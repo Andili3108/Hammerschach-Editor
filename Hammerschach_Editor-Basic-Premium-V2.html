@@ -63,20 +63,6 @@
   .board-column{width:calc(var(--board-size));display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;}
   #board{width:var(--board-size);height:var(--board-size);border:3px solid #333;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;position:relative;overflow:hidden}
   .square{display:flex;align-items:center;justify-content:center;font-size:56px;cursor:pointer;transition:box-shadow .12s ease,transform .08s ease}
-  .pieceglyph {
-    display: block;
-    line-height: 1;
-  }
-  .pieceglyph.white-piece,
-  .pieceglyph.black-piece {
-    line-height: 1;
-  }
-  /* Schwarze Bauern minimal verkleinern, damit sie auf iOS nicht "riesig" wirken */
-  .pieceglyph.black-piece.pawn-piece {
-    transform: scale(0.9);
-    transform-origin: center bottom;
-  }
-
   .light{background:#f0d9b5}.dark{background:#843f46cc}.selected{outline:3px solid rgba(11,99,212,0.9);box-sizing:border-box}
   .controls{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
   button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:600;cursor:pointer}
@@ -160,6 +146,15 @@
 
 /* Falls irgendwo noch alte Outline-Regeln stören: neutralisieren */
 .selected{ outline-offset: 0 !important; }
+
+
+  .piece-img{
+    width:80%;
+    height:80%;
+    display:block;
+    pointer-events:none;
+  }
+
 
 </style>
 
@@ -288,6 +283,21 @@ const files = ['a','b','c','d','e','f','g','h'];
 function coordToAlg(x,y){ return files[x]+(8-y); }
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 const glyph = { P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔', p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚' };
+
+const pieceImg = {
+  P: "https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
+  R: "https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
+  N: "https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
+  B: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
+  Q: "https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
+  K: "https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
+  p: 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
+  r: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+  n: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+  b: 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
+  q: 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
+  k: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
+};
 
 /* helper: safe piece color detection */
 function pieceColor(ch){
@@ -569,10 +579,11 @@ function renderBoardFromView(){
       el.dataset.x = sx; el.dataset.y = sy;
       const p = g.at(sx,sy);
       if(p !== '.') {
-        const span = document.createElement('span');
-        span.textContent = glyph[p];
-        span.className = 'pieceglyph ' + (p === p.toUpperCase() ? 'white-piece' : 'black-piece') + (p.toLowerCase() === 'p' ? ' pawn-piece' : '');
-        el.appendChild(span);
+        const img = document.createElement('img');
+        img.src = pieceImg[p];
+        img.alt = glyph[p] || '';
+        img.className = 'piece-img';
+        el.appendChild(img);
       }
       el.addEventListener('click', ()=>onSquareClick(sx,sy));
       boardEl.appendChild(el);
