@@ -12,10 +12,8 @@
     --bg: #f6f7fb;
   }
 
-  
+  /* V16 alignment fix */
   .moves.box { min-height: var(--board-size); }
-/* V16 alignment fix */
-  
   html, body {
     margin: 0;
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -322,15 +320,7 @@
     }
   }
 
-/* V8-C enhancements */
-.move-list-container { width: 260px !important; padding-right: 8px; }
-.move-list { font-size: 1.05rem !important; line-height: 1.35; }
-.nav-buttons button { padding: 8px 14px !important; font-size: 1rem !important; border-radius: 8px !important; }
-.move-list li:hover { background: rgba(132,63,70,0.1); }
-/* Highlight current move */
-.current-move { background: rgba(132,63,70,0.2) !important; font-weight: bold; }
-
-  /* Ghost-Piece für Engine-Animation */
+/* Ghost-Piece für Engine-Animation */
   .engine-ghost-piece {
     position: absolute;
     display: flex;
@@ -381,9 +371,22 @@
   button,select,label,.box,.moves-pre,#status,#engineStatus,#engineEval{font-family:Tahoma, Arial, sans-serif!important;font-size:14px!important;}
 
 /* === Dezente Andili-Markierungen in Weiß === */
-
-
-
+.square.selected {
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,0.95);
+  border-radius: 6px;
+}
+.square.legal,
+.square.move-target,
+.square.legal-move {
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,0.40);
+  border-radius: 6px;
+}
+.square.selected::after,
+.square.legal::after,
+.square.move-target::after,
+.square.legal-move::after {
+  content: none !important;
+}
 
 </style>
 </head>
@@ -1126,11 +1129,7 @@ if(navStartBtn){
     viewIndex = 0;
     selected = null;
     renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
   });
 }
@@ -1140,11 +1139,7 @@ if(navBackBtn){
     viewIndex = Math.max(0, viewIndex - 1);
     selected = null;
     renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
   });
 }
@@ -1154,11 +1149,7 @@ if(navForwardBtn){
     viewIndex = Math.min(masterHistory.length, viewIndex + 1);
     selected = null;
     renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
   });
 }
@@ -1168,11 +1159,7 @@ if(navEndBtn){
     viewIndex = masterHistory.length;
     selected = null;
     renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
   });
 }
@@ -1226,6 +1213,16 @@ const sideSelectEl = document.getElementById('sideSelect');
 const levelSelectEl = document.getElementById('levelSelect');
 const humanSelectEl = document.getElementById('humanSelect');
 const newGameBtn = document.getElementById('newGameBtn');
+
+function updateLevelLock(){
+  if(!levelSelectEl || !humanSelectEl) return;
+  const lock = humanSelectEl.value !== 'off';
+  levelSelectEl.disabled = lock;
+  levelSelectEl.style.opacity = lock ? '0.5' : '1';
+  levelSelectEl.title = lock ? 'Im Human-Modus deaktiviert' : '';
+}
+
+
 
 function difficultyToMoveTime(level){
   // Suchzeiten deutlich reduziert – in Kombination mit Skill Level
@@ -1729,11 +1726,7 @@ function applyEngineMoveFromUci(uci){
     masterHistory.push(mv);
     viewIndex = masterHistory.length;
     renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
     engineStatusEl.textContent = 'Du bist am Zug.';
     if(timeMode && firstMoveDone && !timeLost){
@@ -1816,11 +1809,7 @@ function onSquareClick(x,y){
           if(!choice){
             selected = null;
             renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
             return;
           }
@@ -1851,11 +1840,7 @@ if(humanSelectEl.value !== 'off'){
           viewIndex = masterHistory.length;
           selected = null;
           renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
           if(timeMode && !timeLost){
             if(!firstMoveDone){
@@ -1896,11 +1881,7 @@ if(humanSelectEl.value !== 'off'){
         viewIndex = masterHistory.length;
         selected = null;
         renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
         if(timeMode && !timeLost){
           if(!firstMoveDone){
@@ -1931,11 +1912,7 @@ if(humanSelectEl.value !== 'off'){
 
 function highlightSelection(sx,sy){
   renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
   document.querySelectorAll('.square').forEach(el=>{
     const ex = parseInt(el.dataset.x,10);
@@ -2036,11 +2013,7 @@ function newGame(){
     updateClockDisplay();
   }
   renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
 
   if(engine && engineBusy){
@@ -2064,15 +2037,7 @@ sideSelectEl.addEventListener('change', ()=>{
 
 humanSelectEl.addEventListener('change', ()=>{
   humanMode = humanSelectEl.value;
-  if(humanMode !== 'off'){
-    levelSelectEl.disabled = true;
-    levelSelectEl.style.opacity = '0.5';
-    levelSelectEl.title = 'Im Human-Modus deaktiviert';
-  } else {
-    levelSelectEl.disabled = false;
-    levelSelectEl.style.opacity = '1';
-    levelSelectEl.title = '';
-  }
+  updateLevelLock();
 });
 levelSelectEl.addEventListener('change', ()=>{
   engineLevel = levelSelectEl.value || 'anfaenger';
@@ -2091,11 +2056,7 @@ if(newGameBtn){
 
 /* ===== Init ===== */
 renderBoardFromView();
-if(humanSelectEl.value !== 'off'){
-  levelSelectEl.disabled = true;
-  levelSelectEl.style.opacity = '0.5';
-  levelSelectEl.title = 'Im Human-Modus deaktiviert';
-}
+updateLevelLock();
 
 initEngine();
 updateClockDisplay();
