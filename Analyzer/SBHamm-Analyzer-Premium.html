@@ -5,18 +5,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
-<title>SBHamm-Analyzer-Premium</title>
-
+<title>Hammerschach Analyzer</title>
+<link href="data:image/png;base64,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" rel="icon" type="image/png"/>
 <style>
-  :root { --board-size:min(600px, 90vw); --accent:#E9F06B; --bg:#4f4f4f; }
-  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:#f3f3f3;color:#000}
-  max-width: 1100px;
-  width: 100%; height:150px; margin:28px auto; padding:26px 10px 22px;
-    color:#000; background: linear-gradient(90deg,#E9F06B 0%,#8B5A2B 20%,#85BA2B 80%,#E9F06B 100%);
-    border-radius:16px; box-shadow:0 8px 18px rgba(0,0,0,.15); text-align:center;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; box-sizing:border-box;
-  }
-
+  :root { --board-size:min(600px, 90vw); --accent:#E9F06B; --bg:#f6f7fb; }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:#f6f7fb;color:#111}
+  
   .page {
   max-width: 1100px;
   margin: 0 auto 40px;
@@ -28,35 +22,29 @@
   justify-content: center;
 }
   .board-col{width:var(--board-size);display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
-  .sidebar {
-  width: 420px;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+  
   .mgmt{width:100%;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:4px}
   .mgmt button{background:#e9ecf0;color:#222;border:1px solid #d1d6dd;padding:6px 10px;border-radius:6px;font-weight:600;cursor:pointer}
-  .mgmt button.primary{background:var(--accent);color:#000;border:none}
+  .mgmt button.primary{background:var(--accent);color:#fff;border:none}
   .mgmt button:hover{filter:brightness(0.98)}
   #board{width:var(--board-size);height:var(--board-size);border:3px solid #333;box-shadow:0 6px 14px rgba(0,0,0,.08);
          display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;position:relative;background:#eee}
   .square{display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
-  .light{background:#e5e5e5}.dark{background:#6f6f6f}
+  .light{background:#e5e5e5 !important;}.dark{background:#6f6f6f !important;}
   .piece{font-size:56px;line-height:1}
   .piece-img{width:80%;height:80%;display:block;pointer-events:none;}
 
   .controls{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center}
-  button.ctrl{background:var(--accent);color:#000;border:none;padding:8px 12px;border-radius:6px;font-weight:600;cursor:pointer}
+  button.ctrl{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:600;cursor:pointer}
   button.ctrl.ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,99,212,.15)}
-  .box{background:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,0.12);border:1px solid rgba(0,0,0,0.06)}
+  .box{background:#fff;padding:10px;border-radius:8px;box-shadow:0 6px 14px rgba(0,0,0,0.05)}
   .pgn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   label{font-size:13px;color:#333}
   input[type="text"]{width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;box-sizing:border-box}
   input[readonly]{background:#f3f4f7;color:#444}
-  .moves{background:#fff;padding:8px;border-radius:8px;box-shadow:0 6px 14px rgba(0,0,0,0.05);max-height:640px;overflow:auto;font-size:14px}
+  .moves { background:#fff; padding:8px; border-radius:8px; box-shadow:0 6px 14px rgba(0,0,0,0.05); }
   .moves-pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Roboto Mono",monospace;white-space:pre-wrap;line-height:1.6;font-size:13px}
-  .status{text-align:center;font-weight:700;padding-top:6px;min-height:32px;color:#000;margin-top:20px;letter-spacing:0.01em;}
+  .status{text-align:center;font-weight:700;padding-top:6px;min-height:32px;color:#000;margin-top:20px;letter-spacing:0.01em !important;}
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:1000}
   .modal{background:#fff;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.3);width:480px;max-width:96vw;padding:14px}
   .modal h3{margin:0 0 10px 0}
@@ -71,28 +59,14 @@
 
   /* Klickbare Zugliste */
   .mv { cursor: pointer; padding: 2px 4px; border-radius: 4px; display: inline-block; }
-  .mv:hover { background: rgba(11,99,212,.08); }
-  .mv.active { background: rgba(11,99,212,.18); }
+  .mv:hover { background: rgba(233,240,107,0.15); }
+  .mv.active { background: rgba(233,240,107,0.3); }
 
 /* === r2d additions (append-only) === */
 :root{--board-size:min(600px, 90vw);}
-.sidebar{display:flex;flex-direction:column;height:var(--board-size)}
-.sidebar .moves{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-gutter:stable}
-#movesPre {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-  line-height: 1.5;
-  font-size: 15px;
-  padding: 10px 12px;
-  border: 1px solid #bbb;
-  border-radius: 8px;
-  background: #000;
-  box-sizing: border-box;
-  width: 100%;
-  overflow-y: auto;
-}
+
+.sidebar .moves { background:#fff; padding:8px; border-radius:8px; box-shadow:0 6px 14px rgba(0,0,0,0.05); }
+
 
 #movesPre .mv {
   min-width: 60px;
@@ -102,36 +76,16 @@
 }
 
 #movesPre .mv:hover {
-  background: rgba(11,99,212,0.08);
+  background: rgba(233,240,107,0.15);
   border-radius: 4px;
 }
-.mgmt{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.mgmt{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .mgmt button{width:100%;height:42px}
 /* === end r2d css === */
 /* === Breitenkorrektur der Zuglistenbox (stabil) === */
-.sidebar .moves {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  padding: 0;
-}
+.sidebar .moves { background:#fff; padding:8px; border-radius:8px; box-shadow:0 6px 14px rgba(0,0,0,0.05); }
 
-#movesPre {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-  line-height: 1.5;
-  font-size: 15px;
-  padding: 10px 12px;
-  border: 1px solid #bbb;
-  border-radius: 8px;
-  background: #000;
-  box-sizing: border-box;
-  width: 100%;
-  overflow-y: auto;
-}
+
 
 #movesPre .mv {
   min-width: 60px;
@@ -141,12 +95,12 @@
 }
 
 #movesPre .mv:hover {
-  background: rgba(11,99,212,0.08);
+  background: rgba(233,240,107,0.15);
   border-radius: 4px;
 }
 
 .mv-num {
-  color: #555;
+  color: #000;
   font-weight: 600;
   margin-right: 4px;
 }
@@ -160,11 +114,11 @@
 }
 
 .mv:hover {
-  background: rgba(11,99,212,0.08);
+  background: rgba(233,240,107,0.15);
 }
 
 .mv.active {
-  background: #dbe9ff;
+  background: #F7F4C0;
   font-weight: 700;
 }
 
@@ -199,18 +153,14 @@
   box-sizing: border-box;
 }
 
-.sidebar .moves {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-}
+.sidebar .moves { background:#fff; padding:8px; border-radius:8px; box-shadow:0 6px 14px rgba(0,0,0,0.05); }
 
 /* Seite optisch leicht ausbalancieren */
 body {
-  background:#f3f3f3;
+  background: #f6f7fb;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   margin: 0;
-  color:#000;
+  color: #111;
 }
 
 /* === Promotion Modal Styles === */
@@ -228,15 +178,19 @@ body {
   padding:10px 12px;
   border-radius:10px;
   border:1px solid #d1d6dd;
-  background:#E9F06B;
+  background:#f9fafb;
   cursor:pointer;
   font-weight:600;
-  color:#000;
 }
-.promo-btn:hover{ filter:brightness(1.02); background:#D8E05F; }
+.promo-btn:hover{ filter:brightness(0.98); background:#fff; }
 .promo-btn .pi{ font-size:28px; line-height:1; width:32px; text-align:center; }
 
 #engineEval, #engineBestMove { font-size:20px; font-weight:700; }
+#movesPre { max-height:500px; overflow-y:auto; }
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
 <style id="marking-final-css">
 /* === V3-r2 FINAL: Innenrahmen-Markierung (3px, #E9F06B) === */
@@ -251,14 +205,18 @@ body {
   box-sizing: border-box;
 }
 
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
 <style id="pgn-import-css">
 /* PGN-Import Popup (600x400, zentriert) */
 #pgnImportBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 1200; }
 #pgnImportModal { width: 600px; height: 400px; max-width: 96vw; max-height: 96vh; background: #fff; border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.3); display:flex; flex-direction:column; }
-.pgn-import-title{height:42px;display:flex;align-items:center;justify-content:center;background:#E9F06B;color:#000;font-weight:800;border-top-left-radius:12px;border-top-right-radius:12px;}
+.pgn-import-title{height:42px;display:flex;align-items:center;justify-content:center;background:#843f46;color:#fff;font-weight:800;border-top-left-radius:12px;border-top-right-radius:12px;}
 #pgnImportModal .content { padding: 12px 14px; flex: 1 1 auto; display:flex; flex-direction:column; gap: 8px; }
-#pgnImportModal .actions { padding: 12px 14px; border-top: 1px solid #E9F06B; display:flex; justify-content:flex-end; gap: 8px; }
+#pgnImportModal .actions { padding: 12px 14px; border-top: 1px solid #e5e7eb; display:flex; justify-content:flex-end; gap: 8px; }
 
 #pgnImportText { width: 100%; height: 100%; min-height: 0; resize: none; border: 1px solid #d1d6dd; border-radius: 8px; padding: 10px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; line-height: 1.5; font-size: 14px; box-sizing: border-box; background:#fff; }
@@ -270,33 +228,29 @@ body {
 #pgnImportText::-webkit-scrollbar-thumb:hover { background: #999; }
 
 /* Buttons */
-button.primary { background: var(--accent); color:#000; border: none; }
+button.primary { background: var(--accent); color: #fff; border: none; }
 button.ghost { background: transparent; color: var(--accent); border: 1px solid rgba(11,99,212,.15); }
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
 <style id="moves-classic-css">
 /* === V5-r20: Klassische Zugliste (Nummer | Weiß | Schwarz) === */
-.sidebar .moves { padding: 0; background: transparent; box-shadow: none; }
+.sidebar .moves { background:#fff; padding:8px; border-radius:8px; box-shadow:0 6px 14px rgba(0,0,0,0.05); }
 
-#movesPre {
-  display: block !important;            /* Container als Block, wir bauen eigene Zeilen */
-  padding: 0;
-  border: none;
-  background: transparent;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
-  font-size: 15px;
-  line-height: 1.5;
-}
+
 
 .mv-table {
   display: grid;
-  grid-template-columns: 64px 1fr 1fr;  /* Nummer fix, Züge flexibel */
-  column-gap: 10px;
+  grid-template-columns: 20px 60px 60px 20px 60px 60px;  /* Variante B kompakt: zwei Züge pro Zeile (Nummer | W | S | Nummer | W | S) */
+  column-gap: 6px;
   row-gap: 2px;
   padding: 10px 12px;
   border: 1px solid #cfd6df;
   border-radius: 10px;
-  background:#fff;
-  box-shadow:0 10px 24px rgba(0,0,0,.10);
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(0,0,0,.05);
 }
 
 .mv-row {
@@ -304,7 +258,7 @@ button.ghost { background: transparent; color: var(--accent); border: 1px solid 
 }
 
 .mv-num {
-  color:#000;
+  color: #000;
   font-weight: 800;
   text-align: right;
   padding-right: 6px;
@@ -327,11 +281,11 @@ button.ghost { background: transparent; color: var(--accent); border: 1px solid 
   cursor: pointer;
 }
 
-.mv:hover { background: #E9F06B33; }
+.mv:hover { background: rgba(233,240,107,0.15); }
 .mv.active {
-  background: #E9F06B;
+  background: #F7F4C0;
   font-weight: 700;
-  outline: 1px solid #E9F06B;
+  outline: 1px solid rgba(11,99,212,.35);
 }
 
 /* Sehr lange SAN-Züge dürfen umbrechen, aber nicht die Nummernsäule verschieben */
@@ -347,23 +301,28 @@ button.ghost { background: transparent; color: var(--accent); border: 1px solid 
   .mv-table { grid-template-columns: 56px 1fr 1fr; }
   .mv-num { padding-right: 4px; }
 }
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
 <style id="scroll-fix-50-css">
 /* Extra Sichtbarkeits-Puffer für .mv.active */
 #movesPre .mv.active { scroll-margin: 36px 0; }
-</style>
 
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
+</style>
 <style id="iframe-perfect-css">
-/* === iframe-perfect overrides === */
-html, body { height: auto; overflow: auto; }  /* never show a page scroll bar inside iframe */
-.page { margin: 4px auto 0 !important; }
-footer { margin: 6px 0 0 !important; }
-.sidebar { height: var(--board-size) !important; min-height: 0 !important; }
-.moves { max-height: none !important; } /* internal move list can scroll inside its own box if needed */
-#movesPre { max-height: none !important; }
+html, body { height:auto; overflow:auto; }
+.page { margin:4px auto 0 !important; }
+footer { margin:6px 0 0 !important; }
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
-
-
 <style id="engine-css">
 /* Hammerschach Analyzer – Engine-Bar */
 .engine-bar {
@@ -381,22 +340,19 @@ footer { margin: 6px 0 0 !important; }
   justify-content: center;
   font-size: 18px;
 }
-.engine-row span strong {
-  color:#000;
-}
-.engine-status {
-  text-align: center;
-  font-size: 12px;
-  color:#000;
-}
+.engine-row span strong{color:#000 !important;}
+.engine-status{text-align:center;font-size:12px;color:#000 !important;}
 @media (max-width: 768px) {
   .engine-row {
     flex-direction: column;
     align-items: center;
   }
 }
-</style>
 
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
+</style>
 <style id="andili-premium-minimal">
   body, button, input, select, textarea, label {
     font-family: Tahoma, Arial, sans-serif !important;
@@ -404,44 +360,101 @@ footer { margin: 6px 0 0 !important; }
   }
   button {
     background: #E9F06B !important;
-    color:#000 !important;
+    color: #fff !important;
     border-radius: 10px !important;
-    border: 1px solid rgba(0,0,0,0.25) !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
     padding: 6px 12px !important;
     box-shadow: 0 2px 5px rgba(0,0,0,0.18) !important;
     cursor: pointer;
   }
   button:hover { filter: brightness(1.05); }
   button:active { transform: translateY(1px); }
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
-
-
 <style id="andili-extra-overrides">
 .mgmt button {
   font-size: 12px !important;
 }
 .square.source::after,
 .square.target::after {
-  border: 3px solid #E9F06B !important;
+  border: 3px solid #ffffff !important;
 }
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
+</style>
+
+<style id="andili-sidebar-fix-final">
+/* FORCE CORRECT SIDEBAR LAYOUT */
+.page {
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  align-items:flex-start !important;
+  justify-content:center !important;
+  gap:22px !important;
+  max-width:1100px !important;
+  margin:8px auto !important;
+  padding:0 16px !important;
+  box-sizing:border-box !important;
+}
+.sidebar {
+  display:flex !important;
+  flex-direction:column !important;
+  width:420px !important;
+  min-width:320px !important;
+  margin-top:0 !important;
+}
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
 </style>
 
 
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.cdnfonts.com/css/cooper-black" rel="stylesheet">
-<style>
-body { font-family: 'Open Sans', sans-serif !important; }
-.sb-title { font-family: 'Cooper Black', 'Open Sans', sans-serif !important; }
-</style>
+<style id="premium-clean">
+body, button, input, select, textarea, label {
+    font-family: Tahoma, Arial, sans-serif !important;
+    font-size: 14px !important;
+    color: #000 !important;
+}
 
-<link rel="icon" type="image/png" sizes="16x16" href="SBHamm-Logo.png">
-<link rel="icon" type="image/png" sizes="32x32" href="SBHamm-Logo.png">
-<link rel="apple-touch-icon" href="SBHamm-Logo.png">
-<link rel="shortcut icon" href="SBHamm-Logo.png">
+button {
+    background: #E9F06B !important;
+    color: #000 !important;
+    border: 1px solid #d1d6dd !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.18) !important;
+}
+
+/* Active move highlight */
+.mv.active, #movesPre .mv.active {
+    background: #E9F06B !important;
+    color: #000 !important;
+}
+
+/* Board marking */
+.square.source::after, .square.target::after {
+    border: 3px solid #E9F06B !important;
+}
+
+/* Popup */
+.modal-header, .pgn-import-title {
+    background: #E9F06B !important;
+    color: #000 !important;
+}
+
+.light{background:#e5e5e5 !important;}
+.dark{background:#6f6f6f !important;}
+.mv-num{color:#000 !important;}
+</style>
 
 </head>
 <body>
-
 <input accept=".pgn,text/plain" id="fileInputPGN" style="display:none" type="file"/>
 <div class="page">
 <div class="board-col">
@@ -462,28 +475,24 @@ body { font-family: 'Open Sans', sans-serif !important; }
 <button class="ctrl ghost" id="btnFlip" title="Brett drehen">Flip</button>
 <button class="ctrl" id="btnSave">Speichern</button>
 </div>
-
 <div class="box engine-bar" id="engineBar">
-  <div class="engine-row">
-    <span><strong>Stellungsbewertung:</strong> <span id="engineEval">–</span></span>
-    <span><strong>Zugvorschlag:</strong> <span id="engineBestMove">–</span>
-    </span>
-  </div>
-  
+<div class="engine-row">
+<span><strong>Stellungsbewertung:</strong> <span id="engineEval">–</span></span>
+<span><strong>Zugvorschlag:</strong> <span id="engineBestMove">–</span>
+</span>
+</div>
 <div class="engine-mode-center" style="text-align:center; margin-top:10px;">
-<select id="engineMode" style="color:#000; font-size:16px;">
-  <option value="8">Grundmodus (1200–1500)</option>
-  <option value="12">Vereinsmodus (1700–1900)</option>
-  <option value="15">Turniermodus (2000–2200)</option>
-  <option value="18" selected>Meistermodus (2400–2600)</option>
+<select id="engineMode" style="color:#E9F06B; font-size:16px;">
+<option value="8">Grundmodus (1200–1500)</option>
+<option value="12">Vereinsmodus (1700–1900)</option>
+<option value="15">Turniermodus (2000–2200)</option>
+<option selected="" value="18">Meistermodus (2400–2600)</option>
 </select>
 </div>
-
 <div class="engine-status" id="engineStatus">Engine wird geladen…</div>
 </div>
 <div class="box status" id="status">Weiß am Zug — Partie <span id="gameIndexLabel">1</span> von <span id="gameCountLabel">1</span></div>
-<div class="engine-footnote" style="text-align:center; margin-top:10px; font-size:10px; color:#000; font-family:Tahoma;">@ Andreas Lipske & ChatGPT 5.1</div>
-
+<div class="engine-footnote" style="text-align:center; margin-top:10px; font-size:13px; color:#777; font-family:Tahoma;">@ Andreas Lipske &amp; ChatGPT 5.1</div>
 </div>
 <aside class="sidebar">
 <div class="box">
@@ -526,7 +535,6 @@ body { font-family: 'Open Sans', sans-serif !important; }
 </div>
 </div>
 </div>
-
 <script type="module">
 document.addEventListener('DOMContentLoaded',()=>{
 // === Hammerschach Analyzer – Stockfish Engine Integration ===
@@ -1216,7 +1224,6 @@ function renderBoardFromView(){
   updateStatusFromGame(g);
   renderMoveList();
 // Aktiver Zug bleibt in der Liste sichtbar
-document.querySelector('.mv.active')?.scrollIntoView({block: "nearest"});
 
   const cur=allePartien[aktuellePartie]; if(cur){ cur.history=clone(masterHistory); cur.headers.PlyCount=String(cur.history.length); }
   // Analyzer nach jeder Stellungsänderung aktualisieren
@@ -1231,103 +1238,151 @@ function updateStatusFromGame(g){
 
 // ===== NEUE FUNKTION (mit x, +, #) =====
 function renderMoveList(){
-  if(masterHistory.length===0){
-    movesPre.textContent='Noch keine Züge.';
+  if (masterHistory.length === 0) {
+    movesPre.textContent = 'Noch keine Züge.';
     return;
   }
 
-  const parts=[];
   const gtmp = new Game();
-  const files=['a','b','c','d','e','f','g','h'];
-  const alg=(x,y)=>files[x]+(8-y);
+  const files = ['a','b','c','d','e','f','g','h'];
+  const alg = (x, y) => files[x] + (8 - y);
 
-function buildSAN(gameBefore, mv){
-  if(!mv) return '';
-  // Castling
-  if(mv.meta && mv.meta.castle)
-    return (mv.meta.castle==='K' || mv.meta.castle==='k') ? 'O-O' : 'O-O-O';
-
-  const files=['a','b','c','d','e','f','g','h'];
-  const alg=(x,y)=>files[x]+(8-y);
-  const p = gameBefore.at(mv.from[0], mv.from[1]);
-  const isPawn = p.toUpperCase()==='P';
-  const isCapture = gameBefore.at(mv.to[0], mv.to[1])!=='.' || (mv.meta && mv.meta.enpassant);
-
-  let san = '';
-
-  if(isPawn){
-    // Pawn notation: captures require file of origin
-    if(isCapture){
-      san = files[mv.from[0]] + 'x' + alg(mv.to[0], mv.to[1]);
-    }else{
-      san = alg(mv.to[0], mv.to[1]);
+  function buildSAN(gameBefore, mv){
+    if (!mv) return '';
+    if (mv.meta && mv.meta.castle) {
+      return (mv.meta.castle === 'K' || mv.meta.castle === 'k') ? 'O-O' : 'O-O-O';
     }
-  } else {
-    // Piece letter
-    const pieceLetter = p.toUpperCase(); // K Q R B N
-    // Disambiguation: find other same-piece candidates that can also move to the same target
-    let disamb = '';
-    try{
-      const legal = gameBefore.legalMoves();
-      const sameTarget = legal.filter(m => m.to[0]===mv.to[0] && m.to[1]===mv.to[1]);
-      const samePiece = sameTarget.filter(m => gameBefore.at(m.from[0], m.from[1]).toUpperCase() === pieceLetter);
 
-      if(samePiece.length > 1){
-        // If from-files differ -> file letter; else if ranks differ -> rank; else full square.
-        const myFile = mv.from[0], myRank = 8 - mv.from[1];
-        const filesSet = new Set(samePiece.map(m => m.from[0]));
-        const ranksSet = new Set(samePiece.map(m => m.from[1]));
+    const p = gameBefore.at(mv.from[0], mv.from[1]);
+    const isPawn = p.toUpperCase() === 'P';
+    const isCapture = gameBefore.at(mv.to[0], mv.to[1]) !== '.' || (mv.meta && mv.meta.enpassant);
 
-        if(filesSet.size > 1){
-          disamb = files[myFile];
-        } else if(ranksSet.size > 1){
-          disamb = String(myRank);
-        } else {
-          disamb = files[myFile] + String(myRank);
-        }
+    let san = '';
+
+    if (isPawn) {
+      if (isCapture) {
+        san = files[mv.from[0]] + 'x' + alg(mv.to[0], mv.to[1]);
+      } else {
+        san = alg(mv.to[0], mv.to[1]);
       }
-    }catch(e){
-      // Fallback: no disambiguation if something goes wrong
+    } else {
+      const pieceLetter = p.toUpperCase();
+      let disamb = '';
+      try {
+        const legal = gameBefore.legalMoves();
+        const sameTarget = legal.filter(m => m.to[0] === mv.to[0] && m.to[1] === mv.to[1]);
+        const samePiece  = sameTarget.filter(m => gameBefore.at(m.from[0], m.from[1]).toUpperCase() === pieceLetter);
+
+        if (samePiece.length > 1) {
+          const myFile   = mv.from[0];
+          const myRank   = 8 - mv.from[1];
+          const filesSet = new Set(samePiece.map(m => m.from[0]));
+          const ranksSet = new Set(samePiece.map(m => m.from[1]));
+
+          if (filesSet.size > 1) {
+            disamb = files[myFile];
+          } else if (ranksSet.size > 1) {
+            disamb = String(myRank);
+          } else {
+            disamb = files[myFile] + String(myRank);
+          }
+        }
+      } catch(e) {
+        // Fallback: keine erzwungene Disambiguierung, wenn etwas schiefgeht
+      }
+      san = pieceLetter + disamb + (isCapture ? 'x' : '') + alg(mv.to[0], mv.to[1]);
     }
 
-    san = pieceLetter + disamb + (isCapture ? 'x' : '') + alg(mv.to[0], mv.to[1]);
+    if (mv.meta && mv.meta.promote) {
+      san += '=' + mv.meta.promote.toUpperCase();
+    }
+
+    try {
+      const sim = gameBefore.clone();
+      sim.makeMove(mv);
+      const over = sim.gameOver && sim.gameOver();
+      if (over && over.type === 'checkmate') {
+        san += '#';
+      } else if (sim.inCheck && sim.inCheck(gameBefore.turn === 'w' ? 'b' : 'w')) {
+        san += '+';
+      }
+    } catch(e) {
+      // bei Fehler kein + oder #
+    }
+
+    return san;
   }
 
-  // Promotion (including after captures)
-  if(mv.meta && mv.meta.promote){
-    san += '=' + mv.meta.promote.toUpperCase();
+  // Zuerst alle Halbzüge in Reihenfolge mit SAN vorbereiten
+  const entries = [];
+  for (let i = 0; i < masterHistory.length; i++) {
+    const mv = masterHistory[i];
+    if (!mv) continue;
+    const san = buildSAN(gtmp, mv);
+    gtmp.makeMove(mv);
+    const moveNo = (i >> 1) + 1;     // 0/1 -> 1., 2/3 -> 2., ...
+    const color  = (i % 2 === 0) ? 'w' : 'b';
+    entries.push({ index: i, moveNo, color, san });
   }
 
-  // Check / mate indicators by simulating the move
-  try{
-    const sim = gameBefore.clone();
-    sim.makeMove(mv);
-    const over = sim.gameOver && sim.gameOver();
-    if(over && over.type==='checkmate') san += '#';
-    else if (sim.inCheck && sim.inCheck(gameBefore.turn === 'w' ? 'b' : 'w')) san += '+';
-  }catch(e){}
+  // Daraus vollständige Züge (Nummer + Weiß + Schwarz) bilden
+  const fullMoves = [];
+  for (let i = 0; i < entries.length; ) {
+    const num = entries[i].moveNo;
+    const fm  = { no: num, white: null, black: null };
+    if (entries[i].color === 'w') {
+      fm.white = entries[i];
+      i++;
+      if (i < entries.length && entries[i].moveNo === num && entries[i].color === 'b') {
+        fm.black = entries[i];
+        i++;
+      }
+    } else {
+      fm.black = entries[i];
+      i++;
+    }
+    fullMoves.push(fm);
+  }
 
-  return san;
+  function renderNumCell(moveObj) {
+    if (!moveObj) return '<div class="mv-num"></div>';
+    return '<div class="mv-num">' + moveObj.no + '.</div>';
+  }
+
+  function renderMoveCell(entry) {
+    if (!entry) return '<div class="mv-cell"></div>';
+    const isActive = (viewIndex - 1) === entry.index;
+    const cls = 'mv' + (isActive ? ' active' : '');
+    const title = entry.san ? ' title="Stellung nach ' + entry.san.replace(/"/g, '&quot;') + '"' : '';
+    return '<div class="mv-cell"><span class="' + cls + '" data-idx="' + entry.index + '"' + title + '>' + entry.san + '</span></div>';
+  }
+
+  let html = '<div class="mv-table">';
+  for (let i = 0; i < fullMoves.length; i += 2) {
+    const left  = fullMoves[i];
+    const right = (i + 1 < fullMoves.length) ? fullMoves[i + 1] : null;
+
+    html += '<div class="mv-row">';
+    html += renderNumCell(left);
+    html += renderMoveCell(left && left.white);
+    html += renderMoveCell(left && left.black);
+
+    if (right) {
+      html += renderNumCell(right);
+      html += renderMoveCell(right.white);
+      html += renderMoveCell(right.black);
+    } else {
+      // rechte Hälfte leer auffüllen, damit Grid sauber bleibt
+      html += '<div class="mv-num"></div><div class="mv-cell"></div><div class="mv-cell"></div>';
+    }
+
+    html += '</div>';
+  }
+  html += '</div>';
+
+  movesPre.innerHTML = html;
 }
 
-  for(let i=0;i<masterHistory.length;i+=2){
-    const num = (i/2|0)+1;
-    const w = masterHistory[i];
-    const b = masterHistory[i+1];
-    let wSan = '', bSan = '';
-    if(w){ wSan = buildSAN(gtmp, w); gtmp.makeMove(w); }
-    if(b){ bSan = buildSAN(gtmp, b); gtmp.makeMove(b); }
-    const wIdx=i, bIdx=i+1;
-    const wActive=(viewIndex-1)===wIdx, bActive=(viewIndex-1)===bIdx;
-    parts.push(
-      `<span class="mv-num">${num}.</span> `+
-      (wSan?`<span class="mv ${wActive?'active':''}" data-idx="${wIdx}" title="Stellung nach ${wSan}">${wSan}</span>`:'')+
-      (bSan?` <span class="mv ${bActive?'active':''}" data-idx="${bIdx}" title="Stellung nach ${bSan}">${bSan}</span>`:'')
-    );
-  }
-
-  movesPre.innerHTML = parts.join('');
-}
 
 // Interaktion
 let selected=null;
@@ -1901,7 +1956,6 @@ function scrollToActiveMove(){
   const parentRect = root.getBoundingClientRect();
   const fullyVisible = rect.top >= parentRect.top && rect.bottom <= parentRect.bottom;
   if(!fullyVisible){
-    active.scrollIntoView({block:"nearest", behavior:"smooth"});
   }
 }
 
@@ -1929,11 +1983,9 @@ function scrollToActiveMove(){
     const parentRect = root.getBoundingClientRect();
     const fullyVisible = rect.top >= parentRect.top && rect.bottom <= parentRect.bottom;
     if(!fullyVisible){
-      active.scrollIntoView({block:"nearest", behavior:"smooth"});
     }
   } else {
     // Fallback: falls kein aktiver Zug, nach ganz unten scrollen
-    root.scrollTo({top: root.scrollHeight, behavior: "smooth"});
   }
 }
 
@@ -1951,7 +2003,6 @@ function scrollToActiveMove(){
       scrollToActiveMove();
       // Fallback: falls Scrollhöhe zugenommen hat, aber kein aktiver Zug -> ans Ende
       if(root.scrollTop + root.clientHeight + 20 < root.scrollHeight){
-        root.scrollTo({top: root.scrollHeight, behavior:"smooth"});
       }
     }, 120);
   };
@@ -1969,7 +2020,6 @@ function ensureActiveVisible(){
   const parentRect = root.getBoundingClientRect();
   const fullyVisible = rect.top >= parentRect.top && rect.bottom <= parentRect.bottom;
   if(!fullyVisible){
-    active.scrollIntoView({block:"nearest", behavior:"smooth"});
   }
 }
 
@@ -2017,7 +2067,6 @@ function ensureActiveVisible(){
 
   function scrollToEndIfNeeded(){
     if(!userScrolledUp){
-      root.scrollTo({top: root.scrollHeight, behavior:"smooth"});
     }
   }
 
@@ -2035,26 +2084,8 @@ function ensureActiveVisible(){
 
 })();
 </script>
-<script id="scroll-fix-50-shim">
-(function(){
-  document.addEventListener('click', function(e){
-    const t = e.target.closest('.mv');
-    if(!t) return;
-    if(window.__HS_scrollFix){
-      // Manuelle Navigation -> sticky temporär deaktivieren (nearest)
-      if (window.__HS_scrollFix.setStickyEnabled) window.__HS_scrollFix.setStickyEnabled(false);
-      const idx = parseInt(t.dataset.mvIndex || '-1', 10);
-      if(!Number.isNaN(idx)) window.__HS_scrollFix.setActiveMove(idx, { });
-    }else{
-      document.querySelectorAll('#movesPre .mv.active').forEach(n=>n.classList.remove('active'));
-      t.classList.add('active');
-      t.scrollIntoView({block:'nearest'});
-    }
-  });
-})();
-</script>
 
-<script id="iframe-perfect-fit" defer>
+<script defer="" id="iframe-perfect-fit">
 (function(){
   function fitLayout(){
     try{
@@ -2079,7 +2110,7 @@ function ensureActiveVisible(){
       document.documentElement.style.setProperty('--board-size', size + 'px');
 
       var sidebar = document.querySelector('.sidebar');
-      if(sidebar){ sidebar.style.height = size + 'px'; }
+      // sidebar height fix removed
     }catch(e){
       // Non-blocking
       console && console.warn && console.warn('fitLayout failed', e);
@@ -2089,216 +2120,24 @@ function ensureActiveVisible(){
   document.addEventListener('DOMContentLoaded', fitLayout);
   // in case the module script renders later, run again after a tick
   setTimeout(fitLayout, 120);
+
+      // sync sidebar removed for correct layout
+
 })();
+</script>
+
+<script>
+window.addEventListener('load', ()=>{
+  const board = document.getElementById('board');
+  const engine = document.querySelector('.engine-bar');
+  const sidebar = document.querySelector('.sidebar');
+  if(board && engine && sidebar){
+    const h = board.getBoundingClientRect().height + engine.getBoundingClientRect().height;
+    sidebar.style.height = h + 'px';
+  }
+});
 </script>
 
 </body></html>
 <script>try{ if(typeof importPGNText==='function'){ window.importPGNText = importPGNText; } }catch(e){ console.warn(e); }</script>
-<script id="scroll-fix-50">
-/* === Scroll-Fix 5.4 — „Der Befreier“ (2025‑10‑25) ===
-   Behoben:
-   - Scroll-Blockade bei Zeile 7–8
-   - „Zum Anfang der Partie“ friert nicht mehr ein
-   - MutationObserver pausiert während Reset
-   - Scrollcontainer sicher entsperrt (Safari/Firefox kompatibel)
-*/
-(function(){
-  const ROOT_SELECTOR = '#movesPre';
-  const MV_SELECTOR = ROOT_SELECTOR + ' .mv';
 
-  function getRoot(){ return document.querySelector(ROOT_SELECTOR); }
-
-  function getScrollContainer(startEl){
-    let el = startEl;
-    while (el) {
-      const style = el === document.documentElement ? null : getComputedStyle(el);
-      const canScroll = el.scrollHeight > el.clientHeight;
-      const overflowY = style ? style.overflowY : 'visible';
-      if (canScroll && (overflowY === 'auto' || overflowY === 'scroll')) return el;
-      el = el.parentElement;
-    }
-    return document.scrollingElement || document.documentElement;
-  }
-
-  function getAllMoves(){ return Array.from(document.querySelectorAll(MV_SELECTOR)); }
-  function getActive(){ return document.querySelector(MV_SELECTOR + '.active'); }
-
-  let lastActiveIndex = -1;
-  let userOverride = false;
-  let observerPaused = false;
-
-  const REARM_THRESHOLD = 60;
-  const MARGIN = 36;
-
-  function indexMoves(){
-    const moves = getAllMoves();
-    moves.forEach((el, i) => el.dataset.mvIndex = String(i));
-  }
-
-  function getActiveIndex(){
-    const a = getActive();
-    if (!a) return -1;
-    const v = parseInt(a.dataset.mvIndex || '-1', 10);
-    return Number.isNaN(v) ? -1 : v;
-  }
-
-  function isNearBottom(container, threshold=REARM_THRESHOLD){
-    const max = container.scrollHeight - container.clientHeight;
-    return (max - container.scrollTop) <= threshold;
-  }
-
-  function smartScrollToActive(mode){
-    const root = getRoot();
-    if (!root) return;
-    const list = getScrollContainer(root);
-    const active = getActive();
-    if (!active) return;
-
-    const rectA = active.getBoundingClientRect();
-    const rectL = list.getBoundingClientRect();
-    const aTop = rectA.top - rectL.top + list.scrollTop;
-    const aBottom = aTop + rectA.height;
-    const viewTop = list.scrollTop;
-    const viewBottom = viewTop + list.clientHeight;
-
-    if (mode === 'end') {
-      list.scrollTop = Math.max(0, aBottom - list.clientHeight + MARGIN);
-      const maxScroll = Math.max(0, list.scrollHeight - list.clientHeight);
-      if (maxScroll - list.scrollTop <= MARGIN) list.scrollTop = maxScroll;
-      return;
-    }
-    if (aTop - MARGIN < viewTop) {
-      list.scrollTop = Math.max(0, aTop - MARGIN);
-    } else if (aBottom + MARGIN > viewBottom) {
-      list.scrollTop = Math.min(list.scrollHeight - list.clientHeight, aBottom + MARGIN - list.clientHeight);
-    }
-  }
-
-  function unlockScroll(list){
-    if (!list) return;
-    const oldBehavior = list.style.scrollBehavior;
-    list.style.scrollBehavior = 'auto';
-    list.style.overflowY = 'auto';
-    setTimeout(()=>{
-      list.style.scrollBehavior = oldBehavior || '';
-      list.style.overflowY = '';
-    }, 150);
-  }
-
-  function performReset(){
-    const root = getRoot();
-    const list = getScrollContainer(root);
-    const moves = getAllMoves();
-    userOverride = true;
-    observerPaused = true;
-
-    // Entferne alle .active
-    document.querySelectorAll(MV_SELECTOR + '.active').forEach(x=>x.classList.remove('active'));
-    lastActiveIndex = 0;
-
-    // Scroll nach oben
-    list.scrollTop = 0;
-    unlockScroll(list);
-
-    // Nach kurzer Pause Observer wieder aktivieren
-    setTimeout(()=>{ observerPaused = false; }, 150);
-
-    // Optional ersten Zug markieren, wenn vorhanden
-    if (moves.length > 0) {
-      moves[0].classList.add('active');
-    }
-  }
-
-  function setActiveMove(index, opts){
-    indexMoves();
-    const moves = getAllMoves();
-    const cur = getActive();
-    if (cur) cur.classList.remove('active');
-
-    let idx = index;
-    if (typeof idx !== 'number') {
-      if (typeof idx === 'string') idx = parseInt(idx, 10);
-      else if (idx && idx.dataset && idx.dataset.mvIndex) idx = parseInt(idx.dataset.mvIndex, 10);
-    }
-    if (Number.isNaN(idx) || idx < 0) return;
-
-    const el = moves[idx];
-    if (!el) return;
-
-    document.querySelectorAll(MV_SELECTOR + '.active').forEach(x=>x.classList.remove('active'));
-    el.classList.add('active');
-    lastActiveIndex = idx;
-
-    const root = getRoot();
-    const list = getScrollContainer(root);
-
-    // Reset-Schutz
-    if (idx === 0) {
-      performReset();
-      return;
-    }
-
-    const atEnd = idx >= moves.length - 1;
-    const nearBottom = isNearBottom(list);
-    const mode = (atEnd && !userOverride && nearBottom) ? 'end' : 'nearest';
-    smartScrollToActive(mode);
-  }
-
-  function attachUserInteraction(){
-    const root = getRoot();
-    if (!root) return;
-    const list = getScrollContainer(root);
-    function onUserIntent(){ userOverride = true; }
-    function onScroll(){ if (isNearBottom(list)) userOverride = false; }
-    ['wheel','touchstart','pointerdown','mousedown','keydown'].forEach(evt =>
-      list.addEventListener(evt, onUserIntent, { passive: true })
-    );
-    list.addEventListener('scroll', onScroll, { passive: true });
-  }
-
-  window.__HS_scrollFix = {
-    indexMoves,
-    setActiveMove,
-    smartScrollToActive,
-    setStickyEnabled: (enabled)=>{ userOverride = !enabled; },
-    resetScroll: performReset
-  };
-
-  document.addEventListener('DOMContentLoaded', () => {
-    indexMoves();
-    attachUserInteraction();
-    const root = getRoot();
-    if (!root) return;
-    const list = getScrollContainer(root);
-    const ai = getActiveIndex();
-    if (ai >= 0) {
-      lastActiveIndex = ai;
-      const initialMode = isNearBottom(list) ? 'end' : 'nearest';
-      smartScrollToActive(initialMode);
-    }
-  });
-
-  const root = getRoot();
-  if (root){
-    const list = getScrollContainer(root);
-    const obs = new MutationObserver(() => {
-      if (observerPaused) return; // skip during reset
-      const wasNearBottom = isNearBottom(list);
-      const savedScroll = list.scrollTop;
-      requestAnimationFrame(() => {
-        indexMoves();
-        const ai = getActiveIndex();
-        if (ai >= 0) {
-          lastActiveIndex = ai;
-          const atEnd = ai >= getAllMoves().length - 1;
-          const allowEndStick = atEnd && !userOverride && wasNearBottom;
-          smartScrollToActive(allowEndStick ? 'end' : 'nearest');
-        } else {
-          list.scrollTop = savedScroll;
-        }
-      });
-    });
-    obs.observe(root, { childList: true, subtree: true });
-  }
-})();
-</script>
