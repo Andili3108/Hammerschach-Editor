@@ -191,6 +191,14 @@ body {
 .light{background:#e5e5e5 !important;}
 .dark{background:#6f6f6f !important;}
 .mv-num{color:#000 !important;}
+
+/* Andili font enlargement & alignment fix */
+.mv-num, .mv-cell {
+  display:flex !important;
+  align-items:center !important;
+  font-size:16px !important;
+}
+
 </style>
 <style id="marking-final-css">
 /* === V3-r2 FINAL: Innenrahmen-Markierung (3px, #E9F06B) === */
@@ -242,6 +250,8 @@ button.ghost { background: transparent; color: var(--accent); border: 1px solid 
 
 
 .mv-table {
+  font-size:16px;
+  line-height:1.5;
   display: grid;
   grid-template-columns: 20px 60px 60px 20px 60px 60px;  /* Variante B kompakt: zwei Züge pro Zeile (Nummer | W | S | Nummer | W | S) */
   column-gap: 6px;
