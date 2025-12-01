@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Schach960 – Generator</title>
+
+<style>
+  :root {
+    --board-size: 600px;
+    --bg: #f6f7fb;
+    --accent: #3b6ea7;
+    --andili-rot: #843f46;
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: transparent !important;
+    color: #111;
+    font-family: Tahoma, Arial, sans-serif;
+    font-size: 14px;
+  }
+
+  body {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* Seitencontainer – ohne Abstand, perfekt für iframe */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  /* Schachbrett */
+  #board {
+    width: var(--board-size);
+    height: var(--board-size);
+    border: 3px solid #333;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+
+    /* Transparenter Brett-Hintergrund */
+    background: transparent;
+  }
+
+  .square {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    position: relative;
+  }
+
+  .light { background: #f0d9b5; }
+  .dark  { background: #843f46cc; }
+
+  .piece-img {
+    width: 80%;
+    height: 80%;
+    pointer-events: none;
+  }
+
+  /* Info-Box Premium */
+  .info-box {
+    width: 100%;
+    max-width: 600px;
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    font-family: Tahoma, Arial, sans-serif !important;
+    font-size: 14px !important;
+    box-sizing: border-box;
+  }
+
+  .info-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  .info-row {
+    margin-bottom: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .info-row label {
+    font-weight: bold;
+  }
+
+  .info-mono {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 13px;
+  }
+
+  #fenField {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+  }
+
+  #indexInput {
+    width: 80px;
+    padding: 5px 8px;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 13px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #fafafa;
+    box-sizing: border-box;
+  }
+
+  .info-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  /* BUTTONS – Andili Premium */
+  .btn-primary,
+  .btn-secondary {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: Tahoma, Arial, sans-serif;
+    transition: 0.12s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: var(--andili-rot);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(132,63,70,0.35);
+  }
+  .btn-primary:hover {
+    background: #9b4b50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(132,63,70,0.45);
+  }
+
+  .btn-secondary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(59,110,167,0.35);
+  }
+  .btn-secondary:hover {
+    background: #447ab8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59,110,167,0.45);
+  }
+
+  .status-text {
+    font-size: 12px;
+    color: var(--accent);
+    min-height: 1em;
+  }
+
+  @media (max-width: 800px) {
+    #board {
+      width: min(90vw, 500px);
+      height: min(90vw, 500px);
+    }
+
+    .info-box {
+      max-width: min(90vw, 500px);
+    }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- BRETT -->
+  <div id="board"></div>
+
+  <!-- INFO BOX -->
+  <div class="info-box">
+    <div class="info-title">Aktuelle Schach960-Stellung</div>
+
+    <div class="info-row">
+      <label>Startreihe:</label>
+      <span id="startRankText" class="info-mono">–</span>
+    </div>
+
+    <div class="info-row">
+      <label>FEN:</label>
+      <input id="fenField" type="text" readonly value="" />
+    </div>
+
+    <div class="info-row">
+      <label>Schach960-Nummer:</label>
+      <span id="indexText" class="info-mono">–</span>
+    </div>
+
+    <div class="info-row">
+      <label>Nummer wählen:</label>
+      <input id="indexInput" type="number" min="0" max="959" value="0" />
+      <button id="showIndexBtn" class="btn-secondary">Anzeigen</button>
+    </div>
+
+    <div class="info-actions">
+      <button id="prevBtn" class="btn-secondary">← zurück</button>
+      <button id="nextBtn" class="btn-secondary">weiter →</button>
+      <button id="newPositionBtn" class="btn-primary">Zufallsstellung</button>
+      <button id="copyFenBtn" class="btn-secondary">FEN kopieren</button>
+      <span id="copyStatus" class="status-text"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* Wikipedia SVG-Figuren */
+  const pieceImg = {
+    P: "https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
+    R: "https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
+    N: "https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
+    B: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
+    Q: "https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
+    K: "https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
+    p: "https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg",
+    r: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg",
+    n: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg",
+    b: "https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg",
+    q: "https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg",
+    k: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg"
+  };
+
+  let currentIndex = 0;
+
+  function generateStartRankFromIndex(index) {
+    let n = index;
+    const darkSquares = [0, 2, 4, 6];
+    const lightSquares = [1, 3, 5, 7];
+    const board = new Array(8).fill(null);
+
+    const b1Index = n % 4;
+    n = Math.floor(n / 4);
+    const b1Square = darkSquares[b1Index];
+    board[b1Square] = "B";
+
+    const b2Index = n % 4;
+    n = Math.floor(n / 4);
+    const b2Square = lightSquares[b2Index];
+    board[b2Square] = "B";
+
+    const remQ = [];
+    for (let i = 0; i < 8; i++) if (!board[i]) remQ.push(i);
+    const qIndex = n % 6;
+    n = Math.floor(n / 6);
+    const qSquare = remQ[qIndex];
+    board[qSquare] = "Q";
+
+    const remN = [];
+    for (let i = 0; i < 8; i++) if (!board[i]) remN.push(i);
+    const knightCombos = [];
+    for (let i = 0; i < remN.length; i++)
+      for (let j = i + 1; j < remN.length; j++)
+        knightCombos.push([remN[i], remN[j]]);
+    const [n1, n2] = knightCombos[n];
+    board[n1] = "N";
+    board[n2] = "N";
+
+    const remRKR = [];
+    for (let i = 0; i < 8; i++) if (!board[i]) remRKR.push(i);
+    remRKR.sort((a,b)=>a-b);
+    board[remRKR[0]] = "R";
+    board[remRKR[1]] = "K";
+    board[remRKR[2]] = "R";
+
+    return board.join("");
+  }
+
+  function buildBoardArray(startRank) {
+    const board = [];
+    board.push(startRank.toLowerCase().split(""));
+    board.push(Array(8).fill("p"));
+    for (let i = 0; i < 4; i++) board.push(Array(8).fill("."));
+    board.push(Array(8).fill("P"));
+    board.push(startRank.toUpperCase().split(""));
+    return board;
+  }
+
+  function renderBoard(board) {
+    const boardEl = document.getElementById("board");
+    boardEl.innerHTML = "";
+
+    for (let rank = 0; rank < 8; rank++) {
+      for (let file = 0; file < 8; file++) {
+        const square = document.createElement("div");
+        square.className = "square " + ((file + rank) % 2 === 0 ? "light" : "dark");
+
+        const piece = board[rank][file];
+        if (piece !== ".") {
+          const img = document.createElement("img");
+          img.src = pieceImg[piece];
+          img.className = "piece-img";
+          square.appendChild(img);
+        }
+
+        boardEl.appendChild(square);
+      }
+    }
+  }
+
+  function buildFen(startRank) {
+    const rank8 = startRank.toLowerCase();
+    const rank7 = "pppppppp";
+    const empty = "8";
+    const rank2 = "PPPPPPPP";
+    const rank1 = startRank.toUpperCase();
+
+    return [
+      rank8,
+      rank7,
+      empty,
+      empty,
+      empty,
+      empty,
+      rank2,
+      rank1
+    ].join("/") + " w KQkq - 0 1";
+  }
+
+  function updateInfo(startRank, index) {
+    document.getElementById("startRankText").textContent =
+      startRank.split("").join(" ") + " (" + startRank + ")";
+    document.getElementById("fenField").value = buildFen(startRank);
+    document.getElementById("indexText").textContent = index;
+  }
+
+  function showPosition(index) {
+    // Ring 0–959, auch bei negativen Werten
+    index = ((index % 960) + 960) % 960;
+    currentIndex = index;
+
+    const startRank = generateStartRankFromIndex(index);
+    const board = buildBoardArray(startRank);
+    renderBoard(board);
+    updateInfo(startRank, index);
+    document.getElementById("copyStatus").textContent = "";
+
+    const idxInput = document.getElementById("indexInput");
+    if (idxInput) {
+      idxInput.value = index;
+    }
+  }
+
+  function generateAndRenderRandomPosition() {
+    const index = Math.floor(Math.random() * 960);
+    showPosition(index);
+  }
+
+  async function copyFenToClipboard() {
+    const fen = document.getElementById("fenField").value;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(fen);
+      } else {
+        const f = document.getElementById("fenField");
+        f.select();
+        document.execCommand("copy");
+        window.getSelection().removeAllRanges();
+      }
+      document.getElementById("copyStatus").textContent = "FEN kopiert ✓";
+      setTimeout(()=>{ document.getElementById("copyStatus").textContent=""; },1500);
+    } catch {
+      document.getElementById("copyStatus").textContent = "Kopieren nicht möglich";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const newBtn   = document.getElementById("newPositionBtn");
+    const copyBtn  = document.getElementById("copyFenBtn");
+    const showBtn  = document.getElementById("showIndexBtn");
+    const prevBtn  = document.getElementById("prevBtn");
+    const nextBtn  = document.getElementById("nextBtn");
+    const idxInput = document.getElementById("indexInput");
+
+    if (newBtn)  newBtn.addEventListener("click", generateAndRenderRandomPosition);
+    if (copyBtn) copyBtn.addEventListener("click", copyFenToClipboard);
+
+    if (showBtn && idxInput) {
+      showBtn.addEventListener("click", () => {
+        const val = parseInt(idxInput.value, 10);
+        if (isNaN(val) || val < 0 || val > 959) {
+          document.getElementById("copyStatus").textContent = "Bitte eine Zahl von 0 bis 959 eingeben.";
+          setTimeout(()=>{ document.getElementById("copyStatus").textContent=""; }, 2000);
+          return;
+        }
+        showPosition(val);
+      });
+
+      // Optional: Enter-Taste im Eingabefeld = Anzeigen
+      idxInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          showBtn.click();
+        }
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        showPosition(currentIndex - 1);
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        showPosition(currentIndex + 1);
+      });
+    }
+
+    // Start mit einer Zufallsstellung
+    generateAndRenderRandomPosition();
+  });
+
+</script>
+
+</body>
+</html>
