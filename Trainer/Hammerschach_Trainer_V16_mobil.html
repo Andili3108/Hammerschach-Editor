@@ -383,7 +383,7 @@
 <div class="page" role="main">
   <div class="board-column">
     <div class="trainer-header">
-      <div id="ratingDisplay">Taktik-Rating: –</div>
+      <div id="ratingDisplay">Hammerschach Trainer - Rating: –</div>
       <button id="btnLogin" class="login-btn">👤 Login</button>
     </div>
 
@@ -1061,7 +1061,7 @@ async function checkSession(){
 async function loadRating(){
   if(!trainerUser){
     trainerRating=1500;
-    ratingDisplayEl.textContent="Taktik-Rating: –";
+    ratingDisplayEl.textContent="Hammerschach Trainer - Rating: –";
     return;
   }
   try{
@@ -1070,14 +1070,14 @@ async function loadRating(){
     const j=await r.json();
     if(j.ok && j.progress && typeof j.progress.rating==="number"){
       trainerRating=j.progress.rating;
-      ratingDisplayEl.textContent=`Taktik-Rating: ${trainerRating}`;
+      ratingDisplayEl.textContent=`Hammerschach Trainer - Rating: ${trainerRating}`;
     }else{
       trainerRating=1500;
-      ratingDisplayEl.textContent="Taktik-Rating: 1500";
+      ratingDisplayEl.textContent="Hammerschach Trainer - Rating: 1500";
     }
   }catch(e){
     console.warn("Rating laden fehlgeschlagen",e);
-    ratingDisplayEl.textContent="Taktik-Rating: –";
+    ratingDisplayEl.textContent="Hammerschach Trainer - Rating: –";
   }
 }
 
@@ -1106,7 +1106,7 @@ async function saveTrainerResult(result){
     const j=await r.json();
     if(j.ok && j.progress && typeof j.progress.rating==="number"){
       trainerRating=j.progress.rating;
-      ratingDisplayEl.textContent=`Taktik-Rating: ${trainerRating}`;
+      ratingDisplayEl.textContent=`Hammerschach Trainer - Rating: ${trainerRating}`;
     }
   }catch(e){
     console.warn("Fehler beim Speichern des Fortschritts",e);
@@ -1122,7 +1122,7 @@ btnLogin.addEventListener("click",()=>{
     localStorage.removeItem("trainerToken");
     localStorage.removeItem("trainerUser");
     updateLoginButtonLabel();
-    ratingDisplayEl.textContent="Taktik-Rating: –";
+    ratingDisplayEl.textContent="Hammerschach Trainer - Rating: –";
     updateAutoDiffState();
   }else{
     loginMsg.textContent="";
