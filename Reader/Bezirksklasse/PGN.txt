@@ -1,0 +1,165 @@
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.1"]
+[White "Enners, Rolf"]
+[Black "Rosentreter, Burkhard"]
+[Result "1-0"]
+[ECO "D45"]
+[WhiteElo "1677"]
+[BlackElo "1689"]
+[PlyCount "67"]
+[EventDate "2024.??.??"]
+[WhiteTeam "SV Rünthe 1"]
+[BlackTeam "Hammer SC 2"]
+
+1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. Nc3 c6 5. e3 Nbd7 6. b3 Bb4 7. Bd2 O-O 8. a3
+Be7 9. Bd3 dxc4 10. bxc4 Qc7 11. O-O e5 12. Qc2 exd4 13. exd4 Bd6 14. g3 b6 15.
+Ng5 h6 16. Nge4 Bb7 17. a4 c5 18. Nb5 Bxe4 19. Bxe4 Nxe4 20. Nxc7 Nxd2 21. Qxd2
+Bxc7 22. d5 Be5 23. Rad1 Bd4 24. Kg2 Ne5 25. Qc2 Rae8 26. h3 f5 27. f4 Nd7 28.
+Rfe1 g6 29. Re2 Nf6 30. Rde1 Ne4 31. Rxe4 fxe4 32. Rxe4 Rxe4 33. Qxe4 Kg7 34.
+g4 1-0
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.2"]
+[White "Bachmann, Rolf"]
+[Black "Grundhöfer, Albert"]
+[Result "1-0"]
+[ECO "B08"]
+[WhiteElo "1737"]
+[BlackElo "1601"]
+[PlyCount "75"]
+[EventDate "2024.??.??"]
+[WhiteTeam "Hammer SC 2"]
+[BlackTeam "SV Rünthe 1"]
+
+1. d4 d6 2. Nf3 g6 3. e4 Nf6 4. Nc3 Bg7 5. Bc4 O-O 6. O-O c6 7. Qe2 b5 8. Bd3
+a6 9. h3 Nbd7 10. e5 Nd5 11. Nxd5 cxd5 12. exd6 exd6 13. Bg5 f6 14. Qe6+ Kh8
+15. Bf4 Ne5 16. Qxd5 Nxf3+ 17. gxf3 Bxh3 18. Rfe1 Re8 19. Qxd6 Qa5 20. Re3 Red8
+21. Qc6 Rac8 22. Qb7 Rxd4 23. Bc7 Rxc7 24. Re8+ Bf8 25. Rxf8+ Kg7 26. Qb8 Rdd7
+27. Rg8+ Kh6 28. Qf8+ Rg7 29. Rxg7 Rxg7 30. Qxf6 b4 31. Qh4+ Qh5 32. Qxh5+
+gxh5+ 33. Kh2 Bc8 34. Re1 h4 35. Re4 Kh5 36. Rxb4 h3 37. Bf1 Rf7 38. f4 1-0
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.3"]
+[White "Dörr, Michael"]
+[Black "Alakbarov, Aleksey"]
+[Result "1-0"]
+[ECO "C93"]
+[WhiteElo "1537"]
+[BlackElo "1638"]
+[PlyCount "55"]
+[WhiteTeam "SV Rünthe 1"]
+[BlackTeam "Hammer SC 2"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O b5 6. Bb3 Be7 7. Re1 O-O 8. c3
+d6 9. h3 h6 10. d4 Nh7 11. Nbd2 Kh8 12. Bd5 Bb7 13. dxe5 Rb8 14. exd6 Bxd6 15.
+c4 Ne5 16. Bxb7 Rxb7 17. Nxe5 Bxe5 18. Nf3 Qe7 19. Nxe5 Qxe5 20. Qd5 Qxd5 21.
+cxd5 Nf6 22. b3 Nd7 23. g4 Kh7 24. Bf4 f6 25. Rac1 Ne5 26. Bxe5 fxe5 27. Rc6
+Rf6 28. Rec1 1-0
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.4"]
+[White "Kleinselbeck, Markus"]
+[Black "Driesner, Norbert"]
+[Result "1-0"]
+[ECO "E51"]
+[WhiteElo "1568"]
+[BlackElo "1402"]
+[PlyCount "89"]
+[WhiteTeam "Hammer SC 2"]
+[BlackTeam "SV Rünthe 1"]
+
+1. d4 d5 2. c4 dxc4 3. e3 e6 4. Bxc4 Nf6 5. Nf3 Be7 6. Nc3 O-O 7. a3 b6 8. Qb3
+Bb7 9. Qd1 c5 10. dxc5 Qxd1+ 11. Nxd1 Bxc5 12. b4 Be7 13. Bb2 Bxf3 14. gxf3 Rd8
+15. Nc3 Nbd7 16. Ba6 Ne5 17. Ke2 Ne8 18. Ne4 Nd7 19. Rhd1 Ndf6 20. Rg1 Nxe4 21.
+fxe4 Bf6 22. e5 Be7 23. Rac1 Rd7 24. Bb5 Rc7 25. Bxe8 Rxc1 26. Bxf7+ Kxf7 27.
+Rxc1 h5 28. Rc7 Ke8 29. Bd4 Kd8 30. Rb7 g5 31. Kd3 g4 32. Ke4 Ke8 33. Kf4 a5
+34. Rxb6 axb4 35. axb4 Ra2 36. Kg3 h4+ 37. Kxg4 Rxf2 38. Kh3 Kd7 39. Rb7+ Ke8
+40. b5 Bg5 41. Rg7 Bxe3 42. Bxe3 Rf3+ 43. Kxh4 Rxe3 44. b6 Re4+ 45. Kg3 1-0
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.5"]
+[White "Friedrich, Norbert"]
+[Black "Ungureanu, David"]
+[Result "0-1"]
+[ECO "A00"]
+[WhiteElo "1275"]
+[BlackElo "1562"]
+[PlyCount "68"]
+[WhiteTeam "SV Rünthe 1"]
+[BlackTeam "Hammer SC 2"]
+
+1. b4 e6 2. a3 d5 3. d4 Nf6 4. e3 Nbd7 5. Bd3 b6 6. Bb2 Bb7 7. Nd2 Be7 8. c4
+dxc4 9. Bxc4 Bxg2 10. Bb5 a6 11. Bxd7+ Qxd7 12. f3 Bxh1 13. Nf1 Nd5 14. Qd2
+Bh4+ 15. Kd1 Qa4+ 16. Kc1 Qb3 17. Qc2 Qxc2+ 18. Kxc2 Bg2 19. Kd2 Bf2 20. e4
+Nxb4 21. axb4 Bxg1 22. Ke2 Bxf1+ 23. Rxf1 Bxh2 24. Rh1 Bd6 25. d5 e5 26. f4 f6
+27. Bc3 exf4 28. Kf3 Be5 29. Bd2 g5 30. Rc1 h5 31. Rc6 Kd7 32. Bc3 Bxc3 33.
+Rxc3 a5 34. b5 a4 0-1
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.6"]
+[White "Kleinselbeck, Jan"]
+[Black "Stock, Helmut"]
+[Result "1-0"]
+[ECO "C50"]
+[WhiteElo "1354"]
+[BlackElo "1213"]
+[PlyCount "62"]
+[WhiteTeam "Hammer SC 2"]
+[BlackTeam "SV Rünthe 1"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 h6 4. b3 Nf6 5. Qe2 Bc5 6. Bb2 Ng4 7. O-O O-O 8. h3
+Nf6 9. Nc3 Nd4 10. Nxd4 Bxd4 11. Nd1 Bxb2 12. Nxb2 d6 13. f4 Qe7 14. f5 c6 15.
+Qf3 b5 16. Be2 Bb7 17. d3 d5 18. Rae1 dxe4 19. dxe4 Qc5+ 20. Rf2 Qxc2 21. Bxb5
+Qc5 22. Bc4 Qb4 23. Nd3 Qd6 24. Rd1 c5 25. Re2 Qd4+ 26. Nf2 Bxe4 27. Rxe4 Qb2
+28. Re2 e4 29. Nxe4 Qe5 30. Nd6 Qxe2 31. Qxe2 Rad8 1-0
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.7"]
+[White "Skory, Peter"]
+[Black "Maaßen, Uwe"]
+[Result "0-1"]
+[ECO "C50"]
+[WhiteElo "1126"]
+[BlackElo "1833"]
+[PlyCount "34"]
+[WhiteTeam "SV Rünthe 1"]
+[BlackTeam "Hammer SC 2"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 h6 5. Nc3 Nf6 6. h3 d6 7. Nd5 Nxd5 8. Bxd5
+Qe7 9. c4 Nd8 10. d4 Bb4+ 11. Ke2 c6 12. Qa4 exd4 13. Nxd4 O-O 14. Be3 Bc5 15.
+b4 Bxd4 16. Bxd4 cxd5 17. Kf1 Qxe4 0-1
+
+[Event "Bezirksklasse 2023/24"]
+[Site "?"]
+[Date "2024.02.04"]
+[Round "5.8"]
+[White "Lin, Joe-Link"]
+[Black "Kloiber, Johann"]
+[Result "1-0"]
+[ECO "A40"]
+[WhiteElo "1258"]
+[BlackElo "952"]
+[PlyCount "45"]
+[WhiteTeam "Hammer SC 2"]
+[BlackTeam "SV Rünthe 1"]
+
+1. d4 e6 2. c4 h6 3. Nc3 Bb4 4. e4 Nc6 5. d5 exd5 6. cxd5 Bxc3+ 7. bxc3 Ne5 8.
+Nf3 Nxf3+ 9. Qxf3 d6 10. Bb5+ Bd7 11. Bxd7+ Qxd7 12. Rb1 b6 13. h4 Ne7 14. h5
+O-O 15. Qg3 c6 16. Bxh6 g6 17. hxg6 fxg6 18. Bxf8 cxd5 19. Bxe7 Qxe7 20. Qxg6+
+Qg7 21. Qxg7+ Kxg7 22. exd5 Re8+ 23. Kd2 1-0
