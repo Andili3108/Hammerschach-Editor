@@ -1,5 +1,21 @@
 [Event "Verbandsbezirksliga 2025/26"]
 [Site "?"]
+[Date "18.01.2026"]
+[Round "5"]
+[White "Römer,Uri"]
+[Black "Bölling,Andreas"]
+[Result "0.5-0.5"]
+[ECO "?"]
+[WhiteElo "1727"]
+[BlackElo "1769"]
+[PlyCount "61"]
+[WhiteTeam "Hammer SC 2"]
+[BlackTeam "SF Brackel 5"]
+
+1. b4 e5 2. Bb2 d6 3. e3 Be6 4. Nf3 Nf6 5. c4 Nbd7 6. Be2 Be7 7. d4 e4 8. Nfd2 d5 9. a3 c6 10. Nc3 O-O 11. O-O Ne8 12. Qb3 Nc7 13. Rfc1 f5 14. Rc2 Nb6 15. cxd5 Ncxd5 16. Bc4 Nxc4 17. Qxc4 Nf4 18. Qf1 Nd3 19. Na4 f4 20. Nxe4 Nxb2 21. Rxb2 fxe3 22. Nac5 Qxd4 23. Nxe6 Qxb2 24. Nxf8 Rxf8 25. f3 Rd8 26. Qc1 e2 27. Qxb2 Rd1+ 28. Rxd1 exd1=Q+ 29. Kf2 Qd5 30. Qe2 Qd4+ 31. Kg3 0.5-0.5
+
+[Event "Verbandsbezirksliga 2025/26"]
+[Site "?"]
 [Date "21.12.2025"]
 [Round "5"]
 [White "Bölling,Andreas"]
