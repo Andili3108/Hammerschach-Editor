@@ -1,5 +1,21 @@
 [Event "Verbandsbezirksliga 2025/26"]
 [Site "?"]
+[Date "21.12.2025"]
+[Round "5"]
+[White "Bölling,Andreas"]
+[Black "Böse,Marc"]
+[Result "1-0"]
+[ECO "?"]
+[WhiteElo "1769"]
+[BlackElo "1775"]
+[PlyCount "53"]
+[WhiteTeam "Hammer SC 2"]
+[BlackTeam "Caissa hamm 1"]
+
+1. e4 c6 2. c4 e6 3. Nc3 d5 4. exd5 exd5 5. d4 Nf6 6. h3 Be6 7. Nf3 h6 8. Qb3 Qb6 9. c5 Qxb3 10. axb3 Nbd7 11. b4 Be7 12. Bd3 O-O 13. Ne2 Ne4 14. O-O Bf5 15. Bf4 Ng3 16. Nxg3 Bxd3 17. Rfe1 Rfe8 18. Ra3 Bh7 19. Rae3 Kf8 20. Nh5 g5 21. Ne5 Nxe5 22. Bxe5 f5 23. Bg7+ Kf7 24. Bxh6 Kg6 25. Rxe7 Rxe7 26. Rxe7 Kxh6 27. Nf6 1-0
+
+[Event "Verbandsbezirksliga 2025/26"]
+[Site "?"]
 [Date "2025.09.14"]
 [Round "1.1"]
 [White "Kammerer, René"]
