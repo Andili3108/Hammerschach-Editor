@@ -1,3 +1,127 @@
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.1"]
+[White "Schlaap, Ralf"]
+[Black "Arndt, Stefan"]
+[Result "1/2-1/2"]
+[ECO "D53"]
+[WhiteElo "2123"]
+[BlackElo "2140"]
+[PlyCount "33"]
+[WhiteTeam "Hammer SC"]
+[BlackTeam "SV Meschede"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Rc1 b6 7. cxd5 Nxd5 8. Nxd5 exd5 9. Bxe7 Qxe7 10. Bd3 c5 11. dxc5 bxc5 12. Ne2 g6 13. O-O Bb7 14. Qa4 a5 15. Rfd1 Nd7 16. Bb5 Nb6 17. Qf4 1/2-1/2
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.2"]
+[White "Rittmeier, Bernhard"]
+[Black "Brieger, Sebastian"]
+[Result "1/2-1/2"]
+[ECO "D02"]
+[WhiteElo "2206"]
+[BlackElo "2003"]
+[PlyCount "41"]
+[WhiteTeam "SV Meschede"]
+[BlackTeam "Hammer SC"]
+
+1. Nf3 d5 2. g3 Nd7 3. d4 Nb6 4. Bg2 Nf6 5. O-O Bf5 6. Nh4 Bg4 7. h3 Bh5 8. g4 Bg6 9. Nxg6 hxg6 10. Bf4 e6 11. Nd2 Bd6 12. Be5 Bxe5 13. dxe5 Nfd7 14. f4 Qe7 15. a4 Qc5+ 16. Kh2 g5 17. a5 Nc4 18. Nxc4 Qxc4 19. e3 gxf4 20. Rxf4 Qc5 21. Qd4 1/2-1/2
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.3"]
+[White "Dukic, Dalibor"]
+[Black "Voss, Georg"]
+[Result "1/2-1/2"]
+[ECO "D40"]
+[WhiteElo "2112"]
+[BlackElo "1841"]
+[PlyCount "80"]
+[WhiteTeam "Hammer SC"]
+[BlackTeam "SV Meschede"]
+
+1. c4 e6 2. Nf3 d5 3. d4 c5 4. e3 Nf6 5. Nc3 Nc6 6. dxc5 Bxc5 7. a3 O-O 8. b4 Be7 9. Bb2 Ne4 10. Nxe4 dxe4 11. Qxd8 Rxd8 12. Nd2 f5 13. c5 Bf6 14. Bxf6 gxf6 15. Nc4 b5 16. Nd6 a6 17. Be2 Ne7 18. O-O Bd7 19. Rfd1 Bc6 20. Bh5 Kg7 21. Rd2 Nd5 22. g3 a5 23. Rb1 axb4 24. axb4 Ra4 25. Bd1 Ra3 26. Bb3 Kg6 27. h4 h5 28. Ra2 Rxa2 29. Bxa2 Ra8 30. Bb3 Ra3 31. Bxd5 exd5 32. Nc8 Kf7 33. Rd1 Ke6 34. Rd4 Ra1+ 35. Kg2 Kd7 36. Nd6 Ke6 37. Rd2 Ra4 38. Rd4 Ra1 39. Kh2 Ra2 40. Kg2 Ra1 1/2-1/2
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.4"]
+[White "Weber, André"]
+[Black "Wörtler, Lars"]
+[Result "1/2-1/2"]
+[ECO "D02"]
+[WhiteElo "2033"]
+[PlyCount "42"]
+[WhiteTeam "SV Meschede"]
+[BlackTeam "Hammer SC"]
+
+1. d4 Nf6 2. Nf3 d5 3. Bf4 e6 4. e3 Be7 5. Nbd2 b6 6. Bd3 Bb7 7. Qe2 Nbd7 8. O-O O-O 9. h3 Ne4 10. a4 a5 11. Bh2 Ndf6 12. Ne5 Nxd2 13. Qxd2 Ne4 14. Qe2 f6 15. Nf3 Bd6 16. Nd2 Bxh2+ 17. Kxh2 Nxd2 18. Qxd2 Qd6+ 19. Kg1 e5 20. f3 Rad8 21. Rad1 g6 1/2-1/2
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.5"]
+[White "Stukert, Artur"]
+[Black "Dyballa, Gerhard"]
+[Result "1/2-1/2"]
+[ECO "C01"]
+[WhiteElo "1871"]
+[BlackElo "1947"]
+[PlyCount "61"]
+[WhiteTeam "Hammer SC"]
+[BlackTeam "SV Meschede"]
+
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. exd5 exd5 5. Bd3 c5 6. Nf3 c4 7. Be2 Nf6 8. Bd2 O-O 9. O-O Nc6 10. a3 Ba5 11. b4 cxb3 12. cxb3 Bg4 13. b4 Bb6 14. Be3 Rc8 15. Rc1 Re8 16. h3 Bh5 17. Re1 Ne4 18. Qb3 Nxc3 19. Qxc3 Nxd4 20. Qxc8 Nxe2+ 21. Rxe2 Qxc8 22. Rxc8 Rxc8 23. Bxb6 Bxf3 24. Re3 axb6 25. Rxf3 Kf8 26. Kf1 Ke7 27. Ke2 f6 28. Kd3 Kd6 29. Rg3 g6 30. Rf3 f5 31. g3 1/2-1/2
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.6"]
+[White "Kampert, Andreas"]
+[Black "Bölling, Andreas"]
+[Result "1-0"]
+[ECO "B22"]
+[WhiteElo "1923"]
+[PlyCount "65"]
+[WhiteTeam "SV Meschede"]
+[BlackTeam "Hammer SC"]
+
+1. e4 c5 2. c3 d5 3. exd5 Qxd5 4. d4 e6 5. Nf3 Nf6 6. Be2 Be7 7. O-O O-O 8. c4 Qd8 9. Nc3 cxd4 10. Nxd4 a6 11. a3 Qc7 12. Qc2 Bd7 13. Be3 Nc6 14. h3 Nxd4 15. Bxd4 Rac8 16. Bd3 e5 17. Be3 Bc6 18. Rac1 h6 19. b4 b6 20. Ne4 Qb7 21. Nxf6+ Bxf6 22. f3 Rfd8 23. Rfd1 b5 24. c5 Qe7 25. Be4 Bg5 26. Bxg5 Qxg5 27. Bxc6 Rxc6 28. Rxd8+ Qxd8 29. Rd1 Qc7 30. Qd3 g6 31. Qd8+ Qxd8 32. Rxd8+ Kg7 33. Rb8 1-0
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.7"]
+[White "Bajelani, Arad"]
+[Black "Weiss, Andreas"]
+[Result "1/2-1/2"]
+[ECO "C50"]
+[WhiteElo "1681"]
+[PlyCount "41"]
+[WhiteTeam "Hammer SC"]
+[BlackTeam "SV Meschede"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d4 exd4 5. O-O Be7 6. Re1 d6 7. Nxd4 Nxd4 8. Qxd4 O-O 9. Nc3 a6 10. a4 Bd7 11. h3 Bc6 12. Bf4 Nd7 13. Nd5 Bxd5 14. Bxd5 Bf6 15. Qd2 Rb8 16. c3 h6 17. Rad1 Bg5 18. Bxg5 Qxg5 19. f4 Qh4 20. Qf2 Qxf2+ 21. Kxf2 1/2-1/2
+
+[Event "NRW-Klasse Gr.1 2025/26"]
+[Site "?"]
+[Date "2026.02.01"]
+[Round "6.8"]
+[White "Hörhold, Karola"]
+[Black "Fitzek, Timm"]
+[Result "1/2-1/2"]
+[ECO "B13"]
+[WhiteElo "1725"]
+[PlyCount "37"]
+[WhiteTeam "SV Meschede"]
+[BlackTeam "Hammer SC"]
+
+1. e4 c6 2. d4 d5 3. exd5 cxd5 4. Nf3 Nf6 5. Ne5 Nbd7 6. c3 e6 7. Bd3 Be7 8. O-O Nxe5 9. dxe5 Nd7 10. f4 Nc5 11. Bc2 O-O 12. Be3 Qc7 13. Nd2 b6 14. Qg4 Ba6 15. Rf3 Bd3 16. Bxd3 Nxd3 17. Rb1 Bc5 18. Nb3 Bxe3+ 19. Rxe3 1/2-1/2
+
 [Event "Paderborn- Waltrop"]
 [Site "?"]
 [Date "2025.09.21"]
