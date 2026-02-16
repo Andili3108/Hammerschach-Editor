@@ -1,0 +1,1891 @@
+[Name "Polnische Eröffnung"]
+[ECO "A00"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. b4 *
+
+[Name "Larsen-Eröffnung"]
+[ECO "A01"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. b3 *
+
+[Name "Bird-Eröffnung"]
+[ECO "A02"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. f4 *
+
+[Name "Bird-Eröffnung"]
+[ECO "A03"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. f4 d5 *
+
+[Name "Zukertort-Eröffnung"]
+[ECO "A04"]
+
+{
+Die Réti-/Zukertort-Systeme beginnen meist mit 1.Sf3 und zeichnen sich
+durch flexible Zentrumsbehandlung aus. Weiß entwickelt zunächst die
+Figuren und entscheidet später, ob ein klassisches Zentrum mit d4/e4
+aufgebaut wird. Schwarz strebt solide Entwicklung und Zentrumsbesetzung
+an.
+}
+
+1. Nf3 *
+
+[Name "Zukertort-Eröffnung – Königsindischer Angriff (Barcza System)"]
+[ECO "A07"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. Typisch sind dynamische Mittelspiele, in denen
+Timing der Bauernhebel entscheidend ist.
+}
+
+1. Nf3 d5 2. g3 *
+
+[Name "Réti-Eröffnung"]
+[ECO "A09"]
+
+{
+Die Réti-/Zukertort-Systeme beginnen meist mit 1.Sf3 und zeichnen sich
+durch flexible Zentrumsbehandlung aus. Weiß entwickelt zunächst die
+Figuren und entscheidet später, ob ein klassisches Zentrum mit d4/e4
+aufgebaut wird. Schwarz strebt solide Entwicklung und Zentrumsbesetzung
+an.
+}
+
+1. Nf3 d5 2. c4 *
+
+[Name "Englische Eröffnung"]
+[ECO "A10"]
+
+{
+Die Englische Eröffnung beginnt mit 1.c4 und kontrolliert das Feld d5.
+Weiß bleibt flexibel und kann in verschiedene Strukturen übergehen.
+Schwarz wählt je nach Aufbau symmetrische Antworten oder zentrale
+Gegenstöße. Typisch sind strategische Mittelspiele mit Spiel auf den c-
+und d-Linien.
+}
+
+1. c4 *
+
+[Name "Englische Eröffnung"]
+[ECO "A13"]
+
+{
+Die Englische Eröffnung beginnt mit 1.c4 und kontrolliert das Feld d5.
+Weiß bleibt flexibel und kann in verschiedene Strukturen übergehen.
+Schwarz wählt je nach Aufbau symmetrische Antworten oder zentrale
+Gegenstöße. Typisch sind strategische Mittelspiele mit Spiel auf den c-
+und d-Linien.
+}
+
+1. c4 e6 *
+
+[Name "Englische Eröffnung"]
+[ECO "A16"]
+
+{
+Die Englische Eröffnung beginnt mit 1.c4 und kontrolliert das Feld d5.
+Weiß bleibt flexibel und kann in verschiedene Strukturen übergehen.
+Schwarz wählt je nach Aufbau symmetrische Antworten oder zentrale
+Gegenstöße. Typisch sind strategische Mittelspiele mit Spiel auf den c-
+und d-Linien.
+}
+
+1. c4 Nf6 2. Nc3 *
+
+[Name "Englische Eröffnung"]
+[ECO "A20"]
+
+{
+Die Englische Eröffnung beginnt mit 1.c4 und kontrolliert das Feld d5.
+Weiß bleibt flexibel und kann in verschiedene Strukturen übergehen.
+Schwarz wählt je nach Aufbau symmetrische Antworten oder zentrale
+Gegenstöße. Typisch sind strategische Mittelspiele mit Spiel auf den c-
+und d-Linien.
+}
+
+1. c4 e5 *
+
+[Name "Englische Eröffnung – Umgekehrte Sizilianische Verteidigung"]
+[ECO "A25"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. c4 e5 2. Nc3 Nc6 *
+
+[Name "Englische Eröffnung – symmetrische Variante"]
+[ECO "A30"]
+
+{
+Die Englische Eröffnung beginnt mit 1.c4 und kontrolliert das Feld d5.
+Weiß bleibt flexibel und kann in verschiedene Strukturen übergehen.
+Schwarz wählt je nach Aufbau symmetrische Antworten oder zentrale
+Gegenstöße. In symmetrischen Aufstellungen spiegelt Schwarz die
+Bauernstruktur. Das Spiel ist häufig positionsstrategisch und von Manövern
+geprägt.
+}
+
+1. c4 c5 *
+
+[Name "Englische Eröffnung – symmetrische, Benoni-Verteidigung Formation"]
+[ECO "A31"]
+
+{
+Die Benoni-Verteidigung entsteht meist nach 1.d4 Sf6 2.c4 c5 3.d5. Schwarz
+akzeptiert Raumrückstand im Zentrum und setzt auf aktives Gegenspiel am
+Damenflügel. Weiß besitzt häufig Raumvorteil und versucht, am Königsflügel
+oder im Zentrum durchzubrechen. Die Struktur ist asymmetrisch, und beide
+Seiten verfolgen klare Flügelpläne.
+}
+
+1. c4 c5 2. Nf3 Nf6 3. d4 *
+
+[Name "Englische Eröffnung – symmetrische, Hauptvariante mit d4"]
+[ECO "A39"]
+
+{
+Die Englische Eröffnung beginnt mit 1.c4 und kontrolliert das Feld d5.
+Weiß bleibt flexibel und kann in verschiedene Strukturen übergehen.
+Schwarz wählt je nach Aufbau symmetrische Antworten oder zentrale
+Gegenstöße. In symmetrischen Aufstellungen spiegelt Schwarz die
+Bauernstruktur. Das Spiel ist häufig positionsstrategisch und von Manövern
+geprägt.
+}
+
+1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. Nf3 Nf6 *
+
+[Name "Damenbauernspiel"]
+[ECO "A40"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 *
+
+[Name "Damenbauernspiel"]
+[ECO "A45"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 Nf6 *
+
+[Name "Königsindische – East Indian Verteidigung"]
+[ECO "A48"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. Typisch sind dynamische Mittelspiele, in denen
+Timing der Bauernhebel entscheidend ist.
+}
+
+1. d4 Nf6 2. Nf3 g6 *
+
+[Name "Benoni-Verteidigung"]
+[ECO "A56"]
+
+{
+Die Benoni-Verteidigung entsteht meist nach 1.d4 Sf6 2.c4 c5 3.d5. Schwarz
+akzeptiert Raumrückstand im Zentrum und setzt auf aktives Gegenspiel am
+Damenflügel. Weiß besitzt häufig Raumvorteil und versucht, am Königsflügel
+oder im Zentrum durchzubrechen. Die Struktur ist asymmetrisch, und beide
+Seiten verfolgen klare Flügelpläne.
+}
+
+1. d4 Nf6 2. c4 c5 *
+
+[Name "Benko-Gambit Gambit"]
+[ECO "A57"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 Nf6 2. c4 c5 3. d5 b5 *
+
+[Name "Benoni-Verteidigung"]
+[ECO "A60"]
+
+{
+Die Benoni-Verteidigung entsteht meist nach 1.d4 Sf6 2.c4 c5 3.d5. Schwarz
+akzeptiert Raumrückstand im Zentrum und setzt auf aktives Gegenspiel am
+Damenflügel. Weiß besitzt häufig Raumvorteil und versucht, am Königsflügel
+oder im Zentrum durchzubrechen. Die Struktur ist asymmetrisch, und beide
+Seiten verfolgen klare Flügelpläne.
+}
+
+1. d4 Nf6 2. c4 c5 3. d5 e6 *
+
+[Name "Benoni-Verteidigung – Fianchetto Variante"]
+[ECO "A62"]
+
+{
+Die Benoni-Verteidigung entsteht meist nach 1.d4 Sf6 2.c4 c5 3.d5. Schwarz
+akzeptiert Raumrückstand im Zentrum und setzt auf aktives Gegenspiel am
+Damenflügel. Weiß besitzt häufig Raumvorteil und versucht, am Königsflügel
+oder im Zentrum durchzubrechen. In der Fianchetto-Variante entwickelt Weiß
+den Läufer nach g2 und spielt häufig positionell. Schwarz setzt auf Druck
+am Damenflügel und Hebel wie ...b5 oder ...f5.
+}
+
+1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 *
+
+[Name "Benoni-Verteidigung – klassisch mit e4 and Nf3"]
+[ECO "A70"]
+
+{
+Die Benoni-Verteidigung entsteht meist nach 1.d4 Sf6 2.c4 c5 3.d5. Schwarz
+akzeptiert Raumrückstand im Zentrum und setzt auf aktives Gegenspiel am
+Damenflügel. Weiß besitzt häufig Raumvorteil und versucht, am Königsflügel
+oder im Zentrum durchzubrechen. In klassischen Aufstellungen baut Weiß
+häufig e4 und Sf3 auf und zielt auf Zentrumsinitiative. Schwarz sucht
+Gegenspiel mit Bauernhebeln und aktivem Figurenspiel.
+}
+
+1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 *
+
+[Name "Holländische Verteidigung"]
+[ECO "A80"]
+
+{
+Die Holländische Verteidigung beginnt mit 1.d4 f5. Schwarz kontrolliert e4
+und strebt aktives Spiel am Königsflügel an, häufig mit ...e6 und ...Sf6.
+Weiß versucht meist, Raum- oder Entwicklungsvorteile in Druck gegen den
+schwarzen König umzusetzen. Typisch sind asymmetrische Mittelspiele mit
+Chancen auf beiden Flügeln.
+}
+
+1. d4 f5 *
+
+[Name "Holländische Verteidigung – Staunton Gambit, Stauntons Variante"]
+[ECO "A83"]
+
+{
+Die Holländische Verteidigung beginnt mit 1.d4 f5. Schwarz kontrolliert e4
+und strebt aktives Spiel am Königsflügel an, häufig mit ...e6 und ...Sf6.
+Weiß versucht meist, Raum- oder Entwicklungsvorteile in Druck gegen den
+schwarzen König umzusetzen. Das Staunton-Gambit mit 2.e4 ist ein früher
+Versuch, schnelle Initiative zu erhalten. Schwarz versucht, den Mehrbauern
+zu behaupten oder die Initiative zu neutralisieren.
+}
+
+1. d4 f5 2. e4 fxe4 3. Nc3 Nf6 4. Bg5 *
+
+[Name "Holländische Verteidigung – Leningrad, Hauptvariante"]
+[ECO "A87"]
+
+{
+Die Holländische Verteidigung beginnt mit 1.d4 f5. Schwarz kontrolliert e4
+und strebt aktives Spiel am Königsflügel an, häufig mit ...e6 und ...Sf6.
+Weiß versucht meist, Raum- oder Entwicklungsvorteile in Druck gegen den
+schwarzen König umzusetzen. Die Leningrader Variante setzt auf Fianchetto
+und dynamische Strukturen. Beide Seiten spielen um Zentralhebel und
+Königsangriff.
+}
+
+1. d4 f5 2. c4 Nf6 3. g3 g6 4. Bg2 Bg7 5. Nf3 *
+
+[Name "Holländische Verteidigung – Aljechin-Verteidigung"]
+[ECO "A90"]
+
+{
+Die Aljechin-Verteidigung beginnt mit 1.e4 Sf6. Schwarz provoziert häufig
+einen Vorstoß des e-Bauern und greift das weiße Zentrum später mit Figuren
+und Bauernhebeln an. Weiß erhält Raum, muss aber darauf achten, dass das
+Zentrum nicht überdehnt wird.
+}
+
+1. d4 f5 2. c4 Nf6 3. g3 e6 4. Bg2 *
+
+[Name "Holländische Verteidigung – Stonewall, Botwinnik Variante"]
+[ECO "A93"]
+
+{
+Die Holländische Verteidigung beginnt mit 1.d4 f5. Schwarz kontrolliert e4
+und strebt aktives Spiel am Königsflügel an, häufig mit ...e6 und ...Sf6.
+Weiß versucht meist, Raum- oder Entwicklungsvorteile in Druck gegen den
+schwarzen König umzusetzen. Im Stonewall-Aufbau entsteht eine feste
+Bauernkette, die Raum am Königsflügel gibt, aber auch Felder wie e5 und c5
+schwächen kann. Die Pläne sind häufig klar und positionsgebunden.
+}
+
+1. d4 f5 2. c4 Nf6 3. g3 e6 4. Bg2 Be7 5. Nf3 O-O *
+
+[Name "Holländische Verteidigung – Ilyin-Genevsky Variante"]
+[ECO "A97"]
+
+{
+Die Holländische Verteidigung beginnt mit 1.d4 f5. Schwarz kontrolliert e4
+und strebt aktives Spiel am Königsflügel an, häufig mit ...e6 und ...Sf6.
+Weiß versucht meist, Raum- oder Entwicklungsvorteile in Druck gegen den
+schwarzen König umzusetzen. Typisch sind asymmetrische Mittelspiele mit
+Chancen auf beiden Flügeln.
+}
+
+1. d4 f5 2. c4 Nf6 3. g3 e6 4. Bg2 Be7 5. Nf3 O-O *
+
+[Name "Holländische Verteidigung – Ilyin-Genevsky Variante mit b3"]
+[ECO "A99"]
+
+{
+Die Holländische Verteidigung beginnt mit 1.d4 f5. Schwarz kontrolliert e4
+und strebt aktives Spiel am Königsflügel an, häufig mit ...e6 und ...Sf6.
+Weiß versucht meist, Raum- oder Entwicklungsvorteile in Druck gegen den
+schwarzen König umzusetzen. Typisch sind asymmetrische Mittelspiele mit
+Chancen auf beiden Flügeln.
+}
+
+1. d4 f5 2. c4 Nf6 3. g3 e6 4. Bg2 Be7 5. Nf3 O-O *
+
+[Name "Skandinavische Verteidigung"]
+[ECO "B01"]
+
+{
+Die Skandinavische Verteidigung entsteht nach 1.e4 d5. Schwarz fordert das
+Zentrum sofort heraus und führt häufig zu frühem Damentausch oder
+-entwicklung. Weiß strebt Entwicklungsvorsprung und Druck im Zentrum an,
+während Schwarz auf solide Struktur und Gegenspiel setzt.
+}
+
+1. e4 d5 *
+
+[Name "Aljechin-Verteidigungs Verteidigung"]
+[ECO "B02"]
+
+{
+Die Aljechin-Verteidigung beginnt mit 1.e4 Sf6. Schwarz provoziert häufig
+einen Vorstoß des e-Bauern und greift das weiße Zentrum später mit Figuren
+und Bauernhebeln an. Weiß erhält Raum, muss aber darauf achten, dass das
+Zentrum nicht überdehnt wird.
+}
+
+1. e4 Nf6 *
+
+[Name "Aljechin-Verteidigungs Verteidigung – moderne Variante"]
+[ECO "B04"]
+
+{
+Die Aljechin-Verteidigung beginnt mit 1.e4 Sf6. Schwarz provoziert häufig
+einen Vorstoß des e-Bauern und greift das weiße Zentrum später mit Figuren
+und Bauernhebeln an. Weiß erhält Raum, muss aber darauf achten, dass das
+Zentrum nicht überdehnt wird.
+}
+
+1. e4 Nf6 2. e5 Nd5 3. d4 d6 4. Nf3 *
+
+[Name "Robatsch"]
+[ECO "B06"]
+
+{
+Die Robatsch-Verteidigung beginnt mit 1.e4 g6 und führt häufig zu modernen
+Fianchetto-Strukturen. Schwarz entwickelt den Königsläufer nach g7 und
+greift das Zentrum aus der Distanz an. Weiß baut oft ein klassisches
+Zentrum mit d4 und e4 auf. Die Partien sind flexibel und können in Pirc-
+oder Königsindisch-ähnliche Stellungen übergehen. Entscheidend ist, wie
+und wann Schwarz die Bauernhebel im Zentrum ansetzt.
+}
+
+1. e4 g6 *
+
+[Name "Pirc-Verteidigung"]
+[ECO "B07"]
+
+{
+Die Pirc-Verteidigung entsteht nach 1.e4 d6 und erlaubt Schwarz eine
+flexible Entwicklung mit ...Sf6 und ...g6. Schwarz verzichtet zunächst auf
+direkten Zentrumsbesitz und greift das weiße Zentrum später an. Weiß
+strebt meist Raumvorteil im Zentrum an. Typisch sind dynamische
+Stellungen, in denen Timing der Bauernhebel entscheidend ist. Beide Seiten
+spielen um Initiative im Zentrum und an den Flügeln.
+}
+
+1. e4 d6 2. d4 Nf6 3. Nc3 *
+
+[Name "Pirc-Verteidigung – Austrian Angriff"]
+[ECO "B09"]
+
+{
+Die Pirc-Verteidigung entsteht nach 1.e4 d6 und erlaubt Schwarz eine
+flexible Entwicklung mit ...Sf6 und ...g6. Schwarz verzichtet zunächst auf
+direkten Zentrumsbesitz und greift das weiße Zentrum später an. Weiß
+strebt meist Raumvorteil im Zentrum an. Im Österreichischen Angriff baut
+Weiß mit f4 ein starkes Zentrum auf und plant häufig Königsangriff.
+Schwarz sucht Gegenspiel durch Hebel wie ...c5 oder ...e5.
+}
+
+1. e4 d6 2. d4 Nf6 3. Nc3 g6 4. f4 *
+
+[Name "Caro-Kann-Verteidigung"]
+[ECO "B10"]
+
+{
+Die Caro-Kann-Verteidigung beginnt mit 1.e4 c6 und zielt auf ein solides
+Zentrum mit ...d5. Schwarz strebt eine robuste Bauernstruktur und
+harmonische Figurenentwicklung an. Weiß versucht, mit Raum- oder
+Entwicklungsvorteil Initiative zu erzielen. Typisch ist ein Kampf um das
+Zentrum bei relativ solider schwarzer Struktur. Weiß wählt je nach Aufbau
+positionelle oder dynamische Pläne.
+}
+
+1. e4 c6 *
+
+[Name "Caro-Kann-Verteidigung"]
+[ECO "B12"]
+
+{
+Die Caro-Kann-Verteidigung beginnt mit 1.e4 c6 und zielt auf ein solides
+Zentrum mit ...d5. Schwarz strebt eine robuste Bauernstruktur und
+harmonische Figurenentwicklung an. Weiß versucht, mit Raum- oder
+Entwicklungsvorteil Initiative zu erzielen. Typisch ist ein Kampf um das
+Zentrum bei relativ solider schwarzer Struktur. Weiß wählt je nach Aufbau
+positionelle oder dynamische Pläne.
+}
+
+1. e4 c6 2. d4 *
+
+[Name "Caro-Kann-Verteidigung – Abtauschvariante Variante"]
+[ECO "B13"]
+
+{
+Die Caro-Kann-Verteidigung beginnt mit 1.e4 c6 und zielt auf ein solides
+Zentrum mit ...d5. Schwarz strebt eine robuste Bauernstruktur und
+harmonische Figurenentwicklung an. Weiß versucht, mit Raum- oder
+Entwicklungsvorteil Initiative zu erzielen. In der Abtauschvariante
+tauscht Weiß früh im Zentrum auf d5 ab. Die Stellung ist oft strukturell
+klar, und beide Seiten spielen um Entwicklung und die richtigen
+Figurenmanöver.
+}
+
+1. e4 c6 2. d4 d5 3. exd5 *
+
+[Name "Caro-Kann-Verteidigung – Panov-Botvinnik Angriff, 5...e6"]
+[ECO "B14"]
+
+{
+Die Caro-Kann-Verteidigung beginnt mit 1.e4 c6 und zielt auf ein solides
+Zentrum mit ...d5. Schwarz strebt eine robuste Bauernstruktur und
+harmonische Figurenentwicklung an. Weiß versucht, mit Raum- oder
+Entwicklungsvorteil Initiative zu erzielen. Der Panov-Angriff führt häufig
+zu isolierten Damenbauern-Strukturen. Weiß setzt auf aktives Figurenspiel,
+Schwarz auf Blockade und Gegenspiel gegen den Isolani.
+}
+
+1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4 Nf6 5. Nc3 e6 *
+
+[Name "Caro-Kann-Verteidigung"]
+[ECO "B15"]
+
+{
+Die Caro-Kann-Verteidigung beginnt mit 1.e4 c6 und zielt auf ein solides
+Zentrum mit ...d5. Schwarz strebt eine robuste Bauernstruktur und
+harmonische Figurenentwicklung an. Weiß versucht, mit Raum- oder
+Entwicklungsvorteil Initiative zu erzielen. Typisch ist ein Kampf um das
+Zentrum bei relativ solider schwarzer Struktur. Weiß wählt je nach Aufbau
+positionelle oder dynamische Pläne.
+}
+
+1. e4 c6 2. d4 d5 3. Nc3 *
+
+[Name "Caro-Kann-Verteidigung – klassisch Variante"]
+[ECO "B18"]
+
+{
+Die Caro-Kann-Verteidigung beginnt mit 1.e4 c6 und zielt auf ein solides
+Zentrum mit ...d5. Schwarz strebt eine robuste Bauernstruktur und
+harmonische Figurenentwicklung an. Weiß versucht, mit Raum- oder
+Entwicklungsvorteil Initiative zu erzielen. Die klassische Variante
+entwickelt sich meist mit ...dxe4 und ...Lf5. Schwarz löst den
+Entwicklungsknoten früh, während Weiß Druck auf das Zentrum aufbaut.
+}
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B20"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 *
+
+[Name "Sizilianische Verteidigung – Alapins Variante (2.c3)"]
+[ECO "B22"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Die Alapin-Variante mit
+2.c3 zielt auf ein stabiles Zentrum mit d4 ab und vermeidet manche
+Hauptvarianten. Schwarz versucht, die Entwicklung zügig abzuschließen und
+das Zentrum zu unterminieren.
+}
+
+1. e4 c5 2. c3 *
+
+[Name "Sizilianische Verteidigung – geschlossen"]
+[ECO "B23"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nc3 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B27"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B30"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 Nc6 *
+
+[Name "Sizilianische Verteidigung – Nimzovich-Rossolimo Angriff (mit ...g6, without ...d6)"]
+[ECO "B31"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Mit Lb5(+) zielt Weiß auf
+eine frühe strukturelle Beeinflussung (z. B. Doppelbauern) und vermeidet
+offene Hauptvarianten. Schwarz reagiert meist mit ...d6 oder ...Sc6 und
+sucht solides Gegenspiel.
+}
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 g6 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B32"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 Nc6 3. d4 *
+
+[Name "Sizilianische Verteidigung – Stanley-MacKenzie"]
+[ECO "B33"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 *
+
+[Name "Sizilianische Verteidigung – beschleunigtes Fianchetto, Abtauschvariante Variante"]
+[ECO "B34"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6 5. Nxc6 *
+
+[Name "Sizilianische Verteidigung – beschleunigtes Fianchetto, moderne Variante mit Bc4"]
+[ECO "B35"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6 5. Nc3 Bg7 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B40"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 e6 *
+
+[Name "Sizilianische Verteidigung – Kan Variante"]
+[ECO "B41"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. In der Kan-Variante
+bereitet Schwarz mit ...a6 häufig ...b5 vor und entwickelt sich flexibel.
+Weiß entscheidet je nach Aufbau zwischen positionellem Druck und direkter
+Initiative.
+}
+
+1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 *
+
+[Name "Sizilianische Verteidigung – Taimanov"]
+[ECO "B44"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Die Taimanov-Variante
+kombiniert ...e6 und ...Sc6 und erlaubt flexible Entwicklung. Häufig
+entstehen Strukturen mit Kampf um die d- und e-Linie.
+}
+
+1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nc6 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B50"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 d6 *
+
+[Name "Sizilianische Verteidigung – Canal-Sokolsky (Nimzovich-Rossolimo, Moscow) Angriff"]
+[ECO "B51"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Mit Lb5(+) zielt Weiß auf
+eine frühe strukturelle Beeinflussung (z. B. Doppelbauern) und vermeidet
+offene Hauptvarianten. Schwarz reagiert meist mit ...d6 oder ...Sc6 und
+sucht solides Gegenspiel.
+}
+
+1. e4 c5 2. Nf3 d6 3. Bb5+ *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B54"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 *
+
+[Name "Sizilianische Verteidigung"]
+[ECO "B56"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 *
+
+[Name "Sizilianische Verteidigung – klassisch"]
+[ECO "B58"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. In den klassischen Systemen
+entwickelt Schwarz den Springer nach f6 und kämpft um das Feld d4. Weiß
+strebt Raumvorteil und aktives Figurenspiel an.
+}
+
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 d6 *
+
+[Name "Sizilianische Verteidigung – Richter-Rauzer"]
+[ECO "B60"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. In den klassischen Systemen
+entwickelt Schwarz den Springer nach f6 und kämpft um das Feld d4. Weiß
+strebt Raumvorteil und aktives Figurenspiel an.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6 *
+
+[Name "Sizilianische Verteidigung – dragon Variante"]
+[ECO "B70"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Typisch sind offene Linien
+und taktische Motive rund um das Zentrum. Beide Seiten müssen ihre
+Entwicklung präzise abstimmen.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6 *
+
+[Name "Sizilianische Verteidigung – Scheveningen Variante"]
+[ECO "B80"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. Die Scheveningen-Struktur
+zeichnet sich durch die Bauern auf d6 und e6 aus. Schwarz bleibt flexibel
+und strebt Gegenspiel im Zentrum sowie am Königsflügel an.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e6 *
+
+[Name "Sizilianische Verteidigung – Najdorf"]
+[ECO "B90"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. In der Najdorf-Variante
+sichert Schwarz mit ...a6 Felder am Damenflügel und hält Optionen für
+...e5 oder ...e6 offen. Die Stellungen sind häufig sehr dynamisch und
+theoriegeprägt.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 *
+
+[Name "Sizilianische Verteidigung – Najdorf, 6.Bg5"]
+[ECO "B94"]
+
+{
+Die Sizilianische Verteidigung entsteht nach 1.e4 c5 und gehört zu den
+wichtigsten Antworten auf 1.e4. Schwarz bekämpft das Zentrum asymmetrisch
+und strebt aktives Gegenspiel an. Weiß versucht meist, Raum- und
+Entwicklungsvorteile in Initiative umzusetzen. In der Najdorf-Variante
+sichert Schwarz mit ...a6 Felder am Damenflügel und hält Optionen für
+...e5 oder ...e6 offen. Die Stellungen sind häufig sehr dynamisch und
+theoriegeprägt.
+}
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 *
+
+[Name "Französische Verteidigung"]
+[ECO "C00"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. Typisch sind Spannungen im
+Zentrum und ein Kampf um die Felder d4 und e5. Die Struktur entscheidet
+oft über den Figurenplan beider Seiten.
+}
+
+1. e4 e6 *
+
+[Name "Französische Verteidigung – Vorstoß Variante"]
+[ECO "C02"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. In der Vorstoßvariante (e5)
+schiebt Weiß Raum vor und erhält einen Angriffsspielraum. Schwarz greift
+das Zentrum typischerweise mit ...c5 und ...f6 an.
+}
+
+1. e4 e6 2. d4 d5 3. e5 *
+
+[Name "Französische Verteidigung – Tarrasch"]
+[ECO "C03"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. Die Tarrasch-Variante mit
+3.Sd2 vermeidet die Fesselung auf b4 und zielt auf ein solides Zentrum.
+Schwarz sucht Gegenspiel durch Druck gegen d4 und Hebel wie ...c5.
+}
+
+1. e4 e6 2. d4 d5 3. Nd2 *
+
+[Name "Französische Verteidigung – Tarrasch, geschlossen Variante"]
+[ECO "C05"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. Die Tarrasch-Variante mit
+3.Sd2 vermeidet die Fesselung auf b4 und zielt auf ein solides Zentrum.
+Schwarz sucht Gegenspiel durch Druck gegen d4 und Hebel wie ...c5.
+}
+
+1. e4 e6 2. d4 d5 3. Nd2 Nf6 *
+
+[Name "Französische Verteidigung – Tarrasch, geschlossen Variante, Hauptvariante"]
+[ECO "C06"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. Die Tarrasch-Variante mit
+3.Sd2 vermeidet die Fesselung auf b4 und zielt auf ein solides Zentrum.
+Schwarz sucht Gegenspiel durch Druck gegen d4 und Hebel wie ...c5.
+}
+
+1. e4 e6 2. d4 d5 3. Nd2 Nf6 4. e5 Nfd7 5. Bd3 c5 *
+
+[Name "Französische Verteidigung – Paulsen Variante"]
+[ECO "C10"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. Typisch sind Spannungen im
+Zentrum und ein Kampf um die Felder d4 und e5. Die Struktur entscheidet
+oft über den Figurenplan beider Seiten.
+}
+
+1. e4 e6 2. d4 d5 3. Nc3 *
+
+[Name "Französische Verteidigung"]
+[ECO "C11"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. Typisch sind Spannungen im
+Zentrum und ein Kampf um die Felder d4 und e5. Die Struktur entscheidet
+oft über den Figurenplan beider Seiten.
+}
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 *
+
+[Name "Französische Verteidigung – klassisch"]
+[ECO "C13"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. In der klassischen Behandlung
+entwickelt Schwarz meist den Königsläufer nach e7 und setzt auf solide
+Entwicklung. Weiß versucht, Raumvorteile in aktives Spiel umzusetzen.
+}
+
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. Bg5 Be7 *
+
+[Name "Französische Verteidigung – Winawer (Nimzovich) Variante"]
+[ECO "C15"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. In der Winawer-Variante
+fesselt Schwarz mit ...Lb4 den Springer c3 und beeinflusst die Struktur.
+Häufig entstehen asymmetrische Bauernbilder und langfristige strategische
+Pläne.
+}
+
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 *
+
+[Name "Französische Verteidigung – Winawer, Vorstoß Variante"]
+[ECO "C16"]
+
+{
+Die Französische Verteidigung entsteht nach 1.e4 e6 und setzt auf ein
+stabiles Bauernzentrum mit ...d5. Schwarz akzeptiert oft etwas
+Raumrückstand, erhält dafür klare Hebel gegen das weiße Zentrum. Weiß
+strebt meist Raumvorteil und Initiative an. In der Winawer-Variante
+fesselt Schwarz mit ...Lb4 den Springer c3 und beeinflusst die Struktur.
+Häufig entstehen asymmetrische Bauernbilder und langfristige strategische
+Pläne.
+}
+
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 *
+
+[Name "Königsbauernspiel"]
+[ECO "C20"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 *
+
+[Name "Läufereröffnung"]
+[ECO "C23"]
+
+{
+Das Italienische Spiel entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lc4. Weiß
+entwickelt schnell und zielt auf das Feld f7 sowie zentrale Kontrolle.
+Häufig entstehen offene oder halb-offene Stellungen mit strategischem
+Kampf um d4 und e5. Schwarz entwickelt sich solide und sucht Gegenspiel im
+Zentrum.
+}
+
+1. e4 e5 2. Bc4 *
+
+[Name "Wiener Partie"]
+[ECO "C25"]
+
+{
+Die Wiener Partie entsteht nach 1.e4 e5 2.Sc3. Weiß entwickelt flexibel
+und hält Optionen für f4 oder d4 offen. Je nach Fortsetzung kann die
+Partie in offene oder gambitartige Stellungen übergehen. Schwarz reagiert
+meist mit solider Entwicklung und zentralem Gegenspiel.
+}
+
+1. e4 e5 2. Nc3 *
+
+[Name "Wiener Partie Gambit"]
+[ECO "C29"]
+
+{
+Die Wiener Partie entsteht nach 1.e4 e5 2.Sc3. Weiß entwickelt flexibel
+und hält Optionen für f4 oder d4 offen. Je nach Fortsetzung kann die
+Partie in offene oder gambitartige Stellungen übergehen. Schwarz reagiert
+meist mit solider Entwicklung und zentralem Gegenspiel.
+}
+
+1. e4 e5 2. Nc3 Nf6 3. f4 d5 *
+
+[Name "Königsgambit"]
+[ECO "C30"]
+
+{
+Das Königsgambit entsteht nach 1.e4 e5 2.f4. Weiß opfert häufig einen
+Bauern, um schnelle Entwicklung und Initiative am Königsflügel zu
+erhalten. Schwarz kann den Bauern annehmen oder ablehnen und versucht, die
+weiße Initiative zu neutralisieren. Typisch sind offene Linien, taktische
+Motive und frühe Königssicherheitsfragen.
+}
+
+1. e4 e5 2. f4 *
+
+[Name "Königsgambit abgelehnt – Falkbeer Gegengambit"]
+[ECO "C31"]
+
+{
+Das Königsgambit entsteht nach 1.e4 e5 2.f4. Weiß opfert häufig einen
+Bauern, um schnelle Entwicklung und Initiative am Königsflügel zu
+erhalten. Schwarz kann den Bauern annehmen oder ablehnen und versucht, die
+weiße Initiative zu neutralisieren. Im abgelehnten Königsgambit nimmt
+Schwarz den Bauern nicht und richtet sich auf solide Entwicklung ein. Weiß
+sucht weiterhin aktives Spiel und Druck gegen f7.
+}
+
+1. e4 e5 2. f4 d5 *
+
+[Name "Königsgambit angenommen"]
+[ECO "C33"]
+
+{
+Das Königsgambit entsteht nach 1.e4 e5 2.f4. Weiß opfert häufig einen
+Bauern, um schnelle Entwicklung und Initiative am Königsflügel zu
+erhalten. Schwarz kann den Bauern annehmen oder ablehnen und versucht, die
+weiße Initiative zu neutralisieren. Im angenommenen Königsgambit entsteht
+oft ein scharfes Spiel mit offenen Linien. Weiß versucht, den
+Entwicklungsvorsprung auszunutzen, während Schwarz auf Königssicherheit
+und Materialvorteil setzt.
+}
+
+1. e4 e5 2. f4 exf4 *
+
+[Name "Königsspringerspiel"]
+[ECO "C40"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 *
+
+[Name "Philidor-Verteidigung"]
+[ECO "C41"]
+
+{
+Die Philidor-Verteidigung entsteht nach 1.e4 e5 2.Sf3 d6. Schwarz stützt
+den Bauern e5 und plant häufig ...Sf6 und ...Le7. Die Stellung ist solide,
+aber Schwarz muss den Raum im Zentrum sorgfältig behandeln. Weiß versucht,
+Raumvorteil und Aktivität aufzubauen.
+}
+
+1. e4 e5 2. Nf3 d6 *
+
+[Name "Russische Verteidigung"]
+[ECO "C42"]
+
+{
+Die Russische Verteidigung (Petrow) entsteht nach 1.e4 e5 2.Sf3 Sf6.
+Schwarz spiegelt den Angriff auf e5 und strebt solide, symmetrische
+Strukturen an. Weiß versucht, durch aktive Entwicklung und Druck im
+Zentrum Initiative zu erhalten.
+}
+
+1. e4 e5 2. Nf3 Nf6 *
+
+[Name "Königsbauernspiel"]
+[ECO "C44"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 *
+
+[Name "Schottische Partie"]
+[ECO "C45"]
+
+{
+Die Schottische Partie entsteht nach 1.e4 e5 2.Sf3 Sc6 3.d4. Weiß öffnet
+früh das Zentrum und strebt aktives Figurenspiel an. Schwarz nimmt den
+Bauern meist an oder reagiert mit zentralem Gegenspiel. Die Stellungen
+sind häufig taktisch und entwicklungsbetont.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 *
+
+[Name "Dreispringerspiel"]
+[ECO "C46"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 *
+
+[Name "Vierspringerspiel – Spanish Variante"]
+[ECO "C48"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. Bb5 *
+
+[Name "Königsbauernspiel"]
+[ECO "C50"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 *
+
+[Name "Giuoco Piano"]
+[ECO "C53"]
+
+{
+Das Italienische Spiel entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lc4. Weiß
+entwickelt schnell und zielt auf das Feld f7 sowie zentrale Kontrolle.
+Häufig entstehen offene oder halb-offene Stellungen mit strategischem
+Kampf um d4 und e5. Schwarz entwickelt sich solide und sucht Gegenspiel im
+Zentrum.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 *
+
+[Name "Giuoco Piano"]
+[ECO "C54"]
+
+{
+Das Italienische Spiel entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lc4. Weiß
+entwickelt schnell und zielt auf das Feld f7 sowie zentrale Kontrolle.
+Häufig entstehen offene oder halb-offene Stellungen mit strategischem
+Kampf um d4 und e5. Schwarz entwickelt sich solide und sucht Gegenspiel im
+Zentrum.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 *
+
+[Name "Zweispringer Verteidigung"]
+[ECO "C55"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 *
+
+[Name "Zweispringer Verteidigung"]
+[ECO "C56"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. d4 exd4 5. O-O Nxe4 *
+
+[Name "Zweispringer Verteidigung"]
+[ECO "C57"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 *
+
+[Name "Spanische Partie"]
+[ECO "C60"]
+
+{
+Die Spanische Partie entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lb5. Weiß übt Druck
+gegen den Springer c6 aus und erhöht indirekt den Druck auf e5. Häufig
+entstehen strategisch reiche Mittelspiele mit langfristigen Plänen. Weiß
+strebt meist Raumvorteil und Königsangriff an, während Schwarz Gegenspiel
+am Damenflügel und im Zentrum sucht.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 *
+
+[Name "Spanische Partie – Schliemann Verteidigung"]
+[ECO "C63"]
+
+{
+Die Spanische Partie entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lb5. Weiß übt Druck
+gegen den Springer c6 aus und erhöht indirekt den Druck auf e5. Häufig
+entstehen strategisch reiche Mittelspiele mit langfristigen Plänen. Die
+Schliemann-Verteidigung mit ...f5 führt zu sehr scharfem Spiel. Schwarz
+sucht unmittelbares Gegenspiel im Zentrum und am Königsflügel.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 f5 *
+
+[Name "Spanische Partie – Berlin Verteidigung"]
+[ECO "C65"]
+
+{
+Die Spanische Partie entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lb5. Weiß übt Druck
+gegen den Springer c6 aus und erhöht indirekt den Druck auf e5. Häufig
+entstehen strategisch reiche Mittelspiele mit langfristigen Plänen. In der
+Berliner Verteidigung entwickelt Schwarz früh mit ...Sf6 und zielt auf
+solide Stellung. Oft entstehen Endspiel- oder strukturell klare
+Mittelspiele, in denen Technik wichtig ist.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 *
+
+[Name "Spanische Partie – Abtauschvariante Variante"]
+[ECO "C68"]
+
+{
+Die Spanische Partie entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lb5. Weiß übt Druck
+gegen den Springer c6 aus und erhöht indirekt den Druck auf e5. Häufig
+entstehen strategisch reiche Mittelspiele mit langfristigen Plänen. In der
+Abtauschvariante nimmt Weiß auf c6 und beschädigt damit häufig die
+schwarze Bauernstruktur. Das Spiel wird oft positionell, mit Plänen gegen
+die entstehenden Schwächen.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 *
+
+[Name "Spanische Partie – Marshall Gegenangriff"]
+[ECO "C89"]
+
+{
+Die Spanische Partie entsteht nach 1.e4 e5 2.Sf3 Sc6 3.Lb5. Weiß übt Druck
+gegen den Springer c6 aus und erhöht indirekt den Druck auf e5. Häufig
+entstehen strategisch reiche Mittelspiele mit langfristigen Plänen. Der
+Marshall-Gegenangriff ist ein Gambitansatz, bei dem Schwarz Initiative
+gegen das weiße Zentrum und den König sucht. Die Variante ist stark
+theoriegeprägt.
+}
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 *
+
+[Name "Damenbauernspiel"]
+[ECO "D00"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 d5 *
+
+[Name "Damenbauernspiel"]
+[ECO "D02"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 d5 2. Nf3 *
+
+[Name "Torre Angriff (Tartakower Variante)"]
+[ECO "D03"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 d5 2. Nf3 Nf6 3. Bg5 *
+
+[Name "Colle System"]
+[ECO "D05"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 d5 2. Nf3 Nf6 3. e3 e6 4. Bd3 c5 5. c3 *
+
+[Name "Damengambit"]
+[ECO "D06"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Typisch ist ein positioneller Kampf um
+Zentrumskontrolle und Figurenharmonie.
+}
+
+1. d4 d5 2. c4 *
+
+[Name "QGD Slawische Verteidigung"]
+[ECO "D10"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. In der Slawischen Verteidigung stützt Schwarz d5
+mit ...c6 und hält den Läufer c8 flexibel. Die Stellungen sind oft solide
+und strategisch geprägt.
+}
+
+1. d4 d5 2. c4 c6 *
+
+[Name "QGD Slawische Verteidigung – Abtauschvariante Variante"]
+[ECO "D13"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. In der Slawischen Verteidigung stützt Schwarz d5
+mit ...c6 und hält den Läufer c8 flexibel. Die Stellungen sind oft solide
+und strategisch geprägt.
+}
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. cxd5 cxd5 *
+
+[Name "QGD Slawische Verteidigung angenommen"]
+[ECO "D15"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. In der Slawischen Verteidigung stützt Schwarz d5
+mit ...c6 und hält den Läufer c8 flexibel. Die Stellungen sind oft solide
+und strategisch geprägt.
+}
+
+1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 dxc4 *
+
+[Name "QGA"]
+[ECO "D20"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 d5 2. c4 dxc4 *
+
+[Name "Damengambit (abgelehnt)"]
+[ECO "D30"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Im abgelehnten Damengambit hält Schwarz das Zentrum
+meist mit ...e6 oder ...c6. Weiß versucht, Raumvorteil und Entwicklung zu
+nutzen.
+}
+
+1. d4 d5 2. c4 e6 *
+
+[Name "Damengambit (abgelehnt) – Tarrasch Verteidigung"]
+[ECO "D32"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Die Tarrasch-Verteidigung setzt auf aktives
+Gegenspiel mit ...c5. Schwarz akzeptiert häufig eine isolierte
+Bauernstruktur zugunsten aktiver Figuren.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 c5 *
+
+[Name "Damengambit (abgelehnt) – Abtauschvariante, positional Variante, 6.Qc2"]
+[ECO "D36"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Im abgelehnten Damengambit hält Schwarz das Zentrum
+meist mit ...e6 oder ...c6. Weiß versucht, Raumvorteil und Entwicklung zu
+nutzen.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 5. Bg5 c6 *
+
+[Name "Damengambit (abgelehnt) – 4.Nf3"]
+[ECO "D37"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Im abgelehnten Damengambit hält Schwarz das Zentrum
+meist mit ...e6 oder ...c6. Weiß versucht, Raumvorteil und Entwicklung zu
+nutzen.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 *
+
+[Name "Damengambit (abgelehnt) – Ragozin Variante"]
+[ECO "D38"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Im abgelehnten Damengambit hält Schwarz das Zentrum
+meist mit ...e6 oder ...c6. Weiß versucht, Raumvorteil und Entwicklung zu
+nutzen.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Bb4 *
+
+[Name "QGD Halbslawische Verteidigung"]
+[ECO "D43"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. In der Slawischen Verteidigung stützt Schwarz d5
+mit ...c6 und hält den Läufer c8 flexibel. Die Stellungen sind oft solide
+und strategisch geprägt.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 c6 *
+
+[Name "QGD Halbslawische Verteidigung – 5.e3"]
+[ECO "D45"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. In der Slawischen Verteidigung stützt Schwarz d5
+mit ...c6 und hält den Läufer c8 flexibel. Die Stellungen sind oft solide
+und strategisch geprägt.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 c6 5. e3 *
+
+[Name "QGD Halbslawische Verteidigung – Meran, 8...a6"]
+[ECO "D48"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. In der Slawischen Verteidigung stützt Schwarz d5
+mit ...c6 und hält den Läufer c8 flexibel. Die Stellungen sind oft solide
+und strategisch geprägt.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 c6 5. e3 Nbd7 *
+
+[Name "Damengambit (abgelehnt) – Orthodox Verteidigung"]
+[ECO "D60"]
+
+{
+Das Damengambit entsteht nach 1.d4 d5 2.c4. Weiß bietet den c-Bauern an,
+um das Zentrum zu beeinflussen und Raumvorteil zu erzielen. Schwarz kann
+annehmen oder ablehnen und strebt je nach System solide Entwicklung oder
+aktives Gegenspiel an. Im abgelehnten Damengambit hält Schwarz das Zentrum
+meist mit ...e6 oder ...c6. Weiß versucht, Raumvorteil und Entwicklung zu
+nutzen.
+}
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O *
+
+[Name "Grünfeld"]
+[ECO "D80"]
+
+{
+Die Grünfeld-Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6 3.Sc3 d5. Schwarz
+greift das Zentrum mit Figuren und Bauernhebeln an und erlaubt Weiß häufig
+einen breiten Bauernaufbau. Typisch sind dynamische Stellungen mit starkem
+Figurenspiel für Schwarz und Raumvorteil für Weiß.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 *
+
+[Name "Grünfeld – Abtauschvariante Variante"]
+[ECO "D85"]
+
+{
+Die Grünfeld-Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6 3.Sc3 d5. Schwarz
+greift das Zentrum mit Figuren und Bauernhebeln an und erlaubt Weiß häufig
+einen breiten Bauernaufbau. Typisch sind dynamische Stellungen mit starkem
+Figurenspiel für Schwarz und Raumvorteil für Weiß.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 *
+
+[Name "Damenbauernspiel"]
+[ECO "E00"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 Nf6 2. c4 e6 *
+
+[Name "Katalanische Eröffnung – geschlossen"]
+[ECO "E01"]
+
+{
+Die Katalanische Eröffnung entsteht nach 1.d4 Sf6 2.c4 e6 3.g3. Weiß
+kombiniert Damenbauernspiel mit Fianchetto und strebt Druck auf der langen
+Diagonale sowie stabilen Raumvorteil an. In der geschlossenen Variante
+bleibt die Spannung im Zentrum länger erhalten. Weiß übt langfristigen
+Druck aus, Schwarz entwickelt sich solide und sucht Gegenspiel.
+}
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 *
+
+[Name "Katalanische Eröffnung – offen, 5.Nf3"]
+[ECO "E04"]
+
+{
+Die Katalanische Eröffnung entsteht nach 1.d4 Sf6 2.c4 e6 3.g3. Weiß
+kombiniert Damenbauernspiel mit Fianchetto und strebt Druck auf der langen
+Diagonale sowie stabilen Raumvorteil an. In der offenen Variante nimmt
+Schwarz häufig auf c4 und testet den Entwicklungsaufbau von Weiß. Weiß
+versucht, den Bauern zurückzugewinnen und gleichzeitig Initiative zu
+behalten.
+}
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 dxc4 5. Nf3 *
+
+[Name "Katalanische Eröffnung – geschlossen, 5.Nf3"]
+[ECO "E06"]
+
+{
+Die Katalanische Eröffnung entsteht nach 1.d4 Sf6 2.c4 e6 3.g3. Weiß
+kombiniert Damenbauernspiel mit Fianchetto und strebt Druck auf der langen
+Diagonale sowie stabilen Raumvorteil an. In der geschlossenen Variante
+bleibt die Spannung im Zentrum länger erhalten. Weiß übt langfristigen
+Druck aus, Schwarz entwickelt sich solide und sucht Gegenspiel.
+}
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 Be7 5. Nf3 *
+
+[Name "Katalanische Eröffnung – geschlossen, Hauptvariante"]
+[ECO "E09"]
+
+{
+Die Katalanische Eröffnung entsteht nach 1.d4 Sf6 2.c4 e6 3.g3. Weiß
+kombiniert Damenbauernspiel mit Fianchetto und strebt Druck auf der langen
+Diagonale sowie stabilen Raumvorteil an. In der geschlossenen Variante
+bleibt die Spannung im Zentrum länger erhalten. Weiß übt langfristigen
+Druck aus, Schwarz entwickelt sich solide und sucht Gegenspiel.
+}
+
+1. d4 Nf6 2. c4 e6 3. g3 d5 4. Bg2 Be7 5. Nf3 O-O *
+
+[Name "Bogo-Indian Verteidigung"]
+[ECO "E11"]
+
+{
+Diese Eröffnung führt zu flexiblen Stellungen, in denen die
+Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
+strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
+Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
+stark von den folgenden Zügen ab.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nf3 Bb4+ *
+
+[Name "Damenindische Verteidigung Verteidigung"]
+[ECO "E12"]
+
+{
+Die Damenindische Verteidigung entsteht typischerweise nach 1.d4 Sf6 2.c4
+e6 3.Sf3 b6. Schwarz fianchettiert den Damenläufer und greift das Zentrum
+aus der Distanz an. Weiß baut meist ein solides Zentrum auf und versucht
+Raumvorteil zu nutzen. Das Spiel ist häufig positionell und von Manövern
+geprägt.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nf3 b6 *
+
+[Name "Damenindische Verteidigung Verteidigung – 4.g3"]
+[ECO "E15"]
+
+{
+Die Damenindische Verteidigung entsteht typischerweise nach 1.d4 Sf6 2.c4
+e6 3.Sf3 b6. Schwarz fianchettiert den Damenläufer und greift das Zentrum
+aus der Distanz an. Weiß baut meist ein solides Zentrum auf und versucht
+Raumvorteil zu nutzen. Das Spiel ist häufig positionell und von Manövern
+geprägt.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nf3 b6 4. g3 *
+
+[Name "Nimzo-Indische Verteidigung"]
+[ECO "E20"]
+
+{
+Die Nimzo-Indische Verteidigung entsteht nach 1.d4 Sf6 2.c4 e6 3.Sc3 Lb4.
+Schwarz fesselt den Springer c3 und erhöht den Druck auf das Zentrum. Weiß
+erhält Wahlmöglichkeiten zwischen Strukturvorteilen und Läuferpaar.
+Typisch sind positionsstrategische Kämpfe um Zentrumskontrolle und
+Figurenharmonie.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 *
+
+[Name "Nimzo-Indische Verteidigung – Sämisch Variante"]
+[ECO "E24"]
+
+{
+Die Nimzo-Indische Verteidigung entsteht nach 1.d4 Sf6 2.c4 e6 3.Sc3 Lb4.
+Schwarz fesselt den Springer c3 und erhöht den Druck auf das Zentrum. Weiß
+erhält Wahlmöglichkeiten zwischen Strukturvorteilen und Läuferpaar. In der
+Sämisch-Variante (a3) stellt Weiß die Läuferentscheidung früh. Es
+entstehen klare Strukturen, in denen beide Seiten langfristige Pläne
+verfolgen.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. a3 Bxc3+ 5. bxc3 *
+
+[Name "Nimzo-Indische Verteidigung – klassisch Variante"]
+[ECO "E32"]
+
+{
+Die Nimzo-Indische Verteidigung entsteht nach 1.d4 Sf6 2.c4 e6 3.Sc3 Lb4.
+Schwarz fesselt den Springer c3 und erhöht den Druck auf das Zentrum. Weiß
+erhält Wahlmöglichkeiten zwischen Strukturvorteilen und Läuferpaar.
+Typisch sind positionsstrategische Kämpfe um Zentrumskontrolle und
+Figurenharmonie.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Qc2 *
+
+[Name "Nimzo-Indische Verteidigung – 4.e3"]
+[ECO "E40"]
+
+{
+Die Nimzo-Indische Verteidigung entsteht nach 1.d4 Sf6 2.c4 e6 3.Sc3 Lb4.
+Schwarz fesselt den Springer c3 und erhöht den Druck auf das Zentrum. Weiß
+erhält Wahlmöglichkeiten zwischen Strukturvorteilen und Läuferpaar. Mit
+4.e3 strebt Weiß solide Entwicklung an und bereitet die Rücknahme mit dem
+Läufer vor. Schwarz sucht Gegenspiel durch ...d5 oder Druck auf c4.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 *
+
+[Name "Nimzo-Indische Verteidigung – 4.e3 O-O"]
+[ECO "E46"]
+
+{
+Die Nimzo-Indische Verteidigung entsteht nach 1.d4 Sf6 2.c4 e6 3.Sc3 Lb4.
+Schwarz fesselt den Springer c3 und erhöht den Druck auf das Zentrum. Weiß
+erhält Wahlmöglichkeiten zwischen Strukturvorteilen und Läuferpaar. Mit
+4.e3 strebt Weiß solide Entwicklung an und bereitet die Rücknahme mit dem
+Läufer vor. Schwarz sucht Gegenspiel durch ...d5 oder Druck auf c4.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 O-O *
+
+[Name "Nimzo-Indische Verteidigung – 4.e3, Hauptvariante"]
+[ECO "E59"]
+
+{
+Die Nimzo-Indische Verteidigung entsteht nach 1.d4 Sf6 2.c4 e6 3.Sc3 Lb4.
+Schwarz fesselt den Springer c3 und erhöht den Druck auf das Zentrum. Weiß
+erhält Wahlmöglichkeiten zwischen Strukturvorteilen und Läuferpaar. Mit
+4.e3 strebt Weiß solide Entwicklung an und bereitet die Rücknahme mit dem
+Läufer vor. Schwarz sucht Gegenspiel durch ...d5 oder Druck auf c4.
+}
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 O-O 5. Nf3 d5 *
+
+[Name "Königsindische Verteidigung"]
+[ECO "E60"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. Typisch sind dynamische Mittelspiele, in denen
+Timing der Bauernhebel entscheidend ist.
+}
+
+1. d4 Nf6 2. c4 g6 *
+
+[Name "Königsindische Verteidigung – Fianchetto Variante"]
+[ECO "E62"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. In der Fianchetto-Variante entwickelt Weiß den
+Läufer nach g2 und spielt häufig positionell. Schwarz sucht Gegenspiel im
+Zentrum oder am Königsflügel, abhängig von der Struktur.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. Nf3 d6 5. g3 *
+
+[Name "Königsindische Verteidigung – 4.e4"]
+[ECO "E70"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. Typisch sind dynamische Mittelspiele, in denen
+Timing der Bauernhebel entscheidend ist.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 *
+
+[Name "Königsindische Verteidigung – Sämisch Variante"]
+[ECO "E80"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. In der Sämisch-Variante stärkt Weiß das Zentrum
+mit f3 und bereitet oft g4 vor. Schwarz kontert typischerweise mit ...c5
+oder ...e5 und sucht dynamisches Gegenspiel.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3 *
+
+[Name "Königsindische Verteidigung – 5.Nf3"]
+[ECO "E90"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. In der Sämisch-Variante stärkt Weiß das Zentrum
+mit f3 und bereitet oft g4 vor. Schwarz kontert typischerweise mit ...c5
+oder ...e5 und sucht dynamisches Gegenspiel.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 *
+
+[Name "Königsindische Verteidigung – orthodox Variante"]
+[ECO "E94"]
+
+{
+Die Königsindische Verteidigung entsteht nach 1.d4 Sf6 2.c4 g6. Schwarz
+fianchettiert den Königsläufer und lässt Weiß häufig Raum im Zentrum, um
+später mit Bauernhebeln gegenzuschlagen. Weiß strebt meist ein starkes
+Zentrum mit e4 und d4 an. In der orthodoxen Hauptaufstellung rochiert
+Schwarz kurz und greift das Zentrum später an. Häufig entstehen komplexe
+Stellungen mit Angriff am Königsflügel gegen weißen Raumvorteil.
+}
+
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O *
