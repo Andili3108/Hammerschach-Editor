@@ -1,12 +1,8 @@
-[Name "Polnische Eröffnung"]
+[Name "Sokolski Eröffnung"]
 [ECO "A00"]
 
 {
-Diese Eröffnung führt zu flexiblen Stellungen, in denen die
-Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
-strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
-Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
-stark von den folgenden Zügen ab.
+Die Sokolski-Eröffnung wird bestimmt durch den eröffnenden Bauernzug 1. b2–b4.[1] Sie wird auch Orang-Utan-Eröffnung oder Polnische Eröffnung genannt; im letzteren Falle ist sie nicht mit der thematisch verwandten Polnischen Verteidigung 1. d2–d4 b7–b5 zu verwechseln. Sie ist kategorisiert unter dem ECO-Code A00 (selten gespielte Eröffnungen). 
 }
 
 1. b4 *
@@ -15,11 +11,9 @@ stark von den folgenden Zügen ab.
 [ECO "A01"]
 
 {
-Diese Eröffnung führt zu flexiblen Stellungen, in denen die
-Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
-strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
-Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
-stark von den folgenden Zügen ab.
+Das Larsen-System zählt zu den Geschlossenen Spielen und wird in der Eröffnungssystematik der ECO-Codes unter dem Schlüssel A01 klassifiziert. Das Larsen-System wird mit dem Zug 1. b2–b3 eingeleitet.
+
+Mit diesem zurückhaltenden Aufbau plant der Weiße durch das Fianchetto des schwarzfeldrigen Läufers den Einfluss auf das Zentrum von der Flanke her. Die häufigsten Antwortzüge sind e7–e5, d7–d5, c7–c5 oder Sg8–f6. Je nach schwarzer Entgegnung sind durch Zugumstellung allerdings zahlreiche Übergänge in andere Eröffnungen möglich
 }
 
 1. b3 *
@@ -28,11 +22,10 @@ stark von den folgenden Zügen ab.
 [ECO "A02"]
 
 {
-Diese Eröffnung führt zu flexiblen Stellungen, in denen die
-Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
-strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
-Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
-stark von den folgenden Zügen ab.
+Die Bird-Eröffnung (auch Holländisch im Anzug) ist benannt nach dem englischen Schachspieler Henry Edward Bird. Ihre ECO-Codes lauten A02 und A03. Sie zählt zu den geschlossenen Spielen und beginnt mit dem Zug
+1. f2–f4
+
+Die strategische Grundidee dieser Eröffnung liegt in der Kontrolle des Zentrumfeldes e5, welches üblicherweise mit den Zügen Sg1–f3, b2–b3 und dem Fianchetto des Läufers c1 nach b2 unterstützt wird. Der Namensgeber Bird selbst hat diesen Eröffnungszug in seinen ca. 250 überlieferten Weißpartien 92 Mal angewandt (+37 =11 −44). 
 }
 
 1. f4 *
@@ -41,11 +34,10 @@ stark von den folgenden Zügen ab.
 [ECO "A03"]
 
 {
-Diese Eröffnung führt zu flexiblen Stellungen, in denen die
-Zentrumsbehandlung und Figurenentwicklung im Vordergrund stehen. Weiß
-strebt meist Raum- oder Entwicklungsvorteil an, während Schwarz auf solide
-Entwicklung und Gegenspiel im Zentrum setzt. Die genaue Stellungsart hängt
-stark von den folgenden Zügen ab.
+Die Bird-Eröffnung (auch Holländisch im Anzug) ist benannt nach dem englischen Schachspieler Henry Edward Bird. Ihre ECO-Codes lauten A02 und A03. Sie zählt zu den geschlossenen Spielen und beginnt mit dem Zug
+1. f2–f4
+
+Die strategische Grundidee dieser Eröffnung liegt in der Kontrolle des Zentrumfeldes e5, welches üblicherweise mit den Zügen Sg1–f3, b2–b3 und dem Fianchetto des Läufers c1 nach b2 unterstützt wird. Der Namensgeber Bird selbst hat diesen Eröffnungszug in seinen ca. 250 überlieferten Weißpartien 92 Mal angewandt (+37 =11 −44). 
 }
 
 1. f4 d5 *
