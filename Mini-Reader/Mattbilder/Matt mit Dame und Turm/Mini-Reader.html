@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hammerschach Player</title>
+
+<style>
+  body{font-family:Tahoma,Verdana,sans-serif;margin:0;padding:0}
+  .wrap{display:flex;justify-content:center;align-items:flex-start;gap:14px;padding:10px}
+  #board{width:500px;height:500px}
+  .moves{width:190px;height:500px;overflow-y:auto;border:1px solid #cfcfcf;padding:6px;font-size:13px;box-sizing:border-box}
+  .row{display:flex;justify-content:space-between;gap:10px;margin:0 0 4px 0}
+  .row span{cursor:pointer;user-select:none}
+  .controls{width:500px;margin:10px auto 12px auto;text-align:center}
+  .controls button{margin:0 4px;padding:6px 10px;font-size:14px;cursor:pointer}
+
+  /* Reader-Brettfarben (ohne JS, robust) */
+  .white-1e1d7{background:#f0d9b5 !important;}
+  .black-3c85d{background:#b58863 !important;}
+
+  /* Hinweisbox falls Libraries nicht laden */
+  #err{max-width:740px;margin:10px auto;padding:10px 12px;border:1px solid #d3b3b3;background:#fff4f4;color:#7a1d1d;display:none}
+  #ok{max-width:740px;margin:10px auto 0 auto;color:#666;font-size:12px;display:none}
+</style>
+</head>
+
+<body>
+
+<div id="err"></div>
+<div id="ok">Hinweis: Player lädt <b>PGN.txt</b> aus demselben Ordner wie diese HTML-Datei.</div>
+
+<div class="wrap">
+  <div id="board"></div>
+  <div class="moves" id="moves"></div>
+</div>
+
+<div class="controls">
+  <button id="btnStart" type="button">⏮</button>
+  <button id="btnBack" type="button">◀</button>
+  <button id="btnPlay" type="button">▶/⏸</button>
+  <button id="btnFwd" type="button">▶</button>
+  <button id="btnEnd" type="button">⏭</button>
+  <button id="btnFlip" type="button">Drehen</button>
+</div>
+
+<script>
+/* ------- Robust Loader: versucht mehrere CDNs ------- */
+function loadCss(url){
+  return new Promise((resolve,reject)=>{
+    const l=document.createElement('link');
+    l.rel='stylesheet'; l.href=url;
+    l.onload=()=>resolve(url);
+    l.onerror=()=>reject(new Error('CSS failed: '+url));
+    document.head.appendChild(l);
+  });
+}
+function loadScript(url){
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src=url; s.async=true;
+    s.onload=()=>resolve(url);
+    s.onerror=()=>reject(new Error('JS failed: '+url));
+    document.head.appendChild(s);
+  });
+}
+async function loadDeps(){
+  // chessboard CSS
+  const csss = [
+    "https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css",
+    "https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css"
+  ];
+  for (const u of csss){ try { await loadCss(u); break; } catch(e){} }
+
+  // jquery, chess.js, chessboard.js
+  const tries = [
+    async()=>{ await loadScript("https://code.jquery.com/jquery-3.6.0.min.js"); },
+    async()=>{ await loadScript("https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"); }
+  ];
+  let jqLoaded=false;
+  for (const t of tries){ try { await t(); jqLoaded=true; break; } catch(e){} }
+  if(!jqLoaded) throw new Error("jQuery konnte nicht geladen werden (CDN blockiert?).");
+
+  const chessTries=[
+    async()=>{ await loadScript("https://cdn.jsdelivr.net/npm/chess.js@0.10.3/chess.min.js"); },
+    async()=>{ await loadScript("https://unpkg.com/chess.js@0.10.3/chess.min.js"); }
+  ];
+  let chessLoaded=false;
+  for (const t of chessTries){ try { await t(); chessLoaded=true; break; } catch(e){} }
+  if(!chessLoaded) throw new Error("chess.js konnte nicht geladen werden.");
+
+  const boardTries=[
+    async()=>{ await loadScript("https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"); },
+    async()=>{ await loadScript("https://unpkg.com/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"); }
+  ];
+  let cbLoaded=false;
+  for (const t of boardTries){ try { await t(); cbLoaded=true; break; } catch(e){} }
+  if(!cbLoaded) throw new Error("chessboard.js konnte nicht geladen werden.");
+
+  if(typeof Chessboard!=="function") throw new Error("Chessboard ist nicht verfügbar (Script geladen, aber Global fehlt).");
+  if(typeof Chess!=="function") throw new Error("Chess ist nicht verfügbar.");
+}
+
+/* ------- Player Logic ------- */
+let board=null;
+let game=null;
+let moves=[];
+let currentMove=0;
+let playing=false;
+let playTimer=null;
+
+function showError(msg){
+  const box=document.getElementById("err");
+  box.style.display="block";
+  box.innerHTML = "<b>Player-Fehler:</b> " + msg +
+    "<br><br><b>Typische Ursache:</b> Du öffnest die HTML über github.com (Blob) statt über GitHub Pages / raw, oder der Browser blockiert CDNs.<br>" +
+    "<b>Lösung:</b> Datei über GitHub Pages laden (https://DEINNAME.github.io/...), oder lokal testen, oder Tracking-Schutz/CDN-Blocker prüfen.";
+}
+
+function initUI(){
+  document.getElementById("btnStart").onclick=()=>goToMove(0);
+  document.getElementById("btnBack").onclick=()=>{ if(currentMove>0) goToMove(currentMove-1); };
+  document.getElementById("btnFwd").onclick=()=>{ if(currentMove<moves.length) goToMove(currentMove+1); };
+  document.getElementById("btnEnd").onclick=()=>goToMove(moves.length);
+  document.getElementById("btnFlip").onclick=()=>{ if(board) board.flip(); };
+  document.getElementById("btnPlay").onclick=togglePlay;
+}
+
+function renderMoves(){
+  const c=document.getElementById("moves");
+  c.innerHTML="";
+  for(let i=0;i<moves.length;i+=2){
+    const row=document.createElement("div");
+    row.className="row";
+
+    const w=document.createElement("span");
+    w.textContent=moves[i]||"";
+    w.onclick=()=>goToMove(i+1);
+
+    const b=document.createElement("span");
+    b.textContent=moves[i+1]||"";
+    b.onclick=()=>goToMove(i+2);
+
+    row.appendChild(w);
+    row.appendChild(b);
+    c.appendChild(row);
+  }
+}
+
+function goToMove(n){
+  stopPlay();
+  game.reset();
+  for(let i=0;i<n;i++) game.move(moves[i]);
+  currentMove=n;
+  board.position(game.fen());
+}
+
+function tickPlay(){
+  if(currentMove>=moves.length){ stopPlay(); return; }
+  goToMove(currentMove+1);
+}
+
+function togglePlay(){
+  if(!moves.length) return;
+  if(playing){ stopPlay(); }
+  else{
+    playing=true;
+    playTimer=setInterval(tickPlay, 700);
+  }
+}
+function stopPlay(){
+  playing=false;
+  if(playTimer){ clearInterval(playTimer); playTimer=null; }
+}
+
+async function loadPGN(){
+  // relative zu HTML im selben Ordner
+  const res = await fetch("PGN.txt", {cache:"no-store"});
+  const text = await res.text();
+
+  game = new Chess();
+  game.load_pgn(text, {sloppy:true});
+  moves = game.history();
+  game.reset();
+  currentMove=0;
+  renderMoves();
+  board.position('start');
+}
+
+async function main(){
+  try{
+    await loadDeps();
+    document.getElementById("ok").style.display="block";
+    initUI();
+
+    game = new Chess();
+    board = Chessboard('board', {
+      position:'start',
+      pieceTheme:'https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/img/chesspieces/wikipedia/{piece}.png'
+    });
+
+    // PGN laden (Board muss auch ohne PGN sichtbar bleiben)
+    try { await loadPGN(); } catch(e){ /* ignorieren, Board bleibt */ }
+
+  } catch(e){
+    showError(e.message || String(e));
+  }
+}
+main();
+</script>
+
+</body>
+</html>
