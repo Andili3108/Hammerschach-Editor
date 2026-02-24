@@ -17,7 +17,7 @@
 [Date "22.02.2026"]
 [Round "7"]
 [White "Boyun,Halid"]
-[Black "Mescher,Marlon]
+[Black "Mescher,Marlon"]
 [Result "1-0"]
 [ECO "?"]
 [WhiteElo "1547"]
