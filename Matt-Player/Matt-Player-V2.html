@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Matt-Player</title>
+<style>
+  :root {
+    --light: #f0d9b5;
+    --dark: #843f46;
+    --frame: #2f2b28;
+    --text: #1f1d1b;
+    --muted: #6c6259;
+    --panel: #fffdf9;
+    --accent: #355c8a;
+  }
+  * { box-sizing: border-box; }
+  html, body { width: 100%; margin: 0; padding: 0; background: transparent; color: var(--text); font-family: "Times New Roman", Times, serif; overflow-x: hidden; }
+  body { padding: 10px 8px 14px; font-size: 18px; }
+  .reader {
+    --board-size: min(600px, 100%);
+    width: var(--board-size);
+    max-width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar {
+    width: 100%;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: max-content max-content 52px 52px minmax(0, 192px);
+    justify-content: center;
+    align-items: center;
+    gap: 10px 12px;
+    min-height: 52px;
+    padding: 4px 0 0;
+  }
+  .control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.12rem;
+    min-width: 0;
+    white-space: nowrap;
+  }
+  label {
+    white-space: nowrap;
+  }
+  select, button {
+    font: inherit;
+    border-radius: 10px;
+    padding: 6px 10px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  select {
+    border: 1px solid #b8ada2;
+    max-width: 100%;
+  }
+  button {
+    cursor: pointer;
+    min-width: 52px;
+    height: 52px;
+    border: 1px solid #cfcfcf;
+    background: #e6e6e6;
+    color: #9A2D33;
+    font-size: 18px;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: filter .15s ease, transform .05s ease;
+  }
+  button:hover {
+    filter: brightness(1.02);
+  }
+  button:active {
+    transform: translateY(1px);
+  }
+  select:hover { border-color: #8e8277; }
+  .status {
+    width: 100%;
+    min-width: 0;
+    min-height: 58px;
+    padding: 8px 14px 8px 16px;
+    border: 1px solid #cab9a8;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fffdf9 0%, #f5eee6 100%);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+    color: var(--text);
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    overflow: hidden;
+  }
+  .status::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: #843f46;
+    opacity: 0.9;
+  }
+  .status-hint {
+    font-size: 0.78rem;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7b6d60;
+    font-weight: 700;
+  }
+  .status-main {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    font-size: 1rem;
+    line-height: 1.08;
+    font-weight: 700;
+    white-space: nowrap;
+    text-align: left;
+    padding-left: 4px;
+  }
+  .status-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1px;
+    text-align: left;
+    line-height: 1.02;
+  }
+  .status-color {
+    font-size: 0.98rem;
+    font-weight: 700;
+  }
+  .status-move {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #5f5449;
+  }
+  .status-dot {
+    width: 0.72em;
+    height: 0.72em;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    border: 1px solid rgba(0,0,0,0.28);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .status.white-turn .status-dot {
+    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f5f0e9 65%, #d7cbc0 100%);
+  }
+  .status.black-turn .status-dot {
+    background: radial-gradient(circle at 35% 35%, #696969 0%, #2c2c2c 60%, #111111 100%);
+    border-color: rgba(255,255,255,0.18);
+  }
+  .board-wrap {
+    width: var(--board-size);
+    max-width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  .board {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    border: 3px solid var(--frame);
+    border-radius: 8px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(8,1fr);
+    grid-template-rows: repeat(8,1fr);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    background: #fff;
+  }
+  .sq {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sq.light { background: var(--light); }
+  .sq.dark { background: var(--dark); }
+  .piece {
+    width: 82%;
+    height: 82%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.22));
+  }
+  .coord-file, .coord-rank {
+    position: absolute;
+    font-size: 0.82rem;
+    line-height: 1;
+    font-weight: 700;
+    opacity: 0.72;
+    pointer-events: none;
+    user-select: none;
+  }
+  .coord-file { right: 6px; bottom: 4px; }
+  .coord-rank { left: 6px; top: 4px; }
+  .sq.light .coord-file, .sq.light .coord-rank { color: rgba(90,52,28,0.8); }
+  .sq.dark .coord-file, .sq.dark .coord-rank { color: rgba(255,244,226,0.88); }
+  .figurine {
+    width: 0.92em;
+    height: 0.92em;
+    vertical-align: -0.1em;
+    margin: 0 0.03em;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.16));
+  }
+  .movectrl {
+    width: var(--board-size);
+    max-width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .movectrl button {
+    min-width: 52px;
+    padding: 6px 14px;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+  input[type="number"] {
+    width: 58px;
+    min-width: 58px;
+    max-width: 58px;
+    height: 52px;
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 1.12rem;
+    line-height: 1;
+    font-family: inherit;
+    border: 1px solid #cfcfcf;
+    border-radius: 10px;
+    background: #fffdf9;
+    color: var(--text);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .solutionline {
+    width: min(600px, var(--board-size));
+    max-width: 100%;
+    min-height: 52px;
+    text-align: center;
+    font-size: 1.18rem;
+    font-weight: 700;
+    line-height: 1.45;
+    color: var(--text);
+    padding: 18px 10px 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .solutionline.hidden {
+    visibility: hidden;
+  }
+  button:disabled {
+    opacity: 0.68;
+    cursor: default;
+  }
+  @media (max-width: 520px) {
+    body { padding: 8px 6px 12px; font-size: 16px; }
+    .reader { gap: 8px; }
+    .topbar {
+      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) 42px 42px;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+    .control {
+      min-width: 0;
+    }
+    input, button { padding: 4px 8px; }
+    button {
+      height: 42px;
+      font-size: 15px;
+      min-width: 42px;
+    }
+    input[type="number"] {
+      width: 50px;
+      min-width: 50px;
+      max-width: 50px;
+      height: 42px;
+      font-size: 1rem;
+      padding: 4px 6px;
+    }
+    .movectrl {
+      gap: 8px;
+    }
+    .movectrl button {
+      font-size: 20px;
+      flex: 0 1 42px;
+    }
+    .status {
+      grid-column: 1 / -1;
+      width: 100%;
+      min-height: 52px;
+    }
+    .status-main {
+      gap: 8px;
+      padding-left: 2px;
+    }
+    .status-color {
+      font-size: 0.94rem;
+    }
+    .status-move {
+      font-size: 0.78rem;
+    }
+    .solutionline {
+      font-size: 1.08rem;
+      min-height: 44px;
+      padding-top: 12px;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+  }
+  @media (max-width: 380px) {
+    .topbar {
+      grid-template-columns: 1fr 40px 40px;
+      gap: 6px;
+    }
+    .control {
+      gap: 6px;
+      font-size: 1rem;
+    }
+    .movectrl {
+      gap: 6px;
+    }
+    .solutionline {
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+  }
+</style>
+</head>
+<body tabindex="0">
+<div class="reader">
+  <div class="topbar">
+    <div class="control">
+      <label for="categorySelect">Kategorie:</label>
+      <select id="categorySelect">
+        <option value="Matt in 1">Matt in 1</option>
+        <option value="Matt in 2">Matt in 2</option>
+        <option value="Matt in 3">Matt in 3</option>
+        <option value="Matt in 4">Matt in 4</option>
+      </select>
+    </div>
+    <div class="control">
+      <label for="taskInput">Aufgabe:</label>
+      <input id="taskInput" type="number" min="1" step="1" inputmode="numeric">
+    </div>
+    <button id="prevTaskBtn" title="Vorige Aufgabe">‹</button>
+    <button id="nextTaskBtn" title="Nächste Aufgabe">›</button>
+    <div class="status" id="statusText"></div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board" aria-label="Schachbrett"></div>
+  </div>
+
+  <div class="movectrl">
+    <button id="startBtn" title="Anfangsstellung">|‹</button>
+    <button id="prevMoveBtn" title="Zug zurück">‹</button>
+    <button id="nextMoveBtn" title="Zug vor">›</button>
+    <button id="endBtn" title="Endstellung">›|</button>
+  </div>
+  <div class="solutionline hidden" id="solutionLine"></div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script>
+const puzzleGroups = {"Matt in 1": [{"id": 1, "fen": "6k1/5ppp/8/8/8/7P/r4PP1/1R4K1 w - - 0 1", "sourceSolution": "1.¦b8#"}, {"id": 2, "fen": "6k1/3q1p1p/p3n1p1/1p6/8/1PQ4P/PB3PP1/6K1 w - - 0 1", "sourceSolution": "1.£h8#"}, {"id": 3, "fen": "3r2rk/pp3p2/2p2Pp1/3p4/3R4/2P3P1/PP4KP/3R4 w - - 0 1", "sourceSolution": "1.¦h4#"}, {"id": 4, "fen": "3r3k/pp5p/1np3p1/5p2/P7/1BP3BP/1P1r1PP1/4R1K1 w - - 0 1", "sourceSolution": "1.¥e5#"}, {"id": 5, "fen": "2r5/kp3p2/2p3rp/N1P3p1/1P2P3/6PP/5PK1/R7 w - - 0 1", "sourceSolution": "1.¤xc6#"}, {"id": 6, "fen": "6n1/5P1k/6pp/8/2pB4/1pP5/pP3PPP/6K1 w - - 0 1", "sourceSolution": "1.f8¤#"}, {"id": 7, "fen": "6rk/pb4pp/1pq4N/2p5/8/P5P1/1P3P1P/4R1K1 w - - 0 1", "sourceSolution": "1.¤f7#"}, {"id": 8, "fen": "3rr2k/1p5p/p4Rp1/2pp4/7P/1P3NP1/PB3PK1/8 w - - 0 1", "sourceSolution": "1.¦f8#"}, {"id": 9, "fen": "r1bqkb1r/pp1npppp/2p2n2/8/3PN3/8/PPP1QPPP/R1B1KBNR w - - 0 1", "sourceSolution": "1.¤d6#"}, {"id": 10, "fen": "2r5/7r/p3p2b/1pp1kp2/1P6/P1P3P1/1B3PB1/3R2K1 w - - 0 1", "sourceSolution": "1.c4#"}, {"id": 11, "fen": "2r3bk/p5pp/8/1q2N3/1p2pPP1/8/PPPB4/2K4R w - - 0 1", "sourceSolution": "1.¤g6#"}, {"id": 12, "fen": "8/8/8/8/8/r5r1/5R2/1R2K1k1 w - - 0 1", "sourceSolution": "1.¢e2#"}, {"id": 13, "fen": "8/3r2p1/1p4rk/p7/2R5/1PP2N2/P3K1P1/8 w - - 0 1", "sourceSolution": "1.¦h4#"}, {"id": 14, "fen": "1R6/8/1b2k3/6p1/4K3/5N2/8/3b4 b - - 0 1", "sourceSolution": "1...¥c2#"}, {"id": 15, "fen": "r2q3Q/2p1bk2/p3prN1/1p1np3/8/1B6/PPP2PPP/R4RK1 w - - 0 1", "sourceSolution": "1.¤xe5# [Mettler P. - Walti T., 2003]"}, {"id": 16, "fen": "8/7p/3Q1n1k/6p1/4B1P1/2q4P/2P2PK1/8 w - - 0 1", "sourceSolution": "1.£f8# [Dürig W. - Meier M., 2005]"}, {"id": 17, "fen": "6k1/pp1r1n1p/4RR1P/3p1pp1/8/2PK1P2/P5P1/8 w - - 0 1", "sourceSolution": "1.¦e8# [Kasparov G. - Kamsky G., Linares, 1991]"}, {"id": 18, "fen": "8/8/2P5/3K1k2/2R3p1/2q5/8/8 b - - 0 1", "sourceSolution": "1...£e5# [Keres P. - Fischer R., Bled, 1959]"}, {"id": 19, "fen": "3r2k1/1p4pp/p4p2/8/1P2qP2/P3p1PP/1RNnn2K/3QN3 b - - 0 1", "sourceSolution": "1...¤f1# [Menchik V. - Rubinstein A., Karlsbad, 1929]"}, {"id": 20, "fen": "3r1k2/8/6P1/4B1qn/2Q5/1P1P2p1/P5K1/8 w - - 0 1", "sourceSolution": "1.£f7# [Portisch L. - Gulko B., Biel, 1976]"}, {"id": 21, "fen": "6k1/1b3p2/6nQ/p7/2P3q1/P7/5R1P/5K2 b - - 0 1", "sourceSolution": "1...£d1# [Gheorghiu F. - Larsen B., Las Palmas, 1972]"}, {"id": 22, "fen": "1rB2k2/4p3/p2p4/3N4/2Pp2Q1/5P2/P3K1P1/1q6 b - - 0 1", "sourceSolution": "1...¦b2# [Gheorghiu F. - Sax G., Teeside, 1975]"}, {"id": 23, "fen": "r1n3k1/p2Q2bp/2p3p1/4p3/4P3/2N2B2/PP3q1P/R1B4K b - - 0 1", "sourceSolution": "1...£f1# [Ghitescu T. - Timman J., Wijk aan Zee, 1974]"}, {"id": 24, "fen": "4R3/5kqp/1p4p1/3p4/3P3Q/3n2P1/5PKP/r7 w - - 0 1", "sourceSolution": "1.£e7# [Geller E. - Kortschnoj V., Moskau, 1975]"}, {"id": 25, "fen": "5b2/5r1p/1R3pk1/4pb1p/8/3rQ3/1P1B2P1/7K w - - 0 1", "sourceSolution": "1.£g5# [Bellon Lopez J. - Larsen B., Lanzarote, 1976]"}, {"id": 26, "fen": "5k2/1R6/4KN2/5r1p/1P2p3/2P5/5r2/8 w - - 0 1", "sourceSolution": "1.¦f7# [Torre E. - Ljubojevic L., Manila, 1976]"}, {"id": 27, "fen": "2b1qk2/4Np2/n3pQp1/p2pP1Np/P6P/8/1P3PP1/6K1 w - - 0 1", "sourceSolution": "1.¤h7# [Hort V. - Kagan S., Hastings, 1977]"}, {"id": 28, "fen": "1n5R/1kp1rppp/1p6/6P1/1P1pP2P/3q2PB/8/Q1R4K w - - 0 1", "sourceSolution": "1.¥c8# [Spassky B. - Gligoric S., Wien, 1980]"}, {"id": 29, "fen": "1R6/R7/6p1/2kPB1K1/2p5/3r3r/8/8 w - - 0 1", "sourceSolution": "1.¦a5# [Bronstein D. - Suetin A., Tallinn, 1980]"}, {"id": 30, "fen": "1r5k/r6b/5P2/7R/3B3P/p4K2/6P1/8 w - - 0 1", "sourceSolution": "1.f7# [Vaganian R. - Dobosz H., Yerevan, 1980]"}, {"id": 31, "fen": "r1bn2k1/1p2bN2/p5q1/3pp3/3P4/2P5/PP5Q/5R1K w - - 0 1", "sourceSolution": "1.£h8# [Geller E. – Benko P.,Stockholm, 1962]"}, {"id": 32, "fen": "8/6PR/p2p4/1p1P2kP/4r3/P1p3K1/1r6/8 b - - 0 1", "sourceSolution": "1...¦e3# [Partos C. - Ungureanu E., Bucharest, 1966]"}, {"id": 33, "fen": "5k2/5Pb1/3N4/2B3pn/P1p2n2/7P/1P4r1/1B3R1K b - - 0 1", "sourceSolution": "1...¤g3# [Polugaevsky L. - Gufeld E., Tbilisi, 1966]"}, {"id": 34, "fen": "Q7/1ppkb3/3pb3/pP3p2/3Pp3/4Pn2/PBP1KP1P/R5q1 b - - 0 1", "sourceSolution": "1...¥c4# [McNab I. - Miles A., Oxford, 1967]"}, {"id": 35, "fen": "r1br4/ppq2p2/3bp3/8/2P2k2/2Qn1P2/PP3BPP/5K1R w - - 0 1", "sourceSolution": "1.£f6# [Kupreichik V. - Tamme A., Parnu, 1975]"}, {"id": 36, "fen": "b4rk1/4Q2p/p2R2q1/P1p5/5p1P/2P3pK/2P5/6N1 b - - 0 1", "sourceSolution": "1...£f5# [Mednis E. - Browne W., Oberlin, 1975]"}, {"id": 37, "fen": "3r1br1/Qpk5/2np1P1p/3P2p1/6B1/6B1/6PP/2R3K1 w - - 0 1", "sourceSolution": "1.¦xc6# [Steinitz W. - Paulsen L., Baden-Baden, 1870]"}, {"id": 38, "fen": "rk2r3/p1p1np1p/p3B3/8/3Q2bq/3P4/PPP5/5RK1 w - - 0 1", "sourceSolution": "1.£b4# [Chigorin M. - Davidov M., St Petersburg, 1874]"}, {"id": 39, "fen": "3nkq2/3p3R/2N5/p2NP3/P1P2p2/1P2p3/8/3K4 w - - 0 1", "sourceSolution": "1.¤c7# [Chigorin M. - Solovtsov A., Moscow, 1884]"}, {"id": 40, "fen": "r6r/pp5p/2n1QN2/q1b3N1/2Pp1k2/8/PP3PPP/2K2B1R w - - 0 1", "sourceSolution": "1.¤h3# [Blackburne J. - Showalter J., New York, 1889]"}, {"id": 41, "fen": "6k1/2p3pp/5p2/2qN4/2P4n/5P1b/1Q2N2P/3RK3 b - - 0 1", "sourceSolution": "1...¤xf3# [Malksoo B. - Keres P., Tallinn, 1940]"}, {"id": 42, "fen": "Q7/4ppkp/1p4p1/4P3/1P1q4/P5PP/4n2K/5B2 b - - 0 1", "sourceSolution": "1...£g1# [Horowitz I. - Reshevsky S., New York, 1939]"}, {"id": 43, "fen": "4r2k/p2bR2p/3P2pB/2p2p2/qpQ5/6P1/1P3P1P/6K1 w - - 0 1", "sourceSolution": "1.¥g7# [Alekhine A. - Baljet L., Bandung, 1933]"}, {"id": 44, "fen": "4Qn2/1r3p1p/p4kp1/8/2Bp4/6PP/PP1q1P2/4R1K1 w - - 0 1", "sourceSolution": "1.£e5# [Gruenfeld E. - Tartakower S., Karlsbad, 1923]"}, {"id": 45, "fen": "7k/5p2/5N1p/4p2q/4P3/3P3b/1P3b1N/6RK w - - 0 1", "sourceSolution": "1.¦g8# [Kholmov R. - Ragozin V., Moscow, 1948]"}, {"id": 46, "fen": "5r2/1b2q1kp/1p2pN2/p3Pp2/P1P4Q/1P4P1/5PB1/n5K1 w - - 0 1", "sourceSolution": "1.£xh7#[Dlugy M. - Gulko B., Los Angeles, 1991]"}, {"id": 47, "fen": "4r1k1/5Nn1/7R/6p1/2B2pP1/2r5/7P/1R4K1 w - - 0 1", "sourceSolution": "1.¦h8# [Knaak R. - King D., Bad Lauterberg, 1991]"}, {"id": 48, "fen": "4nk2/1b6/4Kp2/1P1N2p1/7p/3B3P/6P1/8 b - - 0 1", "sourceSolution": "1...¥c8# [Short N. - Beliavsky A., Linares, 1992]"}, {"id": 49, "fen": "k4r1r/p4p1b/q2p2p1/3Np1Pp/4P2P/PRb5/1PP2P2/1K6 w - - 0 1", "sourceSolution": "1.¤c7# [Rogers I. - Milos G., Manila, 1992]"}, {"id": 50, "fen": "8/5N2/r4bp1/3R1pnk/4R3/6P1/5PK1/8 w - - 0 1", "sourceSolution": "1.¦h4# [Short N. - Timman J., Amsterdam, 1992]"}, {"id": 51, "fen": "8/5n2/R1N2k2/2p2p2/4pK2/2P4r/8/8 b - - 0 1", "sourceSolution": "1...¦f3# [Vogt L. - Kindermann S., Altensteig, 1992]"}, {"id": 52, "fen": "3r4/p4p1k/1p1Nrb2/2pR4/6RP/2P5/PP3P2/2K5 w - - 0 1", "sourceSolution": "1.¦h5# [Jenni F. - Stojanovic M., Zürich, 2007]"}, {"id": 53, "fen": "r5k1/4Rppp/4p3/3p2P1/1B1qP2P/1P3P2/1P5Q/1K6 b - - 0 1", "sourceSolution": "1...£d1# [Frolov A. - Shirov A., Biel, 1993]"}, {"id": 54, "fen": "8/1R3p2/2b1pB2/p1k1P2P/P2p3R/2pK1P2/2P2r2/8 b - - 0 1", "sourceSolution": "1...¦d2# [Polgar J. - Vaganian R., Groningen, 1993]"}, {"id": 55, "fen": "5r1k/1b3ppp/pp2p3/4P3/P1qRpPQB/4R3/1P4PP/7K b - - 0 1", "sourceSolution": "1...£f1# [Tiviakov S. - Van Wely L., New York, 1994]"}, {"id": 56, "fen": "1r4r1/2R3Np/3p1kp1/p2P2p1/bp6/n5P1/PP3P1P/K3R3 w - - 0 1", "sourceSolution": "1.¦e6# [Moiseenko A. - Carlsson P., Plovdiv, 2008]"}, {"id": 57, "fen": "Q7/4r1pk/p6p/1p2B3/3P1Pp1/2P5/PP2q2P/7K b - - 0 1", "sourceSolution": "1...£f1# [Smeets J. - Bacrot E., Wijk aan Zee, 2008]"}, {"id": 58, "fen": "8/5p2/p1b1pP1k/P1B1P1pp/1p3NqP/1P1Q4/1KP5/8 w - - 0 1", "sourceSolution": "1.¥f8# [Shomoev A. - Smirnov P., St. Petersburg, 2006]"}, {"id": 59, "fen": "8/1pp4k/p2nB2q/P5Q1/4p3/6P1/5P2/6K1 w - - 0 1", "sourceSolution": "1.£g8# [Kosic D. - Ivanisevic I., Kopaonik, 2005]"}, {"id": 60, "fen": "7k/R4R2/8/1p3np1/2p5/2P1q2p/1P6/5K2 b - - 0 1", "sourceSolution": "1...¤g3# [Wells P. - Socko B., Mallorca, 2004]"}], "Matt in 2": [{"id": 1, "fen": "2r3k1/5ppp/8/8/2p5/p6P/Pr1R1PP1/3R2K1 w - - 0 1", "sourceSolution": "1.¦d8+ ¦xd8 2.¦xd8#"}, {"id": 2, "fen": "6k1/5ppp/1pb5/3q4/8/1P2Q2P/r4PP1/4R1K1 w - - 0 1", "sourceSolution": "1.£e8+ ¥xe8 2.¦xe8#"}, {"id": 3, "fen": "3R1rk1/p5pp/b7/6N1/7P/2p3P1/Pr3PB1/6K1 w - - 0 1", "sourceSolution": "1.¥d5+ ¢h8 2.¦xf8#"}, {"id": 4, "fen": "2r5/p4p1k/6p1/1p6/5P2/1P1R4/PBr3PP/6K1 w - - 0 1", "sourceSolution": "1.¦h3+ ¢g8 2.¦h8#"}, {"id": 5, "fen": "2r2rk1/pbq2pb1/1p2p3/4P3/1n6/3R2Q1/PPP1NP2/1K5R w - - 0 1", "sourceSolution": "1.£xg7+ ¢xg7 2.¦g3#"}, {"id": 6, "fen": "Q5qk/1p2K2p/2p3Pp/2P5/1P6/8/2B4r/8 w - - 0 1", "sourceSolution": "1.g7+ ¢xg7 2.£a1#"}, {"id": 7, "fen": "r6k/pb4pp/1pq4N/2p5/8/PQ4P1/1P3P1P/4R1K1 w - - 0 1", "sourceSolution": "1.£g8+ ¦xg8 2.¤f7#"}, {"id": 8, "fen": "8/4R2p/1bkpP1p1/1Np3P1/2P5/4p3/5r1r/1R1K4 w - - 0 1", "sourceSolution": "1.¦c7+ ¥xc7 2.¤a7#"}, {"id": 9, "fen": "4rk2/p4p1p/1p4p1/1P6/8/4B1P1/1Pr2P1P/4R1K1 w - - 0 1", "sourceSolution": "1.¥h6+ ¢g8 2.¦xe8#"}, {"id": 10, "fen": "2rr4/5q1p/pb2kp2/1p2p3/PQ3P2/1N5K/1P4P1/2RR4 w - - 0 1", "sourceSolution": "1.f5+ ¢xf5 2.£g4#"}, {"id": 11, "fen": "5k2/8/4K3/8/2R5/8/8/8 w - - 0 1", "sourceSolution": "1.¦g4 ¢e8 2.¦g8#"}, {"id": 12, "fen": "1k5r/2pr2p1/1p5p/5p2/4nB2/5B2/2q1NQPP/R4K2 w - - 0 1", "sourceSolution": "1.£xb6+ ¢c8 2.¦a8#"}, {"id": 13, "fen": "2kq2rr/pp1nbp2/2p1p1b1/P4p1p/1PBP1B1P/2P2QN1/5PP1/R3R1K1 w - - 0 1", "sourceSolution": "1.£xc6+ bxc6 (1...£c7 2.£xc7#) 2.¥a6# [Boschetti C. - Dürig W., 1989]"}, {"id": 14, "fen": "r3r1k1/p2Q1p1p/6p1/2Pp4/4q3/P1b1B3/4BPPP/3K2NR b - - 0 1", "sourceSolution": "1...£b1+ 2.¥c1 £b3# [Trbusic N. - Dürig W., 2007]"}, {"id": 15, "fen": "8/8/1Q4pk/5q2/7p/5p1P/5P2/6K1 b - - 0 1", "sourceSolution": "1...£g5+ [2.¢f1 (2.¢h1 £g2#, 2.¢h2 £g2#) £c1# Kuchen D. - Glauser H., 1998]"}, {"id": 16, "fen": "5k1B/pp3P2/2r1P1pp/3p1q2/3p4/8/P4P1P/4R1K1 w - - 0 1", "sourceSolution": "1.e7+ ¢xf7 2.e8£# [Morphy P. - Maurian C., New Orleans, 1866]"}, {"id": 17, "fen": "5R2/8/3p3p/3Pkn2/6K1/7r/8/8 b - - 0 1", "sourceSolution": "1...¦g3+ 2.¢h5 ¦g5# [Walser M. - Rothenflue B., 1998]"}, {"id": 18, "fen": "r1b4r/p7/k1pQ1np1/Np3q2/7p/8/PP2B1PP/2RR3K w - - 0 1", "sourceSolution": "1.¦xc6+ ¢xa5 2.£a3# [Dürig W. - Levrand R., 2002]"}, {"id": 19, "fen": "r1b1k2r/1pQ2pp1/p1n1p2p/2B1q3/1PB5/8/5PPP/R2R2K1 w - - 0 1", "sourceSolution": "1.¦d8+ [¤xd8 2.£e7# Dürig W. - Schnarwiler H., 1988]"}, {"id": 20, "fen": "4k3/pp4p1/2p1p3/1PPpN3/3Pn3/P2QP3/6q1/4KR1r b - - 0 1", "sourceSolution": "1...¦xf1+ 2.£xf1 2.£d2# [Dobias P. - Dürig W., 1990]"}, {"id": 21, "fen": "2r3k1/pb2bppp/4p3/1B2q2n/6P1/P2QP3/3N1P1P/1N2KR2 b - - 0 1", "sourceSolution": "1...¦c1+ 2.¢e2 ¤f4# [Benko P. – Ivkov B., Tel Aviv, 1964]"}, {"id": 22, "fen": "3qB3/6kr/3pQ3/p1pP1p2/P1P5/7P/5P1K/8 w - - 0 1", "sourceSolution": "1.£f7+ [¢h6 (1...¢h8 2.£f8#) 2.£g6# Browne W. – Gligoric S., Venedig, 1971]"}, {"id": 23, "fen": "4rr2/1p5R/3p1p2/p2Bp3/P2bPkP1/1P5R/1P2K3/8 w - - 0 1", "sourceSolution": "1.¦g7 [¥xb2 (oder sonst ein Zug) 2.¦f3# Karpov A. – Mecking H., Hastings, 1971]"}, {"id": 24, "fen": "6k1/2p4p/2p3p1/p7/3pR1K1/PP1P2R1/1B6/5q2 b - - 0 1", "sourceSolution": "1...£f5+ [2.¢h4 £h5# Filip M. – Tal M., Sochi, 1973]"}, {"id": 25, "fen": "6rk/6pp/5p2/p7/P2Q1N2/4P1P1/2r2n1P/6K1 w - - 0 1", "sourceSolution": "1.¤g6+ [hxg6 2.£h4# Vaganian R. - Kortschnoj V., Moskau, 1975]"}, {"id": 26, "fen": "8/1p3Qb1/p5pk/P1p1p1p1/1P2P1P1/2P1N2n/5P1P/4qB1K w - - 0 1", "sourceSolution": "1.¤f5+ gxf5 (1...¢h7 2.£xg7#) 2.£h5# [Kortschnoj V. - Gutman L., Wijk aan Zee, 1987]"}, {"id": 27, "fen": "r3k3/2p3pp/Nnp1b3/3pP3/pQ4Pq/7P/PPP5/1K3R2 w - - 0 1", "sourceSolution": "1.£f8+ ¢d7 2.¤c5# [Anand V. - Sokolov I., Wijk aan Zee, 1989]"}, {"id": 28, "fen": "8/6pp/8/5pk1/1R6/PP4PK/3rq2P/7Q b - - 0 1", "sourceSolution": "1...£g4+ [2.¦xg4+ fxg4# Browne W. - Karpov A., Las Palmas, 1977]"}, {"id": 29, "fen": "r6k/pp1b2p1/3Np2p/r3P3/1q1p1PRQ/2nB4/2PK1B1P/4R3 w - - 0 1", "sourceSolution": "1.£xh6+ [gxh6 (1...¢g8 2.£xg7#) 2.¤f7# Fischer R. - Benko P., Curacao, 1962]"}, {"id": 30, "fen": "r1n3k1/pp2q2p/2ppr1pQ/4p3/8/2N4R/PPP3PP/5RK1 w - - 0 1", "sourceSolution": "1.¦f8+ £xf8 2.£xh7# [Blackburne J. - Steinitz W., London, 1883]"}, {"id": 31, "fen": "8/6p1/6k1/1p1N1n2/1P1n1PKp/7P/6P1/8 b - - 0 1", "sourceSolution": "1...¤h6+ [¢xh4 2.¤df5# Stenborg A. – Pachman L., Dublin, 1957]"}, {"id": 32, "fen": "r5k1/pp5p/3pN1p1/2pP4/2Q1R1P1/P3BK2/1q6/7r b - - 0 1", "sourceSolution": "1...¦h3+ [2.¢f4 £f6# Partos C. - Kortschnoj V., Biel, 1979]"}, {"id": 33, "fen": "6k1/5pp1/8/1bBn3p/1P5P/5PP1/3QpKB1/1q6 b - - 0 1", "sourceSolution": "1...£f1+ [2.¥xf1 exf1£# Knezevic M. - Kasparov G., Banja Luka, 1979]"}, {"id": 34, "fen": "3Q4/5pkp/1pB1p1p1/pP6/3P2K1/6P1/5q1P/8 b - - 0 1", "sourceSolution": "1...£f5+ [2.¢h4 £h5# Smejkal J. - Szabo L., Amsterdam, 1973]"}, {"id": 35, "fen": "6r1/7k/1p6/1Pp4p/3pPp2/3P1N1q/Q4RrP/7K b - - 0 1", "sourceSolution": "1...£xh2+ [2.¤xh2 ¦g1# Pfleger H. - Quinteros M., Manila, 1974]"}, {"id": 36, "fen": "6rk/8/b2pRp2/2pP4/5P2/PP2nN2/5K1P/3R4 b - - 0 1", "sourceSolution": "1...¦g2+ [2.¢xe3 (oder 2.¢e1) ¦e2# Gheorghiu F. - Miles A., Teeside, 1975]"}, {"id": 37, "fen": "r3r1k1/7p/2p2b2/p1Bp1Q1q/5Kp1/P1P3P1/4NP1P/2R1R3 b - - 0 1", "sourceSolution": "1...¦e4+ [2.£xe4 £g5# Williams A. - Hort V., Nice, 1974]"}, {"id": 38, "fen": "8/8/2p5/1p1p3R/5k2/8/rPP1KPPP/8 w - - 0 1", "sourceSolution": "1.f3 [¦xb2 (oder sonst ein Zug) 2.g3# Spassky B. - Kakageldyev A., Riga, 1975]"}, {"id": 39, "fen": "4Nb2/5k1p/6p1/5p2/3Q1P2/3R3P/2P4K/qr6 w - - 0 1", "sourceSolution": "1.£d5+ [¢xe8 (¢e7) 2.£d7# Levenfish G. - Aronin L., Gorky, 1950]"}, {"id": 40, "fen": "8/2N5/2p3kp/p1br2p1/6K1/8/P1R4P/8 b - - 0 1", "sourceSolution": "1...¦d3 [2.¦xc5 h5# Szabados E. - Gligoric S., Venice, 1949]"}, {"id": 41, "fen": "2R5/pr1k1b2/2N2p2/PP1P4/3K3p/5P2/7P/8 w - - 0 1", "sourceSolution": "1.¦d8+ [¢c7 2.d6# Kortschnoj V. - Suetin A., Yerevan, 1962]"}, {"id": 42, "fen": "8/3b4/B1p4k/3p3P/p3p3/4P1b1/P1R1K1R1/1r6 b - - 0 1", "sourceSolution": "1...¥g4+ 2.¢d2 ¥e1# [Mikenas V. - Petrosian T., Tallinn, 1964]"}, {"id": 43, "fen": "5R2/3k1r1r/1p2p2p/p2pP2P/3P4/P7/KP6/2R5 w - - 0 1", "sourceSolution": "1.¦fc8 [a4 2.¦1c7# Velimirovic D. - Cebalo M., Titograd, 1965]"}, {"id": 44, "fen": "r7/3qr3/p1b2Qp1/1p1k1p2/3B4/P7/1PP1N1PP/3R2K1 w - - 0 1", "sourceSolution": "1.¤c3+ [¢c4 2.b3# Nikolic S. - Kavalek L., Sarajevo, 1967]"}, {"id": 45, "fen": "8/2r2pk1/3p2p1/3Pb3/2P1P2K/6r1/1R2B3/1R6 b - - 0 1", "sourceSolution": "1...¢h6 [2.¦b8 g5# Hort V. - Larsen B., Sousse, 1967]"}, {"id": 46, "fen": "6k1/R5p1/1p5p/8/3rN3/5PPb/PPr4P/4R1K1 w - - 0 1", "sourceSolution": "1.¤f6+ [gxf6 (¢f8; ¢h8) 2.¦e8# Averbakh Y. - Ragozin V., Kiev, 1954]"}, {"id": 47, "fen": "4r3/2q1rpk1/p3bN1p/2p3p1/4QP2/2N4P/PP4P1/5RK1 w - - 0 1", "sourceSolution": "1.£h7+ [¢xf6 (1...¢f8 2.£g8#) 2.¤e4# Najdorf M. - Kalkstein R., Montevideo, 1954]"}, {"id": 48, "fen": "5r1k/pR3ppp/1p6/5N2/N3n3/1B2Pp1P/PP3r2/7K b - - 0 1", "sourceSolution": "1...¦g2 [2.¦xa7 (oder sonst ein Zug) ¤f2# Bronstein D.- Spassky B., Riga, 1958]"}, {"id": 49, "fen": "6Q1/2k1b3/pq6/5B2/3P3P/6P1/6K1/8 w - - 0 1", "sourceSolution": "1.£c8+ [¢d6 2.£d7# Taimanov M. - Mikenas V., Tallinn, 1965]"}, {"id": 50, "fen": "5krR/3p1p2/p7/2PPQ3/3P4/6P1/5PK1/qq6 w - - 0 1", "sourceSolution": "1.£d6+ [¢g7 (1...¢e8 2.¦xg8#) 2.£h6# Tal M. - Ciric D., Sarajevo, 1966]"}, {"id": 51, "fen": "2r3k1/2q3B1/1p3PQ1/3bp3/8/6P1/6P1/1B4K1 w - - 0 1", "sourceSolution": "1.f7+ ¥xf7 2.£h7# [Keene R. - Rantanen M., Havana, 1966]"}, {"id": 52, "fen": "5k1r/ppq1b3/6Q1/2pBn2p/3p4/1P1P2P1/P1P2P2/2B3K1 w - - 0 1", "sourceSolution": "1.¥h6+ ¦xh6 2.£g8# [Gutman L. - Kholmov R., Riga, 1975]"}, {"id": 53, "fen": "5r1k/1p4bp/3Q2p1/1N6/6nq/2N3P1/PP2R3/6K1 b - - 0 1", "sourceSolution": "1...¦f1+ [2.¢xf1 (¢g2) £h1# Vaganian R. - Pigott J., London, 1975]"}, {"id": 54, "fen": "2b1rk2/4p1bp/1BQ1P1p1/p4p2/P7/8/4rPPP/3R2K1 w - - 0 1", "sourceSolution": "1.£xe8+ [¢xe8 2.¦d8# Colle E. - Rubinstein A., Rotterdam, 1931]"}, {"id": 55, "fen": "2k3r1/pppnQ1qp/3p4/3P4/2P5/5p1B/PP3PrB/R3R2K w - - 0 1", "sourceSolution": "1.£e8+ ¦xe8 2.¦xe8# [Kashdan I. - Euwe M., Hastings, 1931]"}, {"id": 56, "fen": "1r6/R1p1kpp1/2Pp3p/8/3K4/1r2P3/1P4PP/1R6 b - - 0 1", "sourceSolution": "1...¦8b4+ [2.¢d5 ¦d3# Alekhine A. - Grijns G., Bandung, 1933]"}, {"id": 57, "fen": "r2q1bQ1/pb1nk1N1/2p2r2/7p/Pp1P3N/4P3/1P3PPP/2R2RK1 w - - 0 1", "sourceSolution": "1.¤hf5+ ¦xf5 2.£e6# [Capablanca J. - Friedmann I., Cuernavaca, 1933]"}, {"id": 58, "fen": "6k1/pp6/5p2/P2p2pp/1PbPr3/2P2KPP/3Rr3/R4N2 b - - 0 1", "sourceSolution": "1...g4+ [2.hxg4 hxg4# Steiner L. - Eliskases E., Ujpest, 1934]"}, {"id": 59, "fen": "6k1/4r1bp/bpQp2p1/p2Pp3/P3P2P/1NP1B2q/1P3K2/R2R4 b - - 0 1", "sourceSolution": "1...£h2+ [2.¢f3 (2.¢e1 £e2#) 2...¥e2# Henneberger W. - Sämisch F., Bad Liebwerda, 1934]"}, {"id": 60, "fen": "6k1/p4pp1/8/3p3N/Q1n1pP2/7P/1r4P1/Rr3nKR b - - 0 1", "sourceSolution": "1...¤fe3+ [2.¦xb1 (¢h2) ¦xg2# Keres P. - Schmidt P., Parnu, 1936]"}], "Matt in 3": [{"id": 1, "fen": "3r1rk1/1p3ppp/p1b5/R4N2/3p3R/3P4/1PP2PPP/6K1 w - - 0 1", "sourceSolution": "1.¤e7+ ¢h8 2.¦xh7+ ¢xh7 3.¦h5#"}, {"id": 2, "fen": "3R3R/5pp1/bp2p1k1/b6p/4P1NP/PP3PK1/q7/8 w - - 0 1", "sourceSolution": "1.¦h6+ gxh6 2.¦g8+ ¢h7 3.¤f6#"}, {"id": 3, "fen": "r2q1r1k/p3N1pp/1pp2pb1/8/8/RQ6/1P3PPP/4R1K1 w - - 0 1", "sourceSolution": "1.£g8+ ¦xg8 2.¤xg6+ hxg6 3.¦h3#"}, {"id": 4, "fen": "8/p6R/2N5/2p2pn1/1p2r1k1/1P2r3/P1P3K1/5R2 w - - 0 1", "sourceSolution": "1.¤e5+ ¦xe5 2.¦f4+ ¢xf4 3.¦h4#"}, {"id": 5, "fen": "8/2p3r1/p6p/1pP2K1k/1P1p4/3R2P1/6P1/8 w - - 0 1", "sourceSolution": "1.g4+ ¦xg4 (1...¢h4 2.¦h3#) 2.¦h3+ ¦h4 3.g4#"}, {"id": 6, "fen": "rn3rk1/1p1p1ppp/4p3/p1QPP3/P7/5N1P/1q3PP1/2R2RK1 w - - 0 1", "sourceSolution": "1.£xf8+ ¢xf8 2.¦c8+ ¢e7 3.d6#"}, {"id": 7, "fen": "r5k1/pb3Npp/1pq5/2p5/8/PQ4P1/1P3P1P/4R1K1 w - - 0 1", "sourceSolution": "1.¤h6+ ¢h8 2.£g8+ ¦xg8 3.¤f7#"}, {"id": 8, "fen": "7k/4K1pp/7N/8/8/8/8/B7 w - - 0 1", "sourceSolution": "1.¥f6 gxf6 2.¢f8 f5 3.¤f7#"}, {"id": 9, "fen": "3q1r1k/p2n2b1/3P4/2p3Np/1pQ3p1/1B4P1/P4P2/6K1 w - - 0 1", "sourceSolution": "1.£g8+ ¦xg8 2.¤f7+ ¢h7 3.¥c2#"}, {"id": 10, "fen": "6k1/pb2Qp1p/1p4p1/1P1q4/2r5/4B1P1/1Pr2P1P/1R2R1K1 w - - 0 1", "sourceSolution": "1.£f8+ ¢xf8 2.¥h6+ ¢g8 3.¦e8#"}, {"id": 11, "fen": "8/8/2p5/2P5/5N2/6K1/4B3/7k w - - 0 1", "sourceSolution": "1.¥d3 ¢g1 2.¤h3+ ¢h1 3.¥e4#"}, {"id": 12, "fen": "1r2r2k/5p1B/7Q/3pq3/8/8/5PPP/5RK1 w - - 0 1", "sourceSolution": "1.¥g6+ ¢g8 2.£h7+ ¢f8 3.£xf7#"}, {"id": 13, "fen": "4r2k/p3qp1B/1r5Q/3p4/8/8/P4PPP/5RK1 w - - 0 1", "sourceSolution": "1.¥g6+ ¢g8 2.£h7+ ¢f8 3.£h8#"}, {"id": 14, "fen": "4r2k/p1p3bp/1Ppp2p1/8/8/qP6/5QBP/1K1R3R b - - 0 1", "sourceSolution": "1...£a1+ [2.¢c2 £b2+ 3.¢d3 £c3# Welsh M. - Glauser H., 1999]"}, {"id": 15, "fen": "r3r1k1/ppp2Np1/6Pp/n3pB2/5q1b/BQP5/PP1R4/2K4R w - - 0 1", "sourceSolution": "1.¤xh6+ ¢h8 2.£g8+ [¦xg8 3.¤f7# Sudarevic N. - Heinzer S., 1996]"}, {"id": 16, "fen": "r5k1/pp4b1/2p1p3/3pP2Q/3q2P1/2N5/PPP2R2/2K5 w - - 0 1", "sourceSolution": "1.£f7+ [¢h8 2.¦h2+ ¥h6 3.¦xh6# Dürig W. - Fleischmann A., 1998]"}, {"id": 17, "fen": "r1bqrknQ/5p1R/p2p2p1/2pPn1P1/1p3N2/5P2/PPP5/1K1R1BN1 w - - 0 1", "sourceSolution": "1.¤xg6+ [¤xg6 (1...fxg6 2.£g7#) 2.£g7+ ¢e7 3.£xf7# Dürig W. - Allegro V., 1998]"}, {"id": 18, "fen": "8/8/3R1K1k/4N1p1/4B2p/7P/1q6/8 w - - 0 1", "sourceSolution": "1.¢f7+ [¢h5 2.¥g6+ ¢h6 3.¤g4# Smyslov V. – Filip M., München, 1958]"}, {"id": 19, "fen": "8/7R/2r5/8/P3n3/8/3nk1PP/R5K1 b - - 0 1", "sourceSolution": "1...¤f3+ [2.gxf3 (2.¢h1 ¤f2#) 2...¦g6+ 3.¢h1 ¤f2# Kortschnoj V. – Karpov A., Baguio City, 1978]"}, {"id": 20, "fen": "6kq/1pQ3b1/2p5/2Pp1B1p/r2P1BnP/6P1/5PK1/8 w - - 0 1", "sourceSolution": "1.£c8+ ¥f8 (1...¢f7 2.£e6+ ¢f8 3.¥d6#) 2.£e6+ ¢g7 3.£g6# [Portisch L. - Larsen B., Tilburg, 1979]"}, {"id": 21, "fen": "8/4NK2/5R2/6k1/7p/r6P/8/8 w - - 0 1", "sourceSolution": "1.¦f5+ [¢h6 2.¤g8+ ¢h7 3.¦h5# Karpov A. - Timman J., Bugojno, 1986]"}, {"id": 22, "fen": "3R4/5Bpk/6bp/p6q/P1p2P2/6P1/2r4P/4Q1K1 w - - 0 1", "sourceSolution": "1.¦h8+ [¢xh8 2.£e8+ ¢h7 3.£g8# Karpov A. - Najdorf M., Mar del Plata, 1982]"}, {"id": 23, "fen": "7Q/8/6pb/2p4k/p1Bpq2P/6PK/P7/8 w - - 0 1", "sourceSolution": "1.£e5+ [g5 (1...£xe5 (1...£f5+) 2.g4#) 2.¥f7+ £g6 3.g4# Karpov A. - Gurevich M., Reggio Emilia, 1991]"}, {"id": 24, "fen": "2r2qk1/r4p1p/b3pBpQ/n3P2P/p2p3R/P5P1/2p2PB1/R5K1 w - - 0 1", "sourceSolution": "1.£xh7+ [¢xh7 2.hxg6+ ¢g8 (2...¢xg6 3.¥e4#) 3.¦h8# Fischer R. - Myagmarsuren L., Sousse, 1967]"}, {"id": 25, "fen": "8/4B2p/7n/4pqpk/P2n1b2/R3P2P/2r3P1/1Q3R1K b - - 0 1", "sourceSolution": "1...£xh3+ [2.gxh3 (2.¢g1 £xg2#) 2...¦h2+ 3.¢g1 ¤e2# Malich B. - Ljubojevic L., Amsterdam, 1972]"}, {"id": 26, "fen": "8/1p3p2/p2p1k2/3PqPp1/P5K1/6Q1/2P3B1/8 b - - 0 1", "sourceSolution": "1...£xf5+ [2.¢h5 g4+ 3.¢h6 (3.¢h4 £g5#) 3...£g6# Kuijpers F. - Timman J., Leeuwarden, 1978]"}, {"id": 27, "fen": "6rk/3R2rp/8/4Qp2/p1B2P2/1P4P1/6KP/2q5 w - - 0 1", "sourceSolution": "1.£xg7+ [¦xg7 2.¦d8+ ¦g8 3.¦xg8# Andersson U. - Rogers I., Malta, 1980]"}, {"id": 28, "fen": "r1b1k1nr/1p1n2bp/p1pQ2p1/4p1N1/4PB2/2q5/P1P2PPP/1R1R2K1 w - - 0 1", "sourceSolution": "1.£e6+ [¢d8 (17...¤e7 2.£f7+ ¢d8 3.¤e6#) 2.¤f7+ ¢c7 3.£d6# Tal M. - Tringov G., Amsterdam, 1964]"}, {"id": 29, "fen": "3q2k1/1Q4pp/p7/5R2/6P1/2P2P1K/PPn1r3/8 w - - 0 1", "sourceSolution": "1.£f7+ [¢h8 2.£f8+ £xf8 3.¦xf8# Petrosian T. - Olafsson F., Stockholm, 1962]"}, {"id": 30, "fen": "6Q1/4k3/2qrB3/b3pP1p/1p6/2p2PP1/PP5K/5R2 w - - 0 1", "sourceSolution": "1.f6+ [¢xf6 2.£f7+ ¢g5 3.£g7# Bhend E. - Casa A., Havana, 1966]"}, {"id": 31, "fen": "2q3k1/5p2/p4B1Q/3b3p/7P/P7/5PPK/3r4 b - - 0 1", "sourceSolution": "1...¦h1+ [2.¢xh1 £h3+ 3.¢g1 £xg2# Poulsen C. - Enevoldsen H., Dänemark, 1951]"}, {"id": 32, "fen": "2b2rk1/5qb1/3p2p1/pp1P2Pp/2p1Pr1P/2P3N1/PP1QB1K1/3R3R b - - 0 1", "sourceSolution": "1...¦f2+ [2.¢g1 ¦g2+ 3.¢xg2 £f2# Ragozin V. – Nilsson Z., Jonkoping, 1958]"}, {"id": 33, "fen": "5k2/2b2p1P/8/2p1pP2/2p1NnRP/5q2/1P1Q4/6K1 w - - 0 1", "sourceSolution": "1.h8£+ ¢e7 2.f6+ ¢e6 3.£c8# [Simagin V. - Taimanov M., Kislovodsk, 1966]"}, {"id": 34, "fen": "rn4r1/1p2Q2p/pkb5/3RN3/8/8/PPP2PP1/2K5 w - - 0 1", "sourceSolution": "1.¤c4+ [¢a7 2.£e3+ b6 3.£xb6# Euwe M. - Von Hartingsvelt H., Amsterdam, 1925]"}, {"id": 35, "fen": "r3b3/pNR5/k7/3p1n2/P2p1B2/2P5/2P2PrP/1R1K4 w - - 0 1", "sourceSolution": "1.¦c6+ [¥xc6 2.¤c5+ ¢a5 3.¥c7# Ivkov B. - Portisch L., Bled, 1961]"}, {"id": 36, "fen": "7r/pbR1bk1N/1p1p1p2/5Pp1/3Qq3/4B3/PP4P1/4K3 w - - 0 1", "sourceSolution": "1.£xf6+ [¢e8 2.£xh8+ ¥f8 3.£xf8# Ljubojevic L. - Smejkal J., Wijk aan Zee, 1972]"}, {"id": 37, "fen": "2bqr2k/1r1n2bp/pp1pBp2/2pP1PQ1/P3PN2/1P4P1/1B5P/R3R1K1 w - - 0 1", "sourceSolution": "1.¤g6+ [hxg6 2.£h4+ ¥h6 3.£xh6# Smyslov V. - Dominguez Sanz J., Las Palmas, 1972]"}, {"id": 38, "fen": "2rr3k/1p5p/5p2/8/1b3Pb1/1PN3PP/pP6/N1K2R1R b - - 0 1", "sourceSolution": "1...¦xc3+ [2.bxc3 ¥a3+ 3.¢c2 ¥f5# Beliavsky A. - Geller E., Moscow, 1975]"}, {"id": 39, "fen": "2k4r/pp3pQ1/2q5/2n5/8/N3pPP1/P3r3/R1R3K1 b - - 0 1", "sourceSolution": "1...¦h1+ [2.¢xh1 £xf3+ 3.¢g1 £g2# Forintos G. - Spassky B., Leningrad, 1960]"}, {"id": 40, "fen": "r2rkn2/pp2b1Q1/2p1p2p/3q4/3PN2P/2P3R1/P4PP1/5RK1 w - - 0 1", "sourceSolution": "1.£xe7+ [¢xe7 2.¦g7+ ¢e8 3.¤f6# Kortschnoj V. - Petersons A., Kiev, 1964]"}, {"id": 41, "fen": "2b4Q/2qrrp2/6k1/2p2p1p/1pB1P2P/1P1P2P1/7K/8 w - - 0 1", "sourceSolution": "1.exf5+ [¢xf5 2.£xh5+ ¢f6 3.£g5# Geller E. - Liebert H., Kapfenberg, 1970]"}, {"id": 42, "fen": "r1b2rk1/pp3ppp/8/8/4NQq1/1P6/P1P3P1/3R1RK1 w - - 0 1", "sourceSolution": "1.£xf7+ [¦xf7 [1...¢h8 2.£xf8#] 2.¦d8+ ¦f8 3.¦dxf8# Lematschko T. - Popova T., Moscow, 1970]"}, {"id": 43, "fen": "r1rR4/5kpp/p7/5p2/q2NpB2/4P3/5PPP/3Q2K1 w - - 0 1", "sourceSolution": "1.£h5+ [g6 (1...¢f6 2.£xf5+ ¢e7 3.¥g5#) 2.£xh7+ ¢f6 3.¦d6# Vaganian R. - Karpov A., Leningrad, 1970]"}, {"id": 44, "fen": "8/6pk/pN5p/4Rp1q/4nP2/2r4P/Q5P1/6RK b - - 0 1", "sourceSolution": "1...¦xh3+ 2.gxh3 £xh3+ 3.£h2 ¤f2# Larsen B. - Najdorf M., Lugano, 1968]"}, {"id": 45, "fen": "8/5r1k/p3Npp1/4p3/3nP3/4QP2/PP2q1P1/1KR5 w - - 0 1", "sourceSolution": "1.£h6+ [¢g8 (1...¢xh6 2.¦h1#) 2.¦c8+ ¦f8 3.¦xf8# Spassky B. - Kortschnoj V., Kiev, 1968]"}, {"id": 46, "fen": "4r1k1/pR3pp1/1n3P1p/q2p4/5N1P/P1rQpP2/8/2B2RK1 w - - 0 1", "sourceSolution": "1.£g6 [fxg6 2.¦xg7+ ¢h8 (2...¢f8 3.¤xg6#) 3.¤xg6# Bronstein D. - Geller E., Moscow, 1961]"}, {"id": 47, "fen": "rnbq1b1r/pp4kp/5np1/4p2Q/2BN1R2/4B3/PPPN2PP/R5K1 w - - 0 1", "sourceSolution": "1.£h6+ [¢xh6 2.¦h4+ ¢g7 3.¥h6# Keres P. - Verbac, Berlin, 1939]"}, {"id": 48, "fen": "8/5R2/1p4pk/4N3/2n2P2/P5P1/6K1/2r5 w - - 0 1", "sourceSolution": "1.¤g4+ [¢h5 2.¤f6+ ¢h6 3.¦h7# Capablanca J. - MenchikV., Margate, 1939]"}, {"id": 49, "fen": "R6R/1r3pp1/4p1kp/3pP3/1r2qPP1/7P/1P1Q3K/8 w - - 0 1", "sourceSolution": "1.f5+ [exf5 2.£xh6+ gxh6 3.¦ag8# Bernstein O. - Kotov A., Groningen, 1946]"}, {"id": 50, "fen": "5k2/5p1p/5Pp1/1p6/3Q4/1P5P/1P2qrPK/8 w - - 0 1", "sourceSolution": "1.£c5+ [¢g8 2.£c8+ £e8 3.£xe8# Shamkovich L. - Botterill G., Hastings, 1977]"}, {"id": 51, "fen": "r5k1/pp4p1/2p1q1p1/4P1B1/2nn2P1/5Q2/P4RK1/5R2 w - - 0 1", "sourceSolution": "1.£f8+ [¦xf8 2.¦xf8+ ¢h7 3.¦h1# Uhlmann W. - Smyslov V., Hastings, 1972]"}, {"id": 52, "fen": "5Rr1/6Pk/4N3/7K/8/2p5/8/8 w - - 0 1", "sourceSolution": "1.¤g5+ [¢xg7 2.¦f7+ ¢h8 3.¦h7# Rashkovsky N. - Ivanov S., Elista, 1995]"}, {"id": 53, "fen": "r4r2/pp1n2k1/2p3p1/5pP1/1qBP2Q1/1P6/P4P2/4RK1R w - - 0 1", "sourceSolution": "1.¦h7+ [¢xh7 2.£h4+ ¢g7 3.£h6# Novikov I. - Brodsky M., Yerevan, 1996]"}, {"id": 54, "fen": "1Q2R3/2r2p1k/p2N2p1/q6r/6n1/4P1P1/5PP1/5RK1 b - - 0 1", "sourceSolution": "1...¦h1+ [2.¢xh1 £h5+ 3.¢g1 £h2# Drasko M. - Lputian S., Ubeda, 1996]"}, {"id": 55, "fen": "3r4/p6p/1p1r1Ppk/n6q/3N3Q/4P2B/7P/6RK w - - 0 1", "sourceSolution": "1.¤f5+ [gxf5 2.£f4+ £g5 3.£xg5# Loginov V. - Horvath J., Budapest, 1994]"}, {"id": 56, "fen": "R7/5ppk/4b2p/2b1Q3/2r5/P7/2q2PPP/5RK1 b - - 0 1", "sourceSolution": "1...£xf2+ [2.¦xf2 ¦c1+ 3.£e1 ¦xe1# Chiburdanidze M. - Geller E., Wien, 1993]"}, {"id": 57, "fen": "3r1q1k/2n2p2/5N1p/p3PP2/1p1P1QR1/2r5/P5p1/5RK1 w - - 0 1", "sourceSolution": "1.¦g8+ [£xg8 2.£xh6+ £h7 3.£xh7# Sokolov I. - Hort V., Biel, 1989]"}, {"id": 58, "fen": "6r1/7k/4p2P/3pp3/3q1r2/pPQ5/P1P5/2K3RR w - - 0 1", "sourceSolution": "1.£c7+ [¢h8 2.¦xg8+ ¢xg8 3.£g7# Sokolov A. - Ljubojevic L., Belfort, 1988]"}, {"id": 59, "fen": "5Q2/pb5k/3p4/PPp3pp/2Bqn3/8/6PP/4R2K w - - 0 1", "sourceSolution": "1.¥g8+ [¢h8 (1...¢g6 2.£f7+ ¢h6 3.£h7#) 2.¥e6+ ¢h7 3.¥f5# Portisch L. - Timman J., Montpellier, 1985]"}, {"id": 60, "fen": "4Rrk1/3Q2bp/6p1/2p1P3/3p3q/6pB/4n3/5N1K b - - 0 1", "sourceSolution": "1...g2+ [2.¢xg2 £f2+ 3.¢h1 £g1# Cvitan O. - Psakhis L., Zagreb, 1993]"}], "Matt in 4": [{"id": 1, "fen": "rnb3kr/ppp2ppp/1b6/3q4/3pN3/Q4N2/PPP2KPP/R1B1R3 w - - 0 1", "sourceSolution": "1.¤f6+ gxf6 2.£f8+ ¢xf8 3.¥h6+ ¢g8 4.¦e8#"}, {"id": 2, "fen": "rk6/N4ppp/Qp2q3/3p4/8/8/5PPP/2R3K1 w - - 0 1", "sourceSolution": "1.¦c8+ £xc8 2.£xb6+ £b7 3.¤c6+ ¢c8 4.£d8#"}, {"id": 3, "fen": "r2r1n2/pp2bk2/2p1p2p/3q4/P2PN1QP/2P3R1/5PP1/5RK1 w - - 0 1", "sourceSolution": "1.£g7+ ¢e8 2.£xe7+ ¢xe7 3.¦g7+ ¢e8 4.¤f6#"}, {"id": 4, "fen": "2q2r2/5rk1/4pNpp/p2pPn2/2pP2QP/2P2R2/P1B3P1/6K1 w - - 0 1", "sourceSolution": "1.£xg6+ ¢h8 (1...¢xg6 2.¦g3#) 2.¥xf5 exf5 3.£xh6+ ¦h7 4.£xh7#"}, {"id": 5, "fen": "r3r1k1/pbqpnpp1/1p1bp3/4n1NQ/PP2N3/2P4P/5PP1/R1B2RK1 w - - 0 1", "sourceSolution": "1.¤f6+ gxf6 (1...¢f8 2.¤gh7#) 2.£h7+ ¢f8 3.¤xe6+ dxe6 4.¥h6#"}, {"id": 6, "fen": "8/Q7/8/2p2p2/1k1n4/1P6/5P2/4KB1q b - - 0 1", "sourceSolution": "1...£e4+ 2.¢d2 (2.¢d1 £c2+ 3.¢e1 ¤f3#) 2...£c2+ 3.¢e3 (3.¢e1 ¤f3#) 3...£c1+ 4.¢d3 £c3#"}, {"id": 7, "fen": "r4b1r/pp1n2k1/1qp1p2p/3pP1pQ/1P6/2BP2N1/P4PPP/R4RK1 w - - 0 1", "sourceSolution": "1.¤f5+ exf5 2.e6+ ¢h7 3.£f7+ ¥g7 4.£xg7#"}, {"id": 8, "fen": "1rrbnk2/p2b1ppQ/3pp3/q5P1/3BP3/1Bp4R/PPP2P1P/1K4R1 w - - 0 1", "sourceSolution": "1.£xg7+ ¢e7 (1...¤xg7 2.¦h8+ ¢e7 3.¥f6#) 2.¥f6+ ¤xf6 3.gxf6+ ¢e8 4.£g8#"}, {"id": 9, "fen": "4kb1Q/5p2/1p6/1K1N4/2P2P2/8/q7/8 w - - 0 1", "sourceSolution": "1.£e5+ ¢d7 2.£c7+ ¢e6 3.£c8+ ¢d6 4.£c6#"}, {"id": 10, "fen": "r4b1r/pp1n2k1/1qp1p2p/3pP1pQ/1P6/2BP2N1/P4PPP/R4RK1 w - - 0 1", "sourceSolution": "1.¤f5+ exf5 2.e6+ ¢h7 (2...¤f6 3.£f7#) 3.£f7+ ¥g7 4.£xg7#"}, {"id": 11, "fen": "4r3/5pk1/1p4p1/p4p1p/PnqNN3/1p2QP1P/2r1P3/R2R3K w - - 0 1", "sourceSolution": "1.¤xf5+ gxf5 (1...¢g8 2.¤f6+ ¢h8 3.£h6#) 2.£g5+ ¢f8 3.£h6+ ¢e7 4.£d6#"}, {"id": 12, "fen": "1Q4R1/pp1rkp1p/2b1p2q/8/3p1P2/P3P3/KP6/8 w - - 0 1", "sourceSolution": "1.¦e8+ ¢f6 2.£e5+ ¢g6 4.¦g8+ £g7 5.£g5#"}, {"id": 13, "fen": "2k5/1N3R1p/2B1K1p1/1p2P3/1pp5/7n/5r2/8 w - - 0 1", "sourceSolution": "1.¤d6+ ¢b8 2.¦b7+ ¢a8 3.¦b6+ ¢a7 4.¤c8#"}, {"id": 14, "fen": "5r2/4ppbk/5q1p/4n2P/1p2P3/1P5Q/r2BKN2/2R3R1 b - - 0 1", "sourceSolution": "1...¦xd2+ 2.¢xd2 £xf2+ 3.¢d1 ¦d8+ 4.£d3 ¦xd3#"}, {"id": 15, "fen": "r1b4r/p1k5/2p2np1/1p3q2/2NQ3p/8/PP2B1PP/2RR3K w - - 0 1", "sourceSolution": "1.£d6+ ¢b7 2.¤a5+ ¢a6 3.¦xc6+ ¢xa5 4.£a3#"}]};
+
+const pieceImg = {
+  P: "https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
+  R: "https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
+  N: "https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
+  B: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
+  Q: "https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
+  K: "https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
+  p: "https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg",
+  r: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg",
+  n: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg",
+  b: "https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg",
+  q: "https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg",
+  k: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg"
+};
+
+const categoryOrder = ["Matt in 1", "Matt in 2", "Matt in 3", "Matt in 4"];
+const figurineToSanMap = {
+  "£": "Q",
+  "¦": "R",
+  "¥": "B",
+  "¤": "N",
+  "¢": "K"
+};
+
+const categorySelect = document.getElementById('categorySelect');
+const taskInput = document.getElementById('taskInput');
+const boardEl = document.getElementById('board');
+const solutionLineEl = document.getElementById('solutionLine');
+const statusTextEl = document.getElementById('statusText');
+const prevTaskBtn = document.getElementById('prevTaskBtn');
+const nextTaskBtn = document.getElementById('nextTaskBtn');
+const startBtn = document.getElementById('startBtn');
+const prevMoveBtn = document.getElementById('prevMoveBtn');
+const nextMoveBtn = document.getElementById('nextMoveBtn');
+const endBtn = document.getElementById('endBtn');
+
+function solutionTokenCandidates(sourceSolution) {
+  let text = sourceSolution;
+  while (/\([^()]*\)/.test(text)) {
+    text = text.replace(/\([^()]*\)/g, ' ');
+  }
+  text = text.replace(/[\[\]]/g, ' ');
+  text = text.replace(/[–—]/g, '-');
+  for (const [from, to] of Object.entries(figurineToSanMap)) {
+    text = text.split(from).join(to);
+  }
+  const rawTokens = text.split(/\s+/);
+  const tokens = [];
+  for (let token of rawTokens) {
+    token = token.trim().replace(/^[,;]+|[,;]+$/g, '');
+    if (!token) continue;
+    if (/^\d+\.(\.\.)?$/.test(token)) continue;
+    token = token.replace(/^\d+\.(\.\.)?/, '').replace(/^[,;]+|[,;]+$/g, '');
+    if (!token) continue;
+    if (/^(1-0|0-1|1\/2-1\/2)$/.test(token)) continue;
+    token = token.replace(/([a-h][18])N([+#]?)$/, '$1=N$2');
+    tokens.push(token);
+  }
+  return tokens;
+}
+
+const sanToFigurineMap = {
+  Q: '£',
+  R: '¦',
+  B: '¥',
+  N: '¤',
+  K: '¢'
+};
+
+function sanToFigurineText(san) {
+  return san
+    .replace(/^([KQRBN])/, (_, piece) => sanToFigurineMap[piece] || piece)
+    .replace(/=([QRBN])/g, (_, piece) => '=' + (sanToFigurineMap[piece] || piece));
+}
+
+function buildDisplaySolution(moves, sideToMove) {
+  if (!moves.length) return '';
+  const parts = [];
+  if (sideToMove === 'w') {
+    for (let i = 0; i < moves.length; i += 2) {
+      parts.push(`${(i / 2) + 1}.${sanToFigurineText(moves[i])}`);
+      if (i + 1 < moves.length) {
+        parts.push(sanToFigurineText(moves[i + 1]));
+      }
+    }
+  } else {
+    parts.push(`1...${sanToFigurineText(moves[0])}`);
+    let moveNo = 2;
+    for (let i = 1; i < moves.length; i += 2) {
+      parts.push(`${moveNo}.${sanToFigurineText(moves[i])}`);
+      if (i + 1 < moves.length) {
+        parts.push(`${moveNo}...${sanToFigurineText(moves[i + 1])}`);
+      }
+      moveNo += 1;
+    }
+  }
+  return parts.join(' ');
+}
+
+function extractPlayableSanMoves(sourceSolution, startFen) {
+  const candidates = solutionTokenCandidates(sourceSolution);
+  const chess = new Chess(startFen);
+  const appliedMoves = [];
+  const positions = [startFen];
+  for (const token of candidates) {
+    const move = chess.move(token, { sloppy: true });
+    if (!move) continue;
+    appliedMoves.push(move.san);
+    positions.push(chess.fen());
+    if (chess.in_checkmate()) break;
+  }
+  return { moves: appliedMoves, positions };
+}
+
+function buildRuntimePuzzle(puzzle) {
+  const base = { ...puzzle, moves: [], positions: [puzzle.fen], displaySolution: puzzle.sourceSolution };
+  if (typeof Chess === 'undefined') {
+    console.warn('chess.js konnte nicht geladen werden. Nur die Ausgangsstellung wird angezeigt.');
+    return base;
+  }
+  const parsed = extractPlayableSanMoves(puzzle.sourceSolution, puzzle.fen);
+  return {
+    ...puzzle,
+    moves: parsed.moves,
+    positions: parsed.positions,
+    displaySolution: buildDisplaySolution(parsed.moves, puzzle.fen.split(' ')[1])
+  };
+}
+
+function buildRuntimePuzzleGroups() {
+  return Object.fromEntries(
+    categoryOrder.map(category => [
+      category,
+      puzzleGroups[category].map(buildRuntimePuzzle)
+    ])
+  );
+}
+
+const runtimePuzzleGroups = buildRuntimePuzzleGroups();
+
+function getPuzzleIds(category) {
+  return runtimePuzzleGroups[category].map(p => p.id).sort((a, b) => a - b);
+}
+
+let currentCategory = localStorage.getItem('schachtaktik-reader-category') || categoryOrder[0];
+if (!categoryOrder.includes(currentCategory)) {
+  currentCategory = categoryOrder[0];
+}
+
+let currentPuzzleId = Number(localStorage.getItem('schachtaktik-reader-puzzle') || getPuzzleIds(currentCategory)[0]);
+if (!Number.isFinite(currentPuzzleId) || !getPuzzleIds(currentCategory).includes(currentPuzzleId)) {
+  currentPuzzleId = getPuzzleIds(currentCategory)[0];
+}
+
+let currentStep = Number(localStorage.getItem('schachtaktik-reader-step') || 0);
+if (!Number.isFinite(currentStep) || currentStep < 0) currentStep = 0;
+
+let actionLockedUntil = 0;
+const actionDebounceMs = 180;
+const controlLockedUntil = new Map();
+
+function runGuardedAction(key, fn) {
+  const now = Date.now();
+  if (now < (controlLockedUntil.get(key) || 0)) return;
+  controlLockedUntil.set(key, now + actionDebounceMs);
+  fn();
+}
+
+function blurControl(el) {
+  if (el && typeof el.blur === 'function') el.blur();
+}
+
+function activePuzzles() {
+  return runtimePuzzleGroups[currentCategory];
+}
+
+function currentPuzzle() {
+  return activePuzzles().find(p => p.id === currentPuzzleId) || activePuzzles()[0];
+}
+
+function currentPuzzleIndex() {
+  return getPuzzleIds(currentCategory).indexOf(currentPuzzleId);
+}
+
+function currentFen() {
+  const puzzle = currentPuzzle();
+  return puzzle.positions[Math.min(currentStep, puzzle.positions.length - 1)];
+}
+
+function puzzleOrientationIsBlack() {
+  return isBlackToMove(currentPuzzle().fen);
+}
+
+function saveState() {
+  localStorage.removeItem('schachtaktik-reader-theme');
+  localStorage.setItem('schachtaktik-reader-category', currentCategory);
+  localStorage.setItem('schachtaktik-reader-puzzle', String(currentPuzzleId));
+  localStorage.setItem('schachtaktik-reader-step', String(currentStep));
+}
+
+function expandFenBoard(fen) {
+  const boardPart = fen.split(' ')[0];
+  return boardPart.split('/').map(row => {
+    const out = [];
+    for (const ch of row) {
+      if (/\d/.test(ch)) {
+        for (let i = 0; i < Number(ch); i++) out.push('.');
+      } else {
+        out.push(ch);
+      }
+    }
+    return out;
+  });
+}
+
+function isBlackToMove(fen) {
+  return fen.split(' ')[1] === 'b';
+}
+
+function renderBoard() {
+  const fen = currentFen();
+  const board = expandFenBoard(fen);
+  const flipped = puzzleOrientationIsBlack();
+
+  boardEl.innerHTML = '';
+  for (let viewY = 0; viewY < 8; viewY++) {
+    for (let viewX = 0; viewX < 8; viewX++) {
+      const boardX = flipped ? 7 - viewX : viewX;
+      const boardY = flipped ? 7 - viewY : viewY;
+
+      const sq = document.createElement('div');
+      sq.className = 'sq ' + (((viewX + viewY) % 2 === 0) ? 'light' : 'dark');
+
+      if (viewY === 7) {
+        const f = document.createElement('span');
+        f.className = 'coord-file';
+        f.textContent = flipped ? 'hgfedcba'[viewX] : 'abcdefgh'[viewX];
+        sq.appendChild(f);
+      }
+      if (viewX === 0) {
+        const r = document.createElement('span');
+        r.className = 'coord-rank';
+        r.textContent = flipped ? String(viewY + 1) : String(8 - viewY);
+        sq.appendChild(r);
+      }
+
+      const piece = board[boardY][boardX];
+      if (piece !== '.') {
+        const img = document.createElement('img');
+        img.className = 'piece';
+        img.alt = '';
+        img.src = pieceImg[piece];
+        sq.appendChild(img);
+      }
+      boardEl.appendChild(sq);
+    }
+  }
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function sourceSolutionToHtml(text) {
+  return escapeHtml(text)
+    .replace(/¢/g, '<img class="figurine" src="' + pieceImg.K + '" alt="">')
+    .replace(/£/g, '<img class="figurine" src="' + pieceImg.Q + '" alt="">')
+    .replace(/¦/g, '<img class="figurine" src="' + pieceImg.R + '" alt="">')
+    .replace(/¥/g, '<img class="figurine" src="' + pieceImg.B + '" alt="">')
+    .replace(/¤/g, '<img class="figurine" src="' + pieceImg.N + '" alt="">');
+}
+
+function renderSolutionLine() {
+  const puzzle = currentPuzzle();
+  const noEngine = typeof Chess === 'undefined';
+  const solutionText = puzzle.displaySolution || puzzle.sourceSolution;
+  if ((currentStep === puzzle.moves.length && solutionText && puzzle.moves.length > 0) || (noEngine && solutionText)) {
+    solutionLineEl.className = 'solutionline';
+    solutionLineEl.innerHTML = sourceSolutionToHtml(solutionText);
+  } else {
+    solutionLineEl.className = 'solutionline';
+    solutionLineEl.textContent = 'Die Lösung wird nach dem Durchklicken der Züge angezeigt.';
+  }
+}
+
+function syncTaskInput() {
+  taskInput.value = String(currentPuzzleId);
+  categorySelect.value = currentCategory;
+}
+
+function renderStatus() {
+  const isBlack = currentPuzzle().fen.split(' ')[1] === 'b';
+  const noEngine = typeof Chess === 'undefined';
+  statusTextEl.classList.toggle('black-turn', isBlack);
+  statusTextEl.classList.toggle('white-turn', !isBlack);
+  statusTextEl.innerHTML = `<span class="status-main"><span class="status-dot" aria-hidden="true"></span><span class="status-text"><span class="status-color">${isBlack ? 'Schwarz' : 'Weiß'}</span><span class="status-move">am Zug</span></span></span>${noEngine ? '<div class="status-hint">Nur Ausgangsstellung geladen</div>' : ''}`;
+}
+
+function clampStep() {
+  currentStep = Math.max(0, Math.min(currentStep, currentPuzzle().moves.length));
+}
+
+function updateButtonStates() {
+  const puzzle = currentPuzzle();
+  const index = currentPuzzleIndex();
+  const noEngine = typeof Chess === 'undefined';
+  prevTaskBtn.disabled = index <= 0;
+  nextTaskBtn.disabled = index >= getPuzzleIds(currentCategory).length - 1;
+  startBtn.disabled = noEngine || currentStep <= 0;
+  prevMoveBtn.disabled = noEngine || currentStep <= 0;
+  nextMoveBtn.disabled = noEngine || currentStep >= puzzle.moves.length;
+  endBtn.disabled = noEngine || currentStep >= puzzle.moves.length;
+}
+
+function renderAll() {
+  clampStep();
+  syncTaskInput();
+  renderStatus();
+  renderBoard();
+  renderSolutionLine();
+  updateButtonStates();
+  saveState();
+}
+
+function setPuzzleById(id) {
+  if (!getPuzzleIds(currentCategory).includes(id)) return;
+  currentPuzzleId = id;
+  currentStep = 0;
+  renderAll();
+}
+
+function setCategory(category) {
+  if (!categoryOrder.includes(category)) return;
+  currentCategory = category;
+  const ids = getPuzzleIds(currentCategory);
+  currentPuzzleId = ids[0];
+  currentStep = 0;
+  renderAll();
+}
+
+function goTask(delta) {
+  const ids = getPuzzleIds(currentCategory);
+  const nextIndex = currentPuzzleIndex() + delta;
+  if (nextIndex < 0 || nextIndex >= ids.length) return;
+  currentPuzzleId = ids[nextIndex];
+  currentStep = 0;
+  renderAll();
+}
+
+function goStep(delta) {
+  const now = Date.now();
+  if (now < actionLockedUntil) return;
+  currentStep += delta;
+  clampStep();
+  actionLockedUntil = now + 60;
+  renderAll();
+}
+
+categorySelect.addEventListener('change', () => {
+  runGuardedAction('category-change', () => {
+    setCategory(categorySelect.value);
+    blurControl(categorySelect);
+  });
+});
+
+categorySelect.addEventListener('pointerup', () => {
+  setTimeout(() => blurControl(categorySelect), 0);
+});
+
+categorySelect.addEventListener('wheel', (event) => {
+  if (document.activeElement === categorySelect) {
+    event.preventDefault();
+    blurControl(categorySelect);
+  }
+}, { passive: false });
+
+taskInput.addEventListener('change', () => {
+  runGuardedAction('task-change', () => {
+    const value = Number(taskInput.value);
+    if (Number.isFinite(value)) {
+      if (getPuzzleIds(currentCategory).includes(value)) {
+        setPuzzleById(value);
+      } else {
+        syncTaskInput();
+      }
+    } else {
+      syncTaskInput();
+    }
+  });
+});
+
+taskInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    taskInput.blur();
+  }
+});
+
+taskInput.addEventListener('wheel', (event) => {
+  if (document.activeElement === taskInput) {
+    event.preventDefault();
+    blurControl(taskInput);
+  }
+}, { passive: false });
+
+prevTaskBtn.addEventListener('click', () => runGuardedAction('prev-task', () => goTask(-1)));
+nextTaskBtn.addEventListener('click', () => runGuardedAction('next-task', () => goTask(1)));
+startBtn.addEventListener('click', () => runGuardedAction('start', () => {
+  currentStep = 0;
+  renderAll();
+}));
+prevMoveBtn.addEventListener('click', () => runGuardedAction('prev-move', () => goStep(-1)));
+nextMoveBtn.addEventListener('click', () => runGuardedAction('next-move', () => goStep(1)));
+endBtn.addEventListener('click', () => runGuardedAction('end', () => {
+  currentStep = currentPuzzle().moves.length;
+  renderAll();
+}));
+
+document.addEventListener('keydown', (event) => {
+  if (['INPUT', 'SELECT'].includes(document.activeElement?.tagName)) return;
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    goStep(-1);
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    goStep(1);
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    goTask(-1);
+  } else if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    goTask(1);
+  }
+});
+
+renderAll();
+</script>
+
+</body>
+</html>
