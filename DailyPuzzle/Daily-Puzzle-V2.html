@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Schachandili – Aufgabe des Tages</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --board-size: min(560px, 94vw);
+      --andi-red: #9A2D33;
+      --andi-red-dark: #7f2027;
+      --light-square: #f0d9b5;
+      --dark-square: #843f46;
+      --button-bg: #e6e6e6;
+      --button-border: #cfcfcf;
+      --text: #222;
+      --muted: #666;
+      --panel: rgba(255,255,255,.90);
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; }
+
+    html, body{
+      min-height:100%;
+      background:transparent;
+      color:var(--text);
+      font-family:"Times New Roman", Times, serif;
+    }
+
+    body{
+      display:flex;
+      justify-content:center;
+      padding:10px;
+    }
+
+    .app{
+      width:min(980px, 100%);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+    }
+
+    .panel{
+      width:min(var(--board-size), 100%);
+      background:var(--panel);
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:16px;
+      box-shadow:0 8px 22px rgba(0,0,0,.10);
+      padding:10px;
+    }
+
+    .title-row{
+      text-align:center;
+      color:var(--andi-red);
+      line-height:1.2;
+    }
+
+    .title-row h1{
+      font-size:clamp(22px, 4.5vw, 34px);
+      font-weight:700;
+    }
+
+    .title-row .subtitle{
+      margin-top:2px;
+      color:var(--muted);
+      font-size:clamp(14px, 2.6vw, 18px);
+    }
+
+    .day-buttons{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(7, minmax(0,1fr));
+      gap:6px;
+    }
+
+    .level-buttons{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:8px;
+    }
+
+    button{
+      font-family:"Times New Roman", Times, serif;
+      background:var(--button-bg);
+      color:var(--andi-red);
+      border:1px solid var(--button-border);
+      border-radius:12px;
+      min-height:42px;
+      padding:6px 8px;
+      font-size:17px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 2px 5px rgba(0,0,0,.12);
+      transition:transform .08s ease, filter .12s ease, background .12s ease, color .12s ease;
+    }
+
+    button:hover{ filter:brightness(1.025); }
+    button:active{ transform:translateY(1px); }
+    button.active{
+      background:var(--andi-red);
+      border-color:var(--andi-red-dark);
+      color:#fff;
+    }
+
+    .day-btn{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:1px;
+      min-height:50px;
+      line-height:1.05;
+    }
+
+    .day-btn .label{ font-size:16px; }
+    .day-btn .date{ font-size:13px; font-weight:600; opacity:.85; }
+
+    .level-btn{ min-height:48px; font-size:20px; }
+
+    .puzzle-info{
+      display:grid;
+      gap:6px;
+      text-align:center;
+      font-size:17px;
+      line-height:1.25;
+    }
+
+    .puzzle-info .name{
+      color:var(--andi-red);
+      font-weight:700;
+      font-size:20px;
+    }
+
+    .puzzle-info .meta{
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .status{
+      min-height:26px;
+      text-align:center;
+      font-size:18px;
+      font-weight:700;
+      color:var(--andi-red);
+    }
+
+    #board-wrap{
+      width:var(--board-size);
+      max-width:100%;
+      position:relative;
+    }
+
+    #board{
+      width:100%;
+      aspect-ratio:1 / 1;
+      border:3px solid #333;
+      border-radius:12px;
+      box-shadow:0 8px 22px rgba(0,0,0,.14);
+      display:grid;
+      grid-template-columns:repeat(8,1fr);
+      grid-template-rows:repeat(8,1fr);
+      overflow:hidden;
+      user-select:none;
+      background:transparent;
+      position:relative;
+    }
+
+    .square{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      cursor:pointer;
+    }
+
+    .light{ background:var(--light-square); }
+    .dark{ background:var(--dark-square); }
+
+    .piece-img{
+      width:80%;
+      height:80%;
+      object-fit:contain;
+      pointer-events:none;
+      filter:drop-shadow(0 2px 1px rgba(0,0,0,.20));
+    }
+
+    .square.selected::after{
+      content:"";
+      position:absolute;
+      inset:5px;
+      border:3px solid rgba(255,255,255,.95);
+      border-radius:8px;
+      pointer-events:none;
+    }
+
+    .square.legal-target::before{
+      content:"";
+      width:24%;
+      height:24%;
+      border-radius:50%;
+      background:rgba(255,255,255,.82);
+      box-shadow:0 0 0 2px rgba(0,0,0,.10);
+      position:absolute;
+      pointer-events:none;
+    }
+
+    .square.last-move::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:rgba(255,255,255,.22);
+      pointer-events:none;
+    }
+
+    .coord{
+      position:absolute;
+      font-size:12px;
+      font-weight:700;
+      opacity:.72;
+      pointer-events:none;
+      z-index:2;
+    }
+    .coord.file{ right:4px; bottom:2px; }
+    .coord.rank{ left:4px; top:2px; }
+    .dark .coord{ color:#fff; }
+    .light .coord{ color:#5b3a22; }
+
+    .board-flash{
+      position:absolute;
+      inset:0;
+      border-radius:12px;
+      pointer-events:none;
+      box-shadow:0 0 0 0 rgba(154,45,51,0);
+      transition:box-shadow 260ms ease;
+    }
+    .board-flash.active{
+      box-shadow:0 0 0 7px rgba(154,45,51,.28), 0 0 28px rgba(154,45,51,.18);
+    }
+
+    .bottom-controls{
+      width:100%;
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:8px;
+    }
+
+    .bottom-controls button{
+      min-height:48px;
+      font-size:19px;
+    }
+
+    .source-note{
+      width:min(var(--board-size), 100%);
+      color:var(--muted);
+      text-align:center;
+      font-size:13px;
+      line-height:1.25;
+      padding:0 6px;
+    }
+
+    .source-note a{
+      color:var(--andi-red);
+      text-decoration:none;
+      font-weight:700;
+    }
+
+    @media (max-width:700px){
+      :root{ --board-size:min(96vw, 520px); }
+      body{ padding:6px; }
+      .panel{ padding:8px; border-radius:14px; }
+      .day-buttons{ grid-template-columns:repeat(4, minmax(0,1fr)); }
+      .day-btn{ min-height:46px; }
+      .day-btn .label{ font-size:15px; }
+      .day-btn .date{ font-size:12px; }
+      .level-btn{ font-size:18px; min-height:44px; }
+      .bottom-controls button{ min-height:44px; font-size:17px; }
+    }
+
+    @media (max-width:430px){
+      .day-buttons{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+      .level-buttons, .bottom-controls{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel title-row" aria-label="Titel">
+      <h1>Schachaufgabe des Tages</h1>
+      <div class="subtitle">7 Tage · 3 Schwierigkeitsstufen · Andili-Training</div>
+    </section>
+
+    <section class="panel" aria-label="Tagesauswahl">
+      <div class="day-buttons" id="dayButtons"></div>
+    </section>
+
+    <section class="panel" aria-label="Schwierigkeitsauswahl">
+      <div class="level-buttons" id="levelButtons">
+        <button class="level-btn" data-level="easy">Leicht</button>
+        <button class="level-btn" data-level="medium">Mittel</button>
+        <button class="level-btn" data-level="hard">Schwer</button>
+      </div>
+    </section>
+
+    <section class="panel puzzle-info" aria-label="Aufgabeninformation">
+      <div class="name" id="puzzleTitle">Lade Aufgaben …</div>
+      <div class="meta" id="puzzleMeta"></div>
+      <div class="status" id="status">Bitte warten.</div>
+    </section>
+
+    <div id="board-wrap">
+      <div id="board" aria-label="Schachbrett"></div>
+      <div class="board-flash" id="boardFlash"></div>
+    </div>
+
+    <section class="panel" aria-label="Steuerung">
+      <div class="bottom-controls">
+        <button id="btnReset" title="Aufgabe neu starten">↻ Neu</button>
+        <button id="btnSolution" title="Nächsten Lösungszug zeigen">Lösung</button>
+        <button id="btnFlip" title="Brett drehen">Flip</button>
+      </div>
+    </section>
+
+    <div class="source-note" id="sourceNote"></div>
+  </main>
+
+  <script>
+    "use strict";
+
+    const PUZZLE_FILE = "andili-puzzles.json";
+    const LEVEL_LABELS = { easy:"Leicht", medium:"Mittel", hard:"Schwer" };
+    const LEVEL_ORDER = ["easy", "medium", "hard"];
+    const BERLIN_TZ = "Europe/Berlin";
+
+    const pieceImg = {
+      P: "https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
+      R: "https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
+      N: "https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
+      B: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
+      Q: "https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
+      K: "https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
+      p: "https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg",
+      r: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg",
+      n: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg",
+      b: "https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg",
+      q: "https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg",
+      k: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg"
+    };
+
+    const glyph = {
+      P:"♙",R:"♖",N:"♘",B:"♗",Q:"♕",K:"♔",
+      p:"♟",r:"♜",n:"♞",b:"♝",q:"♛",k:"♚"
+    };
+
+    const boardEl = document.getElementById("board");
+    const dayButtonsEl = document.getElementById("dayButtons");
+    const levelButtonsEl = document.getElementById("levelButtons");
+    const puzzleTitleEl = document.getElementById("puzzleTitle");
+    const puzzleMetaEl = document.getElementById("puzzleMeta");
+    const statusEl = document.getElementById("status");
+    const sourceNoteEl = document.getElementById("sourceNote");
+    const boardFlashEl = document.getElementById("boardFlash");
+    const btnReset = document.getElementById("btnReset");
+    const btnSolution = document.getElementById("btnSolution");
+    const btnFlip = document.getElementById("btnFlip");
+
+    let puzzleData = null;
+    let daysByDate = new Map();
+    let visibleDays = [];
+    let selectedDate = null;
+    let selectedLevel = "easy";
+    let currentPuzzle = null;
+    let game = null;
+    let initialGame = null;
+    let userSide = "w";
+    let solutionIndex = 0;
+    let selectedSquare = null;
+    let lastMove = null;
+    let orientationWhite = true;
+    let locked = false;
+
+    function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+    function pieceColor(ch){
+      if(!ch || ch === ".") return null;
+      return ch === ch.toUpperCase() ? "w" : "b";
+    }
+
+    function algebraicToXY(s){
+      if(!s || s === "-") return null;
+      const files = "abcdefgh";
+      const x = files.indexOf(s[0]);
+      const rank = Number(s[1]);
+      if(x < 0 || !(rank >= 1 && rank <= 8)) return null;
+      return [x, 8 - rank];
+    }
+
+    function xyToAlgebraic(x,y){
+      return "abcdefgh"[x] + String(8 - y);
+    }
+
+    function parseUci(uci){
+      if(!uci || uci.length < 4) return null;
+      const from = algebraicToXY(uci.slice(0,2));
+      const to = algebraicToXY(uci.slice(2,4));
+      if(!from || !to) return null;
+      const promotion = uci.length >= 5 ? uci[4].toUpperCase() : null;
+      return { from, to, promotion };
+    }
+
+    function moveToUci(mv){
+      if(!mv) return "";
+      let uci = xyToAlgebraic(mv.from[0], mv.from[1]) + xyToAlgebraic(mv.to[0], mv.to[1]);
+      if(mv.promotion) uci += String(mv.promotion).toLowerCase();
+      return uci;
+    }
+
+    function Game(){ this.reset(); }
+
+    Game.prototype.reset = function(){
+      this.board = [
+        ["r","n","b","q","k","b","n","r"],
+        ["p","p","p","p","p","p","p","p"],
+        [".",".",".",".",".",".",".","."],
+        [".",".",".",".",".",".",".","."],
+        [".",".",".",".",".",".",".","."],
+        [".",".",".",".",".",".",".","."],
+        ["P","P","P","P","P","P","P","P"],
+        ["R","N","B","Q","K","B","N","R"]
+      ];
+      this.turn = "w";
+      this.ep = null;
+      this.castling = { K:true, Q:true, k:true, q:true };
+    };
+
+    Game.prototype.fromFEN = function(fen){
+      if(!fen || typeof fen !== "string") throw new Error("FEN fehlt.");
+      const parts = fen.trim().split(/\s+/);
+      if(parts.length < 4) throw new Error("Ungültige FEN: " + fen);
+      const rows = parts[0].split("/");
+      if(rows.length !== 8) throw new Error("Ungültige FEN-Reihen: " + fen);
+
+      const b = [];
+      for(const row of rows){
+        const arr = [];
+        for(const ch of row){
+          if(/[1-8]/.test(ch)){
+            for(let i=0;i<Number(ch);i++) arr.push(".");
+          }else if("prnbqkPRNBQK".includes(ch)){
+            arr.push(ch);
+          }else{
+            throw new Error("Ungültiges FEN-Zeichen: " + ch);
+          }
+        }
+        if(arr.length !== 8) throw new Error("Ungültige FEN-Zeilenlänge: " + row);
+        b.push(arr);
+      }
+      this.board = b;
+      this.turn = parts[1] === "b" ? "b" : "w";
+      const c = parts[2] || "-";
+      this.castling = { K:c.includes("K"), Q:c.includes("Q"), k:c.includes("k"), q:c.includes("q") };
+      this.ep = algebraicToXY(parts[3]);
+      return this;
+    };
+
+    Game.prototype.clone = function(){
+      const g = new Game();
+      g.board = clone(this.board);
+      g.turn = this.turn;
+      g.ep = this.ep ? [this.ep[0], this.ep[1]] : null;
+      g.castling = Object.assign({}, this.castling);
+      return g;
+    };
+
+    Game.prototype.at = function(x,y){ return this.board[y][x]; };
+    Game.prototype.set = function(x,y,v){ this.board[y][x] = v; };
+    Game.prototype.inBounds = function(x,y){ return x>=0 && x<8 && y>=0 && y<8; };
+
+    Game.prototype.findKing = function(color){
+      const k = color === "w" ? "K" : "k";
+      for(let y=0;y<8;y++) for(let x=0;x<8;x++){
+        if(this.board[y][x] === k) return [x,y];
+      }
+      return null;
+    };
+
+    Game.prototype.isAttacked = function(tx,ty,byColor){
+      const dir = byColor === "w" ? -1 : 1;
+      const pawn = byColor === "w" ? "P" : "p";
+      for(const dx of [-1,1]){
+        const x = tx + dx, y = ty - dir;
+        if(this.inBounds(x,y) && this.board[y][x] === pawn) return true;
+      }
+
+      const knight = byColor === "w" ? "N" : "n";
+      for(const [dx,dy] of [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]]){
+        const x = tx + dx, y = ty + dy;
+        if(this.inBounds(x,y) && this.board[y][x] === knight) return true;
+      }
+
+      const bishop = byColor === "w" ? "B" : "b";
+      const queen  = byColor === "w" ? "Q" : "q";
+      const rook   = byColor === "w" ? "R" : "r";
+      const king   = byColor === "w" ? "K" : "k";
+
+      for(const [dx,dy] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+        let x = tx + dx, y = ty + dy;
+        while(this.inBounds(x,y)){
+          const p = this.board[y][x];
+          if(p !== "."){
+            if(p === bishop || p === queen) return true;
+            break;
+          }
+          x += dx; y += dy;
+        }
+      }
+
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        let x = tx + dx, y = ty + dy;
+        while(this.inBounds(x,y)){
+          const p = this.board[y][x];
+          if(p !== "."){
+            if(p === rook || p === queen) return true;
+            break;
+          }
+          x += dx; y += dy;
+        }
+      }
+
+      for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++){
+        if(dx===0 && dy===0) continue;
+        const x = tx + dx, y = ty + dy;
+        if(this.inBounds(x,y) && this.board[y][x] === king) return true;
+      }
+      return false;
+    };
+
+    Game.prototype.pseudoLegalMovesFrom = function(x,y){
+      const moves = [];
+      const p = this.at(x,y);
+      if(!p || p === ".") return moves;
+
+      const color = p === p.toUpperCase() ? "w" : "b";
+      const dir = color === "w" ? -1 : 1;
+      const piece = p.toLowerCase();
+
+      if(piece === "p"){
+        const ny = y + dir;
+        if(this.inBounds(x,ny) && this.at(x,ny) === "."){
+          moves.push({from:[x,y], to:[x,ny], meta:null});
+          const start = color === "w" ? 6 : 1;
+          const ny2 = y + 2*dir;
+          if(y === start && this.inBounds(x,ny2) && this.at(x,ny2) === "."){
+            moves.push({from:[x,y], to:[x,ny2], meta:{ep:[x,ny]}});
+          }
+        }
+        for(const dx of [-1,1]){
+          const nx = x + dx, nyc = y + dir;
+          if(this.inBounds(nx,nyc)){
+            const t = this.at(nx,nyc);
+            if(t !== "." && pieceColor(t) !== color) moves.push({from:[x,y], to:[nx,nyc], meta:null});
+          }
+          const ep = this.ep;
+          if(ep && ep[0] === x+dx && ep[1] === y+dir){
+            moves.push({from:[x,y], to:[x+dx,y+dir], meta:{enpassant:true}});
+          }
+        }
+      } else if(piece === "n"){
+        for(const [dx,dy] of [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]]){
+          const nx = x + dx, ny = y + dy;
+          if(!this.inBounds(nx,ny)) continue;
+          const t = this.at(nx,ny);
+          if(t === "." || pieceColor(t) !== color) moves.push({from:[x,y], to:[nx,ny], meta:null});
+        }
+      } else if(["b","r","q"].includes(piece)){
+        const dirs = piece === "b"
+          ? [[1,1],[1,-1],[-1,1],[-1,-1]]
+          : piece === "r"
+            ? [[1,0],[-1,0],[0,1],[0,-1]]
+            : [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+        for(const [dx,dy] of dirs){
+          let nx = x + dx, ny = y + dy;
+          while(this.inBounds(nx,ny)){
+            const t = this.at(nx,ny);
+            if(t === ".") moves.push({from:[x,y], to:[nx,ny], meta:null});
+            else{
+              if(pieceColor(t) !== color) moves.push({from:[x,y], to:[nx,ny], meta:null});
+              break;
+            }
+            nx += dx; ny += dy;
+          }
+        }
+      } else if(piece === "k"){
+        for(let dx=-1; dx<=1; dx++) for(let dy=-1; dy<=1; dy++){
+          if(dx===0 && dy===0) continue;
+          const nx = x + dx, ny = y + dy;
+          if(!this.inBounds(nx,ny)) continue;
+          const t = this.at(nx,ny);
+          if(t === "." || pieceColor(t) !== color) moves.push({from:[x,y], to:[nx,ny], meta:null});
+        }
+        if(color === "w"){
+          if(this.castling.K && this.at(5,7)==="." && this.at(6,7)===".") moves.push({from:[x,y], to:[6,7], meta:{castle:"K"}});
+          if(this.castling.Q && this.at(1,7)==="." && this.at(2,7)==="." && this.at(3,7)===".") moves.push({from:[x,y], to:[2,7], meta:{castle:"Q"}});
+        }else{
+          if(this.castling.k && this.at(5,0)==="." && this.at(6,0)===".") moves.push({from:[x,y], to:[6,0], meta:{castle:"k"}});
+          if(this.castling.q && this.at(1,0)==="." && this.at(2,0)==="." && this.at(3,0)===".") moves.push({from:[x,y], to:[2,0], meta:{castle:"q"}});
+        }
+      }
+      return moves;
+    };
+
+    Game.prototype.legalMoves = function(){
+      const moves = [];
+      const side = this.turn;
+      const enemy = side === "w" ? "b" : "w";
+
+      for(let y=0;y<8;y++) for(let x=0;x<8;x++){
+        const p = this.at(x,y);
+        if(p === ".") continue;
+        if(pieceColor(p) !== side) continue;
+
+        for(const pm of this.pseudoLegalMovesFrom(x,y)){
+          const nx = pm.to[0], ny = pm.to[1], meta = pm.meta;
+          const sim = this.clone();
+          const piece = sim.at(x,y);
+
+          if(meta && meta.castle){
+            const path = [];
+            if(meta.castle === "K") path.push([4,7],[5,7],[6,7]);
+            if(meta.castle === "Q") path.push([4,7],[3,7],[2,7]);
+            if(meta.castle === "k") path.push([4,0],[5,0],[6,0]);
+            if(meta.castle === "q") path.push([4,0],[3,0],[2,0]);
+            let safePath = true;
+            for(const [px,py] of path){
+              if(this.isAttacked(px,py,enemy)){ safePath = false; break; }
+            }
+            if(!safePath) continue;
+          }
+
+          if(meta && meta.enpassant){
+            sim.set(nx, y, ".");
+            sim.set(nx, ny, piece);
+            sim.set(x,y,".");
+          }else if(meta && meta.castle){
+            if(meta.castle === "K"){
+              sim.set(4,7,"."); sim.set(6,7,"K"); sim.set(7,7,"."); sim.set(5,7,"R");
+            }else if(meta.castle === "Q"){
+              sim.set(4,7,"."); sim.set(2,7,"K"); sim.set(0,7,"."); sim.set(3,7,"R");
+            }else if(meta.castle === "k"){
+              sim.set(4,0,"."); sim.set(6,0,"k"); sim.set(7,0,"."); sim.set(5,0,"r");
+            }else if(meta.castle === "q"){
+              sim.set(4,0,"."); sim.set(2,0,"k"); sim.set(0,0,"."); sim.set(3,0,"r");
+            }
+          }else{
+            sim.set(nx,ny,piece);
+            sim.set(x,y,".");
+          }
+
+          const kp = sim.findKing(side);
+          if(kp && !sim.isAttacked(kp[0], kp[1], enemy)){
+            moves.push(pm);
+          }
+        }
+      }
+      return moves;
+    };
+
+    Game.prototype.makeMove = function(mv){
+      const fx = mv.from[0], fy = mv.from[1], tx = mv.to[0], ty = mv.to[1];
+      const piece = this.at(fx,fy);
+      const meta = mv.meta || {};
+      let taken = ".";
+
+      if(meta.enpassant){
+        taken = this.at(tx,fy);
+        this.set(tx,fy,".");
+      }
+
+      if(meta.castle){
+        if(meta.castle === "K"){
+          this.set(4,7,"."); this.set(6,7,"K"); this.set(7,7,"."); this.set(5,7,"R");
+        }else if(meta.castle === "Q"){
+          this.set(4,7,"."); this.set(2,7,"K"); this.set(0,7,"."); this.set(3,7,"R");
+        }else if(meta.castle === "k"){
+          this.set(4,0,"."); this.set(6,0,"k"); this.set(7,0,"."); this.set(5,0,"r");
+        }else if(meta.castle === "q"){
+          this.set(4,0,"."); this.set(2,0,"k"); this.set(0,0,"."); this.set(3,0,"r");
+        }
+      }else{
+        taken = this.at(tx,ty);
+        this.set(tx,ty,piece);
+        this.set(fx,fy,".");
+        if((this.at(tx,ty) === "P" && ty === 0) || (this.at(tx,ty) === "p" && ty === 7)){
+          const prom = mv.promotion || "Q";
+          this.set(tx,ty, piece === piece.toUpperCase() ? prom.toUpperCase() : prom.toLowerCase());
+        }
+      }
+
+      this.ep = null;
+      if((piece === "P" || piece === "p") && Math.abs(ty - fy) === 2){
+        this.ep = [fx, (fy + ty)/2];
+      }
+
+      if(piece === "K"){ this.castling.K = false; this.castling.Q = false; }
+      if(piece === "k"){ this.castling.k = false; this.castling.q = false; }
+      if(piece === "R" && fy === 7 && fx === 0) this.castling.Q = false;
+      if(piece === "R" && fy === 7 && fx === 7) this.castling.K = false;
+      if(piece === "r" && fy === 0 && fx === 0) this.castling.q = false;
+      if(piece === "r" && fy === 0 && fx === 7) this.castling.k = false;
+      if(taken === "R" && ty === 7 && tx === 0) this.castling.Q = false;
+      if(taken === "R" && ty === 7 && tx === 7) this.castling.K = false;
+      if(taken === "r" && ty === 0 && tx === 0) this.castling.q = false;
+      if(taken === "r" && ty === 0 && tx === 7) this.castling.k = false;
+
+      this.turn = this.turn === "w" ? "b" : "w";
+      lastMove = { from:[fx,fy], to:[tx,ty] };
+    };
+
+    Game.prototype.inCheck = function(color){
+      const kp = this.findKing(color);
+      if(!kp) return false;
+      return this.isAttacked(kp[0],kp[1], color === "w" ? "b" : "w");
+    };
+
+    function findLegalMoveFromUci(g, uci){
+      const parsed = parseUci(uci);
+      if(!parsed) return null;
+      const legal = g.legalMoves();
+      for(const mv of legal){
+        if(mv.from[0] === parsed.from[0] && mv.from[1] === parsed.from[1] &&
+           mv.to[0] === parsed.to[0] && mv.to[1] === parsed.to[1]){
+          const out = Object.assign({}, mv);
+          out.promotion = parsed.promotion || null;
+          return out;
+        }
+      }
+      return null;
+    }
+
+    function sameMove(mv, expectedUci){
+      const expected = parseUci(expectedUci);
+      if(!mv || !expected) return false;
+      if(mv.from[0] !== expected.from[0] || mv.from[1] !== expected.from[1]) return false;
+      if(mv.to[0] !== expected.to[0] || mv.to[1] !== expected.to[1]) return false;
+      if(expected.promotion){
+        return String(mv.promotion || "Q").toUpperCase() === expected.promotion;
+      }
+      return true;
+    }
+
+    function applyUci(g, uci){
+      const mv = findLegalMoveFromUci(g, uci);
+      if(!mv) throw new Error("Illegaler Zug in Aufgabe: " + uci);
+      g.makeMove(mv);
+      return mv;
+    }
+
+    function getBerlinTodayAsUtcNoon(){
+      const fmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: BERLIN_TZ,
+        year:"numeric", month:"2-digit", day:"2-digit"
+      });
+      const parts = Object.fromEntries(fmt.formatToParts(new Date()).map(p => [p.type, p.value]));
+      return new Date(Date.UTC(Number(parts.year), Number(parts.month)-1, Number(parts.day), 12, 0, 0));
+    }
+
+    function addDaysUTC(d, delta){
+      const n = new Date(d.getTime());
+      n.setUTCDate(n.getUTCDate() + delta);
+      return n;
+    }
+
+    function dateKeyUTC(d){
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth()+1).padStart(2,"0");
+      const day = String(d.getUTCDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function compactGermanDayLabel(d, index){
+      const dd = String(d.getUTCDate()).padStart(2,"0");
+      const mm = String(d.getUTCMonth()+1).padStart(2,"0");
+      if(index === 0) return { label:"Heute", date:`${dd}.${mm}.` };
+      const wd = new Intl.DateTimeFormat("de-DE", { weekday:"short", timeZone:"UTC" })
+        .format(d)
+        .replace(".", "");
+      return { label:wd, date:`${dd}.${mm}.` };
+    }
+
+    function buildVisibleDays(){
+      const today = getBerlinTodayAsUtcNoon();
+      visibleDays = [];
+      for(let i=0;i<7;i++){
+        const d = addDaysUTC(today, -i);
+        const text = compactGermanDayLabel(d, i);
+        visibleDays.push({ index:i, date:dateKeyUTC(d), label:text.label, shortDate:text.date });
+      }
+      selectedDate = visibleDays[0].date;
+    }
+
+    function renderDayButtons(){
+      dayButtonsEl.innerHTML = "";
+      for(const day of visibleDays){
+        const btn = document.createElement("button");
+        btn.className = "day-btn" + (day.date === selectedDate ? " active" : "");
+        btn.type = "button";
+        btn.dataset.date = day.date;
+        btn.innerHTML = `<span class="label">${escapeHtml(day.label)}</span><span class="date">${escapeHtml(day.shortDate)}</span>`;
+        btn.addEventListener("click", () => {
+          selectedDate = day.date;
+          renderDayButtons();
+          loadSelectedPuzzle();
+        });
+        dayButtonsEl.appendChild(btn);
+      }
+    }
+
+    function renderLevelButtons(){
+      levelButtonsEl.querySelectorAll("button[data-level]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.level === selectedLevel);
+        btn.addEventListener("click", () => {
+          selectedLevel = btn.dataset.level;
+          renderLevelButtons();
+          loadSelectedPuzzle();
+        }, { once:true });
+      });
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+    }
+
+    function getPuzzleForSelection(){
+      const day = daysByDate.get(selectedDate);
+      if(!day || !day.puzzles) return null;
+      return day.puzzles[selectedLevel] || null;
+    }
+
+    function normalizePuzzle(p){
+      if(!p) return null;
+      const solution = Array.isArray(p.solution) ? p.solution : (typeof p.solution === "string" ? p.solution.trim().split(/\s+/) : []);
+      return Object.assign({}, p, { solution });
+    }
+
+    function loadSelectedPuzzle(){
+      selectedSquare = null;
+      solutionIndex = 0;
+      locked = false;
+      lastMove = null;
+      currentPuzzle = normalizePuzzle(getPuzzleForSelection());
+
+      if(!currentPuzzle){
+        puzzleTitleEl.textContent = "Keine Aufgabe vorhanden";
+        puzzleMetaEl.textContent = `${selectedDate} · ${LEVEL_LABELS[selectedLevel] || selectedLevel}`;
+        statusEl.textContent = "Für diesen Tag oder diese Stufe fehlt ein Eintrag in andili-puzzles.json.";
+        boardEl.innerHTML = "";
+        return;
+      }
+
+      try{
+        game = new Game().fromFEN(currentPuzzle.fen);
+        if(currentPuzzle.preMove){
+          applyUci(game, currentPuzzle.preMove);
+        }
+        initialGame = game.clone();
+        userSide = game.turn;
+        puzzleTitleEl.textContent = currentPuzzle.title || "Schachaufgabe";
+        const bits = [selectedDate, LEVEL_LABELS[selectedLevel] || selectedLevel];
+        if(Number.isFinite(Number(currentPuzzle.rating))) bits.push("Rating " + Number(currentPuzzle.rating));
+        if(Array.isArray(currentPuzzle.themes) && currentPuzzle.themes.length) bits.push(currentPuzzle.themes.slice(0,4).join(", "));
+        puzzleMetaEl.textContent = bits.join(" · ");
+        statusEl.textContent = userSide === "w" ? "Weiß am Zug." : "Schwarz am Zug.";
+        renderSourceNote();
+        renderBoard();
+      }catch(err){
+        puzzleTitleEl.textContent = "Aufgabe konnte nicht geladen werden";
+        puzzleMetaEl.textContent = `${selectedDate} · ${LEVEL_LABELS[selectedLevel] || selectedLevel}`;
+        statusEl.textContent = err.message || String(err);
+        boardEl.innerHTML = "";
+      }
+    }
+
+    function renderSourceNote(){
+      const src = puzzleData && puzzleData.source;
+      if(!src){ sourceNoteEl.textContent = ""; return; }
+      if(typeof src === "string"){
+        sourceNoteEl.textContent = "Quelle: " + src;
+        return;
+      }
+      const name = src.name || "Aufgabenquelle";
+      const license = src.license ? ` · Lizenz: ${src.license}` : "";
+      if(src.url){
+        sourceNoteEl.innerHTML = `Quelle: <a href="${escapeHtml(src.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)}</a>${escapeHtml(license)}`;
+      }else{
+        sourceNoteEl.textContent = `Quelle: ${name}${license}`;
+      }
+    }
+
+    function renderBoard(){
+      if(!game){ boardEl.innerHTML = ""; return; }
+      const legalForSelected = selectedSquare ? game.legalMoves().filter(m => m.from[0] === selectedSquare[0] && m.from[1] === selectedSquare[1]) : [];
+      boardEl.innerHTML = "";
+
+      for(let vy=0; vy<8; vy++){
+        for(let vx=0; vx<8; vx++){
+          const x = orientationWhite ? vx : 7 - vx;
+          const y = orientationWhite ? vy : 7 - vy;
+          const el = document.createElement("div");
+          el.className = "square " + (((x + y) % 2 === 0) ? "light" : "dark");
+          el.dataset.x = String(x);
+          el.dataset.y = String(y);
+
+          if(selectedSquare && selectedSquare[0] === x && selectedSquare[1] === y) el.classList.add("selected");
+          if(legalForSelected.some(m => m.to[0] === x && m.to[1] === y)) el.classList.add("legal-target");
+          if(lastMove && ((lastMove.from[0] === x && lastMove.from[1] === y) || (lastMove.to[0] === x && lastMove.to[1] === y))) el.classList.add("last-move");
+
+          const p = game.at(x,y);
+          if(p !== "."){
+            const img = document.createElement("img");
+            img.src = pieceImg[p];
+            img.alt = glyph[p] || p;
+            img.className = "piece-img";
+            el.appendChild(img);
+          }
+
+          if((orientationWhite && y === 7) || (!orientationWhite && y === 0)){
+            const file = document.createElement("span");
+            file.className = "coord file";
+            file.textContent = "abcdefgh"[x];
+            el.appendChild(file);
+          }
+          if((orientationWhite && x === 0) || (!orientationWhite && x === 7)){
+            const rank = document.createElement("span");
+            rank.className = "coord rank";
+            rank.textContent = String(8 - y);
+            el.appendChild(rank);
+          }
+
+          el.addEventListener("click", onSquareClick);
+          boardEl.appendChild(el);
+        }
+      }
+    }
+
+    function onSquareClick(e){
+      if(locked || !game || !currentPuzzle) return;
+      if(solutionIndex >= currentPuzzle.solution.length) return;
+      if(game.turn !== userSide) return;
+
+      const el = e.currentTarget;
+      const x = Number(el.dataset.x), y = Number(el.dataset.y);
+      const p = game.at(x,y);
+
+      if(!selectedSquare){
+        if(p !== "." && pieceColor(p) === game.turn){
+          selectedSquare = [x,y];
+          renderBoard();
+        }
+        return;
+      }
+
+      if(selectedSquare[0] === x && selectedSquare[1] === y){
+        selectedSquare = null;
+        renderBoard();
+        return;
+      }
+
+      const legal = game.legalMoves().filter(m => m.from[0] === selectedSquare[0] && m.from[1] === selectedSquare[1]);
+      let chosen = legal.find(m => m.to[0] === x && m.to[1] === y);
+
+      if(!chosen){
+        if(p !== "." && pieceColor(p) === game.turn){
+          selectedSquare = [x,y];
+          renderBoard();
+        }else{
+          selectedSquare = null;
+          renderBoard();
+        }
+        return;
+      }
+
+      const expected = currentPuzzle.solution[solutionIndex];
+      const exp = parseUci(expected);
+      if(exp && exp.promotion) chosen = Object.assign({}, chosen, { promotion: exp.promotion });
+
+      if(!sameMove(chosen, expected)){
+        flashWrong();
+        statusEl.textContent = "Das war noch nicht die Lösung.";
+        selectedSquare = null;
+        renderBoard();
+        return;
+      }
+
+      makeCorrectUserMove(chosen);
+    }
+
+    function makeCorrectUserMove(mv){
+      game.makeMove(mv);
+      solutionIndex++;
+      selectedSquare = null;
+      renderBoard();
+
+      if(solutionIndex >= currentPuzzle.solution.length){
+        statusEl.textContent = "Gelöst!";
+        return;
+      }
+
+      locked = true;
+      statusEl.textContent = "Richtig. Antwortzug wird ausgeführt …";
+      setTimeout(() => {
+        try{
+          const reply = currentPuzzle.solution[solutionIndex];
+          applyUci(game, reply);
+          solutionIndex++;
+          renderBoard();
+          if(solutionIndex >= currentPuzzle.solution.length){
+            statusEl.textContent = "Gelöst!";
+          }else{
+            statusEl.textContent = userSide === "w" ? "Weiß am Zug." : "Schwarz am Zug.";
+          }
+        }catch(err){
+          statusEl.textContent = err.message || String(err);
+        }finally{
+          locked = false;
+        }
+      }, 420);
+    }
+
+    function flashWrong(){
+      boardFlashEl.classList.add("active");
+      setTimeout(() => boardFlashEl.classList.remove("active"), 300);
+    }
+
+    function resetPuzzle(){
+      if(!initialGame || !currentPuzzle) return;
+      game = initialGame.clone();
+      selectedSquare = null;
+      solutionIndex = 0;
+      lastMove = null;
+      locked = false;
+      statusEl.textContent = userSide === "w" ? "Weiß am Zug." : "Schwarz am Zug.";
+      renderBoard();
+    }
+
+    function showNextSolutionMove(){
+      if(locked || !game || !currentPuzzle) return;
+      if(solutionIndex >= currentPuzzle.solution.length){
+        statusEl.textContent = "Die Aufgabe ist bereits gelöst.";
+        return;
+      }
+      try{
+        const uci = currentPuzzle.solution[solutionIndex];
+        const mv = applyUci(game, uci);
+        solutionIndex++;
+        selectedSquare = null;
+        renderBoard();
+        statusEl.textContent = "Lösungszug: " + moveToUci(mv);
+
+        if(solutionIndex < currentPuzzle.solution.length){
+          locked = true;
+          setTimeout(() => {
+            try{
+              const reply = currentPuzzle.solution[solutionIndex];
+              applyUci(game, reply);
+              solutionIndex++;
+              renderBoard();
+              statusEl.textContent = solutionIndex >= currentPuzzle.solution.length ? "Lösung vollständig angezeigt." : "Weiter lösen.";
+            }catch(err){
+              statusEl.textContent = err.message || String(err);
+            }finally{
+              locked = false;
+            }
+          }, 420);
+        }else{
+          statusEl.textContent = "Lösung vollständig angezeigt.";
+        }
+      }catch(err){
+        statusEl.textContent = err.message || String(err);
+      }
+    }
+
+    async function loadPuzzleFile(){
+      buildVisibleDays();
+      renderDayButtons();
+      renderLevelButtons();
+
+      try{
+        const resp = await fetch(PUZZLE_FILE, { cache:"no-store" });
+        if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        puzzleData = await resp.json();
+        if(!Array.isArray(puzzleData.days)) throw new Error("andili-puzzles.json enthält kein days-Array.");
+        daysByDate = new Map(puzzleData.days.map(day => [day.date, day]));
+        loadSelectedPuzzle();
+      }catch(err){
+        puzzleTitleEl.textContent = "JSON nicht gefunden";
+        puzzleMetaEl.textContent = PUZZLE_FILE;
+        statusEl.textContent = "Bitte lege andili-puzzles.json neben diese HTML-Datei. Details: " + (err.message || String(err));
+        sourceNoteEl.textContent = "";
+        boardEl.innerHTML = "";
+      }
+    }
+
+    btnReset.addEventListener("click", resetPuzzle);
+    btnSolution.addEventListener("click", showNextSolutionMove);
+    btnFlip.addEventListener("click", () => {
+      orientationWhite = !orientationWhite;
+      renderBoard();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if(e.key.toLowerCase() === "f") btnFlip.click();
+      if(e.key.toLowerCase() === "r") btnReset.click();
+    });
+
+    loadPuzzleFile();
+  </script>
+</body>
+</html>
