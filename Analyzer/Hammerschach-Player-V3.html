@@ -1,0 +1,2828 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Schachandili-Player</title>
+<style>
+  :root {
+    --board-size: min(600px,90vw);
+    --andili-rot: #843f46;
+    --andili-blau: #3b6ea7;
+    --bg: #f6f7fb;
+  }
+
+  /* V16 alignment fix */
+  .moves.box { min-height: var(--board-size); }
+  html, body {
+    margin: 0;
+    font-family: "Times New Roman";
+    background: transparent;
+    color: #111;
+  }
+
+  /* APP-LAYOUT (iframe-optimiert) */
+  .app {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Brett + rechte Zugliste nebeneinander */
+  .top-layout {
+  flex-wrap: wrap;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px; /* sehr schmaler Abstand */
+    width: 100%;
+  }
+
+  .board-wrapper {
+    position: relative;
+    width: var(--board-size);
+    max-width: 100%;
+    aspect-ratio: 1 / 1;
+    flex: 0 1 auto;
+  }
+
+  #board {
+    width: 100%;
+    height: 100%;
+    border: 4px solid var(--andili-rot);
+    box-shadow: 0 14px 36px rgba(0,0,0,0.16);
+    display: grid;
+    grid-template-columns: repeat(8,1fr);
+    grid-template-rows: repeat(8,1fr);
+    user-select: none;
+    overflow: hidden;
+    border-radius: 8px;
+    position: relative; /* für Engine-Ghost-Animation */
+  }
+
+  .square {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    cursor: pointer;
+    transition: box-shadow 0.12s ease, transform 0.08s ease;
+    position: relative;
+  }
+  .piece-img {
+    width: 80%;
+    height: 80%;
+    display: block;
+    pointer-events: none;
+  }
+
+  .light { background: #f0d9b5; }
+  .dark  { background: #843f46; }
+
+  .board-illegal-flash {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    pointer-events: none;
+    box-shadow: 0 0 0 0 rgba(132,63,70,0.0);
+    transition: box-shadow 320ms ease;
+  }
+  .board-illegal-flash.active {
+    box-shadow:
+      0 0 0 6px rgba(132,63,70,0.22),
+      0 0 30px rgba(132,63,70,0.18);
+  }
+
+  /* Rechte Spalte: schmale Zugliste */
+  .moves-right {
+    width: 280px;           /* verbreitert: ~280px */
+    max-width: 100%;
+    flex: 0 1 auto;
+  }
+
+  .box {
+    background: rgba(255,255,255,0.98);
+    padding: 12px 14px;
+    border-radius: 14px;
+    box-shadow: 0 14px 32px rgba(0,0,0,0.12);
+    border: 1px solid rgba(132,63,70,0.16);
+  }
+
+  .moves {
+    padding: 6px;
+    max-height: 600px;          /* Scrollbar für lange Partien, passend zur Brettgröße */
+    overflow: auto;
+    font-size: 14px;
+  }
+  .moves-pre {
+    font-family: "Times New Roman";
+    white-space: pre;
+    line-height: 1.5;
+    font-size: 13px;
+  }
+
+  .moves-footer {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .moves-footer button.nav-btn {
+  background: #3b6ea7;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 14px;
+  border-radius: 999px;
+  border: none;
+}
+  .moves-footer span {
+    flex: 1;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  /* Engine-Panel + Status unter dem Brett (volle Brettbreite) */
+  .sidebar {
+    width: var(--board-size);
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 17px;
+  }
+
+  /* Neuer kompakter Control-Block */
+  .control-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .control-title {
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  label {
+    font-size: 12px;
+    color: #444;
+    display: block;
+    margin-bottom: 2px;
+  }
+  select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+    font-size: 13px;
+    background: #fdfdfd;
+  }
+
+  .engine-info {
+    font-size: 12px;
+    line-height: 1.4;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .engine-status {
+    font-weight: 600;
+  }
+  .engine-eval {
+    font-family: "Times New Roman";
+    font-size: 12px;
+    color: #444;
+    text-align: right;
+    flex: 0 0 auto;
+  }
+
+  .status {
+    margin-top: 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 14px;
+    min-height: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(246,238,240,0.98));
+    border: 1px solid rgba(132,63,70,0.18);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+  }
+
+  /* Auswahlmarkierungen sichtbar auf allen Geräten */
+  .selected { outline-offset: 0 !important; }
+
+  button { background: #e0e0e0; color: #9A2D33; border:none; padding:8px 12px; border-radius:999px; font-weight:600; cursor:pointer; font-size:13px; }
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.16);
+  }
+  button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.10);
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .btn-secondary {
+    background: #eef1f5;
+    color: #111827;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+
+  #newGameBtn {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+  }
+
+  
+  .time-box {
+    margin-top: 8px;
+  }
+  .time-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .time-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: #e5e7eb;
+    color: #111827;
+    cursor: pointer;
+  }
+  .time-btn.active {
+    background: var(--andili);
+    color: #fff;
+    border-color: rgba(0,0,0,0.18);
+  }
+  .clock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    gap: 8px;
+  }
+  #playerClock { font-size:24px;font-weight:700;font-family: "Times New Roman"; }
+  #timeStatus {
+    text-align: right;
+    opacity: 0.85;
+  }
+
+
+  @media (max-width: 700px) {
+    .top-layout {
+  flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
+    }
+    .board-wrapper {
+      width: 100%;
+    }
+    .moves-right {
+      width: 100%;
+    }
+    .sidebar {
+      width: 100%;
+    }
+  }
+
+/* Ghost-Piece für Engine-Animation */
+  .engine-ghost-piece {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+    pointer-events: none;
+    z-index: 20;
+    transition: transform 0.6s ease-out;
+  }
+
+
+  .time-box {
+    padding: 10px 12px 20px;
+    min-height: 147px;
+  }
+  .time-row {
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .time-btn {
+    background:#3b6ea7;
+    color:#fff;
+    border-radius:999px;
+    min-width:70px;
+    padding:6px 10px;
+    font-size:13px;
+    border:1px solid rgba(0,0,0,0.1);
+  }
+  .time-clock {
+    text-align:center;
+    margin-top:4px;
+  }
+  #playerClock { font-size:24px;font-weight:700;font-family: "Times New Roman"; }
+  #timeStatus { display:none!important; }
+  #newGameBtn {
+    background:#3b6ea7;
+    color:#fff;
+    border-radius:999px;
+    padding:7px 16px;
+    font-size:13px;
+    font-weight:600;
+  }
+
+  html,body{font-family: "Times New Roman";font-size:14px;}
+  button,select,label,.box,.moves-pre,#status,#engineStatus,#engineEval{font-family: "Times New Roman";font-size:14px!important;}
+
+/* === Dezente Andili-Markierungen in Weiß === */
+.square.selected {
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,0.95);
+  border-radius: 6px;
+}
+.square.legal,
+.square.move-target,
+.square.legal-move {
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,0.40);
+  border-radius: 6px;
+}
+.square.selected::after,
+.square.legal::after,
+.square.move-target::after,
+.square.legal-move::after {
+  content: none !important;
+}
+
+
+/* ANDILI BUTTON OVERRIDE */
+.nav-btn, .time-btn, #newGameBtn, .btn-secondary, button {
+  background: #e0e0e0 !important;
+  color: #9A2D33 !important;
+  border: none !important;
+}
+.time-btn.active {
+  background: #e0e0e0 !important;
+  color: #9A2D33 !important;
+}
+
+
+/* 6-column move list */
+#moveList {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 40px 1fr 1fr;
+  gap:4px;
+  max-height:600px;
+  overflow-y:auto;
+  padding-right:6px;
+  font-family: inherit;
+}
+
+/* === Lichess-artige Brettbeschriftung === */
+.coord-file{
+  position:absolute;
+  right:4px;
+  bottom:2px;
+  font-family:"Times New Roman", serif;
+  font-size:12px;
+  line-height:1;
+  color:#111;
+  opacity:.88;
+  pointer-events:none;
+  user-select:none;
+}
+.coord-rank{
+  position:absolute;
+  left:4px;
+  top:2px;
+  font-family:"Times New Roman", serif;
+  font-size:12px;
+  line-height:1;
+  color:#111;
+  opacity:.88;
+  pointer-events:none;
+  user-select:none;
+}
+
+
+
+/* === PLAYER REDESIGN: Header, 640px-Brett, Bedenkzeit unter dem Brett, Brettfarben === */
+:root {
+  --board-size: min(640px, calc(100vw - 24px));
+  --light-square: #f0d9b5;
+  --dark-square: #843f46;
+  --player-gap: 16px;
+  --right-col: 396px;
+}
+
+.app {
+  padding: 10px 0 18px;
+  width: 100%;
+}
+.player-shell {
+  /* Desktop-Breite exakt wie Brett + Abstand + rechte Spalte; bleibt unter 1100px */
+  width: min(calc(var(--board-size) + var(--player-gap) + var(--right-col)), calc(100vw - 24px));
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.player-header {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 118px;
+  align-items: stretch;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
+}
+.player-logo-slot {
+  min-height: 128px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(246,246,246,0.92));
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.player-logo-slot img {
+  max-width: 132px;
+  max-height: 112px;
+  object-fit: contain;
+  display: block;
+}
+.player-logo-slot.logo-missing {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--andili-rot);
+}
+.header-controls {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+.header-controls .control-header {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+.header-controls .control-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #222;
+  opacity: 1;
+}
+.header-controls .control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.header-controls label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #333;
+  margin: 0 0 4px;
+}
+.header-controls select {
+  height: 39px;
+  border-radius: 11px;
+  padding: 7px 11px;
+  font-size: 15px;
+  font-weight: 700;
+  background: #f7f7f9;
+  border: 1px solid rgba(0,0,0,.14);
+}
+.header-controls .engine-info {
+  margin: 0;
+  padding-top: 2px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #222;
+}
+.header-actions {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 12px;
+  align-self: stretch;
+}
+#newGameBtn {
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 7px 10px;
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: 11px;
+}
+.top-layout {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--player-gap);
+  flex-wrap: nowrap;
+}
+.board-column {
+  width: var(--board-size);
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 0 0 var(--board-size);
+}
+.board-wrapper {
+  position: relative;
+  width: var(--board-size);
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
+}
+#board {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 4px solid var(--andili-rot);
+  border-radius: 10px;
+}
+.light { background: var(--light-square) !important; }
+.dark { background: var(--dark-square) !important; }
+.board-illegal-flash {
+  inset: 0;
+  border-radius: 10px;
+}
+.moves-right {
+  width: var(--right-col);
+  max-width: 100%;
+  flex: 0 0 var(--right-col);
+}
+.moves.box {
+  height: var(--board-size);
+  min-height: var(--board-size);
+  box-sizing: border-box;
+}
+.moves {
+  padding: 12px 14px;
+  max-height: var(--board-size);
+  overflow: auto;
+  font-size: 15px;
+}
+.moves-title {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+#moveList {
+  display: grid;
+  grid-template-columns: 42px 1fr 1fr 42px 1fr 1fr;
+  gap: 5px 6px;
+  max-height: calc(var(--board-size) - 92px);
+  overflow-y: auto;
+  padding-right: 6px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.42;
+}
+.moves-footer {
+  margin-top: 12px;
+  gap: 8px;
+}
+.moves-footer button.nav-btn {
+  min-width: 40px;
+  min-height: 36px;
+  font-size: 18px;
+  background: #e0e0e0 !important;
+  color: #9A2D33 !important;
+}
+.time-box {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0;
+  padding: 14px 16px;
+  min-height: 0;
+}
+.time-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.time-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #222;
+}
+.time-clock {
+  margin: 0;
+  text-align: right;
+}
+#playerClock {
+  font-size: 28px;
+  font-weight: 900;
+  color: #111;
+}
+.time-buttons-wide {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.time-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 10px;
+  font-size: 17px;
+  font-weight: 900;
+  border-radius: 999px;
+  background: #e0e0e0 !important;
+  color: #9A2D33 !important;
+  border: none !important;
+}
+.time-btn.active {
+  background: var(--andili-rot) !important;
+  color: #fff !important;
+}
+.time-status {
+  display: block !important;
+  margin-top: 9px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #555;
+  opacity: .9;
+}
+#timeStatus { display: block !important; }
+.status {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0;
+  padding: 11px 16px;
+  font-size: 18px;
+  font-weight: 900;
+}
+.board-color-wrap {
+  position: relative;
+  width: 100%;
+  align-self: stretch;
+  justify-self: stretch;
+  display: flex;
+}
+.board-color-btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  border-radius: 11px;
+  padding: 7px 10px;
+  background: #f7f7f9 !important;
+  color: #333 !important;
+  border: 1px solid rgba(0,0,0,.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 2px 6px rgba(0,0,0,.08);
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.board-color-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 238px;
+  background: rgba(255,255,255,.99);
+  border: 1px solid rgba(132,63,70,.22);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(0,0,0,.20);
+  padding: 10px;
+  z-index: 2100;
+}
+.board-color-popup[hidden] { display: none !important; }
+.board-color-popup-title {
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #222;
+}
+.board-color-options {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.board-color-option {
+  width: 100%;
+  height: auto;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 7px 8px;
+  background: #f4f4f5 !important;
+  color: #222 !important;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: left;
+}
+.board-color-option.active {
+  background: var(--andili-rot) !important;
+  color: #fff !important;
+}
+.board-color-swatch {
+  flex: 0 0 auto;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  width: 38px;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,.22);
+}
+.board-color-swatch span { display: block; }
+.board-color-current {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #555;
+}
+
+@media (max-width: 980px) {
+  .player-header {
+    grid-template-columns: 120px minmax(0, 1fr) 118px;
+  }
+  .top-layout {
+    flex-wrap: wrap;
+  }
+  .moves-right {
+    width: var(--board-size);
+    flex-basis: var(--board-size);
+  }
+}
+@media (max-width: 760px) {
+  :root { --board-size: min(640px, calc(100vw - 24px)); }
+  .player-header {
+    grid-template-columns: 1fr;
+  }
+  .player-logo-slot {
+    min-height: 96px;
+  }
+  .player-logo-slot img {
+    max-height: 84px;
+  }
+  .header-controls .control-grid {
+    grid-template-columns: 1fr;
+  }
+  .header-controls .control-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .header-actions {
+    width: 100%;
+  }
+  .board-color-wrap {
+    grid-column: auto;
+    justify-self: stretch;
+  }
+  .board-color-btn {
+    width: 100%;
+  }
+  .board-color-popup {
+    left: 0;
+    right: auto;
+    width: min(238px, calc(100vw - 48px));
+  }
+  .top-layout {
+    flex-direction: column;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+  .board-column,
+  .moves-right {
+    width: var(--board-size);
+    flex: 0 1 auto;
+  }
+  .time-buttons-wide {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+
+
+
+/* === PROFESSIONAL TIME PANEL: Uhr als Mittelpunkt, dezente Presets === */
+.time-box {
+  padding: 16px 18px 18px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+}
+.time-head {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 0 !important;
+}
+.time-title {
+  width: 100%;
+  text-align: left;
+  font-size: 17px !important;
+  line-height: 1.15;
+  letter-spacing: .01em;
+}
+.time-clock {
+  width: 100%;
+  margin: -2px 0 2px !important;
+  text-align: center !important;
+}
+#playerClock {
+  display: inline-block;
+  min-width: 136px;
+  padding: 2px 18px 4px;
+  font-size: 42px !important;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .02em;
+  color: #111 !important;
+  border-radius: 16px;
+  background: rgba(255,255,255,.62);
+  box-shadow: inset 0 0 0 1px rgba(132,63,70,.10);
+}
+.time-buttons-wide {
+  width: 100%;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.time-btn {
+  flex: 0 0 78px;
+  width: 78px !important;
+  min-height: 30px !important;
+  padding: 4px 8px !important;
+  font-size: 14px !important;
+  line-height: 1.1;
+  font-weight: 800;
+  border-radius: 999px;
+  background: rgba(224,224,224,.72) !important;
+  color: #9A2D33 !important;
+  border: 1px solid rgba(132,63,70,.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 2px 5px rgba(0,0,0,.05) !important;
+}
+.time-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75), 0 5px 12px rgba(0,0,0,.10) !important;
+}
+.time-btn.active {
+  background: #843f46 !important;
+  color: #fff !important;
+  border-color: rgba(132,63,70,.40) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 6px 14px rgba(132,63,70,.18) !important;
+}
+.time-status {
+  width: 100%;
+  margin-top: 0 !important;
+  text-align: center !important;
+  font-size: 13px !important;
+  line-height: 1.25;
+  color: #666 !important;
+}
+
+@media (max-width: 760px) {
+  #playerClock {
+    font-size: 34px !important;
+    min-width: 116px;
+  }
+  .time-btn {
+    flex-basis: 72px;
+    width: 72px !important;
+    font-size: 13px !important;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div class="app" role="main">
+  <div class="player-shell">
+    <header class="box player-header" id="playerHeader">
+      <div class="player-logo-slot" id="playerLogoSlot" aria-label="Hammerschach Player Logo">
+        <img src="Player-Logo.png" alt="Hammerschach Player Logo" onerror="this.style.display='none'; this.parentNode.classList.add('logo-missing'); this.parentNode.textContent='Player';" />
+      </div>
+
+      <div class="header-controls">
+        <div class="control-header">
+          <div class="control-title">Spiel-Einstellungen</div>
+        </div>
+        <div class="control-grid">
+          <div>
+            <label for="sideSelect">Spielerfarbe</label>
+            <select id="sideSelect">
+              <option value="w">Weiß (du beginnst)</option>
+              <option value="b">Schwarz (Engine beginnt)</option>
+            </select>
+          </div>
+          <div>
+            <label for="levelSelect">Schwierigkeitsstufe</label>
+            <select id="levelSelect">
+              <option value="schulschach">Schulschach (DWZ 400–700)</option>
+              <option value="anfaenger" selected>Anfänger (DWZ 700–1000)</option>
+              <option value="hobbyspieler">Hobbyspieler (DWZ 1000–1300)</option>
+              <option value="clubspieler">Clubspieler (DWZ 1300–1600)</option>
+              <option value="experte">Experte (DWZ 1700–2000)</option>
+            </select>
+          </div>
+          <div>
+            <label for="humanSelect">Human-Modus</label>
+            <select id="humanSelect">
+              <option value="off" selected>Aus</option>
+              <option value="anfaenger">Anfänger (DWZ 700–1000)</option>
+              <option value="hobbyspieler">Hobbyspieler (DWZ 1000–1300)</option>
+              <option value="clubspieler">Clubspieler (DWZ 1300–1600)</option>
+            </select>
+          </div>
+        </div>
+        <div class="engine-info">
+          <div class="engine-status">Engine-Status: <span id="engineStatus">Wird initialisiert…</span></div>
+          <div class="engine-eval" id="engineEval"></div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="newGameBtn" class="btn-secondary" type="button">Neue Partie</button>
+        <div class="board-color-wrap" id="boardColorWrap">
+          <button id="btnBoardColor" type="button" class="board-color-btn" aria-haspopup="true" aria-expanded="false">Brettfarbe</button>
+        <div id="boardColorPopup" class="board-color-popup" hidden>
+          <div class="board-color-popup-title">Brettfarbe wählen</div>
+          <div class="board-color-options">
+            <button type="button" class="board-color-option" data-board-color="basis">
+              <span>Basis</span>
+              <span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span>
+            </button>
+            <button type="button" class="board-color-option" data-board-color="braun">
+              <span>Klassisch Braun</span>
+              <span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span>
+            </button>
+            <button type="button" class="board-color-option" data-board-color="grau">
+              <span>Grau / Neutral</span>
+              <span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span>
+            </button>
+            <button type="button" class="board-color-option" data-board-color="gruen">
+              <span>Grün / Turnier</span>
+              <span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span>
+            </button>
+          </div>
+          <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="top-layout">
+      <div class="board-column">
+        <div class="board-wrapper">
+          <div id="board" aria-label="Schachbrett"></div>
+          <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
+        </div>
+
+        <div class="box time-box">
+          <div class="time-head">
+            <div class="time-title">Bedenkzeit min+sek</div>
+            <div class="time-clock"><span id="playerClock">--:--</span></div>
+          </div>
+          <div class="time-buttons-wide">
+            <button class="time-btn" data-time="180+2">3 + 2</button>
+            <button class="time-btn" data-time="300+3">5 + 3</button>
+            <button class="time-btn" data-time="600+5">10 + 5</button>
+            <button class="time-btn" data-time="900+10">15 + 10</button>
+            <button class="time-btn" data-time="3600+30">60 + 30</button>
+          </div>
+          <div class="time-status" id="timeStatus">Keine Bedenkzeit aktiv</div>
+        </div>
+
+        <div class="status" id="status">Weiß am Zug</div>
+      </div>
+
+      <aside class="moves-right">
+        <div class="moves box">
+          <div class="moves-title">Zugliste</div>
+          <div id="moveList"></div>
+          <div class="moves-footer">
+            <div>
+              <button class="nav-btn" id="navStart" title="Anfang der Partie">«</button>
+              <button class="nav-btn" id="navBack" title="Einen Zug zurück">‹</button>
+              <button class="nav-btn" id="navForward" title="Einen Zug vor">›</button>
+              <button class="nav-btn" id="navEnd" title="Letzte Stellung">»</button>
+            </div>
+            <span id="movesInfo">0/0</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div id="promoOverlayContainer"></div>
+
+<script>
+
+
+/* ===== Brettfarben-Auswahl ===== */
+const boardColorWrap = document.getElementById('boardColorWrap');
+const btnBoardColor = document.getElementById('btnBoardColor');
+const boardColorPopup = document.getElementById('boardColorPopup');
+const boardColorCurrent = document.getElementById('boardColorCurrent');
+const boardColorOptions = document.querySelectorAll('.board-color-option');
+const BOARD_COLOR_STORAGE_KEY = 'hammerschachPlayerBoardColor';
+const boardColorPresets = [
+  {id:'basis', name:'Basis', light:'#f0d9b5', dark:'#843f46'},
+  {id:'braun', name:'Klassisch Braun', light:'#f3ddb7', dark:'#b4875e'},
+  {id:'grau', name:'Grau / Neutral', light:'#eeeeee', dark:'#9b9b9b'},
+  {id:'gruen', name:'Grün / Turnier', light:'#eeeed2', dark:'#769656'}
+];
+function closeBoardColorPopup(){
+  if(!boardColorPopup || !btnBoardColor) return;
+  boardColorPopup.hidden = true;
+  btnBoardColor.setAttribute('aria-expanded','false');
+}
+function openBoardColorPopup(){
+  if(!boardColorPopup || !btnBoardColor) return;
+  boardColorPopup.hidden = false;
+  btnBoardColor.setAttribute('aria-expanded','true');
+}
+function applyBoardColorPreset(id, closeAfterSelection){
+  const preset = boardColorPresets.find(p => p.id === id) || boardColorPresets[0];
+  document.documentElement.style.setProperty('--light-square', preset.light);
+  document.documentElement.style.setProperty('--dark-square', preset.dark);
+  if(boardColorCurrent) boardColorCurrent.textContent = preset.name;
+  boardColorOptions.forEach(btn => btn.classList.toggle('active', btn.dataset.boardColor === preset.id));
+  try{ localStorage.setItem(BOARD_COLOR_STORAGE_KEY, preset.id); } catch(_){ }
+  if(closeAfterSelection) closeBoardColorPopup();
+}
+if(btnBoardColor){
+  btnBoardColor.addEventListener('click', ev => {
+    ev.stopPropagation();
+    if(boardColorPopup && boardColorPopup.hidden) openBoardColorPopup();
+    else closeBoardColorPopup();
+  });
+}
+boardColorOptions.forEach(btn => {
+  btn.addEventListener('click', ev => {
+    ev.stopPropagation();
+    applyBoardColorPreset(btn.dataset.boardColor, true);
+  });
+});
+document.addEventListener('click', ev => {
+  if(boardColorWrap && !boardColorWrap.contains(ev.target)) closeBoardColorPopup();
+});
+document.addEventListener('keydown', ev => {
+  if(ev.key === 'Escape') closeBoardColorPopup();
+});
+let savedBoardColorPreset = 'basis';
+try{ savedBoardColorPreset = localStorage.getItem(BOARD_COLOR_STORAGE_KEY) || 'basis'; } catch(_){ }
+applyBoardColorPreset(savedBoardColorPreset, false);
+
+/* ==== Sounds (Playing Edition) ==== */
+const sndPickup = new Audio("sounds/pickup.mp3");
+const sndDrop = new Audio("sounds/drop.mp3");
+const sndCapture = new Audio("sounds/capture.mp3");
+const sndCheck = new Audio("sounds/check.mp3");
+const sndEngine = new Audio("sounds/engine.mp3");
+
+function safePlay(audio) {
+  try {
+    audio.currentTime = 0;
+    audio.play();
+  } catch (e) {}
+}
+
+function playMoveSound(opts = {}) {
+  const {
+    isCapture = false,
+    isPromotion = false,
+    isCastle = false,
+    isCheck = false,
+    byEngine = false,
+    isPickup = false,
+    isDrop = false
+  } = opts;
+
+  if (isPickup) {
+    return safePlay(sndPickup);
+  }
+  if (isCheck) {
+    return safePlay(sndCheck);
+  }
+  if (byEngine) {
+    // eigener Klang für Engine-Züge
+    return safePlay(sndEngine);
+  }
+  if (isCapture) {
+    return safePlay(sndCapture);
+  }
+  // Standard-Fall: Figur wird "abgelegt"
+  return safePlay(sndDrop);
+}
+
+
+/* ===== Utility & Grundlogik ===== */
+const files = ['a','b','c','d','e','f','g','h'];
+function coordToAlg(x,y){ return files[x] + (8 - y); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+const glyph = {
+  P:'\u2659',R:'\u2656',N:'\u2658',B:'\u2657',Q:'\u2655',K:'\u2654',
+  p:'\u265F',r:'\u265C',n:'\u265E',b:'\u265D',q:'\u265B',k:'\u265A'
+};
+
+function charFor(p){
+  switch(p){
+    case 'P': return '♙';
+    case 'R': return '♖';
+    case 'N': return '♘';
+    case 'B': return '♗';
+    case 'Q': return '♕';
+    case 'K': return '♔';
+    case 'p': return '♟';
+    case 'r': return '♜';
+    case 'n': return '♞';
+    case 'b': return '♝';
+    case 'q': return '♛';
+    case 'k': return '♚';
+    default: return '';
+  }
+}
+
+const pieceImg = {
+  P: "https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
+  R: "https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
+  N: "https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
+  B: "https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
+  Q: "https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
+  K: "https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
+  p: "https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg",
+  r: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg",
+  n: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg",
+  b: "https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg",
+  q: "https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg",
+  k: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg"
+};
+
+function pieceColor(ch){
+  if(!ch || ch === '.') return null;
+  return (ch === ch.toUpperCase()) ? 'w' : 'b';
+}
+
+/* ===== Game-Objekt (Regeln + Legalität) ===== */
+function Game(){ this.reset(); }
+Game.prototype.reset = function(){
+  this.board = [
+    ['r','n','b','q','k','b','n','r'],
+    ['p','p','p','p','p','p','p','p'],
+    ['.','.','.','.','.','.','.','.'],
+    ['.','.','.','.','.','.','.','.'],
+    ['.','.','.','.','.','.','.','.'],
+    ['.','.','.','.','.','.','.','.'],
+    ['P','P','P','P','P','P','P','P'],
+    ['R','N','B','Q','K','B','N','R']
+  ];
+  this.turn = 'w';
+  this.ep = null;
+  this.castling = {K:true,Q:true,k:true,q:true};
+  this.halfmove = 0;
+  this.fullmove = 1;
+  this.history = [];
+};
+Game.prototype.clone = function(){
+  const g = new Game();
+  g.board = clone(this.board);
+  g.turn = this.turn;
+  g.ep = this.ep ? [this.ep[0],this.ep[1]] : null;
+  g.castling = Object.assign({}, this.castling);
+  g.halfmove = this.halfmove;
+  g.fullmove = this.fullmove;
+  g.history = clone(this.history);
+  return g;
+};
+Game.prototype.at = function(x,y){ return this.board[y][x]; };
+Game.prototype.set = function(x,y,v){ this.board[y][x] = v; };
+Game.prototype.inBounds = function(x,y){ return x>=0 && x<8 && y>=0 && y<8; };
+
+Game.prototype.findKing = function(color){
+  const k = color === 'w' ? 'K' : 'k';
+  for(let y=0;y<8;y++)
+    for(let x=0;x<8;x++)
+      if(this.board[y][x] === k) return [x,y];
+  return null;
+};
+
+Game.prototype.isAttacked = function(tx,ty,byColor){
+  const dir = byColor === 'w' ? -1 : 1;
+  const pawn = byColor === 'w' ? 'P' : 'p';
+  // Bauern
+  for(const dx of [-1,1]){
+    const x = tx + dx, y = ty - dir;
+    if(this.inBounds(x,y) && this.board[y][x] === pawn) return true;
+  }
+  // Springer
+  const knight = byColor === 'w' ? 'N' : 'n';
+  const knightMoves = [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
+  for(const m of knightMoves){
+    const x = tx + m[0], y = ty + m[1];
+    if(this.inBounds(x,y) && this.board[y][x] === knight) return true;
+  }
+  // Läufer/Dame diagonal
+  const bishop = byColor === 'w' ? 'B' : 'b';
+  const queen  = byColor === 'w' ? 'Q' : 'q';
+  const rook   = byColor === 'w' ? 'R' : 'r';
+  const king   = byColor === 'w' ? 'K' : 'k';
+
+  const diags = [[1,1],[1,-1],[-1,1],[-1,-1]];
+  for(const d of diags){
+    let x = tx + d[0], y = ty + d[1];
+    while(this.inBounds(x,y)){
+      const p = this.board[y][x];
+      if(p !== '.'){
+        if(p === bishop || p === queen) return true;
+        break;
+      }
+      x += d[0]; y += d[1];
+    }
+  }
+  // Turm/Dame orthogonal
+  const orth = [[1,0],[-1,0],[0,1],[0,-1]];
+  for(const d of orth){
+    let x = tx + d[0], y = ty + d[1];
+    while(this.inBounds(x,y)){
+      const p = this.board[y][x];
+      if(p !== '.'){
+        if(p === rook || p === queen) return true;
+        break;
+      }
+      x += d[0]; y += d[1];
+    }
+  }
+  // König Nachbarschaft
+  for(let dx=-1; dx<=1; dx++)
+    for(let dy=-1; dy<=1; dy++){
+      if(dx===0 && dy===0) continue;
+      const x = tx + dx, y = ty + dy;
+      if(this.inBounds(x,y) && this.board[y][x] === king) return true;
+    }
+  return false;
+};
+
+Game.prototype.pseudoLegalMovesFrom = function(x,y){
+  const moves = [];
+  const p = this.at(x,y);
+  if(!p || p === '.') return moves;
+  const color = (p === p.toUpperCase()) ? 'w' : 'b';
+  const dir   = color === 'w' ? -1 : 1;
+  const piece = p.toLowerCase();
+
+  if(piece === 'p'){
+    const ny = y + dir;
+    // vorwärts
+    if(this.inBounds(x,ny) && this.at(x,ny) === '.'){
+      moves.push([x,ny,null]);
+      const start = (color === 'w') ? 6 : 1;
+      const ny2   = y + 2*dir;
+      if(y === start && this.at(x,ny2) === '.'){
+        moves.push([x,ny2,{ep:[x,ny]}]);
+      }
+    }
+    // schlagen + en passant
+    for(const dx of [-1,1]){
+      const nx = x + dx, nyc = y + dir;
+      if(this.inBounds(nx,nyc)){
+        const t = this.at(nx,nyc);
+        if(t !== '.' && pieceColor(t) !== color)
+          moves.push([nx,nyc,null]);
+      }
+      const ep = this.ep;
+      if(ep && ep[0] === x+dx && ep[1] === y+dir){
+        moves.push([x+dx,y+dir,{enpassant:true}]);
+      }
+    }
+  } else if(piece === 'n'){
+    const steps = [[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
+    for(const s of steps){
+      const nx = x + s[0], ny = y + s[1];
+      if(!this.inBounds(nx,ny)) continue;
+      const t = this.at(nx,ny);
+      if(t === '.' || pieceColor(t) !== color) moves.push([nx,ny,null]);
+    }
+  } else if(['b','r','q'].includes(piece)){
+    const dirs =
+      piece === 'b' ? [[1,1],[1,-1],[-1,1],[-1,-1]] :
+      piece === 'r' ? [[1,0],[-1,0],[0,1],[0,-1]] :
+      [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    for(const d of dirs){
+      let nx = x + d[0], ny = y + d[1];
+      while(this.inBounds(nx,ny)){
+        const t = this.at(nx,ny);
+        if(t === '.') moves.push([nx,ny,null]);
+        else {
+          if(pieceColor(t) !== color) moves.push([nx,ny,null]);
+          break;
+        }
+        nx += d[0]; ny += d[1];
+      }
+    }
+  } else if(piece === 'k'){
+    for(let dx=-1; dx<=1; dx++)
+      for(let dy=-1; dy<=1; dy++){
+        if(dx===0 && dy===0) continue;
+        const nx = x + dx, ny = y + dy;
+        if(!this.inBounds(nx,ny)) continue;
+        const t = this.at(nx,ny);
+        if(t === '.' || pieceColor(t) !== color) moves.push([nx,ny,null]);
+      }
+    // Rochade rudimentär (ohne Schachprüfung, wird später gefiltert)
+    if(color === 'w'){
+      if(this.castling.K){
+        if(this.at(5,7)==='.' && this.at(6,7)==='.')
+          moves.push([6,7,{castle:'K'}]);
+      }
+      if(this.castling.Q){
+        if(this.at(1,7)==='.' && this.at(2,7)==='.' && this.at(3,7)==='.')
+          moves.push([2,7,{castle:'Q'}]);
+      }
+    } else {
+      if(this.castling.k){
+        if(this.at(5,0)==='.' && this.at(6,0)==='.')
+          moves.push([6,0,{castle:'k'}]);
+      }
+      if(this.castling.q){
+        if(this.at(1,0)==='.' && this.at(2,0)==='.' && this.at(3,0)==='.')
+          moves.push([2,0,{castle:'q'}]);
+      }
+    }
+  }
+  return moves;
+};
+
+Game.prototype.legalMoves = function(){
+  const moves = [];
+  const side = this.turn;
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      const p = this.at(x,y);
+      if(p === '.') continue;
+      const color = (p === p.toUpperCase()) ? 'w' : 'b';
+      if(color !== side) continue;
+      const pseudo = this.pseudoLegalMovesFrom(x,y);
+      for(const pm of pseudo){
+        const nx = pm[0], ny = pm[1], meta = pm[2];
+        const sim = this.clone();
+        const piece = sim.at(x,y);
+        if(meta && meta.enpassant){
+          sim.set(nx, y, '.');
+          sim.set(nx, ny, piece);
+          sim.set(x,y,'.');
+        } else if(meta && meta.castle){
+          if(meta.castle==='K'){ sim.set(4,7,'.'); sim.set(6,7,'K'); sim.set(7,7,'.'); sim.set(5,7,'R'); }
+          else if(meta.castle==='Q'){ sim.set(4,7,'.'); sim.set(2,7,'K'); sim.set(0,7,'.'); sim.set(3,7,'R'); }
+          else if(meta.castle==='k'){ sim.set(4,0,'.'); sim.set(6,0,'k'); sim.set(7,0,'.'); sim.set(5,0,'r'); }
+          else if(meta.castle==='q'){ sim.set(4,0,'.'); sim.set(2,0,'k'); sim.set(0,0,'.'); sim.set(3,0,'r'); }
+        } else {
+          sim.set(nx,ny,piece);
+          sim.set(x,y,'.');
+        }
+        const kp = sim.findKing(side);
+        if(kp && !sim.isAttacked(kp[0],kp[1], side==='w'?'b':'w')){
+          moves.push({from:[x,y],to:[nx,ny],meta:meta});
+        }
+      }
+    }
+  }
+  return moves;
+};
+
+Game.prototype.makeMove = function(mv){
+  const fx = mv.from[0], fy = mv.from[1];
+  const tx = mv.to[0], ty = mv.to[1];
+  const piece = this.at(fx,fy);
+  const meta = mv.meta || {};
+  let taken = '.';
+
+  if(meta.enpassant){
+    taken = this.at(tx, fy);
+    this.set(tx, fy, '.');
+    this.set(tx, ty, piece);
+    this.set(fx, fy, '.');
+  } else if(meta.castle){
+    if(meta.castle==='K'){ this.set(4,7,'.'); this.set(6,7,'K'); this.set(7,7,'.'); this.set(5,7,'R'); }
+    else if(meta.castle==='Q'){ this.set(4,7,'.'); this.set(2,7,'K'); this.set(0,7,'.'); this.set(3,7,'R'); }
+    else if(meta.castle==='k'){ this.set(4,0,'.'); this.set(6,0,'k'); this.set(7,0,'.'); this.set(5,0,'r'); }
+    else if(meta.castle==='q'){ this.set(4,0,'.'); this.set(2,0,'k'); this.set(0,0,'.'); this.set(3,0,'r'); }
+  } else {
+    taken = this.at(tx,ty);
+    this.set(tx,ty,piece);
+    this.set(fx,fy,'.');
+    if((this.at(tx,ty)==='P' && ty===0) || (this.at(tx,ty)==='p' && ty===7)){
+      const prom = mv.promotion || 'Q';
+      const newP = (this.at(tx,ty) === this.at(tx,ty).toUpperCase()) ? prom.toUpperCase() : prom.toLowerCase();
+      this.set(tx,ty,newP);
+    }
+  }
+
+  // En passant Ziel
+  this.ep = null;
+  if((piece==='P' || piece==='p') && Math.abs(ty - fy) === 2){
+    this.ep = [fx, (fy+ty)/2];
+  }
+
+  // Rochaderechte
+  if(piece === 'K'){ this.castling.K=false; this.castling.Q=false; }
+  if(piece === 'k'){ this.castling.k=false; this.castling.q=false; }
+  if(piece === 'R' && fx===0 && fy===7) this.castling.Q=false;
+  if(piece === 'R' && fx===7 && fy===7) this.castling.K=false;
+  if(piece === 'r' && fx===0 && fy===0) this.castling.q=false;
+  if(piece === 'r' && fx===7 && fy===0) this.castling.k=false;
+  if(taken === 'R' && tx===0 && ty===7) this.castling.Q=false;
+  if(taken === 'R' && tx===7 && ty===7) this.castling.K=false;
+  if(taken === 'r' && tx===0 && ty===0) this.castling.q=false;
+  if(taken === 'r' && tx===7 && ty===0) this.castling.k=false;
+
+  // Halbzugzähler
+  if(piece.toLowerCase() === 'p' || taken !== '.') this.halfmove = 0;
+  else this.halfmove++;
+
+  if(this.turn === 'b') this.fullmove++;
+
+  this.history.push({from:mv.from,to:mv.to,piece:piece,taken:taken,meta:meta,promotion:mv.promotion});
+  this.turn = (this.turn === 'w') ? 'b' : 'w';
+};
+
+Game.prototype.inCheck = function(color){
+  const kp = this.findKing(color);
+  return kp && this.isAttacked(kp[0],kp[1], color==='w'?'b':'w');
+};
+
+Game.prototype.gameOver = function(){
+  const lm = this.legalMoves();
+  if(lm.length === 0){
+    if(this.inCheck(this.turn)){
+      return {type:'checkmate', winner: this.turn==='w' ? 'b' : 'w'};
+    } else {
+      return {type:'stalemate'};
+    }
+  }
+  return false;
+};
+
+// SAN nach erfolgtem Zug (mit voller Disambiguierung wie im Editor)
+Game.prototype.moveToSan = function(mv){
+  // Rochade
+  if(mv.meta && mv.meta.castle){
+    const castleSan = mv.meta.castle.toLowerCase().includes('k') ? 'O-O' : 'O-O-O';
+    const opponent = this.turn;
+    const go = this.gameOver();
+    if(go && go.type === 'checkmate') return castleSan + '#';
+    if(this.inCheck(opponent)) return castleSan + '+';
+    return castleSan;
+  }
+
+  const piece = mv.piece;
+  const isPawn = (piece.toLowerCase() === 'p');
+  const destSq = coordToAlg(mv.to[0], mv.to[1]);
+  const isCapture = (mv.taken && mv.taken !== '.');
+
+  let san = '';
+
+  if(isPawn){
+    // Bauern: Datei nur bei Schlagzügen
+    const fromFileChar = files[mv.from[0]];
+    if(isCapture){
+      san += fromFileChar + 'x' + destSq;
+    } else {
+      san += destSq;
+    }
+  } else {
+    const pieceLetter = piece.toUpperCase();
+    san += pieceLetter;
+
+    // === Disambiguierung wie im Editor ===
+    // Wir rekonstruieren die Stellung VOR dem Zug aus der Historie.
+    const h = this.history || [];
+    const prevGame = new Game();
+    if(h.length > 0){
+      for(let i=0; i<h.length-1; i++){
+        prevGame.makeMove(h[i]);
+      }
+    }
+    const allMoves = prevGame.legalMoves();
+    const candidates = [];
+
+    for(const lm of allMoves){
+      const p = prevGame.at(lm.from[0], lm.from[1]);
+      if(p === piece && lm.to[0] === mv.to[0] && lm.to[1] === mv.to[1]){
+        candidates.push(lm);
+      }
+    }
+
+    let needFile = false;
+    let needRank = false;
+
+    if(candidates.length > 1){
+      const fromFile = mv.from[0];
+      const fromRank = mv.from[1];
+      let sameFile = false;
+      let sameRank = false;
+
+      for(const c of candidates){
+        if(c.from[0] === fromFile && c.from[1] === fromRank) continue;
+        if(c.from[0] === fromFile) sameFile = true;
+        if(c.from[1] === fromRank) sameRank = true;
+      }
+
+      if(sameFile && sameRank){
+        needFile = true;
+        needRank = true;
+      } else if(sameFile){
+        needRank = true;
+      } else if(sameRank){
+        needFile = true;
+      } else {
+        // mehrere Kandidaten, aber weder gleiche Reihe noch gleiche Linie -> Dateiangabe reicht
+        needFile = true;
+      }
+    }
+
+    if(needFile){
+      san += files[mv.from[0]];
+    }
+    if(needRank){
+      san += (8 - mv.from[1]);
+    }
+
+    if(isCapture){
+      san += 'x';
+    }
+    san += destSq;
+  }
+
+  // Promotion
+  if(mv.promotion){
+    san += '=' + mv.promotion.toUpperCase();
+  }
+
+  // Schach / Matt
+  const opponent = this.turn;
+  const go = this.gameOver();
+  if(go && go.type === 'checkmate') san += '#';
+  else if(this.inCheck(opponent)) san += '+';
+
+  return san;
+};
+
+/* ===== UI + Historie ===== */
+let masterHistory = [];
+let viewIndex = 0;
+let orientationWhite = true;
+let selected = null;
+
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+
+const illegalFlashEl = document.getElementById('illegalFlash');
+const navStartBtn = document.getElementById('navStart');
+const navBackBtn = document.getElementById('navBack');
+const navForwardBtn = document.getElementById('navForward');
+const navEndBtn = document.getElementById('navEnd');
+
+function buildGameFromHistory(n){
+  const g = new Game();
+  for(let i=0; i<n && i<masterHistory.length; i++){
+    const m = masterHistory[i];
+    const legal = g.legalMoves();
+    let found = null;
+    for(const lm of legal){
+      if(
+        lm.from[0] === m.from[0] && lm.from[1] === m.from[1] &&
+        lm.to[0]   === m.to[0]   && lm.to[1]   === m.to[1]
+      ){
+        found = lm; break;
+      }
+    }
+    let mv;
+    if(found){
+      mv = {from:found.from,to:found.to,meta:found.meta||{},promotion:m.promotion,piece:g.at(found.from[0],found.from[1])};
+      mv.taken = (found.meta && found.meta.enpassant)
+        ? g.at(found.to[0], found.from[1])
+        : g.at(found.to[0], found.to[1]);
+    } else {
+      mv = {from:m.from,to:m.to,meta:m.meta||{},promotion:m.promotion};
+    }
+    g.makeMove(mv);
+  }
+  return g;
+}
+
+function renderBoardFromView(){
+  const g = buildGameFromHistory(viewIndex);
+  boardEl.innerHTML = '';
+  for(let y=0; y<8; y++){
+    for(let x=0; x<8; x++){
+      const sx = orientationWhite ? x : 7-x;
+      const sy = orientationWhite ? y : 7-y;
+      const el = document.createElement('div');
+      el.className = 'square ' + (((sx+sy)%2===0)?'light':'dark');
+      el.dataset.x = sx;
+      el.dataset.y = sy;
+      const p = g.at(sx,sy);
+      if(p !== '.'){
+        const img = document.createElement('img');
+        img.src = pieceImg[p];
+        img.alt = charFor(p) || '';
+        img.className = 'piece-img';
+        el.appendChild(img);
+      }
+      el.addEventListener('click', ()=>onSquareClick(sx,sy));
+      // Lichess-artige Koordinaten: immer an der ANGEZEIGTEN unteren Reihe bzw. linken Spalte
+      const filesArr = ['a','b','c','d','e','f','g','h'];
+      if (y === 7) {
+        const f = document.createElement('span');
+        f.className = 'coord-file';
+        f.textContent = filesArr[sx];
+        el.appendChild(f);
+      }
+      if (x === 0) {
+        const r = document.createElement('span');
+        r.className = 'coord-rank';
+        r.textContent = 8 - sy;
+        el.appendChild(r);
+      }
+      boardEl.appendChild(el);
+    }
+  }
+  reapplySelectionHighlight(g);
+  updateStatusFromGame(g);
+  renderMoveList();
+  removePromoOverlay();
+  updateNavControls();
+}
+
+function updateStatusFromGame(g){
+  const go = g.gameOver();
+  if(go){
+    if(go.type === 'checkmate'){
+      statusEl.textContent = 'Schachmatt — ' + (go.winner==='w' ? 'Weiß' : 'Schwarz') + ' gewinnt';
+    } else {
+      statusEl.textContent = 'Patt — Unentschieden';
+    }
+  } else {
+    let t = (g.turn === 'w') ? 'Weiß am Zug' : 'Schwarz am Zug';
+    if(g.inCheck(g.turn)) t += ' — Schach!';
+    statusEl.textContent = t;
+  }
+}
+
+function moveToLAN(m){
+  return coordToAlg(m.from[0],m.from[1]) +
+         coordToAlg(m.to[0],m.to[1]) +
+         (m.promotion ? '='+m.promotion : '');
+}
+
+function renderMoveList() {
+    const moveListEl = document.getElementById("moveList");
+    moveListEl.innerHTML = "";
+
+    if (masterHistory.length === 0) {
+        moveListEl.innerHTML = "<div>—</div>";
+        return;
+    }
+
+    const sanMoves = masterHistory.map(m => m.san || "");
+
+    for (let i = 0; i < sanMoves.length; i += 4) {
+        const num1 = (i / 2) + 1;
+        const num2 = num1 + 1;
+
+        const w1 = sanMoves[i]     || "";
+        const b1 = sanMoves[i + 1] || "";
+        const w2 = sanMoves[i + 2] || "";
+        const b2 = sanMoves[i + 3] || "";
+
+        moveListEl.innerHTML += `
+            <div>${num1}.</div>
+            <div>${w1}</div>
+            <div>${b1}</div>
+
+            <div>${w2 || b2 ? num2 + "." : ""}</div>
+            <div>${w2}</div>
+            <div>${b2}</div>
+        `;
+    }
+}
+
+function updateNavControls(){
+  if(!navStartBtn || !navBackBtn || !navForwardBtn || !navEndBtn) return;
+  const total = masterHistory.length;
+  const current = viewIndex;
+  navStartBtn.disabled   = (total === 0 || current === 0);
+  navBackBtn.disabled    = (total === 0 || current === 0);
+  navForwardBtn.disabled = (total === 0 || current === total);
+  navEndBtn.disabled     = (total === 0 || current === total);
+  const infoEl = document.getElementById('movesInfo');
+  if(infoEl){
+    infoEl.textContent = total === 0 ? '0/0' : `${current}/${total}`;
+  }
+}
+
+if(navStartBtn){
+  navStartBtn.addEventListener('click', ()=>{
+    if(masterHistory.length === 0) return;
+    viewIndex = 0;
+    selected = null;
+    renderBoardFromView();
+updateLevelLock();
+
+  });
+}
+if(navBackBtn){
+  navBackBtn.addEventListener('click', ()=>{
+    if(masterHistory.length === 0 || viewIndex === 0) return;
+    viewIndex = Math.max(0, viewIndex - 1);
+    selected = null;
+    renderBoardFromView();
+updateLevelLock();
+
+  });
+}
+if(navForwardBtn){
+  navForwardBtn.addEventListener('click', ()=>{
+    if(masterHistory.length === 0 || viewIndex === masterHistory.length) return;
+    viewIndex = Math.min(masterHistory.length, viewIndex + 1);
+    selected = null;
+    renderBoardFromView();
+updateLevelLock();
+
+  });
+}
+if(navEndBtn){
+  navEndBtn.addEventListener('click', ()=>{
+    if(masterHistory.length === 0) return;
+    viewIndex = masterHistory.length;
+    selected = null;
+    renderBoardFromView();
+updateLevelLock();
+
+  });
+}
+
+function showIllegalMoveFeedback(message){
+  if(illegalFlashEl){
+    illegalFlashEl.classList.add('active');
+    setTimeout(()=>illegalFlashEl.classList.remove('active'), 420);
+  }
+  const previous = statusEl.textContent;
+  statusEl.textContent = message || 'Illegaler Zug — nicht erlaubt';
+  setTimeout(()=>{ statusEl.textContent = previous; }, 900);
+  if(navigator.vibrate) navigator.vibrate(80);
+}
+
+/* ===== Engine-Setup ===== */
+let engine = null;
+let engineReady = false;
+let engineBusy = false;
+
+ /* ===== Bedenkzeit (Playing Edition) ===== */
+let timeMode = false;
+let baseTimeMs = 0;
+let incrementMs = 0;
+let playerTimeMs = 0;
+let clockInterval = null;
+let clockRunning = false;
+let firstMoveDone = false;
+let timeLost = false;
+let activeTimeKey = null;
+
+const timeButtons = document.querySelectorAll('.time-btn');
+const playerClockEl = document.getElementById('playerClock');
+const timeStatusEl = document.getElementById('timeStatus');
+
+let humanColor = 'w';
+let engineLevel = 'anfaenger';
+let playMode = 'engine';
+let humanMode = 'off'; // Playing Edition = immer gegen Engine
+let lastEvalSide = 'w'; // für Bewertungsanzeige immer aus Weiß-Sicht
+let multiCandidates = []; // Multi-PV-Kandidaten der Engine
+let currentEngineProfile = null;
+let pendingEngineStart = false;
+
+/*
+  Spielstärken-Kalibrierung
+  ------------------------
+  Wichtiger Hinweis: Die DWZ-Werte sind bewusst als grobe Zielbereiche umgesetzt.
+  Unterhalb von etwa 1300 ist Stockfish per UCI_Elo nicht sauber regelbar, deshalb
+  werden dort Skill Level, kurze Suchzeiten und menschliche Zugauswahl kombiniert.
+*/
+const STRENGTH_PROFILES = {
+  schulschach: {
+    label:'Schulschach', dwz:'ca. DWZ 400–700',
+    movetime:80, skill:0, uciElo:null, multipv:5,
+    weights:[0.18,0.20,0.22,0.18,0.12], random:0.10
+  },
+  anfaenger: {
+    label:'Anfänger', dwz:'ca. DWZ 700–1000',
+    movetime:130, skill:1, uciElo:null, multipv:5,
+    weights:[0.30,0.25,0.19,0.12,0.07], random:0.07
+  },
+  hobbyspieler: {
+    label:'Hobbyspieler', dwz:'ca. DWZ 1000–1300',
+    movetime:240, skill:4, uciElo:null, multipv:4,
+    weights:[0.48,0.27,0.15,0.06], random:0.04
+  },
+  clubspieler: {
+    label:'Clubspieler', dwz:'ca. DWZ 1300–1600',
+    movetime:420, skill:8, uciElo:1450, multipv:4,
+    weights:[0.66,0.22,0.08,0.03], random:0.01
+  },
+  experte: {
+    label:'Experte', dwz:'ca. DWZ 1700–2000',
+    movetime:700, skill:13, uciElo:1850, multipv:3,
+    weights:[0.84,0.13,0.03], random:0.00
+  }
+};
+
+const HUMAN_MODE_PROFILES = {
+  anfaenger: {
+    label:'Human-Anfänger', dwz:'ca. DWZ 700–1000',
+    movetime:150, skill:1, uciElo:null, multipv:5,
+    weights:[0.26,0.25,0.21,0.13,0.07], random:0.08
+  },
+  hobbyspieler: {
+    label:'Human-Hobbyspieler', dwz:'ca. DWZ 1000–1300',
+    movetime:260, skill:4, uciElo:null, multipv:4,
+    weights:[0.44,0.28,0.17,0.07], random:0.04
+  },
+  clubspieler: {
+    label:'Human-Clubspieler', dwz:'ca. DWZ 1300–1600',
+    movetime:460, skill:8, uciElo:1450, multipv:4,
+    weights:[0.62,0.24,0.09,0.03], random:0.02
+  }
+};
+
+const engineStatusEl = document.getElementById('engineStatus');
+const engineEvalEl = document.getElementById('engineEval');
+const sideSelectEl = document.getElementById('sideSelect');
+const levelSelectEl = document.getElementById('levelSelect');
+const humanSelectEl = document.getElementById('humanSelect');
+const newGameBtn = document.getElementById('newGameBtn');
+
+function updateLevelLock(){
+  if(!levelSelectEl || !humanSelectEl) return;
+  const lock = humanSelectEl.value !== 'off';
+  levelSelectEl.disabled = lock;
+  levelSelectEl.style.opacity = lock ? '0.5' : '1';
+  levelSelectEl.title = lock ? 'Im Human-Modus deaktiviert' : '';
+}
+
+
+
+function getEffectiveEngineProfile(){
+  if(humanMode && humanMode !== 'off'){
+    return HUMAN_MODE_PROFILES[humanMode] || HUMAN_MODE_PROFILES.hobbyspieler;
+  }
+  return STRENGTH_PROFILES[engineLevel] || STRENGTH_PROFILES.anfaenger;
+}
+
+function updateStrengthStatus(prefix){
+  if(!engineStatusEl) return;
+  const profile = getEffectiveEngineProfile();
+  const modeText = (humanMode && humanMode !== 'off') ? 'Human-Modus' : 'Engine-Level';
+  engineStatusEl.textContent = (prefix ? prefix + ' — ' : '') + modeText + ': ' + profile.label + ' (' + profile.dwz + ').';
+}
+
+function configureEngineForProfile(profile){
+  if(!engine || !profile) return;
+  const multipv = Math.max(1, Math.min(5, profile.multipv || 1));
+
+  // MultiPV ist eine UCI-Option und wird deshalb sauber VOR dem Suchbefehl gesetzt.
+  engine.postMessage('setoption name MultiPV value ' + multipv);
+
+  if(profile.uciElo){
+    // Für Zielbereiche ab ca. DWZ 1300 nutzen wir Stockfishs eingebaute Elo-Begrenzung.
+    engine.postMessage('setoption name UCI_LimitStrength value true');
+    engine.postMessage('setoption name UCI_Elo value ' + profile.uciElo);
+  } else {
+    // Für niedrigere Zielbereiche ist UCI_Elo nicht geeignet: hier regeln wir über Skill + Zugauswahl.
+    engine.postMessage('setoption name UCI_LimitStrength value false');
+    engine.postMessage('setoption name Skill Level value ' + (profile.skill || 0));
+  }
+}
+
+function normalizeWeights(weights, count){
+  const arr = (weights || [1]).slice(0, count);
+  while(arr.length < count) arr.push(0);
+  const sum = arr.reduce((a,b)=>a + Math.max(0,b), 0);
+  if(sum <= 0) return arr.map((_,idx)=>idx === 0 ? 1 : 0);
+  return arr.map(v => Math.max(0,v) / sum);
+}
+
+function chooseWeightedCandidate(candidates, profile){
+  if(!candidates || candidates.length === 0) return null;
+  const weights = normalizeWeights(profile.weights, candidates.length);
+  let r = Math.random();
+  for(let i=0; i<candidates.length; i++){
+    r -= weights[i];
+    if(r <= 0) return candidates[i];
+  }
+  return candidates[0];
+}
+
+function chooseLegalFallback(excludedUci){
+  const g = buildGameFromHistory(masterHistory.length);
+  const legal = g.legalMoves();
+  const excluded = new Set(excludedUci || []);
+  const alternatives = legal
+    .map(mv => legalMoveToUci(mv, g))
+    .filter(Boolean)
+    .filter(u => !excluded.has(u));
+  if(alternatives.length === 0) return null;
+  return alternatives[Math.floor(Math.random() * alternatives.length)];
+}
+
+function chooseMoveByProfile(bestStr, profile){
+  if(!profile) return bestStr;
+
+  const rawCandidates = [bestStr].concat(multiCandidates || []);
+  const candidates = [];
+  for(const u of rawCandidates){
+    if(!u || !/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(u)) continue;
+    if(!candidates.includes(u)) candidates.push(u);
+  }
+  if(candidates.length === 0) return bestStr;
+
+  // Niedrige Stufen dürfen bewusst auch mal einen legalen, aber nicht enginehaften Zug spielen.
+  const randomChance = Math.max(0, Math.min(0.25, profile.random || 0));
+  if(randomChance > 0 && Math.random() < randomChance){
+    const fallback = chooseLegalFallback(candidates);
+    if(fallback) return fallback;
+  }
+
+  return chooseWeightedCandidate(candidates, profile) || bestStr;
+}
+
+
+function gameToFEN(g){
+  const rows = [];
+  for(let y=0;y<8;y++){
+    let empty = 0;
+    let rowStr = '';
+    for(let x=0;x<8;x++){
+      const p = g.board[y][x];
+      if(p === '.'){
+        empty++;
+      } else {
+        if(empty>0){ rowStr += empty; empty=0; }
+        rowStr += p;
+      }
+    }
+    if(empty>0) rowStr += empty;
+    rows.push(rowStr);
+  }
+  const boardPart = rows.join('/');
+  const active    = g.turn === 'w' ? 'w' : 'b';
+  let castling    = '';
+  if(g.castling.K) castling += 'K';
+  if(g.castling.Q) castling += 'Q';
+  if(g.castling.k) castling += 'k';
+  if(g.castling.q) castling += 'q';
+  if(!castling) castling = '-';
+  let ep = '-';
+  if(g.ep){
+    ep = coordToAlg(g.ep[0], g.ep[1]);
+  }
+  const half = g.halfmove || 0;
+  const full = g.fullmove || 1;
+  return `${boardPart} ${active} ${castling} ${ep} ${half} ${full}`;
+}
+
+
+function formatTime(ms){
+  if(ms < 0) ms = 0;
+  let totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if(hours > 0){
+    return hours + ':' + String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+  }
+  return String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+}
+
+function updateClockDisplay(){
+  if(!playerClockEl) return;
+  if(!timeMode){
+    playerClockEl.textContent = '--:--';
+    return;
+  }
+  playerClockEl.textContent = formatTime(playerTimeMs);
+}
+
+function stopClock(){
+  if(clockInterval){
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
+  clockRunning = false;
+}
+
+function startClock(){
+  if(!timeMode || timeLost) return;
+  if(clockRunning) return;
+  clockRunning = true;
+  if(!clockInterval){
+    clockInterval = setInterval(()=>{
+      if(!timeMode || !clockRunning || timeLost) return;
+      playerTimeMs -= 1000;
+      if(playerTimeMs <= 0){
+        playerTimeMs = 0;
+        updateClockDisplay();
+        timeLost = true;
+        stopClock();
+        if(timeStatusEl) timeStatusEl.textContent = 'Zeit abgelaufen — du hast auf Zeit verloren.';
+        if(statusEl) statusEl.textContent = 'Zeitverlust — Partie beendet.';
+        if(engineStatusEl) engineStatusEl.textContent = 'Zeit abgelaufen.';
+        try{
+          if(engine && engineBusy){
+            engine.postMessage('stop');
+          }
+        } catch(e){}
+        engineBusy = false;
+        return;
+      }
+      updateClockDisplay();
+    }, 1000);
+  }
+}
+
+function pauseClock(){
+  clockRunning = false;
+}
+
+function resumeClock(){
+  if(!timeMode || timeLost) return;
+  if(!clockInterval){
+    startClock();
+  } else {
+    clockRunning = true;
+  }
+}
+
+function setTimeMode(baseSeconds, incrementSeconds, key){
+  timeMode = true;
+  activeTimeKey = key;
+  baseTimeMs = baseSeconds * 1000;
+  incrementMs = incrementSeconds * 1000;
+  playerTimeMs = baseTimeMs;
+  firstMoveDone = false;
+  timeLost = false;
+  stopClock();
+  updateClockDisplay();
+  if(timeStatusEl){
+    timeStatusEl.textContent = 'Bedenkzeit aktiv (' + formatTime(baseTimeMs) + ' + ' + incrementSeconds + 's)';
+  }
+  if(timeButtons){
+    timeButtons.forEach(btn=>{
+      const t = btn.getAttribute('data-time');
+      btn.classList.toggle('active', t === key);
+    });
+  }
+  newGame();
+}
+
+function deactivateTimeMode(){
+  timeMode = false;
+  activeTimeKey = null;
+  stopClock();
+  playerTimeMs = 0;
+  firstMoveDone = false;
+  timeLost = false;
+  updateClockDisplay();
+  if(timeStatusEl){
+    timeStatusEl.textContent = 'Keine Bedenkzeit aktiv';
+  }
+  if(timeButtons){
+    timeButtons.forEach(btn=>btn.classList.remove('active'));
+  }
+  newGame();
+}
+
+if(timeButtons && timeButtons.length){
+  timeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const key = btn.getAttribute('data-time');
+      if(!key) return;
+      if(timeMode && activeTimeKey === key){
+        deactivateTimeMode();
+        return;
+      }
+      const parts = key.split('+');
+      const base = parseInt(parts[0],10);
+      const inc  = parseInt(parts[1],10);
+      if(isNaN(base) || isNaN(inc)) return;
+      setTimeMode(base, inc, key);
+    });
+  });
+}
+
+
+function initEngine(){
+  try{
+    engine = new Worker('stockfish.js');
+  } catch(e){
+    console.error('Engine Worker konnte nicht gestartet werden:', e);
+    engineStatusEl.textContent = 'Fehler beim Laden der Engine (stockfish.js nicht gefunden?)';
+    return;
+  }
+  engineStatusEl.textContent = 'Lade Engine…';
+  engine.onmessage = function(e){
+    const line = (''+e.data).trim();
+    if(line === 'uciok') return;
+    if(line === 'readyok'){
+      engineReady = true;
+      if(pendingEngineStart){
+        pendingEngineStart = false;
+        engineStatusEl.textContent = 'Engine bereit — starte Partie…';
+        setTimeout(()=>requestEngineMove(), 60);
+      } else {
+        engineStatusEl.textContent = 'Engine bereit — du kannst starten.';
+      }
+      return;
+    }
+    if(line.startsWith('info ') && line.includes(' score ')){
+      parseEngineInfo(line);
+      parseHumanCandidates(line);
+      return;
+    }
+    if(line.startsWith('bestmove')){
+      engineBusy = false;
+      handleBestmove(line);
+    }
+  };
+  engine.postMessage('uci');
+  engine.postMessage('isready');
+}
+
+function parseEngineInfo(line){
+  try{
+    const parts = line.split(/\s+/);
+    const idxScore = parts.indexOf('score');
+    if(idxScore === -1 || idxScore + 2 >= parts.length) return;
+    const type = parts[idxScore+1];
+    const val  = parts[idxScore+2];
+    let text = '';
+    let mateIn = null;
+    let cpWhite = null;
+
+    if(type === 'cp'){
+      let centipawns = parseInt(val,10);
+      if(isNaN(centipawns)) return;
+      // UCI-Score ist aus Sicht der Seite am Zug.
+      // Für die Anzeige drehen wir ggf. auf "Sicht Weiß".
+      if(lastEvalSide === 'b') centipawns = -centipawns;
+      cpWhite = centipawns;
+      const pawns = (centipawns / 100).toFixed(2);
+      const sign = centipawns > 0 ? '+' : '';
+      text = `Bewertung (Weiß): ${sign}${pawns}`;
+    } else if(type === 'mate'){
+      mateIn = parseInt(val,10);
+      if(isNaN(mateIn)) return;
+      text = `Matt in ${mateIn}`;
+    } else {
+      return;
+    }
+
+    engineEvalEl.textContent = text;
+
+    // Resignation logic
+    if(type === 'mate' && mateIn !== null && mateIn < 0){
+      engineBusy = false;
+      playMode = 'stopped';
+      engineStatusEl.textContent = 'Engine gibt auf — Matt unausweichlich.';
+      if(statusEl) statusEl.textContent = 'Engine gibt auf — Partie beendet.';
+      return;
+    }
+    if(type === 'cp' && cpWhite !== null && cpWhite < -1000){
+      engineBusy = false;
+      playMode = 'stopped';
+      engineStatusEl.textContent = 'Engine gibt auf — Stellung hoffnungslos.';
+      if(statusEl) statusEl.textContent = 'Engine gibt auf — Partie beendet.';
+      return;
+    }
+  } catch(err) {
+    console.warn('Engine-Info konnte nicht verarbeitet werden:', err);
+  }
+}
+
+function parseHumanCandidates(line){
+  try{
+    const parts = line.split(/\s+/);
+    const idxMulti = parts.indexOf('multipv');
+    const idxPv = parts.indexOf('pv');
+    if(idxMulti === -1 || idxPv === -1 || idxPv + 1 >= parts.length) return;
+    const n = parseInt(parts[idxMulti+1],10);
+    const maxPv = currentEngineProfile ? Math.max(1, Math.min(5, currentEngineProfile.multipv || 1)) : 5;
+    if(isNaN(n) || n < 1 || n > maxPv) return;
+    const moveStr = parts[idxPv+1];
+    if(!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(moveStr)) return;
+    // multipv 1..n werden auf Index 0..n-1 gelegt
+    multiCandidates[n-1] = moveStr;
+  } catch(_){
+    // egal
+  }
+}
+
+function requestEngineMove(){
+  if(timeLost || playMode !== 'engine') return;
+
+  if(timeMode && firstMoveDone && !timeLost){
+    pauseClock();
+  }
+
+  if(!engine || !engineReady){
+    pendingEngineStart = true;
+    engineStatusEl.textContent = 'Engine noch nicht bereit…';
+    return;
+  }
+  pendingEngineStart = false;
+  if(engineBusy) return;
+
+  const g = buildGameFromHistory(masterHistory.length);
+  // Seite am Zug = Engine-Seite; für die Bewertungsanzeige merken
+  lastEvalSide = g.turn;
+  const go = g.gameOver();
+  if(go){
+    engineStatusEl.textContent = 'Partie beendet.';
+    return;
+  }
+
+  engineBusy = true;
+  currentEngineProfile = getEffectiveEngineProfile();
+  engineStatusEl.textContent = currentEngineProfile.label + ' denkt… (' + currentEngineProfile.dwz + ')';
+  const fen = gameToFEN(g);
+  const ms  = currentEngineProfile.movetime || 250;
+
+  // Multi-PV-Kandidaten für die menschlichere Zugauswahl zurücksetzen
+  multiCandidates = [];
+
+  configureEngineForProfile(currentEngineProfile);
+  engine.postMessage('position fen ' + fen);
+  engine.postMessage('go movetime ' + ms);
+}
+
+function uciToCoords(uci){
+  const fromFile = uci[0];
+  const fromRank = uci[1];
+  const toFile   = uci[2];
+  const toRank   = uci[3];
+  const fx = files.indexOf(fromFile);
+  const fy = 8 - parseInt(fromRank,10);
+  const tx = files.indexOf(toFile);
+  const ty = 8 - parseInt(toRank,10);
+  const promo = uci.length >= 5 ? uci[4].toUpperCase() : null;
+  return {from:[fx,fy], to:[tx,ty], promo};
+}
+
+function legalMoveToUci(mv, game){
+  if(!mv) return null;
+  const fx = mv.from[0], fy = mv.from[1], tx = mv.to[0], ty = mv.to[1];
+  let promo = '';
+  if(game){
+    const piece = game.at(fx, fy);
+    if(piece && piece.toLowerCase() === 'p' && (ty === 0 || ty === 7)){
+      promo = 'q';
+    }
+  }
+  return files[fx] + (8-fy) + files[tx] + (8-ty) + promo;
+}
+
+function handleBestmove(line){
+  const parts = line.split(/\s+/);
+  const bestStr = parts[1];
+  if(!bestStr || bestStr === '(none)'){
+    engineStatusEl.textContent = 'Kein Enginezug mehr — Partie vorbei?';
+    return;
+  }
+
+  const profile = currentEngineProfile || getEffectiveEngineProfile();
+  const chosen = chooseMoveByProfile(bestStr, profile);
+
+  applyEngineMoveFromUci(chosen);
+}
+
+
+function animateEngineMoveOnBoard(mv, done){
+  try {
+    const fromSq = document.querySelector('.square[data-x="' + mv.from[0] + '"][data-y="' + mv.from[1] + '"]');
+    const toSq   = document.querySelector('.square[data-x="' + mv.to[0] + '"][data-y="' + mv.to[1] + '"]');
+    if(!fromSq || !toSq || !boardEl){
+      done();
+      return;
+    }
+
+    const pieceImgEl = fromSq.querySelector('img');
+    if(!pieceImgEl){
+      done();
+      return;
+    }
+
+    const boardRect = boardEl.getBoundingClientRect();
+    const fromRect  = fromSq.getBoundingClientRect();
+    const toRect    = toSq.getBoundingClientRect();
+
+    const startX = fromRect.left - boardRect.left;
+    const startY = fromRect.top  - boardRect.top;
+    const endX   = toRect.left   - boardRect.left;
+    const endY   = toRect.top    - boardRect.top;
+
+    // Ghost-Element erzeugen
+    const ghost = document.createElement('div');
+    ghost.className = 'engine-ghost-piece';
+    const ghostImg = pieceImgEl.cloneNode(true);
+    ghost.appendChild(ghostImg);
+    ghost.style.width  = fromRect.width  + 'px';
+    ghost.style.height = fromRect.height + 'px';
+    ghost.style.left   = startX + 'px';
+    ghost.style.top    = startY + 'px';
+    ghost.style.transform = 'translate(0,0)';
+
+    // Ursprüngliche Figur aus dem Startfeld ausblenden
+    pieceImgEl.style.visibility = 'hidden';
+
+    boardEl.appendChild(ghost);
+
+    // Animation starten (600 ms)
+    requestAnimationFrame(() => {
+      const dx = endX - startX;
+      const dy = endY - startY;
+      ghost.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      setTimeout(() => {
+        // Ghost entfernen, Startfeld wieder sichtbar machen
+        if(ghost.parentNode === boardEl){
+          boardEl.removeChild(ghost);
+        }
+        pieceImgEl.style.visibility = '';
+        done();
+      }, 600);
+    });
+  } catch(e){
+    console.warn('Engine-Animation fehlgeschlagen:', e);
+    done();
+  }
+}
+
+
+function applyEngineMoveFromUci(uci){
+  if(timeLost){
+    engineBusy = false;
+    return;
+  }
+
+  const g = buildGameFromHistory(masterHistory.length);
+  const coords = uciToCoords(uci);
+  if(!coords || coords.from[0] < 0 || coords.to[0] < 0 || Number.isNaN(coords.from[1]) || Number.isNaN(coords.to[1])){
+    engineBusy = false;
+    engineStatusEl.textContent = 'Engine-Zug war ungültig.';
+    return;
+  }
+  const legal = g.legalMoves();
+  let chosen = null;
+  for(const lm of legal){
+    if(
+      lm.from[0] === coords.from[0] && lm.from[1] === coords.from[1] &&
+      lm.to[0]   === coords.to[0]   && lm.to[1]   === coords.to[1]
+    ){
+      chosen = lm;
+      break;
+    }
+  }
+  if(!chosen){
+    console.warn('Engine-Zug nicht in legalMoves gefunden:', uci);
+    engineBusy = false;
+    engineStatusEl.textContent = 'Engine-Zug war nicht ausführbar.';
+    return;
+  }
+
+  // Basis-Move-Objekt für die Animation (ohne sofortigen Board-Commit)
+  const baseMv = {
+    from: chosen.from,
+    to:   chosen.to,
+    meta: chosen.meta || {},
+    promotion: coords.promo || null
+  };
+
+  // Nur Engine-Züge animieren, User-Züge bleiben instant
+  animateEngineMoveOnBoard(baseMv, () => {
+    const gNow = buildGameFromHistory(masterHistory.length);
+    const mv = {
+      from: baseMv.from,
+      to:   baseMv.to,
+      meta: baseMv.meta || {},
+      promotion: baseMv.promotion,
+      piece: gNow.at(baseMv.from[0], baseMv.from[1])
+    };
+    mv.taken = (mv.meta && mv.meta.enpassant)
+      ? gNow.at(mv.to[0], mv.from[1])
+      : gNow.at(mv.to[0], mv.to[1]);
+
+    gNow.makeMove(mv);
+    const isCheckEngine = gNow.inCheck(gNow.turn);
+    playMoveSound({
+      isCapture: mv.taken !== '.',
+      isPromotion: !!mv.promotion,
+      isCastle: !!(mv.meta && mv.meta.castle),
+      isCheck: isCheckEngine,
+      byEngine: true,
+      isDrop: true
+    });
+    mv.san = gNow.moveToSan(mv);
+    masterHistory.push(mv);
+    viewIndex = masterHistory.length;
+    renderBoardFromView();
+updateLevelLock();
+
+    updateStrengthStatus('Du bist am Zug');
+    if(timeMode && firstMoveDone && !timeLost){
+      resumeClock();
+    }
+  });
+}
+
+/* ===== Auswahl + Züge (Mensch) ===== */
+function maybeTriggerEngineMove(){
+  if(timeLost) return;
+  if(playMode !== 'engine') return;
+  const g = buildGameFromHistory(masterHistory.length);
+  const sideToMove = g.turn;
+  const engineToMove =
+    (sideToMove === 'w' && humanColor === 'b') ||
+    (sideToMove === 'b' && humanColor === 'w');
+  if(engineToMove){
+    requestEngineMove();
+  }
+}
+
+function onSquareClick(x,y){
+  if(timeLost || playMode === 'stopped') return;
+  const g = buildGameFromHistory(masterHistory.length);
+  // Nur wenn wir in aktueller Stellung sind
+  if(viewIndex !== masterHistory.length) return;
+  if(playMode === 'engine'){
+    const sideToMove = g.turn;
+    const humanToMove =
+      (sideToMove === 'w' && humanColor === 'w') ||
+      (sideToMove === 'b' && humanColor === 'b');
+    if(!humanToMove) return;
+  }
+
+  const piece = g.at(x,y);
+  if(!selected){
+    if(piece === '.') return;
+    const color = (piece === piece.toUpperCase()) ? 'w' : 'b';
+    if(color !== g.turn) return;
+    selected = [x,y];
+    playMoveSound({ isPickup: true });
+    highlightSelection(x,y);
+  } else {
+    // === NEU: Gleiche Figur erneut geklickt → Deselektieren ===
+    if(selected && selected[0] === x && selected[1] === y){
+        selected = null;
+        renderBoardFromView();
+        return;
+    }
+
+    // NEU: Klick auf eine andere eigene Figur: Auswahl auf dieses Feld umlegen
+    const piece2 = g.at(x,y);
+    if(piece2 !== '.'){
+      const color2 = (piece2 === piece2.toUpperCase()) ? 'w' : 'b';
+      if(color2 === g.turn){
+        selected = [x,y];
+        playMoveSound({ isPickup: true });
+        highlightSelection(x,y);
+        return;
+      }
+    }
+    const legal = g.legalMoves();
+    let found = null;
+    for(const lm of legal){
+      if(
+        lm.from[0] === selected[0] && lm.from[1] === selected[1] &&
+        lm.to[0]   === x           && lm.to[1]   === y
+      ){
+        found = lm; break;
+      }
+    }
+
+    if(found){
+      const pieceSel = g.at(found.from[0],found.from[1]);
+      const isPromotion = pieceSel.toLowerCase()==='p' && (found.to[1] === 0 || found.to[1] === 7);
+
+      if(isPromotion){
+        showPromotionOverlay(g.turn, x, y).then(choice=>{
+          if(!choice){
+            selected = null;
+            renderBoardFromView();
+updateLevelLock();
+
+            return;
+          }
+          if(viewIndex < masterHistory.length) masterHistory.splice(viewIndex);
+          const gameNow = buildGameFromHistory(masterHistory.length);
+          const mv = {
+            from: found.from,
+            to:   found.to,
+            meta: found.meta || {},
+            promotion: choice,
+            piece: gameNow.at(found.from[0],found.from[1])
+          };
+          mv.taken = (found.meta && found.meta.enpassant)
+            ? gameNow.at(found.to[0], found.from[1])
+            : gameNow.at(found.to[0], found.to[1]);
+          gameNow.makeMove(mv);
+          const isCheck = gameNow.inCheck(gameNow.turn);
+          playMoveSound({
+            isCapture: mv.taken !== '.',
+            isPromotion: true,
+            isCastle: !!(mv.meta && mv.meta.castle),
+            isCheck,
+            byEngine: false,
+            isDrop: true
+          });
+          mv.san = gameNow.moveToSan(mv);
+          masterHistory.push(mv);
+          viewIndex = masterHistory.length;
+          selected = null;
+          renderBoardFromView();
+updateLevelLock();
+
+          if(timeMode && !timeLost){
+            if(!firstMoveDone){
+              firstMoveDone = true;
+              startClock();
+            }
+            playerTimeMs += incrementMs;
+            updateClockDisplay();
+          }
+
+          maybeTriggerEngineMove();
+        });
+      } else {
+        if(viewIndex < masterHistory.length) masterHistory.splice(viewIndex);
+        const gameNow = buildGameFromHistory(masterHistory.length);
+        const mv = {
+          from: found.from,
+          to:   found.to,
+          meta: found.meta || {},
+          promotion: null,
+          piece: gameNow.at(found.from[0],found.from[1])
+        };
+        mv.taken = (found.meta && found.meta.enpassant)
+          ? gameNow.at(found.to[0], found.from[1])
+          : gameNow.at(found.to[0], found.to[1]);
+        gameNow.makeMove(mv);
+        const isCheck = gameNow.inCheck(gameNow.turn);
+        playMoveSound({
+          isCapture: mv.taken !== '.',
+          isPromotion: false,
+          isCastle: !!(mv.meta && mv.meta.castle),
+          isCheck,
+          byEngine: false,
+          isDrop: true
+        });
+        mv.san = gameNow.moveToSan(mv);
+        masterHistory.push(mv);
+        viewIndex = masterHistory.length;
+        selected = null;
+        renderBoardFromView();
+updateLevelLock();
+
+        if(timeMode && !timeLost){
+          if(!firstMoveDone){
+            firstMoveDone = true;
+            startClock();
+          }
+          playerTimeMs += incrementMs;
+          updateClockDisplay();
+        }
+
+        maybeTriggerEngineMove();
+      }
+    } else {
+      showIllegalMoveFeedback('Illegaler Zug — König im Schach oder Zug nicht erlaubt');
+      if(humanSelectEl.value !== 'off'){
+        levelSelectEl.disabled = true;
+        levelSelectEl.style.opacity = '0.5';
+        levelSelectEl.title = 'Im Human-Modus deaktiviert';
+      }
+      // Auswahl beibehalten und erneut hervorheben
+      if(selected){
+        highlightSelection(selected[0], selected[1]);
+      }
+      return;
+    }
+  }
+}
+
+function clearBoardHighlights(){
+  document.querySelectorAll('.square.selected, .square.legal, .square.move-target, .square.legal-move')
+    .forEach(el => el.classList.remove('selected','legal','move-target','legal-move'));
+}
+
+function markSquare(x, y, className){
+  const el = boardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]');
+  if(el) el.classList.add(className);
+}
+
+function highlightSelection(sx,sy, gameState){
+  clearBoardHighlights();
+  markSquare(sx, sy, 'selected');
+  const g = gameState || buildGameFromHistory(masterHistory.length);
+  const legal = g.legalMoves();
+  for(const m of legal){
+    if(m.from[0] === sx && m.from[1] === sy){
+      markSquare(m.to[0], m.to[1], 'legal');
+    }
+  }
+}
+
+function reapplySelectionHighlight(gameState){
+  clearBoardHighlights();
+  if(!selected || viewIndex !== masterHistory.length) return;
+  const g = gameState || buildGameFromHistory(masterHistory.length);
+  const piece = g.at(selected[0], selected[1]);
+  if(!piece || piece === '.') return;
+  const color = (piece === piece.toUpperCase()) ? 'w' : 'b';
+  if(color !== g.turn) return;
+  highlightSelection(selected[0], selected[1], g);
+}
+
+/* Promotion-Overlay */
+function showPromotionOverlay(playerColor, tx, ty){
+  return new Promise(resolve => {
+    const existing = document.getElementById('promotionBackdrop');
+    if(existing) existing.remove();
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'promotionBackdrop';
+    backdrop.style.position = 'fixed';
+    backdrop.style.inset = '0';
+    backdrop.style.display = 'flex';
+    backdrop.style.alignItems = 'center';
+    backdrop.style.justifyContent = 'center';
+    backdrop.style.background = 'rgba(0,0,0,0.45)';
+    backdrop.style.zIndex = '1000';
+
+    const modal = document.createElement('div');
+    modal.style.background = '#fff';
+    modal.style.borderRadius = '12px';
+    modal.style.boxShadow = '0 16px 40px rgba(0,0,0,.3)';
+    modal.style.width = '420px';
+    modal.style.maxWidth = '96vw';
+    modal.style.padding = '16px 20px';
+    modal.innerHTML = `
+      <h3 style="margin-top:0;margin-bottom:8px">♟️ Bauernumwandlung</h3>
+      <p>Bitte wähle die gewünschte Figur:</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px">
+        <button class="promo-btn" data-piece="Q"><span style="font-size:28px;width:32px;display:inline-block;text-align:center;">♕</span>Dame</button>
+        <button class="promo-btn" data-piece="R"><span style="font-size:28px;width:32px;display:inline-block;text-align:center;">♖</span>Turm</button>
+        <button class="promo-btn" data-piece="B"><span style="font-size:28px;width:32px;display:inline-block;text-align:center;">♗</span>Läufer</button>
+        <button class="promo-btn" data-piece="N"><span style="font-size:28px;width:32px;display:inline-block;text-align:center;">♘</span>Springer</button>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="promoCancel" style="padding:8px 14px;border-radius:8px;border:1px solid #ccc;background:#ddd;font-weight:600;cursor:pointer">Abbrechen</button>
+      </div>`;
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+
+    modal.querySelectorAll('.promo-btn').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        e.stopPropagation();
+        backdrop.remove();
+        resolve(btn.getAttribute('data-piece'));
+      });
+    });
+    modal.querySelector('#promoCancel').addEventListener('click', e=>{
+      e.stopPropagation();
+      backdrop.remove();
+      resolve(null);
+    });
+  });
+}
+
+function removePromoOverlay(){
+  const existing = document.getElementById('promotionBackdrop');
+  if(existing) existing.remove();
+}
+
+/* ===== New Game (nur noch für Farbwechsel & Button) ===== */
+function newGame(){
+  if(engine && engineBusy){
+    try { engine.postMessage('stop'); } catch(_){}
+  }
+  engineBusy = false;
+  pendingEngineStart = false;
+  playMode = 'engine';
+  masterHistory = [];
+  viewIndex = 0;
+  selected = null;
+  engineEvalEl.textContent = '';
+  orientationWhite = (humanColor === 'w');
+  timeLost = false;
+  firstMoveDone = false;
+  stopClock();
+  if(timeMode){
+    playerTimeMs = baseTimeMs;
+    updateClockDisplay();
+    if(timeStatusEl){
+      timeStatusEl.textContent = 'Bedenkzeit aktiv (' + formatTime(baseTimeMs) + ' + ' + (incrementMs/1000) + 's)';
+    }
+  } else {
+    if(timeStatusEl){
+      timeStatusEl.textContent = 'Keine Bedenkzeit aktiv';
+    }
+    updateClockDisplay();
+  }
+  renderBoardFromView();
+updateLevelLock();
+
+  if(humanColor === 'b'){
+    if(engineReady){
+      setTimeout(()=>requestEngineMove(), 120);
+    } else {
+      pendingEngineStart = true;
+      engineStatusEl.textContent = 'Engine wird geladen…';
+    }
+  } else {
+    engineReady ? updateStrengthStatus('Du bist am Zug') : (engineStatusEl.textContent = 'Engine wird geladen…');
+  }
+}
+
+/* ===== UI-Events ===== */
+sideSelectEl.addEventListener('change', ()=>{
+  humanColor = sideSelectEl.value || 'w';
+  newGame();
+});
+
+humanSelectEl.addEventListener('change', ()=>{
+  humanMode = humanSelectEl.value;
+  updateLevelLock();
+  updateStrengthStatus('Spielstärke geändert');
+});
+levelSelectEl.addEventListener('change', ()=>{
+  engineLevel = levelSelectEl.value || 'anfaenger';
+  updateStrengthStatus('Spielstärke geändert');
+});
+
+if(newGameBtn){
+  newGameBtn.addEventListener('click', ()=>{
+    newGame();
+  });
+}
+
+/* ===== Init ===== */
+renderBoardFromView();
+updateLevelLock();
+
+initEngine();
+updateClockDisplay();
+</script>
+</body>
+</html>
