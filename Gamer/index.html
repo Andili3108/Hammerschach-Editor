@@ -95,8 +95,18 @@
   .promo-btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;}
   .promo-piece{font-size:30px;width:34px;text-align:center;}
   .small-note{font-size:13px;color:#666;font-weight:700;line-height:1.3;}
+
+  .online-panel{margin-top:2px;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch;}
+  .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
+  .online-label{font-size:12px;font-weight:900;color:#666;margin-bottom:2px;}
+  .online-value{font-size:14px;font-weight:900;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .online-value.good{color:#226b36;}
+  .online-value.wait{color:#9A2D33;}
+  .online-value.neutral{color:#555;}
+  .online-hint{grid-column:1/-1;font-size:12px;font-weight:700;color:#666;line-height:1.25;}
+
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:150px minmax(0,1fr) 150px}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.player-row,.clocks{grid-template-columns:1fr}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.clock-time{font-size:26px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.player-row,.clocks,.online-panel{grid-template-columns:1fr}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.clock-time{font-size:26px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr}.hide-mobile-pair{display:none}}
 </style>
 </head>
 <body>
@@ -109,15 +119,23 @@
       <div class="title-area">
         <div>
           <div class="title">Hammerschach-Gamer</div>
-          <div class="subtitle">Mensch gegen Mensch · lokale Basisversion</div>
+          <div class="subtitle">Mensch gegen Mensch · Online-Lobby vorbereitet</div>
         </div>
         <div class="player-row">
-          <div class="player-card"><div class="player-label">Weiß</div><div class="player-name"><span class="dot white"></span> Spieler 1</div></div>
-          <div class="player-card"><div class="player-label">Schwarz</div><div class="player-name"><span class="dot black"></span> Spieler 2</div></div>
+          <div class="player-card"><div class="player-label">Weiß</div><div class="player-name"><span class="dot white"></span> <span id="whitePlayerName">Spieler 1</span></div></div>
+          <div class="player-card"><div class="player-label">Schwarz</div><div class="player-name"><span class="dot black"></span> <span id="blackPlayerName">Spieler 2</span></div></div>
         </div>
-        <div class="small-note">Online-Link, Lobby und Server-Synchronisation kommen im nächsten Schritt. Diese Version prüft alle Züge lokal.</div>
+        <div class="small-note">Diese Version erstellt Online-Räume, Einladungslinks und Rollen. Die Zugsynchronisierung folgt im nächsten Schritt; Züge werden weiterhin lokal geprüft.</div>
+        <div class="online-panel" aria-label="Online-Lobby Status">
+          <div class="online-item"><div class="online-label">Online-Status</div><div id="onlineStatus" class="online-value neutral">Lokal</div></div>
+          <div class="online-item"><div class="online-label">Meine Rolle</div><div id="onlineRole" class="online-value neutral">Lokal</div></div>
+          <div class="online-item"><div class="online-label">Raum</div><div id="onlineRoom" class="online-value neutral">—</div></div>
+          <div id="onlineHint" class="online-hint">Keine Online-Partie aktiv.</div>
+        </div>
       </div>
       <div class="actions">
+        <button id="createOnlineBtn" type="button">Online-Partie erstellen</button>
+        <button id="copyInviteBtn" class="button-flat" type="button" disabled>Einladungslink kopieren</button>
         <button id="newGameBtn" type="button">Neue Partie</button>
         <button id="flipBoardBtn" class="button-flat" type="button">Brett drehen</button>
         <div class="board-color-wrap" id="boardColorWrap">
@@ -496,6 +514,259 @@ const navStartBtn = document.getElementById('navStart');
 const navBackBtn = document.getElementById('navBack');
 const navForwardBtn = document.getElementById('navForward');
 const navEndBtn = document.getElementById('navEnd');
+
+
+/* Online-Lobby: Räume, Einladungslink, Rollenanzeige
+   Zugsynchronisierung ist bewusst noch nicht aktiv.
+
+   Konfiguration:
+   - Wenn diese HTML direkt vom Lobby-Worker ausgeliefert wird, leer lassen.
+   - Wenn die HTML auf Pages/anderer Domain liegt, hier die Worker-URL eintragen,
+     z. B. 'https://hammerschach-gamer-lobby.DEIN-ACCOUNT.workers.dev'.
+*/
+const ONLINE_WORKER_URL = '';
+const ONLINE_PLAYER_STORAGE_KEY = 'hammerschachGamerOnlinePlayerId';
+let onlineSocket = null;
+let onlineReconnectTimer = null;
+let onlineRoomId = null;
+let onlineRoleCode = 'local';
+let onlineConnected = false;
+let onlineConnectionState = 'local';
+let onlinePlayers = {white:false, black:false, spectators:0};
+let onlineLastMessage = 'Keine Online-Partie aktiv.';
+
+const createOnlineBtn = document.getElementById('createOnlineBtn');
+const copyInviteBtn = document.getElementById('copyInviteBtn');
+const onlineStatusEl = document.getElementById('onlineStatus');
+const onlineRoleEl = document.getElementById('onlineRole');
+const onlineRoomEl = document.getElementById('onlineRoom');
+const onlineHintEl = document.getElementById('onlineHint');
+const whitePlayerNameEl = document.getElementById('whitePlayerName');
+const blackPlayerNameEl = document.getElementById('blackPlayerName');
+
+function randomToken(len){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => chars[b % chars.length]).join('');
+}
+function getOnlinePlayerId(){
+  try{
+    let id = sessionStorage.getItem(ONLINE_PLAYER_STORAGE_KEY);
+    if(!id){
+      id = (crypto.randomUUID ? crypto.randomUUID() : 'p_' + randomToken(18));
+      sessionStorage.setItem(ONLINE_PLAYER_STORAGE_KEY, id);
+    }
+    return id;
+  } catch(_){
+    return 'p_' + randomToken(18);
+  }
+}
+const onlinePlayerId = getOnlinePlayerId();
+function cleanRoomId(value){
+  return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+}
+function createRoomId(){ return randomToken(10); }
+function roleLabel(role){
+  if(role === 'w') return 'Weiß';
+  if(role === 'b') return 'Schwarz';
+  if(role === 'spectator') return 'Zuschauer';
+  return 'Lokal';
+}
+function updateInviteUrlInAddressBar(roomId){
+  if(!roomId) return;
+  try{
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', roomId);
+    history.replaceState(null, '', url.toString());
+  } catch(_){}
+}
+function getInviteUrl(){
+  const url = new URL(window.location.href);
+  if(onlineRoomId) url.searchParams.set('room', onlineRoomId);
+  return url.toString();
+}
+function getWebSocketUrl(roomId){
+  const configured = (window.HAMMERSCHACH_ONLINE_WORKER_URL || ONLINE_WORKER_URL || '').trim();
+  let url;
+  if(configured){
+    url = new URL('/ws', configured.endsWith('/') ? configured : configured + '/');
+  } else {
+    if(window.location.protocol !== 'http:' && window.location.protocol !== 'https:'){
+      throw new Error('Kein Online-Server konfiguriert. HTML über http(s) laden oder ONLINE_WORKER_URL setzen.');
+    }
+    url = new URL('/ws', window.location.origin);
+  }
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  url.searchParams.set('room', roomId);
+  url.searchParams.set('player', onlinePlayerId);
+  return url.toString();
+}
+function setOnlineValueClass(el, state){
+  if(!el) return;
+  el.classList.remove('good','wait','neutral');
+  el.classList.add(state || 'neutral');
+}
+function updateOnlineUi(){
+  if(!onlineRoomId){
+    onlineStatusEl.textContent = 'Lokal';
+    onlineRoleEl.textContent = 'Lokal';
+    onlineRoomEl.textContent = '—';
+    onlineHintEl.textContent = 'Keine Online-Partie aktiv.';
+    copyInviteBtn.disabled = true;
+    onlineConnectionState = 'local';
+    whitePlayerNameEl.textContent = 'Spieler 1';
+    blackPlayerNameEl.textContent = 'Spieler 2';
+    setOnlineValueClass(onlineStatusEl, 'neutral');
+    setOnlineValueClass(onlineRoleEl, 'neutral');
+    setOnlineValueClass(onlineRoomEl, 'neutral');
+    return;
+  }
+
+  const bothConnected = !!(onlinePlayers.white && onlinePlayers.black);
+  if(onlineConnectionState === 'error'){
+    onlineStatusEl.textContent = 'Online-Fehler';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(onlineConnectionState === 'closed'){
+    onlineStatusEl.textContent = 'Getrennt';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(!onlineConnected){
+    onlineStatusEl.textContent = 'Verbinde...';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(bothConnected){
+    onlineStatusEl.textContent = 'Verbunden';
+    setOnlineValueClass(onlineStatusEl, 'good');
+  } else {
+    onlineStatusEl.textContent = 'Warte auf Gegner';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  }
+
+  onlineRoleEl.textContent = roleLabel(onlineRoleCode);
+  onlineRoomEl.textContent = onlineRoomId;
+  copyInviteBtn.disabled = false;
+  setOnlineValueClass(onlineRoleEl, onlineRoleCode === 'spectator' ? 'wait' : 'good');
+  setOnlineValueClass(onlineRoomEl, 'neutral');
+
+  const whiteText = onlineRoleCode === 'w' ? 'Du (Weiß)' : (onlinePlayers.white ? 'Spieler Weiß verbunden' : 'Warte auf Weiß');
+  const blackText = onlineRoleCode === 'b' ? 'Du (Schwarz)' : (onlinePlayers.black ? 'Spieler Schwarz verbunden' : 'Warte auf Schwarz');
+  whitePlayerNameEl.textContent = whiteText;
+  blackPlayerNameEl.textContent = blackText;
+
+  const syncNote = 'Züge werden in dieser Stufe noch nicht synchronisiert.';
+  onlineHintEl.textContent = onlineLastMessage ? (onlineLastMessage + ' ' + syncNote) : syncNote;
+}
+async function copyInviteLink(){
+  if(!onlineRoomId) return;
+  const link = getInviteUrl();
+  try{
+    await navigator.clipboard.writeText(link);
+    onlineLastMessage = 'Einladungslink wurde kopiert.';
+    statusEl.textContent = 'Einladungslink wurde kopiert.';
+  } catch(_){
+    onlineLastMessage = 'Einladungslink: ' + link;
+    statusEl.textContent = 'Link konnte nicht automatisch kopiert werden.';
+  }
+  updateOnlineUi();
+}
+function closeOnlineSocket(){
+  if(onlineReconnectTimer){ clearTimeout(onlineReconnectTimer); onlineReconnectTimer = null; }
+  if(onlineSocket){
+    try{ onlineSocket.onclose = null; onlineSocket.close(); } catch(_){}
+    onlineSocket = null;
+  }
+}
+function connectOnlineRoom(roomId, opts){
+  opts = opts || {};
+  roomId = cleanRoomId(roomId);
+  if(!roomId) return;
+  onlineRoomId = roomId;
+  onlineRoleCode = 'local';
+  onlineConnected = false;
+  onlineConnectionState = 'connecting';
+  onlinePlayers = {white:false, black:false, spectators:0};
+  onlineLastMessage = 'Online-Raum wird verbunden.';
+  updateInviteUrlInAddressBar(roomId);
+  updateOnlineUi();
+  closeOnlineSocket();
+
+  let wsUrl;
+  try{
+    wsUrl = getWebSocketUrl(roomId);
+  } catch(err){
+    onlineConnected = false;
+    onlineConnectionState = 'error';
+    onlineLastMessage = err.message || 'Kein Online-Server erreichbar.';
+    updateOnlineUi();
+    return;
+  }
+
+  try{
+    onlineSocket = new WebSocket(wsUrl);
+  } catch(err){
+    onlineConnected = false;
+    onlineConnectionState = 'error';
+    onlineLastMessage = 'WebSocket konnte nicht geöffnet werden.';
+    updateOnlineUi();
+    return;
+  }
+
+  onlineSocket.addEventListener('open', () => {
+    onlineConnected = true;
+    onlineConnectionState = 'connected';
+    onlineLastMessage = 'Mit Lobby verbunden.';
+    updateOnlineUi();
+  });
+  onlineSocket.addEventListener('message', ev => {
+    let msg = null;
+    try{ msg = JSON.parse(ev.data); } catch(_){ return; }
+    if(msg.type === 'hello' || msg.type === 'lobby'){
+      if(msg.room) onlineRoomId = cleanRoomId(msg.room) || onlineRoomId;
+      if(msg.role) onlineRoleCode = msg.role;
+      if(msg.players) onlinePlayers = {
+        white: !!(msg.players.white && msg.players.white.connected),
+        black: !!(msg.players.black && msg.players.black.connected),
+        spectators: Number(msg.players.spectators || 0)
+      };
+      onlineConnected = true;
+      onlineConnectionState = 'connected';
+      if(onlinePlayers.white && onlinePlayers.black) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
+      else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
+      else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten.';
+      else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
+      updateOnlineUi();
+    }
+  });
+  onlineSocket.addEventListener('close', () => {
+    onlineConnected = false;
+    onlineConnectionState = 'closed';
+    onlineLastMessage = 'Lobby-Verbindung getrennt.';
+    updateOnlineUi();
+    if(onlineRoomId){
+      onlineReconnectTimer = setTimeout(() => connectOnlineRoom(onlineRoomId, {reconnect:true}), opts.reconnect ? 3500 : 2000);
+    }
+  });
+  onlineSocket.addEventListener('error', () => {
+    onlineConnected = false;
+    onlineConnectionState = 'error';
+    onlineLastMessage = 'Lobby-Verbindung fehlgeschlagen.';
+    updateOnlineUi();
+  });
+}
+
+createOnlineBtn.addEventListener('click', () => {
+  newGame();
+  const roomId = createRoomId();
+  connectOnlineRoom(roomId);
+  setTimeout(copyInviteLink, 250);
+});
+copyInviteBtn.addEventListener('click', copyInviteLink);
+
+const initialRoomId = cleanRoomId(new URL(window.location.href).searchParams.get('room'));
+if(initialRoomId){
+  connectOnlineRoom(initialRoomId);
+} else {
+  updateOnlineUi();
+}
 
 function buildGameFromHistory(n){
   const g = new Game();
