@@ -4459,3 +4459,553 @@
 
 1. Nf3 d5 2. g3 Nf6 3. Bg2 e6 4. d3 Be7 5. Nbd2 O-O 6. O-O c5 7. a4 Nc6 8. e4 dxe4 9. dxe4 e5 10. c3 Be6 11. Qc2 Qc8 12. Ng5 Bd7 13. f4 Ng4 14. Nc4 h6 15. Nf3 exf4 16. gxf4 Be6 17. Qe2 Nf6 18. Kh1 Bh3 19. Rg1 Bg4 20. Qe3 Qe6 21. Nfe5 Nxe5 22. Nxe5 Bd6 23. Nd3 c4 24. Nf2 Bc7 25. e5 Bb6 26. Qg3 Bxf2 27. Qxf2 Nd5 28. Qg3 Bf5 29. Bf3 g6 30. h4 Kh7 31. Bd2 Rad8 32. Rg2 b6 33. Rag1 Ne7 34. h5 Rd3 35. hxg6+ fxg6 36. Qf2 Rfd8 37. Bc1 Rxf3 38. Qxf3 Rd3 39. Qe2 Qd5 40. Re1 Bh3 41. Kg1 Bxg2 42. Qxg2 Qxg2+ 43. Kxg2 h5 44. Re4 Nf5 45. e6 Ne7 46. Rxc4 Rd6 47. Re4 Kg7 48. Be3 Kf6 49. c4 Rxe6 50. Rxe6+ Kxe6 51. c5 Nd5 52. cxb6 Nxe3+ 53. Kf3 axb6 54. Kxe3 Kd5 55. Kf3 Kc4 56. Kg3 Kb3 57. Kh4 Kxb2 58. Kg5 Kb3 59. Kxg6 h4 60. f5 h3 61. f6 h2 62. f7 h1=Q 63. f8=Q Qc6+ 64. Kh5 Kxa4 65. Qf4+ Ka5 66. Qd2+ Kb5 67. Qb2+ Kc5 68. Qc3+ Kd6 69. Qf6+ Kd5 70. Qf3+ Kc5 71. Qc3+ Kd6 72. Qf6+ Kc7 73. Qf7+ Kb8 74. Qf8+ Kb7 75. Qe7+ Qc7 76. Qe4+ Qc6 77. Qe7+ Kc8 78. Qf8+ Kc7 79. Qg7+ Qd7 80. Qe5+ Qd6 81. Qb2 Qd5+ 82. Kh4 b5 83. Qg7+ Kc6 84. Qf6+ Kc5 85. Qf8+ Kc4 86. Qf1+ Qd3 87. Qc1+ Kb3 88. Qa1 b4 89. Kh5 Kc4 90. Qa6+ Kc3 91. Qa1+ Kc2 92. Qa2+ Kc1 93. Qa1+ Qb1 94. Qd4 Qf5+ 95. Kh4 b3 96. Qe3+ Kb2 97. Qd4+ Kb1 98. Qg1+ Kc2 99. Qg2+ Kc3 100. Qg7+ Kd2 101. Qb2+ Qc2 102. Qd4+ Qd3 1-0
 
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.1"]
+[White "Haskenhoff, Jan"]
+[Black "Spyrou, Emmanouil"]
+[Result "1/2-1/2"]
+[ECO "B15"]
+[WhiteElo "2144"]
+[BlackElo "2153"]
+[PlyCount "21"]
+[EventDate "2026.??.??"]
+
+1. e4 g6 2. d4 Bg7 3. Nc3 c6 4. Nf3 d5 5. h3 dxe4 6. Nxe4 Nf6 7. Nxf6+ exf6 8. Bd3 O-O 9. O-O Nd7 10. c4 Re8 11. Be3 1/2-1/2
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.2"]
+[White "Voss, Hubertus"]
+[Black "Suchland, Marko"]
+[Result "1/2-1/2"]
+[ECO "B10"]
+[WhiteElo "2161"]
+[BlackElo "2155"]
+[PlyCount "24"]
+[EventDate "2026.??.??"]
+
+1. e4 c6 2. Nf3 d5 3. exd5 cxd5 4. Ne5 Nc6 5. d4 a6 6. c3 Nf6 7. Bd3 g6 8. O-O Bf5 9. Bf4 Bxd3 10. Qxd3 Nh5 11. Be3 Qc7 12. f4 e6 1/2-1/2
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.3"]
+[White "Henkemeier, Markus"]
+[Black "Schlaap, Ralf"]
+[Result "1/2-1/2"]
+[ECO "B23"]
+[WhiteElo "2078"]
+[BlackElo "2117"]
+[PlyCount "34"]
+[EventDate "2026.??.??"]
+
+1. e4 c5 2. Nc3 e6 3. d3 Nc6 4. Bf4 d6 5. Qd2 Nf6 6. Nf3 Be7 7. Be2 a6 8. h3 b5 9. O-O Bb7 10. a4 Qb6 11. axb5 axb5 12. Rxa8+ Bxa8 13. Ra1 O-O 14. Nd1 Bb7 15. Qc1 Rc8 16. c3 Ra8 17. Rxa8+ Bxa8 1/2-1/2
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.4"]
+[White "Brieger, Sebastian"]
+[Black "Hufendiek, Ekkehard"]
+[Result "1/2-1/2"]
+[ECO "C63"]
+[WhiteElo "2013"]
+[BlackElo "1885"]
+[PlyCount "77"]
+[EventDate "2026.??.??"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 f5 4. d4 fxe4 5. Nxe5 Nxe5 6. dxe5 c6 7. Ba4 Qa5+ 8. c3 Qxe5 9. O-O Bc5 10. Nd2 d5 11. c4 Nf6 12. Kh1 O-O 13. f4 Qd4 14. cxd5 cxd5 15. Nb3 Qxa4 16. Nxc5 Qxd1 17. Rxd1 b6 18. Nb3 Bb7 19. Nd4 Ng4 20. Kg1 Nh6 21. Be3 Nf5 22. Nxf5 Rxf5 23. Rac1 Rc8 24. Rxc8+ Bxc8 25. Rc1 Ba6 26. Rc7 Rf7 27. Rxf7 Kxf7 28. Kf2 Bc4 29. a4 Ke6 30. g4 g6 31. a5 bxa5 32. Bxa7 h5 33. h3 Bb3 34. Bb6 hxg4 35. hxg4 Bd1 36. Ke3 a4 37. g5 Kf5 38. Bd4 Bb3 39. Be5 1/2-1/2
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.5"]
+[White "Ortpaul, Mario"]
+[Black "Hufelschulte, Norbert"]
+[Result "1/2-1/2"]
+[ECO "A34"]
+[WhiteElo "1960"]
+[BlackElo "2054"]
+[PlyCount "22"]
+[EventDate "2026.??.??"]
+
+1. Nf3 Nf6 2. c4 g6 3. g3 Bg7 4. Bg2 O-O 5. Nc3 d5 6. cxd5 Nxd5 7. O-O c5 8. Qb3 Nxc3 9. dxc3 Qc7 10. Rd1 e5 11. Ng5 c4 1/2-1/2
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.6"]
+[White "Dukic, Dalibor"]
+[Black "Schramm, Joshua"]
+[Result "1-0"]
+[ECO "B37"]
+[WhiteElo "2061"]
+[PlyCount "79"]
+[EventDate "2026.??.??"]
+
+1. c4 c5 2. Nf3 g6 3. Nc3 Nf6 4. d4 cxd4 5. Nxd4 Bg7 6. e4 d6 7. Be2 Nc6 8. Nc2 O-O 9. O-O Bd7 10. Bg5 Qc8 11. Qd2 Re8 12. Rac1 Bg4 13. f3 Be6 14. Ne3 Ne5 15. Ncd5 Bxd5 16. cxd5 Qd8 17. Qb4 Rb8 18. Rc2 Ned7 19. Rfc1 Nc5 20. Nc4 Nfd7 21. Nxd6 a5 22. Qb5 Rf8 23. Nc4 b6 24. Bf4 Rc8 25. b3 Re8 26. a3 Kh8 27. e5 Kg8 28. Rd1 Rf8 29. Bg3 Nb7 30. b4 Nxe5 31. Nxe5 Rxc2 32. Nc6 Qd7 33. Bd3 Rb2 34. Qxb6 axb4 35. axb4 Ra8 36. Qe3 Raa2 37. Bf1 Nd6 38. Qxe7 Qf5 39. Qd8+ Bf8 40. Ne7+ 1-0
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.7"]
+[White "Meise, Volker"]
+[Black "Woertler, Lars-Erik"]
+[Result "1/2-1/2"]
+[ECO "B02"]
+[WhiteElo "1690"]
+[BlackElo "1778"]
+[PlyCount "45"]
+[EventDate "2026.??.??"]
+
+1. e4 Nf6 2. Nc3 d5 3. exd5 Nxd5 4. d4 g6 5. Bc4 Nb6 6. Bb3 Bg7 7. Nf3 O-O 8. Be3 Nc6 9. Ne4 Na5 10. c3 Nxb3 11. axb3 Nd5 12. Bd2 Re8 13. O-O b6 14. Re1 Bb7 15. c4 Nf6 16. Nxf6+ Bxf6 17. Bc3 e6 18. d5 Bxc3 19. bxc3 exd5 20. Rxe8+ Qxe8 21. cxd5 Qe4 22. c4 a6 23. Qd2 1/2-1/2
+
+[Event "Hamm - Werther"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.8"]
+[White "Stukert, Artur"]
+[Black "Zolotykh, Ilya"]
+[Result "1-0"]
+[ECO "C92"]
+[WhiteElo "1869"]
+[PlyCount "67"]
+[EventDate "2026.??.??"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O Be7 5. Re1 d6 6. c3 O-O 7. h3 a6 8. Ba4 b5 9. Bb3 Bb7 10. d4 exd4 11. cxd4 d5 12. e5 Ne4 13. Nbd2 Nb4 14. Bc2 Nxc2 15. Qxc2 Rc8 16. Nb3 f6 17. Be3 fxe5 18. Nxe5 Bg5 19. f3 Ng3 20. Nc5 Nf5 21. Bxg5 Qxg5 22. Nxb7 Nxd4 23. Qd3 Rf4 24. Nc5 Rcf8 25. Re3 R8f5 26. Rae1 Qg3 27. Rf1 Rh5 28. Ne6 Nxe6 29. Qxd5 Rf6 30. Qa8+ Rf8 31. Qd5 Rh6 32. Ng4 Rd8 33. Nxh6+ gxh6 34. Qxe6+ 1-0
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.1"]
+[White "Augner, Bjoern"]
+[Black "Happel, Heiner"]
+[Result "1-0"]
+[ECO "A92"]
+[WhiteElo "2080"]
+[BlackElo "2185"]
+[PlyCount "79"]
+[EventDate "2026.??.??"]
+
+1. d4 f5 2. g3 Nf6 3. Bg2 e6 4. Nf3 Be7 5. O-O O-O 6. c4 d5 7. Qc2 c6 8. Ne5 Qe8 9. Nc3 Nbd7 10. cxd5 exd5 11. Qxf5 Ne4 12. Qe6+ Kh8 13. Nxe4 Nb6 14. Nd6 Bxe6 15. Nxe8 Raxe8 16. Bd2 Nc8 17. h4 Kg8 18. Rac1 Nd6 19. Bf4 Nf7 20. e3 Nxe5 21. Bxe5 a5 22. Kh2 a4 23. Bh3 Bxh3 24. Kxh3 h5 25. f4 g6 26. Rg1 Kh7 27. g4 hxg4+ 28. Rxg4 Rf5 29. Rcg1 Rh5 30. Kg3 Rg8 31. Kf3 Bxh4 32. Rh1 Be7 33. Rgg1 Bf8 34. Kg4 Bh6 35. Bf6 Rf8 36. Rxh5 gxh5+ 37. Kf5 h4 38. Ke6 Re8+ 39. Kf7 Rxe3 40. Rg8 1-0
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.2"]
+[White "Frombach, Ralf"]
+[Black "Kesselmeier, Kevin"]
+[Result "1-0"]
+[ECO "D38"]
+[WhiteElo "2187"]
+[BlackElo "1989"]
+[PlyCount "71"]
+[EventDate "2026.??.??"]
+
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Bb4 5. Qa4+ Nc6 6. a3 Bxc3+ 7. bxc3 Ne4 8. Qc2 Na5 9. e3 O-O 10. Bd3 b6 11. cxd5 exd5 12. O-O f5 13. Ne5 c6 14. c4 Ba6 15. Bxe4 fxe4 16. Bd2 Nxc4 17. Nxc6 Qf6 18. Nb4 Nxd2 19. Qxd2 Bxf1 20. Rxf1 Qd6 21. Qa2 Rf5 22. Rc1 Raf8 23. Rc2 h5 24. Nc6 Kh7 25. Nxa7 Qh6 26. h4 Qg6 27. Nc6 Qg4 28. g3 Qd1+ 29. Kg2 Rc8 30. Nb4 Rxc2 31. Qxc2 Qxc2 32. Nxc2 Kg6 33. Kf1 Kf7 34. Ke2 Ke6 35. Ne1 Kd6 36. Ng2 1-0
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.3"]
+[White "Hoette, Moritz"]
+[Black "Dargel, Manuel"]
+[Result "1/2-1/2"]
+[ECO "A84"]
+[WhiteElo "2101"]
+[BlackElo "2125"]
+[PlyCount "94"]
+[EventDate "2026.??.??"]
+
+1. d4 e6 2. Nf3 b6 3. g3 Bb7 4. Bg2 f5 5. O-O Nf6 6. c4 Be7 7. Nc3 O-O 8. d5 Bb4 9. Bd2 Na6 10. Nd4 Nc5 11. a3 Bxc3 12. Bxc3 exd5 13. Nxf5 dxc4 14. Bxb7 Nxb7 15. e4 Nc5 16. e5 Nfe4 17. Qd5+ Kh8 18. Ne3 Nxc3 19. bxc3 Qg5 20. f4 Qh5 21. Qxc4 Rae8 22. Rae1 Re6 23. Nc2 Rh6 24. Rf2 g5 25. f5 Qh3 26. Nd4 Qg4 27. Qe2 Qxe2 28. Rexe2 Kg8 29. Re3 a6 30. g4 Kf7 31. Kg2 b5 32. Kg3 Rb6 33. Nf3 Rg8 34. h3 a5 35. Rh2 b4 36. axb4 axb4 37. cxb4 Rxb4 38. Rhe2 h5 39. e6+ dxe6 40. fxe6+ Ke8 41. Re5 h4+ 42. Kh2 Nd3 43. Rxg5 Rxg5 44. Nxg5 Nf4 45. Rc2 Rb5 46. Nf3 Rb3 47. Ng5 Rb5 1/2-1/2
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.4"]
+[White "Pruess, Wilfried"]
+[Black "Wolek, Lukas"]
+[Result "0-1"]
+[ECO "D40"]
+[WhiteElo "2046"]
+[BlackElo "1933"]
+[PlyCount "68"]
+[EventDate "2026.??.??"]
+
+1. d4 Nf6 2. Nf3 d5 3. c4 e6 4. e3 Be7 5. Nc3 O-O 6. Bd3 dxc4 7. Bxc4 c5 8. O-O Nc6 9. dxc5 Bxc5 10. Qc2 Qe7 11. a3 a6 12. b4 Bd6 13. Bb2 b5 14. Bd3 Bb7 15. Ne4 e5 16. Nxd6 Qxd6 17. Rad1 Qe7 18. Ng5 h6 19. Ne4 Nxe4 20. Bxe4 Rac8 21. Qe2 Rcd8 22. Qf3 Rd6 23. Rxd6 Qxd6 24. Rd1 Qe6 25. Bd5 Nd4 26. Rxd4 exd4 27. Bxb7 Qa2 28. g3 Qxb2 29. exd4 Qxd4 30. Bxa6 Qe5 31. Qc6 Rb8 32. Bb7 Qa1+ 33. Kg2 Qxa3 34. Qc7 Qa7 0-1
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.5"]
+[White "Ilskens, Linus"]
+[Black "Sporkert, Corina"]
+[Result "1-0"]
+[ECO "C70"]
+[WhiteElo "1899"]
+[BlackElo "2013"]
+[PlyCount "211"]
+[EventDate "2026.??.??"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Bc5 4. c3 a6 5. Ba4 Nf6 6. d4 exd4 7. e5 Nd5 8. cxd4 Be7 9. Bb3 Bb4+ 10. Kf1 Nce7 11. Bg5 c6 12. Nbd2 d6 13. Bxd5 Bxd2 14. Bxf7+ Kxf7 15. Qxd2 d5 16. Qf4+ Ke8 17. Qh4 Be6 18. Rc1 h6 19. Bxe7 Qxe7 20. Qxe7+ Kxe7 21. Ke2 Bg4 22. Ke3 Rhf8 23. Nd2 Rac8 24. b4 Ra8 25. Nb3 Rf7 26. f3 Bf5 27. Na5 Kd8 28. Rhf1 Kc7 29. Nb3 Raf8 30. a4 Ra8 31. a5 Raf8 32. Rf2 Kd8 33. Nc5 Bc8 34. Rcf1 h5 35. Nd3 Be6 36. h3 h4 37. Re2 Ke7 38. Nf2 Rf4 39. Nd3 R4f7 40. Nc5 Bc8 41. f4 g6 42. Ref2 Rf5 43. Nd3 Rh5 44. Kf3 Rhh8 45. Rh1 Bf5 46. Nc5 Rhg8 47. Ke3 Bc8 48. Rhf1 Rh8 49. Nb3 Bf5 50. Nd2 Bc8 51. Nf3 Bf5 52. Ng5 Rh5 53. Re1 Rhh8 54. Kd2 Rh5 55. Ke3 Rhh8 56. Kf3 Rh5 57. Ke2 Rhh8 58. Kf1 Rh5 59. Kg1 Rhh8 60. Kh2 Rh5 61. Ree2 Rhh8 62. Re3 Rh5 63. g4 hxg3+ 64. Kxg3 Rfh8 65. Rh2 Rf8 66. h4 Rc8 67. Re1 Rf8 68. Nf3 Rfh8 69. Nd2 Rf8 70. Nf1 Rfh8 71. Ne3 Ke6 72. Ng4 Bxg4 73. Kxg4 Rf8 74. Rc1 Rhf5 75. Rf2 Rh8 76. Rcf1 Rh7 77. Rc2 Rh8 78. Rcf2 Rh7 79. Rg1 Rfh5 80. Rh2 Rh8 81. Rh3 R8h7 82. Rg2 Rh8 83. Rf2 Rf8 84. Rhf3 Rhf5 85. Rg2 Rh8 86. Rfg3 Rh6 87. Kf3 Kf7 88. Rg4 Rfh5 89. Kg3 Ke6 90. Kf3 Kf7 91. e6+ Kf6 92. e7 Kxe7 93. Rxg6 Rxh4 94. Rxh6 Rxh6 95. Rg7+ Kf6 96. Rxb7 Rh3+ 97. Kg4 Rd3 98. Rb6 Rxd4 99. Rxc6+ Ke7 100. Kg5 Rxb4 101. f5 Rb1 102. Rxa6 d4 103. Kf4 Rf1+ 104. Ke4 d3 105. f6+ Kd7 106. Kxd3 1-0
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.6"]
+[White "Maaß, Alexander"]
+[Black "Pickhard, Tobias"]
+[Result "1-0"]
+[ECO "C01"]
+[WhiteElo "1992"]
+[BlackElo "1773"]
+[PlyCount "59"]
+[EventDate "2026.??.??"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. Nf3 Bd6 5. Bd3 Nf6 6. O-O O-O 7. Bg5 Bg4 8. Nbd2 h6 9. Bh4 Re8 10. c3 Nbd7 11. Qc2 Bh5 12. Rae1 g5 13. Bg3 Nf8 14. Ne5 N6d7 15. Bf5 Nxe5 16. dxe5 Be7 17. f4 Kg7 18. fxg5 hxg5 19. Nf3 Ne6 20. Nd4 Bc5 21. Bxe6 Bxd4+ 22. cxd4 Rxe6 23. Qd2 Bg6 24. Rf6 Rxf6 25. exf6+ Kh6 26. Re7 c5 27. h4 Qb6 28. Qxg5+ Kh7 29. Rxf7+ Bxf7 30. Qg7# 1-0
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.7"]
+[White "Rogalski, Niclas"]
+[Black "Happel, Juergen"]
+[Result "1/2-1/2"]
+[ECO "B12"]
+[WhiteElo "1793"]
+[BlackElo "1982"]
+[PlyCount "40"]
+[EventDate "2026.??.??"]
+
+1. e4 c6 2. d4 d5 3. e5 Bf5 4. h4 h6 5. g4 Bh7 6. Bd3 Bxd3 7. Qxd3 e6 8. f4 c5 9. Nf3 Nc6 10. c3 cxd4 11. Nxd4 Nxd4 12. Qxd4 Ne7 13. Be3 Nc6 14. Qd3 Be7 15. Bf2 h5 16. g5 g6 17. Nd2 O-O 18. O-O Qc7 19. Nf3 Rfd8 20. Rac1 Na5 1/2-1/2
+
+[Event "Hamm - Paderborn"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.8"]
+[White "Klaus, Michael"]
+[Black "Zurgeissel, Heinz-Gerd"]
+[Result "1/2-1/2"]
+[ECO "D40"]
+[WhiteElo "1941"]
+[BlackElo "1848"]
+[PlyCount "31"]
+[EventDate "2026.??.??"]
+
+1. d4 Nf6 2. c4 c5 3. e3 e6 4. Nc3 d5 5. Nf3 Nc6 6. Be2 a6 7. O-O dxc4 8. Bxc4 b5 9. Bb3 Be7 10. dxc5 O-O 11. a3 Bb7 12. Bc2 Bxc5 13. Ne4 Be7 14. Bd2 Na5 15. Qb1 Nxe4 16. Bxe4 1/2-1/2
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.1"]
+[White "Klyuner, Vyacheslav"]
+[Black "Schuette, Tobias"]
+[Result "1-0"]
+[ECO "B40"]
+[WhiteElo "2421"]
+[BlackElo "2001"]
+[PlyCount "49"]
+[EventDate "2026.??.??"]
+
+1. e4 e6 2. d3 c5 3. Nf3 Nc6 4. g3 b5 5. Bg2 Bb7 6. O-O Qc7 7. Re1 d6 8. c3 Be7 9. d4 Nf6 10. d5 exd5 11. exd5 Nd8 12. Nh4 Qd7 13. a4 a6 14. axb5 axb5 15. Rxa8 Bxa8 16. Na3 O-O 17. c4 bxc4 18. Nxc4 Qb5 19. b3 Re8 20. Bb2 Bf8 21. Bxf6 Rxe1+ 22. Qxe1 gxf6 23. Qd1 Bb7 24. Qg4+ Kh8 25. Be4 1-0
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.2"]
+[White "Watzlawek, Markus"]
+[Black "Sundorf, Jannik"]
+[Result "1/2-1/2"]
+[ECO "E01"]
+[WhiteElo "2008"]
+[BlackElo "2188"]
+[PlyCount "58"]
+[EventDate "2026.??.??"]
+
+1. d4 Nf6 2. g3 e6 3. Bg2 c5 4. Nf3 cxd4 5. Nxd4 d5 6. c4 e5 7. Nc2 d4 8. O-O Nc6 9. b4 Be6 10. Nba3 Qd7 11. Qd2 a5 12. bxa5 h6 13. Rb1 Nxa5 14. f4 e4 15. Nxd4 Bxa3 16. Nxe6 Qxe6 17. Bxa3 Nxc4 18. Qb4 Nxa3 19. Rb3 Nc4 20. Rc1 Nd6 21. f5 Qd5 22. Rd3 Qb5 23. Qxd6 exd3 24. Rc7 Qb1+ 25. Kf2 Ng4+ 26. Kf3 Nxh2+ 27. Kf2 Ng4+ 28. Kf3 Nh2+ 29. Kf2 Ng4+ 1/2-1/2
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.3"]
+[White "Zelt, Jens"]
+[Black "Brockmann, Michael"]
+[Result "1/2-1/2"]
+[ECO "D02"]
+[WhiteElo "2085"]
+[BlackElo "2076"]
+[PlyCount "116"]
+[EventDate "2026.??.??"]
+
+1. d4 d5 2. c3 c5 3. Nf3 Nf6 4. g3 Nc6 5. Bg2 Bf5 6. O-O Qb6 7. Ne5 e6 8. Qa4 Bd6 9. Nxc6 bxc6 10. Nd2 cxd4 11. cxd4 O-O 12. Nb3 Bc2 13. Be3 Ng4 14. Bd2 h5 15. Bf3 c5 16. Rac1 Bxb3 17. axb3 Rfc8 18. Bxg4 hxg4 19. dxc5 Bxc5 20. Qxg4 Bd4 21. Rxc8+ Rxc8 22. Qf3 Bxb2 23. Qd3 Rc6 24. Rb1 Bd4 25. e3 Bf6 26. Rc1 g6 27. Kg2 Qb7 28. Rxc6 Qxc6 29. Kf1 e5 30. h4 e4 31. Qb1 d4 32. exd4 e3 33. Be1 Qh1+ 34. Ke2 exf2 35. Kxf2 Bxd4+ 36. Ke2 Bc3 37. Qd1 Qe4+ 38. Kf2 Bxe1+ 39. Qxe1 Qc2+ 40. Qe2 Qxb3 41. g4 Qe6 42. Qd1 Qf6+ 43. Kg3 Qe5+ 44. Kg2 a5 45. h5 gxh5 46. gxh5 Qg5+ 47. Kf2 Qf4+ 48. Kg2 a4 49. Qd5 Kg7 50. Qc5 Kh6 51. Kh3 Qf3+ 52. Kh4 a3 53. Qf8+ Kh7 54. Qh6+ Kg8 55. Qg5+ Kf8 56. Qd8+ Kg7 57. Qg5+ Kh7 58. Qh6+ Kxh6 1/2-1/2
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.4"]
+[White "Bilau, Max"]
+[Black "Dawid, Adalbert"]
+[Result "1-0"]
+[ECO "E05"]
+[WhiteElo "1880"]
+[BlackElo "2019"]
+[PlyCount "47"]
+[EventDate "2026.??.??"]
+
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. g3 Be7 5. Bg2 O-O 6. O-O dxc4 7. Qc2 a6 8. a4 Bd7 9. Rd1 Bc6 10. Nc3 Nbd7 11. e4 b5 12. d5 exd5 13. exd5 Bb7 14. Nd4 Nb6 15. d6 Bxg2 16. dxe7 Qxe7 17. Kxg2 c5 18. Nf5 Qb7+ 19. f3 Nbd5 20. Nxd5 Nxd5 21. Rxd5 g6 22. Nh6+ Kg7 23. Qc3+ f6 24. Qd2 1-0
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.5"]
+[White "Linker, Walter"]
+[Black "Horenburg, Oliver"]
+[Result "1-0"]
+[ECO "A03"]
+[WhiteElo "2013"]
+[BlackElo "1950"]
+[PlyCount "81"]
+[EventDate "2026.??.??"]
+
+1. f4 d5 2. Nf3 c5 3. e3 Nc6 4. Bb5 Bd7 5. b3 Nf6 6. Bb2 e6 7. Bxc6 Bxc6 8. Ne5 Be7 9. Nxc6 bxc6 10. O-O O-O 11. d3 c4 12. Nd2 cxd3 13. cxd3 Bc5 14. Rf3 Qb6 15. Nf1 Ng4 16. Qe1 f5 17. Rc1 Be7 18. Qc3 Bf6 19. d4 Rac8 20. h3 Nh6 21. Ba3 Rf7 22. Bc5 Qa6 23. Rf2 Rb7 24. Nh2 Nf7 25. g4 h6 26. Rg2 Kh7 27. Nf3 g6 28. Qe1 Rh8 29. Qg3 Qd3 30. Re1 Rg8 31. g5 Bd8 32. gxh6 a5 33. h4 a4 34. h5 g5 35. fxg5 Bxg5 36. Kh1 axb3 37. axb3 Rxb3 38. Qc7 Bxh6 39. Qxf7+ Rg7 40. Rxg7+ Bxg7 41. Rg1 1-0
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.6"]
+[White "Zachos, Ingo"]
+[Black "Krueger, Simon"]
+[Result "1-0"]
+[ECO "A34"]
+[WhiteElo "1984"]
+[BlackElo "1939"]
+[PlyCount "187"]
+[EventDate "2026.??.??"]
+
+1. Nf3 Nf6 2. c4 c5 3. g3 Nc6 4. Bg2 d5 5. O-O e5 6. d3 Be7 7. cxd5 Nxd5 8. Nc3 Nc7 9. a3 O-O 10. Nd2 Ne6 11. Nc4 f6 12. Rb1 Kh8 13. Nd5 Re8 14. b4 cxb4 15. axb4 Bf8 16. Bd2 Ne7 17. Nde3 Rb8 18. b5 Nd4 19. Ba5 Qd7 20. Re1 Nxb5 21. Qa4 a6 22. Nb6 Qe6 23. Nec4 Nc6 24. Bd2 Rd8 25. Kf1 Bc5 26. Nxc8 Rbxc8 27. Ne3 Bxe3 28. Bxe3 Nc3 29. Qb3 Qxb3 30. Rxb3 Nb5 31. Rc1 Ncd4 32. Rbb1 b6 33. Rxc8 Rxc8 34. Bb7 Rb8 35. Bxa6 Nc3 36. Rb2 h6 37. Bc4 b5 38. Bf7 b4 39. Bb3 Ncxe2 40. Bd2 Nc3 41. Bc4 Nc6 42. Bxc3 bxc3 43. Rc2 g5 44. Rxc3 Nd4 45. h3 Kg7 46. Bd5 Rd8 47. Rc7+ Kg6 48. Bc4 f5 49. Bf7+ Kf6 50. Bc4 Re8 51. Rf7+ Kg6 52. Rd7 Rf8 53. Rd5 Nf3 54. Kg2 g4 55. Rd7 h5 56. Rd6+ Rf6 57. Rd8 Rb6 58. hxg4 hxg4 59. Bd5 Ne1+ 60. Kf1 Nxd3 61. Bf7+ Kxf7 62. Rxd3 Ke6 63. Kg2 Rd6 64. Ra3 Kf6 65. Ra8 Rd2 66. Ra6+ Kg5 67. Re6 Rd5 68. Re8 Kf6 69. Ra8 Ke6 70. Re8+ Kd6 71. Rf8 e4 72. Ra8 Ke5 73. Ra3 Rc5 74. Re3 Ra5 75. Rb3 Kd4 76. Rb8 Rc5 77. Re8 Kd3 78. Re7 Ke2 79. Re8 Rc3 80. Ra8 Rd3 81. Ra5 Ke1 82. Rxf5 Rf3 83. Rf4 e3 84. fxe3 Rxe3 85. Rxg4 Ra3 86. Kh3 Kf2 87. Rf4+ Ke3 88. Rf8 Ra2 89. Kh4 Ke4 90. g4 Rh2+ 91. Kg5 Rg2 92. Kh5 Rh2+ 93. Kg6 Ke5 94. g5 1-0
+
+[Event "Eichlinghofen - Dortmund"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.7"]
+[White "Lin, Yi"]
+[Black "Dekhtyaryuk, Dimitri"]
+[Result "1-0"]
+[ECO "B02"]
+[WhiteElo "1934"]
+[BlackElo "1880"]
+[PlyCount "83"]
+[EventDate "2026.??.??"]
+
+1. e4 Nf6 2. d3 d5 3. e5 Nfd7 4. d4 Nb6 5. Nf3 Bg4 6. Be2 e6 7. O-O N8d7 8. a4 a5 9. b3 Be7 10. Ba3 O-O 11. Nfd2 Bf5 12. c4 c5 13. dxc5 Bxc5 14. Nf3 Qc7 15. Bb2 Bg4 16. cxd5 Nxd5 17. Nbd2 b6 18. Rc1 Qb8 19. h3 Bh5 20. Nh4 Bxe2 21. Qxe2 Qd8 22. Nhf3 Nf4 23. Qe4 Ng6 24. h4 h6 25. h5 Ne7 26. Qg4 Kh8 27. Ne4 Nf5 28. Rfd1 Qe7 29. Qf4 Rg8 30. g4 g5 31. hxg6 Rxg6 32. Kf1 Ng7 33. Nf6 Ra7 34. Nh4 Rg5 35. Qe4 Nf8 36. Bd4 Ng6 37. Nxg6+ Rxg6 38. Bxc5 bxc5 39. Rxc5 Ne8 40. Rc8 Rxf6 41. exf6 Qf8 42. Rdd8 1-0
+
+[Event "Bielefeld 2 - Münster 2"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.1"]
+[White "Junk, Phillip"]
+[Black "Paneff, Florian"]
+[Result "1/2-1/2"]
+[ECO "C01"]
+[WhiteElo "2122"]
+[BlackElo "2044"]
+[PlyCount "73"]
+[EventDate "2026.??.??"]
+
+1. e4 e6 2. d4 d5 3. exd5 exd5 4. Nf3 Nf6 5. Bd3 Bd6 6. Qe2+ Qe7 7. Qxe7+ Bxe7 8. O-O O-O 9. Re1 Re8 10. Bf4 c6 11. Nbd2 Bg4 12. Ne5 Nbd7 13. h3 Be6 14. Nb3 Nxe5 15. Bxe5 b6 16. Ba6 Bc8 17. Bxf6 gxf6 18. Bd3 Be6 19. c3 Bd6 20. Nd2 Kh8 21. Nf1 Rg8 22. Re3 f5 23. f4 Bxf4 24. Rf3 Bg5 25. Bxf5 Bxf5 26. Rxf5 f6 27. Re1 Rae8 28. Rxe8 Rxe8 29. Kf2 Kg7 30. Rf3 Re4 31. Ng3 Bh4 32. Kf1 Bxg3 33. Rxg3+ Kf7 34. Kf2 b5 35. Re3 Rf4+ 36. Rf3 Re4 37. Re3 1/2-1/2
+
+[Event "Bielefeld 2 - Münster 2"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.2"]
+[White "Doering, Carsten"]
+[Black "Virnyi, Julius"]
+[Result "1/2-1/2"]
+[ECO "E31"]
+[WhiteElo "1963"]
+[BlackElo "2101"]
+[PlyCount "59"]
+[EventDate "2026.??.??"]
+
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. Bg5 h6 5. Bh4 c5 6. d5 d6 7. e3 O-O 8. Bd3 exd5 9. cxd5 Nbd7 10. Nge2 a6 11. O-O Re8 12. Qc2 Rb8 13. a3 Ba5 14. Rab1 b5 15. b4 cxb4 16. axb4 Bb6 17. Kh1 Bb7 18. Rbd1 Qc7 19. Bf5 Qc4 20. Bxd7 Nxd7 21. Bg3 Qxb4 22. Qf5 Ne5 23. Ne4 Bc8 24. Qf4 Bc5 25. Nxc5 Qxc5 26. Nd4 Bd7 27. Nf3 Nc4 28. Nd2 Qxd5 29. Nxc4 Qxc4 30. Qxd6 1/2-1/2
+
+[Event "Bielefeld 2 - Münster 2"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.3"]
+[White "Kamp, Aaron"]
+[Black "Roemhild, Marcus"]
+[Result "1/2-1/2"]
+[ECO "B30"]
+[WhiteElo "2066"]
+[BlackElo "1982"]
+[PlyCount "79"]
+[EventDate "2026.??.??"]
+
+1. e4 c5 2. Nf3 Nc6 3. Bb5 Nf6 4. Nc3 g6 5. O-O Bg7 6. Re1 O-O 7. e5 Ng4 8. Bxc6 dxc6 9. h3 Nh6 10. d3 Nf5 11. a4 a5 12. Ne4 b6 13. Bf4 Nd4 14. c3 Nxf3+ 15. Qxf3 Be6 16. Ng5 Qd7 17. Nxe6 Qxe6 18. Re4 Rad8 19. Qe2 Rd7 20. b4 cxb4 21. cxb4 Rfd8 22. bxa5 bxa5 23. Ra3 Rd4 24. Rc3 Qd5 25. Rxd4 Qxd4 26. Rc4 Qa1+ 27. Kh2 g5 28. Bxg5 Qxe5+ 29. Qxe5 Bxe5+ 30. g3 f6 31. Bd2 Rxd3 32. Bxa5 Bd4 33. Kg2 c5 34. Bb6 Ra3 35. a5 Ra2 36. Bxc5 Rxf2+ 37. Kg1 Bxc5 38. Rxc5 Ra2 39. Rc7 Rxa5 40. Rxe7 1/2-1/2
+
+[Event "Bielefeld 2 - Münster 2"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.4"]
+[White "Nagel, Jens"]
+[Black "Seegers, Hendrik"]
+[Result "1/2-1/2"]
+[ECO "A85"]
+[WhiteElo "2011"]
+[BlackElo "2100"]
+[PlyCount "61"]
+[EventDate "2026.??.??"]
+
+1. d4 d5 2. c4 e6 3. Nc3 c6 4. e3 f5 5. Bd3 Nf6 6. Nf3 Bd6 7. O-O O-O 8. Qe2 Ne4 9. Ne5 Nd7 10. f4 Ndf6 11. c5 Bc7 12. Bd2 Bd7 13. Rab1 Be8 14. Be1 Bh5 15. Qc2 Ng4 16. Nxg4 Bxg4 17. Be2 Bxe2 18. Qxe2 b6 19. Nxe4 fxe4 20. Rc1 b5 21. Qg4 Qd7 22. Bh4 Qf7 23. Rf2 g6 24. Rcf1 Rae8 25. Bg5 Qf5 26. Qh4 Bd8 27. g4 Qf7 28. Qg3 Kh8 29. Bh6 Rg8 30. Bg5 Bf6 31. Bxf6+ 1/2-1/2
+
+[Event "Bielefeld 2 - Münster 2"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.7"]
+[White "Timmermann, Aaron Frederik"]
+[Black "Gernhuber, Darian"]
+[Result "0-1"]
+[ECO "A07"]
+[WhiteElo "1796"]
+[BlackElo "1895"]
+[PlyCount "74"]
+[EventDate "2026.??.??"]
+
+1. Nf3 d5 2. g3 Nf6 3. Bg2 c6 4. d3 Bf5 5. Nbd2 h6 6. O-O e6 7. Re1 Be7 8. b3 O-O 9. Bb2 a5 10. a3 Nbd7 11. e4 dxe4 12. dxe4 Bh7 13. Qe2 Qc7 14. Rad1 Rfd8 15. e5 Ne8 16. Ne4 Nc5 17. Nfd2 Rd7 18. Nxc5 Bxc5 19. Ne4 Be7 20. Rxd7 Qxd7 21. Rd1 Qc7 22. Nc3 Rd8 23. Be4 Rxd1+ 24. Nxd1 Bxe4 25. Qxe4 Qd7 26. Qe2 Nc7 27. c4 Na6 28. Nc3 Nc5 29. b4 axb4 30. axb4 Nd3 31. Ne4 Bxb4 32. Nd6 Nxb2 33. Qxb2 Bxd6 34. exd6 Qxd6 35. Qxb7 Qc5 36. Qb3 e5 37. Kg2 Qd4 0-1
+
+[Event "Bielefeld 2 - Münster 2"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.8"]
+[White "Augustin, Dirk"]
+[Black "Unkel, Jari"]
+[Result "1-0"]
+[ECO "D02"]
+[BlackElo "1800"]
+[PlyCount "85"]
+[EventDate "2026.??.??"]
+
+1. Nf3 d5 2. g3 Nc6 3. d4 Bf5 4. Bg2 Qd7 5. h3 O-O-O 6. c3 f6 7. b4 a6 8. a4 e6 9. Nbd2 Bxb4 10. cxb4 Nxb4 11. O-O Bc2 12. Qe1 Bxa4 13. Nc4 Nc2 14. Qc3 dxc4 15. Ra2 Bb3 16. Rxc2 Bxc2 17. Qxc2 Qb5 18. Bf4 Qb3 19. Qe4 c3 20. Rb1 Qd5 21. Qd3 c6 22. Ne5 Qxd4 23. Nxc6 Qxd3 24. Na7+ Kd7 25. Rxb7+ Ke8 26. exd3 Ne7 27. Nc6 Nxc6 28. Bxc6+ Kf8 29. Bd7 Kf7 30. Bb5+ Kg6 31. Bxa6 Ra8 32. Bb5 Rhc8 33. Bd7 Rc5 34. Rb1 c2 35. Rc1 e5 36. Be3 Rc7 37. Be6 Rb8 38. Kf1 Rd8 39. Bc4 e4 40. Rxc2 f5 41. dxe4 Rdc8 42. exf5+ Kxf5 43. Bd3+ 1-0
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.1"]
+[White "Arndt, Stefan"]
+[Black "Eckert, Marius"]
+[Result "1-0"]
+[ECO "B23"]
+[WhiteElo "2129"]
+[BlackElo "2086"]
+[PlyCount "101"]
+[EventDate "2026.??.??"]
+
+1. e4 c5 2. Nc3 Nc6 3. Bb5 Nd4 4. Nf3 Nxb5 5. Nxb5 d6 6. d4 Qa5+ 7. Nc3 Nf6 8. O-O cxd4 9. Qxd4 g6 10. Nd5 Bg7 11. Bg5 Nh5 12. Qc4 Be6 13. Qc7 Qxc7 14. Nxc7+ Kd7 15. Nxa8 Rxa8 16. c3 Rc8 17. Nd4 Bc4 18. Rfe1 h6 19. Be3 Nf6 20. f3 Ke8 21. b3 Ba6 22. c4 Nd7 23. Rac1 Ne5 24. Red1 b6 25. Nb5 Nc6 26. Bd4 Nxd4 27. Nxd4 Bb7 28. Nb5 h5 29. Rc2 a6 30. Nc3 Rc6 31. Nd5 e6 32. Ne3 Ke7 33. Kf2 Be5 34. g3 g5 35. Re2 Rc8 36. Ng2 Bc3 37. a3 b5 38. Ne3 Ba5 39. cxb5 axb5 40. Rc2 Ra8 41. a4 Bb6 42. axb5 g4 43. Rdc1 Kd7 44. Ke2 gxf3+ 45. Kd3 Ra3 46. Rb2 d5 47. exd5 exd5 48. Rf1 Bxe3 49. Kxe3 Ra5 50. Kd4 Rxb5 51. Rxf3 1-0
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.2"]
+[White "Oeztekin, Atilla"]
+[Black "Rittmeier, Bernhard"]
+[Result "0-1"]
+[ECO "B45"]
+[WhiteElo "2071"]
+[BlackElo "2206"]
+[PlyCount "96"]
+[EventDate "2026.??.??"]
+
+1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6 6. Nxc6 bxc6 7. e5 Nd5 8. Ne4 Qc7 9. f4 Qb6 10. c4 Bb4+ 11. Ke2 f5 12. exf6 Nxf6 13. Be3 Qd8 14. Nd6+ Bxd6 15. Qxd6 Bb7 16. Rd1 Rc8 17. Bd4 c5 18. Bxf6 gxf6 19. f5 Qe7 20. fxe6 dxe6 21. Kf2 Qxd6 22. Rxd6 Ke7 23. Rd1 Rhg8 24. Rg1 Rcd8 25. Be2 Rxd1 26. Bxd1 Rd8 27. Ke3 Rd4 28. Bf3 Bxf3 29. gxf3 Rxc4 30. Rg7+ Kd6 31. Rxh7 Rc2 32. Rxa7 Rxb2 33. h4 Rh2 34. Ra4 f5 35. a3 Kd5 36. Ra8 Rxh4 37. Rd8+ Ke5 38. Rc8 Kd6 39. Rd8+ Kc7 40. Ra8 e5 41. Re8 Kd6 42. Rd8+ Ke6 43. Re8+ Kd5 44. Rd8+ Kc4 45. Re8 e4 46. Ke2 Rh2+ 47. Kd1 exf3 48. Re5 Rh1+ 0-1
+
+[Event "Waltrop -  Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.3"]
+[White "Weber, Andre"]
+[Black "Gasper, Joern"]
+[Result "0-1"]
+[ECO "A47"]
+[WhiteElo "2009"]
+[BlackElo "2008"]
+[PlyCount "76"]
+[EventDate "2026.??.??"]
+
+1. d4 Nf6 2. Nf3 e6 3. Bf4 c5 4. e3 b6 5. Nbd2 Be7 6. Bd3 cxd4 7. exd4 O-O 8. h3 Ba6 9. Qe2 Bxd3 10. Qxd3 Nd5 11. Bg3 Nb4 12. Qb3 N8c6 13. O-O Na5 14. Qa4 Rc8 15. a3 Nxc2 16. Rac1 b5 17. Qxb5 Qb6 18. Qa4 Qxb2 19. Qxa5 Qxa3 20. Qb5 Nxd4 21. Qb1 Ne2+ 22. Kh2 Rxc1 23. Rxc1 Qxc1 24. Qb7 Nxg3 25. fxg3 Qc6 26. Qxa7 Ra8 27. Qf2 Bf6 28. Qe3 d5 29. g4 Qc7+ 30. Kg1 Ra1+ 31. Kf2 Qa7 32. g5 Qxe3+ 33. Kxe3 Ra3+ 34. Ke2 Be7 35. Kf2 Ra2 36. Ke3 Bc5+ 37. Kf4 Bd6+ 38. Ke3 Bb4 0-1
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.4"]
+[White "Winterberg, Andreas"]
+[Black "Hollmann, Bert"]
+[Result "1-0"]
+[ECO "C47"]
+[WhiteElo "2073"]
+[BlackElo "2096"]
+[PlyCount "47"]
+[EventDate "2026.??.??"]
+
+1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4 5. Nxd4 Bb4 6. Nxc6 Bxc3+ 7. bxc3 bxc6 8. Bd3 Qe7 9. O-O O-O 10. Re1 d6 11. h3 Rb8 12. f4 Re8 13. Be3 c5 14. Bf2 Bb7 15. e5 Nd7 16. Qh5 g6 17. Qg4 dxe5 18. Bh4 h5 19. Qg3 exf4 20. Rxe7 fxg3 21. Rxd7 c4 22. Bxc4 Re4 23. Bxf7+ Kf8 24. Bg5 1-0
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.5"]
+[White "Dyballa, Gerhard"]
+[Black "Atali, Dogukan"]
+[Result "0-1"]
+[ECO "E63"]
+[WhiteElo "1956"]
+[BlackElo "1996"]
+[PlyCount "110"]
+[EventDate "2026.??.??"]
+
+1. c4 Nf6 2. Nc3 g6 3. g3 Bg7 4. Bg2 O-O 5. Nf3 d6 6. d4 Nc6 7. O-O a6 8. h3 Rb8 9. d5 Na5 10. Qd3 c5 11. dxc6 bxc6 12. b3 Bf5 13. Qe3 Ne4 14. Bd2 d5 15. cxd5 cxd5 16. Nxe4 Bxa1 17. Rxa1 Bxe4 18. Qc3 Bxf3 19. Bxf3 Nb7 20. Bh6 d4 21. Qc6 Re8 22. Qxa6 Nc5 23. Qc4 Qd6 24. b4 Ne6 25. b5 Qc5 26. Qxc5 Nxc5 27. a4 e5 28. Bc6 Rec8 29. a5 Na6 30. Bd2 Nb4 31. Rc1 Nxc6 32. bxc6 f6 33. f4 Rb2 34. Be1 Rxe2 35. fxe5 d3 36. Bb4 d2 37. Rd1 Re1+ 38. Rxe1 dxe1=Q+ 39. Bxe1 fxe5 40. Bc3 Rxc6 41. Bxe5 Rc5 42. Bd4 Rxa5 43. Kf2 Kf7 44. Kf3 Ke6 45. g4 Ra3+ 46. Be3 Ke5 47. h4 Rb3 48. h5 g5 49. Kf2 Rxe3 50. Kxe3 h6 51. Kf3 Kd4 52. Kf2 Ke4 53. Kg3 Ke3 54. Kg2 Kf4 55. Kh3 Kf3 0-1
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.6"]
+[White "Drewes, Martin"]
+[Black "Kampert, Andreas"]
+[Result "1/2-1/2"]
+[ECO "B15"]
+[WhiteElo "1974"]
+[BlackElo "1924"]
+[PlyCount "51"]
+[EventDate "2026.??.??"]
+
+1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Ng3 e6 6. Nf3 c5 7. c3 Nc6 8. Bb5 Bd7 9. O-O cxd4 10. Bxc6 Bxc6 11. Nxd4 Qd5 12. Nxc6 Qxc6 13. Qe2 Be7 14. Be3 O-O 15. Rfd1 Nd5 16. Bd4 Nf4 17. Qf1 Rfd8 18. Be5 Ng6 19. Bd4 Nf4 20. Be5 Ng6 21. Bd4 Bc5 22. Bxc5 Qxc5 23. Qe2 Qb6 24. Ne4 Rxd1+ 25. Rxd1 Rd8 26. Rd2 1/2-1/2
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.7"]
+[White "Hoppe, Dirk"]
+[Black "Breidenbach, Rolf"]
+[Result "1/2-1/2"]
+[ECO "B15"]
+[BlackElo "1988"]
+[PlyCount "52"]
+[EventDate "2026.??.??"]
+
+1. e4 c6 2. d4 g6 3. Nc3 Bg7 4. Be3 d5 5. exd5 cxd5 6. Qd2 Nc6 7. Nf3 Bf5 8. Bd3 Bxd3 9. Qxd3 a6 10. O-O Nf6 11. Ne5 Rc8 12. f4 e6 13. Bf2 O-O 14. Bh4 Qd6 15. h3 Ne4 16. Nxe4 dxe4 17. Qxe4 Qxd4+ 18. Qxd4 Nxd4 19. c3 Nf5 20. Bf2 Bxe5 21. fxe5 h5 22. Rad1 Rfd8 23. Bb6 Rxd1 24. Rxd1 Rc6 25. Bf2 Rc7 26. Bb6 Rc6 1/2-1/2
+
+[Event "Waltrop - Meschede"]
+[Site "?"]
+[Date "2026.05.03"]
+[Round "9.8"]
+[White "Meier, Jan"]
+[Black "Bartel, Armin"]
+[Result "1-0"]
+[ECO "D05"]
+[WhiteElo "1912"]
+[PlyCount "57"]
+[EventDate "2026.??.??"]
+
+1. d4 d5 2. Nf3 e6 3. e3 Nf6 4. b3 Be7 5. Nbd2 O-O 6. Bd3 b6 7. Bb2 Bb7 8. O-O Nbd7 9. Ne5 c5 10. f4 Ne4 11. Qe2 f5 12. Rad1 Rc8 13. Nxe4 fxe4 14. Bb5 Nxe5 15. fxe5 Bg5 16. Rxf8+ Qxf8 17. Bd7 Rc7 18. Bxe6+ Kh8 19. Rf1 Qe8 20. h4 Bh6 21. c4 dxc4 22. d5 Re7 23. bxc4 g6 24. Bf7 Qd8 25. e6+ Bg7 26. h5 gxh5 27. Bxg7+ Kxg7 28. Qb2+ Kh6 29. Qf6# 1-0
+
