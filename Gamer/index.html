@@ -66,10 +66,13 @@
   .clock-card.active{box-shadow:inset 0 0 0 2px rgba(132,63,70,.35);background:#fff;}
   .clock-side{font-size:13px;font-weight:900;color:#555;margin-bottom:3px;}
   .clock-time{font-size:30px;line-height:1;font-weight:900;letter-spacing:.02em;}
-  .time-buttons{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;}
-  .time-btn{flex:0 0 78px;min-height:30px;padding:4px 8px!important;font-size:14px!important;background:rgba(224,224,224,.72)!important;color:#9A2D33!important;border:1px solid rgba(132,63,70,.10)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 5px rgba(0,0,0,.05)!important;}
-  .time-btn.active{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.40)!important;}
-  .time-status{text-align:center;font-size:13px;font-weight:700;color:#666;}
+  .time-selectors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:center;}
+  .time-control-select{width:100%;min-height:40px;border-radius:14px;border:1px solid rgba(132,63,70,.18);background:#f7f7f9;color:#333;padding:8px 34px 8px 12px;font-size:14px;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 5px rgba(0,0,0,.05);cursor:pointer;line-height:1.2;}
+  .time-control-select.active{background:#843f46;color:#fff;border-color:rgba(132,63,70,.45);}
+  .time-control-select:disabled{opacity:.50;cursor:not-allowed;box-shadow:none;}
+  .time-format-help{text-align:center;font-size:12px;font-weight:800;color:#666;line-height:1.25;margin-top:-2px;}
+  .time-status{text-align:center;font-size:13px;font-weight:800;color:#555;line-height:1.35;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.10);border-radius:12px;padding:6px 10px;}
+  .time-lock-note{text-align:center;font-size:12px;font-weight:700;color:#9A2D33;min-height:16px;line-height:1.25;}
   .moves-right{width:var(--right-col);max-width:100%;flex:0 0 var(--right-col);}
   .moves{height:var(--board-size);min-height:var(--board-size);padding:12px 14px;overflow:auto;}
   .moves-title{font-size:18px;font-weight:900;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -106,7 +109,7 @@
   .online-hint{grid-column:1/-1;font-size:12px;font-weight:700;color:#666;line-height:1.25;}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:150px minmax(0,1fr) 150px}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.player-row,.clocks,.online-panel{grid-template-columns:1fr}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.clock-time{font-size:26px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.player-row,.clocks,.online-panel,.time-selectors{grid-template-columns:1fr}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.clock-time{font-size:26px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr}.hide-mobile-pair{display:none}}
 </style>
 </head>
 <body>
@@ -167,15 +170,31 @@
             <div id="clockCardW" class="clock-card"><div class="clock-side">Weiß</div><div id="clockW" class="clock-time">--:--</div></div>
             <div id="clockCardB" class="clock-card"><div class="clock-side">Schwarz</div><div id="clockB" class="clock-time">--:--</div></div>
           </div>
-          <div class="time-buttons">
-            <button class="time-btn" data-time="0+0">Ohne</button>
-            <button class="time-btn" data-time="180+2">3 + 2</button>
-            <button class="time-btn" data-time="300+3">5 + 3</button>
-            <button class="time-btn" data-time="600+5">10 + 5</button>
-            <button class="time-btn" data-time="900+10">15 + 10</button>
-            <button class="time-btn" data-time="3600+30">60 + 30</button>
+          <div class="time-selectors" aria-label="Bedenkzeit wählen">
+            <select id="classicTimeSelect" class="time-control-select" data-category="classic" aria-label="Classic Bedenkzeit" title="Classic: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
+              <option value="" disabled selected>Classic</option>
+              <option value="3600+30" data-time-label="Classic · 60 Min + 30 Sek/Zug">60 Min + 30 Sek/Zug</option>
+              <option value="5400+30" data-time-label="Classic · 90 Min + 30 Sek/Zug">90 Min + 30 Sek/Zug</option>
+              <option value="7200+30" data-time-label="Classic · 120 Min + 30 Sek/Zug">120 Min + 30 Sek/Zug</option>
+            </select>
+            <select id="rapidTimeSelect" class="time-control-select" data-category="rapid" aria-label="Rapid Bedenkzeit" title="Rapid: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
+              <option value="" disabled selected>Rapid</option>
+              <option value="600+5" data-time-label="Rapid · 10 Min + 5 Sek/Zug">10 Min + 5 Sek/Zug</option>
+              <option value="900+10" data-time-label="Rapid · 15 Min + 10 Sek/Zug">15 Min + 10 Sek/Zug</option>
+              <option value="1500+10" data-time-label="Rapid · 25 Min + 10 Sek/Zug">25 Min + 10 Sek/Zug</option>
+              <option value="1800+0" data-time-label="Rapid · 30 Min ohne Inkrement">30 Min · ohne Inkrement</option>
+            </select>
+            <select id="blitzTimeSelect" class="time-control-select" data-category="blitz" aria-label="Blitz Bedenkzeit" title="Blitz: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
+              <option value="" disabled selected>Blitz</option>
+              <option value="180+2" data-time-label="Blitz · 3 Min + 2 Sek/Zug">3 Min + 2 Sek/Zug</option>
+              <option value="300+0" data-time-label="Blitz · 5 Min ohne Inkrement">5 Min · ohne Inkrement</option>
+              <option value="300+3" data-time-label="Blitz · 5 Min + 3 Sek/Zug">5 Min + 3 Sek/Zug</option>
+              <option value="600+0" data-time-label="Blitz · 10 Min ohne Inkrement">10 Min · ohne Inkrement</option>
+            </select>
           </div>
+          <div class="time-format-help">Format: Grundzeit in Minuten · Inkrement pro Zug in Sekunden</div>
           <div id="timeStatus" class="time-status">Keine Bedenkzeit aktiv</div>
+          <div id="timeLockNote" class="time-lock-note"></div>
         </div>
         <div class="status" id="status">Weiß am Zug</div>
       </div>
@@ -1089,8 +1108,12 @@ soundToggleBtn.addEventListener('click', () => setSoundEnabled(!soundEnabled));
 updateSoundToggle();
 
 /* Bedenkzeit */
+const TIME_STORAGE_KEY = 'hammerschachGamerTimeControl';
+const TIME_CATEGORY_STORAGE_KEY = 'hammerschachGamerTimeCategory';
 let timeMode = false;
 let activeTimeKey = '0+0';
+let activeTimeCategory = '';
+let activeTimeLabel = 'Keine Bedenkzeit';
 let baseTimeMs = 0;
 let incrementMs = 0;
 let clocks = {w:0, b:0};
@@ -1103,7 +1126,16 @@ const clockBEl = document.getElementById('clockB');
 const clockCardW = document.getElementById('clockCardW');
 const clockCardB = document.getElementById('clockCardB');
 const timeStatusEl = document.getElementById('timeStatus');
-const timeButtons = document.querySelectorAll('.time-btn');
+const timeLockNoteEl = document.getElementById('timeLockNote');
+const timeSelects = document.querySelectorAll('.time-control-select');
+try{
+  const savedTimeKey = localStorage.getItem(TIME_STORAGE_KEY);
+  const savedTimeCategory = localStorage.getItem(TIME_CATEGORY_STORAGE_KEY) || '';
+  if(savedTimeKey && getTimeOption(savedTimeKey, savedTimeCategory)){
+    activeTimeKey = savedTimeKey;
+    activeTimeCategory = savedTimeCategory;
+  }
+} catch(_){}
 function formatTime(ms){
   if(ms < 0) ms = 0;
   const total = Math.ceil(ms / 1000);
@@ -1119,6 +1151,7 @@ function updateClockDisplay(gameState){
   clockBEl.textContent = timeMode ? formatTime(clocks.b) : '--:--';
   clockCardW.classList.toggle('active', timeMode && g.turn === 'w' && clockRunning && viewIndex === masterHistory.length);
   clockCardB.classList.toggle('active', timeMode && g.turn === 'b' && clockRunning && viewIndex === masterHistory.length);
+  updateTimeControlsLock();
 }
 function stopClock(){
   if(clockInterval){ clearInterval(clockInterval); clockInterval = null; }
@@ -1148,8 +1181,8 @@ function resetClockForNewGame(){
   clocks = {w:baseTimeMs, b:baseTimeMs};
   firstMoveDone = false;
   timeLost = false;
-  if(timeMode) timeStatusEl.textContent = 'Bedenkzeit aktiv (' + formatTime(baseTimeMs) + ' + ' + Math.floor(incrementMs/1000) + 's)';
-  else timeStatusEl.textContent = 'Keine Bedenkzeit aktiv';
+  updateTimeStatus();
+  updateTimeControlsLock();
 }
 function afterMoveClock(movedSide){
   if(!timeMode || timeLost) return;
@@ -1157,23 +1190,85 @@ function afterMoveClock(movedSide){
   if(!firstMoveDone){ firstMoveDone = true; }
   startClock();
 }
-function setTimeControl(key){
+function getTimeOption(key, category){
+  for(const select of timeSelects){
+    if(category && select.dataset.category !== category) continue;
+    const option = Array.from(select.options).find(opt => opt.value === key);
+    if(option) return {select, option};
+  }
+  return null;
+}
+function isTimeControlLocked(){
+  return masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost;
+}
+function updateTimeStatus(){
+  if(timeMode){
+    const incText = incrementMs ? Math.floor(incrementMs/1000) + ' Sek/Zug' : 'ohne Inkrement';
+    timeStatusEl.textContent = 'Gewählt: ' + activeTimeLabel + ' · Start: ' + formatTime(baseTimeMs) + ' · ' + incText;
+  } else {
+    timeStatusEl.textContent = 'Keine Bedenkzeit aktiv';
+  }
+}
+function updateTimeControlsLock(){
+  const locked = isTimeControlLocked();
+  timeSelects.forEach(select => {
+    select.disabled = locked;
+    select.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+  if(timeLockNoteEl){
+    timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist nach Partiebeginn gesperrt. Für eine Änderung bitte „Neue Partie“ starten.' : 'Auswahl vor Partiebeginn möglich. Die zuletzt gewählte Bedenkzeit gilt.';
+  }
+}
+function updateTimeSelectValues(){
+  timeSelects.forEach(select => {
+    if(activeTimeCategory && select.dataset.category === activeTimeCategory && activeTimeKey !== '0+0') select.value = activeTimeKey;
+    else select.value = '';
+    select.classList.toggle('active', !!select.value);
+  });
+}
+function applyTimeControlFromKey(key, label, category){
+  const found = getTimeOption(key, category);
   activeTimeKey = key;
+  activeTimeCategory = found ? found.select.dataset.category : '';
   const [base, inc] = key.split('+').map(v => parseInt(v,10));
+  activeTimeLabel = label || (found ? (found.option.dataset.timeLabel || found.option.textContent.trim()) : 'Keine Bedenkzeit');
   if(!base){
     timeMode = false;
     baseTimeMs = 0;
     incrementMs = 0;
+    activeTimeCategory = '';
   } else {
     timeMode = true;
     baseTimeMs = base * 1000;
     incrementMs = (inc || 0) * 1000;
   }
-  timeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.time === key));
+  updateTimeSelectValues();
+  updateTimeStatus();
+  updateTimeControlsLock();
+}
+function setTimeControl(key, label, category){
+  if(isTimeControlLocked()){
+    const previous = statusEl.textContent;
+    statusEl.textContent = 'Bedenkzeit kann während einer laufenden Partie nicht geändert werden.';
+    setTimeout(() => { if(statusEl.textContent === 'Bedenkzeit kann während einer laufenden Partie nicht geändert werden.') statusEl.textContent = previous; }, 1200);
+    updateTimeControlsLock();
+    updateTimeSelectValues();
+    return;
+  }
+  if(!key){ updateTimeSelectValues(); return; }
+  applyTimeControlFromKey(key, label, category);
+  try{
+    localStorage.setItem(TIME_STORAGE_KEY, key);
+    localStorage.setItem(TIME_CATEGORY_STORAGE_KEY, activeTimeCategory);
+  } catch(_){}
   newGame();
 }
-timeButtons.forEach(btn => btn.addEventListener('click', () => setTimeControl(btn.dataset.time)));
-timeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.time === activeTimeKey));
+timeSelects.forEach(select => select.addEventListener('change', () => {
+  const option = select.selectedOptions && select.selectedOptions[0];
+  setTimeControl(select.value, option ? (option.dataset.timeLabel || option.textContent.trim()) : '', select.dataset.category);
+}));
+const initialTimeOption = getTimeOption(activeTimeKey, activeTimeCategory);
+applyTimeControlFromKey(activeTimeKey, initialTimeOption?.option?.dataset.timeLabel, activeTimeCategory);
 resetClockForNewGame();
 renderBoard();
 </script>
