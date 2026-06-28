@@ -560,6 +560,8 @@ let onlineGameStartedAt = null;
 let onlineRoomTimeControl = null;
 let applyingRemoteTimeControl = false;
 let onlineAutoSyncedInitialTime = false;
+let onlineOrientationRoleApplied = null;
+let onlinePendingTimeControlMessageId = null;
 
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -600,6 +602,17 @@ function roleLabel(role){
   if(role === 'b') return 'Schwarz';
   if(role === 'spectator') return 'Zuschauer';
   return 'Lokal';
+}
+function applyOnlineOrientationForRole(role){
+  if(role !== 'w' && role !== 'b') return false;
+  if(onlineOrientationRoleApplied === role) return false;
+  orientationWhite = role !== 'b';
+  onlineOrientationRoleApplied = role;
+  selected = null;
+  return true;
+}
+function sameTimeControl(a,b){
+  return !!(a && b && a.key === b.key && String(a.category || '') === String(b.category || ''));
 }
 function updateInviteUrlInAddressBar(roomId){
   if(!roomId) return;
@@ -757,6 +770,8 @@ function connectOnlineRoom(roomId, opts){
   onlineGameStartedAt = null;
   onlineRoomTimeControl = null;
   onlineAutoSyncedInitialTime = false;
+  onlineOrientationRoleApplied = null;
+  onlinePendingTimeControlMessageId = null;
   onlineLastMessage = 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
@@ -788,23 +803,33 @@ function connectOnlineRoom(roomId, opts){
     onlineConnectionState = 'connected';
     onlineLastMessage = 'Mit Lobby verbunden.';
     updateOnlineUi();
+    setTimeout(() => sendOnlineMessage({type:'request_state'}), 120);
   });
   onlineSocket.addEventListener('message', ev => {
     let msg = null;
     try{ msg = JSON.parse(ev.data); } catch(_){ return; }
     if(msg.type === 'hello' || msg.type === 'lobby' || msg.type === 'room_state'){
+      const previousTime = onlineRoomTimeControl ? Object.assign({}, onlineRoomTimeControl) : null;
+      let orientationChanged = false;
       if(msg.room) onlineRoomId = cleanRoomId(msg.room) || onlineRoomId;
-      if(msg.role) onlineRoleCode = msg.role;
+      if(msg.role){
+        onlineRoleCode = msg.role;
+        orientationChanged = applyOnlineOrientationForRole(onlineRoleCode);
+      }
       if(msg.players) onlinePlayers = {
         white: !!(msg.players.white && msg.players.white.connected),
         black: !!(msg.players.black && msg.players.black.connected),
         spectators: Number(msg.players.spectators || 0)
       };
-      if(msg.timeControl) applyTimeControlFromOnline(msg.timeControl);
+      const hasTimeControl = !!msg.timeControl;
+      if(hasTimeControl) applyTimeControlFromOnline(msg.timeControl);
       if(msg.game) applyOnlineGameState(msg.game);
       onlineConnected = true;
       onlineConnectionState = 'connected';
-      if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
+      if(hasTimeControl && !sameTimeControl(previousTime, msg.timeControl)){
+        if(msg.timeControl.updatedByRole && msg.timeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
+        else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
+      } else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
       else if(onlinePlayers.white && onlinePlayers.black) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
       else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
       else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
@@ -813,6 +838,12 @@ function connectOnlineRoom(roomId, opts){
         onlineAutoSyncedInitialTime = true;
         setTimeout(syncCurrentTimeControlToOnline, 100);
       }
+      if(orientationChanged) renderBoard();
+      updateOnlineUi();
+    } else if(msg.type === 'time_control_ack'){
+      if(msg.timeControl) applyTimeControlFromOnline(msg.timeControl);
+      onlinePendingTimeControlMessageId = null;
+      onlineLastMessage = 'Bedenkzeit vom Server bestätigt.';
       updateOnlineUi();
     } else if(msg.type === 'error'){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
@@ -861,18 +892,30 @@ function syncCurrentTimeControlToOnline(){
   if(onlineRoleCode !== 'w' && onlineRoleCode !== 'b') return;
   const timeControl = currentTimeControlPayload();
   if(!timeControl) return;
-  if(sendOnlineMessage({type:'set_time_control', timeControl})){
-    onlineRoomTimeControl = timeControl;
-    onlineLastMessage = 'Bedenkzeit wurde an die Lobby gesendet.';
+  const messageId = 'tc_' + Date.now() + '_' + randomToken(5);
+  onlinePendingTimeControlMessageId = messageId;
+  if(sendOnlineMessage({type:'set_time_control', timeControl, messageId})){
+    onlineLastMessage = 'Bedenkzeit wird an die Lobby gesendet...';
     updateOnlineUi();
+    setTimeout(() => {
+      if(onlinePendingTimeControlMessageId === messageId){
+        onlineLastMessage = 'Warte auf Bestätigung der Bedenkzeit vom Server.';
+        updateOnlineUi();
+      }
+    }, 1200);
   }
 }
 function applyTimeControlFromOnline(timeControl){
   if(!timeControl || !timeControl.key) return;
   onlineRoomTimeControl = timeControl;
+  onlinePendingTimeControlMessageId = null;
   applyingRemoteTimeControl = true;
   try{
     applyTimeControlFromKey(timeControl.key, timeControl.label, timeControl.category);
+    try{
+      localStorage.setItem(TIME_STORAGE_KEY, timeControl.key);
+      localStorage.setItem(TIME_CATEGORY_STORAGE_KEY, timeControl.category || '');
+    } catch(_){}
   } finally {
     applyingRemoteTimeControl = false;
   }
@@ -1197,7 +1240,7 @@ function newGame(){
   renderBoard();
 }
 document.getElementById('newGameBtn').addEventListener('click', newGame);
-document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; renderBoard(); });
+document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
 const boardColorWrap = document.getElementById('boardColorWrap');
