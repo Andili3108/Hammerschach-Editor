@@ -562,6 +562,8 @@ let applyingRemoteTimeControl = false;
 let onlineAutoSyncedInitialTime = false;
 let onlineOrientationRoleApplied = null;
 let onlinePendingTimeControlMessageId = null;
+let onlinePendingStartMessageId = null;
+let onlineStatePollTimer = null;
 
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -662,6 +664,12 @@ function updateOnlineStartButton(){
     startOnlineBtn.title = 'Die Online-Partie wurde bereits gestartet.';
     return;
   }
+  if(onlinePendingStartMessageId){
+    startOnlineBtn.disabled = true;
+    startOnlineBtn.textContent = 'Start wird gesendet';
+    startOnlineBtn.title = 'Der Partiestart wurde gesendet und wartet auf Server-Bestätigung.';
+    return;
+  }
   if(onlineRoleCode !== 'w'){
     startOnlineBtn.disabled = true;
     startOnlineBtn.textContent = onlineRoleCode === 'b' ? 'Warte auf Start' : 'Partie starten';
@@ -752,10 +760,86 @@ async function copyInviteLink(){
 }
 function closeOnlineSocket(){
   if(onlineReconnectTimer){ clearTimeout(onlineReconnectTimer); onlineReconnectTimer = null; }
+  if(onlineStatePollTimer){ clearInterval(onlineStatePollTimer); onlineStatePollTimer = null; }
   if(onlineSocket){
     try{ onlineSocket.onclose = null; onlineSocket.close(); } catch(_){}
     onlineSocket = null;
   }
+}
+
+function requestOnlineState(){
+  if(!onlineRoomId || !onlineConnected) return false;
+  return sendOnlineMessage({type:'request_state'});
+}
+function startOnlineStatePolling(){
+  if(onlineStatePollTimer) clearInterval(onlineStatePollTimer);
+  onlineStatePollTimer = setInterval(() => {
+    if(onlineRoomId && onlineConnected) requestOnlineState();
+  }, 3000);
+}
+function normalizeIncomingTimeControl(candidate){
+  if(!candidate) return null;
+  if(candidate.timeControl) return normalizeIncomingTimeControl(candidate.timeControl);
+  if(candidate.time_control) return normalizeIncomingTimeControl(candidate.time_control);
+  if(candidate.clock) return normalizeIncomingTimeControl(candidate.clock);
+  const key = candidate.key || candidate.value || candidate.timeKey || candidate.time_control_key;
+  let baseSeconds = Number(candidate.baseSeconds ?? candidate.base_seconds ?? candidate.base ?? candidate.initial ?? 0);
+  let incrementSeconds = Number(candidate.incrementSeconds ?? candidate.increment_seconds ?? candidate.increment ?? candidate.inc ?? 0);
+  let normalizedKey = key ? String(key) : '';
+  if(!normalizedKey && baseSeconds > 0) normalizedKey = Math.floor(baseSeconds) + '+' + Math.floor(incrementSeconds || 0);
+  if(!normalizedKey) return null;
+  if((!baseSeconds || !Number.isFinite(baseSeconds)) && normalizedKey.includes('+')){
+    const parts = normalizedKey.split('+').map(v => parseInt(v, 10));
+    baseSeconds = parts[0] || 0;
+    incrementSeconds = parts[1] || 0;
+  }
+  return {
+    key: normalizedKey,
+    category: candidate.category || candidate.timeCategory || candidate.time_category || '',
+    label: candidate.label || candidate.timeLabel || candidate.time_label || '',
+    baseSeconds: Math.floor(baseSeconds || 0),
+    incrementSeconds: Math.floor(incrementSeconds || 0),
+    updatedByRole: candidate.updatedByRole || candidate.updated_by_role || candidate.byRole || ''
+  };
+}
+function extractOnlineTimeControl(msg){
+  return normalizeIncomingTimeControl(
+    msg.timeControl || msg.time_control ||
+    (msg.state && (msg.state.timeControl || msg.state.time_control)) ||
+    (msg.roomState && (msg.roomState.timeControl || msg.roomState.time_control)) ||
+    (msg.lobby && (msg.lobby.timeControl || msg.lobby.time_control)) ||
+    (msg.type === 'time_control' || msg.type === 'time_control_set' || msg.type === 'set_time_control' || msg.type === 'time_control_ack' ? msg : null)
+  );
+}
+function normalizeIncomingGame(candidate){
+  if(!candidate) return null;
+  if(candidate.game) return normalizeIncomingGame(candidate.game);
+  if(candidate.gameState) return normalizeIncomingGame(candidate.gameState);
+  const hasStartedFlag = Object.prototype.hasOwnProperty.call(candidate, 'started') || Object.prototype.hasOwnProperty.call(candidate, 'gameStarted') || Object.prototype.hasOwnProperty.call(candidate, 'isStarted');
+  if(!hasStartedFlag && candidate.type !== 'game_started' && candidate.type !== 'start_game_ack') return null;
+  return {
+    started: !!(candidate.started ?? candidate.gameStarted ?? candidate.isStarted ?? (candidate.type === 'game_started' || candidate.type === 'start_game_ack')),
+    startedAt: candidate.startedAt || candidate.started_at || candidate.time || null
+  };
+}
+function extractOnlineGame(msg){
+  return normalizeIncomingGame(
+    msg.game || msg.gameState ||
+    (msg.state && (msg.state.game || msg.state.gameState)) ||
+    (msg.roomState && (msg.roomState.game || msg.roomState.gameState)) ||
+    (msg.lobby && (msg.lobby.game || msg.lobby.gameState)) ||
+    (msg.type === 'game_started' || msg.type === 'start_game_ack' ? msg : null) ||
+    (Object.prototype.hasOwnProperty.call(msg, 'started') || Object.prototype.hasOwnProperty.call(msg, 'gameStarted') ? msg : null)
+  );
+}
+function extractOnlinePlayers(msg){
+  return msg.players || (msg.state && msg.state.players) || (msg.roomState && msg.roomState.players) || (msg.lobby && msg.lobby.players) || null;
+}
+function extractOnlineRole(msg){
+  return msg.role || msg.myRole || msg.assignedRole || (msg.me && msg.me.role) || (msg.self && msg.self.role) || (msg.state && (msg.state.role || msg.state.myRole)) || '';
+}
+function extractOnlineRoom(msg){
+  return msg.room || msg.roomId || (msg.state && (msg.state.room || msg.state.roomId)) || (msg.roomState && (msg.roomState.room || msg.roomState.roomId)) || '';
 }
 function connectOnlineRoom(roomId, opts){
   opts = opts || {};
@@ -772,6 +856,7 @@ function connectOnlineRoom(roomId, opts){
   onlineAutoSyncedInitialTime = false;
   onlineOrientationRoleApplied = null;
   onlinePendingTimeControlMessageId = null;
+  onlinePendingStartMessageId = null;
   onlineLastMessage = 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
@@ -803,52 +888,89 @@ function connectOnlineRoom(roomId, opts){
     onlineConnectionState = 'connected';
     onlineLastMessage = 'Mit Lobby verbunden.';
     updateOnlineUi();
-    setTimeout(() => sendOnlineMessage({type:'request_state'}), 120);
+    setTimeout(requestOnlineState, 120);
+    setTimeout(requestOnlineState, 650);
+    startOnlineStatePolling();
   });
   onlineSocket.addEventListener('message', ev => {
     let msg = null;
     try{ msg = JSON.parse(ev.data); } catch(_){ return; }
-    if(msg.type === 'hello' || msg.type === 'lobby' || msg.type === 'room_state'){
-      const previousTime = onlineRoomTimeControl ? Object.assign({}, onlineRoomTimeControl) : null;
-      let orientationChanged = false;
-      if(msg.room) onlineRoomId = cleanRoomId(msg.room) || onlineRoomId;
-      if(msg.role){
-        onlineRoleCode = msg.role;
-        orientationChanged = applyOnlineOrientationForRole(onlineRoleCode);
-      }
-      if(msg.players) onlinePlayers = {
-        white: !!(msg.players.white && msg.players.white.connected),
-        black: !!(msg.players.black && msg.players.black.connected),
-        spectators: Number(msg.players.spectators || 0)
-      };
-      const hasTimeControl = !!msg.timeControl;
-      if(hasTimeControl) applyTimeControlFromOnline(msg.timeControl);
-      if(msg.game) applyOnlineGameState(msg.game);
-      onlineConnected = true;
-      onlineConnectionState = 'connected';
-      if(hasTimeControl && !sameTimeControl(previousTime, msg.timeControl)){
-        if(msg.timeControl.updatedByRole && msg.timeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
-        else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
-      } else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
-      else if(onlinePlayers.white && onlinePlayers.black) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
-      else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
-      else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
-      else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
-      if(!onlineAutoSyncedInitialTime && onlineRoleCode === 'w' && !msg.timeControl && timeMode && !onlineGameStarted){
-        onlineAutoSyncedInitialTime = true;
-        setTimeout(syncCurrentTimeControlToOnline, 100);
-      }
-      if(orientationChanged) renderBoard();
-      updateOnlineUi();
-    } else if(msg.type === 'time_control_ack'){
-      if(msg.timeControl) applyTimeControlFromOnline(msg.timeControl);
-      onlinePendingTimeControlMessageId = null;
-      onlineLastMessage = 'Bedenkzeit vom Server bestätigt.';
-      updateOnlineUi();
-    } else if(msg.type === 'error'){
+    if(msg.type === 'error'){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
+      if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
       updateOnlineUi();
+      return;
     }
+
+    const previousTime = onlineRoomTimeControl ? Object.assign({}, onlineRoomTimeControl) : null;
+    const previousStarted = onlineGameStarted;
+    let orientationChanged = false;
+    let handled = false;
+
+    const incomingRoom = extractOnlineRoom(msg);
+    if(incomingRoom){ onlineRoomId = cleanRoomId(incomingRoom) || onlineRoomId; handled = true; }
+
+    const incomingRole = extractOnlineRole(msg);
+    if(incomingRole){
+      onlineRoleCode = incomingRole;
+      orientationChanged = applyOnlineOrientationForRole(onlineRoleCode);
+      handled = true;
+    }
+
+    const players = extractOnlinePlayers(msg);
+    if(players){
+      onlinePlayers = {
+        white: !!(players.white && (players.white.connected !== false)),
+        black: !!(players.black && (players.black.connected !== false)),
+        spectators: Number(players.spectators || 0)
+      };
+      handled = true;
+    }
+
+    const incomingTimeControl = extractOnlineTimeControl(msg);
+    if(incomingTimeControl){
+      applyTimeControlFromOnline(incomingTimeControl);
+      handled = true;
+    }
+
+    const incomingGame = extractOnlineGame(msg);
+    if(incomingGame){
+      applyOnlineGameState(incomingGame);
+      handled = true;
+    }
+
+    if(msg.type === 'time_control_ack'){
+      onlinePendingTimeControlMessageId = null;
+      handled = true;
+    }
+    if((msg.type === 'start_game_ack' || (incomingGame && incomingGame.started)) && onlineGameStarted){
+      onlinePendingStartMessageId = null;
+      handled = true;
+    }
+
+    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','pong'];
+    if(!handled && !knownStateTypes.includes(msg.type)) return;
+
+    onlineConnected = true;
+    onlineConnectionState = 'connected';
+
+    if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = 'Online-Partie wurde gestartet.';
+    else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){
+      if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
+      else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
+    } else if(msg.type === 'time_control_ack') onlineLastMessage = 'Bedenkzeit vom Server bestätigt.';
+    else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
+    else if(onlinePlayers.white && onlinePlayers.black) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
+    else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
+    else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
+    else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
+
+    if(!onlineAutoSyncedInitialTime && onlineRoleCode === 'w' && !incomingTimeControl && timeMode && !onlineGameStarted){
+      onlineAutoSyncedInitialTime = true;
+      setTimeout(syncCurrentTimeControlToOnline, 100);
+    }
+    if(orientationChanged) renderBoard();
+    updateOnlineUi();
   });
   onlineSocket.addEventListener('close', () => {
     onlineConnected = false;
@@ -870,7 +992,8 @@ function connectOnlineRoom(roomId, opts){
 function sendOnlineMessage(payload){
   if(!onlineSocket || onlineSocket.readyState !== WebSocket.OPEN) return false;
   try{
-    onlineSocket.send(JSON.stringify(payload));
+    const outgoing = Object.assign({room: onlineRoomId || undefined, player: onlinePlayerId}, payload || {});
+    onlineSocket.send(JSON.stringify(outgoing));
     return true;
   } catch(_){
     return false;
@@ -898,11 +1021,20 @@ function syncCurrentTimeControlToOnline(){
     onlineLastMessage = 'Bedenkzeit wird an die Lobby gesendet...';
     updateOnlineUi();
     setTimeout(() => {
+      if(onlinePendingTimeControlMessageId === messageId && onlineConnected && !sameTimeControl(onlineRoomTimeControl, timeControl)){
+        sendOnlineMessage({type:'set_time_control', timeControl, messageId: messageId + '_retry'});
+        requestOnlineState();
+        onlineLastMessage = 'Bedenkzeit wurde erneut gesendet. Warte auf Server-Bestätigung.';
+        updateOnlineUi();
+      }
+    }, 900);
+    setTimeout(() => {
       if(onlinePendingTimeControlMessageId === messageId){
+        requestOnlineState();
         onlineLastMessage = 'Warte auf Bestätigung der Bedenkzeit vom Server.';
         updateOnlineUi();
       }
-    }, 1200);
+    }, 1800);
   }
 }
 function applyTimeControlFromOnline(timeControl){
@@ -924,6 +1056,7 @@ function applyTimeControlFromOnline(timeControl){
 function applyOnlineGameState(game){
   const wasStarted = onlineGameStarted;
   onlineGameStarted = !!(game && game.started);
+  if(onlineGameStarted) onlinePendingStartMessageId = null;
   onlineGameStartedAt = game && game.startedAt ? game.startedAt : null;
   if(onlineGameStarted && !wasStarted){
     selected = null;
@@ -938,20 +1071,39 @@ function applyOnlineGameState(game){
   }
 }
 function startOnlineGame(){
-  if(!onlineRoomId || onlineRoleCode !== 'w' || onlineGameStarted) return;
+  if(!onlineRoomId || onlineRoleCode !== 'w' || onlineGameStarted || onlinePendingStartMessageId) return;
   if(!timeMode){
     statusEl.textContent = 'Bitte zuerst eine Bedenkzeit auswählen.';
     updateOnlineStartButton();
     return;
   }
+  const timeControl = currentTimeControlPayload();
   syncCurrentTimeControlToOnline();
-  if(sendOnlineMessage({type:'start_game'})){
-    onlineLastMessage = 'Partiestart wurde gesendet.';
-    updateOnlineUi();
-  } else {
-    onlineLastMessage = 'Partiestart konnte nicht gesendet werden.';
-    updateOnlineUi();
-  }
+  const messageId = 'sg_' + Date.now() + '_' + randomToken(5);
+  onlinePendingStartMessageId = messageId;
+  onlineLastMessage = 'Bedenkzeit wird gesendet, Partiestart folgt sofort.';
+  updateOnlineUi();
+  setTimeout(() => {
+    if(onlineGameStarted || onlinePendingStartMessageId !== messageId) return;
+    if(sendOnlineMessage({type:'start_game', timeControl, game:{started:true}, messageId})){
+      onlineLastMessage = 'Partiestart wurde gesendet. Warte auf Server-Bestätigung.';
+      updateOnlineUi();
+      setTimeout(requestOnlineState, 250);
+      setTimeout(requestOnlineState, 900);
+      setTimeout(() => {
+        if(onlinePendingStartMessageId === messageId && !onlineGameStarted){
+          onlinePendingStartMessageId = null;
+          requestOnlineState();
+          onlineLastMessage = 'Partiestart wurde vom Server noch nicht bestätigt. Bitte erneut versuchen.';
+          updateOnlineUi();
+        }
+      }, 2500);
+    } else {
+      onlinePendingStartMessageId = null;
+      onlineLastMessage = 'Partiestart konnte nicht gesendet werden.';
+      updateOnlineUi();
+    }
+  }, 300);
 }
 function onlineInteractionBlockReason(gameState){
   if(!onlineRoomId) return '';
