@@ -27,6 +27,10 @@ function safeSend(ws, payload) {
   } catch (_) {}
 }
 
+function opposite(role) {
+  return role === 'w' ? 'b' : 'w';
+}
+
 function cleanTimeControl(value) {
   if (!value || typeof value !== 'object') return null;
 
@@ -78,6 +82,68 @@ function cleanMove(value) {
     san: String(value.san || '').slice(0, 40),
     clientPly: Number.isFinite(Number(value.ply)) ? Math.max(1, Math.floor(Number(value.ply))) : null,
     clientMessageId: String(value.messageId || value.message_id || '').slice(0, 96)
+  };
+}
+
+function makeInitialClock(timeControl, now = Date.now()) {
+  const baseMs = Math.max(0, Math.floor(Number(timeControl.baseSeconds || 0) * 1000));
+  return {
+    wMs: baseMs,
+    bMs: baseMs,
+    turn: 'w',
+    running: true,
+    lastTs: now,
+    timeLost: false,
+    loser: null,
+    winner: null,
+    updatedAt: now
+  };
+}
+
+function advanceClock(clock, now = Date.now()) {
+  if (!clock || typeof clock !== 'object') return null;
+  const out = {
+    wMs: Math.max(0, Math.floor(Number(clock.wMs || 0))),
+    bMs: Math.max(0, Math.floor(Number(clock.bMs || 0))),
+    turn: clock.turn === 'b' ? 'b' : 'w',
+    running: !!clock.running,
+    lastTs: Number.isFinite(Number(clock.lastTs)) ? Math.floor(Number(clock.lastTs)) : now,
+    timeLost: !!clock.timeLost,
+    loser: clock.loser || null,
+    winner: clock.winner || null,
+    updatedAt: Number.isFinite(Number(clock.updatedAt)) ? Math.floor(Number(clock.updatedAt)) : now
+  };
+
+  if (out.running && !out.timeLost) {
+    const elapsed = Math.max(0, now - out.lastTs);
+    out[out.turn + 'Ms'] = Math.max(0, out[out.turn + 'Ms'] - elapsed);
+    out.lastTs = now;
+    out.updatedAt = now;
+    if (out[out.turn + 'Ms'] <= 0) {
+      out[out.turn + 'Ms'] = 0;
+      out.running = false;
+      out.timeLost = true;
+      out.loser = out.turn;
+      out.winner = opposite(out.turn);
+    }
+  }
+  return out;
+}
+
+function clockPayload(clock, now = Date.now()) {
+  const current = advanceClock(clock, now);
+  if (!current) return null;
+  return {
+    wMs: current.wMs,
+    bMs: current.bMs,
+    active: current.turn,
+    turn: current.turn,
+    running: current.running,
+    timeLost: current.timeLost,
+    loser: current.loser,
+    winner: current.winner,
+    serverNow: now,
+    lastTs: current.lastTs
   };
 }
 
@@ -149,12 +215,24 @@ export class GameRoom {
     return active;
   }
 
+  async getClockForState(now = Date.now()) {
+    let clock = (await this.state.storage.get('clock')) || null;
+    if (!clock) return null;
+    const advanced = advanceClock(clock, now);
+    if (advanced && JSON.stringify(advanced) !== JSON.stringify(clock)) {
+      await this.state.storage.put('clock', advanced);
+    }
+    return advanced;
+  }
+
   async buildStateFor(ws) {
     const info = ws.deserializeAttachment() || {};
     const players = (await this.state.storage.get('players')) || { white: null, black: null };
     const timeControl = (await this.state.storage.get('timeControl')) || null;
     const game = (await this.state.storage.get('game')) || { started: false, startedAt: null };
     const moves = (await this.state.storage.get('moves')) || [];
+    const now = Date.now();
+    const clock = await this.getClockForState(now);
 
     return {
       type: 'room_state',
@@ -168,7 +246,9 @@ export class GameRoom {
       players: this.getActivePlayers(),
       timeControl,
       game,
-      moves
+      moves,
+      clock: clockPayload(clock, now),
+      serverNow: now
     };
   }
 
@@ -184,7 +264,8 @@ export class GameRoom {
     }
   }
 
-  async broadcastMove(move, messageId = null) {
+  async broadcastMove(move, messageId = null, clock = null) {
+    const now = Date.now();
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
       safeSend(ws, {
@@ -193,7 +274,9 @@ export class GameRoom {
         messageId,
         room: info.room || 'unknown',
         role: info.role || 'spectator',
-        move
+        move,
+        clock: clockPayload(clock, now),
+        serverNow: now
       });
     }
   }
@@ -211,7 +294,7 @@ export class GameRoom {
     const role = info.role || 'spectator';
 
     if (data.type === 'ping') {
-      safeSend(ws, { type: 'pong', ts: Date.now() });
+      safeSend(ws, { type: 'pong', ts: Date.now(), serverNow: Date.now() });
       return;
     }
 
@@ -241,12 +324,14 @@ export class GameRoom {
       timeControl.updatedByRole = role;
       timeControl.updatedByPlayer = info.playerId || null;
       await this.state.storage.put('timeControl', timeControl);
+      await this.state.storage.delete('clock');
 
       safeSend(ws, {
         type: 'time_control_ack',
         ok: true,
         messageId: data.messageId || null,
-        timeControl
+        timeControl,
+        serverNow: Date.now()
       });
       await this.broadcastRoomState('room_state');
       return;
@@ -284,16 +369,27 @@ export class GameRoom {
         return;
       }
 
+      const now = Date.now();
       const game = {
         started: true,
-        startedAt: new Date().toISOString(),
+        startedAt: new Date(now).toISOString(),
         startedByRole: role,
         startedByPlayer: info.playerId || null
       };
+      const clock = makeInitialClock(timeControl, now);
       await this.state.storage.put('game', game);
       await this.state.storage.put('moves', []);
+      await this.state.storage.put('clock', clock);
 
-      safeSend(ws, { type: 'start_game_ack', ok: true, game, timeControl, moves: [] });
+      safeSend(ws, {
+        type: 'start_game_ack',
+        ok: true,
+        game,
+        timeControl,
+        moves: [],
+        clock: clockPayload(clock, now),
+        serverNow: now
+      });
       await this.broadcastRoomState('room_state');
       return;
     }
@@ -310,6 +406,12 @@ export class GameRoom {
         return;
       }
 
+      const timeControl = (await this.state.storage.get('timeControl')) || null;
+      if (!timeControl) {
+        safeSend(ws, { type: 'error', code: 'TIME_CONTROL_REQUIRED', message: 'Keine Bedenkzeit im Raum gespeichert.' });
+        return;
+      }
+
       const moves = (await this.state.storage.get('moves')) || [];
       const expectedRole = moves.length % 2 === 0 ? 'w' : 'b';
       if (role !== expectedRole) {
@@ -317,6 +419,34 @@ export class GameRoom {
           type: 'error',
           code: 'NOT_YOUR_TURN',
           message: expectedRole === 'w' ? 'Weiß ist am Zug.' : 'Schwarz ist am Zug.'
+        });
+        return;
+      }
+
+      let clock = (await this.state.storage.get('clock')) || makeInitialClock(timeControl, Date.parse(game.startedAt) || Date.now());
+      const now = Date.now();
+      clock = advanceClock(clock, now);
+      if (!clock || clock.timeLost) {
+        await this.state.storage.put('clock', clock);
+        safeSend(ws, {
+          type: 'error',
+          code: 'TIME_LOST',
+          message: 'Die Bedenkzeit ist abgelaufen.',
+          clock: clockPayload(clock, now),
+          serverNow: now
+        });
+        await this.broadcastRoomState('room_state');
+        return;
+      }
+
+      if (clock.turn !== role) {
+        await this.state.storage.put('clock', clock);
+        safeSend(ws, {
+          type: 'error',
+          code: 'CLOCK_NOT_YOUR_TURN',
+          message: clock.turn === 'w' ? 'Laut Serveruhr ist Weiß am Zug.' : 'Laut Serveruhr ist Schwarz am Zug.',
+          clock: clockPayload(clock, now),
+          serverNow: now
         });
         return;
       }
@@ -346,21 +476,34 @@ export class GameRoom {
         promotion: incoming.promotion,
         san: incoming.san,
         messageId: data.messageId || incoming.clientMessageId || null,
-        receivedAt: new Date().toISOString(),
+        receivedAt: new Date(now).toISOString(),
+        serverNow: now,
         byPlayer: info.playerId || null
       };
 
+      clock[role + 'Ms'] = Math.max(0, clock[role + 'Ms'] + Math.max(0, Number(timeControl.incrementSeconds || 0) * 1000));
+      clock.turn = opposite(role);
+      clock.running = true;
+      clock.lastTs = now;
+      clock.updatedAt = now;
+      clock.timeLost = false;
+      clock.loser = null;
+      clock.winner = null;
+
       moves.push(move);
       await this.state.storage.put('moves', moves);
+      await this.state.storage.put('clock', clock);
 
       safeSend(ws, {
         type: 'move_ack',
         ok: true,
         messageId: data.messageId || incoming.clientMessageId || null,
         move,
-        movesCount: moves.length
+        movesCount: moves.length,
+        clock: clockPayload(clock, now),
+        serverNow: now
       });
-      await this.broadcastMove(move, data.messageId || incoming.clientMessageId || null);
+      await this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock);
       return;
     }
 
@@ -411,8 +554,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'time_control', 'game_start', 'move_sync'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit, Partiestart und Züge. Die endgültige serverseitige Legalitätsprüfung folgt später.'
+      features: ['lobby', 'roles', 'time_control', 'game_start', 'move_sync', 'server_clock'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit, Partiestart, Züge und eine servergeführte Uhr. Die endgültige serverseitige Legalitätsprüfung folgt später.'
     });
   }
 };
