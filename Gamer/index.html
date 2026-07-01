@@ -1168,8 +1168,20 @@ function syncCurrentTimeControlToOnline(){
 }
 function applyTimeControlFromOnline(timeControl){
   if(!timeControl || !timeControl.key) return;
+  const previous = onlineRoomTimeControl ? Object.assign({}, onlineRoomTimeControl) : null;
+  const changed = !sameTimeControl(previous, timeControl);
   onlineRoomTimeControl = timeControl;
   onlinePendingTimeControlMessageId = null;
+
+  /*
+    Wichtig: Der Worker sendet den Raumzustand regelmäßig erneut.
+    Dieser Zustand enthält auch die Bedenkzeit. Während einer laufenden Partie
+    darf diese Wiederholung die Uhren nicht zurück auf die Startzeit setzen.
+    Sonst läuft die aktive Uhr kurz herunter und springt beim nächsten
+    request_state/room_state wieder auf die Anfangszeit.
+  */
+  const mayResetClock = !onlineGameStarted && masterHistory.length === 0 && !clockRunning && !firstMoveDone && !timeLost;
+
   applyingRemoteTimeControl = true;
   try{
     applyTimeControlFromKey(timeControl.key, timeControl.label, timeControl.category);
@@ -1180,7 +1192,14 @@ function applyTimeControlFromOnline(timeControl){
   } finally {
     applyingRemoteTimeControl = false;
   }
-  resetClockForNewGame();
+
+  if(mayResetClock || changed && !onlineGameStarted && masterHistory.length === 0){
+    resetClockForNewGame();
+  } else {
+    updateTimeStatus();
+    updateTimeControlsLock();
+    updateClockDisplay();
+  }
 }
 function applyOnlineGameState(game){
   const wasStarted = onlineGameStarted;
