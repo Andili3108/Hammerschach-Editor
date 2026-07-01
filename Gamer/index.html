@@ -566,6 +566,7 @@ let onlinePendingStartMessageId = null;
 let onlineStatePollTimer = null;
 let applyingRemoteMove = false;
 let onlineLastMoveMessageId = null;
+let onlineClockSync = null;
 
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -835,6 +836,71 @@ function extractOnlineGame(msg){
   );
 }
 
+function normalizeIncomingClock(candidate){
+  if(!candidate) return null;
+  if(candidate.clock) return normalizeIncomingClock(candidate.clock);
+  if(candidate.clocks) return normalizeIncomingClock(candidate.clocks);
+  const remaining = candidate.remaining || candidate.remain || {};
+  const wRaw = candidate.wMs ?? candidate.whiteMs ?? candidate.white_ms ?? candidate.w ?? candidate.white ?? remaining.w ?? remaining.white;
+  const bRaw = candidate.bMs ?? candidate.blackMs ?? candidate.black_ms ?? candidate.b ?? candidate.black ?? remaining.b ?? remaining.black;
+  const wMs = Number(wRaw);
+  const bMs = Number(bRaw);
+  if(!Number.isFinite(wMs) || !Number.isFinite(bMs)) return null;
+  const active = candidate.active || candidate.turn || candidate.side || candidate.runningSide || candidate.running_side || '';
+  const normalizedActive = active === 'white' ? 'w' : active === 'black' ? 'b' : active;
+  let serverNow = Number(candidate.serverNow ?? candidate.server_now ?? candidate.now ?? 0);
+  if(!Number.isFinite(serverNow) || serverNow <= 0){
+    const serverTime = candidate.serverTime || candidate.server_time || candidate.time;
+    serverNow = serverTime ? Date.parse(serverTime) : 0;
+  }
+  if(!Number.isFinite(serverNow) || serverNow <= 0) serverNow = Date.now();
+  return {
+    wMs: Math.max(0, Math.floor(wMs)),
+    bMs: Math.max(0, Math.floor(bMs)),
+    active: normalizedActive === 'w' || normalizedActive === 'b' ? normalizedActive : '',
+    running: !!candidate.running,
+    timeLost: !!(candidate.timeLost || candidate.time_lost || candidate.flagged),
+    loser: candidate.loser || '',
+    winner: candidate.winner || '',
+    serverNow,
+    syncedAtClient: Date.now()
+  };
+}
+function extractOnlineClock(msg){
+  if(!msg) return null;
+  return normalizeIncomingClock(
+    msg.clock || msg.clocks ||
+    (msg.game && (msg.game.clock || msg.game.clocks)) ||
+    (msg.state && (msg.state.clock || msg.state.clocks)) ||
+    (msg.roomState && (msg.roomState.clock || msg.roomState.clocks)) ||
+    (msg.lobby && (msg.lobby.clock || msg.lobby.clocks)) ||
+    (Object.prototype.hasOwnProperty.call(msg, 'wMs') || Object.prototype.hasOwnProperty.call(msg, 'whiteMs') ? msg : null)
+  );
+}
+function applyOnlineClockState(clockState){
+  const normalized = normalizeIncomingClock(clockState);
+  if(!normalized) return false;
+  onlineClockSync = normalized;
+  clocks = {w: normalized.wMs, b: normalized.bMs};
+  clockRunning = !!(normalized.running && !normalized.timeLost);
+  if(onlineGameStarted || masterHistory.length > 0) firstMoveDone = true;
+  timeLost = !!normalized.timeLost;
+  if(timeLost){
+    stopClock();
+    clockRunning = false;
+    const loser = normalized.loser === 'w' ? 'Weiß' : normalized.loser === 'b' ? 'Schwarz' : '';
+    const winner = normalized.winner === 'w' ? 'Weiß' : normalized.winner === 'b' ? 'Schwarz' : '';
+    if(loser && winner){
+      statusEl.textContent = 'Zeit abgelaufen — ' + loser + ' verliert, ' + winner + ' gewinnt.';
+      timeStatusEl.textContent = 'Zeit abgelaufen.';
+    }
+  } else if(clockRunning){
+    startClock();
+  }
+  updateClockDisplay();
+  return true;
+}
+
 function normalizeIncomingMove(candidate){
   if(!candidate) return null;
   if(candidate.move) return normalizeIncomingMove(candidate.move);
@@ -976,6 +1042,7 @@ function connectOnlineRoom(roomId, opts){
   onlinePendingStartMessageId = null;
   applyingRemoteMove = false;
   onlineLastMoveMessageId = null;
+  onlineClockSync = null;
   onlineLastMessage = 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
@@ -1066,6 +1133,12 @@ function connectOnlineRoom(roomId, opts){
     const appliedSingleMove = incomingMove ? applyOnlineMove(incomingMove) : false;
     if(incomingMove) handled = true;
 
+    const incomingClock = extractOnlineClock(msg);
+    if(incomingClock){
+      applyOnlineClockState(incomingClock);
+      handled = true;
+    }
+
     if(msg.type === 'time_control_ack'){
       onlinePendingTimeControlMessageId = null;
       handled = true;
@@ -1075,7 +1148,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','pong'];
+    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -1214,6 +1287,7 @@ function applyOnlineGameState(game){
     lastMove = null;
     gameEnded = false;
     resetClockForNewGame();
+    onlineClockSync = null;
     onlineLastMessage = 'Online-Partie wurde gestartet.';
     renderBoard();
   }
@@ -1561,6 +1635,7 @@ document.getElementById('copyPgnBtn').addEventListener('click', async () => {
 
 function newGame(){
   stopClock();
+  onlineClockSync = null;
   masterHistory = [];
   viewIndex = 0;
   selected = null;
@@ -1677,12 +1752,26 @@ function formatTime(ms){
   if(h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
+function getDisplayClocks(gameState){
+  const g = gameState || buildGameFromHistory(viewIndex);
+  if(timeMode && onlineRoomId && onlineClockSync){
+    const values = {w: onlineClockSync.wMs, b: onlineClockSync.bMs};
+    const active = onlineClockSync.active || g.turn;
+    if(onlineClockSync.running && !onlineClockSync.timeLost && viewIndex === masterHistory.length && (active === 'w' || active === 'b')){
+      values[active] = Math.max(0, values[active] - (Date.now() - onlineClockSync.syncedAtClient));
+    }
+    return values;
+  }
+  return {w: clocks.w, b: clocks.b};
+}
 function updateClockDisplay(gameState){
   const g = gameState || buildGameFromHistory(viewIndex);
-  clockWEl.textContent = timeMode ? formatTime(clocks.w) : '--:--';
-  clockBEl.textContent = timeMode ? formatTime(clocks.b) : '--:--';
-  clockCardW.classList.toggle('active', timeMode && g.turn === 'w' && clockRunning && viewIndex === masterHistory.length);
-  clockCardB.classList.toggle('active', timeMode && g.turn === 'b' && clockRunning && viewIndex === masterHistory.length);
+  const shown = getDisplayClocks(g);
+  clockWEl.textContent = timeMode ? formatTime(shown.w) : '--:--';
+  clockBEl.textContent = timeMode ? formatTime(shown.b) : '--:--';
+  const activeSide = onlineClockSync && onlineClockSync.running ? (onlineClockSync.active || g.turn) : g.turn;
+  clockCardW.classList.toggle('active', timeMode && activeSide === 'w' && clockRunning && viewIndex === masterHistory.length);
+  clockCardB.classList.toggle('active', timeMode && activeSide === 'b' && clockRunning && viewIndex === masterHistory.length);
   updateTimeControlsLock();
 }
 function stopClock(){
@@ -1696,6 +1785,24 @@ function startClock(){
   clockInterval = setInterval(() => {
     if(!clockRunning || !timeMode || timeLost || gameEnded || viewIndex !== masterHistory.length) return;
     const g = buildGameFromHistory(masterHistory.length);
+    if(onlineRoomId && onlineClockSync){
+      const active = onlineClockSync.active || g.turn;
+      const shown = getDisplayClocks(g);
+      if((active === 'w' || active === 'b') && shown[active] <= 0){
+        timeLost = true;
+        stopClock();
+        onlineClockSync.timeLost = true;
+        onlineClockSync.running = false;
+        clocks = shown;
+        const loser = active === 'w' ? 'Weiß' : 'Schwarz';
+        const winner = active === 'w' ? 'Schwarz' : 'Weiß';
+        statusEl.textContent = 'Zeit abgelaufen — ' + loser + ' verliert, ' + winner + ' gewinnt.';
+        timeStatusEl.textContent = 'Zeit abgelaufen.';
+        requestOnlineState();
+      }
+      updateClockDisplay(g);
+      return;
+    }
     clocks[g.turn] -= 1000;
     if(clocks[g.turn] <= 0){
       clocks[g.turn] = 0;
@@ -1711,6 +1818,7 @@ function startClock(){
 }
 function resetClockForNewGame(){
   clocks = {w:baseTimeMs, b:baseTimeMs};
+  onlineClockSync = null;
   firstMoveDone = false;
   timeLost = false;
   updateTimeStatus();
@@ -1718,6 +1826,26 @@ function resetClockForNewGame(){
 }
 function afterMoveClock(movedSide){
   if(!timeMode || timeLost) return;
+  if(onlineRoomId && onlineClockSync){
+    const shown = getDisplayClocks(buildGameFromHistory(masterHistory.length));
+    shown[movedSide] = Math.max(0, shown[movedSide]) + incrementMs;
+    const nextSide = movedSide === 'w' ? 'b' : 'w';
+    clocks = {w: shown.w, b: shown.b};
+    onlineClockSync = {
+      wMs: clocks.w,
+      bMs: clocks.b,
+      active: nextSide,
+      running: true,
+      timeLost: false,
+      loser: '',
+      winner: '',
+      serverNow: Date.now(),
+      syncedAtClient: Date.now()
+    };
+    if(!firstMoveDone){ firstMoveDone = true; }
+    startClock();
+    return;
+  }
   clocks[movedSide] += incrementMs;
   if(!firstMoveDone){ firstMoveDone = true; }
   startClock();
