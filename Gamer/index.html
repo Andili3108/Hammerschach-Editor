@@ -21,12 +21,10 @@
   .app{padding:10px 0 18px;width:100%;}
   .shell{width:min(calc(var(--board-max) + var(--gap) + var(--right-col)), 100vw);max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px;}
   .box{background:rgba(255,255,255,.98);border:1px solid rgba(132,63,70,.16);border-radius:18px;box-shadow:0 14px 32px rgba(0,0,0,.12);box-sizing:border-box;}
-  .header{display:grid;grid-template-columns:170px minmax(0,1fr) 170px;gap:14px;padding:12px 14px;align-items:stretch;}
+  .header{display:grid;grid-template-columns:170px minmax(0,1fr);gap:14px;padding:12px 14px;align-items:stretch;}
+  .header-main{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:12px;}
   .logo-slot{min-height:126px;border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(246,246,246,.92));box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--andili-rot);font-size:18px;font-weight:900;text-align:center;}
   .logo-slot img{width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.08);}
-  .title-area{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:10px;}
-  .title{font-size:26px;line-height:1.05;font-weight:900;color:#222;}
-  .subtitle{font-size:16px;color:#555;font-weight:700;}
   .player-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .player-card{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;}
   .player-label{font-size:13px;font-weight:900;color:#555;margin-bottom:3px;}
@@ -34,7 +32,9 @@
   .dot{width:12px;height:12px;border-radius:999px;display:inline-block;border:1px solid rgba(0,0,0,.22);}
   .dot.white{background:#fff;}
   .dot.black{background:#111;}
-  .actions{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:8px;}
+  .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;}
+  .actions button{min-height:38px;white-space:nowrap;}
+  .actions .board-color-wrap{width:auto;display:flex;}
   button{background:#e0e0e0;color:#9A2D33;border:none;border-radius:999px;padding:8px 12px;font-size:14px;font-weight:900;cursor:pointer;transition:transform .08s ease, box-shadow .12s ease;}
   button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.14);}
   button:active:not(:disabled){transform:translateY(0);box-shadow:0 3px 8px rgba(0,0,0,.10);}
@@ -107,7 +107,7 @@
   .promo-piece{font-size:30px;width:34px;text-align:center;}
   .small-note{font-size:13px;color:#666;font-weight:700;line-height:1.3;}
 
-  .online-panel{margin-top:2px;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
+  .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
   .online-label{font-size:12px;font-weight:900;color:#666;margin-bottom:2px;}
   .online-value{font-size:14px;font-weight:900;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -116,8 +116,8 @@
   .online-value.neutral{color:#555;}
   .online-hint[hidden]{display:none!important;}
 
-  @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:150px minmax(0,1fr) 150px}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.online-panel,.time-selectors{grid-template-columns:1fr}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:150px minmax(0,1fr)}.actions{justify-content:flex-start}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:stretch}.actions button{flex:1 1 150px}.actions .board-color-wrap{flex:1 1 150px}.actions .board-color-wrap > button{width:100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
 </style>
 </head>
 <body>
@@ -127,11 +127,7 @@
       <div class="logo-slot" aria-label="Hammerschach-Gamer Logo">
         <img src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" onerror="this.style.display='none'; this.parentNode.textContent='Hammerschach';" />
       </div>
-      <div class="title-area">
-        <div>
-          <div class="title">Hammerschach-Gamer</div>
-          <div class="subtitle">Mensch gegen Mensch · Online-Partie</div>
-        </div>
+      <div class="header-main">
         <div class="online-panel" aria-label="Online-Lobby Status">
           <div class="online-item"><div class="online-label">Online-Status</div><div id="onlineStatus" class="online-value neutral">Lokal</div></div>
           <div class="online-item"><div class="online-label">Meine Rolle</div><div id="onlineRole" class="online-value neutral">Lokal</div></div>
@@ -139,27 +135,27 @@
           <div class="online-item"><div class="online-label">Partie</div><div id="onlineGameState" class="online-value neutral">Lokal</div></div>
           <div id="onlineHint" class="online-hint" hidden></div>
         </div>
-      </div>
-      <div class="actions">
-        <button id="createOnlineBtn" type="button">Online-Partie erstellen</button>
-        <button id="copyInviteBtn" class="button-flat" type="button" disabled>Einladungslink kopieren</button>
-        <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
-        <button id="newGameBtn" type="button">Neue Partie</button>
-        <button id="flipBoardBtn" class="button-flat" type="button">Brett drehen</button>
-        <div class="board-color-wrap" id="boardColorWrap">
-          <button id="btnBoardColor" type="button" class="button-flat" aria-haspopup="true" aria-expanded="false">Brettfarbe</button>
-          <div id="boardColorPopup" class="board-color-popup" hidden>
-            <div class="board-color-popup-title">Brettfarbe wählen</div>
-            <div class="board-color-options">
-              <button type="button" class="board-color-option" data-board-color="basis"><span>Basis</span><span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span></button>
-              <button type="button" class="board-color-option" data-board-color="braun"><span>Klassisch Braun</span><span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span></button>
-              <button type="button" class="board-color-option" data-board-color="grau"><span>Grau / Neutral</span><span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span></button>
-              <button type="button" class="board-color-option" data-board-color="gruen"><span>Grün / Turnier</span><span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span></button>
+        <div class="actions" aria-label="Partie- und Anzeigeaktionen">
+          <button id="createOnlineBtn" type="button">Online-Partie erstellen</button>
+          <button id="copyInviteBtn" class="button-flat" type="button" disabled>Einladungslink kopieren</button>
+          <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
+          <button id="newGameBtn" type="button">Neue Partie</button>
+          <button id="flipBoardBtn" class="button-flat" type="button">Brett drehen</button>
+          <div class="board-color-wrap" id="boardColorWrap">
+            <button id="btnBoardColor" type="button" class="button-flat" aria-haspopup="true" aria-expanded="false">Brettfarbe</button>
+            <div id="boardColorPopup" class="board-color-popup" hidden>
+              <div class="board-color-popup-title">Brettfarbe wählen</div>
+              <div class="board-color-options">
+                <button type="button" class="board-color-option" data-board-color="basis"><span>Basis</span><span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span></button>
+                <button type="button" class="board-color-option" data-board-color="braun"><span>Klassisch Braun</span><span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span></button>
+                <button type="button" class="board-color-option" data-board-color="grau"><span>Grau / Neutral</span><span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span></button>
+                <button type="button" class="board-color-option" data-board-color="gruen"><span>Grün / Turnier</span><span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span></button>
+              </div>
+              <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
             </div>
-            <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
           </div>
+          <button id="soundToggleBtn" class="button-flat" type="button" aria-pressed="true">Ton: An</button>
         </div>
-        <button id="soundToggleBtn" class="button-flat" type="button" aria-pressed="true">Ton: An</button>
       </div>
     </header>
 
