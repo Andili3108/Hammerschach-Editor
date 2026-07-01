@@ -27,6 +27,32 @@ function safeSend(ws, payload) {
   } catch (_) {}
 }
 
+function cleanTimeControl(value) {
+  if (!value || typeof value !== 'object') return null;
+
+  const key = String(value.key || '').trim();
+  if (!/^\d+\+\d+$/.test(key)) return null;
+
+  const [baseFromKey, incFromKey] = key.split('+').map(v => parseInt(v, 10));
+  const baseSeconds = Number.isFinite(Number(value.baseSeconds))
+    ? Math.max(0, Math.floor(Number(value.baseSeconds)))
+    : baseFromKey;
+  const incrementSeconds = Number.isFinite(Number(value.incrementSeconds))
+    ? Math.max(0, Math.floor(Number(value.incrementSeconds)))
+    : incFromKey;
+
+  if (!baseSeconds) return null;
+
+  return {
+    key,
+    category: String(value.category || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24),
+    label: String(value.label || key).slice(0, 120),
+    baseSeconds,
+    incrementSeconds,
+    updatedAt: Date.now()
+  };
+}
+
 export class GameRoom {
   constructor(state, env) {
     this.state = state;
@@ -51,7 +77,8 @@ export class GameRoom {
     server.serializeAttachment({ playerId, role, room, joinedAt: Date.now() });
 
     safeSend(server, { type: 'hello', room, playerId, role });
-    await this.broadcastLobby(room);
+    await this.sendRoomState(server, 'hello_state');
+    await this.broadcastRoomState('lobby');
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -94,24 +121,36 @@ export class GameRoom {
     return active;
   }
 
-  async broadcastLobby(roomOverride) {
-    const players = await this.state.storage.get('players');
-    const active = this.getActivePlayers();
+  async buildStateFor(ws) {
+    const info = ws.deserializeAttachment() || {};
+    const players = (await this.state.storage.get('players')) || { white: null, black: null };
+    const timeControl = (await this.state.storage.get('timeControl')) || null;
+    const game = (await this.state.storage.get('game')) || { started: false, startedAt: null };
 
+    return {
+      type: 'room_state',
+      room: info.room || 'unknown',
+      role: info.role || 'spectator',
+      playerId: info.playerId || null,
+      assigned: {
+        white: !!players.white,
+        black: !!players.black
+      },
+      players: this.getActivePlayers(),
+      timeControl,
+      game
+    };
+  }
+
+  async sendRoomState(ws, type = 'room_state') {
+    const payload = await this.buildStateFor(ws);
+    payload.type = type;
+    safeSend(ws, payload);
+  }
+
+  async broadcastRoomState(type = 'room_state') {
     for (const ws of this.state.getWebSockets()) {
-      const info = ws.deserializeAttachment() || {};
-      const room = roomOverride || info.room || 'unknown';
-      safeSend(ws, {
-        type: 'lobby',
-        room,
-        role: info.role || 'spectator',
-        playerId: info.playerId || null,
-        assigned: {
-          white: !!(players && players.white),
-          black: !!(players && players.black)
-        },
-        players: active
-      });
+      await this.sendRoomState(ws, type);
     }
   }
 
@@ -120,26 +159,115 @@ export class GameRoom {
     try {
       data = JSON.parse(message);
     } catch (_) {
+      safeSend(ws, { type: 'error', code: 'BAD_JSON', message: 'Nachricht konnte nicht gelesen werden.' });
       return;
     }
+
+    const info = ws.deserializeAttachment() || {};
+    const role = info.role || 'spectator';
 
     if (data.type === 'ping') {
       safeSend(ws, { type: 'pong', ts: Date.now() });
       return;
     }
 
+    if (data.type === 'request_state') {
+      await this.sendRoomState(ws, 'room_state');
+      return;
+    }
+
+    if (data.type === 'set_time_control') {
+      const game = (await this.state.storage.get('game')) || { started: false };
+      if (game.started) {
+        safeSend(ws, { type: 'error', code: 'GAME_ALREADY_STARTED', message: 'Bedenkzeit ist nach Partiestart gesperrt.' });
+        return;
+      }
+
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können die Bedenkzeit ändern.' });
+        return;
+      }
+
+      const timeControl = cleanTimeControl(data.timeControl || data.time_control);
+      if (!timeControl) {
+        safeSend(ws, { type: 'error', code: 'INVALID_TIME_CONTROL', message: 'Ungültige Bedenkzeit.' });
+        return;
+      }
+
+      timeControl.updatedByRole = role;
+      timeControl.updatedByPlayer = info.playerId || null;
+      await this.state.storage.put('timeControl', timeControl);
+
+      safeSend(ws, {
+        type: 'time_control_ack',
+        ok: true,
+        messageId: data.messageId || null,
+        timeControl
+      });
+      await this.broadcastRoomState('room_state');
+      return;
+    }
+
+    if (data.type === 'start_game') {
+      if (role !== 'w') {
+        safeSend(ws, { type: 'error', code: 'ONLY_WHITE_CAN_START', message: 'Nur Weiß kann die Partie starten.' });
+        return;
+      }
+
+      const active = this.getActivePlayers();
+      if (!active.black.connected) {
+        safeSend(ws, { type: 'error', code: 'BLACK_NOT_CONNECTED', message: 'Schwarz ist noch nicht verbunden.' });
+        return;
+      }
+
+      let timeControl = (await this.state.storage.get('timeControl')) || null;
+      const submittedTimeControl = cleanTimeControl(data.timeControl || data.time_control);
+      if (submittedTimeControl) {
+        submittedTimeControl.updatedByRole = role;
+        submittedTimeControl.updatedByPlayer = info.playerId || null;
+        await this.state.storage.put('timeControl', submittedTimeControl);
+        timeControl = submittedTimeControl;
+      }
+
+      if (!timeControl) {
+        safeSend(ws, { type: 'error', code: 'TIME_CONTROL_REQUIRED', message: 'Vor dem Start muss eine Bedenkzeit gewählt werden.' });
+        return;
+      }
+
+      const existingGame = (await this.state.storage.get('game')) || { started: false };
+      if (existingGame.started) {
+        await this.broadcastRoomState('room_state');
+        return;
+      }
+
+      const game = {
+        started: true,
+        startedAt: new Date().toISOString(),
+        startedByRole: role,
+        startedByPlayer: info.playerId || null
+      };
+      await this.state.storage.put('game', game);
+
+      safeSend(ws, { type: 'start_game_ack', ok: true, game, timeControl });
+      await this.broadcastRoomState('room_state');
+      return;
+    }
+
     // Zugsynchronisierung wird absichtlich erst in der nächsten Stufe ergänzt.
     if (data.type === 'move') {
-      safeSend(ws, { type: 'error', code: 'MOVE_SYNC_NOT_ENABLED' });
+      safeSend(ws, { type: 'error', code: 'MOVE_SYNC_NOT_ENABLED', message: 'Zugsynchronisierung ist noch nicht aktiv.' });
+      return;
     }
+
+    safeSend(ws, { type: 'error', code: 'UNKNOWN_MESSAGE_TYPE', message: 'Unbekannter Nachrichtentyp: ' + String(data.type || '') });
   }
 
   async webSocketClose() {
-    await this.broadcastLobby();
+    await this.broadcastRoomState('lobby');
   }
 
   async webSocketError() {
-    await this.broadcastLobby();
+    await this.broadcastRoomState('lobby');
   }
 }
 
@@ -178,7 +306,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      note: 'Diese Stufe verwaltet nur Lobby und Rollen. Zugsynchronisierung folgt später.'
+      features: ['lobby', 'roles', 'time_control', 'game_start'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit und Partiestart. Zugsynchronisierung folgt später.'
     });
   }
 };
