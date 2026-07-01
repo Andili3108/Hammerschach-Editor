@@ -53,6 +53,34 @@ function cleanTimeControl(value) {
   };
 }
 
+function cleanSquare(value) {
+  if (!Array.isArray(value) || value.length < 2) return null;
+  const x = Math.floor(Number(value[0]));
+  const y = Math.floor(Number(value[1]));
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+  if (x < 0 || x > 7 || y < 0 || y > 7) return null;
+  return [x, y];
+}
+
+function cleanMove(value) {
+  if (!value || typeof value !== 'object') return null;
+  const from = cleanSquare(value.from);
+  const to = cleanSquare(value.to);
+  if (!from || !to) return null;
+
+  const promotionRaw = value.promotion ? String(value.promotion).toUpperCase() : '';
+  const promotion = ['Q', 'R', 'B', 'N'].includes(promotionRaw) ? promotionRaw : null;
+
+  return {
+    from,
+    to,
+    promotion,
+    san: String(value.san || '').slice(0, 40),
+    clientPly: Number.isFinite(Number(value.ply)) ? Math.max(1, Math.floor(Number(value.ply))) : null,
+    clientMessageId: String(value.messageId || value.message_id || '').slice(0, 96)
+  };
+}
+
 export class GameRoom {
   constructor(state, env) {
     this.state = state;
@@ -126,6 +154,7 @@ export class GameRoom {
     const players = (await this.state.storage.get('players')) || { white: null, black: null };
     const timeControl = (await this.state.storage.get('timeControl')) || null;
     const game = (await this.state.storage.get('game')) || { started: false, startedAt: null };
+    const moves = (await this.state.storage.get('moves')) || [];
 
     return {
       type: 'room_state',
@@ -138,7 +167,8 @@ export class GameRoom {
       },
       players: this.getActivePlayers(),
       timeControl,
-      game
+      game,
+      moves
     };
   }
 
@@ -151,6 +181,20 @@ export class GameRoom {
   async broadcastRoomState(type = 'room_state') {
     for (const ws of this.state.getWebSockets()) {
       await this.sendRoomState(ws, type);
+    }
+  }
+
+  async broadcastMove(move, messageId = null) {
+    for (const ws of this.state.getWebSockets()) {
+      const info = ws.deserializeAttachment() || {};
+      safeSend(ws, {
+        type: 'move',
+        ok: true,
+        messageId,
+        room: info.room || 'unknown',
+        role: info.role || 'spectator',
+        move
+      });
     }
   }
 
@@ -247,15 +291,76 @@ export class GameRoom {
         startedByPlayer: info.playerId || null
       };
       await this.state.storage.put('game', game);
+      await this.state.storage.put('moves', []);
 
-      safeSend(ws, { type: 'start_game_ack', ok: true, game, timeControl });
+      safeSend(ws, { type: 'start_game_ack', ok: true, game, timeControl, moves: [] });
       await this.broadcastRoomState('room_state');
       return;
     }
 
-    // Zugsynchronisierung wird absichtlich erst in der nächsten Stufe ergänzt.
     if (data.type === 'move') {
-      safeSend(ws, { type: 'error', code: 'MOVE_SYNC_NOT_ENABLED', message: 'Zugsynchronisierung ist noch nicht aktiv.' });
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können Züge senden.' });
+        return;
+      }
+
+      const game = (await this.state.storage.get('game')) || { started: false };
+      if (!game.started) {
+        safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
+        return;
+      }
+
+      const moves = (await this.state.storage.get('moves')) || [];
+      const expectedRole = moves.length % 2 === 0 ? 'w' : 'b';
+      if (role !== expectedRole) {
+        safeSend(ws, {
+          type: 'error',
+          code: 'NOT_YOUR_TURN',
+          message: expectedRole === 'w' ? 'Weiß ist am Zug.' : 'Schwarz ist am Zug.'
+        });
+        return;
+      }
+
+      const incoming = cleanMove(data.move || data);
+      if (!incoming) {
+        safeSend(ws, { type: 'error', code: 'INVALID_MOVE', message: 'Ungültiges Zugformat.' });
+        return;
+      }
+
+      const ply = moves.length + 1;
+      if (incoming.clientPly && incoming.clientPly !== ply) {
+        safeSend(ws, {
+          type: 'error',
+          code: 'MOVE_OUT_OF_SYNC',
+          message: 'Zugnummer passt nicht zum Raumzustand. Bitte neu verbinden.'
+        });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
+      const move = {
+        ply,
+        side: role,
+        from: incoming.from,
+        to: incoming.to,
+        promotion: incoming.promotion,
+        san: incoming.san,
+        messageId: data.messageId || incoming.clientMessageId || null,
+        receivedAt: new Date().toISOString(),
+        byPlayer: info.playerId || null
+      };
+
+      moves.push(move);
+      await this.state.storage.put('moves', moves);
+
+      safeSend(ws, {
+        type: 'move_ack',
+        ok: true,
+        messageId: data.messageId || incoming.clientMessageId || null,
+        move,
+        movesCount: moves.length
+      });
+      await this.broadcastMove(move, data.messageId || incoming.clientMessageId || null);
       return;
     }
 
@@ -306,8 +411,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'time_control', 'game_start'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit und Partiestart. Zugsynchronisierung folgt später.'
+      features: ['lobby', 'roles', 'time_control', 'game_start', 'move_sync'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit, Partiestart und Züge. Die endgültige serverseitige Legalitätsprüfung folgt später.'
     });
   }
 };
