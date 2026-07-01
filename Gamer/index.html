@@ -564,6 +564,8 @@ let onlineOrientationRoleApplied = null;
 let onlinePendingTimeControlMessageId = null;
 let onlinePendingStartMessageId = null;
 let onlineStatePollTimer = null;
+let applyingRemoteMove = false;
+let onlineLastMoveMessageId = null;
 
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
@@ -737,7 +739,7 @@ function updateOnlineUi(){
   whitePlayerNameEl.textContent = whiteText;
   blackPlayerNameEl.textContent = blackText;
 
-  let syncNote = onlineGameStarted ? 'Partie gestartet. Züge werden in dieser Stufe noch nicht synchronisiert.' : 'Bedenkzeit und Partiestart werden synchronisiert. Züge folgen im nächsten Schritt.';
+  let syncNote = onlineGameStarted ? 'Partie gestartet. Züge werden synchronisiert.' : 'Bedenkzeit, Partiestart und Züge werden synchronisiert.';
   if(onlineRoomTimeControl && onlineRoomTimeControl.label){
     syncNote = 'Raum-Bedenkzeit: ' + onlineRoomTimeControl.label + '. ' + syncNote;
   }
@@ -832,6 +834,121 @@ function extractOnlineGame(msg){
     (Object.prototype.hasOwnProperty.call(msg, 'started') || Object.prototype.hasOwnProperty.call(msg, 'gameStarted') ? msg : null)
   );
 }
+
+function normalizeIncomingMove(candidate){
+  if(!candidate) return null;
+  if(candidate.move) return normalizeIncomingMove(candidate.move);
+  const from = Array.isArray(candidate.from) ? candidate.from : null;
+  const to = Array.isArray(candidate.to) ? candidate.to : null;
+  if(!from || !to || from.length < 2 || to.length < 2) return null;
+  const fx = parseInt(from[0], 10), fy = parseInt(from[1], 10), tx = parseInt(to[0], 10), ty = parseInt(to[1], 10);
+  if([fx,fy,tx,ty].some(v => !Number.isFinite(v) || v < 0 || v > 7)) return null;
+  const promotionRaw = candidate.promotion ? String(candidate.promotion).toUpperCase() : null;
+  return {
+    ply: Number.isFinite(Number(candidate.ply)) ? Math.floor(Number(candidate.ply)) : null,
+    side: candidate.side || candidate.turn || candidate.color || '',
+    from: [fx, fy],
+    to: [tx, ty],
+    promotion: promotionRaw && ['Q','R','B','N'].includes(promotionRaw) ? promotionRaw : null,
+    san: candidate.san || '',
+    messageId: candidate.messageId || candidate.message_id || ''
+  };
+}
+function extractOnlineMove(msg){
+  if(!msg) return null;
+  return normalizeIncomingMove(
+    msg.move ||
+    (msg.type === 'move' || msg.type === 'move_ack' || msg.type === 'move_applied' ? msg : null)
+  );
+}
+function extractOnlineMoves(msg){
+  const list = msg.moves || msg.moveHistory || msg.history ||
+    (msg.game && (msg.game.moves || msg.game.moveHistory)) ||
+    (msg.state && (msg.state.moves || msg.state.moveHistory)) ||
+    (msg.roomState && (msg.roomState.moves || msg.roomState.moveHistory));
+  if(!Array.isArray(list)) return [];
+  return list.map(normalizeIncomingMove).filter(Boolean);
+}
+function sameMoveCoords(a,b){
+  return !!(a && b && a.from && b.from && a.to && b.to &&
+    a.from[0] === b.from[0] && a.from[1] === b.from[1] &&
+    a.to[0] === b.to[0] && a.to[1] === b.to[1] &&
+    String(a.promotion || '') === String(b.promotion || ''));
+}
+function commitRemoteMove(found, promotion){
+  const before = buildGameFromHistory(masterHistory.length);
+  const mv = {from:found.from, to:found.to, meta:found.meta || {}, promotion};
+  const info = before.clone();
+  const applied = info.makeMove(mv, false);
+  mv.piece = applied.piece;
+  mv.taken = applied.taken;
+  mv.san = moveToSan(before, mv, info);
+  masterHistory.push(mv);
+  viewIndex = masterHistory.length;
+  lastMove = {from:mv.from, to:mv.to};
+  selected = null;
+  afterMoveClock(before.turn);
+  playMoveSound({capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), check:info.inCheck(info.turn)});
+  renderBoard();
+  return mv;
+}
+function applyOnlineMove(move){
+  const normalized = normalizeIncomingMove(move);
+  if(!normalized) return false;
+  if(normalized.ply && normalized.ply <= masterHistory.length){
+    const existing = masterHistory[normalized.ply - 1];
+    if(!sameMoveCoords(existing, normalized)){
+      onlineLastMessage = 'Raumzug passt nicht zur lokalen Zugliste. Raumzustand wird neu abgefragt.';
+      requestOnlineState();
+      updateOnlineUi();
+    }
+    return false;
+  }
+  if(normalized.ply && normalized.ply > masterHistory.length + 1){
+    onlineLastMessage = 'Zugfolge ist voraus. Raumzustand wird neu abgefragt.';
+    requestOnlineState();
+    updateOnlineUi();
+    return false;
+  }
+  const g = buildGameFromHistory(masterHistory.length);
+  if(normalized.side && normalized.side !== g.turn){
+    onlineLastMessage = 'Empfangener Zug passt nicht zur aktuellen Seite. Raumzustand wird neu abgefragt.';
+    requestOnlineState();
+    updateOnlineUi();
+    return false;
+  }
+  const found = g.legalMoves().find(m => m.from[0] === normalized.from[0] && m.from[1] === normalized.from[1] && m.to[0] === normalized.to[0] && m.to[1] === normalized.to[1]);
+  if(!found){
+    onlineLastMessage = 'Empfangener Zug ist lokal nicht legal. Raumzustand wird neu abgefragt.';
+    requestOnlineState();
+    updateOnlineUi();
+    return false;
+  }
+  applyingRemoteMove = true;
+  try{
+    commitRemoteMove(found, normalized.promotion);
+  } finally {
+    applyingRemoteMove = false;
+  }
+  onlineLastMoveMessageId = normalized.messageId || onlineLastMoveMessageId;
+  onlineLastMessage = 'Online-Zug wurde übernommen.';
+  updateOnlineUi();
+  return true;
+}
+function applyOnlineMoveList(moves){
+  if(!Array.isArray(moves) || moves.length === 0) return 0;
+  const ordered = moves.slice().sort((a,b) => {
+    const ap = Number(a.ply || 0), bp = Number(b.ply || 0);
+    if(ap && bp) return ap - bp;
+    return 0;
+  });
+  let applied = 0;
+  for(const move of ordered){
+    const beforeLen = masterHistory.length;
+    if(applyOnlineMove(move) && masterHistory.length > beforeLen) applied++;
+  }
+  return applied;
+}
 function extractOnlinePlayers(msg){
   return msg.players || (msg.state && msg.state.players) || (msg.roomState && msg.roomState.players) || (msg.lobby && msg.lobby.players) || null;
 }
@@ -857,6 +974,8 @@ function connectOnlineRoom(roomId, opts){
   onlineOrientationRoleApplied = null;
   onlinePendingTimeControlMessageId = null;
   onlinePendingStartMessageId = null;
+  applyingRemoteMove = false;
+  onlineLastMoveMessageId = null;
   onlineLastMessage = 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
@@ -939,6 +1058,14 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    const incomingMoves = extractOnlineMoves(msg);
+    const appliedMoveCount = applyOnlineMoveList(incomingMoves);
+    if(incomingMoves.length) handled = true;
+
+    const incomingMove = extractOnlineMove(msg);
+    const appliedSingleMove = incomingMove ? applyOnlineMove(incomingMove) : false;
+    if(incomingMove) handled = true;
+
     if(msg.type === 'time_control_ack'){
       onlinePendingTimeControlMessageId = null;
       handled = true;
@@ -948,13 +1075,15 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','pong'];
+    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
     onlineConnectionState = 'connected';
 
-    if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = 'Online-Partie wurde gestartet.';
+    if(appliedMoveCount || appliedSingleMove) onlineLastMessage = 'Online-Zug wurde übernommen.';
+    else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
+    else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = 'Online-Partie wurde gestartet.';
     else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){
       if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
       else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
@@ -1279,6 +1408,35 @@ function onSquareClick(x,y){
     commitHumanMove(found, null);
   }
 }
+
+function syncMoveToOnline(mv, movedSide){
+  if(applyingRemoteMove) return;
+  if(!onlineRoomId || !onlineGameStarted || !onlineConnected) return;
+  if(onlineRoleCode !== movedSide) return;
+  const messageId = 'mv_' + Date.now() + '_' + randomToken(5);
+  const move = {
+    ply: masterHistory.length,
+    side: movedSide,
+    from: mv.from,
+    to: mv.to,
+    promotion: mv.promotion || null,
+    san: mv.san || '',
+    messageId
+  };
+  onlineLastMoveMessageId = messageId;
+  if(sendOnlineMessage({type:'move', move, messageId})){
+    onlineLastMessage = 'Zug wird übertragen...';
+    updateOnlineUi();
+    setTimeout(() => {
+      if(onlineLastMoveMessageId === messageId && onlineConnected){
+        requestOnlineState();
+      }
+    }, 800);
+  } else {
+    onlineLastMessage = 'Zug konnte nicht übertragen werden.';
+    updateOnlineUi();
+  }
+}
 function commitHumanMove(found, promotion){
   const before = buildGameFromHistory(masterHistory.length);
   if(viewIndex < masterHistory.length) masterHistory.splice(viewIndex);
@@ -1294,6 +1452,7 @@ function commitHumanMove(found, promotion){
   selected = null;
   afterMoveClock(before.turn);
   playMoveSound({capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), check:info.inCheck(info.turn)});
+  syncMoveToOnline(mv, before.turn);
   renderBoard();
 }
 function showPromotionOverlay(color){
