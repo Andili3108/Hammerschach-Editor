@@ -134,17 +134,17 @@
       </div>
       <div class="header-main">
         <div class="online-panel" aria-label="Online-Lobby Status">
-          <div class="online-item"><div class="online-label">Online-Status</div><div id="onlineStatus" class="online-value neutral">Lokal</div></div>
-          <div class="online-item"><div class="online-label">Meine Rolle</div><div id="onlineRole" class="online-value neutral">Lokal</div></div>
+          <div class="online-item"><div class="online-label">Online-Status</div><div id="onlineStatus" class="online-value neutral">Nicht verbunden</div></div>
+          <div class="online-item"><div class="online-label">Meine Rolle</div><div id="onlineRole" class="online-value neutral">—</div></div>
           <div class="online-item"><div class="online-label">Raum</div><div id="onlineRoom" class="online-value neutral">—</div></div>
-          <div class="online-item"><div class="online-label">Partie</div><div id="onlineGameState" class="online-value neutral">Lokal</div></div>
+          <div class="online-item"><div class="online-label">Partie</div><div id="onlineGameState" class="online-value neutral">Keine Partie</div></div>
           <div id="onlineHint" class="online-hint" hidden></div>
         </div>
         <div class="actions" aria-label="Partie- und Anzeigeaktionen">
           <button id="createOnlineBtn" type="button">Online-Partie erstellen</button>
           <button id="copyInviteBtn" class="button-flat" type="button" disabled>Einladungslink kopieren</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
-          <button id="newGameBtn" type="button">Neue Partie</button>
+          <button id="newGameBtn" type="button">Neue Online-Partie</button>
           <button id="flipBoardBtn" class="button-flat" type="button">Brett drehen</button>
           <div class="board-color-wrap" id="boardColorWrap">
             <button id="btnBoardColor" type="button" class="button-flat" aria-haspopup="true" aria-expanded="false">Brettfarbe</button>
@@ -170,7 +170,7 @@
           <div id="board" aria-label="Schachbrett"></div>
           <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
         </div>
-        <div class="status" id="status">Weiß am Zug</div>
+        <div class="status" id="status">Online-Partie erstellen, um zu beginnen</div>
       </div>
 
       <aside class="moves-right">
@@ -578,15 +578,20 @@ if(showPlayersPanelBtn) showPlayersPanelBtn.addEventListener('click', () => setR
 if(showMovesPanelBtn) showMovesPanelBtn.addEventListener('click', () => setRightPanelMode('moves'));
 setRightPanelMode('players');
 
+function isOnlineGameLiveForUi(){
+  return !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
+}
+function isMoveNavigationLocked(){
+  return isOnlineGameLiveForUi();
+}
 function isGameInProgressForUi(){
-  return !!(onlineGameStarted || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost);
+  return !!(isOnlineGameLiveForUi() || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost);
 }
 function updateTimeSetupVisibility(){
-  if(timeSetupBoxEl) timeSetupBoxEl.hidden = isGameInProgressForUi();
+  if(timeSetupBoxEl) timeSetupBoxEl.hidden = !onlineRoomId || onlineRoleCode !== 'w' || isGameInProgressForUi();
 }
 
-/* Online-Lobby: Räume, Einladungslink, Rollenanzeige
-   Zugsynchronisierung ist bewusst noch nicht aktiv.
+/* Online-Schach: Räume, Einladungslink, Rollen, Bedenkzeit, Partiestart und Zugsynchronisierung.
 
    Konfiguration:
    - Wenn diese HTML direkt vom Lobby-Worker ausgeliefert wird, leer lassen.
@@ -605,6 +610,8 @@ let onlinePlayers = {white:false, black:false, spectators:0};
 let onlineLastMessage = 'Keine Online-Partie aktiv.';
 let onlineGameStarted = false;
 let onlineGameStartedAt = null;
+let onlineGameEnded = false;
+let onlineGameResult = '*';
 let onlineRoomTimeControl = null;
 let applyingRemoteTimeControl = false;
 let onlineAutoSyncedInitialTime = false;
@@ -619,6 +626,7 @@ let onlineClockSync = null;
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
 const startOnlineBtn = document.getElementById('startOnlineBtn');
+const newGameBtn = document.getElementById('newGameBtn');
 const onlineStatusEl = document.getElementById('onlineStatus');
 const onlineRoleEl = document.getElementById('onlineRole');
 const onlineRoomEl = document.getElementById('onlineRoom');
@@ -654,7 +662,7 @@ function roleLabel(role){
   if(role === 'w') return 'Weiß';
   if(role === 'b') return 'Schwarz';
   if(role === 'spectator') return 'Zuschauer';
-  return 'Lokal';
+  return '—';
 }
 function applyOnlineOrientationForRole(role){
   if(role !== 'w' && role !== 'b') return false;
@@ -701,6 +709,18 @@ function setOnlineValueClass(el, state){
   el.classList.remove('good','wait','neutral');
   el.classList.add(state || 'neutral');
 }
+function updateOnlineActionButtons(){
+  const live = isOnlineGameLiveForUi();
+  if(createOnlineBtn){
+    createOnlineBtn.disabled = live;
+    createOnlineBtn.title = live ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.' : 'Neue Online-Partie mit Einladungslink erstellen.';
+  }
+  if(newGameBtn){
+    newGameBtn.disabled = live;
+    newGameBtn.hidden = !onlineRoomId;
+    newGameBtn.title = live ? 'Neue Online-Partie erst nach Partieende möglich.' : 'Neue Online-Partie mit neuem Raum erstellen.';
+  }
+}
 function updateOnlineStartButton(){
   if(!startOnlineBtn) return;
   if(!onlineRoomId){
@@ -711,8 +731,8 @@ function updateOnlineStartButton(){
   }
   if(onlineGameStarted){
     startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Partie läuft';
-    startOnlineBtn.title = 'Die Online-Partie wurde bereits gestartet.';
+    startOnlineBtn.textContent = onlineGameEnded || gameEnded || timeLost ? 'Partie beendet' : 'Partie läuft';
+    startOnlineBtn.title = onlineGameEnded || gameEnded || timeLost ? 'Für eine neue Partie bitte eine neue Online-Partie erstellen.' : 'Die Online-Partie wurde bereits gestartet.';
     return;
   }
   if(onlinePendingStartMessageId){
@@ -737,20 +757,21 @@ function updateOnlineStartButton(){
 }
 function updateOnlineUi(){
   if(!onlineRoomId){
-    onlineStatusEl.textContent = 'Lokal';
-    onlineRoleEl.textContent = 'Lokal';
+    onlineStatusEl.textContent = 'Nicht verbunden';
+    onlineRoleEl.textContent = '—';
     onlineRoomEl.textContent = '—';
-    if(onlineGameStateEl) onlineGameStateEl.textContent = 'Lokal';
-    onlineHintEl.textContent = 'Keine Online-Partie aktiv.';
+    if(onlineGameStateEl) onlineGameStateEl.textContent = 'Keine Partie';
+    onlineHintEl.textContent = 'Bitte eine Online-Partie erstellen oder einem Einladungslink folgen.';
     copyInviteBtn.disabled = true;
     onlineConnectionState = 'local';
-    whitePlayerNameEl.textContent = 'Spieler 1';
-    blackPlayerNameEl.textContent = 'Spieler 2';
+    whitePlayerNameEl.textContent = 'Weiß';
+    blackPlayerNameEl.textContent = 'Schwarz';
     setOnlineValueClass(onlineStatusEl, 'neutral');
     setOnlineValueClass(onlineRoleEl, 'neutral');
     setOnlineValueClass(onlineRoomEl, 'neutral');
     setOnlineValueClass(onlineGameStateEl, 'neutral');
     updateOnlineStartButton();
+    updateOnlineActionButtons();
     updateTimeSetupVisibility();
     return;
   }
@@ -780,8 +801,9 @@ function updateOnlineUi(){
   setOnlineValueClass(onlineRoomEl, 'neutral');
 
   if(onlineGameStateEl){
-    onlineGameStateEl.textContent = onlineGameStarted ? 'Gestartet' : 'Lobby';
-    setOnlineValueClass(onlineGameStateEl, onlineGameStarted ? 'good' : 'wait');
+    const ended = onlineGameEnded || gameEnded || timeLost;
+    onlineGameStateEl.textContent = ended ? 'Beendet' : (onlineGameStarted ? 'Gestartet' : 'Lobby');
+    setOnlineValueClass(onlineGameStateEl, ended ? 'neutral' : (onlineGameStarted ? 'good' : 'wait'));
   }
 
   const whiteText = onlineRoleCode === 'w' ? 'Du (Weiß)' : (onlinePlayers.white ? 'Spieler Weiß verbunden' : 'Warte auf Weiß');
@@ -789,12 +811,13 @@ function updateOnlineUi(){
   whitePlayerNameEl.textContent = whiteText;
   blackPlayerNameEl.textContent = blackText;
 
-  let syncNote = onlineGameStarted ? 'Partie gestartet. Züge werden synchronisiert.' : 'Bedenkzeit, Partiestart und Züge werden synchronisiert.';
+  let syncNote = onlineGameEnded || gameEnded || timeLost ? 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.' : (onlineGameStarted ? 'Partie gestartet. Züge werden synchronisiert und serverseitig geprüft.' : 'Weiß wählt die Bedenkzeit und startet die Partie. Züge werden synchronisiert und serverseitig geprüft.');
   if(onlineRoomTimeControl && onlineRoomTimeControl.label){
     syncNote = 'Raum-Bedenkzeit: ' + onlineRoomTimeControl.label + '. ' + syncNote;
   }
   onlineHintEl.textContent = onlineLastMessage ? (onlineLastMessage + ' ' + syncNote) : syncNote;
   updateOnlineStartButton();
+  updateOnlineActionButtons();
   updateTimeControlsLock();
   updateTimeSetupVisibility();
 }
@@ -869,10 +892,16 @@ function normalizeIncomingGame(candidate){
   if(candidate.game) return normalizeIncomingGame(candidate.game);
   if(candidate.gameState) return normalizeIncomingGame(candidate.gameState);
   const hasStartedFlag = Object.prototype.hasOwnProperty.call(candidate, 'started') || Object.prototype.hasOwnProperty.call(candidate, 'gameStarted') || Object.prototype.hasOwnProperty.call(candidate, 'isStarted');
-  if(!hasStartedFlag && candidate.type !== 'game_started' && candidate.type !== 'start_game_ack') return null;
+  const hasEndedFlag = Object.prototype.hasOwnProperty.call(candidate, 'ended') || Object.prototype.hasOwnProperty.call(candidate, 'gameEnded') || Object.prototype.hasOwnProperty.call(candidate, 'isEnded');
+  if(!hasStartedFlag && !hasEndedFlag && candidate.type !== 'game_started' && candidate.type !== 'start_game_ack') return null;
   return {
     started: !!(candidate.started ?? candidate.gameStarted ?? candidate.isStarted ?? (candidate.type === 'game_started' || candidate.type === 'start_game_ack')),
-    startedAt: candidate.startedAt || candidate.started_at || candidate.time || null
+    startedAt: candidate.startedAt || candidate.started_at || candidate.time || null,
+    ended: !!(candidate.ended ?? candidate.gameEnded ?? candidate.isEnded ?? false),
+    endedAt: candidate.endedAt || candidate.ended_at || null,
+    result: candidate.result || '*',
+    winner: candidate.winner || null,
+    endReason: candidate.endReason || candidate.end_reason || null
   };
 }
 function extractOnlineGame(msg){
@@ -882,7 +911,7 @@ function extractOnlineGame(msg){
     (msg.roomState && (msg.roomState.game || msg.roomState.gameState)) ||
     (msg.lobby && (msg.lobby.game || msg.lobby.gameState)) ||
     (msg.type === 'game_started' || msg.type === 'start_game_ack' ? msg : null) ||
-    (Object.prototype.hasOwnProperty.call(msg, 'started') || Object.prototype.hasOwnProperty.call(msg, 'gameStarted') ? msg : null)
+    (Object.prototype.hasOwnProperty.call(msg, 'started') || Object.prototype.hasOwnProperty.call(msg, 'gameStarted') || Object.prototype.hasOwnProperty.call(msg, 'ended') || Object.prototype.hasOwnProperty.call(msg, 'gameEnded') ? msg : null)
   );
 }
 
@@ -936,6 +965,8 @@ function applyOnlineClockState(clockState){
   if(onlineGameStarted || masterHistory.length > 0) firstMoveDone = true;
   timeLost = !!normalized.timeLost;
   if(timeLost){
+    onlineGameEnded = true;
+    onlineGameResult = normalized.winner === 'w' ? '1-0' : normalized.winner === 'b' ? '0-1' : '*';
     stopClock();
     clockRunning = false;
     const loser = normalized.loser === 'w' ? 'Weiß' : normalized.loser === 'b' ? 'Schwarz' : '';
@@ -1085,6 +1116,8 @@ function connectOnlineRoom(roomId, opts){
   onlinePlayers = {white:false, black:false, spectators:0};
   onlineGameStarted = false;
   onlineGameStartedAt = null;
+  onlineGameEnded = false;
+  onlineGameResult = '*';
   onlineRoomTimeControl = null;
   onlineAutoSyncedInitialTime = false;
   onlineOrientationRoleApplied = null;
@@ -1264,7 +1297,7 @@ function currentTimeControlPayload(){
 function syncCurrentTimeControlToOnline(){
   if(applyingRemoteTimeControl) return;
   if(!onlineRoomId || !onlineConnected || onlineGameStarted) return;
-  if(onlineRoleCode !== 'w' && onlineRoleCode !== 'b') return;
+  if(onlineRoleCode !== 'w') return;
   const timeControl = currentTimeControlPayload();
   if(!timeControl) return;
   const messageId = 'tc_' + Date.now() + '_' + randomToken(5);
@@ -1326,7 +1359,10 @@ function applyTimeControlFromOnline(timeControl){
 }
 function applyOnlineGameState(game){
   const wasStarted = onlineGameStarted;
+  const wasEnded = onlineGameEnded;
   onlineGameStarted = !!(game && game.started);
+  onlineGameEnded = !!(game && game.ended);
+  onlineGameResult = game && game.result ? game.result : (onlineGameEnded ? onlineGameResult : '*');
   if(onlineGameStarted) onlinePendingStartMessageId = null;
   onlineGameStartedAt = game && game.startedAt ? game.startedAt : null;
   if(onlineGameStarted && !wasStarted){
@@ -1341,6 +1377,17 @@ function applyOnlineGameState(game){
     onlineClockSync = null;
     onlineLastMessage = 'Online-Partie wurde gestartet.';
     renderBoard();
+  }
+  if(onlineGameEnded && !wasEnded){
+    stopClock();
+    clockRunning = false;
+    selected = null;
+    if(game && game.endReason === 'checkmate' && game.winner){
+      statusEl.textContent = 'Schachmatt — ' + (game.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt';
+    } else if(game && game.endReason === 'stalemate'){
+      statusEl.textContent = 'Patt — Unentschieden';
+    }
+    updateOnlineUi();
   }
 }
 function startOnlineGame(){
@@ -1379,19 +1426,33 @@ function startOnlineGame(){
   }, 300);
 }
 function onlineInteractionBlockReason(gameState){
-  if(!onlineRoomId) return '';
+  if(!onlineRoomId) return 'Bitte zuerst eine Online-Partie erstellen oder einem Einladungslink folgen.';
+  if(!onlineConnected) return 'Online-Verbindung ist noch nicht bereit.';
   if(!onlineGameStarted) return onlineRoleCode === 'w' ? 'Online-Partie noch nicht gestartet. Bitte „Partie starten“ verwenden.' : 'Online-Partie noch nicht gestartet. Warte auf Weiß.';
+  if(onlineGameEnded || gameEnded || timeLost) return 'Diese Online-Partie ist beendet. Bitte eine neue Online-Partie erstellen.';
   if(onlineRoleCode === 'spectator') return 'Zuschauer können keine Züge ausführen.';
   if(onlineRoleCode !== 'w' && onlineRoleCode !== 'b') return 'Keine Spielerrolle zugewiesen.';
   if(onlineRoleCode !== gameState.turn) return 'Du spielst ' + roleLabel(onlineRoleCode) + '. ' + roleLabel(gameState.turn) + ' ist am Zug.';
   return '';
 }
-createOnlineBtn.addEventListener('click', () => {
+function createNewOnlineRoom(){
+  if(isOnlineGameLiveForUi()) return;
+  closeOnlineSocket();
+  onlineRoomId = null;
+  onlineRoleCode = 'local';
+  onlineConnected = false;
+  onlineConnectionState = 'local';
+  onlineGameStarted = false;
+  onlineGameEnded = false;
+  onlineGameResult = '*';
+  onlineRoomTimeControl = null;
+  onlineClockSync = null;
   newGame();
   const roomId = createRoomId();
   connectOnlineRoom(roomId);
   setTimeout(copyInviteLink, 250);
-});
+}
+createOnlineBtn.addEventListener('click', createNewOnlineRoom);
 copyInviteBtn.addEventListener('click', copyInviteLink);
 startOnlineBtn.addEventListener('click', startOnlineGame);
 
@@ -1407,6 +1468,7 @@ function buildGameFromHistory(n){
   return g;
 }
 function renderBoard(){
+  if(isMoveNavigationLocked() && viewIndex !== masterHistory.length) viewIndex = masterHistory.length;
   const g = buildGameFromHistory(viewIndex);
   boardEl.innerHTML = '';
   for(let row=0; row<8; row++){
@@ -1478,7 +1540,16 @@ function updateStatus(g){
     else statusEl.textContent = 'Patt — Unentschieden';
     return;
   }
+  if(!onlineRoomId){
+    statusEl.textContent = 'Online-Partie erstellen, um zu beginnen';
+    return;
+  }
   if(onlineRoomId){
+    if(onlineGameEnded || timeLost){
+      if(timeLost) return;
+      statusEl.textContent = onlineGameResult && onlineGameResult !== '*' ? 'Online-Partie beendet — Ergebnis: ' + onlineGameResult : 'Online-Partie beendet';
+      return;
+    }
     if(!onlineGameStarted){
       if(onlineRoleCode === 'w') statusEl.textContent = onlinePlayers.black ? 'Lobby bereit — Bedenkzeit wählen und Partie starten.' : 'Online-Lobby — warte auf Schwarz.';
       else if(onlineRoleCode === 'b') statusEl.textContent = 'Online-Lobby — warte auf Partiestart durch Weiß.';
@@ -1631,6 +1702,7 @@ function renderMoveList(){
     cells.push({txt:num1 + '.', idx:null}, {txt:masterHistory[i]?.san || '', idx:i}, {txt:masterHistory[i+1]?.san || '', idx:i+1});
     cells.push({txt:masterHistory[i+2] || masterHistory[i+3] ? num2 + '.' : '', idx:null}, {txt:masterHistory[i+2]?.san || '', idx:i+2}, {txt:masterHistory[i+3]?.san || '', idx:i+3});
   }
+  const navigationLocked = isMoveNavigationLocked();
   cells.forEach((c, cellIndex) => {
     const div = document.createElement('div');
     div.className = 'move-cell';
@@ -1638,25 +1710,31 @@ function renderMoveList(){
     div.textContent = c.txt;
     if(c.idx !== null){
       if(viewIndex === c.idx + 1) div.classList.add('current');
-      div.title = 'Zu dieser Stellung springen';
-      div.style.cursor = 'pointer';
-      div.addEventListener('click', () => { viewIndex = c.idx + 1; selected = null; renderBoard(); });
+      if(navigationLocked){
+        div.title = 'Navigation ist während einer laufenden Online-Partie gesperrt.';
+        div.style.cursor = 'default';
+      } else {
+        div.title = 'Zu dieser Stellung springen';
+        div.style.cursor = 'pointer';
+        div.addEventListener('click', () => { viewIndex = c.idx + 1; selected = null; renderBoard(); });
+      }
     }
     moveListEl.appendChild(div);
   });
 }
 function updateNavControls(){
   const total = masterHistory.length;
-  navStartBtn.disabled = total === 0 || viewIndex === 0;
-  navBackBtn.disabled = total === 0 || viewIndex === 0;
-  navForwardBtn.disabled = total === 0 || viewIndex === total;
-  navEndBtn.disabled = total === 0 || viewIndex === total;
+  const locked = isMoveNavigationLocked();
+  navStartBtn.disabled = locked || total === 0 || viewIndex === 0;
+  navBackBtn.disabled = locked || total === 0 || viewIndex === 0;
+  navForwardBtn.disabled = locked || total === 0 || viewIndex === total;
+  navEndBtn.disabled = locked || total === 0 || viewIndex === total;
   movesInfoEl.textContent = total === 0 ? '0/0' : viewIndex + '/' + total;
 }
-navStartBtn.addEventListener('click', () => { viewIndex = 0; selected = null; renderBoard(); });
-navBackBtn.addEventListener('click', () => { viewIndex = Math.max(0, viewIndex - 1); selected = null; renderBoard(); });
-navForwardBtn.addEventListener('click', () => { viewIndex = Math.min(masterHistory.length, viewIndex + 1); selected = null; renderBoard(); });
-navEndBtn.addEventListener('click', () => { viewIndex = masterHistory.length; selected = null; renderBoard(); });
+navStartBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = 0; selected = null; renderBoard(); });
+navBackBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.max(0, viewIndex - 1); selected = null; renderBoard(); });
+navForwardBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.min(masterHistory.length, viewIndex + 1); selected = null; renderBoard(); });
+navEndBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = masterHistory.length; selected = null; renderBoard(); });
 
 function buildPgn(){
   if(masterHistory.length === 0) return '';
@@ -1696,7 +1774,7 @@ function newGame(){
   resetClockForNewGame();
   renderBoard();
 }
-document.getElementById('newGameBtn').addEventListener('click', newGame);
+if(newGameBtn) newGameBtn.addEventListener('click', createNewOnlineRoom);
 document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
@@ -1911,9 +1989,11 @@ function getTimeOption(key, category){
   return null;
 }
 function isTimeControlLocked(){
+  if(!onlineRoomId) return true;
   if(masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return true;
   if(onlineGameStarted) return true;
-  if(onlineRoomId && (!onlineConnected || (onlineRoleCode !== 'w' && onlineRoleCode !== 'b'))) return true;
+  if(!onlineConnected) return true;
+  if(onlineRoleCode !== 'w') return true;
   return false;
 }
 function updateTimeStatus(){
@@ -1931,11 +2011,12 @@ function updateTimeControlsLock(){
     select.setAttribute('aria-disabled', locked ? 'true' : 'false');
   });
   if(timeLockNoteEl){
-    if(onlineGameStarted) timeLockNoteEl.textContent = 'Online-Partie gestartet: Bedenkzeit ist gesperrt.';
-    else if(onlineRoomId && onlineRoleCode === 'spectator') timeLockNoteEl.textContent = 'Zuschauer können die Bedenkzeit nicht ändern.';
-    else if(onlineRoomId && !onlineConnected) timeLockNoteEl.textContent = 'Bedenkzeit wird nach Lobby-Verbindung freigegeben.';
-    else if(onlineRoomId) timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist gesperrt.' : 'Online-Auswahl: Änderung wird an beide Spieler übertragen. Die zuletzt gewählte Bedenkzeit gilt.';
-    else timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist nach Partiebeginn gesperrt. Für eine Änderung bitte „Neue Partie“ starten.' : 'Auswahl vor Partiebeginn möglich. Die zuletzt gewählte Bedenkzeit gilt.';
+    if(!onlineRoomId) timeLockNoteEl.textContent = 'Bitte zuerst eine Online-Partie erstellen.';
+    else if(onlineGameStarted) timeLockNoteEl.textContent = 'Online-Partie gestartet: Bedenkzeit ist gesperrt.';
+    else if(onlineRoleCode === 'b') timeLockNoteEl.textContent = 'Nur Weiß wählt die Bedenkzeit.';
+    else if(onlineRoleCode === 'spectator') timeLockNoteEl.textContent = 'Zuschauer können die Bedenkzeit nicht ändern.';
+    else if(!onlineConnected) timeLockNoteEl.textContent = 'Bedenkzeit wird nach Lobby-Verbindung freigegeben.';
+    else timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist gesperrt.' : 'Weiß-Auswahl: Änderung wird an beide Spieler übertragen.';
   }
   updateTimeSetupVisibility();
   updateOnlineStartButton();
@@ -1970,8 +2051,8 @@ function applyTimeControlFromKey(key, label, category){
 function setTimeControl(key, label, category){
   if(isTimeControlLocked()){
     const previous = statusEl.textContent;
-    statusEl.textContent = 'Bedenkzeit kann während einer laufenden Partie nicht geändert werden.';
-    setTimeout(() => { if(statusEl.textContent === 'Bedenkzeit kann während einer laufenden Partie nicht geändert werden.') statusEl.textContent = previous; }, 1200);
+    statusEl.textContent = !onlineRoomId ? 'Bitte zuerst eine Online-Partie erstellen.' : 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.';
+    setTimeout(() => { if(statusEl.textContent === 'Bitte zuerst eine Online-Partie erstellen.' || statusEl.textContent === 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.') statusEl.textContent = previous; }, 1200);
     updateTimeControlsLock();
     updateTimeSelectValues();
     return;
