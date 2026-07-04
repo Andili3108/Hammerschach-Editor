@@ -21,6 +21,28 @@ function cleanPlayerId(value) {
   return /^[A-Za-z0-9_.:-]{8,128}$/.test(player) ? player : crypto.randomUUID();
 }
 
+function cleanDisplayName(value) {
+  const name = String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 24);
+  return name;
+}
+
+function guestNameFromPlayerId(playerId) {
+  const compact = String(playerId || '').replace(/[^A-Za-z0-9]/g, '');
+  const suffix = (compact.slice(-4) || crypto.randomUUID().replace(/[^A-Za-z0-9]/g, '').slice(0, 4)).toUpperCase();
+  return 'Gast-' + suffix;
+}
+
+function playerIdFromSlot(slot) {
+  if (!slot) return null;
+  if (typeof slot === 'string') return slot;
+  if (typeof slot === 'object') return slot.playerId || slot.id || null;
+  return null;
+}
+
 function safeSend(ws, payload) {
   try {
     ws.send(JSON.stringify(payload));
@@ -558,16 +580,18 @@ export class GameRoom {
     const url = new URL(request.url);
     const room = cleanRoomId(url.searchParams.get('room'));
     const playerId = cleanPlayerId(url.searchParams.get('player'));
+    const requestedDisplayName = cleanDisplayName(url.searchParams.get('name') || url.searchParams.get('displayName'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     const role = await this.assignRole(playerId);
+    const profile = await this.savePlayerProfile(playerId, requestedDisplayName, role);
 
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({ playerId, role, room, joinedAt: Date.now() });
+    server.serializeAttachment({ playerId, role, room, displayName: profile.displayName, guest: profile.guest, joinedAt: Date.now() });
 
-    safeSend(server, { type: 'hello', room, playerId, role });
+    safeSend(server, { type: 'hello', room, playerId, role, displayName: profile.displayName, guest: profile.guest });
     await this.sendRoomState(server, 'hello_state');
     await this.broadcastRoomState('lobby');
 
@@ -577,8 +601,8 @@ export class GameRoom {
   async assignRole(playerId) {
     const players = (await this.state.storage.get('players')) || { white: null, black: null };
 
-    if (players.white === playerId) return 'w';
-    if (players.black === playerId) return 'b';
+    if (playerIdFromSlot(players.white) === playerId) return 'w';
+    if (playerIdFromSlot(players.black) === playerId) return 'b';
 
     if (!players.white) {
       players.white = playerId;
@@ -595,18 +619,60 @@ export class GameRoom {
     return 'spectator';
   }
 
-  getActivePlayers() {
+  async savePlayerProfile(playerId, requestedDisplayName, role = '') {
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const previous = profiles[playerId] || {};
+    const displayName = cleanDisplayName(requestedDisplayName) || cleanDisplayName(previous.displayName) || guestNameFromPlayerId(playerId);
+    const profile = {
+      playerId,
+      displayName,
+      name: displayName,
+      guest: previous.guest !== false,
+      role: role || previous.role || '',
+      updatedAt: Date.now()
+    };
+    profiles[playerId] = profile;
+    await this.state.storage.put('playerProfiles', profiles);
+    return profile;
+  }
+
+  async getActivePlayers(players = null) {
+    const assigned = players || (await this.state.storage.get('players')) || { white: null, black: null };
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const whiteId = playerIdFromSlot(assigned.white);
+    const blackId = playerIdFromSlot(assigned.black);
+    const makeSlot = (playerId) => {
+      const profile = playerId ? (profiles[playerId] || {}) : {};
+      const displayName = cleanDisplayName(profile.displayName || profile.name) || (playerId ? guestNameFromPlayerId(playerId) : '');
+      return {
+        connected: false,
+        playerId: playerId || null,
+        name: displayName,
+        displayName,
+        guest: profile.guest !== false
+      };
+    };
+
     const active = {
-      white: { connected: false },
-      black: { connected: false },
+      white: makeSlot(whiteId),
+      black: makeSlot(blackId),
       spectators: 0
     };
 
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
-      if (info.role === 'w') active.white.connected = true;
-      else if (info.role === 'b') active.black.connected = true;
-      else active.spectators += 1;
+      const name = cleanDisplayName(info.displayName) || (info.playerId ? guestNameFromPlayerId(info.playerId) : '');
+      if (info.role === 'w') {
+        active.white.connected = true;
+        if (name) { active.white.name = name; active.white.displayName = name; }
+        active.white.guest = info.guest !== false;
+      } else if (info.role === 'b') {
+        active.black.connected = true;
+        if (name) { active.black.name = name; active.black.displayName = name; }
+        active.black.guest = info.guest !== false;
+      } else {
+        active.spectators += 1;
+      }
     }
 
     return active;
@@ -638,10 +704,10 @@ export class GameRoom {
       role: info.role || 'spectator',
       playerId: info.playerId || null,
       assigned: {
-        white: !!players.white,
-        black: !!players.black
+        white: !!playerIdFromSlot(players.white),
+        black: !!playerIdFromSlot(players.black)
       },
-      players: this.getActivePlayers(),
+      players: await this.getActivePlayers(players),
       timeControl,
       game,
       moves,
@@ -705,6 +771,19 @@ export class GameRoom {
       return;
     }
 
+    if (data.type === 'set_player_name') {
+      const displayName = cleanDisplayName(data.displayName || data.name);
+      if (displayName.length < 2) {
+        safeSend(ws, { type: 'error', code: 'INVALID_PLAYER_NAME', message: 'Spielername muss mindestens 2 Zeichen haben.' });
+        return;
+      }
+      const profile = await this.savePlayerProfile(info.playerId, displayName, role);
+      ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest }));
+      safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, serverNow: Date.now() });
+      await this.broadcastRoomState('room_state');
+      return;
+    }
+
     if (data.type === 'set_time_control') {
       const game = (await this.state.storage.get('game')) || { started: false };
       if (game.started) {
@@ -745,7 +824,7 @@ export class GameRoom {
         return;
       }
 
-      const active = this.getActivePlayers();
+      const active = await this.getActivePlayers();
       if (!active.black.connected) {
         safeSend(ws, { type: 'error', code: 'BLACK_NOT_CONNECTED', message: 'Schwarz ist noch nicht verbunden.' });
         return;
@@ -1155,8 +1234,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'guest_display_names', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-Anzeigenamen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
