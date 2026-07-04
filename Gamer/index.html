@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Hammerschach-Gamer</title>
-<!-- Design v3: Bedenkzeit-Auswahl in rechter Spieler/Zeit-Spalte -->
+<!-- Design v4: Kompakter Online-Header mit Statusfeld und Icon-Leiste unter dem Brett -->
 <style>
   :root{
     --board-max:760px;
@@ -33,9 +33,14 @@
   .dot{width:12px;height:12px;border-radius:999px;display:inline-block;border:1px solid rgba(0,0,0,.22);}
   .dot.white{background:#fff;}
   .dot.black{background:#111;}
-  .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;}
-  .actions button{min-height:38px;white-space:nowrap;}
-  .actions .board-color-wrap{width:auto;display:flex;}
+  .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
+  .actions button{min-height:40px;white-space:nowrap;}
+  .match-actions{justify-content:center;}
+  .match-actions button{min-width:168px;}
+  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%;}
+  .icon-btn{width:44px;height:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:23px;line-height:1;padding:0;}
+  .icon-btn .icon-label{display:inline-block;line-height:1;}
+  .board-tools .board-color-wrap{position:relative;width:auto;display:flex;justify-content:center;}
   button{background:#e0e0e0;color:#9A2D33;border:none;border-radius:999px;padding:8px 12px;font-size:14px;font-weight:900;cursor:pointer;transition:transform .08s ease, box-shadow .12s ease;}
   button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.14);}
   button:active:not(:disabled){transform:translateY(0);box-shadow:0 3px 8px rgba(0,0,0,.10);}
@@ -60,6 +65,7 @@
   .board-illegal-flash{position:absolute;inset:0;border-radius:10px;pointer-events:none;box-shadow:0 0 0 0 rgba(132,63,70,0);transition:box-shadow 320ms ease;}
   .board-illegal-flash.active{box-shadow:0 0 0 6px rgba(132,63,70,.22),0 0 30px rgba(132,63,70,.18);}
   .status{width:100%;box-sizing:border-box;text-align:center;font-weight:900;font-size:18px;padding:11px 16px;border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(246,238,240,.98));border:1px solid rgba(132,63,70,.18);box-shadow:0 10px 24px rgba(0,0,0,.12);}
+  .header-status{align-self:center;max-width:720px;margin:0 auto;}
   .time-setup-box{padding:13px 16px;display:flex;flex-direction:column;gap:10px;}
   .time-setup-box[hidden]{display:none!important;}
   .player-time-setup{border-radius:16px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:12px;box-shadow:none;}
@@ -96,6 +102,7 @@
   .nav-btn{min-width:40px;min-height:36px;font-size:18px;padding:5px 10px;}
   .board-color-wrap{position:relative;width:100%;display:flex;}
   .board-color-popup{position:absolute;top:calc(100% + 8px);right:0;width:238px;background:rgba(255,255,255,.99);border:1px solid rgba(132,63,70,.22);border-radius:14px;box-shadow:0 18px 42px rgba(0,0,0,.20);padding:10px;z-index:2100;}
+  .board-tools .board-color-popup{left:50%;right:auto;transform:translateX(-50%);}
   .board-color-popup[hidden]{display:none!important;}
   .board-color-popup-title{margin-bottom:8px;font-size:15px;font-weight:900;color:#222;}
   .board-color-options{display:flex;flex-direction:column;gap:7px;}
@@ -120,9 +127,10 @@
   .online-value.wait{color:#9A2D33;}
   .online-value.neutral{color:#555;}
   .online-hint[hidden]{display:none!important;}
+  .online-panel[hidden]{display:none!important;}
 
-  @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:150px minmax(0,1fr)}.actions{justify-content:flex-start}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:stretch}.actions button{flex:1 1 150px}.actions .board-color-wrap{flex:1 1 150px}.actions .board-color-wrap > button{width:100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-color-popup{left:0;right:auto;width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:150px minmax(0,1fr)}.actions{justify-content:center}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr}.logo-slot{min-height:96px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
 </style>
 </head>
 <body>
@@ -133,21 +141,31 @@
         <img src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" onerror="this.style.display='none'; this.parentNode.textContent='Hammerschach';" />
       </div>
       <div class="header-main">
-        <div class="online-panel" aria-label="Online-Lobby Status">
+        <div class="online-panel" aria-label="Online-Lobby Status" hidden>
           <div class="online-item"><div class="online-label">Online-Status</div><div id="onlineStatus" class="online-value neutral">Nicht verbunden</div></div>
           <div class="online-item"><div class="online-label">Meine Rolle</div><div id="onlineRole" class="online-value neutral">—</div></div>
           <div class="online-item"><div class="online-label">Raum</div><div id="onlineRoom" class="online-value neutral">—</div></div>
           <div class="online-item"><div class="online-label">Partie</div><div id="onlineGameState" class="online-value neutral">Keine Partie</div></div>
           <div id="onlineHint" class="online-hint" hidden></div>
         </div>
-        <div class="actions" aria-label="Partie- und Anzeigeaktionen">
-          <button id="createOnlineBtn" type="button">Online-Partie erstellen</button>
-          <button id="copyInviteBtn" class="button-flat" type="button" disabled>Einladungslink kopieren</button>
+        <div class="status header-status" id="status">Zur Partie einladen, um eine Online-Partie zu erstellen.</div>
+        <div class="actions match-actions" aria-label="Partieaktionen">
+          <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
-          <button id="newGameBtn" type="button">Neue Online-Partie</button>
-          <button id="flipBoardBtn" class="button-flat" type="button">Brett drehen</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="top-layout">
+      <div class="board-column">
+        <div class="board-wrapper">
+          <div id="board" aria-label="Schachbrett"></div>
+          <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
+        </div>
+        <div class="board-tools" aria-label="Brett- und Anzeigeaktionen">
+          <button id="flipBoardBtn" class="button-flat icon-btn" type="button" title="Brett drehen" aria-label="Brett drehen"><span class="icon-label">↻</span></button>
           <div class="board-color-wrap" id="boardColorWrap">
-            <button id="btnBoardColor" type="button" class="button-flat" aria-haspopup="true" aria-expanded="false">Brettfarbe</button>
+            <button id="btnBoardColor" type="button" class="button-flat icon-btn" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe"><span class="icon-label">🎨</span></button>
             <div id="boardColorPopup" class="board-color-popup" hidden>
               <div class="board-color-popup-title">Brettfarbe wählen</div>
               <div class="board-color-options">
@@ -159,18 +177,8 @@
               <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
             </div>
           </div>
-          <button id="soundToggleBtn" class="button-flat" type="button" aria-pressed="true">Ton: An</button>
+          <button id="soundToggleBtn" class="button-flat icon-btn" type="button" aria-pressed="true" title="Ton an/aus" aria-label="Ton an"><span class="icon-label">🔊</span></button>
         </div>
-      </div>
-    </header>
-
-    <div class="top-layout">
-      <div class="board-column">
-        <div class="board-wrapper">
-          <div id="board" aria-label="Schachbrett"></div>
-          <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
-        </div>
-        <div class="status" id="status">Online-Partie erstellen, um zu beginnen</div>
       </div>
 
       <aside class="moves-right">
@@ -709,11 +717,15 @@ function setOnlineValueClass(el, state){
   el.classList.remove('good','wait','neutral');
   el.classList.add(state || 'neutral');
 }
+function refreshHeaderStatusFromState(){
+  if(!statusEl || !boardEl) return;
+  try{ updateStatus(buildGameFromHistory(viewIndex)); } catch(_){}
+}
 function updateOnlineActionButtons(){
   const live = isOnlineGameLiveForUi();
   if(createOnlineBtn){
     createOnlineBtn.disabled = live;
-    createOnlineBtn.title = live ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.' : 'Neue Online-Partie mit Einladungslink erstellen.';
+    createOnlineBtn.title = live ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungslink erneut kopieren.' : 'Online-Partie erstellen und Einladungslink kopieren.');
   }
   if(newGameBtn){
     newGameBtn.disabled = live;
@@ -731,19 +743,19 @@ function updateOnlineStartButton(){
   }
   if(onlineGameStarted){
     startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = onlineGameEnded || gameEnded || timeLost ? 'Partie beendet' : 'Partie läuft';
+    startOnlineBtn.textContent = 'Partie starten';
     startOnlineBtn.title = onlineGameEnded || gameEnded || timeLost ? 'Für eine neue Partie bitte eine neue Online-Partie erstellen.' : 'Die Online-Partie wurde bereits gestartet.';
     return;
   }
   if(onlinePendingStartMessageId){
     startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Start wird gesendet';
+    startOnlineBtn.textContent = 'Partie starten';
     startOnlineBtn.title = 'Der Partiestart wurde gesendet und wartet auf Server-Bestätigung.';
     return;
   }
   if(onlineRoleCode !== 'w'){
     startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = onlineRoleCode === 'b' ? 'Warte auf Start' : 'Partie starten';
+    startOnlineBtn.textContent = 'Partie starten';
     startOnlineBtn.title = onlineRoleCode === 'b' ? 'Weiß startet die Partie.' : 'Nur Weiß kann die Partie starten.';
     return;
   }
@@ -762,7 +774,7 @@ function updateOnlineUi(){
     onlineRoomEl.textContent = '—';
     if(onlineGameStateEl) onlineGameStateEl.textContent = 'Keine Partie';
     onlineHintEl.textContent = 'Bitte eine Online-Partie erstellen oder einem Einladungslink folgen.';
-    copyInviteBtn.disabled = true;
+    if(copyInviteBtn) copyInviteBtn.disabled = true;
     onlineConnectionState = 'local';
     whitePlayerNameEl.textContent = 'Weiß';
     blackPlayerNameEl.textContent = 'Schwarz';
@@ -773,6 +785,7 @@ function updateOnlineUi(){
     updateOnlineStartButton();
     updateOnlineActionButtons();
     updateTimeSetupVisibility();
+    refreshHeaderStatusFromState();
     return;
   }
 
@@ -796,7 +809,7 @@ function updateOnlineUi(){
 
   onlineRoleEl.textContent = roleLabel(onlineRoleCode);
   onlineRoomEl.textContent = onlineRoomId;
-  copyInviteBtn.disabled = false;
+  if(copyInviteBtn) copyInviteBtn.disabled = false;
   setOnlineValueClass(onlineRoleEl, onlineRoleCode === 'spectator' ? 'wait' : 'good');
   setOnlineValueClass(onlineRoomEl, 'neutral');
 
@@ -820,6 +833,7 @@ function updateOnlineUi(){
   updateOnlineActionButtons();
   updateTimeControlsLock();
   updateTimeSetupVisibility();
+  refreshHeaderStatusFromState();
 }
 async function copyInviteLink(){
   if(!onlineRoomId) return;
@@ -1452,8 +1466,16 @@ function createNewOnlineRoom(){
   connectOnlineRoom(roomId);
   setTimeout(copyInviteLink, 250);
 }
-createOnlineBtn.addEventListener('click', createNewOnlineRoom);
-copyInviteBtn.addEventListener('click', copyInviteLink);
+function inviteToOnlineGame(){
+  if(isOnlineGameLiveForUi()) return;
+  if(onlineRoomId && !onlineGameStarted && !onlineGameEnded){
+    copyInviteLink();
+    return;
+  }
+  createNewOnlineRoom();
+}
+createOnlineBtn.addEventListener('click', inviteToOnlineGame);
+if(copyInviteBtn) copyInviteBtn.addEventListener('click', copyInviteLink);
 startOnlineBtn.addEventListener('click', startOnlineGame);
 
 function buildGameFromHistory(n){
@@ -1541,7 +1563,7 @@ function updateStatus(g){
     return;
   }
   if(!onlineRoomId){
-    statusEl.textContent = 'Online-Partie erstellen, um zu beginnen';
+    statusEl.textContent = 'Zur Partie einladen, um eine Online-Partie zu erstellen.';
     return;
   }
   if(onlineRoomId){
@@ -1551,7 +1573,7 @@ function updateStatus(g){
       return;
     }
     if(!onlineGameStarted){
-      if(onlineRoleCode === 'w') statusEl.textContent = onlinePlayers.black ? 'Lobby bereit — Bedenkzeit wählen und Partie starten.' : 'Online-Lobby — warte auf Schwarz.';
+      if(onlineRoleCode === 'w') statusEl.textContent = onlinePlayers.black ? 'Schwarz verbunden — Bedenkzeit wählen und Partie starten.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
       else if(onlineRoleCode === 'b') statusEl.textContent = 'Online-Lobby — warte auf Partiestart durch Weiß.';
       else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
       else statusEl.textContent = 'Online-Lobby wird verbunden.';
@@ -1821,8 +1843,10 @@ let soundEnabled = true;
 try{ soundEnabled = localStorage.getItem(SOUND_STORAGE_KEY) !== 'off'; } catch(_){}
 function stopAllSounds(){ allSounds.forEach(a => { try{ a.pause(); a.currentTime = 0; } catch(_){} }); }
 function updateSoundToggle(){
-  soundToggleBtn.textContent = soundEnabled ? 'Ton: An' : 'Ton: Aus';
+  soundToggleBtn.innerHTML = '<span class="icon-label">' + (soundEnabled ? '🔊' : '🔇') + '</span>';
   soundToggleBtn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+  soundToggleBtn.setAttribute('aria-label', soundEnabled ? 'Ton ausschalten' : 'Ton einschalten');
+  soundToggleBtn.title = soundEnabled ? 'Ton ausschalten' : 'Ton einschalten';
 }
 function setSoundEnabled(enabled){
   soundEnabled = !!enabled;
