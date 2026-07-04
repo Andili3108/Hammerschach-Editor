@@ -628,6 +628,7 @@ export class GameRoom {
     const timeControl = (await this.state.storage.get('timeControl')) || null;
     const game = (await this.state.storage.get('game')) || { started: false, startedAt: null, ended: false, result: '*' };
     const moves = (await this.state.storage.get('moves')) || [];
+    const drawOffer = (await this.state.storage.get('drawOffer')) || null;
     const now = Date.now();
     const clock = await this.getClockForState(now);
 
@@ -644,6 +645,7 @@ export class GameRoom {
       timeControl,
       game,
       moves,
+      drawOffer,
       clock: clockPayload(clock, now),
       serverNow: now
     };
@@ -663,6 +665,7 @@ export class GameRoom {
 
   async broadcastMove(move, messageId = null, clock = null, game = null) {
     const now = Date.now();
+    const drawOffer = (await this.state.storage.get('drawOffer')) || null;
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
       safeSend(ws, {
@@ -673,6 +676,7 @@ export class GameRoom {
         role: info.role || 'spectator',
         move,
         game,
+        drawOffer,
         clock: clockPayload(clock, now),
         serverNow: now
       });
@@ -783,6 +787,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.put('moves', []);
       await this.state.storage.put('clock', clock);
+      await this.state.storage.delete('drawOffer');
 
       safeSend(ws, {
         type: 'start_game_ack',
@@ -794,6 +799,150 @@ export class GameRoom {
         serverNow: now
       });
       await this.broadcastRoomState('room_state');
+      return;
+    }
+
+    if (data.type === 'offer_draw') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können Remis anbieten.' });
+        return;
+      }
+
+      const game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      if (!game.started) {
+        safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
+        return;
+      }
+      if (game.ended) {
+        safeSend(ws, { type: 'error', code: 'GAME_ALREADY_ENDED', message: 'Die Partie ist bereits beendet.' });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
+      const existingOffer = (await this.state.storage.get('drawOffer')) || null;
+      if (existingOffer && existingOffer.byRole === role) {
+        safeSend(ws, { type: 'draw_offer', ok: true, drawOffer: existingOffer, message: 'Remisangebot ist bereits offen.', serverNow: Date.now() });
+        await this.broadcastRoomState('draw_offer');
+        return;
+      }
+      if (existingOffer && existingOffer.byRole && existingOffer.byRole !== role) {
+        safeSend(ws, { type: 'error', code: 'DRAW_OFFER_PENDING', message: 'Es liegt bereits ein Remisangebot des Gegners vor.' });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
+      const now = Date.now();
+      const drawOffer = {
+        offered: true,
+        byRole: role,
+        byPlayer: info.playerId || null,
+        offeredAt: new Date(now).toISOString(),
+        serverNow: now
+      };
+      await this.state.storage.put('drawOffer', drawOffer);
+      safeSend(ws, { type: 'draw_offer', ok: true, drawOffer, serverNow: now });
+      await this.broadcastRoomState('draw_offer');
+      return;
+    }
+
+    if (data.type === 'respond_draw') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können auf ein Remisangebot antworten.' });
+        return;
+      }
+
+      let game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      if (!game.started) {
+        safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
+        return;
+      }
+      if (game.ended) {
+        safeSend(ws, { type: 'error', code: 'GAME_ALREADY_ENDED', message: 'Die Partie ist bereits beendet.' });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
+      const drawOffer = (await this.state.storage.get('drawOffer')) || null;
+      if (!drawOffer || !drawOffer.byRole) {
+        safeSend(ws, { type: 'error', code: 'NO_DRAW_OFFER', message: 'Es liegt kein Remisangebot vor.' });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+      if (drawOffer.byRole === role) {
+        safeSend(ws, { type: 'error', code: 'CANNOT_ACCEPT_OWN_DRAW_OFFER', message: 'Das eigene Remisangebot kann nicht selbst angenommen werden.' });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
+      const action = String(data.action || data.response || '').toLowerCase();
+      const now = Date.now();
+      if (action === 'accept' || action === 'accepted') {
+        let clock = (await this.state.storage.get('clock')) || null;
+        if (clock) {
+          clock = advanceClock(clock, now);
+          clock.running = false;
+          clock.timeLost = false;
+          clock.loser = null;
+          clock.winner = null;
+          clock.lastTs = now;
+          clock.updatedAt = now;
+          await this.state.storage.put('clock', clock);
+        }
+        game = finishGameState(game, 'draw_agreed', null, now);
+        game.result = '1/2-1/2';
+        await this.state.storage.put('game', game);
+        await this.state.storage.delete('drawOffer');
+        safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game, drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
+        await this.broadcastRoomState('game_finished');
+        return;
+      }
+
+      if (action === 'reject' || action === 'decline' || action === 'rejected' || action === 'declined') {
+        await this.state.storage.delete('drawOffer');
+        safeSend(ws, { type: 'draw_response', ok: true, action: 'reject', drawOffer: null, serverNow: now });
+        await this.broadcastRoomState('draw_response');
+        return;
+      }
+
+      safeSend(ws, { type: 'error', code: 'INVALID_DRAW_RESPONSE', message: 'Ungültige Antwort auf das Remisangebot.' });
+      return;
+    }
+
+    if (data.type === 'resign') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können aufgeben.' });
+        return;
+      }
+
+      let game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      if (!game.started) {
+        safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
+        return;
+      }
+      if (game.ended) {
+        safeSend(ws, { type: 'error', code: 'GAME_ALREADY_ENDED', message: 'Die Partie ist bereits beendet.' });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
+      const now = Date.now();
+      const winner = opposite(role);
+      let clock = (await this.state.storage.get('clock')) || null;
+      if (clock) {
+        clock = advanceClock(clock, now);
+        clock.running = false;
+        clock.timeLost = false;
+        clock.loser = role;
+        clock.winner = winner;
+        clock.lastTs = now;
+        clock.updatedAt = now;
+        await this.state.storage.put('clock', clock);
+      }
+      game = finishGameState(game, 'resignation', winner, now);
+      await this.state.storage.put('game', game);
+      await this.state.storage.delete('drawOffer');
+      safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game, drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
+      await this.broadcastRoomState('game_finished');
       return;
     }
 
@@ -932,6 +1081,13 @@ export class GameRoom {
       clock.lastTs = now;
       clock.updatedAt = now;
 
+      const openDrawOffer = (await this.state.storage.get('drawOffer')) || null;
+      let outgoingDrawOffer = openDrawOffer;
+      if (validation.gameOver || (openDrawOffer && openDrawOffer.byRole && openDrawOffer.byRole !== role)) {
+        await this.state.storage.delete('drawOffer');
+        outgoingDrawOffer = null;
+      }
+
       moves.push(move);
       await this.state.storage.put('moves', moves);
       await this.state.storage.put('clock', clock);
@@ -943,6 +1099,7 @@ export class GameRoom {
         messageId: data.messageId || incoming.clientMessageId || null,
         move,
         game,
+        drawOffer: outgoingDrawOffer,
         movesCount: moves.length,
         clock: clockPayload(clock, now),
         serverNow: now
@@ -998,7 +1155,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation'],
+      features: ['lobby', 'roles', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
