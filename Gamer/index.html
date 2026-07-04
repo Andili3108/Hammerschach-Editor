@@ -100,6 +100,10 @@
   .move-cell.current{background:rgba(132,63,70,.12);font-weight:900;}
   .moves-footer{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .nav-btn{min-width:40px;min-height:36px;font-size:18px;padding:5px 10px;}
+  .game-actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .game-actions[hidden]{display:none!important;}
+  .game-action-btn{border-radius:12px;min-height:38px;padding:8px 8px;}
+  .resign-btn{background:#843f46!important;color:#fff!important;}
   .board-color-wrap{position:relative;width:100%;display:flex;}
   .board-color-popup{position:absolute;top:calc(100% + 8px);right:0;width:238px;background:rgba(255,255,255,.99);border:1px solid rgba(132,63,70,.22);border-radius:14px;box-shadow:0 18px 42px rgba(0,0,0,.20);padding:10px;z-index:2100;}
   .board-tools .board-color-popup{left:50%;right:auto;transform:translateX(-50%);}
@@ -246,6 +250,11 @@
               </div>
               <button id="copyPgnBtn" class="button-flat" type="button">PGN kopieren</button>
             </div>
+          </div>
+
+          <div id="gameActions" class="game-actions" aria-label="Partieaktionen" hidden>
+            <button id="offerDrawBtn" class="button-flat game-action-btn" type="button">Remis anbieten</button>
+            <button id="resignBtn" class="game-action-btn resign-btn" type="button">Aufgeben</button>
           </div>
         </div>
       </aside>
@@ -620,6 +629,9 @@ let onlineGameStarted = false;
 let onlineGameStartedAt = null;
 let onlineGameEnded = false;
 let onlineGameResult = '*';
+let onlineGameEndReason = null;
+let onlineGameWinner = null;
+let onlineDrawOffer = null;
 let onlineRoomTimeControl = null;
 let applyingRemoteTimeControl = false;
 let onlineAutoSyncedInitialTime = false;
@@ -635,6 +647,9 @@ const createOnlineBtn = document.getElementById('createOnlineBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
 const startOnlineBtn = document.getElementById('startOnlineBtn');
 const newGameBtn = document.getElementById('newGameBtn');
+const gameActionsEl = document.getElementById('gameActions');
+const offerDrawBtn = document.getElementById('offerDrawBtn');
+const resignBtn = document.getElementById('resignBtn');
 const onlineStatusEl = document.getElementById('onlineStatus');
 const onlineRoleEl = document.getElementById('onlineRole');
 const onlineRoomEl = document.getElementById('onlineRoom');
@@ -733,6 +748,33 @@ function updateOnlineActionButtons(){
     newGameBtn.title = live ? 'Neue Online-Partie erst nach Partieende möglich.' : 'Neue Online-Partie mit neuem Raum erstellen.';
   }
 }
+function updateGameActionButtons(){
+  const live = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
+  if(gameActionsEl) gameActionsEl.hidden = !live;
+  if(!offerDrawBtn || !resignBtn) return;
+  offerDrawBtn.disabled = !live;
+  resignBtn.disabled = !live;
+  if(!live){
+    offerDrawBtn.textContent = 'Remis anbieten';
+    offerDrawBtn.title = 'Remisangebot ist nur während einer laufenden Online-Partie möglich.';
+    resignBtn.title = 'Aufgeben ist nur während einer laufenden Online-Partie möglich.';
+    return;
+  }
+  if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode){
+    offerDrawBtn.textContent = 'Remis angeboten';
+    offerDrawBtn.disabled = true;
+    offerDrawBtn.title = 'Dein Remisangebot wartet auf Antwort.';
+  } else if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
+    offerDrawBtn.textContent = 'Remis annehmen';
+    offerDrawBtn.disabled = false;
+    offerDrawBtn.title = 'Remisangebot des Gegners annehmen.';
+  } else {
+    offerDrawBtn.textContent = 'Remis anbieten';
+    offerDrawBtn.disabled = false;
+    offerDrawBtn.title = 'Dem Gegner Remis anbieten.';
+  }
+  resignBtn.title = onlineRoleCode === 'w' ? 'Als Weiß aufgeben.' : 'Als Schwarz aufgeben.';
+}
 function updateOnlineStartButton(){
   if(!startOnlineBtn) return;
   if(!onlineRoomId){
@@ -784,6 +826,7 @@ function updateOnlineUi(){
     setOnlineValueClass(onlineGameStateEl, 'neutral');
     updateOnlineStartButton();
     updateOnlineActionButtons();
+    updateGameActionButtons();
     updateTimeSetupVisibility();
     refreshHeaderStatusFromState();
     return;
@@ -831,6 +874,7 @@ function updateOnlineUi(){
   onlineHintEl.textContent = onlineLastMessage ? (onlineLastMessage + ' ' + syncNote) : syncNote;
   updateOnlineStartButton();
   updateOnlineActionButtons();
+  updateGameActionButtons();
   updateTimeControlsLock();
   updateTimeSetupVisibility();
   refreshHeaderStatusFromState();
@@ -929,6 +973,47 @@ function extractOnlineGame(msg){
   );
 }
 
+function normalizeIncomingDrawOffer(candidate){
+  if(!candidate || typeof candidate !== 'object') return null;
+  const byRole = candidate.byRole || candidate.by_role || candidate.side || candidate.role || '';
+  if(byRole !== 'w' && byRole !== 'b') return null;
+  if(candidate.offered === false || candidate.active === false) return null;
+  return {
+    offered: true,
+    byRole,
+    byPlayer: candidate.byPlayer || candidate.by_player || candidate.playerId || null,
+    offeredAt: candidate.offeredAt || candidate.offered_at || candidate.time || null
+  };
+}
+function extractOnlineDrawOffer(msg){
+  if(!msg) return null;
+  const explicitEmpty = Object.prototype.hasOwnProperty.call(msg, 'drawOffer') && !msg.drawOffer;
+  if(explicitEmpty) return {offered:false};
+  const candidate = msg.drawOffer || msg.draw_offer ||
+    (msg.state && (msg.state.drawOffer || msg.state.draw_offer)) ||
+    (msg.roomState && (msg.roomState.drawOffer || msg.roomState.draw_offer)) ||
+    (msg.lobby && (msg.lobby.drawOffer || msg.lobby.draw_offer)) ||
+    null;
+  const normalized = normalizeIncomingDrawOffer(candidate);
+  return normalized || (candidate === null && Object.prototype.hasOwnProperty.call(msg, 'drawOffer') ? {offered:false} : null);
+}
+function applyOnlineDrawOffer(drawOffer){
+  if(!drawOffer) return false;
+  onlineDrawOffer = drawOffer.offered === false ? null : drawOffer;
+  updateGameActionButtons();
+  return true;
+}
+function formatOnlineEndMessage(game){
+  if(!game) return 'Online-Partie beendet';
+  const winnerName = game.winner === 'w' ? 'Weiß' : game.winner === 'b' ? 'Schwarz' : '';
+  if(game.endReason === 'resignation') return 'Aufgabe — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
+  if(game.endReason === 'draw_agreed') return 'Remis vereinbart — 1/2-1/2';
+  if(game.endReason === 'checkmate') return 'Schachmatt — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
+  if(game.endReason === 'stalemate') return 'Patt — Unentschieden';
+  if(game.endReason === 'time') return 'Zeit abgelaufen — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
+  return game.result && game.result !== '*' ? 'Online-Partie beendet — Ergebnis: ' + game.result : 'Online-Partie beendet';
+}
+
 function normalizeIncomingClock(candidate){
   if(!candidate) return null;
   if(candidate.clock) return normalizeIncomingClock(candidate.clock);
@@ -981,6 +1066,9 @@ function applyOnlineClockState(clockState){
   if(timeLost){
     onlineGameEnded = true;
     onlineGameResult = normalized.winner === 'w' ? '1-0' : normalized.winner === 'b' ? '0-1' : '*';
+    onlineGameEndReason = 'time';
+    onlineGameWinner = normalized.winner || null;
+    onlineDrawOffer = null;
     stopClock();
     clockRunning = false;
     const loser = normalized.loser === 'w' ? 'Weiß' : normalized.loser === 'b' ? 'Schwarz' : '';
@@ -1132,6 +1220,9 @@ function connectOnlineRoom(roomId, opts){
   onlineGameStartedAt = null;
   onlineGameEnded = false;
   onlineGameResult = '*';
+  onlineGameEndReason = null;
+  onlineGameWinner = null;
+  onlineDrawOffer = null;
   onlineRoomTimeControl = null;
   onlineAutoSyncedInitialTime = false;
   onlineOrientationRoleApplied = null;
@@ -1222,6 +1313,12 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    const incomingDrawOffer = extractOnlineDrawOffer(msg);
+    if(incomingDrawOffer){
+      applyOnlineDrawOffer(incomingDrawOffer);
+      handled = true;
+    }
+
     const incomingMoves = extractOnlineMoves(msg);
     const appliedMoveCount = applyOnlineMoveList(incomingMoves);
     if(incomingMoves.length) handled = true;
@@ -1245,7 +1342,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','pong'];
+    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -1253,6 +1350,9 @@ function connectOnlineRoom(roomId, opts){
 
     if(appliedMoveCount || appliedSingleMove) onlineLastMessage = 'Online-Zug wurde übernommen.';
     else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
+    else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
+    else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
+    else if(msg.type === 'game_finished' || msg.type === 'resignation') onlineLastMessage = 'Online-Partie beendet.';
     else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = 'Online-Partie wurde gestartet.';
     else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){
       if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
@@ -1377,6 +1477,8 @@ function applyOnlineGameState(game){
   onlineGameStarted = !!(game && game.started);
   onlineGameEnded = !!(game && game.ended);
   onlineGameResult = game && game.result ? game.result : (onlineGameEnded ? onlineGameResult : '*');
+  onlineGameEndReason = game && game.endReason ? game.endReason : (onlineGameEnded ? onlineGameEndReason : null);
+  onlineGameWinner = game && game.winner ? game.winner : (onlineGameEnded ? onlineGameWinner : null);
   if(onlineGameStarted) onlinePendingStartMessageId = null;
   onlineGameStartedAt = game && game.startedAt ? game.startedAt : null;
   if(onlineGameStarted && !wasStarted){
@@ -1387,6 +1489,7 @@ function applyOnlineGameState(game){
     viewIndex = 0;
     lastMove = null;
     gameEnded = false;
+    onlineDrawOffer = null;
     resetClockForNewGame();
     onlineClockSync = null;
     onlineLastMessage = 'Online-Partie wurde gestartet.';
@@ -1396,14 +1499,13 @@ function applyOnlineGameState(game){
     stopClock();
     clockRunning = false;
     selected = null;
-    if(game && game.endReason === 'checkmate' && game.winner){
-      statusEl.textContent = 'Schachmatt — ' + (game.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt';
-    } else if(game && game.endReason === 'stalemate'){
-      statusEl.textContent = 'Patt — Unentschieden';
-    }
+    onlineDrawOffer = null;
+    statusEl.textContent = formatOnlineEndMessage(game);
+    updateGameActionButtons();
     updateOnlineUi();
   }
 }
+
 function startOnlineGame(){
   if(!onlineRoomId || onlineRoleCode !== 'w' || onlineGameStarted || onlinePendingStartMessageId) return;
   if(!timeMode){
@@ -1439,6 +1541,37 @@ function startOnlineGame(){
     }
   }, 300);
 }
+function isPlayerAllowedForGameAction(){
+  return !!(onlineRoomId && onlineConnected && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
+}
+function handleDrawButtonClick(){
+  if(!isPlayerAllowedForGameAction()){ updateGameActionButtons(); return; }
+  if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
+    if(!window.confirm('Remisangebot annehmen?')) return;
+    if(sendOnlineMessage({type:'respond_draw', action:'accept'})){
+      onlineLastMessage = 'Remisannahme wird gesendet...';
+      updateOnlineUi();
+      setTimeout(requestOnlineState, 500);
+    }
+    return;
+  }
+  if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode) return;
+  if(sendOnlineMessage({type:'offer_draw'})){
+    onlineLastMessage = 'Remisangebot wird gesendet...';
+    updateOnlineUi();
+    setTimeout(requestOnlineState, 500);
+  }
+}
+function handleResignButtonClick(){
+  if(!isPlayerAllowedForGameAction()){ updateGameActionButtons(); return; }
+  const side = onlineRoleCode === 'w' ? 'Weiß' : 'Schwarz';
+  if(!window.confirm(side + ' wirklich aufgeben?')) return;
+  if(sendOnlineMessage({type:'resign'})){
+    onlineLastMessage = 'Aufgabe wird gesendet...';
+    updateOnlineUi();
+    setTimeout(requestOnlineState, 500);
+  }
+}
 function onlineInteractionBlockReason(gameState){
   if(!onlineRoomId) return 'Bitte zuerst eine Online-Partie erstellen oder einem Einladungslink folgen.';
   if(!onlineConnected) return 'Online-Verbindung ist noch nicht bereit.';
@@ -1459,6 +1592,9 @@ function createNewOnlineRoom(){
   onlineGameStarted = false;
   onlineGameEnded = false;
   onlineGameResult = '*';
+  onlineGameEndReason = null;
+  onlineGameWinner = null;
+  onlineDrawOffer = null;
   onlineRoomTimeControl = null;
   onlineClockSync = null;
   newGame();
@@ -1477,6 +1613,8 @@ function inviteToOnlineGame(){
 createOnlineBtn.addEventListener('click', inviteToOnlineGame);
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', copyInviteLink);
 startOnlineBtn.addEventListener('click', startOnlineGame);
+if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
+if(resignBtn) resignBtn.addEventListener('click', handleResignButtonClick);
 
 function buildGameFromHistory(n){
   const g = new Game();
@@ -1531,6 +1669,7 @@ function renderBoard(){
   renderMoveList();
   updateNavControls();
   updateClockDisplay(g);
+  updateGameActionButtons();
 }
 function getSquareEl(x,y){ return boardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]'); }
 function markSquare(x,y,cls){ const el = getSquareEl(x,y); if(el) el.classList.add(cls); }
@@ -1569,7 +1708,7 @@ function updateStatus(g){
   if(onlineRoomId){
     if(onlineGameEnded || timeLost){
       if(timeLost) return;
-      statusEl.textContent = onlineGameResult && onlineGameResult !== '*' ? 'Online-Partie beendet — Ergebnis: ' + onlineGameResult : 'Online-Partie beendet';
+      statusEl.textContent = formatOnlineEndMessage({result:onlineGameResult, endReason:onlineGameEndReason, winner:onlineGameWinner});
       return;
     }
     if(!onlineGameStarted){
@@ -1581,6 +1720,14 @@ function updateStatus(g){
     }
     if(onlineRoleCode === 'spectator'){
       statusEl.textContent = 'Zuschaueransicht — ' + (g.turn === 'w' ? 'Weiß' : 'Schwarz') + ' am Zug';
+      return;
+    }
+    if(onlineDrawOffer){
+      if(onlineDrawOffer.byRole === onlineRoleCode){
+        statusEl.textContent = 'Remisangebot gesendet — warte auf Antwort.';
+      } else {
+        statusEl.textContent = 'Gegner bietet Remis an — Remis annehmen oder weiterspielen.';
+      }
       return;
     }
   }
