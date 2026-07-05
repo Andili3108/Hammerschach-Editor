@@ -184,7 +184,7 @@
     <div id="playerNameBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="playerNameTitle">
         <h3 id="playerNameTitle">Spielername</h3>
-        <p>Dieser Name wird deinem Gegner in der rechten Spalte angezeigt. Später kann hier der Account-Login ergänzt werden.</p>
+        <p>Dieser Name wird nur für Gäste verwendet. Eingeloggte Mitglieder spielen automatisch mit ihrem Accountnamen.</p>
         <label class="identity-label" for="playerNameInput">Anzeigename</label>
         <input id="playerNameInput" class="identity-input" type="text" maxlength="24" autocomplete="nickname" placeholder="z. B. Andi" />
         <div id="playerNameError" class="identity-error" aria-live="polite"></div>
@@ -279,7 +279,7 @@
                 <span class="dot white"></span>
                 <span class="player-clock-side">Weiß</span>
               </div>
-              <div class="player-clock-name" id="whitePlayerName">Spieler 1</div>
+              <div class="player-clock-name" id="whitePlayerName">—</div>
               <div class="player-clock-time" id="clockW">--:--</div>
             </div>
             <div class="player-clock-card" id="clockCardB">
@@ -287,7 +287,7 @@
                 <span class="dot black"></span>
                 <span class="player-clock-side">Schwarz</span>
               </div>
-              <div class="player-clock-name" id="blackPlayerName">Spieler 2</div>
+              <div class="player-clock-name" id="blackPlayerName">—</div>
               <div class="player-clock-time" id="clockB">--:--</div>
             </div>
         <div id="timeSetupBox" class="time-setup-box player-time-setup">
@@ -732,6 +732,7 @@ const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
 const authBackdrop = document.getElementById('authBackdrop');
+const authIntro = document.getElementById('authIntro');
 const authLoginTab = document.getElementById('authLoginTab');
 const authRegisterTab = document.getElementById('authRegisterTab');
 const authLoginForm = document.getElementById('authLoginForm');
@@ -828,7 +829,8 @@ function saveDisplayName(name, confirmed){
 }
 function updatePlayerNameButton(){
   if(!editPlayerNameBtn) return;
-  editPlayerNameBtn.title = 'Aktueller Spielername: ' + onlineDisplayName;
+  editPlayerNameBtn.textContent = 'Gastname ändern';
+  editPlayerNameBtn.title = 'Aktueller Gastname: ' + onlineDisplayName;
 }
 function emptyOnlinePlayers(){
   return {
@@ -900,7 +902,8 @@ function submitPlayerNameFromDialog(confirmName){
 }
 async function ensureDisplayNameForOnline(){
   if(onlineAuthUser){
-    saveDisplayName(onlineAuthUser.username || onlineDisplayName, true);
+    onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName || defaultGuestName();
+    updatePlayerNameButton();
     return true;
   }
   if(hasConfirmedDisplayName()) return true;
@@ -932,6 +935,7 @@ function loadAuthState(){
     onlinePlayerId = 'u_' + String(onlineAuthUser.id);
     onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName;
   }
+  updatePlayerNameButton();
 }
 function saveAuthState(token, user){
   onlineAuthToken = token || '';
@@ -947,11 +951,15 @@ function saveAuthState(token, user){
   } catch(_){}
   if(onlineAuthUser && onlineAuthUser.id){
     onlinePlayerId = 'u_' + String(onlineAuthUser.id);
-    saveDisplayName(onlineAuthUser.username || onlineDisplayName, true);
+    onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName || defaultGuestName();
+    updatePlayerNameButton();
   } else {
     onlinePlayerId = getOnlinePlayerId();
+    onlineDisplayName = getStoredDisplayName();
+    updatePlayerNameButton();
   }
   updateAuthUi();
+  updateOnlineUi();
 }
 async function authApi(path, options){
   const headers = {'content-type':'application/json'};
@@ -983,7 +991,10 @@ function updateAuthUi(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   if(authOpenBtn){
     authOpenBtn.textContent = loggedIn ? ('Account: ' + (onlineAuthUser.username || 'aktiv')) : 'Registrierung / Login';
-    authOpenBtn.title = loggedIn ? 'Angemeldet als ' + (onlineAuthUser.username || 'Account') : 'Registrierung oder Login öffnen';
+    authOpenBtn.title = loggedIn ? 'Angemeldet als ' + (onlineAuthUser.username || 'Account') + ' — klicken für Account/Logout' : 'Registrierung oder Login öffnen';
+  }
+  if(authIntro){
+    authIntro.textContent = loggedIn ? 'Dein Accountname wird in Online-Partien automatisch verwendet.' : 'Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.';
   }
   if(editPlayerNameBtn) editPlayerNameBtn.hidden = loggedIn;
   if(authLoggedOut) authLoggedOut.hidden = loggedIn;
@@ -1055,6 +1066,7 @@ async function logoutAuth(){
     saveDisplayName(getStoredDisplayName(), true);
     sendOnlineMessage({type:'set_player_name', displayName: onlineDisplayName});
   }
+  closeAuthDialog();
 }
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
 if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
@@ -1212,8 +1224,8 @@ function updateOnlineUi(){
     onlineHintEl.textContent = 'Bitte eine Online-Partie erstellen oder einem Einladungslink folgen.';
     if(copyInviteBtn) copyInviteBtn.disabled = true;
     onlineConnectionState = 'local';
-    whitePlayerNameEl.textContent = onlineDisplayName || 'Weiß';
-    blackPlayerNameEl.textContent = 'Schwarz';
+    whitePlayerNameEl.textContent = '—';
+    blackPlayerNameEl.textContent = '—';
     setOnlineValueClass(onlineStatusEl, 'neutral');
     setOnlineValueClass(onlineRoleEl, 'neutral');
     setOnlineValueClass(onlineRoomEl, 'neutral');
