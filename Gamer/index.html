@@ -135,6 +135,13 @@
   .identity-error{min-height:18px;margin-top:6px;font-size:13px;font-weight:800;color:#9A2D33;}
   .identity-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:14px;}
   .identity-actions button{border-radius:12px;min-height:38px;}
+  .auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px;}
+  .auth-tab{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);}
+  .auth-tab.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
+  .auth-form[hidden],.auth-account[hidden]{display:none!important;}
+  .auth-account{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:10px 12px;margin-top:10px;}
+  .auth-account-name{font-size:18px;font-weight:900;color:#222;}
+  .auth-account-mail{font-size:13px;font-weight:800;color:#666;margin-top:2px;word-break:break-word;}
   .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
   .online-label{font-size:12px;font-weight:900;color:#666;margin-bottom:2px;}
@@ -169,6 +176,7 @@
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
           <button id="editPlayerNameBtn" class="button-flat name-action-btn" type="button">Name ändern</button>
+          <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
         </div>
       </div>
     </header>
@@ -184,6 +192,51 @@
           <button id="playerNameCancelBtn" class="button-flat" type="button">Abbrechen</button>
           <button id="playerNameGuestBtn" class="button-flat" type="button">Weiter als Gast</button>
           <button id="playerNameSaveBtn" type="button">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="authBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <h3 id="authTitle">Registrierung / Login</h3>
+        <p id="authIntro">Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.</p>
+
+        <div id="authLoggedOut">
+          <div class="auth-tabs" aria-label="Registrierung oder Login wählen">
+            <button id="authLoginTab" class="auth-tab active" type="button">Login</button>
+            <button id="authRegisterTab" class="auth-tab" type="button">Registrierung</button>
+          </div>
+
+          <div id="authLoginForm" class="auth-form">
+            <label class="identity-label" for="loginIdentifierInput">Benutzername oder Mailadresse</label>
+            <input id="loginIdentifierInput" class="identity-input" type="text" autocomplete="username" placeholder="z. B. Andi" />
+            <label class="identity-label" for="loginPasswordInput">Kennwort</label>
+            <input id="loginPasswordInput" class="identity-input" type="password" autocomplete="current-password" minlength="8" />
+          </div>
+
+          <div id="authRegisterForm" class="auth-form" hidden>
+            <label class="identity-label" for="registerUsernameInput">Benutzername</label>
+            <input id="registerUsernameInput" class="identity-input" type="text" autocomplete="username" maxlength="24" placeholder="z. B. Andi" />
+            <label class="identity-label" for="registerEmailInput">Mailadresse</label>
+            <input id="registerEmailInput" class="identity-input" type="email" autocomplete="email" placeholder="name@example.de" />
+            <label class="identity-label" for="registerPasswordInput">Kennwort</label>
+            <input id="registerPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" />
+            <label class="identity-label" for="registerPasswordRepeatInput">Kennwort wiederholen</label>
+            <input id="registerPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" />
+          </div>
+        </div>
+
+        <div id="authLoggedIn" class="auth-account" hidden>
+          <div>Angemeldet als</div>
+          <div id="authAccountName" class="auth-account-name">—</div>
+          <div id="authAccountEmail" class="auth-account-mail">—</div>
+        </div>
+
+        <div id="authError" class="identity-error" aria-live="polite"></div>
+        <div class="identity-actions">
+          <button id="authCancelBtn" class="button-flat" type="button">Schließen</button>
+          <button id="authLogoutBtn" class="button-flat" type="button" hidden>Logout</button>
+          <button id="authSubmitBtn" type="button">Einloggen</button>
         </div>
       </div>
     </div>
@@ -647,6 +700,8 @@ const ONLINE_WORKER_URL = 'https://hammerschach-hammerschach-lobby-worker.webmas
 const ONLINE_PLAYER_STORAGE_KEY = 'hammerschachGamerOnlinePlayerId';
 const ONLINE_PLAYER_NAME_STORAGE_KEY = 'hammerschachGamerOnlineDisplayName';
 const ONLINE_PLAYER_NAME_CONFIRMED_KEY = 'hammerschachGamerOnlineDisplayNameConfirmed';
+const ONLINE_AUTH_TOKEN_STORAGE_KEY = 'hammerschachGamerAuthToken';
+const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
 let onlineSocket = null;
 let onlineReconnectTimer = null;
 let onlineRoomId = null;
@@ -675,6 +730,26 @@ let onlineClockSync = null;
 
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
+const authOpenBtn = document.getElementById('authOpenBtn');
+const authBackdrop = document.getElementById('authBackdrop');
+const authLoginTab = document.getElementById('authLoginTab');
+const authRegisterTab = document.getElementById('authRegisterTab');
+const authLoginForm = document.getElementById('authLoginForm');
+const authRegisterForm = document.getElementById('authRegisterForm');
+const authLoggedOut = document.getElementById('authLoggedOut');
+const authLoggedIn = document.getElementById('authLoggedIn');
+const authAccountName = document.getElementById('authAccountName');
+const authAccountEmail = document.getElementById('authAccountEmail');
+const authError = document.getElementById('authError');
+const authCancelBtn = document.getElementById('authCancelBtn');
+const authLogoutBtn = document.getElementById('authLogoutBtn');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+const loginIdentifierInput = document.getElementById('loginIdentifierInput');
+const loginPasswordInput = document.getElementById('loginPasswordInput');
+const registerUsernameInput = document.getElementById('registerUsernameInput');
+const registerEmailInput = document.getElementById('registerEmailInput');
+const registerPasswordInput = document.getElementById('registerPasswordInput');
+const registerPasswordRepeatInput = document.getElementById('registerPasswordRepeatInput');
 const playerNameBackdrop = document.getElementById('playerNameBackdrop');
 const playerNameInput = document.getElementById('playerNameInput');
 const playerNameError = document.getElementById('playerNameError');
@@ -713,7 +788,10 @@ function getOnlinePlayerId(){
     return 'p_' + randomToken(18);
   }
 }
-const onlinePlayerId = getOnlinePlayerId();
+let onlinePlayerId = getOnlinePlayerId();
+let onlineAuthToken = '';
+let onlineAuthUser = null;
+let authMode = 'login';
 function cleanDisplayName(value){
   return String(value || '')
     .replace(/[<>\u0000-\u001F\u007F]/g, '')
@@ -821,6 +899,10 @@ function submitPlayerNameFromDialog(confirmName){
   closePlayerNameDialog(true);
 }
 async function ensureDisplayNameForOnline(){
+  if(onlineAuthUser){
+    saveDisplayName(onlineAuthUser.username || onlineDisplayName, true);
+    return true;
+  }
   if(hasConfirmedDisplayName()) return true;
   return await showPlayerNameDialog();
 }
@@ -835,6 +917,158 @@ if(playerNameInput){
   });
 }
 updatePlayerNameButton();
+function onlineApiBaseUrl(){
+  const configured = (window.HAMMERSCHACH_ONLINE_WORKER_URL || ONLINE_WORKER_URL || '').trim();
+  if(configured) return configured.replace(/\/+$/, '');
+  return window.location.origin;
+}
+function loadAuthState(){
+  try{
+    onlineAuthToken = localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY) || '';
+    const raw = localStorage.getItem(ONLINE_AUTH_USER_STORAGE_KEY);
+    onlineAuthUser = raw ? JSON.parse(raw) : null;
+  } catch(_){ onlineAuthToken = ''; onlineAuthUser = null; }
+  if(onlineAuthUser && onlineAuthUser.id){
+    onlinePlayerId = 'u_' + String(onlineAuthUser.id);
+    onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName;
+  }
+}
+function saveAuthState(token, user){
+  onlineAuthToken = token || '';
+  onlineAuthUser = user || null;
+  try{
+    if(onlineAuthToken && onlineAuthUser){
+      localStorage.setItem(ONLINE_AUTH_TOKEN_STORAGE_KEY, onlineAuthToken);
+      localStorage.setItem(ONLINE_AUTH_USER_STORAGE_KEY, JSON.stringify(onlineAuthUser));
+    } else {
+      localStorage.removeItem(ONLINE_AUTH_TOKEN_STORAGE_KEY);
+      localStorage.removeItem(ONLINE_AUTH_USER_STORAGE_KEY);
+    }
+  } catch(_){}
+  if(onlineAuthUser && onlineAuthUser.id){
+    onlinePlayerId = 'u_' + String(onlineAuthUser.id);
+    saveDisplayName(onlineAuthUser.username || onlineDisplayName, true);
+  } else {
+    onlinePlayerId = getOnlinePlayerId();
+  }
+  updateAuthUi();
+}
+async function authApi(path, options){
+  const headers = {'content-type':'application/json'};
+  if(onlineAuthToken) headers.authorization = 'Bearer ' + onlineAuthToken;
+  const response = await fetch(onlineApiBaseUrl() + path, Object.assign({method:'GET', headers}, options || {}));
+  let data = null;
+  try{ data = await response.json(); } catch(_){ data = {ok:false, message:'Antwort konnte nicht gelesen werden.'}; }
+  if(!response.ok || !data.ok){
+    const err = new Error(data.message || 'Anfrage fehlgeschlagen.');
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+function openAuthDialog(mode){
+  authMode = mode === 'register' ? 'register' : 'login';
+  updateAuthUi();
+  if(authBackdrop) authBackdrop.hidden = false;
+  setTimeout(() => {
+    try{
+      const first = onlineAuthUser ? authCancelBtn : (authMode === 'login' ? loginIdentifierInput : registerUsernameInput);
+      if(first) first.focus();
+    } catch(_){}
+  }, 0);
+}
+function closeAuthDialog(){ if(authBackdrop) authBackdrop.hidden = true; }
+function setAuthMode(mode){ authMode = mode === 'register' ? 'register' : 'login'; updateAuthUi(); }
+function updateAuthUi(){
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  if(authOpenBtn){
+    authOpenBtn.textContent = loggedIn ? ('Account: ' + (onlineAuthUser.username || 'aktiv')) : 'Registrierung / Login';
+    authOpenBtn.title = loggedIn ? 'Angemeldet als ' + (onlineAuthUser.username || 'Account') : 'Registrierung oder Login öffnen';
+  }
+  if(editPlayerNameBtn) editPlayerNameBtn.hidden = loggedIn;
+  if(authLoggedOut) authLoggedOut.hidden = loggedIn;
+  if(authLoggedIn) authLoggedIn.hidden = !loggedIn;
+  if(authLogoutBtn) authLogoutBtn.hidden = !loggedIn;
+  if(authSubmitBtn) authSubmitBtn.hidden = loggedIn;
+  if(authSubmitBtn) authSubmitBtn.textContent = authMode === 'register' ? 'Registrieren' : 'Einloggen';
+  if(authLoginTab) authLoginTab.classList.toggle('active', authMode === 'login');
+  if(authRegisterTab) authRegisterTab.classList.toggle('active', authMode === 'register');
+  if(authLoginForm) authLoginForm.hidden = loggedIn || authMode !== 'login';
+  if(authRegisterForm) authRegisterForm.hidden = loggedIn || authMode !== 'register';
+  if(authAccountName) authAccountName.textContent = loggedIn ? (onlineAuthUser.username || '—') : '—';
+  if(authAccountEmail) authAccountEmail.textContent = loggedIn ? (onlineAuthUser.email || '—') : '—';
+  if(authError) authError.textContent = '';
+}
+function applyLoggedInUserToOnlineRoom(){
+  if(!onlineAuthUser) return;
+  onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName;
+  if(onlineRoomId && onlineConnected){
+    sendOnlineMessage({type:'set_player_name', displayName: onlineDisplayName, authToken: onlineAuthToken});
+    onlineLastMessage = 'Accountname wurde für die Lobby übernommen.';
+    updateOnlineUi();
+  }
+}
+async function refreshAuthSession(){
+  if(!onlineAuthToken){ updateAuthUi(); return; }
+  try{
+    const data = await authApi('/api/me');
+    saveAuthState(onlineAuthToken, data.user);
+  } catch(_){
+    saveAuthState('', null);
+  }
+}
+async function submitAuthDialog(){
+  if(!authError || !authSubmitBtn) return;
+  authError.textContent = '';
+  authSubmitBtn.disabled = true;
+  try{
+    let payload;
+    if(authMode === 'register'){
+      const username = cleanDisplayName(registerUsernameInput ? registerUsernameInput.value : '');
+      const email = String(registerEmailInput ? registerEmailInput.value : '').trim();
+      const password = String(registerPasswordInput ? registerPasswordInput.value : '');
+      const passwordRepeat = String(registerPasswordRepeatInput ? registerPasswordRepeatInput.value : '');
+      if(password !== passwordRepeat) throw new Error('Die Kennwörter stimmen nicht überein.');
+      payload = {username, email, password};
+      const data = await authApi('/api/register', {method:'POST', body:JSON.stringify(payload)});
+      saveAuthState(data.sessionToken, data.user);
+    } else {
+      const identifier = String(loginIdentifierInput ? loginIdentifierInput.value : '').trim();
+      const password = String(loginPasswordInput ? loginPasswordInput.value : '');
+      payload = {identifier, password};
+      const data = await authApi('/api/login', {method:'POST', body:JSON.stringify(payload)});
+      saveAuthState(data.sessionToken, data.user);
+    }
+    applyLoggedInUserToOnlineRoom();
+    closeAuthDialog();
+  } catch(err){
+    authError.textContent = err && err.message ? err.message : 'Anmeldung fehlgeschlagen.';
+  } finally {
+    authSubmitBtn.disabled = false;
+  }
+}
+async function logoutAuth(){
+  const oldToken = onlineAuthToken;
+  try{ if(oldToken) await authApi('/api/logout', {method:'POST', body:JSON.stringify({})}); } catch(_){}
+  saveAuthState('', null);
+  if(onlineRoomId && onlineConnected){
+    saveDisplayName(getStoredDisplayName(), true);
+    sendOnlineMessage({type:'set_player_name', displayName: onlineDisplayName});
+  }
+}
+if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
+if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
+if(authLoginTab) authLoginTab.addEventListener('click', () => setAuthMode('login'));
+if(authRegisterTab) authRegisterTab.addEventListener('click', () => setAuthMode('register'));
+if(authSubmitBtn) authSubmitBtn.addEventListener('click', submitAuthDialog);
+if(authLogoutBtn) authLogoutBtn.addEventListener('click', logoutAuth);
+if(authBackdrop) authBackdrop.addEventListener('click', ev => { if(ev.target === authBackdrop) closeAuthDialog(); });
+[loginPasswordInput, registerPasswordRepeatInput].forEach(input => {
+  if(input) input.addEventListener('keydown', ev => { if(ev.key === 'Enter') submitAuthDialog(); });
+});
+loadAuthState();
+updateAuthUi();
+refreshAuthSession();
 function cleanRoomId(value){
   return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
 }
@@ -884,6 +1118,7 @@ function getWebSocketUrl(roomId){
   url.searchParams.set('room', roomId);
   url.searchParams.set('player', onlinePlayerId);
   url.searchParams.set('name', onlineDisplayName || defaultGuestName());
+  if(onlineAuthToken) url.searchParams.set('auth', onlineAuthToken);
   return url.toString();
 }
 function setOnlineValueClass(el, state){
