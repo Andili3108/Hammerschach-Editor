@@ -10,3 +10,8 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["GameRoom"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hammerschach-gamer-db"
+database_id = "e6155132-6ad6-4569-be28-122540d3748f"
