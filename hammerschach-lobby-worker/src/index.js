@@ -4,8 +4,8 @@ function json(data, init = {}) {
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'access-control-allow-origin': '*',
-      'access-control-allow-methods': 'GET, OPTIONS',
-      'access-control-allow-headers': 'content-type',
+      'access-control-allow-methods': 'GET, POST, OPTIONS',
+      'access-control-allow-headers': 'content-type, authorization',
       ...(init.headers || {})
     }
   });
@@ -34,6 +34,216 @@ function guestNameFromPlayerId(playerId) {
   const compact = String(playerId || '').replace(/[^A-Za-z0-9]/g, '');
   const suffix = (compact.slice(-4) || crypto.randomUUID().replace(/[^A-Za-z0-9]/g, '').slice(0, 4)).toUpperCase();
   return 'Gast-' + suffix;
+}
+
+
+const AUTH_SESSION_DAYS = 30;
+const PASSWORD_ITERATIONS = 100000;
+
+function cleanUsername(value) {
+  const username = String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, '')
+    .replace(/\s+/g, '')
+    .trim()
+    .slice(0, 24);
+  return /^[A-Za-z0-9_-]{3,24}$/.test(username) ? username : '';
+}
+
+function normalizeEmail(value) {
+  const email = String(value || '').trim().toLowerCase().slice(0, 254);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+}
+
+function publicUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    createdAt: row.created_at || row.createdAt || null
+  };
+}
+
+function bytesToBase64Url(bytes) {
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlToBytes(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function randomBase64Url(byteLength = 32) {
+  const bytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  return bytesToBase64Url(bytes);
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(value || '')));
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function timingSafeStringEqual(a, b) {
+  const left = String(a || '');
+  const right = String(b || '');
+  let diff = left.length ^ right.length;
+  const len = Math.max(left.length, right.length);
+  for (let i = 0; i < len; i++) {
+    diff |= (left.charCodeAt(i) || 0) ^ (right.charCodeAt(i) || 0);
+  }
+  return diff === 0;
+}
+
+async function hashPassword(password, salt, iterations = PASSWORD_ITERATIONS) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(String(password || '')),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt: base64UrlToBytes(salt), iterations },
+    keyMaterial,
+    256
+  );
+  return bytesToBase64Url(new Uint8Array(bits));
+}
+
+async function verifyPassword(password, user) {
+  if (!user || user.password_alg !== 'pbkdf2-sha256') return false;
+  const iterations = Math.max(1, Math.floor(Number(user.password_iterations || PASSWORD_ITERATIONS)));
+  const candidate = await hashPassword(password, user.password_salt, iterations);
+  return timingSafeStringEqual(candidate, user.password_hash);
+}
+
+async function readJsonBody(request) {
+  try {
+    return await request.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+function bearerTokenFromRequest(request) {
+  const header = request.headers.get('authorization') || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : '';
+}
+
+function dbMissingResponse() {
+  return json({
+    ok: false,
+    code: 'DB_NOT_CONFIGURED',
+    message: 'Account-Datenbank ist noch nicht konfiguriert. Bitte D1-Binding DB im Worker einrichten.'
+  }, { status: 503 });
+}
+
+async function createSession(env, userId) {
+  const token = randomBase64Url(32);
+  const tokenHash = await sha256Hex(token);
+  const now = new Date();
+  const expires = new Date(now.getTime() + AUTH_SESSION_DAYS * 24 * 60 * 60 * 1000);
+  await env.DB.prepare(
+    `INSERT INTO sessions (id, user_id, token_hash, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`
+  ).bind(crypto.randomUUID(), userId, tokenHash, now.toISOString(), expires.toISOString()).run();
+  return token;
+}
+
+async function lookupAuthSession(env, token) {
+  if (!env || !env.DB || !token) return null;
+  const tokenHash = await sha256Hex(token);
+  const nowIso = new Date().toISOString();
+  const row = await env.DB.prepare(
+    `SELECT s.id AS session_id, s.expires_at, u.id, u.username, u.username_lc, u.email, u.email_lc, u.created_at
+       FROM sessions s
+       JOIN users u ON u.id = s.user_id
+      WHERE s.token_hash = ? AND s.expires_at > ?
+      LIMIT 1`
+  ).bind(tokenHash, nowIso).first();
+  return row ? { sessionId: row.session_id, user: publicUser(row) } : null;
+}
+
+async function handleAuthApi(request, env, url) {
+  if (!env || !env.DB) return dbMissingResponse();
+
+  if (url.pathname === '/api/me' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
+    return json({ ok: true, user: session.user });
+  }
+
+  if (url.pathname === '/api/register' && request.method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Registrierungsdaten konnten nicht gelesen werden.' }, { status: 400 });
+
+    const username = cleanUsername(body.username);
+    const email = normalizeEmail(body.email);
+    const password = String(body.password || '');
+    if (!username) return json({ ok: false, code: 'INVALID_USERNAME', message: 'Benutzername: 3 bis 24 Zeichen, erlaubt sind Buchstaben, Zahlen, _ und -.' }, { status: 400 });
+    if (!email) return json({ ok: false, code: 'INVALID_EMAIL', message: 'Bitte eine gültige Mailadresse eingeben.' }, { status: 400 });
+    if (password.length < 8) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das Kennwort muss mindestens 8 Zeichen haben.' }, { status: 400 });
+
+    const usernameLc = username.toLowerCase();
+    const existing = await env.DB.prepare(
+      `SELECT id, username_lc, email_lc FROM users WHERE username_lc = ? OR email_lc = ? LIMIT 1`
+    ).bind(usernameLc, email).first();
+    if (existing && existing.username_lc === usernameLc) return json({ ok: false, code: 'USERNAME_TAKEN', message: 'Dieser Benutzername ist bereits vergeben.' }, { status: 409 });
+    if (existing && existing.email_lc === email) return json({ ok: false, code: 'EMAIL_TAKEN', message: 'Diese Mailadresse ist bereits registriert.' }, { status: 409 });
+
+    const id = crypto.randomUUID();
+    const salt = randomBase64Url(16);
+    const passwordHash = await hashPassword(password, salt, PASSWORD_ITERATIONS);
+    const nowIso = new Date().toISOString();
+    await env.DB.prepare(
+      `INSERT INTO users (id, username, username_lc, email, email_lc, password_alg, password_hash, password_salt, password_iterations, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
+
+    const token = await createSession(env, id);
+    return json({ ok: true, sessionToken: token, user: { id, username, email, createdAt: nowIso } });
+  }
+
+  if (url.pathname === '/api/login' && request.method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Login-Daten konnten nicht gelesen werden.' }, { status: 400 });
+
+    const identifier = String(body.identifier || '').trim();
+    const password = String(body.password || '');
+    const email = normalizeEmail(identifier);
+    const usernameLc = identifier.toLowerCase();
+    if (!identifier || !password) return json({ ok: false, code: 'MISSING_LOGIN', message: 'Bitte Benutzername/Mailadresse und Kennwort eingeben.' }, { status: 400 });
+
+    const user = await env.DB.prepare(
+      email
+        ? `SELECT * FROM users WHERE email_lc = ? LIMIT 1`
+        : `SELECT * FROM users WHERE username_lc = ? LIMIT 1`
+    ).bind(email || usernameLc).first();
+
+    const valid = await verifyPassword(password, user);
+    if (!valid) return json({ ok: false, code: 'INVALID_LOGIN', message: 'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status: 401 });
+
+    const token = await createSession(env, user.id);
+    return json({ ok: true, sessionToken: token, user: publicUser(user) });
+  }
+
+  if (url.pathname === '/api/logout' && request.method === 'POST') {
+    const token = bearerTokenFromRequest(request);
+    if (token) {
+      const tokenHash = await sha256Hex(token);
+      await env.DB.prepare(`DELETE FROM sessions WHERE token_hash = ?`).bind(tokenHash).run();
+    }
+    return json({ ok: true });
+  }
+
+  return json({ ok: false, code: 'NOT_FOUND', message: 'Account-Endpunkt nicht gefunden.' }, { status: 404 });
 }
 
 function playerIdFromSlot(slot) {
@@ -579,19 +789,26 @@ export class GameRoom {
 
     const url = new URL(request.url);
     const room = cleanRoomId(url.searchParams.get('room'));
-    const playerId = cleanPlayerId(url.searchParams.get('player'));
-    const requestedDisplayName = cleanDisplayName(url.searchParams.get('name') || url.searchParams.get('displayName'));
+    let playerId = cleanPlayerId(url.searchParams.get('player'));
+    let requestedDisplayName = cleanDisplayName(url.searchParams.get('name') || url.searchParams.get('displayName'));
+    const authToken = url.searchParams.get('auth') || url.searchParams.get('token') || '';
+    const authSession = await lookupAuthSession(this.env, authToken);
+    const authUser = authSession ? authSession.user : null;
+    if (authUser && authUser.id) {
+      playerId = cleanPlayerId('u_' + authUser.id);
+      requestedDisplayName = cleanDisplayName(authUser.username);
+    }
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     const role = await this.assignRole(playerId);
-    const profile = await this.savePlayerProfile(playerId, requestedDisplayName, role);
+    const profile = await this.savePlayerProfile(playerId, requestedDisplayName, role, authUser);
 
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({ playerId, role, room, displayName: profile.displayName, guest: profile.guest, joinedAt: Date.now() });
+    server.serializeAttachment({ playerId, role, room, displayName: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '', joinedAt: Date.now() });
 
-    safeSend(server, { type: 'hello', room, playerId, role, displayName: profile.displayName, guest: profile.guest });
+    safeSend(server, { type: 'hello', room, playerId, role, displayName: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '' });
     await this.sendRoomState(server, 'hello_state');
     await this.broadcastRoomState('lobby');
 
@@ -619,15 +836,18 @@ export class GameRoom {
     return 'spectator';
   }
 
-  async savePlayerProfile(playerId, requestedDisplayName, role = '') {
+  async savePlayerProfile(playerId, requestedDisplayName, role = '', accountUser = null) {
     const profiles = (await this.state.storage.get('playerProfiles')) || {};
     const previous = profiles[playerId] || {};
-    const displayName = cleanDisplayName(requestedDisplayName) || cleanDisplayName(previous.displayName) || guestNameFromPlayerId(playerId);
+    const accountName = accountUser ? cleanDisplayName(accountUser.username) : '';
+    const displayName = accountName || cleanDisplayName(requestedDisplayName) || cleanDisplayName(previous.displayName) || guestNameFromPlayerId(playerId);
     const profile = {
       playerId,
       displayName,
       name: displayName,
-      guest: previous.guest !== false,
+      guest: accountUser ? false : true,
+      userId: accountUser ? accountUser.id : null,
+      username: accountUser ? accountUser.username : '',
       role: role || previous.role || '',
       updatedAt: Date.now()
     };
@@ -649,7 +869,9 @@ export class GameRoom {
         playerId: playerId || null,
         name: displayName,
         displayName,
-        guest: profile.guest !== false
+        guest: profile.guest !== false,
+        userId: profile.userId || null,
+        username: profile.username || ''
       };
     };
 
@@ -666,10 +888,14 @@ export class GameRoom {
         active.white.connected = true;
         if (name) { active.white.name = name; active.white.displayName = name; }
         active.white.guest = info.guest !== false;
+        active.white.userId = info.userId || active.white.userId || null;
+        active.white.username = info.username || active.white.username || '';
       } else if (info.role === 'b') {
         active.black.connected = true;
         if (name) { active.black.name = name; active.black.displayName = name; }
         active.black.guest = info.guest !== false;
+        active.black.userId = info.userId || active.black.userId || null;
+        active.black.username = info.username || active.black.username || '';
       } else {
         active.spectators += 1;
       }
@@ -772,14 +998,16 @@ export class GameRoom {
     }
 
     if (data.type === 'set_player_name') {
-      const displayName = cleanDisplayName(data.displayName || data.name);
+      const authSession = await lookupAuthSession(this.env, data.authToken || data.token || '');
+      const authUser = authSession ? authSession.user : null;
+      const displayName = authUser ? cleanDisplayName(authUser.username) : cleanDisplayName(data.displayName || data.name);
       if (displayName.length < 2) {
         safeSend(ws, { type: 'error', code: 'INVALID_PLAYER_NAME', message: 'Spielername muss mindestens 2 Zeichen haben.' });
         return;
       }
-      const profile = await this.savePlayerProfile(info.playerId, displayName, role);
-      ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest }));
-      safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, serverNow: Date.now() });
+      const profile = await this.savePlayerProfile(info.playerId, displayName, role, authUser);
+      ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '' }));
+      safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '', serverNow: Date.now() });
       await this.broadcastRoomState('room_state');
       return;
     }
@@ -1208,10 +1436,14 @@ export default {
         status: 204,
         headers: {
           'access-control-allow-origin': '*',
-          'access-control-allow-methods': 'GET, OPTIONS',
-          'access-control-allow-headers': 'content-type'
+          'access-control-allow-methods': 'GET, POST, OPTIONS',
+          'access-control-allow-headers': 'content-type, authorization'
         }
       });
+    }
+
+    if (url.pathname.startsWith('/api/')) {
+      return handleAuthApi(request, env, url);
     }
 
     if (url.pathname === '/health') {
@@ -1233,9 +1465,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'guest_display_names', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-Anzeigenamen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/ws?room=ROOM_ID&player=PLAYER_ID'],
+      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
