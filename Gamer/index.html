@@ -101,9 +101,10 @@
   .move-cell.current{background:rgba(132,63,70,.12);font-weight:900;}
   .moves-footer{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .nav-btn{min-width:40px;min-height:36px;font-size:18px;padding:5px 10px;}
-  .game-actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .game-actions{width:100%;box-sizing:border-box;margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .game-actions[hidden]{display:none!important;}
-  .game-action-btn{border-radius:12px;min-height:38px;padding:8px 8px;}
+  .board-column > .game-actions{margin-top:0;}
+  .game-action-btn{border-radius:12px;min-height:38px;padding:8px 10px;}
   .resign-btn{background:#843f46!important;color:#fff!important;}
   .chat-panel{display:flex;flex-direction:column;gap:10px;overflow:hidden;}
   .chat-title{font-size:18px;font-weight:900;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -188,7 +189,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.chat-input-row button{width:100%}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.chat-input-row button{width:100%}}
 </style>
 </head>
 <body>
@@ -326,6 +327,11 @@
           </div>
           <button id="soundToggleBtn" class="button-flat icon-btn" type="button" aria-pressed="true" title="Ton an/aus" aria-label="Ton an"><span class="icon-label">🔊</span></button>
         </div>
+
+        <div id="gameActions" class="game-actions" aria-label="Partieaktionen unter dem Brett" hidden>
+          <button id="offerDrawBtn" class="button-flat game-action-btn" type="button">½ Remis anbieten</button>
+          <button id="resignBtn" class="game-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
+        </div>
       </div>
 
       <aside class="moves-right">
@@ -410,10 +416,6 @@
             <div id="chatStatus" class="chat-status" aria-live="polite">Chat verfügbar, sobald ein Online-Raum verbunden ist.</div>
           </div>
 
-          <div id="gameActions" class="game-actions" aria-label="Partieaktionen" hidden>
-            <button id="offerDrawBtn" class="button-flat game-action-btn" type="button">Remis anbieten</button>
-            <button id="resignBtn" class="game-action-btn resign-btn" type="button">Aufgeben</button>
-          </div>
         </div>
       </aside>
     </div>
@@ -1466,21 +1468,21 @@ function updateGameActionButtons(){
   offerDrawBtn.disabled = !live;
   resignBtn.disabled = !live;
   if(!live){
-    offerDrawBtn.textContent = 'Remis anbieten';
+    offerDrawBtn.textContent = '½ Remis anbieten';
     offerDrawBtn.title = 'Remisangebot ist nur während einer laufenden Online-Partie möglich.';
     resignBtn.title = 'Aufgeben ist nur während einer laufenden Online-Partie möglich.';
     return;
   }
   if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode){
-    offerDrawBtn.textContent = 'Remis angeboten';
+    offerDrawBtn.textContent = '½ Remis angeboten';
     offerDrawBtn.disabled = true;
     offerDrawBtn.title = 'Dein Remisangebot wartet auf Antwort.';
   } else if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
-    offerDrawBtn.textContent = 'Remis annehmen';
+    offerDrawBtn.textContent = '½ Remis annehmen';
     offerDrawBtn.disabled = false;
     offerDrawBtn.title = 'Remisangebot des Gegners annehmen.';
   } else {
-    offerDrawBtn.textContent = 'Remis anbieten';
+    offerDrawBtn.textContent = '½ Remis anbieten';
     offerDrawBtn.disabled = false;
     offerDrawBtn.title = 'Dem Gegner Remis anbieten.';
   }
