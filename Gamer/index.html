@@ -83,7 +83,7 @@
   .time-lock-note{text-align:center;font-size:12px;font-weight:700;color:#9A2D33;min-height:16px;line-height:1.25;}
   .moves-right{width:var(--right-col);max-width:100%;flex:0 0 var(--right-col);}
   .side-panel{height:var(--board-size);min-height:var(--board-size);padding:12px 14px;display:flex;flex-direction:column;overflow:hidden;}
-  .side-toggle-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .side-toggle-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
   .side-toggle-btn{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;}
   .side-toggle-btn.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
   .side-content{min-height:0;flex:1;overflow:auto;}
@@ -105,6 +105,20 @@
   .game-actions[hidden]{display:none!important;}
   .game-action-btn{border-radius:12px;min-height:38px;padding:8px 8px;}
   .resign-btn{background:#843f46!important;color:#fff!important;}
+  .chat-panel{display:flex;flex-direction:column;gap:10px;overflow:hidden;}
+  .chat-title{font-size:18px;font-weight:900;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .chat-messages{min-height:0;flex:1;overflow-y:auto;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:10px;display:flex;flex-direction:column;gap:8px;}
+  .chat-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;text-align:center;padding:14px 8px;}
+  .chat-message{border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:8px 9px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
+  .chat-message.mine{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.14);}
+  .chat-message-meta{font-size:12px;font-weight:900;color:#666;margin-bottom:3px;display:flex;justify-content:space-between;gap:8px;}
+  .chat-message-text{font-size:14px;font-weight:800;color:#222;line-height:1.32;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .chat-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;}
+  .chat-input{width:100%;min-height:38px;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:8px 10px;font-size:14px;font-weight:800;outline:none;}
+  .chat-input:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
+  .chat-input:disabled{opacity:.55;cursor:not-allowed;}
+  .chat-send-btn{border-radius:12px;min-height:38px;padding:8px 10px;}
+  .chat-status{min-height:16px;font-size:12px;font-weight:800;color:#666;line-height:1.25;}
   .board-color-wrap{position:relative;width:100%;display:flex;}
   .board-color-popup{position:absolute;top:auto;bottom:calc(100% + 12px);right:0;width:238px;background:rgba(255,255,255,.99);border:1px solid rgba(132,63,70,.22);border-radius:14px;box-shadow:0 18px 42px rgba(0,0,0,.20);padding:10px;z-index:2100;}
   .board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);}
@@ -174,7 +188,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card{grid-template-columns:1fr}.invite-link-row button,.member-result-card button{width:100%}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.chat-input-row button{width:100%}}
 </style>
 </head>
 <body>
@@ -319,6 +333,7 @@
           <div class="side-toggle-row" aria-label="Rechte Spalte umschalten">
             <button id="showPlayersPanelBtn" class="side-toggle-btn active" type="button">Spieler & Zeit</button>
             <button id="showMovesPanelBtn" class="side-toggle-btn" type="button">Zugliste</button>
+            <button id="showChatPanelBtn" class="side-toggle-btn" type="button">Chat</button>
           </div>
 
           <div id="playersPanel" class="side-content players-panel">
@@ -379,6 +394,20 @@
               </div>
               <button id="copyPgnBtn" class="button-flat" type="button">PGN kopieren</button>
             </div>
+          </div>
+
+
+
+          <div id="chatPanel" class="side-content chat-panel" hidden>
+            <div class="chat-title"><span>Partie-Chat</span><span id="chatCount">0</span></div>
+            <div id="chatMessages" class="chat-messages" aria-live="polite" aria-label="Chatnachrichten">
+              <div class="chat-empty">Noch keine Chatnachrichten.</div>
+            </div>
+            <div class="chat-input-row">
+              <input id="chatInput" class="chat-input" type="text" maxlength="300" autocomplete="off" placeholder="Nachricht schreiben…" aria-label="Chatnachricht schreiben" disabled />
+              <button id="chatSendBtn" class="chat-send-btn" type="button" disabled>Senden</button>
+            </div>
+            <div id="chatStatus" class="chat-status" aria-live="polite">Chat verfügbar, sobald ein Online-Raum verbunden ist.</div>
           </div>
 
           <div id="gameActions" class="game-actions" aria-label="Partieaktionen" hidden>
@@ -748,20 +777,174 @@ const navEndBtn = document.getElementById('navEnd');
 const timeSetupBoxEl = document.getElementById('timeSetupBox');
 const playersPanelEl = document.getElementById('playersPanel');
 const movesPanelEl = document.getElementById('movesPanel');
+const chatPanelEl = document.getElementById('chatPanel');
 const showPlayersPanelBtn = document.getElementById('showPlayersPanelBtn');
 const showMovesPanelBtn = document.getElementById('showMovesPanelBtn');
+const showChatPanelBtn = document.getElementById('showChatPanelBtn');
+const chatMessagesEl = document.getElementById('chatMessages');
+const chatInputEl = document.getElementById('chatInput');
+const chatSendBtn = document.getElementById('chatSendBtn');
+const chatStatusEl = document.getElementById('chatStatus');
+const chatCountEl = document.getElementById('chatCount');
+const CHAT_MESSAGE_MAX_LENGTH = 300;
+const CHAT_HISTORY_MAX = 80;
+const CHAT_SEND_COOLDOWN_MS = 1200;
+let chatMessages = [];
+let chatMessageIds = new Set();
+let chatLastSentAt = 0;
 let rightPanelMode = 'players';
 
 function setRightPanelMode(mode){
-  rightPanelMode = mode === 'moves' ? 'moves' : 'players';
+  rightPanelMode = mode === 'moves' ? 'moves' : mode === 'chat' ? 'chat' : 'players';
   if(playersPanelEl) playersPanelEl.hidden = rightPanelMode !== 'players';
   if(movesPanelEl) movesPanelEl.hidden = rightPanelMode !== 'moves';
+  if(chatPanelEl) chatPanelEl.hidden = rightPanelMode !== 'chat';
   if(showPlayersPanelBtn) showPlayersPanelBtn.classList.toggle('active', rightPanelMode === 'players');
   if(showMovesPanelBtn) showMovesPanelBtn.classList.toggle('active', rightPanelMode === 'moves');
+  if(showChatPanelBtn) showChatPanelBtn.classList.toggle('active', rightPanelMode === 'chat');
+  if(rightPanelMode === 'chat') renderChatMessages();
 }
 if(showPlayersPanelBtn) showPlayersPanelBtn.addEventListener('click', () => setRightPanelMode('players'));
 if(showMovesPanelBtn) showMovesPanelBtn.addEventListener('click', () => setRightPanelMode('moves'));
+if(showChatPanelBtn) showChatPanelBtn.addEventListener('click', () => setRightPanelMode('chat'));
 setRightPanelMode('players');
+
+function cleanChatText(value){
+  return String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, CHAT_MESSAGE_MAX_LENGTH);
+}
+function setChatStatus(message, isError){
+  if(!chatStatusEl) return;
+  chatStatusEl.style.color = isError ? '#9A2D33' : '#666';
+  chatStatusEl.textContent = message || '';
+}
+function resetChatMessages(){
+  chatMessages = [];
+  chatMessageIds = new Set();
+  renderChatMessages();
+}
+function formatChatTime(value){
+  const d = value ? new Date(value) : new Date();
+  if(Number.isNaN(d.getTime())) return '';
+  try{ return d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}); } catch(_){ return ''; }
+}
+function normalizeChatMessage(message){
+  const chat = message && message.chat ? message.chat : message;
+  if(!chat) return null;
+  const text = cleanChatText(chat.text || chat.message);
+  if(!text) return null;
+  const id = String(chat.id || chat.messageId || message.messageId || ('chat_local_' + Date.now() + '_' + Math.random())).slice(0, 80);
+  const role = chat.role === 'w' || chat.role === 'b' || chat.role === 'spectator' ? chat.role : '';
+  const playerId = chat.playerId || chat.byPlayer || '';
+  const fallbackName = role === 'w' ? 'Weiß' : role === 'b' ? 'Schwarz' : 'Zuschauer';
+  const senderName = cleanDisplayName(chat.senderName || chat.name || chat.displayName || fallbackName) || fallbackName;
+  return {
+    id,
+    messageId: id,
+    role,
+    playerId,
+    senderName,
+    text,
+    sentAt: chat.sentAt || chat.time || new Date().toISOString(),
+    mine: !!(playerId && playerId === onlinePlayerId)
+  };
+}
+function appendChatMessage(message){
+  const chat = normalizeChatMessage(message);
+  if(!chat) return false;
+  if(chatMessageIds.has(chat.id)) return false;
+  chatMessageIds.add(chat.id);
+  chatMessages.push(chat);
+  if(chatMessages.length > CHAT_HISTORY_MAX){
+    chatMessages = chatMessages.slice(-CHAT_HISTORY_MAX);
+    chatMessageIds = new Set(chatMessages.map(m => m.id));
+  }
+  renderChatMessages();
+  return true;
+}
+function renderChatMessages(){
+  if(chatCountEl) chatCountEl.textContent = String(chatMessages.length);
+  if(!chatMessagesEl) return;
+  chatMessagesEl.innerHTML = '';
+  if(chatMessages.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'chat-empty';
+    empty.textContent = 'Noch keine Chatnachrichten.';
+    chatMessagesEl.appendChild(empty);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  chatMessages.forEach(chat => {
+    const item = document.createElement('div');
+    item.className = 'chat-message' + (chat.mine ? ' mine' : '');
+    const meta = document.createElement('div');
+    meta.className = 'chat-message-meta';
+    const name = document.createElement('span');
+    name.textContent = chat.senderName;
+    const time = document.createElement('span');
+    time.textContent = formatChatTime(chat.sentAt);
+    meta.appendChild(name);
+    meta.appendChild(time);
+    const body = document.createElement('div');
+    body.className = 'chat-message-text';
+    body.textContent = chat.text;
+    item.appendChild(meta);
+    item.appendChild(body);
+    frag.appendChild(item);
+  });
+  chatMessagesEl.appendChild(frag);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+function updateChatControls(){
+  const enabled = !!(onlineRoomId && onlineConnected);
+  if(chatInputEl){
+    chatInputEl.disabled = !enabled;
+    chatInputEl.placeholder = enabled ? 'Nachricht schreiben…' : 'Chat verfügbar nach Online-Verbindung…';
+  }
+  if(chatSendBtn) chatSendBtn.disabled = !enabled;
+  if(!enabled){
+    if(!onlineRoomId) setChatStatus('Chat verfügbar, sobald ein Online-Raum erstellt ist.', false);
+    else setChatStatus('Chat wird freigegeben, sobald die Lobby verbunden ist.', false);
+  } else if(chatStatusEl && (!chatStatusEl.textContent || chatStatusEl.textContent.includes('sobald') || chatStatusEl.textContent.includes('freigegeben'))){
+    setChatStatus('Chat ist verbunden. Maximal 300 Zeichen pro Nachricht.', false);
+  }
+}
+function extractOnlineChatMessage(msg){
+  if(!msg) return null;
+  if(msg.type !== 'chat_message' && msg.type !== 'chat_ack') return null;
+  return msg.chat || msg;
+}
+function sendChatMessage(){
+  if(!onlineRoomId){ setChatStatus('Bitte zuerst eine Online-Partie erstellen oder einem Link folgen.', true); return; }
+  if(!onlineConnected){ setChatStatus('Lobby ist noch nicht verbunden.', true); return; }
+  const text = cleanChatText(chatInputEl ? chatInputEl.value : '');
+  if(!text){ setChatStatus('Bitte eine Nachricht eingeben.', true); return; }
+  const now = Date.now();
+  if(now - chatLastSentAt < CHAT_SEND_COOLDOWN_MS){
+    setChatStatus('Bitte kurz warten, bevor du die nächste Nachricht sendest.', true);
+    return;
+  }
+  const messageId = 'chat_' + now + '_' + randomToken(5);
+  if(sendOnlineMessage({type:'chat_message', text, messageId})){
+    chatLastSentAt = now;
+    if(chatInputEl) chatInputEl.value = '';
+    setChatStatus('Nachricht wird gesendet...', false);
+  } else {
+    setChatStatus('Nachricht konnte nicht gesendet werden.', true);
+  }
+}
+if(chatSendBtn) chatSendBtn.addEventListener('click', sendChatMessage);
+if(chatInputEl){
+  chatInputEl.addEventListener('keydown', ev => {
+    if(ev.key === 'Enter'){
+      ev.preventDefault();
+      sendChatMessage();
+    }
+  });
+}
 
 function isOnlineGameLiveForUi(){
   return !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
@@ -1355,6 +1538,7 @@ function updateOnlineUi(){
     updateOnlineStartButton();
     updateOnlineActionButtons();
     updateGameActionButtons();
+    updateChatControls();
     updateTimeSetupVisibility();
     refreshHeaderStatusFromState();
     return;
@@ -1401,6 +1585,7 @@ function updateOnlineUi(){
   updateOnlineStartButton();
   updateOnlineActionButtons();
   updateGameActionButtons();
+  updateChatControls();
   updateTimeControlsLock();
   updateTimeSetupVisibility();
   refreshHeaderStatusFromState();
@@ -1937,6 +2122,8 @@ function connectOnlineRoom(roomId, opts){
   opts = opts || {};
   roomId = cleanRoomId(roomId);
   if(!roomId) return;
+  const previousRoomId = onlineRoomId;
+  if(previousRoomId !== roomId) resetChatMessages();
   onlineRoomId = roomId;
   onlineRoleCode = 'local';
   onlineConnected = false;
@@ -1997,6 +2184,7 @@ function connectOnlineRoom(roomId, opts){
     try{ msg = JSON.parse(ev.data); } catch(_){ return; }
     if(msg.type === 'error'){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
+      if(String(msg.code || '').indexOf('CHAT_') === 0) setChatStatus(msg.message || 'Chat-Fehler.', true);
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
       updateOnlineUi();
       return;
@@ -2055,6 +2243,13 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    const incomingChatMessage = extractOnlineChatMessage(msg);
+    if(incomingChatMessage){
+      appendChatMessage(incomingChatMessage);
+      setChatStatus('Chat ist verbunden. Maximal 300 Zeichen pro Nachricht.', false);
+      handled = true;
+    }
+
     if(msg.type === 'time_control_ack'){
       onlinePendingTimeControlMessageId = null;
       handled = true;
@@ -2064,7 +2259,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','pong'];
+    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
