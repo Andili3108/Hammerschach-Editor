@@ -223,6 +223,17 @@
   .info-actions button{border-radius:12px;min-height:38px;}
 
 
+
+  .site-footnote{
+    text-align:center;
+    font-size:12px;
+    font-weight:700;
+    color:rgba(17,17,17,.48);
+    line-height:1.35;
+    padding:2px 8px 0;
+    user-select:none;
+  }
+
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
   @media (max-width:760px){.match-actions #infoOpenBtn{margin-left:0}.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors,.invite-color-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
@@ -525,6 +536,7 @@
         </div>
       </aside>
     </div>
+    <footer class="site-footnote" aria-label="Projekt-Hinweis">Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026)</footer>
   </div>
 </div>
 
