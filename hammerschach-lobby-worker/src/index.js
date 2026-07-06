@@ -718,12 +718,54 @@ ChessGame.prototype.makeMove = function(mv, silent) {
   return { piece, taken };
 };
 
-ChessGame.prototype.gameOver = function() {
+ChessGame.prototype.repetitionEpKey = function() {
+  if (!this.ep) return '-';
+  const x = this.ep[0];
+  const y = this.ep[1];
+  const pawnY = this.turn === 'w' ? y + 1 : y - 1;
+  const pawn = this.turn === 'w' ? 'P' : 'p';
+  for (const dx of [-1, 1]) {
+    const px = x + dx;
+    if (this.inBounds(px, pawnY) && this.at(px, pawnY) === pawn) return coordToAlg(x, y);
+  }
+  return '-';
+};
+
+ChessGame.prototype.repetitionKey = function() {
+  const boardPart = this.board.map(row => row.join('')).join('/');
+  const castlingPart = ['K','Q','k','q'].filter(key => this.castling[key]).join('') || '-';
+  return [boardPart, this.turn, castlingPart, this.repetitionEpKey()].join(' ');
+};
+
+ChessGame.prototype.hasInsufficientMaterial = function() {
+  const pieces = [];
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const p = this.at(x, y);
+      if (!p || p === '.') continue;
+      const kind = p.toLowerCase();
+      if (kind === 'p' || kind === 'r' || kind === 'q') return false;
+      if (kind !== 'k') pieces.push({ kind, squareColor: (x + y) % 2 });
+    }
+  }
+  if (pieces.length === 0) return true;
+  if (pieces.length === 1 && (pieces[0].kind === 'b' || pieces[0].kind === 'n')) return true;
+  if (pieces.every(piece => piece.kind === 'b')) {
+    const firstColor = pieces[0].squareColor;
+    if (pieces.every(piece => piece.squareColor === firstColor)) return true;
+  }
+  return false;
+};
+
+ChessGame.prototype.gameOver = function(repetitionCount) {
   const legal = this.legalMoves();
   if (legal.length === 0) {
     if (this.inCheck(this.turn)) return { type:'checkmate', winner: opposite(this.turn) };
     return { type:'stalemate' };
   }
+  if (this.hasInsufficientMaterial()) return { type:'insufficient_material' };
+  if (this.halfmove >= 100) return { type:'fifty_move_rule' };
+  if ((repetitionCount || 0) >= 3) return { type:'threefold_repetition' };
   return false;
 };
 
@@ -782,6 +824,25 @@ function buildGameFromStoredMoves(moves) {
   return g;
 }
 
+function countCurrentPositionRepetitions(moves) {
+  const g = new ChessGame();
+  const counts = new Map();
+  const addCurrent = () => {
+    const key = g.repetitionKey();
+    counts.set(key, (counts.get(key) || 0) + 1);
+  };
+  addCurrent();
+  for (const stored of moves || []) {
+    const legal = g.legalMoves();
+    const found = legal.find(lm => lm.from[0] === stored.from[0] && lm.from[1] === stored.from[1] && lm.to[0] === stored.to[0] && lm.to[1] === stored.to[1]);
+    if (!found) throw new Error('Gespeicherte Zugliste enthält einen illegalen Zug.');
+    const mv = { from: found.from, to: found.to, meta: found.meta || {}, promotion: stored.promotion || null };
+    g.makeMove(mv, true);
+    addCurrent();
+  }
+  return counts.get(g.repetitionKey()) || 1;
+}
+
 function validateMoveOnServer(storedMoves, incoming) {
   const before = buildGameFromStoredMoves(storedMoves || []);
   const legal = before.legalMoves();
@@ -806,13 +867,15 @@ function validateMoveOnServer(storedMoves, incoming) {
   mv.taken = applied.taken;
   mv.san = serverMoveToSan(before, mv, after);
 
-  return { ok:true, before, after, move: mv, gameOver: after.gameOver() };
+  const movesAfter = (storedMoves || []).concat([{ from: mv.from, to: mv.to, promotion: mv.promotion || null }]);
+  const repetitionCount = countCurrentPositionRepetitions(movesAfter);
+  return { ok:true, before, after, move: mv, repetitionCount, gameOver: after.gameOver(repetitionCount) };
 }
 
 function resultFromGameOver(gameOver) {
   if (!gameOver) return '*';
   if (gameOver.type === 'checkmate') return gameOver.winner === 'w' ? '1-0' : '0-1';
-  if (gameOver.type === 'stalemate') return '1/2-1/2';
+  if (['stalemate','insufficient_material','fifty_move_rule','threefold_repetition'].includes(gameOver.type)) return '1/2-1/2';
   return '*';
 }
 
@@ -1517,8 +1580,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'automatic_draw_rules'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität und automatische Remisregeln.'
     });
   }
 };
