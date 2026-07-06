@@ -237,6 +237,8 @@
   }
   .site-footnote a{color:rgba(132,63,70,.72);text-decoration:none;border-bottom:1px solid rgba(132,63,70,.22);}
   .site-footnote a:hover{text-decoration:none;border-bottom-color:rgba(132,63,70,.72);}
+  .site-stats{margin-top:4px;font-size:12px;font-weight:700;color:rgba(17,17,17,.46);line-height:1.35;}
+  .site-stats[hidden]{display:none!important;}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
   @media (max-width:760px){.match-actions #infoOpenBtn{margin-left:0}.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors,.invite-color-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
@@ -445,7 +447,8 @@
           <button id="resignBtn" class="game-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
         </div>
         <footer class="site-footnote" aria-label="Projekt-Hinweis">
-          Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026) · <a href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener">Impressum</a>
+          <div>Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026) · <a href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener">Impressum</a></div>
+          <div id="siteStats" class="site-stats" aria-live="polite" hidden>Gamer-Aufrufe: — · Gespielte Online-Partien: —</div>
         </footer>
       </div>
 
@@ -1223,6 +1226,7 @@ let applyingRemoteMove = false;
 let onlineLastMoveMessageId = null;
 let onlineClockSync = null;
 
+const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
@@ -1451,6 +1455,28 @@ function onlineApiBaseUrl(){
   const configured = (window.HAMMERSCHACH_ONLINE_WORKER_URL || ONLINE_WORKER_URL || '').trim();
   if(configured) return configured.replace(/\/+$/, '');
   return window.location.origin;
+}
+function formatStatsNumber(value){
+  const number = Number(value || 0);
+  if(!Number.isFinite(number)) return '0';
+  try{ return Math.max(0, Math.floor(number)).toLocaleString('de-DE'); } catch(_){ return String(Math.max(0, Math.floor(number))); }
+}
+function renderSiteStats(stats){
+  if(!siteStatsEl || !stats) return;
+  const visits = formatStatsNumber(stats.visits ?? stats.pageViews ?? stats.page_views ?? 0);
+  const games = formatStatsNumber(stats.gamesPlayed ?? stats.games_played ?? 0);
+  siteStatsEl.textContent = 'Gamer-Aufrufe: ' + visits + ' · Gespielte Online-Partien: ' + games;
+  siteStatsEl.hidden = false;
+}
+async function refreshSiteStats(countVisit){
+  if(!siteStatsEl) return;
+  try{
+    const response = await fetch(onlineApiBaseUrl() + (countVisit ? '/api/stats/visit' : '/api/stats'), {method: countVisit ? 'POST' : 'GET'});
+    const data = await response.json();
+    if(response.ok && data && data.ok) renderSiteStats(data.stats || data);
+  } catch(_){
+    /* Statistik bleibt ausgeblendet, wenn der Worker/D1 gerade nicht erreichbar ist. */
+  }
 }
 function loadAuthState(){
   try{
@@ -3524,6 +3550,7 @@ const initialTimeOption = getTimeOption(activeTimeKey, activeTimeCategory);
 applyTimeControlFromKey(activeTimeKey, initialTimeOption?.option?.dataset.timeLabel, activeTimeCategory);
 resetClockForNewGame();
 renderBoard();
+refreshSiteStats(true);
 const initialRoomId = cleanRoomId(new URL(window.location.href).searchParams.get('room'));
 if(initialRoomId){
   onlinePreferredRoleForNextConnect = '';
