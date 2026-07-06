@@ -42,6 +42,7 @@
   .match-actions{justify-content:center;}
   .match-actions button{min-width:168px;}
   .match-actions .name-action-btn{min-width:128px;}
+  .match-actions #infoOpenBtn{margin-left:auto;}
   .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%;}
   .icon-btn{width:44px;height:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:23px;line-height:1;padding:0;}
   .icon-btn .icon-label{display:inline-block;line-height:1;}
@@ -207,8 +208,23 @@
   .online-hint[hidden]{display:none!important;}
   .online-panel[hidden]{display:none!important;}
 
+  .info-open-btn{min-width:82px!important;}
+  .info-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:3300;padding:18px;box-sizing:border-box;}
+  .info-backdrop[hidden]{display:none!important;}
+  .info-modal{width:760px;max-width:100%;max-height:88vh;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);display:flex;flex-direction:column;}
+  .info-modal h3{margin:0 0 8px;font-size:24px;color:#222;}
+  .info-modal-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
+  .info-scroll{overflow:auto;padding:2px 8px 2px 0;line-height:1.38;font-size:15px;color:#222;}
+  .info-scroll h4{font-size:17px;margin:16px 0 6px;color:#222;}
+  .info-scroll p{margin:0 0 9px;}
+  .info-scroll ul{margin:6px 0 10px 22px;padding:0;}
+  .info-scroll li{margin:3px 0;}
+  .info-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+  .info-actions button{border-radius:12px;min-height:38px;}
+
+
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors,.invite-color-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.match-actions #infoOpenBtn{margin-left:0}.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors,.invite-color-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
 </style>
 </head>
@@ -232,9 +248,66 @@
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
+          <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">Info</button>
         </div>
       </div>
     </header>
+
+    <div id="infoBackdrop" class="info-backdrop" hidden>
+      <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+        <h3 id="infoTitle">Hammerschach-Gamer – Bedienungsanleitung</h3>
+        <p class="info-modal-intro">Die wichtigsten Funktionen kurz erklärt. Die Anleitung kann gescrollt werden.</p>
+        <div class="info-scroll" id="infoScroll" tabindex="0">
+          <h4>1. Registrierung oder Gastspiel</h4>
+          <p>Du kannst mit einem registrierten Account spielen oder als Gast teilnehmen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
+
+          <h4>2. Bedenkzeit wählen</h4>
+          <p>Vor der Einladung sollte zuerst die Bedenkzeit eingestellt werden. In der rechten Spalte findest du <strong>Classic</strong>, <strong>Rapid</strong> und <strong>Blitz</strong>. Nach dem Start der Partie kann die Bedenkzeit nicht mehr geändert werden.</p>
+
+          <h4>3. Farbe wählen</h4>
+          <p>Vor dem Erstellen der Einladung kannst du wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß startet die Partie.</p>
+
+          <h4>4. Zur Partie einladen</h4>
+          <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link kopieren, einen Einladungstext kopieren, ein Mitglied suchen oder die Mitgliederliste öffnen.</p>
+          <p>Die vorbereitete E-Mail wird nicht automatisch versendet. Dein Mailprogramm öffnet sich, damit du die Nachricht prüfen und selbst absenden kannst.</p>
+
+          <h4>5. Partie starten</h4>
+          <p>Wenn beide Spieler im Raum sind und eine Bedenkzeit gewählt wurde, kann Weiß die Partie über <strong>„Partie starten“</strong> starten. Danach laufen die Uhren und die Züge werden online synchronisiert.</p>
+
+          <h4>6. Spielen</h4>
+          <p>Figuren werden durch Anklicken bewegt. Illegale Züge werden blockiert. Das Brett zeigt mögliche Zielfelder an. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
+
+          <h4>7. Rechte Spalte</h4>
+          <ul>
+            <li><strong>Spieler &amp; Zeit:</strong> zeigt beide Spieler und die Uhren.</li>
+            <li><strong>Zugliste:</strong> zeigt die gespielten Züge. Nach der Partie kann die PGN kopiert werden.</li>
+            <li><strong>Chat:</strong> Nachrichten im aktuellen Online-Raum. Neue Nachrichten werden am Chat-Reiter markiert, wenn der Chat nicht geöffnet ist.</li>
+          </ul>
+
+          <h4>8. Partieaktionen</h4>
+          <p>Während einer laufenden Online-Partie erscheinen unter dem Brett die Schaltflächen <strong>„½ Remis anbieten“</strong> und <strong>„🏳️ Aufgeben“</strong>.</p>
+
+          <h4>9. Automatische Partieenden</h4>
+          <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial.</p>
+
+          <h4>10. Brett und Darstellung</h4>
+          <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
+
+          <h4>11. Nach der Partie</h4>
+          <p>Nach Partieende kann die Zugliste angesehen und die PGN kopiert werden. Für eine neue Online-Partie wird ein neuer Raum bzw. Einladungslink erstellt.</p>
+
+          <h4>12. Verbindung</h4>
+          <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Zustand wieder zu synchronisieren. Oft hilft es, den Einladungslink erneut zu öffnen oder die Seite neu zu laden.</p>
+
+          <h4>13. Admin-Funktion</h4>
+          <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Diese Funktion ist nur für den Administrator nutzbar.</p>
+        </div>
+        <div class="info-actions">
+          <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
 
     <div id="playerNameBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="playerNameTitle">
@@ -1135,6 +1208,10 @@ let onlineClockSync = null;
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
+const infoOpenBtn = document.getElementById('infoOpenBtn');
+const infoBackdrop = document.getElementById('infoBackdrop');
+const infoCloseBtn = document.getElementById('infoCloseBtn');
+const infoScroll = document.getElementById('infoScroll');
 const authBackdrop = document.getElementById('authBackdrop');
 const authIntro = document.getElementById('authIntro');
 const authLoginTab = document.getElementById('authLoginTab');
@@ -1511,6 +1588,23 @@ if(authBackdrop) authBackdrop.addEventListener('click', ev => { if(ev.target ===
 [loginPasswordInput, registerPasswordRepeatInput].forEach(input => {
   if(input) input.addEventListener('keydown', ev => { if(ev.key === 'Enter') submitAuthDialog(); });
 });
+
+function openInfoDialog(){
+  if(!infoBackdrop) return;
+  infoBackdrop.hidden = false;
+  setTimeout(() => {
+    try{ if(infoScroll) infoScroll.focus(); }
+    catch(_){}
+  }, 0);
+}
+function closeInfoDialog(){
+  if(infoBackdrop) infoBackdrop.hidden = true;
+}
+if(infoOpenBtn) infoOpenBtn.addEventListener('click', openInfoDialog);
+if(infoCloseBtn) infoCloseBtn.addEventListener('click', closeInfoDialog);
+if(infoBackdrop) infoBackdrop.addEventListener('click', ev => { if(ev.target === infoBackdrop) closeInfoDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && infoBackdrop && !infoBackdrop.hidden) closeInfoDialog(); });
+
 loadAuthState();
 updateAuthUi();
 refreshAuthSession();
