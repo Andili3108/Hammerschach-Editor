@@ -146,6 +146,46 @@ function dbMissingResponse() {
   }, { status: 503 });
 }
 
+function cleanMemberSearchQuery(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9@._-]/g, '')
+    .slice(0, 48);
+}
+
+function escapeSqlLike(value) {
+  return String(value || '').replace(/[\\%_]/g, match => '\\' + match);
+}
+
+async function searchMembers(env, sessionUser, query) {
+  const cleaned = cleanMemberSearchQuery(query);
+  if (!env || !env.DB || !sessionUser || cleaned.length < 2) return [];
+
+  const escaped = escapeSqlLike(cleaned);
+  const contains = '%' + escaped + '%';
+  const prefix = escaped + '%';
+  const result = await env.DB.prepare(
+    `SELECT id, username, created_at
+       FROM users
+      WHERE id <> ?
+        AND (username_lc LIKE ? ESCAPE '\\' OR email_lc LIKE ? ESCAPE '\\')
+      ORDER BY
+        CASE
+          WHEN username_lc = ? THEN 0
+          WHEN username_lc LIKE ? ESCAPE '\\' THEN 1
+          ELSE 2
+        END,
+        username_lc ASC
+      LIMIT 8`
+  ).bind(sessionUser.id, contains, contains, cleaned, prefix).all();
+
+  return (result && result.results ? result.results : []).map(row => ({
+    id: row.id,
+    username: row.username,
+    createdAt: row.created_at || null
+  }));
+}
+
 async function createSession(env, userId) {
   const token = randomBase64Url(32);
   const tokenHash = await sha256Hex(token);
@@ -232,6 +272,15 @@ async function handleAuthApi(request, env, url) {
 
     const token = await createSession(env, user.id);
     return json({ ok: true, sessionToken: token, user: publicUser(user) });
+  }
+
+  if (url.pathname === '/api/members/search' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Mitgliedersuche ist nur nach Login verfügbar.' }, { status: 401 });
+
+    const query = cleanMemberSearchQuery(url.searchParams.get('q') || url.searchParams.get('query') || '');
+    const users = await searchMembers(env, session.user, query);
+    return json({ ok: true, query, users });
   }
 
   if (url.pathname === '/api/logout' && request.method === 'POST') {
@@ -1465,9 +1514,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/ws?room=ROOM_ID&player=PLAYER_ID'],
+      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
