@@ -641,12 +641,51 @@ Game.prototype.makeMove = function(mv, silent){
   if(!silent){ mv.piece = piece; mv.taken = taken; }
   return {piece, taken};
 };
-Game.prototype.gameOver = function(){
+Game.prototype.repetitionEpKey = function(){
+  if(!this.ep) return '-';
+  const x = this.ep[0];
+  const y = this.ep[1];
+  const pawnY = this.turn === 'w' ? y + 1 : y - 1;
+  const pawn = this.turn === 'w' ? 'P' : 'p';
+  for(const dx of [-1,1]){
+    const px = x + dx;
+    if(this.inBounds(px,pawnY) && this.at(px,pawnY) === pawn) return coordToAlg(x,y);
+  }
+  return '-';
+};
+Game.prototype.repetitionKey = function(){
+  const boardPart = this.board.map(row => row.join('')).join('/');
+  const castlingPart = ['K','Q','k','q'].filter(key => this.castling[key]).join('') || '-';
+  return [boardPart, this.turn, castlingPart, this.repetitionEpKey()].join(' ');
+};
+Game.prototype.hasInsufficientMaterial = function(){
+  const pieces = [];
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      const p = this.at(x,y);
+      if(!p || p === '.') continue;
+      const kind = p.toLowerCase();
+      if(kind === 'p' || kind === 'r' || kind === 'q') return false;
+      if(kind !== 'k') pieces.push({kind, squareColor:(x + y) % 2});
+    }
+  }
+  if(pieces.length === 0) return true;
+  if(pieces.length === 1 && (pieces[0].kind === 'b' || pieces[0].kind === 'n')) return true;
+  if(pieces.every(piece => piece.kind === 'b')){
+    const firstColor = pieces[0].squareColor;
+    if(pieces.every(piece => piece.squareColor === firstColor)) return true;
+  }
+  return false;
+};
+Game.prototype.gameOver = function(repetitionCount){
   const legal = this.legalMoves();
   if(legal.length === 0){
     if(this.inCheck(this.turn)) return {type:'checkmate', winner:opposite(this.turn)};
     return {type:'stalemate'};
   }
+  if(this.hasInsufficientMaterial()) return {type:'insufficient_material'};
+  if(this.halfmove >= 100) return {type:'fifty_move_rule'};
+  if((repetitionCount || 0) >= 3) return {type:'threefold_repetition'};
   return false;
 };
 
@@ -1692,6 +1731,9 @@ function formatOnlineEndMessage(game){
   const winnerName = game.winner === 'w' ? 'Weiß' : game.winner === 'b' ? 'Schwarz' : '';
   if(game.endReason === 'resignation') return 'Aufgabe — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
   if(game.endReason === 'draw_agreed') return 'Remis vereinbart — 1/2-1/2';
+  if(game.endReason === 'insufficient_material') return 'Remis — unzureichendes Mattmaterial.';
+  if(game.endReason === 'fifty_move_rule') return 'Remis — 50-Züge-Regel.';
+  if(game.endReason === 'threefold_repetition') return 'Remis — dreifache Stellungswiederholung.';
   if(game.endReason === 'checkmate') return 'Schachmatt — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
   if(game.endReason === 'stalemate') return 'Patt — Unentschieden';
   if(game.endReason === 'time') return 'Zeit abgelaufen — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
@@ -2311,6 +2353,35 @@ function buildGameFromHistory(n){
   }
   return g;
 }
+function repetitionCountForHistory(n){
+  const g = new Game();
+  const counts = new Map();
+  const addCurrent = () => {
+    const key = g.repetitionKey();
+    counts.set(key, (counts.get(key) || 0) + 1);
+  };
+  addCurrent();
+  for(let i=0; i<n && i<masterHistory.length; i++){
+    const h = masterHistory[i];
+    const legal = g.legalMoves();
+    const found = legal.find(lm => lm.from[0] === h.from[0] && lm.from[1] === h.from[1] && lm.to[0] === h.to[0] && lm.to[1] === h.to[1]);
+    const mv = found ? {from:found.from, to:found.to, meta:found.meta || {}, promotion:h.promotion || null} : {from:h.from, to:h.to, meta:h.meta || {}, promotion:h.promotion || null};
+    g.makeMove(mv, true);
+    addCurrent();
+  }
+  return counts.get(g.repetitionKey()) || 1;
+}
+function gameOverForHistory(n, gameState){
+  const g = gameState || buildGameFromHistory(n);
+  return g.gameOver(repetitionCountForHistory(n));
+}
+function drawReasonText(type){
+  if(type === 'insufficient_material') return 'Remis — unzureichendes Mattmaterial.';
+  if(type === 'fifty_move_rule') return 'Remis — 50-Züge-Regel.';
+  if(type === 'threefold_repetition') return 'Remis — dreifache Stellungswiederholung.';
+  if(type === 'stalemate') return 'Patt — Unentschieden';
+  return 'Remis — Unentschieden';
+}
 function renderBoard(){
   if(isMoveNavigationLocked() && viewIndex !== masterHistory.length) viewIndex = masterHistory.length;
   const g = buildGameFromHistory(viewIndex);
@@ -2377,12 +2448,12 @@ function reapplySelectionHighlight(g){
   highlightSelection(selected[0], selected[1], g);
 }
 function updateStatus(g){
-  const go = g.gameOver();
+  const go = gameOverForHistory(viewIndex, g);
   gameEnded = !!go;
   if(go){
     stopClock();
     if(go.type === 'checkmate') statusEl.textContent = 'Schachmatt — ' + (go.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt';
-    else statusEl.textContent = 'Patt — Unentschieden';
+    else statusEl.textContent = drawReasonText(go.type);
     return;
   }
   if(!onlineRoomId){
@@ -2598,9 +2669,9 @@ function buildPgn(){
     if(masterHistory[i+1]) parts.push(masterHistory[i+1].san);
   }
   const g = buildGameFromHistory(masterHistory.length);
-  const go = g.gameOver();
+  const go = gameOverForHistory(masterHistory.length, g);
   if(go && go.type === 'checkmate') parts.push(go.winner === 'w' ? '1-0' : '0-1');
-  else if(go && go.type === 'stalemate') parts.push('1/2-1/2');
+  else if(go) parts.push('1/2-1/2');
   else parts.push('*');
   return parts.join(' ');
 }
