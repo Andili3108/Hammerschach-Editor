@@ -143,6 +143,23 @@
   .auth-account-name{font-size:18px;font-weight:900;color:#222;}
   .auth-account-mail{font-size:13px;font-weight:800;color:#666;margin-top:2px;word-break:break-word;}
 
+  .invite-modal{width:560px;max-width:100%;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);}
+  .invite-modal h3{margin:0 0 8px;font-size:22px;color:#222;}
+  .invite-modal p{margin:0 0 14px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
+  .invite-link-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;}
+  .invite-link-input{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-size:14px;font-weight:800;outline:none;}
+  .invite-link-input:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
+  .invite-copy-status{min-height:18px;margin-top:6px;font-size:13px;font-weight:800;color:#226b36;}
+  .member-search-box{margin-top:12px;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:12px;}
+  .member-search-head{font-size:16px;font-weight:900;color:#222;margin-bottom:4px;}
+  .member-search-hint{font-size:13px!important;margin:0 0 10px!important;color:#666!important;}
+  .member-search-results{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;margin-top:10px;}
+  .member-result-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;}
+  .member-result-name{font-size:16px;font-weight:900;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .member-result-meta{font-size:12px;font-weight:800;color:#666;margin-top:2px;}
+  .member-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;padding:6px 2px;}
+  .member-search-status{min-height:18px;font-size:13px;font-weight:800;color:#9A2D33;margin-top:6px;}
+
   .account-status{align-self:center;display:inline-flex;align-items:center;justify-content:center;gap:8px;max-width:720px;margin:-2px auto 0;padding:6px 13px;border-radius:999px;background:rgba(34,107,54,.08);border:1px solid rgba(34,107,54,.18);color:#226b36;font-size:13px;font-weight:900;line-height:1.2;text-align:center;}
   .account-status[hidden]{display:none!important;}
   .account-status::before{content:"✓";display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:999px;background:rgba(34,107,54,.14);font-size:12px;}
@@ -158,6 +175,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.invite-link-row,.member-result-card{grid-template-columns:1fr}.invite-link-row button,.member-result-card button{width:100%}}
 </style>
 </head>
 <body>
@@ -242,6 +260,34 @@
           <button id="authCancelBtn" class="button-flat" type="button">Schließen</button>
           <button id="authLogoutBtn" class="button-flat" type="button" hidden>Logout</button>
           <button id="authSubmitBtn" type="button">Einloggen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="inviteBackdrop" class="identity-backdrop" hidden>
+      <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
+        <h3 id="inviteTitle">Zur Partie einladen</h3>
+        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied. Mailversand folgt später als eigener Schritt.</p>
+
+        <label class="identity-label" for="inviteLinkInput">Einladungslink</label>
+        <div class="invite-link-row">
+          <input id="inviteLinkInput" class="invite-link-input" type="text" readonly aria-label="Einladungslink" />
+          <button id="inviteCopyLinkBtn" type="button">Link kopieren</button>
+        </div>
+        <div id="inviteCopyStatus" class="invite-copy-status" aria-live="polite"></div>
+
+        <div class="member-search-box">
+          <div class="member-search-head">Mitglied suchen</div>
+          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Es wird noch keine Mail versendet.</p>
+          <label class="identity-label" for="memberSearchInput">Suchbegriff</label>
+          <input id="memberSearchInput" class="identity-input" type="search" autocomplete="off" placeholder="z. B. Andreas" />
+          <div id="memberSearchStatus" class="member-search-status" aria-live="polite"></div>
+          <div id="memberSearchResults" class="member-search-results" aria-label="Suchergebnisse"></div>
+        </div>
+
+        <div class="identity-actions">
+          <button id="inviteCloseBtn" class="button-flat" type="button">Schließen</button>
+          <button id="inviteCopyTextBtn" type="button">Einladungstext kopieren</button>
         </div>
       </div>
     </div>
@@ -777,6 +823,20 @@ const onlineHintEl = document.getElementById('onlineHint');
 const whitePlayerNameEl = document.getElementById('whitePlayerName');
 const blackPlayerNameEl = document.getElementById('blackPlayerName');
 
+const inviteBackdrop = document.getElementById('inviteBackdrop');
+const inviteLinkInput = document.getElementById('inviteLinkInput');
+const inviteCopyLinkBtn = document.getElementById('inviteCopyLinkBtn');
+const inviteCopyTextBtn = document.getElementById('inviteCopyTextBtn');
+const inviteCloseBtn = document.getElementById('inviteCloseBtn');
+const inviteCopyStatus = document.getElementById('inviteCopyStatus');
+const memberSearchInput = document.getElementById('memberSearchInput');
+const memberSearchHint = document.getElementById('memberSearchHint');
+const memberSearchStatus = document.getElementById('memberSearchStatus');
+const memberSearchResults = document.getElementById('memberSearchResults');
+let inviteSelectedMember = null;
+let memberSearchTimer = null;
+let memberSearchRequestId = 0;
+
 function randomToken(len){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
   const bytes = new Uint8Array(len);
@@ -966,6 +1026,7 @@ function saveAuthState(token, user){
   }
   updateAuthUi();
   updateOnlineUi();
+  if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
 }
 async function authApi(path, options){
   const headers = {'content-type':'application/json'};
@@ -1157,7 +1218,7 @@ function updateOnlineActionButtons(){
   const live = isOnlineGameLiveForUi();
   if(createOnlineBtn){
     createOnlineBtn.disabled = live;
-    createOnlineBtn.title = live ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungslink erneut kopieren.' : 'Online-Partie erstellen und Einladungslink kopieren.');
+    createOnlineBtn.title = live ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.');
   }
   if(newGameBtn){
     newGameBtn.disabled = live;
@@ -1306,6 +1367,162 @@ async function copyInviteLink(){
     statusEl.textContent = 'Link konnte nicht automatisch kopiert werden.';
   }
   updateOnlineUi();
+}
+
+function closeInviteDialog(){
+  if(inviteBackdrop) inviteBackdrop.hidden = true;
+}
+function updateInviteDialog(){
+  if(!inviteBackdrop) return;
+  const link = onlineRoomId ? getInviteUrl() : '';
+  if(inviteLinkInput) inviteLinkInput.value = link;
+  if(inviteCopyTextBtn) inviteCopyTextBtn.disabled = !link;
+  if(inviteCopyLinkBtn) inviteCopyLinkBtn.disabled = !link;
+
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  if(memberSearchInput) memberSearchInput.disabled = !loggedIn;
+  if(memberSearchHint){
+    memberSearchHint.textContent = loggedIn
+      ? 'Suche nach Benutzername oder Mailadresse. Es wird noch keine Mail versendet.'
+      : 'Mitgliedersuche ist nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
+  }
+  if(!loggedIn){
+    inviteSelectedMember = null;
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Bitte einloggen, um registrierte Mitglieder zu suchen.';
+    if(memberSearchResults) memberSearchResults.innerHTML = '<div class="member-empty">Keine Suche aktiv.</div>';
+  } else if(memberSearchInput && !memberSearchInput.value.trim()){
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Mindestens 2 Zeichen eingeben.';
+    if(memberSearchResults) memberSearchResults.innerHTML = '<div class="member-empty">Noch keine Suche gestartet.</div>';
+  }
+}
+function setInviteCopyStatus(message, isError){
+  if(!inviteCopyStatus) return;
+  inviteCopyStatus.style.color = isError ? '#9A2D33' : '#226b36';
+  inviteCopyStatus.textContent = message || '';
+}
+async function copyTextToClipboard(text){
+  if(!text) return false;
+  try{
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch(_){
+    return false;
+  }
+}
+async function copyInviteLinkFromDialog(){
+  const link = onlineRoomId ? getInviteUrl() : '';
+  if(!link){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
+  const ok = await copyTextToClipboard(link);
+  if(ok){
+    onlineLastMessage = 'Einladungslink wurde kopiert.';
+    statusEl.textContent = 'Einladungslink wurde kopiert.';
+    setInviteCopyStatus('Einladungslink wurde kopiert.', false);
+  } else {
+    try{ if(inviteLinkInput){ inviteLinkInput.focus(); inviteLinkInput.select(); } } catch(_){}
+    setInviteCopyStatus('Automatisches Kopieren nicht möglich. Bitte den markierten Link manuell kopieren.', true);
+  }
+  updateOnlineUi();
+}
+function buildInvitationText(member){
+  const link = onlineRoomId ? getInviteUrl() : '';
+  const name = member && member.username ? cleanDisplayName(member.username) : '';
+  const greeting = name ? ('Hallo ' + name + ',') : 'Hallo,';
+  return greeting + '\n\nich lade dich zu einer Online-Partie Hammerschach-Gamer ein:\n' + link + '\n\nViele Grüße';
+}
+async function copyInvitationText(member){
+  const link = onlineRoomId ? getInviteUrl() : '';
+  if(!link){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
+  if(member) inviteSelectedMember = member;
+  const text = buildInvitationText(member || inviteSelectedMember || null);
+  const ok = await copyTextToClipboard(text);
+  if(ok){
+    const suffix = member && member.username ? (' für ' + member.username) : '';
+    setInviteCopyStatus('Einladungstext' + suffix + ' wurde kopiert.', false);
+    onlineLastMessage = 'Einladungstext wurde kopiert.';
+    statusEl.textContent = 'Einladungstext wurde kopiert.';
+  } else {
+    setInviteCopyStatus('Automatisches Kopieren nicht möglich. Bitte den Link oben manuell kopieren.', true);
+  }
+  updateOnlineUi();
+}
+function renderMemberSearchResults(users){
+  if(!memberSearchResults) return;
+  memberSearchResults.innerHTML = '';
+  if(!users || users.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'member-empty';
+    empty.textContent = 'Kein passendes Mitglied gefunden.';
+    memberSearchResults.appendChild(empty);
+    return;
+  }
+  users.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'member-result-card';
+
+    const info = document.createElement('div');
+    info.style.minWidth = '0';
+    const name = document.createElement('div');
+    name.className = 'member-result-name';
+    name.textContent = user.username || 'Mitglied';
+    const meta = document.createElement('div');
+    meta.className = 'member-result-meta';
+    meta.textContent = 'Registriertes Mitglied';
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'button-flat';
+    btn.textContent = 'Einladung kopieren';
+    btn.addEventListener('click', () => copyInvitationText(user));
+
+    card.appendChild(info);
+    card.appendChild(btn);
+    memberSearchResults.appendChild(card);
+  });
+}
+async function performMemberSearch(query, requestId){
+  try{
+    const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
+    if(requestId !== memberSearchRequestId) return;
+    renderMemberSearchResults(data.users || []);
+    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied auswählen und Einladungstext kopieren.' : 'Keine Treffer.';
+  } catch(err){
+    if(requestId !== memberSearchRequestId) return;
+    renderMemberSearchResults([]);
+    if(memberSearchStatus) memberSearchStatus.textContent = err && err.message ? err.message : 'Mitgliedersuche fehlgeschlagen.';
+  }
+}
+function scheduleMemberSearch(){
+  if(memberSearchTimer) clearTimeout(memberSearchTimer);
+  inviteSelectedMember = null;
+  const query = memberSearchInput ? memberSearchInput.value.trim() : '';
+  memberSearchRequestId++;
+  if(!onlineAuthToken || !onlineAuthUser){ updateInviteDialog(); return; }
+  if(query.length < 2){
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Mindestens 2 Zeichen eingeben.';
+    if(memberSearchResults) memberSearchResults.innerHTML = '<div class="member-empty">Noch keine Suche gestartet.</div>';
+    return;
+  }
+  if(memberSearchStatus) memberSearchStatus.textContent = 'Suche läuft...';
+  const requestId = memberSearchRequestId;
+  memberSearchTimer = setTimeout(() => performMemberSearch(query, requestId), 260);
+}
+async function openInviteDialogForCurrentOrNewRoom(){
+  if(isOnlineGameLiveForUi()) return false;
+  if(!onlineRoomId || onlineGameStarted || onlineGameEnded || gameEnded || timeLost){
+    const created = await createNewOnlineRoom({copyLink:false});
+    if(!created) return false;
+  }
+  updateInviteDialog();
+  if(inviteBackdrop) inviteBackdrop.hidden = false;
+  setTimeout(() => {
+    try{
+      if(onlineAuthToken && onlineAuthUser && memberSearchInput) memberSearchInput.focus();
+      else if(inviteCopyLinkBtn) inviteCopyLinkBtn.focus();
+    } catch(_){}
+  }, 0);
+  return true;
 }
 function closeOnlineSocket(){
   if(onlineReconnectTimer){ clearTimeout(onlineReconnectTimer); onlineReconnectTimer = null; }
@@ -1993,9 +2210,10 @@ function onlineInteractionBlockReason(gameState){
   if(onlineRoleCode !== gameState.turn) return 'Du spielst ' + roleLabel(onlineRoleCode) + '. ' + roleLabel(gameState.turn) + ' ist am Zug.';
   return '';
 }
-async function createNewOnlineRoom(){
-  if(isOnlineGameLiveForUi()) return;
-  if(!(await ensureDisplayNameForOnline())) return;
+async function createNewOnlineRoom(opts){
+  opts = opts || {};
+  if(isOnlineGameLiveForUi()) return false;
+  if(!(await ensureDisplayNameForOnline())) return false;
   closeOnlineSocket();
   onlineRoomId = null;
   onlineRoleCode = 'local';
@@ -2012,18 +2230,20 @@ async function createNewOnlineRoom(){
   newGame();
   const roomId = createRoomId();
   connectOnlineRoom(roomId);
-  setTimeout(copyInviteLink, 250);
+  if(opts.copyLink !== false) setTimeout(copyInviteLink, 250);
+  return true;
 }
 async function inviteToOnlineGame(){
-  if(isOnlineGameLiveForUi()) return;
-  if(onlineRoomId && !onlineGameStarted && !onlineGameEnded){
-    copyInviteLink();
-    return;
-  }
-  createNewOnlineRoom();
+  await openInviteDialogForCurrentOrNewRoom();
 }
 createOnlineBtn.addEventListener('click', inviteToOnlineGame);
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', copyInviteLink);
+if(inviteCopyLinkBtn) inviteCopyLinkBtn.addEventListener('click', copyInviteLinkFromDialog);
+if(inviteCopyTextBtn) inviteCopyTextBtn.addEventListener('click', () => copyInvitationText(inviteSelectedMember || null));
+if(inviteCloseBtn) inviteCloseBtn.addEventListener('click', closeInviteDialog);
+if(inviteBackdrop) inviteBackdrop.addEventListener('click', ev => { if(ev.target === inviteBackdrop) closeInviteDialog(); });
+if(memberSearchInput) memberSearchInput.addEventListener('input', scheduleMemberSearch);
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && inviteBackdrop && !inviteBackdrop.hidden) closeInviteDialog(); });
 startOnlineBtn.addEventListener('click', startOnlineGame);
 if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
 if(resignBtn) resignBtn.addEventListener('click', handleResignButtonClick);
