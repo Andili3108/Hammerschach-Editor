@@ -192,7 +192,7 @@
           <div class="online-item"><div class="online-label">Partie</div><div id="onlineGameState" class="online-value neutral">Keine Partie</div></div>
           <div id="onlineHint" class="online-hint" hidden></div>
         </div>
-        <div class="status header-status" id="status">Zur Partie einladen, um eine Online-Partie zu erstellen.</div>
+        <div class="status header-status" id="status">Bedenkzeit wählen, dann zur Partie einladen.</div>
         <div class="actions match-actions" aria-label="Partieaktionen">
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
@@ -734,7 +734,14 @@ function isGameInProgressForUi(){
   return !!(isOnlineGameLiveForUi() || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost);
 }
 function updateTimeSetupVisibility(){
-  if(timeSetupBoxEl) timeSetupBoxEl.hidden = !onlineRoomId || onlineRoleCode !== 'w' || isGameInProgressForUi();
+  if(!timeSetupBoxEl) return;
+  /*
+    Die Bedenkzeit-Auswahl gehört vor die Einladung:
+    - vor Erstellung eines Online-Raums sichtbar und auswählbar
+    - in der Lobby sichtbar, aber für Schwarz/Zuschauer gesperrt
+    - erst während einer gestarteten/laufenden Partie ausgeblendet
+  */
+  timeSetupBoxEl.hidden = !!(onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
 }
 
 /* Online-Schach: Räume, Einladungslink, Rollen, Bedenkzeit, Partiestart und Zugsynchronisierung.
@@ -2379,7 +2386,7 @@ function updateStatus(g){
     return;
   }
   if(!onlineRoomId){
-    statusEl.textContent = 'Zur Partie einladen, um eine Online-Partie zu erstellen.';
+    statusEl.textContent = 'Bedenkzeit wählen, dann zur Partie einladen.';
     return;
   }
   if(onlineRoomId){
@@ -2837,9 +2844,15 @@ function getTimeOption(key, category){
   return null;
 }
 function isTimeControlLocked(){
-  if(!onlineRoomId) return true;
   if(masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return true;
   if(onlineGameStarted) return true;
+
+  /*
+    Vor der Einladung gibt es noch keinen Online-Raum.
+    Genau dann soll Weiß die Bedenkzeit bereits vorbereiten können.
+  */
+  if(!onlineRoomId) return false;
+
   if(!onlineConnected) return true;
   if(onlineRoleCode !== 'w') return true;
   return false;
@@ -2859,7 +2872,7 @@ function updateTimeControlsLock(){
     select.setAttribute('aria-disabled', locked ? 'true' : 'false');
   });
   if(timeLockNoteEl){
-    if(!onlineRoomId) timeLockNoteEl.textContent = 'Bitte zuerst eine Online-Partie erstellen.';
+    if(!onlineRoomId) timeLockNoteEl.textContent = 'Bedenkzeit vor der Einladung wählen.';
     else if(onlineGameStarted) timeLockNoteEl.textContent = 'Online-Partie gestartet: Bedenkzeit ist gesperrt.';
     else if(onlineRoleCode === 'b') timeLockNoteEl.textContent = 'Nur Weiß wählt die Bedenkzeit.';
     else if(onlineRoleCode === 'spectator') timeLockNoteEl.textContent = 'Zuschauer können die Bedenkzeit nicht ändern.';
@@ -2899,8 +2912,8 @@ function applyTimeControlFromKey(key, label, category){
 function setTimeControl(key, label, category){
   if(isTimeControlLocked()){
     const previous = statusEl.textContent;
-    statusEl.textContent = !onlineRoomId ? 'Bitte zuerst eine Online-Partie erstellen.' : 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.';
-    setTimeout(() => { if(statusEl.textContent === 'Bitte zuerst eine Online-Partie erstellen.' || statusEl.textContent === 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.') statusEl.textContent = previous; }, 1200);
+    statusEl.textContent = onlineGameStarted ? 'Die Partie wurde bereits gestartet. Die Bedenkzeit ist gesperrt.' : 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.';
+    setTimeout(() => { if(statusEl.textContent === 'Die Partie wurde bereits gestartet. Die Bedenkzeit ist gesperrt.' || statusEl.textContent === 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.') statusEl.textContent = previous; }, 1200);
     updateTimeControlsLock();
     updateTimeSelectValues();
     return;
