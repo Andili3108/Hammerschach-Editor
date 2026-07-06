@@ -81,6 +81,14 @@
   .time-format-help{text-align:center;font-size:12px;font-weight:800;color:#666;line-height:1.25;margin-top:-2px;}
   .time-status{text-align:center;font-size:13px;font-weight:800;color:#555;line-height:1.35;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.10);border-radius:12px;padding:6px 10px;}
   .time-lock-note{text-align:center;font-size:12px;font-weight:700;color:#9A2D33;min-height:16px;line-height:1.25;}
+  .invite-color-box{padding:13px 16px;display:flex;flex-direction:column;gap:10px;}
+  .invite-color-box[hidden]{display:none!important;}
+  .invite-color-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .invite-color-option{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;min-height:38px;}
+  .invite-color-option.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
+  .invite-color-option:disabled{opacity:.55;cursor:default;}
+  .invite-color-summary{border-radius:12px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);padding:8px 10px;margin:0 0 12px;font-size:13px;font-weight:800;color:#555;line-height:1.35;}
+  .invite-color-summary[hidden]{display:none!important;}
   .moves-right{width:var(--right-col);max-width:100%;flex:0 0 var(--right-col);}
   .side-panel{height:var(--board-size);min-height:var(--board-size);padding:12px 14px;display:flex;flex-direction:column;overflow:hidden;}
   .side-toggle-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
@@ -196,7 +204,7 @@
   .online-panel[hidden]{display:none!important;}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors,.invite-color-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
 </style>
 </head>
@@ -288,6 +296,7 @@
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
         <h3 id="inviteTitle">Zur Partie einladen</h3>
         <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und öffne eine vorbereitete E-Mail in deinem Mailprogramm.</p>
+        <div id="inviteColorSummary" class="invite-color-summary" hidden></div>
 
         <label class="identity-label" for="inviteLinkInput">Einladungslink</label>
         <div class="invite-link-row">
@@ -397,6 +406,15 @@
           <div id="timeStatus" class="time-status" hidden>Keine Bedenkzeit aktiv</div>
           <div id="timeLockNote" class="time-lock-note" hidden></div>
         </div>
+            <div id="inviteColorBox" class="invite-color-box player-time-setup">
+              <div class="clock-title">Farbe für Einladung wählen</div>
+              <div class="invite-color-options" aria-label="Farbe des Einladenden wählen">
+                <button id="inviteColorWhiteBtn" class="invite-color-option" type="button" data-invite-color="w">⚪ Weiß</button>
+                <button id="inviteColorBlackBtn" class="invite-color-option" type="button" data-invite-color="b">⚫ Schwarz</button>
+                <button id="inviteColorRandomBtn" class="invite-color-option" type="button" data-invite-color="random">🎲 Zufall</button>
+              </div>
+              <div id="inviteColorStatus" class="time-status">Diese Auswahl gilt für den nächsten Einladungsraum.</div>
+            </div>
           </div>
 
           <div id="movesPanel" class="side-content moves-panel" hidden>
@@ -788,6 +806,10 @@ const navBackBtn = document.getElementById('navBack');
 const navForwardBtn = document.getElementById('navForward');
 const navEndBtn = document.getElementById('navEnd');
 const timeSetupBoxEl = document.getElementById('timeSetupBox');
+const inviteColorBoxEl = document.getElementById('inviteColorBox');
+const inviteColorStatusEl = document.getElementById('inviteColorStatus');
+const inviteColorSummaryEl = document.getElementById('inviteColorSummary');
+const inviteColorButtons = document.querySelectorAll('.invite-color-option');
 const playersPanelEl = document.getElementById('playersPanel');
 const movesPanelEl = document.getElementById('movesPanel');
 const chatPanelEl = document.getElementById('chatPanel');
@@ -1001,6 +1023,67 @@ function updateTimeSetupVisibility(){
   timeSetupBoxEl.hidden = !!(onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
 }
 
+function normalizeInviteColorPreference(value){
+  value = String(value || '').toLowerCase();
+  return value === 'b' || value === 'black' ? 'b' : value === 'random' || value === 'zufall' ? 'random' : 'w';
+}
+function inviteColorPreferenceLabel(value){
+  value = normalizeInviteColorPreference(value);
+  if(value === 'b') return 'Schwarz';
+  if(value === 'random') return 'Zufall';
+  return 'Weiß';
+}
+function oppositeInviteSide(value){ return value === 'b' ? 'w' : 'b'; }
+function resolveInviteCreatorRole(){
+  const pref = normalizeInviteColorPreference(inviteColorPreference);
+  if(pref === 'random') return Math.random() < 0.5 ? 'w' : 'b';
+  return pref;
+}
+function isInviteColorLocked(){
+  if(onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost) return true;
+  return !!(onlineRoomId && !onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
+}
+function buildInviteColorSummaryText(){
+  if(onlineRoomId && (onlineRoleCode === 'w' || onlineRoleCode === 'b')){
+    const mySide = roleLabel(onlineRoleCode);
+    const opponentSide = roleLabel(oppositeInviteSide(onlineRoleCode));
+    return 'Farbe festgelegt: Du spielst ' + mySide + '. Der eingeladene Spieler spielt ' + opponentSide + '.';
+  }
+  const pref = normalizeInviteColorPreference(inviteColorPreference);
+  if(pref === 'random') return 'Farbe: Zufall. Beim Erstellen des Einladungsraums wird deine Farbe ausgelost.';
+  return 'Farbe: Du lädst als ' + inviteColorPreferenceLabel(pref) + ' ein. Der eingeladene Spieler erhält die Gegenfarbe.';
+}
+function updateInviteColorUi(){
+  const hidden = !!(onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
+  const locked = isInviteColorLocked();
+  if(inviteColorBoxEl) inviteColorBoxEl.hidden = hidden;
+  inviteColorButtons.forEach(btn => {
+    const value = normalizeInviteColorPreference(btn.dataset.inviteColor);
+    btn.classList.toggle('active', normalizeInviteColorPreference(inviteColorPreference) === value);
+    btn.disabled = locked;
+    btn.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+  if(inviteColorStatusEl){
+    if(hidden) inviteColorStatusEl.textContent = '';
+    else if(onlineRoomId && !onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost) inviteColorStatusEl.textContent = buildInviteColorSummaryText() + ' Für eine andere Farbe bitte einen neuen Einladungsraum erstellen.';
+    else inviteColorStatusEl.textContent = buildInviteColorSummaryText();
+  }
+  if(inviteColorSummaryEl){
+    inviteColorSummaryEl.hidden = !onlineRoomId;
+    inviteColorSummaryEl.textContent = buildInviteColorSummaryText();
+  }
+}
+function setInviteColorPreference(value){
+  const normalized = normalizeInviteColorPreference(value);
+  if(isInviteColorLocked()){
+    if(inviteColorStatusEl) inviteColorStatusEl.textContent = 'Die Farbe ist für diesen Einladungsraum bereits festgelegt.';
+    return;
+  }
+  inviteColorPreference = normalized;
+  try{ localStorage.setItem(ONLINE_INVITE_COLOR_STORAGE_KEY, inviteColorPreference); } catch(_){ }
+  updateInviteColorUi();
+}
+
 /* Online-Schach: Räume, Einladungslink, Rollen, Bedenkzeit, Partiestart und Zugsynchronisierung.
 
    Konfiguration:
@@ -1014,6 +1097,11 @@ const ONLINE_PLAYER_NAME_STORAGE_KEY = 'hammerschachGamerOnlineDisplayName';
 const ONLINE_PLAYER_NAME_CONFIRMED_KEY = 'hammerschachGamerOnlineDisplayNameConfirmed';
 const ONLINE_AUTH_TOKEN_STORAGE_KEY = 'hammerschachGamerAuthToken';
 const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
+const ONLINE_INVITE_COLOR_STORAGE_KEY = 'hammerschachGamerInviteColorPreference';
+let inviteColorPreference = 'w';
+try{ inviteColorPreference = normalizeInviteColorPreference(localStorage.getItem(ONLINE_INVITE_COLOR_STORAGE_KEY) || 'w'); } catch(_){ inviteColorPreference = 'w'; }
+let onlinePreferredRoleForNextConnect = '';
+let onlineCanSetTimeControl = false;
 let onlineSocket = null;
 let onlineReconnectTimer = null;
 let onlineRoomId = null;
@@ -1471,6 +1559,7 @@ function getWebSocketUrl(roomId){
   url.searchParams.set('room', roomId);
   url.searchParams.set('player', onlinePlayerId);
   url.searchParams.set('name', onlineAuthUser ? (onlineDisplayName || defaultGuestName()) : displayNameForOnline(onlineDisplayName || defaultGuestName(), true));
+  if(onlinePreferredRoleForNextConnect) url.searchParams.set('preferredRole', onlinePreferredRoleForNextConnect);
   if(onlineAuthToken) url.searchParams.set('auth', onlineAuthToken);
   return url.toString();
 }
@@ -1558,6 +1647,7 @@ function updateOnlineStartButton(){
 }
 function updateOnlineUi(){
   if(!onlineRoomId){
+    onlineCanSetTimeControl = false;
     onlineStatusEl.textContent = 'Nicht verbunden';
     onlineRoleEl.textContent = '—';
     onlineRoomEl.textContent = '—';
@@ -1576,6 +1666,7 @@ function updateOnlineUi(){
     updateGameActionButtons();
     updateChatControls();
     updateTimeSetupVisibility();
+    updateInviteColorUi();
     refreshHeaderStatusFromState();
     return;
   }
@@ -1613,7 +1704,7 @@ function updateOnlineUi(){
   whitePlayerNameEl.textContent = onlineSideText('w');
   blackPlayerNameEl.textContent = onlineSideText('b');
 
-  let syncNote = onlineGameEnded || gameEnded || timeLost ? 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.' : (onlineGameStarted ? 'Partie gestartet. Züge werden synchronisiert und serverseitig geprüft.' : 'Weiß wählt die Bedenkzeit und startet die Partie. Züge werden synchronisiert und serverseitig geprüft.');
+  let syncNote = onlineGameEnded || gameEnded || timeLost ? 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.' : (onlineGameStarted ? 'Partie gestartet. Züge werden synchronisiert und serverseitig geprüft.' : 'Weiß startet die Partie. Die Bedenkzeit wählt Weiß oder der Einladende. Züge werden synchronisiert und serverseitig geprüft.');
   if(onlineRoomTimeControl && onlineRoomTimeControl.label){
     syncNote = 'Raum-Bedenkzeit: ' + onlineRoomTimeControl.label + '. ' + syncNote;
   }
@@ -1624,6 +1715,7 @@ function updateOnlineUi(){
   updateChatControls();
   updateTimeControlsLock();
   updateTimeSetupVisibility();
+  updateInviteColorUi();
   refreshHeaderStatusFromState();
 }
 async function copyInviteLink(){
@@ -1649,6 +1741,7 @@ function isCurrentUserAdmin(){
 }
 function updateInviteDialog(){
   if(!inviteBackdrop) return;
+  updateInviteColorUi();
   const link = onlineRoomId ? getInviteUrl() : '';
   if(inviteLinkInput) inviteLinkInput.value = link;
   if(inviteCopyTextBtn) inviteCopyTextBtn.disabled = !link;
@@ -2222,6 +2315,7 @@ function extractOnlineRoom(msg){
 }
 function connectOnlineRoom(roomId, opts){
   opts = opts || {};
+  if(opts.preferredRole) onlinePreferredRoleForNextConnect = normalizeInviteColorPreference(opts.preferredRole) === 'b' ? 'b' : 'w';
   roomId = cleanRoomId(roomId);
   if(!roomId) return;
   const previousRoomId = onlineRoomId;
@@ -2239,6 +2333,7 @@ function connectOnlineRoom(roomId, opts){
   onlineGameWinner = null;
   onlineDrawOffer = null;
   onlineRoomTimeControl = null;
+  onlineCanSetTimeControl = false;
   onlineAutoSyncedInitialTime = false;
   onlineOrientationRoleApplied = null;
   onlinePendingTimeControlMessageId = null;
@@ -2304,6 +2399,11 @@ function connectOnlineRoom(roomId, opts){
     if(incomingRole){
       onlineRoleCode = incomingRole;
       orientationChanged = applyOnlineOrientationForRole(onlineRoleCode);
+      handled = true;
+    }
+
+    if(Object.prototype.hasOwnProperty.call(msg, 'canSetTimeControl')){
+      onlineCanSetTimeControl = !!msg.canSetTimeControl;
       handled = true;
     }
 
@@ -2383,7 +2483,7 @@ function connectOnlineRoom(roomId, opts){
     else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
     else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
 
-    if(!onlineAutoSyncedInitialTime && onlineRoleCode === 'w' && !incomingTimeControl && timeMode && !onlineGameStarted){
+    if(!onlineAutoSyncedInitialTime && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && !incomingTimeControl && timeMode && !onlineGameStarted){
       onlineAutoSyncedInitialTime = true;
       setTimeout(syncCurrentTimeControlToOnline, 100);
     }
@@ -2430,7 +2530,7 @@ function currentTimeControlPayload(){
 function syncCurrentTimeControlToOnline(){
   if(applyingRemoteTimeControl) return;
   if(!onlineRoomId || !onlineConnected || onlineGameStarted) return;
-  if(onlineRoleCode !== 'w') return;
+  if(onlineRoleCode !== 'w' && !onlineCanSetTimeControl) return;
   const timeControl = currentTimeControlPayload();
   if(!timeControl) return;
   const messageId = 'tc_' + Date.now() + '_' + randomToken(5);
@@ -2617,16 +2717,20 @@ async function createNewOnlineRoom(opts){
   onlineGameWinner = null;
   onlineDrawOffer = null;
   onlineRoomTimeControl = null;
+  onlineCanSetTimeControl = false;
   onlineClockSync = null;
   newGame();
   const roomId = createRoomId();
-  connectOnlineRoom(roomId);
+  onlinePreferredRoleForNextConnect = resolveInviteCreatorRole();
+  connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect});
   if(opts.copyLink !== false) setTimeout(copyInviteLink, 250);
   return true;
 }
 async function inviteToOnlineGame(){
   await openInviteDialogForCurrentOrNewRoom();
 }
+inviteColorButtons.forEach(btn => btn.addEventListener('click', () => setInviteColorPreference(btn.dataset.inviteColor)));
+updateInviteColorUi();
 createOnlineBtn.addEventListener('click', inviteToOnlineGame);
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', copyInviteLink);
 if(inviteCopyLinkBtn) inviteCopyLinkBtn.addEventListener('click', copyInviteLinkFromDialog);
@@ -2766,7 +2870,7 @@ function updateStatus(g){
     }
     if(!onlineGameStarted){
       if(onlineRoleCode === 'w') statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — Bedenkzeit wählen und Partie starten.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
-      else if(onlineRoleCode === 'b') statusEl.textContent = 'Online-Lobby — warte auf Partiestart durch Weiß.';
+      else if(onlineRoleCode === 'b') statusEl.textContent = isOnlineSideConnected('w') ? 'Online-Lobby — warte auf Partiestart durch Weiß.' : 'Du spielst Schwarz — warte auf Weiß.';
       else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
       else statusEl.textContent = 'Online-Lobby wird verbunden.';
       return;
@@ -3223,7 +3327,7 @@ function isTimeControlLocked(){
   if(!onlineRoomId) return false;
 
   if(!onlineConnected) return true;
-  if(onlineRoleCode !== 'w') return true;
+  if(onlineRoleCode !== 'w' && !onlineCanSetTimeControl) return true;
   return false;
 }
 function updateTimeStatus(){
@@ -3243,10 +3347,10 @@ function updateTimeControlsLock(){
   if(timeLockNoteEl){
     if(!onlineRoomId) timeLockNoteEl.textContent = 'Bedenkzeit vor der Einladung wählen.';
     else if(onlineGameStarted) timeLockNoteEl.textContent = 'Online-Partie gestartet: Bedenkzeit ist gesperrt.';
-    else if(onlineRoleCode === 'b') timeLockNoteEl.textContent = 'Nur Weiß wählt die Bedenkzeit.';
+    else if(onlineRoleCode === 'b' && !onlineCanSetTimeControl) timeLockNoteEl.textContent = 'Nur Weiß oder der Einladende wählt die Bedenkzeit.';
     else if(onlineRoleCode === 'spectator') timeLockNoteEl.textContent = 'Zuschauer können die Bedenkzeit nicht ändern.';
     else if(!onlineConnected) timeLockNoteEl.textContent = 'Bedenkzeit wird nach Lobby-Verbindung freigegeben.';
-    else timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist gesperrt.' : 'Weiß-Auswahl: Änderung wird an beide Spieler übertragen.';
+    else timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist gesperrt.' : 'Auswahl wird an beide Spieler übertragen.';
   }
   updateTimeSetupVisibility();
   updateOnlineStartButton();
@@ -3281,8 +3385,8 @@ function applyTimeControlFromKey(key, label, category){
 function setTimeControl(key, label, category){
   if(isTimeControlLocked()){
     const previous = statusEl.textContent;
-    statusEl.textContent = onlineGameStarted ? 'Die Partie wurde bereits gestartet. Die Bedenkzeit ist gesperrt.' : 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.';
-    setTimeout(() => { if(statusEl.textContent === 'Die Partie wurde bereits gestartet. Die Bedenkzeit ist gesperrt.' || statusEl.textContent === 'Nur Weiß kann die Bedenkzeit vor Partiestart ändern.') statusEl.textContent = previous; }, 1200);
+    statusEl.textContent = onlineGameStarted ? 'Die Partie wurde bereits gestartet. Die Bedenkzeit ist gesperrt.' : 'Nur Weiß oder der Einladende kann die Bedenkzeit vor Partiestart ändern.';
+    setTimeout(() => { if(statusEl.textContent === 'Die Partie wurde bereits gestartet. Die Bedenkzeit ist gesperrt.' || statusEl.textContent === 'Nur Weiß oder der Einladende kann die Bedenkzeit vor Partiestart ändern.') statusEl.textContent = previous; }, 1200);
     updateTimeControlsLock();
     updateTimeSelectValues();
     return;
@@ -3306,6 +3410,7 @@ resetClockForNewGame();
 renderBoard();
 const initialRoomId = cleanRoomId(new URL(window.location.href).searchParams.get('room'));
 if(initialRoomId){
+  onlinePreferredRoleForNextConnect = '';
   ensureDisplayNameForOnline().then(ok => {
     if(ok) connectOnlineRoom(initialRoomId);
     else updateOnlineUi();
