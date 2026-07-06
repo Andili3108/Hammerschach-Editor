@@ -186,6 +186,150 @@ async function searchMembers(env, sessionUser, query) {
   }));
 }
 
+
+function cleanUserId(value) {
+  const id = String(value || '').trim().slice(0, 80);
+  return /^[A-Za-z0-9_-]{8,80}$/.test(id) ? id : '';
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function cleanInviteUrl(value, expectedRoom) {
+  const raw = String(value || '').trim().slice(0, 2000);
+  if (!raw) return '';
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+    const room = cleanRoomId(parsed.searchParams.get('room'));
+    if (!room) return '';
+    if (expectedRoom && room !== expectedRoom) return '';
+    return parsed.toString();
+  } catch (_) {
+    return '';
+  }
+}
+
+function invitationFromAddress(env) {
+  return String(
+    (env && (env.INVITE_FROM_EMAIL || env.RESEND_FROM_EMAIL)) ||
+    'Hammerschach <einladung@mail.andili.de>'
+  ).trim();
+}
+
+function buildInvitationSubject() {
+  return 'Einladung zu einer Partie auf Hammerschach';
+}
+
+function buildInvitationText(senderName, recipientName, inviteUrl) {
+  return 'Hallo ' + recipientName + ',\n\n' +
+    'du wurdest von ' + senderName + ' zu einer Schachpartie auf Hammerschach eingeladen.\n\n' +
+    'Klicke einfach auf folgenden Link:\n\n' +
+    inviteUrl + '\n\n' +
+    'Viele Grüße\n' +
+    senderName;
+}
+
+function buildInvitationHtml(senderName, recipientName, inviteUrl) {
+  const sender = escapeHtml(senderName);
+  const recipient = escapeHtml(recipientName);
+  const link = escapeHtml(inviteUrl);
+  return '<div style="font-family:Arial,sans-serif;font-size:16px;line-height:1.5;color:#111">' +
+    '<p>Hallo ' + recipient + ',</p>' +
+    '<p>du wurdest von ' + sender + ' zu einer Schachpartie auf Hammerschach eingeladen.</p>' +
+    '<p>Klicke einfach auf folgenden Link:</p>' +
+    '<p><a href="' + link + '">' + link + '</a></p>' +
+    '<p>Viele Grüße<br>' + sender + '</p>' +
+    '</div>';
+}
+
+async function sendViaResend(env, payload, idempotencyKey) {
+  const apiKey = String((env && env.RESEND_API_KEY) || '').trim();
+  if (!apiKey) {
+    return {
+      ok: false,
+      status: 503,
+      code: 'RESEND_NOT_CONFIGURED',
+      message: 'Mailversand ist noch nicht konfiguriert. Bitte RESEND_API_KEY als Worker-Secret hinterlegen.'
+    };
+  }
+
+  let response;
+  try {
+    response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'authorization': 'Bearer ' + apiKey,
+        'content-type': 'application/json; charset=utf-8',
+        'idempotency-key': idempotencyKey || crypto.randomUUID()
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch (_) {
+    return {
+      ok: false,
+      status: 502,
+      code: 'RESEND_UNREACHABLE',
+      message: 'Resend konnte vom Worker aus nicht erreicht werden.'
+    };
+  }
+
+  let data = null;
+  try { data = await response.json(); } catch (_) { data = null; }
+
+  if (!response.ok) {
+    const providerMessage = data && (data.message || (data.error && data.error.message) || data.name) ? String(data.message || (data.error && data.error.message) || data.name) : '';
+    return {
+      ok: false,
+      status: 502,
+      providerStatus: response.status,
+      code: 'RESEND_SEND_FAILED',
+      message: providerMessage ? ('Einladung konnte nicht verschickt werden: ' + providerMessage) : 'Einladung konnte nicht verschickt werden.'
+    };
+  }
+
+  return { ok: true, data };
+}
+
+async function sendInvitationEmail(env, senderUser, recipientUser, inviteUrl, room) {
+  const senderName = cleanDisplayName(senderUser && senderUser.username) || 'Hammerschach-Spieler';
+  const recipientName = cleanDisplayName(recipientUser && recipientUser.username) || 'Mitglied';
+  const recipientEmail = normalizeEmail(recipientUser && recipientUser.email);
+  if (!recipientEmail) {
+    return { ok: false, status: 400, code: 'RECIPIENT_EMAIL_INVALID', message: 'Für dieses Mitglied ist keine gültige Mailadresse gespeichert.' };
+  }
+
+  const subject = buildInvitationSubject();
+  const text = buildInvitationText(senderName, recipientName, inviteUrl);
+  const html = buildInvitationHtml(senderName, recipientName, inviteUrl);
+  const idempotencyKey = 'invite-' + String(senderUser.id || '').slice(0, 24) + '-' + String(recipientUser.id || '').slice(0, 24) + '-' + String(room || '').slice(0, 32);
+
+  const result = await sendViaResend(env, {
+    from: invitationFromAddress(env),
+    to: [recipientEmail],
+    subject,
+    text,
+    html,
+    tags: [
+      { name: 'app', value: 'hammerschach' },
+      { name: 'type', value: 'game_invite' }
+    ]
+  }, idempotencyKey);
+
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    message: 'Einladung an ' + recipientName + ' wurde verschickt.',
+    providerId: result.data && result.data.id ? result.data.id : null
+  };
+}
+
 async function createSession(env, userId) {
   const token = randomBase64Url(32);
   const tokenHash = await sha256Hex(token);
@@ -281,6 +425,37 @@ async function handleAuthApi(request, env, url) {
     const query = cleanMemberSearchQuery(url.searchParams.get('q') || url.searchParams.get('query') || '');
     const users = await searchMembers(env, session.user, query);
     return json({ ok: true, query, users });
+  }
+
+  if (url.pathname === '/api/invitations/send' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Einladungen können nur von eingeloggten Mitgliedern verschickt werden.' }, { status: 401 });
+
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Einladungsdaten konnten nicht gelesen werden.' }, { status: 400 });
+
+    const recipientUserId = cleanUserId(body.recipientUserId || body.userId || body.recipientId);
+    const room = cleanRoomId(body.room || body.roomId);
+    const inviteUrl = cleanInviteUrl(body.inviteUrl || body.url || body.link, room);
+
+    if (!recipientUserId) return json({ ok: false, code: 'RECIPIENT_REQUIRED', message: 'Bitte ein Mitglied auswählen.' }, { status: 400 });
+    if (!room || !inviteUrl) return json({ ok: false, code: 'INVITE_LINK_INVALID', message: 'Der Einladungslink ist ungültig oder enthält keinen gültigen Raum.' }, { status: 400 });
+    if (recipientUserId === session.user.id) return json({ ok: false, code: 'SELF_INVITE', message: 'Du kannst keine Einladung an deinen eigenen Account senden.' }, { status: 400 });
+
+    const recipient = await env.DB.prepare(
+      `SELECT id, username, email, email_lc, created_at FROM users WHERE id = ? LIMIT 1`
+    ).bind(recipientUserId).first();
+    if (!recipient) return json({ ok: false, code: 'RECIPIENT_NOT_FOUND', message: 'Dieses Mitglied wurde nicht gefunden.' }, { status: 404 });
+
+    const result = await sendInvitationEmail(env, session.user, recipient, inviteUrl, room);
+    if (!result.ok) return json({ ok: false, code: result.code || 'INVITATION_SEND_FAILED', message: result.message || 'Einladung konnte nicht verschickt werden.', providerStatus: result.providerStatus || undefined }, { status: result.status || 502 });
+
+    return json({
+      ok: true,
+      message: result.message,
+      recipient: { id: recipient.id, username: recipient.username },
+      providerId: result.providerId || null
+    });
   }
 
   if (url.pathname === '/api/logout' && request.method === 'POST') {
@@ -1514,9 +1689,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/invitations/send', '/ws?room=ROOM_ID&player=PLAYER_ID'],
+      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'server_email_invitations_resend', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Server-Mail-Einladungen über Resend, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
