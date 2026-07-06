@@ -30,6 +30,13 @@ function cleanDisplayName(value) {
   return name;
 }
 
+function cleanPreferredRole(value) {
+  const role = String(value || '').trim().toLowerCase();
+  if (role === 'w' || role === 'white') return 'w';
+  if (role === 'b' || role === 'black') return 'b';
+  return '';
+}
+
 function guestNameFromPlayerId(playerId) {
   const compact = String(playerId || '').replace(/[^A-Za-z0-9]/g, '');
   const suffix = (compact.slice(-4) || crypto.randomUUID().replace(/[^A-Za-z0-9]/g, '').slice(0, 4)).toUpperCase();
@@ -946,6 +953,7 @@ export class GameRoom {
     let playerId = cleanPlayerId(url.searchParams.get('player'));
     let requestedDisplayName = cleanDisplayName(url.searchParams.get('name') || url.searchParams.get('displayName'));
     const authToken = url.searchParams.get('auth') || url.searchParams.get('token') || '';
+    const preferredRole = cleanPreferredRole(url.searchParams.get('preferredRole') || url.searchParams.get('preferred_role') || url.searchParams.get('desiredRole') || url.searchParams.get('desired_role'));
     const authSession = await lookupAuthSession(this.env, authToken);
     const authUser = authSession ? authSession.user : null;
     if (authUser && authUser.id) {
@@ -956,7 +964,7 @@ export class GameRoom {
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
-    const role = await this.assignRole(playerId);
+    const role = await this.assignRole(playerId, preferredRole);
     const profile = await this.savePlayerProfile(playerId, requestedDisplayName, role, authUser);
 
     this.state.acceptWebSocket(server);
@@ -969,23 +977,33 @@ export class GameRoom {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  async assignRole(playerId) {
+  async assignRole(playerId, preferredRole = '') {
     const players = (await this.state.storage.get('players')) || { white: null, black: null };
 
     if (playerIdFromSlot(players.white) === playerId) return 'w';
     if (playerIdFromSlot(players.black) === playerId) return 'b';
 
-    if (!players.white) {
-      players.white = playerId;
+    const assign = async (role) => {
+      if (role === 'b') players.black = playerId;
+      else players.white = playerId;
       await this.state.storage.put('players', players);
-      return 'w';
+      const creator = (await this.state.storage.get('createdByPlayer')) || '';
+      if (!creator) {
+        await this.state.storage.put('createdByPlayer', playerId);
+        await this.state.storage.put('createdByRole', role === 'b' ? 'b' : 'w');
+      }
+      return role === 'b' ? 'b' : 'w';
+    };
+
+    if (!players.white && !players.black) {
+      return await assign(preferredRole === 'b' ? 'b' : 'w');
     }
 
-    if (!players.black) {
-      players.black = playerId;
-      await this.state.storage.put('players', players);
-      return 'b';
-    }
+    if (preferredRole === 'w' && !players.white) return await assign('w');
+    if (preferredRole === 'b' && !players.black) return await assign('b');
+
+    if (!players.white) return await assign('w');
+    if (!players.black) return await assign('b');
 
     return 'spectator';
   }
@@ -1073,6 +1091,7 @@ export class GameRoom {
     const players = (await this.state.storage.get('players')) || { white: null, black: null };
     const timeControl = (await this.state.storage.get('timeControl')) || null;
     const game = (await this.state.storage.get('game')) || { started: false, startedAt: null, ended: false, result: '*' };
+    const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
     const moves = (await this.state.storage.get('moves')) || [];
     const drawOffer = (await this.state.storage.get('drawOffer')) || null;
     const now = Date.now();
@@ -1088,6 +1107,8 @@ export class GameRoom {
         black: !!playerIdFromSlot(players.black)
       },
       players: await this.getActivePlayers(players),
+      canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByPlayer && info.playerId === createdByPlayer))),
+      createdByMe: !!(createdByPlayer && info.playerId === createdByPlayer),
       timeControl,
       game,
       moves,
@@ -1223,8 +1244,10 @@ export class GameRoom {
         return;
       }
 
-      if (role !== 'w') {
-        safeSend(ws, { type: 'error', code: 'ONLY_WHITE_CAN_SET_TIME', message: 'Nur Weiß kann die Bedenkzeit ändern.' });
+      const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
+      const canSetTimeControl = role === 'w' || (createdByPlayer && info.playerId === createdByPlayer);
+      if (!canSetTimeControl) {
+        safeSend(ws, { type: 'error', code: 'ONLY_WHITE_OR_CREATOR_CAN_SET_TIME', message: 'Nur Weiß oder der Einladende kann die Bedenkzeit ändern.' });
         return;
       }
 
@@ -1670,7 +1693,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
