@@ -264,7 +264,7 @@
     <div id="inviteBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
         <h3 id="inviteTitle">Zur Partie einladen</h3>
-        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und versende die Einladung direkt per E-Mail.</p>
+        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und öffne eine vorbereitete E-Mail in deinem Mailprogramm.</p>
 
         <label class="identity-label" for="inviteLinkInput">Einladungslink</label>
         <div class="invite-link-row">
@@ -275,7 +275,7 @@
 
         <div class="member-search-box">
           <div class="member-search-head">Mitglied suchen</div>
-          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Beim Klick wird eine E-Mail-Einladung über den Server verschickt.</p>
+          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.</p>
           <label class="identity-label" for="memberSearchInput">Suchbegriff</label>
           <input id="memberSearchInput" class="identity-input" type="search" autocomplete="off" placeholder="z. B. Andreas" />
           <div id="memberSearchStatus" class="member-search-status" aria-live="polite"></div>
@@ -1387,7 +1387,7 @@ function updateInviteDialog(){
   if(memberSearchInput) memberSearchInput.disabled = !loggedIn;
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? 'Suche nach Benutzername oder Mailadresse. Beim Klick wird eine E-Mail-Einladung über den Server verschickt.'
+      ? 'Suche nach Benutzername oder Mailadresse. Beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.'
       : 'Mitgliedersuche ist nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -1455,43 +1455,33 @@ async function copyInvitationText(member){
   }
   updateOnlineUi();
 }
-async function sendInvitationToMember(member, button){
-  if(invitationSendBusy) return;
+
+function openMailInvitationToMember(member, button){
   const link = onlineRoomId ? getInviteUrl() : '';
-  if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Einladungen per Mail zu verschicken.', true); return; }
+  if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Mitglieder per Mail einzuladen.', true); return; }
   if(!link || !onlineRoomId){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
   if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
 
-  invitationSendBusy = true;
-  const oldButtonText = button ? button.textContent : '';
-  if(button){ button.disabled = true; button.textContent = 'Sende...'; }
-  if(memberSearchStatus) memberSearchStatus.textContent = 'Einladung wird verschickt...';
-  setInviteCopyStatus('', false);
+  const recipientEmail = String(member.email || '').trim();
+  if(!recipientEmail){ setInviteCopyStatus('Für dieses Mitglied ist keine Mailadresse verfügbar.', true); return; }
+
+  inviteSelectedMember = member;
+  const subject = 'Einladung zu einer Partie auf Hammerschach';
+  const body = buildInvitationText(member);
+  const mailtoUrl = 'mailto:' + encodeURIComponent(recipientEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 
   try{
-    const data = await authApi('/api/invitations/send', {
-      method:'POST',
-      body: JSON.stringify({
-        recipientUserId: member.id,
-        room: onlineRoomId,
-        inviteUrl: link
-      })
-    });
-    const recipientName = data && data.recipient && data.recipient.username ? data.recipient.username : (member.username || 'Mitglied');
-    const message = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde verschickt.');
+    window.location.href = mailtoUrl;
+    const recipientName = member.username || 'Mitglied';
+    const message = 'Mailprogramm für Einladung an ' + recipientName + ' wurde geöffnet.';
     setInviteCopyStatus(message, false);
-    if(memberSearchStatus) memberSearchStatus.textContent = 'Verschickt an ' + recipientName + '.';
+    if(memberSearchStatus) memberSearchStatus.textContent = 'E-Mail im Mailprogramm prüfen und absenden.';
     onlineLastMessage = message;
     statusEl.textContent = message;
-  } catch(err){
-    const message = err && err.message ? err.message : 'Einladung konnte nicht verschickt werden.';
-    setInviteCopyStatus(message, true);
-    if(memberSearchStatus) memberSearchStatus.textContent = message;
-  } finally {
-    invitationSendBusy = false;
-    if(button){ button.disabled = false; button.textContent = oldButtonText || 'Einladung senden'; }
-    updateOnlineUi();
+  } catch(_){
+    setInviteCopyStatus('Mailprogramm konnte nicht geöffnet werden. Bitte Einladungstext kopieren.', true);
   }
+  updateOnlineUi();
 }
 
 function renderMemberSearchResults(users){
@@ -1508,7 +1498,7 @@ function renderMemberSearchResults(users){
     const card = document.createElement('div');
     card.className = 'member-result-card clickable';
     card.tabIndex = 0;
-    card.title = 'Einladung per E-Mail an ' + (user.username || 'dieses Mitglied') + ' senden';
+    card.title = 'E-Mail-Einladung an ' + (user.username || 'dieses Mitglied') + ' im Mailprogramm öffnen';
 
     const info = document.createElement('div');
     info.style.minWidth = '0';
@@ -1517,18 +1507,18 @@ function renderMemberSearchResults(users){
     name.textContent = user.username || 'Mitglied';
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = 'Registriertes Mitglied · Mailadresse bleibt verborgen';
+    meta.textContent = 'Registriertes Mitglied · Mailadresse wird nur für die vorbereitete E-Mail verwendet';
     info.appendChild(name);
     info.appendChild(meta);
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'button-flat';
-    btn.textContent = 'Einladung senden';
-    btn.addEventListener('click', ev => { ev.stopPropagation(); sendInvitationToMember(user, btn); });
-    card.addEventListener('click', () => sendInvitationToMember(user, btn));
+    btn.textContent = 'E-Mail öffnen';
+    btn.addEventListener('click', ev => { ev.stopPropagation(); openMailInvitationToMember(user, btn); });
+    card.addEventListener('click', () => openMailInvitationToMember(user, btn));
     card.addEventListener('keydown', ev => {
-      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); sendInvitationToMember(user, btn); }
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); openMailInvitationToMember(user, btn); }
     });
 
     card.appendChild(info);
@@ -1541,7 +1531,7 @@ async function performMemberSearch(query, requestId){
     const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
     if(requestId !== memberSearchRequestId) return;
     renderMemberSearchResults(data.users || []);
-    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um Einladung per Mail zu senden.' : 'Keine Treffer.';
+    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um E-Mail im Mailprogramm zu öffnen.' : 'Keine Treffer.';
   } catch(err){
     if(requestId !== memberSearchRequestId) return;
     renderMemberSearchResults([]);
