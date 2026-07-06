@@ -275,6 +275,48 @@ async function deleteUserAsAdmin(env, adminUser, targetId) {
   return { ok: true, deletedUser: publicUser(target, env) };
 }
 
+
+async function ensureStatsTable(env) {
+  if (!env || !env.DB) return false;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS gamer_stats (
+       name TEXT PRIMARY KEY,
+       value INTEGER NOT NULL DEFAULT 0,
+       updated_at TEXT
+     )`
+  ).run();
+  return true;
+}
+
+async function ensureStatRows(env) {
+  if (!(await ensureStatsTable(env))) return false;
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(`INSERT OR IGNORE INTO gamer_stats (name, value, updated_at) VALUES ('page_views', 0, ?)`).bind(nowIso).run();
+  await env.DB.prepare(`INSERT OR IGNORE INTO gamer_stats (name, value, updated_at) VALUES ('games_played', 0, ?)`).bind(nowIso).run();
+  return true;
+}
+
+async function readGamerStats(env) {
+  if (!(await ensureStatRows(env))) {
+    return { visits: 0, gamesPlayed: 0 };
+  }
+  const result = await env.DB.prepare(`SELECT name, value FROM gamer_stats WHERE name IN ('page_views', 'games_played')`).all();
+  const rows = result && result.results ? result.results : [];
+  const values = { page_views: 0, games_played: 0 };
+  for (const row of rows) {
+    if (row && (row.name === 'page_views' || row.name === 'games_played')) values[row.name] = Math.max(0, Number(row.value || 0));
+  }
+  return { visits: values.page_views, pageViews: values.page_views, gamesPlayed: values.games_played };
+}
+
+async function incrementGamerStat(env, name) {
+  const key = name === 'games_played' ? 'games_played' : name === 'page_views' ? 'page_views' : '';
+  if (!key || !(await ensureStatRows(env))) return false;
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(`UPDATE gamer_stats SET value = value + 1, updated_at = ? WHERE name = ?`).bind(nowIso, key).run();
+  return true;
+}
+
 async function createSession(env, userId) {
   const token = randomBase64Url(32);
   const tokenHash = await sha256Hex(token);
@@ -304,6 +346,17 @@ async function lookupAuthSession(env, token) {
 
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
+
+  if (url.pathname === '/api/stats' && request.method === 'GET') {
+    const stats = await readGamerStats(env);
+    return json({ ok: true, stats });
+  }
+
+  if (url.pathname === '/api/stats/visit' && request.method === 'POST') {
+    await incrementGamerStat(env, 'page_views');
+    const stats = await readGamerStats(env);
+    return json({ ok: true, stats });
+  }
 
   if (url.pathname === '/api/me' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
@@ -1315,7 +1368,9 @@ export class GameRoom {
         endedAt: null,
         endReason: null,
         winner: null,
-        result: '*'
+        result: '*',
+        playStatsCounted: false,
+        playStatsCountedAt: null
       };
       const clock = makeInitialClock(timeControl, now);
       await this.state.storage.put('game', game);
@@ -1615,6 +1670,18 @@ export class GameRoom {
       clock.lastTs = now;
       clock.updatedAt = now;
 
+      if (!game.playStatsCounted) {
+        try {
+          const counted = await incrementGamerStat(this.env, 'games_played');
+          if (counted) {
+            game.playStatsCounted = true;
+            game.playStatsCountedAt = new Date(now).toISOString();
+          }
+        } catch (_) {
+          /* Die Partie darf nicht scheitern, nur weil der Statistikzähler nicht verfügbar ist. */
+        }
+      }
+
       const openDrawOffer = (await this.state.storage.get('drawOffer')) || null;
       let outgoingDrawOffer = openDrawOffer;
       if (validation.gameOver || (openDrawOffer && openDrawOffer.byRole && openDrawOffer.byRole !== role)) {
@@ -1692,7 +1759,7 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID&player=PLAYER_ID'],
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID&player=PLAYER_ID'],
       features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
