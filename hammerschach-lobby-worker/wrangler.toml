@@ -15,7 +15,3 @@ new_sqlite_classes = ["GameRoom"]
 binding = "DB"
 database_name = "hammerschach-gamer-db"
 database_id = "e6155132-6ad6-4569-be28-122540d3748f"
-
-[vars]
-# Muss zu einer bei Resend verifizierten Domain passen.
-INVITE_FROM_EMAIL = "Hammerschach <einladung@mail.andili.de>"
