@@ -194,7 +194,6 @@
         <div class="actions match-actions" aria-label="Partieaktionen">
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
-          <button id="editPlayerNameBtn" class="button-flat name-action-btn" type="button">Name ändern</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
         </div>
       </div>
@@ -202,15 +201,15 @@
 
     <div id="playerNameBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="playerNameTitle">
-        <h3 id="playerNameTitle">Spielername</h3>
-        <p>Dieser Name wird nur für Gäste verwendet. Eingeloggte Mitglieder spielen automatisch mit ihrem Accountnamen.</p>
-        <label class="identity-label" for="playerNameInput">Anzeigename</label>
-        <input id="playerNameInput" class="identity-input" type="text" maxlength="24" autocomplete="nickname" placeholder="z. B. Andi" />
+        <h3 id="playerNameTitle">Als Gast weiterspielen</h3>
+        <p>Ohne Account wirst du als Gast angezeigt. Optional kannst du einen Gastnamen eintragen, damit dein Gegner dich leichter erkennt.</p>
+        <label class="identity-label" for="playerNameInput">Gastname optional</label>
+        <input id="playerNameInput" class="identity-input" type="text" maxlength="24" autocomplete="nickname" placeholder="Gast oder z. B. Andi" />
         <div id="playerNameError" class="identity-error" aria-live="polite"></div>
         <div class="identity-actions">
           <button id="playerNameCancelBtn" class="button-flat" type="button">Abbrechen</button>
-          <button id="playerNameGuestBtn" class="button-flat" type="button">Weiter als Gast</button>
-          <button id="playerNameSaveBtn" type="button">Speichern</button>
+          <button id="playerNameGuestBtn" class="button-flat" type="button">Als Gast spielen</button>
+          <button id="playerNameSaveBtn" type="button">Gastname speichern</button>
         </div>
       </div>
     </div>
@@ -862,14 +861,22 @@ function cleanDisplayName(value){
     .slice(0, 24);
 }
 function defaultGuestName(){
-  const compact = String(onlinePlayerId || '').replace(/[^A-Za-z0-9]/g, '');
-  const suffix = (compact.slice(-4) || randomToken(4)).toUpperCase();
-  return 'Gast-' + suffix;
+  return 'Gast';
+}
+function isGeneratedGuestName(name){
+  return /^Gast-[A-Z0-9]{2,}$/i.test(String(name || '').trim());
+}
+function displayNameForOnline(name, isGuest){
+  const cleaned = cleanDisplayName(name);
+  if(!cleaned) return isGuest ? defaultGuestName() : '';
+  if(!isGuest) return cleaned;
+  if(cleaned === 'Gast' || isGeneratedGuestName(cleaned) || /\(Gast\)$/i.test(cleaned)) return cleaned;
+  return cleanDisplayName(cleaned + ' (Gast)') || cleaned;
 }
 function getStoredDisplayName(){
   try{
     const saved = cleanDisplayName(localStorage.getItem(ONLINE_PLAYER_NAME_STORAGE_KEY));
-    if(saved) return saved;
+    if(saved) return isGeneratedGuestName(saved) ? defaultGuestName() : saved;
   } catch(_){}
   return defaultGuestName();
 }
@@ -889,9 +896,8 @@ function saveDisplayName(name, confirmed){
   return cleaned;
 }
 function updatePlayerNameButton(){
-  if(!editPlayerNameBtn) return;
-  editPlayerNameBtn.textContent = 'Gastname ändern';
-  editPlayerNameBtn.title = 'Aktueller Gastname: ' + onlineDisplayName;
+  /* Die frühere Header-Schaltfläche „Gastname ändern“ wurde bewusst entfernt.
+     Gäste bestätigen ihren Namen nur noch beim Erstellen/Beitreten einer Online-Partie. */
 }
 function emptyOnlinePlayers(){
   return {
@@ -924,7 +930,8 @@ function isOnlineSideConnected(role){
 function onlineSideName(role){
   const key = role === 'w' ? 'white' : role === 'b' ? 'black' : '';
   const fallback = role === 'w' ? 'Weiß' : role === 'b' ? 'Schwarz' : 'Spieler';
-  return (key && onlinePlayers[key] && onlinePlayers[key].name) ? onlinePlayers[key].name : fallback;
+  const slot = key ? onlinePlayers[key] : null;
+  return slot && slot.name ? displayNameForOnline(slot.name, slot.guest !== false) : fallback;
 }
 function onlineSideText(role){
   const side = role === 'w' ? 'Weiß' : 'Schwarz';
@@ -946,7 +953,8 @@ function closePlayerNameDialog(result){
 }
 function showPlayerNameDialog(){
   if(!playerNameBackdrop || !playerNameInput) return Promise.resolve(false);
-  playerNameInput.value = onlineDisplayName || defaultGuestName();
+  const current = cleanDisplayName(onlineDisplayName);
+  playerNameInput.value = current && current !== defaultGuestName() ? current.replace(/\s*\(Gast\)$/i, '') : '';
   if(playerNameError) playerNameError.textContent = '';
   playerNameBackdrop.hidden = false;
   setTimeout(() => { try{ playerNameInput.focus(); playerNameInput.select(); } catch(_){} }, 0);
@@ -955,10 +963,10 @@ function showPlayerNameDialog(){
 function submitPlayerNameFromDialog(confirmName){
   const typed = cleanDisplayName(playerNameInput ? playerNameInput.value : '');
   if(confirmName && typed.length < 2){
-    if(playerNameError) playerNameError.textContent = 'Bitte mindestens 2 Zeichen eingeben.';
+    if(playerNameError) playerNameError.textContent = 'Bitte mindestens 2 Zeichen eingeben oder „Als Gast spielen“ wählen.';
     return;
   }
-  saveDisplayName(confirmName ? typed : (typed || onlineDisplayName || defaultGuestName()), true);
+  saveDisplayName(confirmName ? displayNameForOnline(typed, true) : defaultGuestName(), true);
   closePlayerNameDialog(true);
 }
 async function ensureDisplayNameForOnline(){
@@ -967,7 +975,10 @@ async function ensureDisplayNameForOnline(){
     updatePlayerNameButton();
     return true;
   }
-  if(hasConfirmedDisplayName()) return true;
+  if(hasConfirmedDisplayName()){
+    onlineDisplayName = displayNameForOnline(onlineDisplayName || defaultGuestName(), true);
+    return true;
+  }
   return await showPlayerNameDialog();
 }
 if(editPlayerNameBtn) editPlayerNameBtn.addEventListener('click', () => showPlayerNameDialog());
@@ -1059,7 +1070,6 @@ function updateAuthUi(){
   if(authIntro){
     authIntro.textContent = loggedIn ? 'Dein Accountname wird in Online-Partien automatisch verwendet.' : 'Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.';
   }
-  if(editPlayerNameBtn) editPlayerNameBtn.hidden = loggedIn;
   if(authLoggedOut) authLoggedOut.hidden = loggedIn;
   if(authLoggedIn) authLoggedIn.hidden = !loggedIn;
   if(authLogoutBtn) authLogoutBtn.hidden = !loggedIn;
@@ -1126,7 +1136,7 @@ async function logoutAuth(){
   try{ if(oldToken) await authApi('/api/logout', {method:'POST', body:JSON.stringify({})}); } catch(_){}
   saveAuthState('', null);
   if(onlineRoomId && onlineConnected){
-    saveDisplayName(getStoredDisplayName(), true);
+    saveDisplayName(displayNameForOnline(getStoredDisplayName(), true), true);
     sendOnlineMessage({type:'set_player_name', displayName: onlineDisplayName});
   }
   closeAuthDialog();
@@ -1192,7 +1202,7 @@ function getWebSocketUrl(roomId){
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   url.searchParams.set('room', roomId);
   url.searchParams.set('player', onlinePlayerId);
-  url.searchParams.set('name', onlineDisplayName || defaultGuestName());
+  url.searchParams.set('name', onlineAuthUser ? (onlineDisplayName || defaultGuestName()) : displayNameForOnline(onlineDisplayName || defaultGuestName(), true));
   if(onlineAuthToken) url.searchParams.set('auth', onlineAuthToken);
   return url.toString();
 }
