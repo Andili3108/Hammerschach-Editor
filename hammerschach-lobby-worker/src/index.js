@@ -36,6 +36,14 @@ function guestNameFromPlayerId(playerId) {
   return 'Gast-' + suffix;
 }
 
+function cleanChatText(value) {
+  return String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 300);
+}
+
 
 const AUTH_SESSION_DAYS = 30;
 const PASSWORD_ITERATIONS = 100000;
@@ -1089,6 +1097,22 @@ export class GameRoom {
     }
   }
 
+  async broadcastChatMessage(chat) {
+    const now = Date.now();
+    for (const ws of this.state.getWebSockets()) {
+      const info = ws.deserializeAttachment() || {};
+      safeSend(ws, {
+        type: 'chat_message',
+        ok: true,
+        messageId: chat.messageId || chat.id || null,
+        room: info.room || 'unknown',
+        role: info.role || 'spectator',
+        chat,
+        serverNow: now
+      });
+    }
+  }
+
   async webSocketMessage(ws, message) {
     let data = null;
     try {
@@ -1108,6 +1132,43 @@ export class GameRoom {
 
     if (data.type === 'request_state') {
       await this.sendRoomState(ws, 'room_state');
+      return;
+    }
+
+    if (data.type === 'chat_message') {
+      const text = cleanChatText(data.text || data.message || (data.chat && data.chat.text));
+      if (!text) {
+        safeSend(ws, { type: 'error', code: 'CHAT_EMPTY', message: 'Bitte eine Chatnachricht eingeben.' });
+        return;
+      }
+
+      const now = Date.now();
+      const playerId = info.playerId || '';
+      const lastMap = (await this.state.storage.get('chatLastSentAt')) || {};
+      const lastSentAt = Number(lastMap[playerId] || 0);
+      if (playerId && now - lastSentAt < 1200) {
+        safeSend(ws, { type: 'error', code: 'CHAT_RATE_LIMIT', message: 'Bitte kurz warten, bevor du die nächste Chatnachricht sendest.' });
+        return;
+      }
+      if (playerId) {
+        lastMap[playerId] = now;
+        await this.state.storage.put('chatLastSentAt', lastMap);
+      }
+
+      const messageId = String(data.messageId || data.clientMessageId || ('chat_' + now + '_' + crypto.randomUUID())).slice(0, 80);
+      const senderName = cleanDisplayName(info.displayName || info.username) || (role === 'w' ? 'Weiß' : role === 'b' ? 'Schwarz' : 'Zuschauer');
+      const chat = {
+        id: messageId,
+        messageId,
+        room: info.room || 'unknown',
+        role,
+        playerId: playerId || null,
+        senderName,
+        text,
+        sentAt: new Date(now).toISOString(),
+        serverNow: now
+      };
+      await this.broadcastChatMessage(chat);
       return;
     }
 
