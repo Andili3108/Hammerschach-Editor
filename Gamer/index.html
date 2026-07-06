@@ -160,9 +160,6 @@
   .member-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;padding:6px 2px;}
   .member-search-status{min-height:18px;font-size:13px;font-weight:800;color:#9A2D33;margin-top:6px;}
 
-  .account-status{align-self:center;display:inline-flex;align-items:center;justify-content:center;gap:8px;max-width:720px;margin:-2px auto 0;padding:6px 13px;border-radius:999px;background:rgba(34,107,54,.08);border:1px solid rgba(34,107,54,.18);color:#226b36;font-size:13px;font-weight:900;line-height:1.2;text-align:center;}
-  .account-status[hidden]{display:none!important;}
-  .account-status::before{content:"✓";display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:999px;background:rgba(34,107,54,.14);font-size:12px;}
   .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
   .online-label{font-size:12px;font-weight:900;color:#666;margin-bottom:2px;}
@@ -200,7 +197,6 @@
           <button id="editPlayerNameBtn" class="button-flat name-action-btn" type="button">Name ändern</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
         </div>
-        <div id="accountStatusBar" class="account-status" hidden aria-live="polite"></div>
       </div>
     </header>
 
@@ -782,7 +778,6 @@ let onlineClockSync = null;
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
-const accountStatusBar = document.getElementById('accountStatusBar');
 const authBackdrop = document.getElementById('authBackdrop');
 const authIntro = document.getElementById('authIntro');
 const authLoginTab = document.getElementById('authLoginTab');
@@ -1060,10 +1055,6 @@ function updateAuthUi(){
   if(authOpenBtn){
     authOpenBtn.textContent = loggedIn ? ('Account: ' + accountName) : 'Registrierung / Login';
     authOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — klicken für Account/Logout' : 'Registrierung oder Login öffnen';
-  }
-  if(accountStatusBar){
-    accountStatusBar.hidden = !loggedIn;
-    accountStatusBar.textContent = loggedIn ? ('Angemeldet als ' + accountName) : '';
   }
   if(authIntro){
     authIntro.textContent = loggedIn ? 'Dein Accountname wird in Online-Partien automatisch verwendet.' : 'Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.';
