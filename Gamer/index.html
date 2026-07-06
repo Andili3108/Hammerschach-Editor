@@ -155,6 +155,8 @@
   .member-search-hint{font-size:13px!important;margin:0 0 10px!important;color:#666!important;}
   .member-search-results{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow:auto;margin-top:10px;}
   .member-result-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;}
+  .member-result-card.clickable{cursor:pointer;}
+  .member-result-card.clickable:hover{box-shadow:0 7px 18px rgba(0,0,0,.10);transform:translateY(-1px);}
   .member-result-name{font-size:16px;font-weight:900;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .member-result-meta{font-size:12px;font-weight:800;color:#666;margin-top:2px;}
   .member-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;padding:6px 2px;}
@@ -262,7 +264,7 @@
     <div id="inviteBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
         <h3 id="inviteTitle">Zur Partie einladen</h3>
-        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied. Mailversand folgt später als eigener Schritt.</p>
+        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und versende die Einladung direkt per E-Mail.</p>
 
         <label class="identity-label" for="inviteLinkInput">Einladungslink</label>
         <div class="invite-link-row">
@@ -273,7 +275,7 @@
 
         <div class="member-search-box">
           <div class="member-search-head">Mitglied suchen</div>
-          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Es wird noch keine Mail versendet.</p>
+          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Beim Klick wird eine E-Mail-Einladung über den Server verschickt.</p>
           <label class="identity-label" for="memberSearchInput">Suchbegriff</label>
           <input id="memberSearchInput" class="identity-input" type="search" autocomplete="off" placeholder="z. B. Andreas" />
           <div id="memberSearchStatus" class="member-search-status" aria-live="polite"></div>
@@ -830,6 +832,7 @@ const memberSearchResults = document.getElementById('memberSearchResults');
 let inviteSelectedMember = null;
 let memberSearchTimer = null;
 let memberSearchRequestId = 0;
+let invitationSendBusy = false;
 
 function randomToken(len){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -1384,7 +1387,7 @@ function updateInviteDialog(){
   if(memberSearchInput) memberSearchInput.disabled = !loggedIn;
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? 'Suche nach Benutzername oder Mailadresse. Es wird noch keine Mail versendet.'
+      ? 'Suche nach Benutzername oder Mailadresse. Beim Klick wird eine E-Mail-Einladung über den Server verschickt.'
       : 'Mitgliedersuche ist nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -1426,9 +1429,15 @@ async function copyInviteLinkFromDialog(){
 }
 function buildInvitationText(member){
   const link = onlineRoomId ? getInviteUrl() : '';
-  const name = member && member.username ? cleanDisplayName(member.username) : '';
-  const greeting = name ? ('Hallo ' + name + ',') : 'Hallo,';
-  return greeting + '\n\nich lade dich zu einer Online-Partie Hammerschach-Gamer ein:\n' + link + '\n\nViele Grüße';
+  const recipientName = member && member.username ? cleanDisplayName(member.username) : '';
+  const senderName = onlineAuthUser && onlineAuthUser.username ? cleanDisplayName(onlineAuthUser.username) : cleanDisplayName(onlineDisplayName || 'Gast');
+  const greeting = recipientName ? ('Hallo ' + recipientName + ',') : 'Hallo,';
+  return greeting + '\n\n' +
+    'du wurdest von ' + (senderName || 'Gast') + ' zu einer Schachpartie auf Hammerschach eingeladen.\n\n' +
+    'Klicke einfach auf folgenden Link:\n\n' +
+    link + '\n\n' +
+    'Viele Grüße\n' +
+    (senderName || 'Gast');
 }
 async function copyInvitationText(member){
   const link = onlineRoomId ? getInviteUrl() : '';
@@ -1446,6 +1455,45 @@ async function copyInvitationText(member){
   }
   updateOnlineUi();
 }
+async function sendInvitationToMember(member, button){
+  if(invitationSendBusy) return;
+  const link = onlineRoomId ? getInviteUrl() : '';
+  if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Einladungen per Mail zu verschicken.', true); return; }
+  if(!link || !onlineRoomId){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
+  if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
+
+  invitationSendBusy = true;
+  const oldButtonText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Sende...'; }
+  if(memberSearchStatus) memberSearchStatus.textContent = 'Einladung wird verschickt...';
+  setInviteCopyStatus('', false);
+
+  try{
+    const data = await authApi('/api/invitations/send', {
+      method:'POST',
+      body: JSON.stringify({
+        recipientUserId: member.id,
+        room: onlineRoomId,
+        inviteUrl: link
+      })
+    });
+    const recipientName = data && data.recipient && data.recipient.username ? data.recipient.username : (member.username || 'Mitglied');
+    const message = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde verschickt.');
+    setInviteCopyStatus(message, false);
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Verschickt an ' + recipientName + '.';
+    onlineLastMessage = message;
+    statusEl.textContent = message;
+  } catch(err){
+    const message = err && err.message ? err.message : 'Einladung konnte nicht verschickt werden.';
+    setInviteCopyStatus(message, true);
+    if(memberSearchStatus) memberSearchStatus.textContent = message;
+  } finally {
+    invitationSendBusy = false;
+    if(button){ button.disabled = false; button.textContent = oldButtonText || 'Einladung senden'; }
+    updateOnlineUi();
+  }
+}
+
 function renderMemberSearchResults(users){
   if(!memberSearchResults) return;
   memberSearchResults.innerHTML = '';
@@ -1458,7 +1506,9 @@ function renderMemberSearchResults(users){
   }
   users.forEach(user => {
     const card = document.createElement('div');
-    card.className = 'member-result-card';
+    card.className = 'member-result-card clickable';
+    card.tabIndex = 0;
+    card.title = 'Einladung per E-Mail an ' + (user.username || 'dieses Mitglied') + ' senden';
 
     const info = document.createElement('div');
     info.style.minWidth = '0';
@@ -1467,15 +1517,19 @@ function renderMemberSearchResults(users){
     name.textContent = user.username || 'Mitglied';
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = 'Registriertes Mitglied';
+    meta.textContent = 'Registriertes Mitglied · Mailadresse bleibt verborgen';
     info.appendChild(name);
     info.appendChild(meta);
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'button-flat';
-    btn.textContent = 'Einladung kopieren';
-    btn.addEventListener('click', () => copyInvitationText(user));
+    btn.textContent = 'Einladung senden';
+    btn.addEventListener('click', ev => { ev.stopPropagation(); sendInvitationToMember(user, btn); });
+    card.addEventListener('click', () => sendInvitationToMember(user, btn));
+    card.addEventListener('keydown', ev => {
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); sendInvitationToMember(user, btn); }
+    });
 
     card.appendChild(info);
     card.appendChild(btn);
@@ -1487,7 +1541,7 @@ async function performMemberSearch(query, requestId){
     const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
     if(requestId !== memberSearchRequestId) return;
     renderMemberSearchResults(data.users || []);
-    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied auswählen und Einladungstext kopieren.' : 'Keine Treffer.';
+    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um Einladung per Mail zu senden.' : 'Keine Treffer.';
   } catch(err){
     if(requestId !== memberSearchRequestId) return;
     renderMemberSearchResults([]);
