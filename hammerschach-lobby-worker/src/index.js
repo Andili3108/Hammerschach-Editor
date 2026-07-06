@@ -36,6 +36,24 @@ function guestNameFromPlayerId(playerId) {
   return 'Gast-' + suffix;
 }
 
+const CHAT_MESSAGE_MAX_LENGTH = 300;
+const CHAT_SEND_COOLDOWN_MS = 1000;
+
+function cleanChatText(value) {
+  return String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, CHAT_MESSAGE_MAX_LENGTH);
+}
+
+function fallbackChatName(role, playerId) {
+  if (role === 'w') return 'Weiß';
+  if (role === 'b') return 'Schwarz';
+  if (role === 'spectator') return 'Zuschauer';
+  return guestNameFromPlayerId(playerId || '');
+}
+
 
 const AUTH_SESSION_DAYS = 30;
 const PASSWORD_ITERATIONS = 100000;
@@ -1111,6 +1129,22 @@ export class GameRoom {
     }
   }
 
+  async broadcastChatMessage(chat, messageId = null) {
+    const now = Date.now();
+    for (const ws of this.state.getWebSockets()) {
+      const info = ws.deserializeAttachment() || {};
+      safeSend(ws, {
+        type: 'chat_message',
+        ok: true,
+        messageId: messageId || chat.messageId || chat.id || null,
+        room: info.room || 'unknown',
+        role: info.role || 'spectator',
+        chat,
+        serverNow: now
+      });
+    }
+  }
+
   async webSocketMessage(ws, message) {
     let data = null;
     try {
@@ -1130,6 +1164,40 @@ export class GameRoom {
 
     if (data.type === 'request_state') {
       await this.sendRoomState(ws, 'room_state');
+      return;
+    }
+
+    if (data.type === 'chat_message') {
+      const text = cleanChatText(data.text || data.message || (data.chat && data.chat.text));
+      if (!text) {
+        safeSend(ws, { type: 'error', code: 'EMPTY_CHAT_MESSAGE', message: 'Chatnachricht ist leer.' });
+        return;
+      }
+
+      const now = Date.now();
+      const lastChatAt = Number(info.lastChatAt || 0);
+      if (lastChatAt && now - lastChatAt < CHAT_SEND_COOLDOWN_MS) {
+        safeSend(ws, { type: 'error', code: 'CHAT_TOO_FAST', message: 'Bitte kurz warten, bevor du die nächste Chatnachricht sendest.' });
+        return;
+      }
+
+      const updatedInfo = Object.assign({}, info, { lastChatAt: now });
+      ws.serializeAttachment(updatedInfo);
+
+      const messageId = String(data.messageId || data.message_id || (data.chat && (data.chat.messageId || data.chat.id)) || ('chat_' + now + '_' + crypto.randomUUID().slice(0, 8))).slice(0, 80);
+      const senderName = cleanDisplayName(info.displayName || info.username || '') || fallbackChatName(role, info.playerId);
+      const chat = {
+        id: messageId,
+        messageId,
+        role,
+        playerId: info.playerId || null,
+        senderName,
+        name: senderName,
+        text,
+        sentAt: new Date(now).toISOString()
+      };
+
+      await this.broadcastChatMessage(chat, messageId);
       return;
     }
 
