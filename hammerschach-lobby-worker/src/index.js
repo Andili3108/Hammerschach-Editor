@@ -4,7 +4,7 @@ function json(data, init = {}) {
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'access-control-allow-origin': '*',
-      'access-control-allow-methods': 'GET, POST, OPTIONS',
+      'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
       'access-control-allow-headers': 'content-type, authorization',
       ...(init.headers || {})
     }
@@ -36,14 +36,6 @@ function guestNameFromPlayerId(playerId) {
   return 'Gast-' + suffix;
 }
 
-function cleanChatText(value) {
-  return String(value || '')
-    .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 300);
-}
-
 
 const AUTH_SESSION_DAYS = 30;
 const PASSWORD_ITERATIONS = 100000;
@@ -62,13 +54,27 @@ function normalizeEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
 }
 
-function publicUser(row) {
+function isAdminUser(row, env = null) {
+  if (!row) return false;
+  const username = String(row.username || '').trim().toLowerCase();
+  const email = String(row.email || '').trim().toLowerCase();
+  const configuredUsername = String((env && env.ADMIN_USERNAME) || 'Andili').trim().toLowerCase();
+  const configuredEmail = String((env && env.ADMIN_EMAIL) || '').trim().toLowerCase();
+  return !!(
+    row.is_admin === 1 || row.is_admin === true || String(row.is_admin || '') === '1' ||
+    (configuredUsername && username === configuredUsername) ||
+    (configuredEmail && email === configuredEmail)
+  );
+}
+
+function publicUser(row, env = null) {
   if (!row) return null;
   return {
     id: row.id,
     username: row.username,
     email: row.email,
-    createdAt: row.created_at || row.createdAt || null
+    createdAt: row.created_at || row.createdAt || null,
+    isAdmin: isAdminUser(row, env)
   };
 }
 
@@ -196,6 +202,54 @@ async function searchMembers(env, sessionUser, query) {
 }
 
 
+
+async function listMembers(env, sessionUser, limit = 50) {
+  if (!env || !env.DB || !sessionUser) return [];
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
+  const result = await env.DB.prepare(
+    `SELECT id, username, email, created_at
+       FROM users
+      WHERE id <> ?
+      ORDER BY username_lc ASC
+      LIMIT ?`
+  ).bind(sessionUser.id, safeLimit).all();
+
+  return (result && result.results ? result.results : []).map(row => ({
+    id: row.id,
+    username: row.username,
+    email: row.email || '',
+    createdAt: row.created_at || null
+  }));
+}
+
+async function deleteUserAsAdmin(env, adminUser, targetId) {
+  if (!env || !env.DB || !adminUser) {
+    return { ok: false, status: 503, code: 'DB_NOT_CONFIGURED', message: 'Account-Datenbank ist nicht verfügbar.' };
+  }
+  if (!isAdminUser(adminUser, env)) {
+    return { ok: false, status: 403, code: 'NOT_ADMIN', message: 'Nur Andili kann User löschen.' };
+  }
+  const id = String(targetId || '').trim();
+  if (!/^[A-Za-z0-9_-]{8,80}$/.test(id) && !/^[0-9a-f-]{36}$/i.test(id)) {
+    return { ok: false, status: 400, code: 'INVALID_USER_ID', message: 'Ungültige User-ID.' };
+  }
+  if (id === adminUser.id) {
+    return { ok: false, status: 400, code: 'CANNOT_DELETE_SELF', message: 'Der eigene Admin-Account kann nicht gelöscht werden.' };
+  }
+
+  const target = await env.DB.prepare(`SELECT id, username, email FROM users WHERE id = ? LIMIT 1`).bind(id).first();
+  if (!target) {
+    return { ok: false, status: 404, code: 'USER_NOT_FOUND', message: 'User wurde nicht gefunden.' };
+  }
+  if (isAdminUser(target, env)) {
+    return { ok: false, status: 400, code: 'CANNOT_DELETE_ADMIN', message: 'Ein Admin-Account kann nicht über diese Oberfläche gelöscht werden.' };
+  }
+
+  await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(id).run();
+  await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
+  return { ok: true, deletedUser: publicUser(target, env) };
+}
+
 async function createSession(env, userId) {
   const token = randomBase64Url(32);
   const tokenHash = await sha256Hex(token);
@@ -212,13 +266,15 @@ async function lookupAuthSession(env, token) {
   const tokenHash = await sha256Hex(token);
   const nowIso = new Date().toISOString();
   const row = await env.DB.prepare(
-    `SELECT s.id AS session_id, s.expires_at, u.id, u.username, u.username_lc, u.email, u.email_lc, u.created_at
+    `SELECT s.id AS session_id, s.expires_at, u.*
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = ? AND s.expires_at > ?
       LIMIT 1`
   ).bind(tokenHash, nowIso).first();
-  return row ? { sessionId: row.session_id, user: publicUser(row) } : null;
+  if (!row) return null;
+  if (row.disabled === 1 || row.disabled === true || row.deleted_at) return null;
+  return { sessionId: row.session_id, user: publicUser(row, env) };
 }
 
 async function handleAuthApi(request, env, url) {
@@ -258,7 +314,7 @@ async function handleAuthApi(request, env, url) {
     ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
 
     const token = await createSession(env, id);
-    return json({ ok: true, sessionToken: token, user: { id, username, email, createdAt: nowIso } });
+    return json({ ok: true, sessionToken: token, user: publicUser({ id, username, email, created_at: nowIso }, env) });
   }
 
   if (url.pathname === '/api/login' && request.method === 'POST') {
@@ -279,9 +335,12 @@ async function handleAuthApi(request, env, url) {
 
     const valid = await verifyPassword(password, user);
     if (!valid) return json({ ok: false, code: 'INVALID_LOGIN', message: 'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status: 401 });
+    if (user && (user.disabled === 1 || user.disabled === true || user.deleted_at)) {
+      return json({ ok: false, code: 'ACCOUNT_DISABLED', message: 'Dieser Account ist deaktiviert.' }, { status: 403 });
+    }
 
     const token = await createSession(env, user.id);
-    return json({ ok: true, sessionToken: token, user: publicUser(user) });
+    return json({ ok: true, sessionToken: token, user: publicUser(user, env) });
   }
 
   if (url.pathname === '/api/members/search' && request.method === 'GET') {
@@ -290,7 +349,25 @@ async function handleAuthApi(request, env, url) {
 
     const query = cleanMemberSearchQuery(url.searchParams.get('q') || url.searchParams.get('query') || '');
     const users = await searchMembers(env, session.user, query);
-    return json({ ok: true, query, users });
+    return json({ ok: true, query, users, isAdmin: isAdminUser(session.user, env) });
+  }
+
+  if (url.pathname === '/api/members/list' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Mitgliederliste ist nur nach Login verfügbar.' }, { status: 401 });
+
+    const limit = url.searchParams.get('limit') || 50;
+    const users = await listMembers(env, session.user, limit);
+    return json({ ok: true, users, isAdmin: isAdminUser(session.user, env) });
+  }
+
+  const adminDeleteMatch = url.pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
+  if (adminDeleteMatch && request.method === 'DELETE') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte als Andili einloggen.' }, { status: 401 });
+    const result = await deleteUserAsAdmin(env, session.user, decodeURIComponent(adminDeleteMatch[1]));
+    if (!result.ok) return json({ ok: false, code: result.code, message: result.message }, { status: result.status || 400 });
+    return json({ ok: true, deletedUser: result.deletedUser });
   }
 
   if (url.pathname === '/api/logout' && request.method === 'POST') {
@@ -726,54 +803,12 @@ ChessGame.prototype.makeMove = function(mv, silent) {
   return { piece, taken };
 };
 
-ChessGame.prototype.repetitionEpKey = function() {
-  if (!this.ep) return '-';
-  const x = this.ep[0];
-  const y = this.ep[1];
-  const pawnY = this.turn === 'w' ? y + 1 : y - 1;
-  const pawn = this.turn === 'w' ? 'P' : 'p';
-  for (const dx of [-1, 1]) {
-    const px = x + dx;
-    if (this.inBounds(px, pawnY) && this.at(px, pawnY) === pawn) return coordToAlg(x, y);
-  }
-  return '-';
-};
-
-ChessGame.prototype.repetitionKey = function() {
-  const boardPart = this.board.map(row => row.join('')).join('/');
-  const castlingPart = ['K','Q','k','q'].filter(key => this.castling[key]).join('') || '-';
-  return [boardPart, this.turn, castlingPart, this.repetitionEpKey()].join(' ');
-};
-
-ChessGame.prototype.hasInsufficientMaterial = function() {
-  const pieces = [];
-  for (let y = 0; y < 8; y++) {
-    for (let x = 0; x < 8; x++) {
-      const p = this.at(x, y);
-      if (!p || p === '.') continue;
-      const kind = p.toLowerCase();
-      if (kind === 'p' || kind === 'r' || kind === 'q') return false;
-      if (kind !== 'k') pieces.push({ kind, squareColor: (x + y) % 2 });
-    }
-  }
-  if (pieces.length === 0) return true;
-  if (pieces.length === 1 && (pieces[0].kind === 'b' || pieces[0].kind === 'n')) return true;
-  if (pieces.every(piece => piece.kind === 'b')) {
-    const firstColor = pieces[0].squareColor;
-    if (pieces.every(piece => piece.squareColor === firstColor)) return true;
-  }
-  return false;
-};
-
-ChessGame.prototype.gameOver = function(repetitionCount) {
+ChessGame.prototype.gameOver = function() {
   const legal = this.legalMoves();
   if (legal.length === 0) {
     if (this.inCheck(this.turn)) return { type:'checkmate', winner: opposite(this.turn) };
     return { type:'stalemate' };
   }
-  if (this.hasInsufficientMaterial()) return { type:'insufficient_material' };
-  if (this.halfmove >= 100) return { type:'fifty_move_rule' };
-  if ((repetitionCount || 0) >= 3) return { type:'threefold_repetition' };
   return false;
 };
 
@@ -832,25 +867,6 @@ function buildGameFromStoredMoves(moves) {
   return g;
 }
 
-function countCurrentPositionRepetitions(moves) {
-  const g = new ChessGame();
-  const counts = new Map();
-  const addCurrent = () => {
-    const key = g.repetitionKey();
-    counts.set(key, (counts.get(key) || 0) + 1);
-  };
-  addCurrent();
-  for (const stored of moves || []) {
-    const legal = g.legalMoves();
-    const found = legal.find(lm => lm.from[0] === stored.from[0] && lm.from[1] === stored.from[1] && lm.to[0] === stored.to[0] && lm.to[1] === stored.to[1]);
-    if (!found) throw new Error('Gespeicherte Zugliste enthält einen illegalen Zug.');
-    const mv = { from: found.from, to: found.to, meta: found.meta || {}, promotion: stored.promotion || null };
-    g.makeMove(mv, true);
-    addCurrent();
-  }
-  return counts.get(g.repetitionKey()) || 1;
-}
-
 function validateMoveOnServer(storedMoves, incoming) {
   const before = buildGameFromStoredMoves(storedMoves || []);
   const legal = before.legalMoves();
@@ -875,15 +891,13 @@ function validateMoveOnServer(storedMoves, incoming) {
   mv.taken = applied.taken;
   mv.san = serverMoveToSan(before, mv, after);
 
-  const movesAfter = (storedMoves || []).concat([{ from: mv.from, to: mv.to, promotion: mv.promotion || null }]);
-  const repetitionCount = countCurrentPositionRepetitions(movesAfter);
-  return { ok:true, before, after, move: mv, repetitionCount, gameOver: after.gameOver(repetitionCount) };
+  return { ok:true, before, after, move: mv, gameOver: after.gameOver() };
 }
 
 function resultFromGameOver(gameOver) {
   if (!gameOver) return '*';
   if (gameOver.type === 'checkmate') return gameOver.winner === 'w' ? '1-0' : '0-1';
-  if (['stalemate','insufficient_material','fifty_move_rule','threefold_repetition'].includes(gameOver.type)) return '1/2-1/2';
+  if (gameOver.type === 'stalemate') return '1/2-1/2';
   return '*';
 }
 
@@ -1097,22 +1111,6 @@ export class GameRoom {
     }
   }
 
-  async broadcastChatMessage(chat) {
-    const now = Date.now();
-    for (const ws of this.state.getWebSockets()) {
-      const info = ws.deserializeAttachment() || {};
-      safeSend(ws, {
-        type: 'chat_message',
-        ok: true,
-        messageId: chat.messageId || chat.id || null,
-        room: info.room || 'unknown',
-        role: info.role || 'spectator',
-        chat,
-        serverNow: now
-      });
-    }
-  }
-
   async webSocketMessage(ws, message) {
     let data = null;
     try {
@@ -1132,43 +1130,6 @@ export class GameRoom {
 
     if (data.type === 'request_state') {
       await this.sendRoomState(ws, 'room_state');
-      return;
-    }
-
-    if (data.type === 'chat_message') {
-      const text = cleanChatText(data.text || data.message || (data.chat && data.chat.text));
-      if (!text) {
-        safeSend(ws, { type: 'error', code: 'CHAT_EMPTY', message: 'Bitte eine Chatnachricht eingeben.' });
-        return;
-      }
-
-      const now = Date.now();
-      const playerId = info.playerId || '';
-      const lastMap = (await this.state.storage.get('chatLastSentAt')) || {};
-      const lastSentAt = Number(lastMap[playerId] || 0);
-      if (playerId && now - lastSentAt < 1200) {
-        safeSend(ws, { type: 'error', code: 'CHAT_RATE_LIMIT', message: 'Bitte kurz warten, bevor du die nächste Chatnachricht sendest.' });
-        return;
-      }
-      if (playerId) {
-        lastMap[playerId] = now;
-        await this.state.storage.put('chatLastSentAt', lastMap);
-      }
-
-      const messageId = String(data.messageId || data.clientMessageId || ('chat_' + now + '_' + crypto.randomUUID())).slice(0, 80);
-      const senderName = cleanDisplayName(info.displayName || info.username) || (role === 'w' ? 'Weiß' : role === 'b' ? 'Schwarz' : 'Zuschauer');
-      const chat = {
-        id: messageId,
-        messageId,
-        room: info.room || 'unknown',
-        role,
-        playerId: playerId || null,
-        senderName,
-        text,
-        sentAt: new Date(now).toISOString(),
-        serverNow: now
-      };
-      await this.broadcastChatMessage(chat);
       return;
     }
 
@@ -1611,7 +1572,7 @@ export default {
         status: 204,
         headers: {
           'access-control-allow-origin': '*',
-          'access-control-allow-methods': 'GET, POST, OPTIONS',
+          'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
           'access-control-allow-headers': 'content-type, authorization'
         }
       });
@@ -1640,9 +1601,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'automatic_draw_rules'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität und automatische Remisregeln.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID&player=PLAYER_ID'],
+      features: ['lobby', 'roles', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
