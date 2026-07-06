@@ -176,6 +176,11 @@
   .member-result-meta{font-size:12px;font-weight:800;color:#666;margin-top:2px;}
   .member-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;padding:6px 2px;}
   .member-search-status{min-height:18px;font-size:13px;font-weight:800;color:#9A2D33;margin-top:6px;}
+  .member-list-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .member-list-actions button{border-radius:12px;min-height:36px;}
+  .member-result-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+  .member-result-actions button{border-radius:12px;min-height:34px;padding:7px 9px;}
+  .member-delete-btn{background:#843f46!important;color:#fff!important;}
 
   .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
@@ -189,7 +194,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:116px minmax(0,1fr)}.logo-slot{height:90px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:8px 10px}.logo-slot{height:74px}.online-panel,.time-selectors{grid-template-columns:1fr}.actions{justify-content:center}.match-actions button{flex:1 1 190px}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.chat-input-row button{width:100%}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
 </style>
 </head>
 <body>
@@ -294,6 +299,9 @@
           <label class="identity-label" for="memberSearchInput">Suchbegriff</label>
           <input id="memberSearchInput" class="identity-input" type="search" autocomplete="off" placeholder="z. B. Andreas" />
           <div id="memberSearchStatus" class="member-search-status" aria-live="polite"></div>
+          <div class="member-list-actions">
+            <button id="memberListBtn" class="button-flat" type="button">Mitgliederliste öffnen</button>
+          </div>
           <div id="memberSearchResults" class="member-search-results" aria-label="Suchergebnisse"></div>
         </div>
 
@@ -1060,6 +1068,7 @@ const memberSearchInput = document.getElementById('memberSearchInput');
 const memberSearchHint = document.getElementById('memberSearchHint');
 const memberSearchStatus = document.getElementById('memberSearchStatus');
 const memberSearchResults = document.getElementById('memberSearchResults');
+const memberListBtn = document.getElementById('memberListBtn');
 let inviteSelectedMember = null;
 let memberSearchTimer = null;
 let memberSearchRequestId = 0;
@@ -1609,6 +1618,10 @@ async function copyInviteLink(){
 function closeInviteDialog(){
   if(inviteBackdrop) inviteBackdrop.hidden = true;
 }
+function isCurrentUserAdmin(){
+  const user = onlineAuthUser || {};
+  return !!(user.isAdmin || String(user.username || '').trim().toLowerCase() === 'andili');
+}
 function updateInviteDialog(){
   if(!inviteBackdrop) return;
   const link = onlineRoomId ? getInviteUrl() : '';
@@ -1618,17 +1631,22 @@ function updateInviteDialog(){
 
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   if(memberSearchInput) memberSearchInput.disabled = !loggedIn;
+  if(memberListBtn){
+    memberListBtn.disabled = !loggedIn;
+    memberListBtn.textContent = isCurrentUserAdmin() ? 'Mitgliederliste / Admin öffnen' : 'Mitgliederliste öffnen';
+    memberListBtn.title = loggedIn ? 'Registrierte Mitglieder anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
+  }
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? 'Suche nach Benutzername oder Mailadresse. Beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.'
-      : 'Mitgliedersuche ist nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
+      ? (isCurrentUserAdmin() ? 'Suche oder öffne die Mitgliederliste. Als Andili kannst du User zusätzlich löschen.' : 'Suche nach Benutzername oder öffne die Mitgliederliste. Beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.')
+      : 'Mitgliedersuche und Mitgliederliste sind nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
     inviteSelectedMember = null;
     if(memberSearchStatus) memberSearchStatus.textContent = 'Bitte einloggen, um registrierte Mitglieder zu suchen.';
     if(memberSearchResults) memberSearchResults.innerHTML = '<div class="member-empty">Keine Suche aktiv.</div>';
-  } else if(memberSearchInput && !memberSearchInput.value.trim()){
-    if(memberSearchStatus) memberSearchStatus.textContent = 'Mindestens 2 Zeichen eingeben.';
+  } else if(memberSearchInput && !memberSearchInput.value.trim() && memberSearchResults && !memberSearchResults.dataset.loadedList){
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Mindestens 2 Zeichen eingeben oder Mitgliederliste öffnen.';
     if(memberSearchResults) memberSearchResults.innerHTML = '<div class="member-empty">Noch keine Suche gestartet.</div>';
   }
 }
@@ -1717,16 +1735,19 @@ function openMailInvitationToMember(member, button){
   updateOnlineUi();
 }
 
-function renderMemberSearchResults(users){
+function renderMemberSearchResults(users, options){
+  options = options || {};
   if(!memberSearchResults) return;
+  memberSearchResults.dataset.loadedList = options.source === 'list' ? 'yes' : '';
   memberSearchResults.innerHTML = '';
   if(!users || users.length === 0){
     const empty = document.createElement('div');
     empty.className = 'member-empty';
-    empty.textContent = 'Kein passendes Mitglied gefunden.';
+    empty.textContent = options.source === 'list' ? 'Keine registrierten Mitglieder gefunden.' : 'Kein passendes Mitglied gefunden.';
     memberSearchResults.appendChild(empty);
     return;
   }
+  const canAdminDelete = isCurrentUserAdmin();
   users.forEach(user => {
     const card = document.createElement('div');
     card.className = 'member-result-card clickable';
@@ -1740,34 +1761,87 @@ function renderMemberSearchResults(users){
     name.textContent = user.username || 'Mitglied';
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = 'Registriertes Mitglied · Mailadresse wird nur für die vorbereitete E-Mail verwendet';
+    meta.textContent = canAdminDelete
+      ? 'Registriertes Mitglied · Admin: Einladung oder User löschen'
+      : 'Registriertes Mitglied · Mailadresse wird nur für die vorbereitete E-Mail verwendet';
     info.appendChild(name);
     info.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'member-result-actions';
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'button-flat';
     btn.textContent = 'E-Mail öffnen';
     btn.addEventListener('click', ev => { ev.stopPropagation(); openMailInvitationToMember(user, btn); });
+    actions.appendChild(btn);
+
+    if(canAdminDelete && onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'member-delete-btn';
+      deleteBtn.textContent = 'User löschen';
+      deleteBtn.title = 'User dauerhaft aus der Account-Datenbank entfernen';
+      deleteBtn.addEventListener('click', ev => { ev.stopPropagation(); deleteMemberAsAdmin(user, deleteBtn); });
+      actions.appendChild(deleteBtn);
+    }
+
     card.addEventListener('click', () => openMailInvitationToMember(user, btn));
     card.addEventListener('keydown', ev => {
       if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); openMailInvitationToMember(user, btn); }
     });
 
     card.appendChild(info);
-    card.appendChild(btn);
+    card.appendChild(actions);
     memberSearchResults.appendChild(card);
   });
+}
+async function loadMemberList(){
+  if(!onlineAuthToken || !onlineAuthUser){ updateInviteDialog(); return; }
+  inviteSelectedMember = null;
+  if(memberSearchStatus) memberSearchStatus.textContent = 'Mitgliederliste wird geladen...';
+  if(memberListBtn) memberListBtn.disabled = true;
+  try{
+    const data = await authApi('/api/members/list?limit=50');
+    renderMemberSearchResults(data.users || [], {source:'list'});
+    const count = (data.users || []).length;
+    if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Mitglied anklicken, um E-Mail im Mailprogramm zu öffnen.') : 'Keine weiteren Mitglieder gefunden.';
+  } catch(err){
+    renderMemberSearchResults([], {source:'list'});
+    if(memberSearchStatus) memberSearchStatus.textContent = err && err.message ? err.message : 'Mitgliederliste konnte nicht geladen werden.';
+  } finally {
+    if(memberListBtn) memberListBtn.disabled = false;
+  }
+}
+async function deleteMemberAsAdmin(user, button){
+  if(!isCurrentUserAdmin()){ setInviteCopyStatus('Nur Andili kann User löschen.', true); return; }
+  if(!user || !user.id){ setInviteCopyStatus('Dieser User kann nicht gelöscht werden.', true); return; }
+  if(onlineAuthUser && user.id === onlineAuthUser.id){ setInviteCopyStatus('Der eigene Admin-Account kann nicht gelöscht werden.', true); return; }
+  const username = user.username || 'diesen User';
+  const ok = window.confirm('User „' + username + '“ wirklich löschen?\n\nDer Account und aktive Login-Sitzungen werden aus der Datenbank entfernt.');
+  if(!ok) return;
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Lösche...'; }
+  try{
+    await authApi('/api/admin/users/' + encodeURIComponent(user.id), {method:'DELETE'});
+    setInviteCopyStatus('User „' + username + '“ wurde gelöscht.', false);
+    statusEl.textContent = 'User „' + username + '“ wurde gelöscht.';
+    await loadMemberList();
+  } catch(err){
+    setInviteCopyStatus(err && err.message ? err.message : 'User konnte nicht gelöscht werden.', true);
+    if(button){ button.disabled = false; button.textContent = oldText || 'User löschen'; }
+  }
 }
 async function performMemberSearch(query, requestId){
   try{
     const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
     if(requestId !== memberSearchRequestId) return;
-    renderMemberSearchResults(data.users || []);
+    renderMemberSearchResults(data.users || [], {source:'search'});
     if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um E-Mail im Mailprogramm zu öffnen.' : 'Keine Treffer.';
   } catch(err){
     if(requestId !== memberSearchRequestId) return;
-    renderMemberSearchResults([]);
+    renderMemberSearchResults([], {source:'search'});
     if(memberSearchStatus) memberSearchStatus.textContent = err && err.message ? err.message : 'Mitgliedersuche fehlgeschlagen.';
   }
 }
@@ -1775,6 +1849,7 @@ function scheduleMemberSearch(){
   if(memberSearchTimer) clearTimeout(memberSearchTimer);
   inviteSelectedMember = null;
   const query = memberSearchInput ? memberSearchInput.value.trim() : '';
+  if(memberSearchResults) memberSearchResults.dataset.loadedList = '';
   memberSearchRequestId++;
   if(!onlineAuthToken || !onlineAuthUser){ updateInviteDialog(); return; }
   if(query.length < 2){
@@ -2534,6 +2609,7 @@ if(inviteCopyTextBtn) inviteCopyTextBtn.addEventListener('click', () => copyInvi
 if(inviteCloseBtn) inviteCloseBtn.addEventListener('click', closeInviteDialog);
 if(inviteBackdrop) inviteBackdrop.addEventListener('click', ev => { if(ev.target === inviteBackdrop) closeInviteDialog(); });
 if(memberSearchInput) memberSearchInput.addEventListener('input', scheduleMemberSearch);
+if(memberListBtn) memberListBtn.addEventListener('click', loadMemberList);
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && inviteBackdrop && !inviteBackdrop.hidden) closeInviteDialog(); });
 startOnlineBtn.addEventListener('click', startOnlineGame);
 if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
