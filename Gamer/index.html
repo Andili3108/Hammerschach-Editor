@@ -131,8 +131,10 @@
   #moveList{display:grid;grid-template-columns:34px 1fr 1fr 34px 1fr 1fr;gap:5px 4px;max-height:calc(var(--board-size) - 136px);overflow-y:auto;padding-right:6px;font-size:15px;line-height:1.42;}
   .move-cell{border-radius:6px;padding:1px 3px;}
   .move-cell.current{background:rgba(132,63,70,.12);font-weight:900;}
-  .moves-footer{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
-  .nav-btn{min-width:40px;min-height:36px;font-size:18px;padding:5px 10px;}
+  .moves-footer{margin-top:12px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:center;}
+  .move-nav-group{display:contents;}
+  .nav-btn{width:100%;min-width:0;min-height:34px;font-size:18px;padding:4px 0;border-radius:12px;}
+  .copy-pgn-btn{width:100%;min-width:0;min-height:34px;padding:4px 4px!important;border-radius:12px;font-size:12px;line-height:1.05;white-space:normal;}
   .game-actions{width:100%;box-sizing:border-box;margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
   .game-actions[hidden]{display:none!important;}
   .board-column > .game-actions{margin-top:0;}
@@ -556,13 +558,13 @@
             <div class="moves-title"><span>Zugliste</span><span id="movesInfo">0/0</span></div>
             <div id="moveList"></div>
             <div class="moves-footer">
-              <div>
-                <button class="nav-btn" id="navStart" title="Anfang der Partie">«</button>
-                <button class="nav-btn" id="navBack" title="Einen Halbzug zurück">‹</button>
-                <button class="nav-btn" id="navForward" title="Einen Halbzug vor">›</button>
-                <button class="nav-btn" id="navEnd" title="Letzte Stellung">»</button>
+              <div class="move-nav-group" aria-label="Zugnavigation">
+                <button class="nav-btn" id="navStart" title="Anfang der Partie" aria-label="Anfang der Partie">«</button>
+                <button class="nav-btn" id="navBack" title="Einen Halbzug zurück" aria-label="Einen Halbzug zurück">‹</button>
+                <button class="nav-btn" id="navForward" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">›</button>
+                <button class="nav-btn" id="navEnd" title="Letzte Stellung" aria-label="Letzte Stellung">»</button>
               </div>
-              <button id="copyPgnBtn" class="button-flat" type="button">PGN kopieren</button>
+              <button id="copyPgnBtn" class="button-flat copy-pgn-btn" type="button" title="PGN kopieren" aria-label="PGN kopieren">PGN</button>
             </div>
           </div>
 
@@ -3651,28 +3653,97 @@ navBackBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return
 navForwardBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.min(masterHistory.length, viewIndex + 1); selected = null; renderBoard(); });
 navEndBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = masterHistory.length; selected = null; renderBoard(); });
 
-function buildPgn(){
-  if(masterHistory.length === 0) return '';
+function pgnEscapeTagValue(value){
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/[\r\n]/g, ' ')
+    .trim();
+}
+function fenBoardPartFromBoard(board){
+  return board.map(row => {
+    let out = '';
+    let empty = 0;
+    row.forEach(piece => {
+      if(!piece || piece === '.'){ empty++; return; }
+      if(empty){ out += String(empty); empty = 0; }
+      out += piece;
+    });
+    if(empty) out += String(empty);
+    return out;
+  }).join('/');
+}
+function initialFenForSetup(setup){
+  const g = new Game(setup);
+  return fenBoardPartFromBoard(g.board) + ' w KQkq - 0 1';
+}
+function currentPgnDate(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '.' + m + '.' + day;
+}
+function pgnPlayerNameForRole(role){
+  if(onlineRoomId) return cleanDisplayName(onlineSideName(role)) || (role === 'w' ? 'Weiß' : 'Schwarz');
+  return role === 'w' ? 'Weiß' : 'Schwarz';
+}
+function pgnTimeControlTag(){
+  if(!timeMode || !baseTimeMs) return '-';
+  return Math.floor(baseTimeMs / 1000) + '+' + Math.floor(incrementMs / 1000);
+}
+function pgnResultFromState(go){
+  if(onlineGameResult && onlineGameResult !== '*') return onlineGameResult;
+  if(timeLost){
+    const g = buildGameFromHistory(masterHistory.length);
+    return g.turn === 'w' ? '0-1' : '1-0';
+  }
+  if(go && go.type === 'checkmate') return go.winner === 'w' ? '1-0' : '0-1';
+  if(go) return '1/2-1/2';
+  return '*';
+}
+function buildPgnMoveText(result){
   const parts = [];
   for(let i=0; i<masterHistory.length; i+=2){
     parts.push((Math.floor(i/2)+1) + '.');
-    parts.push(masterHistory[i].san);
-    if(masterHistory[i+1]) parts.push(masterHistory[i+1].san);
+    if(masterHistory[i] && masterHistory[i].san) parts.push(masterHistory[i].san);
+    if(masterHistory[i+1] && masterHistory[i+1].san) parts.push(masterHistory[i+1].san);
   }
+  parts.push(result || '*');
+  return parts.join(' ');
+}
+function buildPgn(){
+  const setup = normalizeGameSetup(currentGameSetup);
   const g = buildGameFromHistory(masterHistory.length);
   const go = gameOverForHistory(masterHistory.length, g);
-  if(go && go.type === 'checkmate') parts.push(go.winner === 'w' ? '1-0' : '0-1');
-  else if(go) parts.push('1/2-1/2');
-  else parts.push('*');
-  return parts.join(' ');
+  const result = pgnResultFromState(go);
+  const tags = [
+    ['Event', 'Hammerschach-Gamer'],
+    ['Site', 'Andili.de'],
+    ['Date', currentPgnDate()],
+    ['Round', '-'],
+    ['White', pgnPlayerNameForRole('w')],
+    ['Black', pgnPlayerNameForRole('b')],
+    ['Result', result],
+    ['TimeControl', pgnTimeControlTag()]
+  ];
+  if(setup.variant === GAME_VARIANT_FREESTYLE){
+    tags.push(['Variant', 'Chess960']);
+    tags.push(['SetUp', '1']);
+    tags.push(['FEN', initialFenForSetup(setup)]);
+    tags.push(['HammerschachPosition', String(setup.positionId)]);
+    tags.push(['HammerschachBackRank', setup.backRank]);
+  }
+  const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
+  return header + '\n\n' + buildPgnMoveText(result);
 }
 document.getElementById('copyPgnBtn').addEventListener('click', async () => {
   const pgn = buildPgn();
   try{
     await navigator.clipboard.writeText(pgn || '');
-    statusEl.textContent = pgn ? 'PGN wurde kopiert.' : 'Noch keine Züge vorhanden.';
+    statusEl.textContent = 'PGN wurde kopiert.';
   } catch(_){
-    statusEl.textContent = pgn ? pgn : 'Noch keine Züge vorhanden.';
+    statusEl.textContent = pgn ? pgn : 'PGN konnte nicht kopiert werden.';
   }
   setTimeout(() => renderBoard(), 1000);
 });
