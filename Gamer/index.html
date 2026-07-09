@@ -45,8 +45,8 @@
   .dot.black{background:#111;}
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
-  .match-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;justify-content:stretch;}
-  .match-actions button{width:100%;min-width:0;font-size:18px;}
+  .match-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;justify-content:stretch;}
+  .match-actions button{width:100%;min-width:0;font-size:15px;padding:9px 10px;min-height:40px;line-height:1.12;}
   .match-actions .name-action-btn{min-width:0;}
   .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%;}
   .icon-btn{width:44px;height:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:23px;line-height:1;padding:0;}
@@ -282,6 +282,7 @@
           <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">Info</button>
         </div>
         <div class="actions match-actions" aria-label="Partieaktionen">
+          <button id="newGameBtn" class="button-flat name-action-btn" type="button">Neue Partie</button>
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
@@ -2042,9 +2043,9 @@ function updateOnlineActionButtons(){
     createOnlineBtn.title = live ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.');
   }
   if(newGameBtn){
-    newGameBtn.disabled = live;
-    newGameBtn.hidden = !onlineRoomId;
-    newGameBtn.title = live ? 'Neue Online-Partie erst nach Partieende möglich.' : 'Neue Online-Partie mit neuem Raum erstellen.';
+    newGameBtn.disabled = false;
+    newGameBtn.hidden = false;
+    newGameBtn.title = 'Neue Partie in einem frischen Tab öffnen.';
   }
 }
 function updateGameActionButtons(){
@@ -3629,7 +3630,18 @@ function newGame(){
   resetClockForNewGame();
   renderBoard();
 }
-if(newGameBtn) newGameBtn.addEventListener('click', createNewOnlineRoom);
+function openNewGameTab(){
+  try{
+    const url = new URL(window.location.href);
+    url.searchParams.delete('room');
+    url.searchParams.delete('role');
+    url.searchParams.delete('player');
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  } catch(_){
+    window.open(window.location.pathname || '/', '_blank', 'noopener,noreferrer');
+  }
+}
+if(newGameBtn) newGameBtn.addEventListener('click', openNewGameTab);
 document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
