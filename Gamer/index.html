@@ -100,6 +100,14 @@
   .invite-color-option:disabled{opacity:.55;cursor:default;}
   .invite-color-summary{border-radius:12px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);padding:8px 10px;margin:0 0 12px;font-size:13px;font-weight:800;color:#555;line-height:1.35;}
   .invite-color-summary[hidden]{display:none!important;}
+  .variant-setup-box{padding:13px 16px;display:flex;flex-direction:column;gap:10px;}
+  .variant-setup-box[hidden]{display:none!important;}
+  .variant-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .variant-option{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;min-height:38px;}
+  .variant-option.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
+  .variant-option:disabled{opacity:.55;cursor:default;}
+  .freestyle-random-btn{border-radius:12px;min-height:38px;padding:8px 10px;}
+  .freestyle-random-btn[hidden]{display:none!important;}
   .moves-right{width:var(--right-col);max-width:100%;flex:0 0 var(--right-col);}
   .side-panel{height:var(--board-size);min-height:var(--board-size);padding:12px 14px;display:flex;flex-direction:column;overflow:hidden;}
   .side-toggle-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
@@ -246,7 +254,7 @@
   .site-stats[hidden]{display:none!important;}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
 </style>
 </head>
@@ -488,6 +496,16 @@
               <div class="player-clock-name" id="blackPlayerName">—</div>
               <div class="player-clock-time" id="clockB">--:--</div>
             </div>
+            <div id="variantSetupBox" class="variant-setup-box player-time-setup">
+              <div class="clock-title">Spielmodus wählen</div>
+              <div class="variant-options" aria-label="Spielmodus wählen">
+                <button id="variantStandardBtn" class="variant-option active" type="button" data-variant="standard">Klassisch</button>
+                <button id="variantFreestyleBtn" class="variant-option" type="button" data-variant="freestyle960">Freestyle</button>
+              </div>
+              <button id="freestyleRandomBtn" class="button-flat freestyle-random-btn" type="button" hidden>🎲 Freestyle-Stellung würfeln</button>
+              <div id="variantStatus" class="time-status">Klassisches Schach: normale Startstellung.</div>
+              <div id="variantLockNote" class="time-lock-note"></div>
+            </div>
         <div id="timeSetupBox" class="time-setup-box player-time-setup">
           <div class="clock-title">Bedenkzeit wählen</div>
           <div class="time-selectors" aria-label="Bedenkzeit wählen">
@@ -584,17 +602,171 @@ function coordToAlg(x,y){ return files[x] + (8-y); }
 function pieceColor(ch){ if(!ch || ch === '.') return null; return ch === ch.toUpperCase() ? 'w' : 'b'; }
 function opposite(color){ return color === 'w' ? 'b' : 'w'; }
 
-function Game(){ this.reset(); }
-Game.prototype.reset = function(){
+const GAME_VARIANT_STANDARD = 'standard';
+const GAME_VARIANT_FREESTYLE = 'freestyle960';
+const STANDARD_BACK_RANK = 'RNBQKBNR';
+const GAME_VARIANT_STORAGE_KEY = 'hammerschachGamerVariant';
+const FREESTYLE_POSITION_STORAGE_KEY = 'hammerschachGamerFreestylePositionId';
+const FREESTYLE_BACK_RANK_STORAGE_KEY = 'hammerschachGamerFreestyleBackRank';
+let chess960BackRankCache = null;
+let currentGameSetup = {variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK};
+
+function isValidChess960BackRank(rank){
+  rank = String(rank || '').toUpperCase();
+  if(!/^[RNBQKBNR]{8}$/.test(rank)) return false;
+  const counts = {R:0,N:0,B:0,Q:0,K:0};
+  for(const ch of rank) counts[ch] = (counts[ch] || 0) + 1;
+  if(counts.R !== 2 || counts.N !== 2 || counts.B !== 2 || counts.Q !== 1 || counts.K !== 1) return false;
+  const kingFile = rank.indexOf('K');
+  const rookFiles = [];
+  const bishopFiles = [];
+  for(let i=0;i<8;i++){
+    if(rank[i] === 'R') rookFiles.push(i);
+    if(rank[i] === 'B') bishopFiles.push(i);
+  }
+  return rookFiles[0] < kingFile && kingFile < rookFiles[1] && bishopFiles.length === 2 && (bishopFiles[0] % 2) !== (bishopFiles[1] % 2);
+}
+function generateChess960BackRanks(){
+  if(chess960BackRankCache) return chess960BackRankCache;
+  const pieces = ['R','R','N','N','B','B','Q','K'];
+  const out = [];
+  const used = Array(pieces.length).fill(false);
+  const seen = new Set();
+  function rec(path){
+    if(path.length === 8){
+      const rank = path.join('');
+      if(!seen.has(rank) && isValidChess960BackRank(rank)){
+        seen.add(rank);
+        out.push(rank);
+      }
+      return;
+    }
+    const local = new Set();
+    for(let i=0;i<pieces.length;i++){
+      if(used[i] || local.has(pieces[i])) continue;
+      local.add(pieces[i]);
+      used[i] = true;
+      path.push(pieces[i]);
+      rec(path);
+      path.pop();
+      used[i] = false;
+    }
+  }
+  rec([]);
+  out.sort();
+  chess960BackRankCache = out;
+  return chess960BackRankCache;
+}
+function chess960BackRankById(positionId){
+  const list = generateChess960BackRanks();
+  const id = Math.max(0, Math.min(959, Math.floor(Number(positionId || 0))));
+  return list[id] || STANDARD_BACK_RANK;
+}
+function randomChess960Setup(){
+  const bytes = new Uint16Array(1);
+  try{ crypto.getRandomValues(bytes); } catch(_){ bytes[0] = Math.floor(Math.random() * 65536); }
+  const positionId = bytes[0] % 960;
+  return {variant: GAME_VARIANT_FREESTYLE, positionId, backRank: chess960BackRankById(positionId)};
+}
+function normalizeGameSetup(setup){
+  setup = setup || {};
+  const variant = String(setup.variant || setup.mode || '').toLowerCase() === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
+  if(variant !== GAME_VARIANT_FREESTYLE){
+    return {variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK};
+  }
+  let positionId = Number.isFinite(Number(setup.positionId ?? setup.position_id)) ? Math.floor(Number(setup.positionId ?? setup.position_id)) : null;
+  if(positionId !== null) positionId = Math.max(0, Math.min(959, positionId));
+  let backRank = String(setup.backRank || setup.back_rank || '').toUpperCase();
+  if(!isValidChess960BackRank(backRank)){
+    backRank = positionId !== null ? chess960BackRankById(positionId) : chess960BackRankById(0);
+  }
+  if(positionId === null){
+    const list = generateChess960BackRanks();
+    const idx = list.indexOf(backRank);
+    positionId = idx >= 0 ? idx : 0;
+  }
+  return {variant: GAME_VARIANT_FREESTYLE, positionId, backRank};
+}
+function sameGameSetup(a,b){
+  const left = normalizeGameSetup(a);
+  const right = normalizeGameSetup(b);
+  return left.variant === right.variant && left.positionId === right.positionId && left.backRank === right.backRank;
+}
+function blackBackRankFromWhite(backRank){ return String(backRank || STANDARD_BACK_RANK).toLowerCase().split('').join(''); }
+function castlingInfoFromBackRank(backRank){
+  backRank = isValidChess960BackRank(backRank) ? backRank : STANDARD_BACK_RANK;
+  const kingFile = backRank.indexOf('K');
+  const rooks = [];
+  for(let i=0;i<8;i++) if(backRank[i] === 'R') rooks.push(i);
+  const qRook = rooks.filter(x => x < kingFile).pop();
+  const kRook = rooks.find(x => x > kingFile);
+  return {
+    w:{kingFile, rank:7, kingside:{key:'K', rookFile:kRook, kingTo:6, rookTo:5}, queenside:{key:'Q', rookFile:qRook, kingTo:2, rookTo:3}},
+    b:{kingFile, rank:0, kingside:{key:'k', rookFile:kRook, kingTo:6, rookTo:5}, queenside:{key:'q', rookFile:qRook, kingTo:2, rookTo:3}}
+  };
+}
+function rangeBetweenInclusive(a,b){
+  const out = [];
+  const step = a <= b ? 1 : -1;
+  for(let x=a;;x+=step){
+    out.push(x);
+    if(x === b) break;
+  }
+  return out;
+}
+function rangeBetweenExclusive(a,b){
+  if(a === b) return [];
+  const out = [];
+  const step = a < b ? 1 : -1;
+  for(let x=a+step; x !== b; x+=step) out.push(x);
+  return out;
+}
+function setupLabel(setup){
+  const normalized = normalizeGameSetup(setup || currentGameSetup);
+  if(normalized.variant !== GAME_VARIANT_FREESTYLE) return 'Klassisches Schach: normale Startstellung.';
+  return 'Freestyle-Stellung #' + normalized.positionId + ' · Grundreihe: ' + normalized.backRank;
+}
+function loadGameSetupPreference(){
+  let variant = GAME_VARIANT_STANDARD;
+  let positionId = null;
+  let backRank = '';
+  try{
+    variant = localStorage.getItem(GAME_VARIANT_STORAGE_KEY) || GAME_VARIANT_STANDARD;
+    positionId = localStorage.getItem(FREESTYLE_POSITION_STORAGE_KEY);
+    backRank = localStorage.getItem(FREESTYLE_BACK_RANK_STORAGE_KEY) || '';
+  } catch(_){}
+  currentGameSetup = normalizeGameSetup({variant, positionId, backRank});
+}
+function saveGameSetupPreference(setup){
+  const normalized = normalizeGameSetup(setup);
+  currentGameSetup = normalized;
+  try{
+    localStorage.setItem(GAME_VARIANT_STORAGE_KEY, normalized.variant);
+    if(normalized.variant === GAME_VARIANT_FREESTYLE){
+      localStorage.setItem(FREESTYLE_POSITION_STORAGE_KEY, String(normalized.positionId));
+      localStorage.setItem(FREESTYLE_BACK_RANK_STORAGE_KEY, normalized.backRank);
+    }
+  } catch(_){}
+  return normalized;
+}
+loadGameSetupPreference();
+
+function Game(setup){ this.reset(setup); }
+Game.prototype.reset = function(setup){
+  this.setup = normalizeGameSetup(setup || currentGameSetup);
+  const backRank = this.setup.backRank || STANDARD_BACK_RANK;
+  this.variant = this.setup.variant;
+  this.startBackRank = backRank;
+  this.castleInfo = castlingInfoFromBackRank(backRank);
   this.board = [
-    ['r','n','b','q','k','b','n','r'],
+    blackBackRankFromWhite(backRank).split(''),
     ['p','p','p','p','p','p','p','p'],
     ['.','.','.','.','.','.','.','.'],
     ['.','.','.','.','.','.','.','.'],
     ['.','.','.','.','.','.','.','.'],
     ['.','.','.','.','.','.','.','.'],
     ['P','P','P','P','P','P','P','P'],
-    ['R','N','B','Q','K','B','N','R']
+    backRank.split('')
   ];
   this.turn = 'w';
   this.ep = null;
@@ -603,7 +775,11 @@ Game.prototype.reset = function(){
   this.fullmove = 1;
 };
 Game.prototype.clone = function(){
-  const g = new Game();
+  const g = new Game(this.setup);
+  g.setup = normalizeGameSetup(this.setup);
+  g.variant = this.variant;
+  g.startBackRank = this.startBackRank;
+  g.castleInfo = clone(this.castleInfo);
   g.board = clone(this.board);
   g.turn = this.turn;
   g.ep = this.ep ? [this.ep[0], this.ep[1]] : null;
@@ -670,6 +846,35 @@ Game.prototype.inCheck = function(color){
   const kp = this.findKing(color);
   return !!(kp && this.isAttacked(kp[0], kp[1], opposite(color)));
 };
+Game.prototype.castleMove = function(color, side){
+  const colorInfo = this.castleInfo && this.castleInfo[color];
+  if(!colorInfo) return null;
+  const info = colorInfo[side];
+  if(!info) return null;
+  const key = info.key;
+  const rank = color === 'w' ? 7 : 0;
+  const king = color === 'w' ? 'K' : 'k';
+  const rook = color === 'w' ? 'R' : 'r';
+  const kingFrom = colorInfo.kingFile;
+  const rookFrom = info.rookFile;
+  const kingTo = info.kingTo;
+  const rookTo = info.rookTo;
+  if(!this.castling[key]) return null;
+  if(!Number.isInteger(kingFrom) || !Number.isInteger(rookFrom)) return null;
+  if(this.at(kingFrom, rank) !== king || this.at(rookFrom, rank) !== rook) return null;
+  for(const xx of rangeBetweenExclusive(kingFrom, rookFrom)){
+    if(this.at(xx, rank) !== '.') return null;
+  }
+  const mayOccupy = xx => xx === kingFrom || xx === rookFrom || this.at(xx, rank) === '.';
+  for(const xx of rangeBetweenInclusive(kingFrom, kingTo)){
+    if(!mayOccupy(xx)) return null;
+  }
+  for(const xx of rangeBetweenInclusive(rookFrom, rookTo)){
+    if(!mayOccupy(xx)) return null;
+  }
+  const displayTo = kingTo === kingFrom ? rookFrom : kingTo;
+  return {from:[kingFrom,rank], to:[displayTo,rank], meta:{castle:key, kingFrom, kingTo, rookFrom, rookTo}};
+};
 Game.prototype.pseudoLegalMovesFrom = function(x,y){
   const moves = [];
   const p = this.at(x,y);
@@ -727,13 +932,12 @@ Game.prototype.pseudoLegalMovesFrom = function(x,y){
       const t = this.at(nx,ny);
       if(t === '.' || pieceColor(t) !== color) moves.push({from:[x,y], to:[nx,ny], meta:{}});
     }
-    if(color === 'w' && x === 4 && y === 7){
-      if(this.castling.K && this.at(7,7)==='R' && this.at(5,7)==='.' && this.at(6,7)==='.') moves.push({from:[x,y], to:[6,7], meta:{castle:'K'}});
-      if(this.castling.Q && this.at(0,7)==='R' && this.at(1,7)==='.' && this.at(2,7)==='.' && this.at(3,7)==='.') moves.push({from:[x,y], to:[2,7], meta:{castle:'Q'}});
-    }
-    if(color === 'b' && x === 4 && y === 0){
-      if(this.castling.k && this.at(7,0)==='r' && this.at(5,0)==='.' && this.at(6,0)==='.') moves.push({from:[x,y], to:[6,0], meta:{castle:'k'}});
-      if(this.castling.q && this.at(0,0)==='r' && this.at(1,0)==='.' && this.at(2,0)==='.' && this.at(3,0)==='.') moves.push({from:[x,y], to:[2,0], meta:{castle:'q'}});
+    const colorInfo = this.castleInfo && this.castleInfo[color];
+    if(colorInfo && x === colorInfo.kingFile && y === colorInfo.rank){
+      const kingSideCastle = this.castleMove(color, 'kingside');
+      const queenSideCastle = this.castleMove(color, 'queenside');
+      if(kingSideCastle) moves.push(kingSideCastle);
+      if(queenSideCastle) moves.push(queenSideCastle);
     }
   }
   return moves;
@@ -743,9 +947,14 @@ Game.prototype.castlePathIsSafe = function(mv){
   const color = this.turn;
   const enemy = opposite(color);
   if(this.inCheck(color)) return false;
-  const c = mv.meta.castle;
-  const path = c === 'K' ? [[5,7],[6,7]] : c === 'Q' ? [[3,7],[2,7]] : c === 'k' ? [[5,0],[6,0]] : [[3,0],[2,0]];
-  return path.every(([x,y]) => !this.isAttacked(x,y,enemy));
+  const meta = mv.meta;
+  const rank = color === 'w' ? 7 : 0;
+  const kingFrom = Number.isInteger(meta.kingFrom) ? meta.kingFrom : (this.castleInfo && this.castleInfo[color] ? this.castleInfo[color].kingFile : (color === 'w' ? 4 : 4));
+  const kingTo = Number.isInteger(meta.kingTo) ? meta.kingTo : ((meta.castle === 'K' || meta.castle === 'k') ? 6 : 2);
+  for(const xx of rangeBetweenInclusive(kingFrom, kingTo)){
+    if(this.isAttacked(xx, rank, enemy)) return false;
+  }
+  return true;
 };
 Game.prototype.legalMoves = function(){
   const moves = [];
@@ -776,10 +985,17 @@ Game.prototype.makeMove = function(mv, silent){
     this.set(tx,ty,piece);
     this.set(fx,fy,'.');
   } else if(meta.castle){
-    if(meta.castle === 'K'){ this.set(4,7,'.'); this.set(6,7,'K'); this.set(7,7,'.'); this.set(5,7,'R'); }
-    else if(meta.castle === 'Q'){ this.set(4,7,'.'); this.set(2,7,'K'); this.set(0,7,'.'); this.set(3,7,'R'); }
-    else if(meta.castle === 'k'){ this.set(4,0,'.'); this.set(6,0,'k'); this.set(7,0,'.'); this.set(5,0,'r'); }
-    else if(meta.castle === 'q'){ this.set(4,0,'.'); this.set(2,0,'k'); this.set(0,0,'.'); this.set(3,0,'r'); }
+    const color = pieceColor(piece);
+    const rank = color === 'w' ? 7 : 0;
+    const rook = color === 'w' ? 'R' : 'r';
+    const kingFrom = Number.isInteger(meta.kingFrom) ? meta.kingFrom : fx;
+    const kingTo = Number.isInteger(meta.kingTo) ? meta.kingTo : tx;
+    const rookFrom = Number.isInteger(meta.rookFrom) ? meta.rookFrom : ((meta.castle === 'K' || meta.castle === 'k') ? 7 : 0);
+    const rookTo = Number.isInteger(meta.rookTo) ? meta.rookTo : ((meta.castle === 'K' || meta.castle === 'k') ? 5 : 3);
+    this.set(kingFrom, rank, '.');
+    this.set(rookFrom, rank, '.');
+    this.set(kingTo, rank, piece);
+    this.set(rookTo, rank, rook);
   } else {
     taken = this.at(tx,ty);
     this.set(tx,ty,piece);
@@ -795,14 +1011,24 @@ Game.prototype.makeMove = function(mv, silent){
 
   if(piece === 'K'){ this.castling.K = false; this.castling.Q = false; }
   if(piece === 'k'){ this.castling.k = false; this.castling.q = false; }
-  if(piece === 'R' && fx===0 && fy===7) this.castling.Q = false;
-  if(piece === 'R' && fx===7 && fy===7) this.castling.K = false;
-  if(piece === 'r' && fx===0 && fy===0) this.castling.q = false;
-  if(piece === 'r' && fx===7 && fy===0) this.castling.k = false;
-  if(taken === 'R' && tx===0 && ty===7) this.castling.Q = false;
-  if(taken === 'R' && tx===7 && ty===7) this.castling.K = false;
-  if(taken === 'r' && tx===0 && ty===0) this.castling.q = false;
-  if(taken === 'r' && tx===7 && ty===0) this.castling.k = false;
+  const wInfo = this.castleInfo && this.castleInfo.w;
+  const bInfo = this.castleInfo && this.castleInfo.b;
+  if(piece === 'R' && fy===7 && wInfo){
+    if(fx === wInfo.queenside.rookFile) this.castling.Q = false;
+    if(fx === wInfo.kingside.rookFile) this.castling.K = false;
+  }
+  if(piece === 'r' && fy===0 && bInfo){
+    if(fx === bInfo.queenside.rookFile) this.castling.q = false;
+    if(fx === bInfo.kingside.rookFile) this.castling.k = false;
+  }
+  if(taken === 'R' && ty===7 && wInfo){
+    if(tx === wInfo.queenside.rookFile) this.castling.Q = false;
+    if(tx === wInfo.kingside.rookFile) this.castling.K = false;
+  }
+  if(taken === 'r' && ty===0 && bInfo){
+    if(tx === bInfo.queenside.rookFile) this.castling.q = false;
+    if(tx === bInfo.kingside.rookFile) this.castling.k = false;
+  }
 
   this.halfmove = (piece.toLowerCase() === 'p' || taken !== '.') ? 0 : this.halfmove + 1;
   if(this.turn === 'b') this.fullmove++;
@@ -915,6 +1141,12 @@ const navBackBtn = document.getElementById('navBack');
 const navForwardBtn = document.getElementById('navForward');
 const navEndBtn = document.getElementById('navEnd');
 const timeSetupBoxEl = document.getElementById('timeSetupBox');
+const variantSetupBoxEl = document.getElementById('variantSetupBox');
+const variantStandardBtn = document.getElementById('variantStandardBtn');
+const variantFreestyleBtn = document.getElementById('variantFreestyleBtn');
+const freestyleRandomBtn = document.getElementById('freestyleRandomBtn');
+const variantStatusEl = document.getElementById('variantStatus');
+const variantLockNoteEl = document.getElementById('variantLockNote');
 const inviteColorBoxEl = document.getElementById('inviteColorBox');
 const inviteColorStatusEl = document.getElementById('inviteColorStatus');
 const inviteColorSummaryEl = document.getElementById('inviteColorSummary');
@@ -1132,6 +1364,80 @@ function updateTimeSetupVisibility(){
   timeSetupBoxEl.hidden = !!(onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
 }
 
+function isVariantSetupLocked(){
+  if(masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return true;
+  if(onlineGameStarted) return true;
+  return !!onlineRoomId;
+}
+function currentGameSetupPayload(){
+  return normalizeGameSetup(currentGameSetup);
+}
+function updateVariantSetupVisibility(){
+  const live = !!(onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
+  if(variantSetupBoxEl) variantSetupBoxEl.hidden = live;
+}
+function updateVariantUi(){
+  const setup = normalizeGameSetup(currentGameSetup);
+  const locked = isVariantSetupLocked();
+  if(variantStandardBtn){
+    variantStandardBtn.classList.toggle('active', setup.variant === GAME_VARIANT_STANDARD);
+    variantStandardBtn.disabled = locked;
+  }
+  if(variantFreestyleBtn){
+    variantFreestyleBtn.classList.toggle('active', setup.variant === GAME_VARIANT_FREESTYLE);
+    variantFreestyleBtn.disabled = locked;
+  }
+  if(freestyleRandomBtn){
+    freestyleRandomBtn.hidden = setup.variant !== GAME_VARIANT_FREESTYLE;
+    freestyleRandomBtn.disabled = locked;
+  }
+  if(variantStatusEl) variantStatusEl.textContent = setupLabel(setup);
+  if(variantLockNoteEl){
+    if(!onlineRoomId) variantLockNoteEl.textContent = 'Spielmodus vor der Einladung wählen.';
+    else if(onlineGameStarted) variantLockNoteEl.textContent = 'Online-Partie gestartet: Spielmodus ist gesperrt.';
+    else variantLockNoteEl.textContent = 'Spielmodus und Startstellung sind für diesen Einladungsraum festgelegt.';
+  }
+  updateVariantSetupVisibility();
+}
+function applyGameSetup(setup, options){
+  options = options || {};
+  const beforeSetup = normalizeGameSetup(currentGameSetup);
+  const normalized = normalizeGameSetup(setup);
+  const changed = !sameGameSetup(beforeSetup, normalized);
+  if(options.save === false) currentGameSetup = normalized;
+  else saveGameSetupPreference(normalized);
+  if((changed || options.forceReset) && masterHistory.length === 0 && !onlineGameStarted && !firstMoveDone && !clockRunning){
+    selected = null;
+    lastMove = null;
+    viewIndex = 0;
+    renderBoard();
+  }
+  updateVariantUi();
+  return normalized;
+}
+function setGameVariant(variant){
+  if(isVariantSetupLocked()){
+    if(variantStatusEl) variantStatusEl.textContent = 'Der Spielmodus ist für diesen Einladungsraum bereits festgelegt.';
+    return;
+  }
+  if(variant === GAME_VARIANT_FREESTYLE){
+    const setup = currentGameSetup.variant === GAME_VARIANT_FREESTYLE ? currentGameSetup : randomChess960Setup();
+    applyGameSetup(setup, {forceReset:true});
+  } else {
+    applyGameSetup({variant: GAME_VARIANT_STANDARD}, {forceReset:true});
+  }
+}
+function randomizeFreestyleSetup(){
+  if(isVariantSetupLocked()){
+    if(variantStatusEl) variantStatusEl.textContent = 'Die Freestyle-Stellung ist für diesen Einladungsraum bereits festgelegt.';
+    return;
+  }
+  applyGameSetup(randomChess960Setup(), {forceReset:true});
+}
+if(variantStandardBtn) variantStandardBtn.addEventListener('click', () => setGameVariant(GAME_VARIANT_STANDARD));
+if(variantFreestyleBtn) variantFreestyleBtn.addEventListener('click', () => setGameVariant(GAME_VARIANT_FREESTYLE));
+if(freestyleRandomBtn) freestyleRandomBtn.addEventListener('click', randomizeFreestyleSetup);
+
 function normalizeInviteColorPreference(value){
   value = String(value || '').toLowerCase();
   return value === 'b' || value === 'black' ? 'b' : value === 'random' || value === 'zufall' ? 'random' : 'w';
@@ -1227,6 +1533,10 @@ let onlineGameEndReason = null;
 let onlineGameWinner = null;
 let onlineDrawOffer = null;
 let onlineRoomTimeControl = null;
+let onlineRoomGameSetup = null;
+let onlinePendingGameSetupMessageId = null;
+let onlineAutoSyncedInitialSetup = false;
+let applyingRemoteGameSetup = false;
 let applyingRemoteTimeControl = false;
 let onlineAutoSyncedInitialTime = false;
 let onlineOrientationRoleApplied = null;
@@ -1819,6 +2129,7 @@ function updateOnlineUi(){
     updateGameActionButtons();
     updateChatControls();
     updateTimeSetupVisibility();
+    updateVariantUi();
     updateInviteColorUi();
     refreshHeaderStatusFromState();
     return;
@@ -1868,6 +2179,7 @@ function updateOnlineUi(){
   updateChatControls();
   updateTimeControlsLock();
   updateTimeSetupVisibility();
+  updateVariantUi();
   updateInviteColorUi();
   refreshHeaderStatusFromState();
 }
@@ -2201,6 +2513,26 @@ function extractOnlineTimeControl(msg){
     (msg.type === 'time_control' || msg.type === 'time_control_set' || msg.type === 'set_time_control' || msg.type === 'time_control_ack' ? msg : null)
   );
 }
+function extractOnlineGameSetup(msg){
+  if(!msg) return null;
+  return msg.gameSetup || msg.game_setup || msg.startPosition || msg.start_position ||
+    (msg.game && (msg.game.gameSetup || msg.game.game_setup || msg.game.startPosition || msg.game.start_position)) ||
+    (msg.state && (msg.state.gameSetup || msg.state.game_setup || msg.state.startPosition || msg.state.start_position)) ||
+    (msg.roomState && (msg.roomState.gameSetup || msg.roomState.game_setup || msg.roomState.startPosition || msg.roomState.start_position)) ||
+    (msg.lobby && (msg.lobby.gameSetup || msg.lobby.game_setup || msg.lobby.startPosition || msg.lobby.start_position)) ||
+    (msg.type === 'game_setup' || msg.type === 'game_setup_ack' || msg.type === 'set_game_setup' ? msg : null);
+}
+function applyGameSetupFromOnline(gameSetup){
+  const normalized = normalizeGameSetup(gameSetup || {});
+  onlineRoomGameSetup = normalized;
+  onlinePendingGameSetupMessageId = null;
+  applyingRemoteGameSetup = true;
+  try{
+    applyGameSetup(normalized, {save:false, forceReset: masterHistory.length === 0 && !onlineGameStarted});
+  } finally {
+    applyingRemoteGameSetup = false;
+  }
+}
 function normalizeIncomingGame(candidate){
   if(!candidate) return null;
   if(candidate.game) return normalizeIncomingGame(candidate.game);
@@ -2486,7 +2818,10 @@ function connectOnlineRoom(roomId, opts){
   onlineGameWinner = null;
   onlineDrawOffer = null;
   onlineRoomTimeControl = null;
+  onlineRoomGameSetup = null;
+  onlinePendingGameSetupMessageId = null;
   onlineCanSetTimeControl = false;
+  onlineAutoSyncedInitialSetup = false;
   onlineAutoSyncedInitialTime = false;
   onlineOrientationRoleApplied = null;
   onlinePendingTimeControlMessageId = null;
@@ -2566,6 +2901,12 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    const incomingGameSetup = extractOnlineGameSetup(msg);
+    if(incomingGameSetup){
+      applyGameSetupFromOnline(incomingGameSetup);
+      handled = true;
+    }
+
     const incomingTimeControl = extractOnlineTimeControl(msg);
     if(incomingTimeControl){
       applyTimeControlFromOnline(incomingTimeControl);
@@ -2605,6 +2946,10 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    if(msg.type === 'game_setup_ack'){
+      onlinePendingGameSetupMessageId = null;
+      handled = true;
+    }
     if(msg.type === 'time_control_ack'){
       onlinePendingTimeControlMessageId = null;
       handled = true;
@@ -2614,7 +2959,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['hello','lobby','room_state','state','sync','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -2636,6 +2981,10 @@ function connectOnlineRoom(roomId, opts){
     else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
     else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
 
+    if(!onlineAutoSyncedInitialSetup && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && !incomingGameSetup && !onlineGameStarted){
+      onlineAutoSyncedInitialSetup = true;
+      setTimeout(syncCurrentGameSetupToOnline, 80);
+    }
     if(!onlineAutoSyncedInitialTime && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && !incomingTimeControl && timeMode && !onlineGameStarted){
       onlineAutoSyncedInitialTime = true;
       setTimeout(syncCurrentTimeControlToOnline, 100);
@@ -2668,6 +3017,27 @@ function sendOnlineMessage(payload){
     return true;
   } catch(_){
     return false;
+  }
+}
+function currentGameSetupPayload(){
+  return normalizeGameSetup(currentGameSetup);
+}
+function syncCurrentGameSetupToOnline(){
+  if(applyingRemoteGameSetup) return;
+  if(!onlineRoomId || !onlineConnected || onlineGameStarted) return;
+  if(onlineRoleCode !== 'w' && !onlineCanSetTimeControl) return;
+  const gameSetup = currentGameSetupPayload();
+  const messageId = 'gs_' + Date.now() + '_' + randomToken(5);
+  onlinePendingGameSetupMessageId = messageId;
+  if(sendOnlineMessage({type:'set_game_setup', gameSetup, messageId})){
+    onlineLastMessage = gameSetup.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle-Stellung wird an die Lobby gesendet...' : 'Spielmodus wird an die Lobby gesendet...';
+    updateOnlineUi();
+    setTimeout(() => {
+      if(onlinePendingGameSetupMessageId === messageId && onlineConnected && !sameGameSetup(onlineRoomGameSetup, gameSetup)){
+        sendOnlineMessage({type:'set_game_setup', gameSetup, messageId: messageId + '_retry'});
+        requestOnlineState();
+      }
+    }, 900);
   }
 }
 function currentTimeControlPayload(){
@@ -2786,6 +3156,8 @@ function startOnlineGame(){
     return;
   }
   const timeControl = currentTimeControlPayload();
+  const gameSetup = currentGameSetupPayload();
+  syncCurrentGameSetupToOnline();
   syncCurrentTimeControlToOnline();
   const messageId = 'sg_' + Date.now() + '_' + randomToken(5);
   onlinePendingStartMessageId = messageId;
@@ -2793,7 +3165,7 @@ function startOnlineGame(){
   updateOnlineUi();
   setTimeout(() => {
     if(onlineGameStarted || onlinePendingStartMessageId !== messageId) return;
-    if(sendOnlineMessage({type:'start_game', timeControl, game:{started:true}, messageId})){
+    if(sendOnlineMessage({type:'start_game', timeControl, gameSetup, game:{started:true, gameSetup}, messageId})){
       onlineLastMessage = 'Partiestart wurde gesendet. Warte auf Server-Bestätigung.';
       updateOnlineUi();
       setTimeout(requestOnlineState, 250);
@@ -2870,6 +3242,9 @@ async function createNewOnlineRoom(opts){
   onlineGameWinner = null;
   onlineDrawOffer = null;
   onlineRoomTimeControl = null;
+  onlineRoomGameSetup = null;
+  onlinePendingGameSetupMessageId = null;
+  onlineAutoSyncedInitialSetup = false;
   onlineCanSetTimeControl = false;
   onlineClockSync = null;
   newGame();
@@ -3079,13 +3454,14 @@ function onSquareClick(x,y){
     renderBoard();
     return;
   }
-  if(piece !== '.' && pieceColor(piece) === g.turn){
+  const selectedLegalMove = g.legalMoves().find(m => m.from[0] === selected[0] && m.from[1] === selected[1] && m.to[0] === x && m.to[1] === y);
+  if(piece !== '.' && pieceColor(piece) === g.turn && !selectedLegalMove){
     selected = [x,y];
     playMoveSound({pickup:true});
     highlightSelection(x,y,g);
     return;
   }
-  const found = g.legalMoves().find(m => m.from[0] === selected[0] && m.from[1] === selected[1] && m.to[0] === x && m.to[1] === y);
+  const found = selectedLegalMove;
   if(!found){
     showIllegalMoveFeedback('Illegaler Zug — König im Schach oder Zug nicht erlaubt');
     highlightSelection(selected[0], selected[1], g);
@@ -3560,6 +3936,7 @@ timeSelects.forEach(select => select.addEventListener('change', () => {
 const initialTimeOption = getTimeOption(activeTimeKey, activeTimeCategory);
 applyTimeControlFromKey(activeTimeKey, initialTimeOption?.option?.dataset.timeLabel, activeTimeCategory);
 resetClockForNewGame();
+updateVariantUi();
 renderBoard();
 refreshSiteStats(true);
 const initialRoomId = cleanRoomId(new URL(window.location.href).searchParams.get('room'));
