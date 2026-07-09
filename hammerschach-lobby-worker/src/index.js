@@ -609,20 +609,135 @@ function pieceColor(ch) {
   return ch === ch.toUpperCase() ? 'w' : 'b';
 }
 
-function ChessGame() {
-  this.reset();
+const GAME_VARIANT_STANDARD = 'standard';
+const GAME_VARIANT_FREESTYLE = 'freestyle960';
+const STANDARD_BACK_RANK = 'RNBQKBNR';
+let chess960BackRankCache = null;
+
+function isValidChess960BackRank(rank) {
+  rank = String(rank || '').toUpperCase();
+  if (!/^[RNBQKBNR]{8}$/.test(rank)) return false;
+  const counts = { R:0, N:0, B:0, Q:0, K:0 };
+  for (const ch of rank) counts[ch] = (counts[ch] || 0) + 1;
+  if (counts.R !== 2 || counts.N !== 2 || counts.B !== 2 || counts.Q !== 1 || counts.K !== 1) return false;
+  const kingFile = rank.indexOf('K');
+  const rookFiles = [];
+  const bishopFiles = [];
+  for (let i = 0; i < 8; i++) {
+    if (rank[i] === 'R') rookFiles.push(i);
+    if (rank[i] === 'B') bishopFiles.push(i);
+  }
+  return rookFiles[0] < kingFile && kingFile < rookFiles[1] && bishopFiles.length === 2 && (bishopFiles[0] % 2) !== (bishopFiles[1] % 2);
 }
 
-ChessGame.prototype.reset = function() {
+function generateChess960BackRanks() {
+  if (chess960BackRankCache) return chess960BackRankCache;
+  const pieces = ['R','R','N','N','B','B','Q','K'];
+  const out = [];
+  const used = Array(pieces.length).fill(false);
+  const seen = new Set();
+  function rec(path) {
+    if (path.length === 8) {
+      const rank = path.join('');
+      if (!seen.has(rank) && isValidChess960BackRank(rank)) {
+        seen.add(rank);
+        out.push(rank);
+      }
+      return;
+    }
+    const local = new Set();
+    for (let i = 0; i < pieces.length; i++) {
+      if (used[i] || local.has(pieces[i])) continue;
+      local.add(pieces[i]);
+      used[i] = true;
+      path.push(pieces[i]);
+      rec(path);
+      path.pop();
+      used[i] = false;
+    }
+  }
+  rec([]);
+  out.sort();
+  chess960BackRankCache = out;
+  return chess960BackRankCache;
+}
+
+function chess960BackRankById(positionId) {
+  const list = generateChess960BackRanks();
+  const id = Math.max(0, Math.min(959, Math.floor(Number(positionId || 0))));
+  return list[id] || STANDARD_BACK_RANK;
+}
+
+function cleanGameSetup(setup) {
+  setup = setup || {};
+  const variant = String(setup.variant || setup.mode || '').toLowerCase() === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
+  if (variant !== GAME_VARIANT_FREESTYLE) return { variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK };
+  let positionId = Number.isFinite(Number(setup.positionId ?? setup.position_id)) ? Math.floor(Number(setup.positionId ?? setup.position_id)) : null;
+  if (positionId !== null) positionId = Math.max(0, Math.min(959, positionId));
+  let backRank = String(setup.backRank || setup.back_rank || '').toUpperCase();
+  if (!isValidChess960BackRank(backRank)) backRank = positionId !== null ? chess960BackRankById(positionId) : chess960BackRankById(0);
+  if (positionId === null) {
+    const list = generateChess960BackRanks();
+    const idx = list.indexOf(backRank);
+    positionId = idx >= 0 ? idx : 0;
+  }
+  return { variant: GAME_VARIANT_FREESTYLE, positionId, backRank };
+}
+
+function blackBackRankFromWhite(backRank) {
+  return String(backRank || STANDARD_BACK_RANK).toLowerCase();
+}
+
+function castlingInfoFromBackRank(backRank) {
+  backRank = isValidChess960BackRank(backRank) ? backRank : STANDARD_BACK_RANK;
+  const kingFile = backRank.indexOf('K');
+  const rooks = [];
+  for (let i = 0; i < 8; i++) if (backRank[i] === 'R') rooks.push(i);
+  const qRook = rooks.filter(x => x < kingFile).pop();
+  const kRook = rooks.find(x => x > kingFile);
+  return {
+    w:{ kingFile, rank:7, kingside:{ key:'K', rookFile:kRook, kingTo:6, rookTo:5 }, queenside:{ key:'Q', rookFile:qRook, kingTo:2, rookTo:3 } },
+    b:{ kingFile, rank:0, kingside:{ key:'k', rookFile:kRook, kingTo:6, rookTo:5 }, queenside:{ key:'q', rookFile:qRook, kingTo:2, rookTo:3 } }
+  };
+}
+
+function rangeBetweenInclusive(a, b) {
+  const out = [];
+  const step = a <= b ? 1 : -1;
+  for (let x = a;; x += step) {
+    out.push(x);
+    if (x === b) break;
+  }
+  return out;
+}
+
+function rangeBetweenExclusive(a, b) {
+  if (a === b) return [];
+  const out = [];
+  const step = a < b ? 1 : -1;
+  for (let x = a + step; x !== b; x += step) out.push(x);
+  return out;
+}
+
+function ChessGame(setup) {
+  this.reset(setup);
+}
+
+ChessGame.prototype.reset = function(setup) {
+  this.setup = cleanGameSetup(setup);
+  const backRank = this.setup.backRank || STANDARD_BACK_RANK;
+  this.variant = this.setup.variant;
+  this.startBackRank = backRank;
+  this.castleInfo = castlingInfoFromBackRank(backRank);
   this.board = [
-    ['r','n','b','q','k','b','n','r'],
+    blackBackRankFromWhite(backRank).split(''),
     ['p','p','p','p','p','p','p','p'],
     ['.','.','.','.','.','.','.','.'],
     ['.','.','.','.','.','.','.','.'],
     ['.','.','.','.','.','.','.','.'],
     ['.','.','.','.','.','.','.','.'],
     ['P','P','P','P','P','P','P','P'],
-    ['R','N','B','Q','K','B','N','R']
+    backRank.split('')
   ];
   this.turn = 'w';
   this.ep = null;
@@ -632,7 +747,11 @@ ChessGame.prototype.reset = function() {
 };
 
 ChessGame.prototype.clone = function() {
-  const g = new ChessGame();
+  const g = new ChessGame(this.setup);
+  g.setup = cleanGameSetup(this.setup);
+  g.variant = this.variant;
+  g.startBackRank = this.startBackRank;
+  g.castleInfo = clone(this.castleInfo);
   g.board = clone(this.board);
   g.turn = this.turn;
   g.ep = this.ep ? [this.ep[0], this.ep[1]] : null;
@@ -721,6 +840,38 @@ ChessGame.prototype.inCheck = function(color) {
   return !!(kp && this.isAttacked(kp[0], kp[1], opposite(color)));
 };
 
+ChessGame.prototype.castleMove = function(color, side) {
+  const colorInfo = this.castleInfo && this.castleInfo[color];
+  if (!colorInfo) return null;
+  const info = colorInfo[side];
+  if (!info) return null;
+  const key = info.key;
+  const rank = color === 'w' ? 7 : 0;
+  const king = color === 'w' ? 'K' : 'k';
+  const rook = color === 'w' ? 'R' : 'r';
+  const kingFrom = colorInfo.kingFile;
+  const rookFrom = info.rookFile;
+  const kingTo = info.kingTo;
+  const rookTo = info.rookTo;
+  if (!this.castling[key]) return null;
+  if (!Number.isInteger(kingFrom) || !Number.isInteger(rookFrom)) return null;
+  if (this.at(kingFrom, rank) !== king || this.at(rookFrom, rank) !== rook) return null;
+
+  for (const xx of rangeBetweenExclusive(kingFrom, rookFrom)) {
+    if (this.at(xx, rank) !== '.') return null;
+  }
+  const mayOccupy = xx => xx === kingFrom || xx === rookFrom || this.at(xx, rank) === '.';
+  for (const xx of rangeBetweenInclusive(kingFrom, kingTo)) {
+    if (!mayOccupy(xx)) return null;
+  }
+  for (const xx of rangeBetweenInclusive(rookFrom, rookTo)) {
+    if (!mayOccupy(xx)) return null;
+  }
+
+  const displayTo = kingTo === kingFrom ? rookFrom : kingTo;
+  return { from:[kingFrom,rank], to:[displayTo,rank], meta:{ castle:key, kingFrom, kingTo, rookFrom, rookTo } };
+};
+
 ChessGame.prototype.pseudoLegalMovesFrom = function(x, y) {
   const moves = [];
   const p = this.at(x, y);
@@ -789,13 +940,12 @@ ChessGame.prototype.pseudoLegalMovesFrom = function(x, y) {
         if (t === '.' || pieceColor(t) !== color) moves.push({ from:[x,y], to:[nx,ny], meta:{} });
       }
     }
-    if (color === 'w' && x === 4 && y === 7) {
-      if (this.castling.K && this.at(7,7) === 'R' && this.at(5,7) === '.' && this.at(6,7) === '.') moves.push({ from:[x,y], to:[6,7], meta:{ castle:'K' } });
-      if (this.castling.Q && this.at(0,7) === 'R' && this.at(1,7) === '.' && this.at(2,7) === '.' && this.at(3,7) === '.') moves.push({ from:[x,y], to:[2,7], meta:{ castle:'Q' } });
-    }
-    if (color === 'b' && x === 4 && y === 0) {
-      if (this.castling.k && this.at(7,0) === 'r' && this.at(5,0) === '.' && this.at(6,0) === '.') moves.push({ from:[x,y], to:[6,0], meta:{ castle:'k' } });
-      if (this.castling.q && this.at(0,0) === 'r' && this.at(1,0) === '.' && this.at(2,0) === '.' && this.at(3,0) === '.') moves.push({ from:[x,y], to:[2,0], meta:{ castle:'q' } });
+    const colorInfo = this.castleInfo && this.castleInfo[color];
+    if (colorInfo && x === colorInfo.kingFile && y === colorInfo.rank) {
+      const kingSideCastle = this.castleMove(color, 'kingside');
+      const queenSideCastle = this.castleMove(color, 'queenside');
+      if (kingSideCastle) moves.push(kingSideCastle);
+      if (queenSideCastle) moves.push(queenSideCastle);
     }
   }
 
@@ -807,9 +957,14 @@ ChessGame.prototype.castlePathIsSafe = function(mv) {
   const color = this.turn;
   const enemy = opposite(color);
   if (this.inCheck(color)) return false;
-  const c = mv.meta.castle;
-  const path = c === 'K' ? [[5,7],[6,7]] : c === 'Q' ? [[3,7],[2,7]] : c === 'k' ? [[5,0],[6,0]] : [[3,0],[2,0]];
-  return path.every(([x, y]) => !this.isAttacked(x, y, enemy));
+  const meta = mv.meta;
+  const rank = color === 'w' ? 7 : 0;
+  const kingFrom = Number.isInteger(meta.kingFrom) ? meta.kingFrom : (this.castleInfo && this.castleInfo[color] ? this.castleInfo[color].kingFile : 4);
+  const kingTo = Number.isInteger(meta.kingTo) ? meta.kingTo : ((meta.castle === 'K' || meta.castle === 'k') ? 6 : 2);
+  for (const xx of rangeBetweenInclusive(kingFrom, kingTo)) {
+    if (this.isAttacked(xx, rank, enemy)) return false;
+  }
+  return true;
 };
 
 ChessGame.prototype.legalMoves = function() {
@@ -846,10 +1001,17 @@ ChessGame.prototype.makeMove = function(mv, silent) {
     this.set(tx, ty, piece);
     this.set(fx, fy, '.');
   } else if (meta.castle) {
-    if (meta.castle === 'K') { this.set(4,7,'.'); this.set(6,7,'K'); this.set(7,7,'.'); this.set(5,7,'R'); }
-    else if (meta.castle === 'Q') { this.set(4,7,'.'); this.set(2,7,'K'); this.set(0,7,'.'); this.set(3,7,'R'); }
-    else if (meta.castle === 'k') { this.set(4,0,'.'); this.set(6,0,'k'); this.set(7,0,'.'); this.set(5,0,'r'); }
-    else if (meta.castle === 'q') { this.set(4,0,'.'); this.set(2,0,'k'); this.set(0,0,'.'); this.set(3,0,'r'); }
+    const color = pieceColor(piece);
+    const rank = color === 'w' ? 7 : 0;
+    const rook = color === 'w' ? 'R' : 'r';
+    const kingFrom = Number.isInteger(meta.kingFrom) ? meta.kingFrom : fx;
+    const kingTo = Number.isInteger(meta.kingTo) ? meta.kingTo : tx;
+    const rookFrom = Number.isInteger(meta.rookFrom) ? meta.rookFrom : ((meta.castle === 'K' || meta.castle === 'k') ? 7 : 0);
+    const rookTo = Number.isInteger(meta.rookTo) ? meta.rookTo : ((meta.castle === 'K' || meta.castle === 'k') ? 5 : 3);
+    this.set(kingFrom, rank, '.');
+    this.set(rookFrom, rank, '.');
+    this.set(kingTo, rank, piece);
+    this.set(rookTo, rank, rook);
   } else {
     taken = this.at(tx, ty);
     this.set(tx, ty, piece);
@@ -865,14 +1027,24 @@ ChessGame.prototype.makeMove = function(mv, silent) {
 
   if (piece === 'K') { this.castling.K = false; this.castling.Q = false; }
   if (piece === 'k') { this.castling.k = false; this.castling.q = false; }
-  if (piece === 'R' && fx === 0 && fy === 7) this.castling.Q = false;
-  if (piece === 'R' && fx === 7 && fy === 7) this.castling.K = false;
-  if (piece === 'r' && fx === 0 && fy === 0) this.castling.q = false;
-  if (piece === 'r' && fx === 7 && fy === 0) this.castling.k = false;
-  if (taken === 'R' && tx === 0 && ty === 7) this.castling.Q = false;
-  if (taken === 'R' && tx === 7 && ty === 7) this.castling.K = false;
-  if (taken === 'r' && tx === 0 && ty === 0) this.castling.q = false;
-  if (taken === 'r' && tx === 7 && ty === 0) this.castling.k = false;
+  const wInfo = this.castleInfo && this.castleInfo.w;
+  const bInfo = this.castleInfo && this.castleInfo.b;
+  if (piece === 'R' && fy === 7 && wInfo) {
+    if (fx === wInfo.queenside.rookFile) this.castling.Q = false;
+    if (fx === wInfo.kingside.rookFile) this.castling.K = false;
+  }
+  if (piece === 'r' && fy === 0 && bInfo) {
+    if (fx === bInfo.queenside.rookFile) this.castling.q = false;
+    if (fx === bInfo.kingside.rookFile) this.castling.k = false;
+  }
+  if (taken === 'R' && ty === 7 && wInfo) {
+    if (tx === wInfo.queenside.rookFile) this.castling.Q = false;
+    if (tx === wInfo.kingside.rookFile) this.castling.K = false;
+  }
+  if (taken === 'r' && ty === 0 && bInfo) {
+    if (tx === bInfo.queenside.rookFile) this.castling.q = false;
+    if (tx === bInfo.kingside.rookFile) this.castling.k = false;
+  }
 
   this.halfmove = (piece.toLowerCase() === 'p' || taken !== '.') ? 0 : this.halfmove + 1;
   if (this.turn === 'b') this.fullmove++;
@@ -933,8 +1105,8 @@ function serverMoveToSan(before, mv, after) {
   return san;
 }
 
-function buildGameFromStoredMoves(moves) {
-  const g = new ChessGame();
+function buildGameFromStoredMoves(moves, gameSetup = null) {
+  const g = new ChessGame(cleanGameSetup(gameSetup));
   for (const stored of moves || []) {
     const legal = g.legalMoves();
     const found = legal.find(lm => lm.from[0] === stored.from[0] && lm.from[1] === stored.from[1] && lm.to[0] === stored.to[0] && lm.to[1] === stored.to[1]);
@@ -945,8 +1117,8 @@ function buildGameFromStoredMoves(moves) {
   return g;
 }
 
-function validateMoveOnServer(storedMoves, incoming) {
-  const before = buildGameFromStoredMoves(storedMoves || []);
+function validateMoveOnServer(storedMoves, incoming, gameSetup = null) {
+  const before = buildGameFromStoredMoves(storedMoves || [], gameSetup);
   const legal = before.legalMoves();
   const found = legal.find(lm => lm.from[0] === incoming.from[0] && lm.from[1] === incoming.from[1] && lm.to[0] === incoming.to[0] && lm.to[1] === incoming.to[1]);
   if (!found) {
@@ -1143,7 +1315,9 @@ export class GameRoom {
     const info = ws.deserializeAttachment() || {};
     const players = (await this.state.storage.get('players')) || { white: null, black: null };
     const timeControl = (await this.state.storage.get('timeControl')) || null;
-    const game = (await this.state.storage.get('game')) || { started: false, startedAt: null, ended: false, result: '*' };
+    const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || null);
+    const game = (await this.state.storage.get('game')) || { started: false, startedAt: null, ended: false, result: '*', gameSetup };
+    if (!game.gameSetup) game.gameSetup = gameSetup;
     const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
     const moves = (await this.state.storage.get('moves')) || [];
     const drawOffer = (await this.state.storage.get('drawOffer')) || null;
@@ -1163,6 +1337,7 @@ export class GameRoom {
       canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByPlayer && info.playerId === createdByPlayer))),
       createdByMe: !!(createdByPlayer && info.playerId === createdByPlayer),
       timeControl,
+      gameSetup,
       game,
       moves,
       drawOffer,
@@ -1290,6 +1465,38 @@ export class GameRoom {
       return;
     }
 
+    if (data.type === 'set_game_setup') {
+      const game = (await this.state.storage.get('game')) || { started: false };
+      if (game.started) {
+        safeSend(ws, { type: 'error', code: 'GAME_ALREADY_STARTED', message: 'Spielmodus ist nach Partiestart gesperrt.' });
+        return;
+      }
+
+      const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
+      const canSetGameSetup = role === 'w' || (createdByPlayer && info.playerId === createdByPlayer);
+      if (!canSetGameSetup) {
+        safeSend(ws, { type: 'error', code: 'ONLY_WHITE_OR_CREATOR_CAN_SET_SETUP', message: 'Nur Weiß oder der Einladende kann den Spielmodus ändern.' });
+        return;
+      }
+
+      const gameSetup = cleanGameSetup(data.gameSetup || data.game_setup || data.startPosition || data.start_position || data);
+      gameSetup.updatedByRole = role;
+      gameSetup.updatedByPlayer = info.playerId || null;
+      await this.state.storage.put('gameSetup', gameSetup);
+      await this.state.storage.put('moves', []);
+      await this.state.storage.delete('clock');
+
+      safeSend(ws, {
+        type: 'game_setup_ack',
+        ok: true,
+        messageId: data.messageId || null,
+        gameSetup,
+        serverNow: Date.now()
+      });
+      await this.broadcastRoomState('room_state');
+      return;
+    }
+
     if (data.type === 'set_time_control') {
       const game = (await this.state.storage.get('game')) || { started: false };
       if (game.started) {
@@ -1338,6 +1545,16 @@ export class GameRoom {
         return;
       }
 
+      let gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || null);
+      const submittedGameSetupRaw = data.gameSetup || data.game_setup || data.startPosition || data.start_position || null;
+      if (submittedGameSetupRaw) {
+        const submittedGameSetup = cleanGameSetup(submittedGameSetupRaw);
+        submittedGameSetup.updatedByRole = role;
+        submittedGameSetup.updatedByPlayer = info.playerId || null;
+        await this.state.storage.put('gameSetup', submittedGameSetup);
+        gameSetup = submittedGameSetup;
+      }
+
       let timeControl = (await this.state.storage.get('timeControl')) || null;
       const submittedTimeControl = cleanTimeControl(data.timeControl || data.time_control);
       if (submittedTimeControl) {
@@ -1369,10 +1586,12 @@ export class GameRoom {
         endReason: null,
         winner: null,
         result: '*',
+        gameSetup,
         playStatsCounted: false,
         playStatsCountedAt: null
       };
       const clock = makeInitialClock(timeControl, now);
+      await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('game', game);
       await this.state.storage.put('moves', []);
       await this.state.storage.put('clock', clock);
@@ -1382,6 +1601,7 @@ export class GameRoom {
         type: 'start_game_ack',
         ok: true,
         game,
+        gameSetup,
         timeControl,
         moves: [],
         clock: clockPayload(clock, now),
@@ -1576,9 +1796,10 @@ export class GameRoom {
         return;
       }
 
+      const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
       let validation;
       try {
-        validation = validateMoveOnServer(moves, incoming);
+        validation = validateMoveOnServer(moves, incoming, gameSetup);
       } catch (err) {
         safeSend(ws, {
           type: 'error',
@@ -1760,7 +1981,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'freestyle960'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
