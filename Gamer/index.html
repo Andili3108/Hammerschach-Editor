@@ -321,7 +321,7 @@
           <h4>7. Rechte Spalte</h4>
           <ul>
             <li><strong>Spieler &amp; Zeit:</strong> zeigt beide Spieler und die Uhren.</li>
-            <li><strong>Zugliste:</strong> zeigt die gespielten Züge. Nach der Partie kann die PGN kopiert werden.</li>
+            <li><strong>Zugliste:</strong> zeigt die gespielten Züge. Nach der Partie kann die PGN als Datei heruntergeladen werden.</li>
             <li><strong>Chat:</strong> Nachrichten im aktuellen Online-Raum. Neue Nachrichten werden am Chat-Reiter markiert, wenn der Chat nicht geöffnet ist.</li>
           </ul>
 
@@ -335,7 +335,7 @@
           <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
 
           <h4>11. Nach der Partie</h4>
-          <p>Nach Partieende kann die Zugliste angesehen und die PGN kopiert werden. Für eine neue Online-Partie wird ein neuer Raum bzw. Einladungslink erstellt.</p>
+          <p>Nach Partieende kann die Zugliste angesehen und die PGN als Datei heruntergeladen werden. Für eine neue Online-Partie wird ein neuer Raum bzw. Einladungslink erstellt.</p>
 
           <h4>12. Verbindung</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Zustand wieder zu synchronisieren. Oft hilft es, den Einladungslink erneut zu öffnen oder die Seite neu zu laden.</p>
@@ -564,7 +564,7 @@
                 <button class="nav-btn" id="navForward" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">›</button>
                 <button class="nav-btn" id="navEnd" title="Letzte Stellung" aria-label="Letzte Stellung">»</button>
               </div>
-              <button id="copyPgnBtn" class="button-flat copy-pgn-btn" type="button" title="PGN kopieren" aria-label="PGN kopieren">PGN</button>
+              <button id="copyPgnBtn" class="button-flat copy-pgn-btn" type="button" title="PGN-Datei herunterladen" aria-label="PGN-Datei herunterladen">PGN</button>
             </div>
           </div>
 
@@ -3737,16 +3737,47 @@ function buildPgn(){
   const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
   return header + '\n\n' + buildPgnMoveText(result);
 }
-document.getElementById('copyPgnBtn').addEventListener('click', async () => {
+function safePgnFilePart(value){
+  return String(value || '')
+    .replace(/[^A-Za-z0-9_\-äöüÄÖÜß]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 36) || 'Partie';
+}
+function buildPgnFileName(){
+  const setup = normalizeGameSetup(currentGameSetup);
+  const datePart = currentPgnDate().replace(/\./g, '-');
+  const variantPart = setup.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle-' + String(setup.positionId) : 'Klassisch';
+  const whitePart = safePgnFilePart(pgnPlayerNameForRole('w'));
+  const blackPart = safePgnFilePart(pgnPlayerNameForRole('b'));
+  return safePgnFilePart('Hammerschach-' + datePart + '-' + variantPart + '-' + whitePart + '-vs-' + blackPart) + '.pgn';
+}
+function downloadPgnFile(){
   const pgn = buildPgn();
+  if(!pgn){
+    statusEl.textContent = 'Noch keine PGN-Daten vorhanden.';
+    return;
+  }
   try{
-    await navigator.clipboard.writeText(pgn || '');
-    statusEl.textContent = 'PGN wurde kopiert.';
+    const blob = new Blob([pgn + '\n'], {type:'application/x-chess-pgn;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = buildPgnFileName();
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      try{ URL.revokeObjectURL(url); } catch(_){}
+      try{ link.remove(); } catch(_){}
+    }, 1000);
+    statusEl.textContent = 'PGN-Datei wurde erstellt.';
   } catch(_){
-    statusEl.textContent = pgn ? pgn : 'PGN konnte nicht kopiert werden.';
+    statusEl.textContent = 'PGN-Datei konnte nicht erzeugt werden.';
   }
   setTimeout(() => renderBoard(), 1000);
-});
+}
+document.getElementById('copyPgnBtn').addEventListener('click', downloadPgnFile);
 
 function newGame(){
   stopClock();
