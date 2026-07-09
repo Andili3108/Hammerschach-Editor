@@ -110,7 +110,9 @@
   .freestyle-random-btn[hidden]{display:none!important;}
   .moves-right{width:var(--right-col);max-width:100%;flex:0 0 var(--right-col);}
   .side-panel{height:var(--board-size);min-height:var(--board-size);padding:12px 14px;display:flex;flex-direction:column;overflow:hidden;}
+  .setup-panel{display:flex;flex-direction:column;gap:12px;}
   .side-toggle-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+  .side-toggle-row[hidden]{display:none!important;}
   .side-toggle-btn{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;}
   .side-toggle-btn.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
   .side-toggle-btn.has-unread{background:#fff3cd!important;color:#843f46!important;border-color:rgba(132,63,70,.42)!important;box-shadow:0 0 0 3px rgba(132,63,70,.12),0 7px 18px rgba(132,63,70,.14)!important;}
@@ -474,13 +476,64 @@
 
       <aside class="moves-right">
         <div class="side-panel box">
-          <div class="side-toggle-row" aria-label="Rechte Spalte umschalten">
+          <div id="preRoomSetupPanel" class="side-content setup-panel">
+            <div id="inviteColorBox" class="invite-color-box player-time-setup">
+              <div class="clock-title">Farbe für Einladung wählen</div>
+              <div class="invite-color-options" aria-label="Farbe des Einladenden wählen">
+                <button id="inviteColorWhiteBtn" class="invite-color-option" type="button" data-invite-color="w">⚪ Weiß</button>
+                <button id="inviteColorBlackBtn" class="invite-color-option" type="button" data-invite-color="b">⚫ Schwarz</button>
+                <button id="inviteColorRandomBtn" class="invite-color-option" type="button" data-invite-color="random">🎲 Zufall</button>
+              </div>
+              <div id="inviteColorStatus" class="time-status" hidden></div>
+            </div>
+
+            <div id="variantSetupBox" class="variant-setup-box player-time-setup">
+              <div class="clock-title">Spielmodus wählen</div>
+              <div class="variant-options" aria-label="Spielmodus wählen">
+                <button id="variantStandardBtn" class="variant-option active" type="button" data-variant="standard">Klassisch</button>
+                <button id="variantFreestyleBtn" class="variant-option" type="button" data-variant="freestyle960">Freestyle</button>
+              </div>
+              <button id="freestyleRandomBtn" class="button-flat freestyle-random-btn" type="button" hidden>🎲 Freestyle-Stellung würfeln</button>
+              <div id="variantStatus" class="time-status">Klassisches Schach: normale Startstellung.</div>
+              <div id="variantLockNote" class="time-lock-note" hidden></div>
+            </div>
+
+            <div id="timeSetupBox" class="time-setup-box player-time-setup">
+              <div class="clock-title">Bedenkzeit wählen</div>
+              <div class="time-selectors" aria-label="Bedenkzeit wählen">
+                <select id="classicTimeSelect" class="time-control-select" data-category="classic" aria-label="Classic Bedenkzeit" title="Classic: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
+                  <option value="" disabled selected>Classic</option>
+                  <option value="3600+30" data-time-label="Classic · 60 Min + 30 Sek/Zug">60 Min + 30 Sek/Zug</option>
+                  <option value="5400+30" data-time-label="Classic · 90 Min + 30 Sek/Zug">90 Min + 30 Sek/Zug</option>
+                  <option value="7200+30" data-time-label="Classic · 120 Min + 30 Sek/Zug">120 Min + 30 Sek/Zug</option>
+                </select>
+                <select id="rapidTimeSelect" class="time-control-select" data-category="rapid" aria-label="Rapid Bedenkzeit" title="Rapid: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
+                  <option value="" disabled selected>Rapid</option>
+                  <option value="600+5" data-time-label="Rapid · 10 Min + 5 Sek/Zug">10 Min + 5 Sek/Zug</option>
+                  <option value="900+10" data-time-label="Rapid · 15 Min + 10 Sek/Zug">15 Min + 10 Sek/Zug</option>
+                  <option value="1500+10" data-time-label="Rapid · 25 Min + 10 Sek/Zug">25 Min + 10 Sek/Zug</option>
+                  <option value="1800+0" data-time-label="Rapid · 30 Min ohne Inkrement">30 Min · ohne Inkrement</option>
+                </select>
+                <select id="blitzTimeSelect" class="time-control-select" data-category="blitz" aria-label="Blitz Bedenkzeit" title="Blitz: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
+                  <option value="" disabled selected>Blitz</option>
+                  <option value="180+2" data-time-label="Blitz · 3 Min + 2 Sek/Zug">3 Min + 2 Sek/Zug</option>
+                  <option value="300+0" data-time-label="Blitz · 5 Min ohne Inkrement">5 Min · ohne Inkrement</option>
+                  <option value="300+3" data-time-label="Blitz · 5 Min + 3 Sek/Zug">5 Min + 3 Sek/Zug</option>
+                  <option value="600+0" data-time-label="Blitz · 10 Min ohne Inkrement">10 Min · ohne Inkrement</option>
+                </select>
+              </div>
+              <div id="timeStatus" class="time-status" hidden>Keine Bedenkzeit aktiv</div>
+              <div id="timeLockNote" class="time-lock-note" hidden></div>
+            </div>
+          </div>
+
+          <div id="sideToggleRow" class="side-toggle-row" aria-label="Rechte Spalte umschalten" hidden>
             <button id="showPlayersPanelBtn" class="side-toggle-btn active" type="button">Spieler & Zeit</button>
             <button id="showMovesPanelBtn" class="side-toggle-btn" type="button">Zugliste</button>
             <button id="showChatPanelBtn" class="side-toggle-btn" type="button">Chat</button>
           </div>
 
-          <div id="playersPanel" class="side-content players-panel">
+          <div id="playersPanel" class="side-content players-panel" hidden>
             <div class="player-clock-card" id="clockCardW">
               <div class="player-clock-head">
                 <span class="dot white"></span>
@@ -496,52 +549,6 @@
               </div>
               <div class="player-clock-name" id="blackPlayerName">—</div>
               <div class="player-clock-time" id="clockB">--:--</div>
-            </div>
-            <div id="variantSetupBox" class="variant-setup-box player-time-setup">
-              <div class="clock-title">Spielmodus wählen</div>
-              <div class="variant-options" aria-label="Spielmodus wählen">
-                <button id="variantStandardBtn" class="variant-option active" type="button" data-variant="standard">Klassisch</button>
-                <button id="variantFreestyleBtn" class="variant-option" type="button" data-variant="freestyle960">Freestyle</button>
-              </div>
-              <button id="freestyleRandomBtn" class="button-flat freestyle-random-btn" type="button" hidden>🎲 Freestyle-Stellung würfeln</button>
-              <div id="variantStatus" class="time-status">Klassisches Schach: normale Startstellung.</div>
-              <div id="variantLockNote" class="time-lock-note"></div>
-            </div>
-        <div id="timeSetupBox" class="time-setup-box player-time-setup">
-          <div class="clock-title">Bedenkzeit wählen</div>
-          <div class="time-selectors" aria-label="Bedenkzeit wählen">
-            <select id="classicTimeSelect" class="time-control-select" data-category="classic" aria-label="Classic Bedenkzeit" title="Classic: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
-              <option value="" disabled selected>Classic</option>
-              <option value="3600+30" data-time-label="Classic · 60 Min + 30 Sek/Zug">60 Min + 30 Sek/Zug</option>
-              <option value="5400+30" data-time-label="Classic · 90 Min + 30 Sek/Zug">90 Min + 30 Sek/Zug</option>
-              <option value="7200+30" data-time-label="Classic · 120 Min + 30 Sek/Zug">120 Min + 30 Sek/Zug</option>
-            </select>
-            <select id="rapidTimeSelect" class="time-control-select" data-category="rapid" aria-label="Rapid Bedenkzeit" title="Rapid: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
-              <option value="" disabled selected>Rapid</option>
-              <option value="600+5" data-time-label="Rapid · 10 Min + 5 Sek/Zug">10 Min + 5 Sek/Zug</option>
-              <option value="900+10" data-time-label="Rapid · 15 Min + 10 Sek/Zug">15 Min + 10 Sek/Zug</option>
-              <option value="1500+10" data-time-label="Rapid · 25 Min + 10 Sek/Zug">25 Min + 10 Sek/Zug</option>
-              <option value="1800+0" data-time-label="Rapid · 30 Min ohne Inkrement">30 Min · ohne Inkrement</option>
-            </select>
-            <select id="blitzTimeSelect" class="time-control-select" data-category="blitz" aria-label="Blitz Bedenkzeit" title="Blitz: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
-              <option value="" disabled selected>Blitz</option>
-              <option value="180+2" data-time-label="Blitz · 3 Min + 2 Sek/Zug">3 Min + 2 Sek/Zug</option>
-              <option value="300+0" data-time-label="Blitz · 5 Min ohne Inkrement">5 Min · ohne Inkrement</option>
-              <option value="300+3" data-time-label="Blitz · 5 Min + 3 Sek/Zug">5 Min + 3 Sek/Zug</option>
-              <option value="600+0" data-time-label="Blitz · 10 Min ohne Inkrement">10 Min · ohne Inkrement</option>
-            </select>
-          </div>
-          <div id="timeStatus" class="time-status" hidden>Keine Bedenkzeit aktiv</div>
-          <div id="timeLockNote" class="time-lock-note" hidden></div>
-        </div>
-            <div id="inviteColorBox" class="invite-color-box player-time-setup">
-              <div class="clock-title">Farbe für Einladung wählen</div>
-              <div class="invite-color-options" aria-label="Farbe des Einladenden wählen">
-                <button id="inviteColorWhiteBtn" class="invite-color-option" type="button" data-invite-color="w">⚪ Weiß</button>
-                <button id="inviteColorBlackBtn" class="invite-color-option" type="button" data-invite-color="b">⚫ Schwarz</button>
-                <button id="inviteColorRandomBtn" class="invite-color-option" type="button" data-invite-color="random">🎲 Zufall</button>
-              </div>
-              <div id="inviteColorStatus" class="time-status">Diese Auswahl gilt für den nächsten Einladungsraum.</div>
             </div>
           </div>
 
@@ -1136,6 +1143,8 @@ const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
 const illegalFlashEl = document.getElementById('illegalFlash');
 const moveListEl = document.getElementById('moveList');
+const preRoomSetupPanelEl = document.getElementById('preRoomSetupPanel');
+const sideToggleRowEl = document.getElementById('sideToggleRow');
 const movesInfoEl = document.getElementById('movesInfo');
 const navStartBtn = document.getElementById('navStart');
 const navBackBtn = document.getElementById('navBack');
@@ -1172,14 +1181,26 @@ let chatLastSentAt = 0;
 let chatUnreadCount = 0;
 let rightPanelMode = 'players';
 
-function setRightPanelMode(mode){
-  rightPanelMode = mode === 'moves' ? 'moves' : mode === 'chat' ? 'chat' : 'players';
-  if(playersPanelEl) playersPanelEl.hidden = rightPanelMode !== 'players';
-  if(movesPanelEl) movesPanelEl.hidden = rightPanelMode !== 'moves';
-  if(chatPanelEl) chatPanelEl.hidden = rightPanelMode !== 'chat';
+function updateSidePanelLayout(){
+  const inRoom = (typeof onlineRoomId !== 'undefined') && !!onlineRoomId;
+  if(preRoomSetupPanelEl) preRoomSetupPanelEl.hidden = inRoom;
+  if(sideToggleRowEl) sideToggleRowEl.hidden = !inRoom;
+  if(!inRoom){
+    if(playersPanelEl) playersPanelEl.hidden = true;
+    if(movesPanelEl) movesPanelEl.hidden = true;
+    if(chatPanelEl) chatPanelEl.hidden = true;
+  } else {
+    if(playersPanelEl) playersPanelEl.hidden = rightPanelMode !== 'players';
+    if(movesPanelEl) movesPanelEl.hidden = rightPanelMode !== 'moves';
+    if(chatPanelEl) chatPanelEl.hidden = rightPanelMode !== 'chat';
+  }
   if(showPlayersPanelBtn) showPlayersPanelBtn.classList.toggle('active', rightPanelMode === 'players');
   if(showMovesPanelBtn) showMovesPanelBtn.classList.toggle('active', rightPanelMode === 'moves');
   if(showChatPanelBtn) showChatPanelBtn.classList.toggle('active', rightPanelMode === 'chat');
+}
+function setRightPanelMode(mode){
+  rightPanelMode = mode === 'moves' ? 'moves' : mode === 'chat' ? 'chat' : 'players';
+  updateSidePanelLayout();
   if(rightPanelMode === 'chat') clearChatUnreadIndicator();
   if(rightPanelMode === 'chat') renderChatMessages();
   updateChatUnreadIndicator();
@@ -1187,7 +1208,7 @@ function setRightPanelMode(mode){
 if(showPlayersPanelBtn) showPlayersPanelBtn.addEventListener('click', () => setRightPanelMode('players'));
 if(showMovesPanelBtn) showMovesPanelBtn.addEventListener('click', () => setRightPanelMode('moves'));
 if(showChatPanelBtn) showChatPanelBtn.addEventListener('click', () => setRightPanelMode('chat'));
-setRightPanelMode('players');
+setTimeout(() => setRightPanelMode('players'), 0);
 
 function cleanChatText(value){
   return String(value || '')
@@ -1394,9 +1415,8 @@ function updateVariantUi(){
   }
   if(variantStatusEl) variantStatusEl.textContent = setupLabel(setup);
   if(variantLockNoteEl){
-    if(!onlineRoomId) variantLockNoteEl.textContent = 'Spielmodus vor der Einladung wählen.';
-    else if(onlineGameStarted) variantLockNoteEl.textContent = 'Online-Partie gestartet: Spielmodus ist gesperrt.';
-    else variantLockNoteEl.textContent = 'Spielmodus und Startstellung sind für diesen Einladungsraum festgelegt.';
+    variantLockNoteEl.hidden = true;
+    variantLockNoteEl.textContent = '';
   }
   updateVariantSetupVisibility();
 }
@@ -1418,7 +1438,7 @@ function applyGameSetup(setup, options){
 }
 function setGameVariant(variant){
   if(isVariantSetupLocked()){
-    if(variantStatusEl) variantStatusEl.textContent = 'Der Spielmodus ist für diesen Einladungsraum bereits festgelegt.';
+    updateVariantUi();
     return;
   }
   if(variant === GAME_VARIANT_FREESTYLE){
@@ -1430,7 +1450,7 @@ function setGameVariant(variant){
 }
 function randomizeFreestyleSetup(){
   if(isVariantSetupLocked()){
-    if(variantStatusEl) variantStatusEl.textContent = 'Die Freestyle-Stellung ist für diesen Einladungsraum bereits festgelegt.';
+    updateVariantUi();
     return;
   }
   applyGameSetup(randomChess960Setup(), {forceReset:true});
@@ -1480,9 +1500,8 @@ function updateInviteColorUi(){
     btn.setAttribute('aria-disabled', locked ? 'true' : 'false');
   });
   if(inviteColorStatusEl){
-    if(hidden) inviteColorStatusEl.textContent = '';
-    else if(onlineRoomId && !onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost) inviteColorStatusEl.textContent = buildInviteColorSummaryText() + ' Für eine andere Farbe bitte einen neuen Einladungsraum erstellen.';
-    else inviteColorStatusEl.textContent = buildInviteColorSummaryText();
+    inviteColorStatusEl.hidden = true;
+    inviteColorStatusEl.textContent = '';
   }
   if(inviteColorSummaryEl){
     inviteColorSummaryEl.hidden = !onlineRoomId;
@@ -1492,7 +1511,7 @@ function updateInviteColorUi(){
 function setInviteColorPreference(value){
   const normalized = normalizeInviteColorPreference(value);
   if(isInviteColorLocked()){
-    if(inviteColorStatusEl) inviteColorStatusEl.textContent = 'Die Farbe ist für diesen Einladungsraum bereits festgelegt.';
+    updateInviteColorUi();
     return;
   }
   inviteColorPreference = normalized;
@@ -1535,6 +1554,7 @@ let onlineGameWinner = null;
 let onlineDrawOffer = null;
 let onlineRoomTimeControl = null;
 let onlineRoomGameSetup = null;
+let onlineDesiredGameSetupForNewRoom = null;
 let onlinePendingGameSetupMessageId = null;
 let onlineAutoSyncedInitialSetup = false;
 let applyingRemoteGameSetup = false;
@@ -2132,6 +2152,7 @@ function updateOnlineUi(){
     updateTimeSetupVisibility();
     updateVariantUi();
     updateInviteColorUi();
+    updateSidePanelLayout();
     refreshHeaderStatusFromState();
     return;
   }
@@ -2182,6 +2203,7 @@ function updateOnlineUi(){
   updateTimeSetupVisibility();
   updateVariantUi();
   updateInviteColorUi();
+  updateSidePanelLayout();
   refreshHeaderStatusFromState();
 }
 async function copyInviteLink(){
@@ -2523,10 +2545,36 @@ function extractOnlineGameSetup(msg){
     (msg.lobby && (msg.lobby.gameSetup || msg.lobby.game_setup || msg.lobby.startPosition || msg.lobby.start_position)) ||
     (msg.type === 'game_setup' || msg.type === 'game_setup_ack' || msg.type === 'set_game_setup' ? msg : null);
 }
+function shouldKeepLocalGameSetupForNewRoom(incomingSetup){
+  if(!onlineDesiredGameSetupForNewRoom) return false;
+  if(onlineGameStarted || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return false;
+  const desired = normalizeGameSetup(onlineDesiredGameSetupForNewRoom);
+  const incoming = normalizeGameSetup(incomingSetup || {});
+  if(sameGameSetup(incoming, desired)) return false;
+  return sameGameSetup(currentGameSetup, desired);
+}
 function applyGameSetupFromOnline(gameSetup){
   const normalized = normalizeGameSetup(gameSetup || {});
   onlineRoomGameSetup = normalized;
+
+  /*
+    Beim Erstellen eines neuen Raums liefert der Worker zunächst seinen Default-Zustand
+    aus. Der darf eine lokal gewählte Freestyle-Stellung nicht zurück auf Klassisch setzen.
+    Stattdessen behalten wir die lokale Auswahl und senden sie direkt an den Raum.
+  */
+  if(shouldKeepLocalGameSetupForNewRoom(normalized)){
+    onlinePendingGameSetupMessageId = null;
+    onlineAutoSyncedInitialSetup = true;
+    setTimeout(syncCurrentGameSetupToOnline, 50);
+    setTimeout(syncCurrentGameSetupToOnline, 450);
+    updateVariantUi();
+    return;
+  }
+
   onlinePendingGameSetupMessageId = null;
+  if(onlineDesiredGameSetupForNewRoom && sameGameSetup(normalized, onlineDesiredGameSetupForNewRoom)){
+    onlineDesiredGameSetupForNewRoom = null;
+  }
   applyingRemoteGameSetup = true;
   try{
     applyGameSetup(normalized, {save:false, forceReset: masterHistory.length === 0 && !onlineGameStarted});
@@ -2802,6 +2850,8 @@ function extractOnlineRoom(msg){
 function connectOnlineRoom(roomId, opts){
   opts = opts || {};
   if(opts.preferredRole) onlinePreferredRoleForNextConnect = normalizeInviteColorPreference(opts.preferredRole) === 'b' ? 'b' : 'w';
+  if(opts.initialGameSetup) onlineDesiredGameSetupForNewRoom = normalizeGameSetup(opts.initialGameSetup);
+  else if(!opts.reconnect) onlineDesiredGameSetupForNewRoom = null;
   roomId = cleanRoomId(roomId);
   if(!roomId) return;
   const previousRoomId = onlineRoomId;
@@ -2861,6 +2911,10 @@ function connectOnlineRoom(roomId, opts){
     onlineConnectionState = 'connected';
     onlineLastMessage = 'Mit Lobby verbunden.';
     updateOnlineUi();
+    if(onlineDesiredGameSetupForNewRoom){
+      setTimeout(syncCurrentGameSetupToOnline, 180);
+      setTimeout(syncCurrentGameSetupToOnline, 750);
+    }
     setTimeout(requestOnlineState, 120);
     setTimeout(requestOnlineState, 650);
     startOnlineStatePolling();
@@ -2949,6 +3003,9 @@ function connectOnlineRoom(roomId, opts){
 
     if(msg.type === 'game_setup_ack'){
       onlinePendingGameSetupMessageId = null;
+      if(onlineDesiredGameSetupForNewRoom && sameGameSetup(currentGameSetup, onlineDesiredGameSetupForNewRoom)){
+        onlineDesiredGameSetupForNewRoom = null;
+      }
       handled = true;
     }
     if(msg.type === 'time_control_ack'){
@@ -2982,7 +3039,7 @@ function connectOnlineRoom(roomId, opts){
     else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
     else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
 
-    if(!onlineAutoSyncedInitialSetup && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && !incomingGameSetup && !onlineGameStarted){
+    if(!onlineAutoSyncedInitialSetup && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && (!incomingGameSetup || onlineDesiredGameSetupForNewRoom) && !onlineGameStarted){
       onlineAutoSyncedInitialSetup = true;
       setTimeout(syncCurrentGameSetupToOnline, 80);
     }
@@ -3231,6 +3288,7 @@ async function createNewOnlineRoom(opts){
   opts = opts || {};
   if(isOnlineGameLiveForUi()) return false;
   if(!(await ensureDisplayNameForOnline())) return false;
+  const selectedGameSetupForRoom = currentGameSetupPayload();
   closeOnlineSocket();
   onlineRoomId = null;
   onlineRoleCode = 'local';
@@ -3244,6 +3302,7 @@ async function createNewOnlineRoom(opts){
   onlineDrawOffer = null;
   onlineRoomTimeControl = null;
   onlineRoomGameSetup = null;
+  onlineDesiredGameSetupForNewRoom = selectedGameSetupForRoom;
   onlinePendingGameSetupMessageId = null;
   onlineAutoSyncedInitialSetup = false;
   onlineCanSetTimeControl = false;
@@ -3251,7 +3310,7 @@ async function createNewOnlineRoom(opts){
   newGame();
   const roomId = createRoomId();
   onlinePreferredRoleForNextConnect = resolveInviteCreatorRole();
-  connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect});
+  connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect, initialGameSetup: selectedGameSetupForRoom});
   if(opts.copyLink !== false) setTimeout(copyInviteLink, 250);
   return true;
 }
@@ -3886,12 +3945,8 @@ function updateTimeControlsLock(){
     select.setAttribute('aria-disabled', locked ? 'true' : 'false');
   });
   if(timeLockNoteEl){
-    if(!onlineRoomId) timeLockNoteEl.textContent = 'Bedenkzeit vor der Einladung wählen.';
-    else if(onlineGameStarted) timeLockNoteEl.textContent = 'Online-Partie gestartet: Bedenkzeit ist gesperrt.';
-    else if(onlineRoleCode === 'b' && !onlineCanSetTimeControl) timeLockNoteEl.textContent = 'Nur Weiß oder der Einladende wählt die Bedenkzeit.';
-    else if(onlineRoleCode === 'spectator') timeLockNoteEl.textContent = 'Zuschauer können die Bedenkzeit nicht ändern.';
-    else if(!onlineConnected) timeLockNoteEl.textContent = 'Bedenkzeit wird nach Lobby-Verbindung freigegeben.';
-    else timeLockNoteEl.textContent = locked ? 'Bedenkzeit ist gesperrt.' : 'Auswahl wird an beide Spieler übertragen.';
+    timeLockNoteEl.hidden = true;
+    timeLockNoteEl.textContent = '';
   }
   updateTimeSetupVisibility();
   updateOnlineStartButton();
