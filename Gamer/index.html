@@ -282,7 +282,7 @@
           <div id="onlineHint" class="online-hint" hidden></div>
         </div>
         <div class="header-top-row">
-          <div class="status header-status" id="status">Bedenkzeit wählen, dann zur Partie einladen.</div>
+          <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann zur Partie einladen.</div>
           <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">Info</button>
         </div>
         <div class="actions match-actions" aria-label="Partieaktionen">
@@ -3460,7 +3460,7 @@ function updateStatus(g){
     return;
   }
   if(!onlineRoomId){
-    statusEl.textContent = 'Bedenkzeit wählen, dann zur Partie einladen.';
+    statusEl.textContent = 'Spielmodus, Farbe und Bedenkzeit wählen – dann zur Partie einladen.';
     return;
   }
   if(onlineRoomId){
