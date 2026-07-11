@@ -3558,7 +3558,7 @@ function updateStatus(g){
       return;
     }
     if(!onlineGameStarted){
-      if(onlineRoleCode === 'w') statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — Bedenkzeit wählen und Partie starten.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
+      if(onlineRoleCode === 'w') statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — Partie kann gestartet werden.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
       else if(onlineRoleCode === 'b') statusEl.textContent = isOnlineSideConnected('w') ? 'Online-Lobby — warte auf Partiestart durch Weiß.' : 'Du spielst Schwarz — warte auf Weiß.';
       else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
       else statusEl.textContent = 'Online-Lobby wird verbunden.';
