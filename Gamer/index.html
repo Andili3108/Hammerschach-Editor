@@ -630,6 +630,7 @@ const GAME_VARIANT_STORAGE_KEY = 'hammerschachGamerVariant';
 const FREESTYLE_POSITION_STORAGE_KEY = 'hammerschachGamerFreestylePositionId';
 const FREESTYLE_BACK_RANK_STORAGE_KEY = 'hammerschachGamerFreestyleBackRank';
 let chess960BackRankCache = null;
+let chess960BackRankIdCache = null;
 let currentGameSetup = {variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK};
 
 function isValidChess960BackRank(rank){
@@ -647,41 +648,51 @@ function isValidChess960BackRank(rank){
   }
   return rookFiles[0] < kingFile && kingFile < rookFiles[1] && bishopFiles.length === 2 && (bishopFiles[0] % 2) !== (bishopFiles[1] % 2);
 }
+function buildChess960BackRankFromScharnaglId(positionId){
+  let n = Math.max(0, Math.min(959, Math.floor(Number(positionId || 0))));
+  const lightBishopIndex = n % 4;
+  n = Math.floor(n / 4);
+  const darkBishopIndex = n % 4;
+  n = Math.floor(n / 4);
+  const queenIndex = n % 6;
+  n = Math.floor(n / 6);
+
+  const knightPairs = [[0,1],[0,2],[0,3],[0,4],[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]];
+  const knightPair = knightPairs[n] || knightPairs[0];
+  const rank = Array(8).fill('');
+
+  rank[lightBishopIndex * 2 + 1] = 'B';
+  rank[darkBishopIndex * 2] = 'B';
+
+  let freeFiles = rank.map((piece, file) => piece ? -1 : file).filter(file => file >= 0);
+  rank[freeFiles[queenIndex]] = 'Q';
+
+  freeFiles = rank.map((piece, file) => piece ? -1 : file).filter(file => file >= 0);
+  rank[freeFiles[knightPair[0]]] = 'N';
+  rank[freeFiles[knightPair[1]]] = 'N';
+
+  freeFiles = rank.map((piece, file) => piece ? -1 : file).filter(file => file >= 0);
+  rank[freeFiles[0]] = 'R';
+  rank[freeFiles[1]] = 'K';
+  rank[freeFiles[2]] = 'R';
+  return rank.join('');
+}
 function generateChess960BackRanks(){
   if(chess960BackRankCache) return chess960BackRankCache;
-  const pieces = ['R','R','N','N','B','B','Q','K'];
-  const out = [];
-  const used = Array(pieces.length).fill(false);
-  const seen = new Set();
-  function rec(path){
-    if(path.length === 8){
-      const rank = path.join('');
-      if(!seen.has(rank) && isValidChess960BackRank(rank)){
-        seen.add(rank);
-        out.push(rank);
-      }
-      return;
-    }
-    const local = new Set();
-    for(let i=0;i<pieces.length;i++){
-      if(used[i] || local.has(pieces[i])) continue;
-      local.add(pieces[i]);
-      used[i] = true;
-      path.push(pieces[i]);
-      rec(path);
-      path.pop();
-      used[i] = false;
-    }
-  }
-  rec([]);
-  out.sort();
-  chess960BackRankCache = out;
+  chess960BackRankCache = Array.from({length:960}, (_, positionId) => buildChess960BackRankFromScharnaglId(positionId));
+  chess960BackRankIdCache = new Map(chess960BackRankCache.map((rank, positionId) => [rank, positionId]));
   return chess960BackRankCache;
 }
 function chess960BackRankById(positionId){
   const list = generateChess960BackRanks();
   const id = Math.max(0, Math.min(959, Math.floor(Number(positionId || 0))));
   return list[id] || STANDARD_BACK_RANK;
+}
+function chess960IdByBackRank(backRank){
+  const rank = String(backRank || '').toUpperCase();
+  if(!isValidChess960BackRank(rank)) return null;
+  generateChess960BackRanks();
+  return chess960BackRankIdCache.has(rank) ? chess960BackRankIdCache.get(rank) : null;
 }
 function randomChess960Setup(){
   const bytes = new Uint16Array(1);
@@ -698,13 +709,15 @@ function normalizeGameSetup(setup){
   let positionId = Number.isFinite(Number(setup.positionId ?? setup.position_id)) ? Math.floor(Number(setup.positionId ?? setup.position_id)) : null;
   if(positionId !== null) positionId = Math.max(0, Math.min(959, positionId));
   let backRank = String(setup.backRank || setup.back_rank || '').toUpperCase();
-  if(!isValidChess960BackRank(backRank)){
-    backRank = positionId !== null ? chess960BackRankById(positionId) : chess960BackRankById(0);
-  }
-  if(positionId === null){
-    const list = generateChess960BackRanks();
-    const idx = list.indexOf(backRank);
-    positionId = idx >= 0 ? idx : 0;
+
+  /* Migration älterer Hammerschach-Stellungen:
+     Eine vorhandene gültige Grundreihe ist maßgeblich. Ihre Nummer wird immer
+     neu nach dem weltweit üblichen Scharnagl-Schema 0–959 berechnet. */
+  if(isValidChess960BackRank(backRank)){
+    positionId = chess960IdByBackRank(backRank);
+  } else {
+    positionId = positionId !== null ? positionId : 0;
+    backRank = chess960BackRankById(positionId);
   }
   return {variant: GAME_VARIANT_FREESTYLE, positionId, backRank};
 }
@@ -757,6 +770,12 @@ function loadGameSetupPreference(){
     backRank = localStorage.getItem(FREESTYLE_BACK_RANK_STORAGE_KEY) || '';
   } catch(_){}
   currentGameSetup = normalizeGameSetup({variant, positionId, backRank});
+  try{
+    if(currentGameSetup.variant === GAME_VARIANT_FREESTYLE){
+      localStorage.setItem(FREESTYLE_POSITION_STORAGE_KEY, String(currentGameSetup.positionId));
+      localStorage.setItem(FREESTYLE_BACK_RANK_STORAGE_KEY, currentGameSetup.backRank);
+    }
+  } catch(_){}
 }
 function saveGameSetupPreference(setup){
   const normalized = normalizeGameSetup(setup);
