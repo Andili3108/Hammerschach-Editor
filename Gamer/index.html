@@ -1297,7 +1297,7 @@ function normalizeChatMessage(message){
     senderName,
     text,
     sentAt: chat.sentAt || chat.time || new Date().toISOString(),
-    mine: !!(playerId && playerId === onlinePlayerId)
+    mine: typeof chat.mine === 'boolean' ? chat.mine : !!(playerId && playerId === onlinePlayerId)
   };
 }
 function appendChatMessage(message){
@@ -1565,6 +1565,7 @@ const ONLINE_PLAYER_NAME_CONFIRMED_KEY = 'hammerschachGamerOnlineDisplayNameConf
 const ONLINE_AUTH_TOKEN_STORAGE_KEY = 'hammerschachGamerAuthToken';
 const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
 const ONLINE_INVITE_COLOR_STORAGE_KEY = 'hammerschachGamerInviteColorPreference';
+const ONLINE_SEAT_STORAGE_PREFIX = 'hammerschachGamerSeat:';
 let inviteColorPreference = 'w';
 try{ inviteColorPreference = normalizeInviteColorPreference(localStorage.getItem(ONLINE_INVITE_COLOR_STORAGE_KEY) || 'w'); } catch(_){ inviteColorPreference = 'w'; }
 let onlinePreferredRoleForNextConnect = '';
@@ -1599,6 +1600,8 @@ let onlineStatePollTimer = null;
 let applyingRemoteMove = false;
 let onlineLastMoveMessageId = null;
 let onlineClockSync = null;
+let onlineSeatClaimSent = false;
+let onlineReconnectSuppressed = false;
 
 const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
@@ -2047,6 +2050,48 @@ function applyOnlineOrientationForRole(role){
 function sameTimeControl(a,b){
   return !!(a && b && a.key === b.key && String(a.category || '') === String(b.category || ''));
 }
+function seatStorageKey(roomId){
+  return ONLINE_SEAT_STORAGE_PREFIX + cleanRoomId(roomId || '');
+}
+function loadSeatCredentials(roomId){
+  if(!roomId) return {role:'', token:''};
+  try{
+    const raw = sessionStorage.getItem(seatStorageKey(roomId));
+    const data = raw ? JSON.parse(raw) : null;
+    const role = data && (data.role === 'w' || data.role === 'b') ? data.role : '';
+    const token = data && typeof data.token === 'string' ? data.token : '';
+    return {role, token};
+  } catch(_){ return {role:'', token:''}; }
+}
+function saveSeatCredentials(roomId, role, token){
+  if(!roomId || (role !== 'w' && role !== 'b') || !token) return;
+  try{ sessionStorage.setItem(seatStorageKey(roomId), JSON.stringify({role, token})); } catch(_){}
+}
+function clearSeatCredentials(roomId){
+  if(!roomId) return;
+  try{ sessionStorage.removeItem(seatStorageKey(roomId)); } catch(_){}
+}
+function sendSeatClaim(){
+  if(!onlineSocket || onlineSocket.readyState !== WebSocket.OPEN || onlineSeatClaimSent || !onlineRoomId) return false;
+  const saved = loadSeatCredentials(onlineRoomId);
+  const preferredRole = saved.role || onlinePreferredRoleForNextConnect || '';
+  const displayName = onlineAuthUser ? (onlineDisplayName || defaultGuestName()) : displayNameForOnline(onlineDisplayName || defaultGuestName(), true);
+  try{
+    onlineSocket.send(JSON.stringify({
+      type:'claim_seat',
+      player:onlinePlayerId,
+      displayName,
+      preferredRole,
+      seatToken:saved.token || '',
+      authToken:onlineAuthToken || ''
+    }));
+    onlineSeatClaimSent = true;
+    onlineConnectionState = 'authenticating';
+    onlineLastMessage = 'Spielerplatz wird sicher bestätigt.';
+    updateOnlineUi();
+    return true;
+  } catch(_){ return false; }
+}
 function updateInviteUrlInAddressBar(roomId){
   if(!roomId) return;
   try{
@@ -2073,10 +2118,6 @@ function getWebSocketUrl(roomId){
   }
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   url.searchParams.set('room', roomId);
-  url.searchParams.set('player', onlinePlayerId);
-  url.searchParams.set('name', onlineAuthUser ? (onlineDisplayName || defaultGuestName()) : displayNameForOnline(onlineDisplayName || defaultGuestName(), true));
-  if(onlinePreferredRoleForNextConnect) url.searchParams.set('preferredRole', onlinePreferredRoleForNextConnect);
-  if(onlineAuthToken) url.searchParams.set('auth', onlineAuthToken);
   return url.toString();
 }
 function setOnlineValueClass(el, state){
@@ -2257,7 +2298,7 @@ function closeInviteDialog(){
 }
 function isCurrentUserAdmin(){
   const user = onlineAuthUser || {};
-  return !!(user.isAdmin || String(user.username || '').trim().toLowerCase() === 'andili');
+  return user.isAdmin === true;
 }
 function updateInviteDialog(){
   if(!inviteBackdrop) return;
@@ -2912,6 +2953,8 @@ function connectOnlineRoom(roomId, opts){
   applyingRemoteMove = false;
   onlineLastMoveMessageId = null;
   onlineClockSync = null;
+  onlineSeatClaimSent = false;
+  onlineReconnectSuppressed = false;
   onlineLastMessage = 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
@@ -2939,21 +2982,42 @@ function connectOnlineRoom(roomId, opts){
   }
 
   onlineSocket.addEventListener('open', () => {
-    onlineConnected = true;
-    onlineConnectionState = 'connected';
-    onlineLastMessage = 'Mit Lobby verbunden.';
+    onlineConnected = false;
+    onlineConnectionState = 'authenticating';
+    onlineLastMessage = 'Verbindung geöffnet. Spielerplatz wird bestätigt.';
     updateOnlineUi();
-    if(onlineDesiredGameSetupForNewRoom){
-      setTimeout(syncCurrentGameSetupToOnline, 180);
-      setTimeout(syncCurrentGameSetupToOnline, 750);
-    }
-    setTimeout(requestOnlineState, 120);
-    setTimeout(requestOnlineState, 650);
-    startOnlineStatePolling();
   });
   onlineSocket.addEventListener('message', ev => {
     let msg = null;
     try{ msg = JSON.parse(ev.data); } catch(_){ return; }
+    if(msg.type === 'seat_challenge'){
+      sendSeatClaim();
+      return;
+    }
+    if(msg.type === 'seat_replaced'){
+      onlineReconnectSuppressed = true;
+      clearSeatCredentials(onlineRoomId);
+      onlineConnected = false;
+      onlineConnectionState = 'closed';
+      onlineLastMessage = msg.message || 'Dieser Spielerplatz wurde in einer neuen Verbindung geöffnet.';
+      updateOnlineUi();
+      try{ onlineSocket.close(); } catch(_){}
+      return;
+    }
+    if(msg.type === 'hello'){
+      if(msg.seatDenied) clearSeatCredentials(onlineRoomId);
+      if((msg.role === 'w' || msg.role === 'b') && msg.seatToken) saveSeatCredentials(onlineRoomId, msg.role, msg.seatToken);
+      onlineConnected = true;
+      onlineConnectionState = 'connected';
+      onlineLastMessage = msg.seatDenied ? (msg.message || 'Spielerplatz konnte nicht übernommen werden; Zuschauerrolle aktiv.') : 'Mit Lobby verbunden.';
+      if(onlineDesiredGameSetupForNewRoom){
+        setTimeout(syncCurrentGameSetupToOnline, 180);
+        setTimeout(syncCurrentGameSetupToOnline, 750);
+      }
+      setTimeout(requestOnlineState, 120);
+      setTimeout(requestOnlineState, 650);
+      startOnlineStatePolling();
+    }
     if(msg.type === 'error'){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
       if(String(msg.code || '').indexOf('CHAT_') === 0) setChatStatus(msg.message || 'Chat-Fehler.', true);
@@ -3049,7 +3113,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -3082,12 +3146,16 @@ function connectOnlineRoom(roomId, opts){
     if(orientationChanged) renderBoard();
     updateOnlineUi();
   });
-  onlineSocket.addEventListener('close', () => {
+  onlineSocket.addEventListener('close', event => {
     onlineConnected = false;
     onlineConnectionState = 'closed';
-    onlineLastMessage = 'Lobby-Verbindung getrennt.';
+    if(event && event.code === 4001){
+      onlineReconnectSuppressed = true;
+      clearSeatCredentials(onlineRoomId);
+    }
+    if(!onlineReconnectSuppressed) onlineLastMessage = 'Lobby-Verbindung getrennt.';
     updateOnlineUi();
-    if(onlineRoomId){
+    if(onlineRoomId && !onlineReconnectSuppressed){
       onlineReconnectTimer = setTimeout(() => connectOnlineRoom(onlineRoomId, {reconnect:true}), opts.reconnect ? 3500 : 2000);
     }
   });
@@ -3102,7 +3170,7 @@ function connectOnlineRoom(roomId, opts){
 function sendOnlineMessage(payload){
   if(!onlineSocket || onlineSocket.readyState !== WebSocket.OPEN) return false;
   try{
-    const outgoing = Object.assign({room: onlineRoomId || undefined, player: onlinePlayerId}, payload || {});
+    const outgoing = Object.assign({room: onlineRoomId || undefined}, payload || {});
     onlineSocket.send(JSON.stringify(outgoing));
     return true;
   } catch(_){
@@ -3339,6 +3407,7 @@ async function createNewOnlineRoom(opts){
   onlineAutoSyncedInitialSetup = false;
   onlineCanSetTimeControl = false;
   onlineClockSync = null;
+  onlineSeatClaimSent = false;
   newGame();
   const roomId = createRoomId();
   onlinePreferredRoleForNextConnect = resolveInviteCreatorRole();
