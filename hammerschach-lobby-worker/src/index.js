@@ -81,14 +81,10 @@ function normalizeEmail(value) {
 
 function isAdminUser(row, env = null) {
   if (!row) return false;
-  const username = String(row.username || '').trim().toLowerCase();
-  const email = String(row.email || '').trim().toLowerCase();
-  const configuredUsername = String((env && env.ADMIN_USERNAME) || 'Andili').trim().toLowerCase();
-  const configuredEmail = String((env && env.ADMIN_EMAIL) || '').trim().toLowerCase();
+  const configuredAdminId = String((env && env.ADMIN_USER_ID) || '').trim();
   return !!(
     row.is_admin === 1 || row.is_admin === true || String(row.is_admin || '') === '1' ||
-    (configuredUsername && username === configuredUsername) ||
-    (configuredEmail && email === configuredEmail)
+    (configuredAdminId && String(row.id || '') === configuredAdminId)
   );
 }
 
@@ -262,7 +258,7 @@ async function deleteUserAsAdmin(env, adminUser, targetId) {
     return { ok: false, status: 400, code: 'CANNOT_DELETE_SELF', message: 'Der eigene Admin-Account kann nicht gelöscht werden.' };
   }
 
-  const target = await env.DB.prepare(`SELECT id, username, email FROM users WHERE id = ? LIMIT 1`).bind(id).first();
+  const target = await env.DB.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).bind(id).first();
   if (!target) {
     return { ok: false, status: 404, code: 'USER_NOT_FOUND', message: 'User wurde nicht gefunden.' };
   }
@@ -465,6 +461,61 @@ function playerIdFromSlot(slot) {
   if (typeof slot === 'string') return slot;
   if (typeof slot === 'object') return slot.playerId || slot.id || null;
   return null;
+}
+
+function normalizeSeatSlot(slot) {
+  if (!slot || typeof slot !== 'object') return null;
+  const playerId = String(slot.playerId || slot.id || '').trim();
+  const seatTokenHash = String(slot.seatTokenHash || slot.seat_token_hash || '').trim();
+  if (!playerId || !seatTokenHash) return null;
+  return {
+    playerId,
+    seatTokenHash,
+    userId: slot.userId || slot.user_id || null,
+    assignedAt: Number(slot.assignedAt || slot.assigned_at || Date.now()),
+    updatedAt: Number(slot.updatedAt || slot.updated_at || Date.now())
+  };
+}
+
+function safeSetupForClient(value) {
+  const setup = cleanGameSetup(value || null);
+  if (value && (value.updatedByRole === 'w' || value.updatedByRole === 'b')) setup.updatedByRole = value.updatedByRole;
+  return setup;
+}
+
+function safeTimeControlForClient(value) {
+  const control = cleanTimeControl(value || null);
+  if (!control) return null;
+  if (value && (value.updatedByRole === 'w' || value.updatedByRole === 'b')) control.updatedByRole = value.updatedByRole;
+  return control;
+}
+
+function safeGameForClient(value) {
+  if (!value || typeof value !== 'object') return value || null;
+  const out = Object.assign({}, value);
+  delete out.startedByPlayer;
+  delete out.updatedByPlayer;
+  if (out.gameSetup) out.gameSetup = safeSetupForClient(out.gameSetup);
+  return out;
+}
+
+function safeMoveForClient(value) {
+  if (!value || typeof value !== 'object') return value || null;
+  const out = Object.assign({}, value);
+  delete out.byPlayer;
+  delete out.playerId;
+  delete out.userId;
+  return out;
+}
+
+function safeDrawOfferForClient(value) {
+  if (!value || typeof value !== 'object' || !value.byRole) return null;
+  return {
+    offered: value.offered !== false,
+    byRole: value.byRole,
+    offeredAt: value.offeredAt || null,
+    serverNow: value.serverNow || null
+  };
 }
 
 function safeSend(ws, payload) {
@@ -1191,62 +1242,134 @@ export class GameRoom {
 
     const url = new URL(request.url);
     const room = cleanRoomId(url.searchParams.get('room'));
-    let playerId = cleanPlayerId(url.searchParams.get('player'));
-    let requestedDisplayName = cleanDisplayName(url.searchParams.get('name') || url.searchParams.get('displayName'));
-    const authToken = url.searchParams.get('auth') || url.searchParams.get('token') || '';
-    const preferredRole = cleanPreferredRole(url.searchParams.get('preferredRole') || url.searchParams.get('preferred_role') || url.searchParams.get('desiredRole') || url.searchParams.get('desired_role'));
-    const authSession = await lookupAuthSession(this.env, authToken);
-    const authUser = authSession ? authSession.user : null;
-    if (authUser && authUser.id) {
-      playerId = cleanPlayerId('u_' + authUser.id);
-      requestedDisplayName = cleanDisplayName(authUser.username);
-    }
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
-    const role = await this.assignRole(playerId, preferredRole);
-    const profile = await this.savePlayerProfile(playerId, requestedDisplayName, role, authUser);
-
     this.state.acceptWebSocket(server);
-    server.serializeAttachment({ playerId, role, room, displayName: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '', joinedAt: Date.now() });
+    server.serializeAttachment({
+      connectionId: crypto.randomUUID(),
+      playerId: null,
+      role: 'pending',
+      room,
+      displayName: '',
+      guest: true,
+      userId: null,
+      username: '',
+      seatClaimed: false,
+      joinedAt: Date.now()
+    });
 
-    safeSend(server, { type: 'hello', room, playerId, role, displayName: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '' });
-    await this.sendRoomState(server, 'hello_state');
-    await this.broadcastRoomState('lobby');
-
+    safeSend(server, { type: 'seat_challenge', room, serverNow: Date.now() });
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  async assignRole(playerId, preferredRole = '') {
-    const players = (await this.state.storage.get('players')) || { white: null, black: null };
-
-    if (playerIdFromSlot(players.white) === playerId) return 'w';
-    if (playerIdFromSlot(players.black) === playerId) return 'b';
-
-    const assign = async (role) => {
-      if (role === 'b') players.black = playerId;
-      else players.white = playerId;
-      await this.state.storage.put('players', players);
-      const creator = (await this.state.storage.get('createdByPlayer')) || '';
-      if (!creator) {
-        await this.state.storage.put('createdByPlayer', playerId);
-        await this.state.storage.put('createdByRole', role === 'b' ? 'b' : 'w');
-      }
-      return role === 'b' ? 'b' : 'w';
+  async getSecurePlayers() {
+    const raw = (await this.state.storage.get('players')) || { white: null, black: null };
+    const players = {
+      white: normalizeSeatSlot(raw.white),
+      black: normalizeSeatSlot(raw.black)
     };
 
-    if (!players.white && !players.black) {
-      return await assign(preferredRole === 'b' ? 'b' : 'w');
+    // Alte, nur aus einer offen sichtbaren playerId bestehende Plätze werden bewusst
+    // nicht übernommen. Damit bleiben Räume aus der unsicheren Vorversion nicht angreifbar.
+    const requiresMigration = [raw.white, raw.black].some(slot =>
+      !!slot && (typeof slot !== 'object' || !String(slot.seatTokenHash || slot.seat_token_hash || '').trim())
+    );
+    if (requiresMigration) await this.state.storage.put('players', players);
+    return players;
+  }
+
+  async seatTokenMatches(slot, rawToken) {
+    if (!slot || !slot.seatTokenHash || !rawToken) return false;
+    const candidateHash = await sha256Hex(String(rawToken));
+    return timingSafeStringEqual(candidateHash, slot.seatTokenHash);
+  }
+
+  seatIdentityMatches(slot, playerId, authUser) {
+    if (!slot) return false;
+    if (slot.userId) return !!(authUser && String(authUser.id) === String(slot.userId));
+    return !authUser && String(slot.playerId || '') === String(playerId || '');
+  }
+
+  async assignRole(playerId, preferredRole = '', seatToken = '', authUser = null) {
+    const players = await this.getSecurePlayers();
+    const roles = preferredRole === 'b' ? ['b', 'w'] : preferredRole === 'w' ? ['w', 'b'] : ['w', 'b'];
+    const slotForRole = role => role === 'b' ? players.black : players.white;
+
+    // Ein bestehender Platz kann nur mit seinem geheimen Token zurückgewonnen werden.
+    for (const role of roles) {
+      const slot = slotForRole(role);
+      if (!this.seatIdentityMatches(slot, playerId, authUser)) continue;
+      if (!(await this.seatTokenMatches(slot, seatToken))) {
+        return { role: 'spectator', seatToken: '', denied: true, code: 'SEAT_TOKEN_REQUIRED' };
+      }
+
+      const rotatedToken = randomBase64Url(32);
+      const renewed = Object.assign({}, slot, {
+        playerId,
+        userId: authUser ? authUser.id : null,
+        seatTokenHash: await sha256Hex(rotatedToken),
+        updatedAt: Date.now()
+      });
+      if (role === 'b') players.black = renewed;
+      else players.white = renewed;
+      await this.state.storage.put('players', players);
+      return { role, seatToken: rotatedToken, denied: false, reclaimed: true };
     }
 
-    if (preferredRole === 'w' && !players.white) return await assign('w');
-    if (preferredRole === 'b' && !players.black) return await assign('b');
+    const assign = async role => {
+      const token = randomBase64Url(32);
+      const slot = {
+        playerId,
+        userId: authUser ? authUser.id : null,
+        seatTokenHash: await sha256Hex(token),
+        assignedAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      if (role === 'b') players.black = slot;
+      else players.white = slot;
+      await this.state.storage.put('players', players);
+      const creatorRole = (await this.state.storage.get('createdByRole')) || '';
+      if (!creatorRole) await this.state.storage.put('createdByRole', role);
+      return { role, seatToken: token, denied: false, reclaimed: false };
+    };
 
-    if (!players.white) return await assign('w');
-    if (!players.black) return await assign('b');
+    if (!players.white && !players.black) return assign(preferredRole === 'b' ? 'b' : 'w');
+    if (preferredRole === 'w' && !players.white) return assign('w');
+    if (preferredRole === 'b' && !players.black) return assign('b');
+    if (!players.white) return assign('w');
+    if (!players.black) return assign('b');
+    return { role: 'spectator', seatToken: '', denied: false, reclaimed: false };
+  }
 
-    return 'spectator';
+  replaceExistingSeatConnection(role, currentWs) {
+    if (role !== 'w' && role !== 'b') return;
+    for (const other of this.state.getWebSockets()) {
+      if (other === currentWs) continue;
+      const otherInfo = other.deserializeAttachment() || {};
+      if (otherInfo.role !== role) continue;
+      other.serializeAttachment(Object.assign({}, otherInfo, { role: 'revoked', seatClaimed: false, revokedAt: Date.now() }));
+      safeSend(other, {
+        type: 'seat_replaced',
+        message: 'Dieser Spielerplatz wurde in einer neuen Verbindung übernommen.',
+        serverNow: Date.now()
+      });
+      try { other.close(4001, 'Spielerplatz in neuer Verbindung geöffnet'); } catch (_) {}
+    }
+  }
+
+  async bindCurrentSeatToUser(role, playerId, authUser) {
+    if (!authUser || !authUser.id || (role !== 'w' && role !== 'b')) return true;
+    const players = await this.getSecurePlayers();
+    const slot = role === 'b' ? players.black : players.white;
+    if (!slot || String(slot.playerId || '') !== String(playerId || '')) return false;
+    if (slot.userId && String(slot.userId) !== String(authUser.id)) return false;
+    const bound = Object.assign({}, slot, { userId: authUser.id, updatedAt: Date.now() });
+    if (role === 'b') players.black = bound;
+    else players.white = bound;
+    await this.state.storage.put('players', players);
+    return true;
   }
 
   async savePlayerProfile(playerId, requestedDisplayName, role = '', accountUser = null) {
@@ -1279,12 +1402,9 @@ export class GameRoom {
       const displayName = cleanDisplayName(profile.displayName || profile.name) || (playerId ? guestNameFromPlayerId(playerId) : '');
       return {
         connected: false,
-        playerId: playerId || null,
         name: displayName,
         displayName,
-        guest: profile.guest !== false,
-        userId: profile.userId || null,
-        username: profile.username || ''
+        guest: profile.guest !== false
       };
     };
 
@@ -1301,14 +1421,10 @@ export class GameRoom {
         active.white.connected = true;
         if (name) { active.white.name = name; active.white.displayName = name; }
         active.white.guest = info.guest !== false;
-        active.white.userId = info.userId || active.white.userId || null;
-        active.white.username = info.username || active.white.username || '';
       } else if (info.role === 'b') {
         active.black.connected = true;
         if (name) { active.black.name = name; active.black.displayName = name; }
         active.black.guest = info.guest !== false;
-        active.black.userId = info.userId || active.black.userId || null;
-        active.black.username = info.username || active.black.username || '';
       } else {
         active.spectators += 1;
       }
@@ -1317,47 +1433,83 @@ export class GameRoom {
     return active;
   }
 
-  async getClockForState(now = Date.now()) {
+  async scheduleClockAlarm(clock, now = Date.now()) {
+    try {
+      if (!clock || !clock.running || clock.timeLost) {
+        await this.state.storage.deleteAlarm();
+        return;
+      }
+      const remaining = Math.max(0, Number(clock[clock.turn + 'Ms'] || 0));
+      await this.state.storage.setAlarm(now + remaining + 25);
+    } catch (_) {
+      // Zustandsabfragen und Aktionen finalisieren die Uhr zusätzlich.
+    }
+  }
+
+  async refreshTimedGameState(now = Date.now()) {
+    let game = (await this.state.storage.get('game')) || { started: false, ended: false, result: '*' };
     let clock = (await this.state.storage.get('clock')) || null;
-    if (!clock) return null;
+    if (!clock) return { game, clock: null, justEnded: false };
+
     const advanced = advanceClock(clock, now);
     if (advanced && JSON.stringify(advanced) !== JSON.stringify(clock)) {
-      await this.state.storage.put('clock', advanced);
+      clock = advanced;
+      await this.state.storage.put('clock', clock);
+    } else {
+      clock = advanced || clock;
     }
-    return advanced;
+
+    let justEnded = false;
+    if (game.started && !game.ended && clock && clock.timeLost) {
+      game = finishGameState(game, 'time', clock.winner, now);
+      await this.state.storage.put('game', game);
+      await this.state.storage.delete('drawOffer');
+      justEnded = true;
+    }
+
+    if (game.ended || !clock.running || clock.timeLost) {
+      try { await this.state.storage.deleteAlarm(); } catch (_) {}
+    } else {
+      await this.scheduleClockAlarm(clock, now);
+    }
+    return { game, clock, justEnded };
+  }
+
+  async alarm() {
+    const current = await this.refreshTimedGameState(Date.now());
+    if (current.justEnded) await this.broadcastRoomState('game_finished');
   }
 
   async buildStateFor(ws) {
     const info = ws.deserializeAttachment() || {};
-    const players = (await this.state.storage.get('players')) || { white: null, black: null };
-    const timeControl = (await this.state.storage.get('timeControl')) || null;
-    const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || null);
-    const game = (await this.state.storage.get('game')) || { started: false, startedAt: null, ended: false, result: '*', gameSetup };
-    if (!game.gameSetup) game.gameSetup = gameSetup;
-    const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
-    const moves = (await this.state.storage.get('moves')) || [];
-    const drawOffer = (await this.state.storage.get('drawOffer')) || null;
+    const players = await this.getSecurePlayers();
+    const storedTimeControl = (await this.state.storage.get('timeControl')) || null;
+    const storedGameSetup = (await this.state.storage.get('gameSetup')) || null;
+    const gameSetup = safeSetupForClient(storedGameSetup);
     const now = Date.now();
-    const clock = await this.getClockForState(now);
+    const timed = await this.refreshTimedGameState(now);
+    const game = safeGameForClient(Object.assign({}, timed.game || { started: false, ended: false, result: '*' }, { gameSetup }));
+    const createdByRole = (await this.state.storage.get('createdByRole')) || '';
+    const moves = ((await this.state.storage.get('moves')) || []).map(safeMoveForClient);
+    const drawOffer = safeDrawOfferForClient((await this.state.storage.get('drawOffer')) || null);
 
     return {
       type: 'room_state',
       room: info.room || 'unknown',
       role: info.role || 'spectator',
-      playerId: info.playerId || null,
       assigned: {
-        white: !!playerIdFromSlot(players.white),
-        black: !!playerIdFromSlot(players.black)
+        white: !!players.white,
+        black: !!players.black
       },
       players: await this.getActivePlayers(players),
-      canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByPlayer && info.playerId === createdByPlayer))),
-      createdByMe: !!(createdByPlayer && info.playerId === createdByPlayer),
-      timeControl,
+      canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByRole && info.role === createdByRole))),
+      createdByMe: !!(createdByRole && info.role === createdByRole),
+      timeControl: safeTimeControlForClient(storedTimeControl),
       gameSetup,
       game,
       moves,
       drawOffer,
-      clock: clockPayload(clock, now),
+      clock: clockPayload(timed.clock, now),
       serverNow: now
     };
   }
@@ -1385,9 +1537,9 @@ export class GameRoom {
         messageId,
         room: info.room || 'unknown',
         role: info.role || 'spectator',
-        move,
-        game,
-        drawOffer,
+        move: safeMoveForClient(move),
+        game: safeGameForClient(game),
+        drawOffer: safeDrawOfferForClient(drawOffer),
         clock: clockPayload(clock, now),
         serverNow: now
       });
@@ -1398,13 +1550,23 @@ export class GameRoom {
     const now = Date.now();
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
+      const publicChat = {
+        id: chat.id,
+        messageId: chat.messageId,
+        role: chat.role,
+        senderName: chat.senderName,
+        name: chat.name,
+        text: chat.text,
+        sentAt: chat.sentAt,
+        mine: !!(chat.senderConnectionId && chat.senderConnectionId === info.connectionId)
+      };
       safeSend(ws, {
         type: 'chat_message',
         ok: true,
         messageId: messageId || chat.messageId || chat.id || null,
         room: info.room || 'unknown',
         role: info.role || 'spectator',
-        chat,
+        chat: publicChat,
         serverNow: now
       });
     }
@@ -1419,7 +1581,62 @@ export class GameRoom {
       return;
     }
 
-    const info = ws.deserializeAttachment() || {};
+    let info = ws.deserializeAttachment() || {};
+
+    if (data.type === 'claim_seat') {
+      if (info.seatClaimed) {
+        safeSend(ws, { type: 'error', code: 'SEAT_ALREADY_CLAIMED', message: 'Der Spielerplatz wurde bereits zugeordnet.' });
+        return;
+      }
+
+      const authSession = await lookupAuthSession(this.env, data.authToken || data.auth || data.token || '');
+      const authUser = authSession ? authSession.user : null;
+      let playerId = cleanPlayerId(data.player || data.playerId || data.player_id);
+      let displayName = cleanDisplayName(data.displayName || data.name);
+      if (authUser && authUser.id) {
+        playerId = cleanPlayerId('u_' + authUser.id);
+        displayName = cleanDisplayName(authUser.username);
+      }
+      const preferredRole = cleanPreferredRole(data.preferredRole || data.preferred_role || data.seatRole || data.seat_role);
+      const claimed = await this.assignRole(playerId, preferredRole, String(data.seatToken || data.seat_token || ''), authUser);
+      const profile = await this.savePlayerProfile(playerId, displayName, claimed.role, authUser);
+
+      info = Object.assign({}, info, {
+        playerId,
+        role: claimed.role,
+        displayName: profile.displayName,
+        guest: profile.guest,
+        userId: profile.userId || null,
+        username: profile.username || '',
+        seatClaimed: true,
+        claimedAt: Date.now()
+      });
+      ws.serializeAttachment(info);
+      this.replaceExistingSeatConnection(claimed.role, ws);
+
+      safeSend(ws, {
+        type: 'hello',
+        room: info.room || 'unknown',
+        role: claimed.role,
+        displayName: profile.displayName,
+        guest: profile.guest,
+        username: profile.username || '',
+        seatToken: claimed.seatToken || '',
+        seatDenied: !!claimed.denied,
+        seatCode: claimed.code || '',
+        message: claimed.denied ? 'Der bisherige Spielerplatz konnte ohne gültiges Sitzplatz-Token nicht übernommen werden.' : '',
+        serverNow: Date.now()
+      });
+      await this.sendRoomState(ws, 'hello_state');
+      await this.broadcastRoomState('lobby');
+      return;
+    }
+
+    if (!info.seatClaimed) {
+      safeSend(ws, { type: 'error', code: 'SEAT_CLAIM_REQUIRED', message: 'Bitte zuerst den Spielerplatz sicher bestätigen.' });
+      return;
+    }
+
     const role = info.role || 'spectator';
 
     if (data.type === 'ping') {
@@ -1455,7 +1672,7 @@ export class GameRoom {
         id: messageId,
         messageId,
         role,
-        playerId: info.playerId || null,
+        senderConnectionId: info.connectionId || '',
         senderName,
         name: senderName,
         text,
@@ -1474,9 +1691,13 @@ export class GameRoom {
         safeSend(ws, { type: 'error', code: 'INVALID_PLAYER_NAME', message: 'Spielername muss mindestens 2 Zeichen haben.' });
         return;
       }
+      if (authUser && !(await this.bindCurrentSeatToUser(role, info.playerId, authUser))) {
+        safeSend(ws, { type: 'error', code: 'SEAT_ACCOUNT_MISMATCH', message: 'Dieser Spielerplatz ist bereits an einen anderen Account gebunden.' });
+        return;
+      }
       const profile = await this.savePlayerProfile(info.playerId, displayName, role, authUser);
-      ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '' }));
-      safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, guest: profile.guest, userId: profile.userId || null, username: profile.username || '', serverNow: Date.now() });
+      ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest, userId: profile.userId || info.userId || null, username: profile.username || '' }));
+      safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, guest: profile.guest, username: profile.username || '', serverNow: Date.now() });
       await this.broadcastRoomState('room_state');
       return;
     }
@@ -1488,8 +1709,8 @@ export class GameRoom {
         return;
       }
 
-      const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
-      const canSetGameSetup = role === 'w' || (createdByPlayer && info.playerId === createdByPlayer);
+      const createdByRole = (await this.state.storage.get('createdByRole')) || '';
+      const canSetGameSetup = role === 'w' || (createdByRole && role === createdByRole);
       if (!canSetGameSetup) {
         safeSend(ws, { type: 'error', code: 'ONLY_WHITE_OR_CREATOR_CAN_SET_SETUP', message: 'Nur Weiß oder der Einladende kann den Spielmodus ändern.' });
         return;
@@ -1497,7 +1718,6 @@ export class GameRoom {
 
       const gameSetup = cleanGameSetup(data.gameSetup || data.game_setup || data.startPosition || data.start_position || data);
       gameSetup.updatedByRole = role;
-      gameSetup.updatedByPlayer = info.playerId || null;
       await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('moves', []);
       await this.state.storage.delete('clock');
@@ -1506,7 +1726,7 @@ export class GameRoom {
         type: 'game_setup_ack',
         ok: true,
         messageId: data.messageId || null,
-        gameSetup,
+        gameSetup: safeSetupForClient(gameSetup),
         serverNow: Date.now()
       });
       await this.broadcastRoomState('room_state');
@@ -1520,8 +1740,8 @@ export class GameRoom {
         return;
       }
 
-      const createdByPlayer = (await this.state.storage.get('createdByPlayer')) || '';
-      const canSetTimeControl = role === 'w' || (createdByPlayer && info.playerId === createdByPlayer);
+      const createdByRole = (await this.state.storage.get('createdByRole')) || '';
+      const canSetTimeControl = role === 'w' || (createdByRole && role === createdByRole);
       if (!canSetTimeControl) {
         safeSend(ws, { type: 'error', code: 'ONLY_WHITE_OR_CREATOR_CAN_SET_TIME', message: 'Nur Weiß oder der Einladende kann die Bedenkzeit ändern.' });
         return;
@@ -1534,7 +1754,6 @@ export class GameRoom {
       }
 
       timeControl.updatedByRole = role;
-      timeControl.updatedByPlayer = info.playerId || null;
       await this.state.storage.put('timeControl', timeControl);
       await this.state.storage.delete('clock');
 
@@ -1542,7 +1761,7 @@ export class GameRoom {
         type: 'time_control_ack',
         ok: true,
         messageId: data.messageId || null,
-        timeControl,
+        timeControl: safeTimeControlForClient(timeControl),
         serverNow: Date.now()
       });
       await this.broadcastRoomState('room_state');
@@ -1566,7 +1785,6 @@ export class GameRoom {
       if (submittedGameSetupRaw) {
         const submittedGameSetup = cleanGameSetup(submittedGameSetupRaw);
         submittedGameSetup.updatedByRole = role;
-        submittedGameSetup.updatedByPlayer = info.playerId || null;
         await this.state.storage.put('gameSetup', submittedGameSetup);
         gameSetup = submittedGameSetup;
       }
@@ -1575,7 +1793,6 @@ export class GameRoom {
       const submittedTimeControl = cleanTimeControl(data.timeControl || data.time_control);
       if (submittedTimeControl) {
         submittedTimeControl.updatedByRole = role;
-        submittedTimeControl.updatedByPlayer = info.playerId || null;
         await this.state.storage.put('timeControl', submittedTimeControl);
         timeControl = submittedTimeControl;
       }
@@ -1596,7 +1813,6 @@ export class GameRoom {
         started: true,
         startedAt: new Date(now).toISOString(),
         startedByRole: role,
-        startedByPlayer: info.playerId || null,
         ended: false,
         endedAt: null,
         endReason: null,
@@ -1612,13 +1828,14 @@ export class GameRoom {
       await this.state.storage.put('moves', []);
       await this.state.storage.put('clock', clock);
       await this.state.storage.delete('drawOffer');
+      await this.scheduleClockAlarm(clock, now);
 
       safeSend(ws, {
         type: 'start_game_ack',
         ok: true,
-        game,
-        gameSetup,
-        timeControl,
+        game: safeGameForClient(game),
+        gameSetup: safeSetupForClient(gameSetup),
+        timeControl: safeTimeControlForClient(timeControl),
         moves: [],
         clock: clockPayload(clock, now),
         serverNow: now
@@ -1633,7 +1850,8 @@ export class GameRoom {
         return;
       }
 
-      const game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      const timedState = await this.refreshTimedGameState(Date.now());
+      const game = timedState.game || { started: false, ended: false };
       if (!game.started) {
         safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
         return;
@@ -1646,7 +1864,7 @@ export class GameRoom {
 
       const existingOffer = (await this.state.storage.get('drawOffer')) || null;
       if (existingOffer && existingOffer.byRole === role) {
-        safeSend(ws, { type: 'draw_offer', ok: true, drawOffer: existingOffer, message: 'Remisangebot ist bereits offen.', serverNow: Date.now() });
+        safeSend(ws, { type: 'draw_offer', ok: true, drawOffer: safeDrawOfferForClient(existingOffer), message: 'Remisangebot ist bereits offen.', serverNow: Date.now() });
         await this.broadcastRoomState('draw_offer');
         return;
       }
@@ -1660,12 +1878,11 @@ export class GameRoom {
       const drawOffer = {
         offered: true,
         byRole: role,
-        byPlayer: info.playerId || null,
         offeredAt: new Date(now).toISOString(),
         serverNow: now
       };
       await this.state.storage.put('drawOffer', drawOffer);
-      safeSend(ws, { type: 'draw_offer', ok: true, drawOffer, serverNow: now });
+      safeSend(ws, { type: 'draw_offer', ok: true, drawOffer: safeDrawOfferForClient(drawOffer), serverNow: now });
       await this.broadcastRoomState('draw_offer');
       return;
     }
@@ -1676,7 +1893,8 @@ export class GameRoom {
         return;
       }
 
-      let game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      const timedState = await this.refreshTimedGameState(Date.now());
+      let game = timedState.game || { started: false, ended: false };
       if (!game.started) {
         safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
         return;
@@ -1705,8 +1923,13 @@ export class GameRoom {
         let clock = (await this.state.storage.get('clock')) || null;
         if (clock) {
           clock = advanceClock(clock, now);
+          if (clock.timeLost) {
+            await this.refreshTimedGameState(now);
+            safeSend(ws, { type: 'error', code: 'TIME_LOST', message: 'Die Bedenkzeit ist bereits abgelaufen.' });
+            await this.broadcastRoomState('game_finished');
+            return;
+          }
           clock.running = false;
-          clock.timeLost = false;
           clock.loser = null;
           clock.winner = null;
           clock.lastTs = now;
@@ -1717,13 +1940,15 @@ export class GameRoom {
         game.result = '1/2-1/2';
         await this.state.storage.put('game', game);
         await this.state.storage.delete('drawOffer');
-        safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game, drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
+        try { await this.state.storage.deleteAlarm(); } catch (_) {}
+        safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
         await this.broadcastRoomState('game_finished');
         return;
       }
 
       if (action === 'reject' || action === 'decline' || action === 'rejected' || action === 'declined') {
         await this.state.storage.delete('drawOffer');
+        try { await this.state.storage.deleteAlarm(); } catch (_) {}
         safeSend(ws, { type: 'draw_response', ok: true, action: 'reject', drawOffer: null, serverNow: now });
         await this.broadcastRoomState('draw_response');
         return;
@@ -1739,7 +1964,8 @@ export class GameRoom {
         return;
       }
 
-      let game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      const timedState = await this.refreshTimedGameState(Date.now());
+      let game = timedState.game || { started: false, ended: false };
       if (!game.started) {
         safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
         return;
@@ -1755,8 +1981,13 @@ export class GameRoom {
       let clock = (await this.state.storage.get('clock')) || null;
       if (clock) {
         clock = advanceClock(clock, now);
+        if (clock.timeLost) {
+          await this.refreshTimedGameState(now);
+          safeSend(ws, { type: 'error', code: 'TIME_LOST', message: 'Die Bedenkzeit ist bereits abgelaufen.' });
+          await this.broadcastRoomState('game_finished');
+          return;
+        }
         clock.running = false;
-        clock.timeLost = false;
         clock.loser = role;
         clock.winner = winner;
         clock.lastTs = now;
@@ -1766,7 +1997,8 @@ export class GameRoom {
       game = finishGameState(game, 'resignation', winner, now);
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
-      safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game, drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
+      try { await this.state.storage.deleteAlarm(); } catch (_) {}
+      safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
       return;
     }
@@ -1777,7 +2009,8 @@ export class GameRoom {
         return;
       }
 
-      let game = (await this.state.storage.get('game')) || { started: false, ended: false };
+      const timedState = await this.refreshTimedGameState(Date.now());
+      let game = timedState.game || { started: false, ended: false };
       if (!game.started) {
         safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
         return;
@@ -1841,24 +2074,20 @@ export class GameRoom {
         return;
       }
 
-      let clock = (await this.state.storage.get('clock')) || makeInitialClock(timeControl, Date.parse(game.startedAt) || Date.now());
+      let clock = timedState.clock || (await this.state.storage.get('clock')) || makeInitialClock(timeControl, Date.parse(game.startedAt) || Date.now());
       const now = Date.now();
       clock = advanceClock(clock, now);
-      if (!clock || clock.timeLost) {
-        if (clock) {
-          game = finishGameState(game, 'time', clock.winner, now);
-          await this.state.storage.put('game', game);
-          await this.state.storage.put('clock', clock);
-        }
+      if (!clock || clock.timeLost || game.ended) {
+        await this.refreshTimedGameState(now);
         safeSend(ws, {
           type: 'error',
           code: 'TIME_LOST',
           message: 'Die Bedenkzeit ist abgelaufen.',
-          game,
+          game: safeGameForClient(game),
           clock: clockPayload(clock, now),
           serverNow: now
         });
-        await this.broadcastRoomState('room_state');
+        await this.broadcastRoomState('game_finished');
         return;
       }
 
@@ -1885,8 +2114,7 @@ export class GameRoom {
         taken: validation.move.taken,
         messageId: data.messageId || incoming.clientMessageId || null,
         receivedAt: new Date(now).toISOString(),
-        serverNow: now,
-        byPlayer: info.playerId || null
+        serverNow: now
       };
 
       if (validation.gameOver) {
@@ -1930,14 +2158,19 @@ export class GameRoom {
       await this.state.storage.put('moves', moves);
       await this.state.storage.put('clock', clock);
       await this.state.storage.put('game', game);
+      if (game.ended) {
+        try { await this.state.storage.deleteAlarm(); } catch (_) {}
+      } else {
+        await this.scheduleClockAlarm(clock, now);
+      }
 
       safeSend(ws, {
         type: 'move_ack',
         ok: true,
         messageId: data.messageId || incoming.clientMessageId || null,
-        move,
-        game,
-        drawOffer: outgoingDrawOffer,
+        move: safeMoveForClient(move),
+        game: safeGameForClient(game),
+        drawOffer: safeDrawOfferForClient(outgoingDrawOffer),
         movesCount: moves.length,
         clock: clockPayload(clock, now),
         serverNow: now
@@ -1996,8 +2229,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID&player=PLAYER_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'freestyle960'],
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'freestyle960'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
