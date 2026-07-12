@@ -243,6 +243,75 @@ async function listMembers(env, sessionUser, limit = 50) {
   }));
 }
 
+let dailyGamesTableReady = false;
+async function ensureDailyGamesTable(env) {
+  if (!env || !env.DB) return false;
+  if (dailyGamesTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS daily_games (
+       room_id TEXT PRIMARY KEY,
+       white_user_id TEXT,
+       black_user_id TEXT,
+       white_name TEXT,
+       black_name TEXT,
+       time_label TEXT,
+       days_per_move INTEGER,
+       variant TEXT,
+       started INTEGER NOT NULL DEFAULT 0,
+       started_at TEXT,
+       updated_at TEXT,
+       turn TEXT,
+       deadline_at TEXT,
+       ended INTEGER NOT NULL DEFAULT 0,
+       ended_at TEXT,
+       result TEXT,
+       end_reason TEXT
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
+  dailyGamesTableReady = true;
+  return true;
+}
+
+async function listDailyGames(env, sessionUser) {
+  if (!(await ensureDailyGamesTable(env)) || !sessionUser) return [];
+  const result = await env.DB.prepare(
+    `SELECT room_id, white_user_id, black_user_id, white_name, black_name,
+            time_label, days_per_move, variant, started, started_at, updated_at,
+            turn, deadline_at, ended, ended_at, result, end_reason
+       FROM daily_games
+      WHERE (white_user_id = ? OR black_user_id = ?)
+        AND ended = 0
+      ORDER BY
+        CASE WHEN turn = CASE WHEN white_user_id = ? THEN 'w' ELSE 'b' END THEN 0 ELSE 1 END,
+        COALESCE(deadline_at, updated_at) ASC
+      LIMIT 100`
+  ).bind(sessionUser.id, sessionUser.id, sessionUser.id).all();
+
+  return (result && result.results ? result.results : []).map(row => {
+    const role = String(row.white_user_id || '') === String(sessionUser.id) ? 'w' : 'b';
+    const turn = row.turn === 'b' ? 'b' : row.turn === 'w' ? 'w' : '';
+    return {
+      roomId: row.room_id,
+      role,
+      opponentName: role === 'w' ? (row.black_name || 'Schwarz') : (row.white_name || 'Weiß'),
+      timeLabel: row.time_label || ((row.days_per_move || 1) + ' Tag(e) pro Zug'),
+      daysPerMove: Math.max(1, Number(row.days_per_move || 1)),
+      variant: row.variant || 'standard',
+      started: !!row.started,
+      startedAt: row.started_at || null,
+      updatedAt: row.updated_at || null,
+      turn,
+      isMyTurn: !!row.started && turn === role,
+      deadlineAt: row.deadline_at || null,
+      ended: !!row.ended,
+      result: row.result || '*',
+      endReason: row.end_reason || null
+    };
+  });
+}
+
 async function deleteUserAsAdmin(env, adminUser, targetId) {
   if (!env || !env.DB || !adminUser) {
     return { ok: false, status: 503, code: 'DB_NOT_CONFIGURED', message: 'Account-Datenbank ist nicht verfügbar.' };
@@ -358,6 +427,17 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
     return json({ ok: true, user: session.user });
+  }
+
+  if (url.pathname === '/api/daily-games' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Daily-Partien sind nur nach Login verfügbar.' }, { status: 401 });
+    try {
+      const games = await listDailyGames(env, session.user);
+      return json({ ok: true, games, serverNow: Date.now() });
+    } catch (_) {
+      return json({ ok: false, code: 'DAILY_GAMES_UNAVAILABLE', message: 'Daily-Partien konnten nicht aus der Datenbank geladen werden.' }, { status: 500 });
+    }
   }
 
   if (url.pathname === '/api/register' && request.method === 'POST') {
@@ -544,10 +624,17 @@ function cleanTimeControl(value) {
 
   if (!baseSeconds) return null;
 
+  const category = String(value.category || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24);
+  const requestedMode = String(value.mode || value.clockMode || value.clock_mode || '').trim().toLowerCase();
+  const mode = requestedMode === 'daily' || category === 'daily' ? 'daily' : 'live';
+  if (mode === 'daily' && ![86400, 259200, 604800].includes(baseSeconds)) return null;
+
   return {
     key,
-    category: String(value.category || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 24),
+    category,
     label: String(value.label || key).slice(0, 120),
+    mode,
+    daysPerMove: mode === 'daily' ? Math.max(1, Math.round(baseSeconds / 86400)) : 0,
     baseSeconds,
     incrementSeconds,
     updatedAt: Date.now()
@@ -639,6 +726,7 @@ function clockPayload(clock, now = Date.now()) {
     timeLost: current.timeLost,
     loser: current.loser,
     winner: current.winner,
+    deadlineAt: current.running && !current.timeLost ? now + Math.max(0, current[current.turn + 'Ms']) : null,
     serverNow: now,
     lastTs: current.lastTs
   };
@@ -1244,6 +1332,8 @@ export class GameRoom {
     const room = cleanRoomId(url.searchParams.get('room'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
+    await this.state.storage.put('roomId', room);
+
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.state.acceptWebSocket(server);
@@ -1297,11 +1387,14 @@ export class GameRoom {
     const roles = preferredRole === 'b' ? ['b', 'w'] : preferredRole === 'w' ? ['w', 'b'] : ['w', 'b'];
     const slotForRole = role => role === 'b' ? players.black : players.white;
 
-    // Ein bestehender Platz kann nur mit seinem geheimen Token zurückgewonnen werden.
+    // Gäste benötigen weiterhin das geheime Sitzplatz-Token. Ein an einen
+    // registrierten Account gebundener Platz kann zusätzlich über eine gültige
+    // Login-Sitzung desselben Accounts zurückgewonnen werden.
     for (const role of roles) {
       const slot = slotForRole(role);
       if (!this.seatIdentityMatches(slot, playerId, authUser)) continue;
-      if (!(await this.seatTokenMatches(slot, seatToken))) {
+      const reclaimedByAccount = !!(slot.userId && authUser && String(slot.userId) === String(authUser.id));
+      if (!reclaimedByAccount && !(await this.seatTokenMatches(slot, seatToken))) {
         return { role: 'spectator', seatToken: '', denied: true, code: 'SEAT_TOKEN_REQUIRED' };
       }
 
@@ -1433,6 +1526,71 @@ export class GameRoom {
     return active;
   }
 
+  async syncDailyGameIndex() {
+    try {
+      if (!(await ensureDailyGamesTable(this.env))) return;
+      const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+      if (!roomId) return;
+
+      const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      if (!timeControl || timeControl.mode !== 'daily') {
+        await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+        return;
+      }
+
+      const players = await this.getSecurePlayers();
+      const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+      const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+      if (!whiteUserId && !blackUserId) return;
+
+      const profiles = (await this.state.storage.get('playerProfiles')) || {};
+      const whitePlayerId = playerIdFromSlot(players.white);
+      const blackPlayerId = playerIdFromSlot(players.black);
+      const whiteName = cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
+      const blackName = cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+      const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
+      const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
+      const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+      const now = Date.now();
+      const deadlineAt = clock && clock.running && !clock.timeLost
+        ? new Date(now + Math.max(0, Number(clock[clock.turn + 'Ms'] || 0))).toISOString()
+        : null;
+
+      await this.env.DB.prepare(
+        `INSERT INTO daily_games (
+           room_id, white_user_id, black_user_id, white_name, black_name,
+           time_label, days_per_move, variant, started, started_at, updated_at,
+           turn, deadline_at, ended, ended_at, result, end_reason
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(room_id) DO UPDATE SET
+           white_user_id = excluded.white_user_id,
+           black_user_id = excluded.black_user_id,
+           white_name = excluded.white_name,
+           black_name = excluded.black_name,
+           time_label = excluded.time_label,
+           days_per_move = excluded.days_per_move,
+           variant = excluded.variant,
+           started = excluded.started,
+           started_at = excluded.started_at,
+           updated_at = excluded.updated_at,
+           turn = excluded.turn,
+           deadline_at = excluded.deadline_at,
+           ended = excluded.ended,
+           ended_at = excluded.ended_at,
+           result = excluded.result,
+           end_reason = excluded.end_reason`
+      ).bind(
+        roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
+        timeControl.label, timeControl.daysPerMove, setup.variant,
+        game.started ? 1 : 0, game.startedAt || null, new Date(now).toISOString(),
+        clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : null, deadlineAt,
+        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null
+      ).run();
+    } catch (_) {
+      // Ein D1-Fehler darf die eigentliche Partie nicht unterbrechen.
+    }
+  }
+
   async scheduleClockAlarm(clock, now = Date.now()) {
     try {
       if (!clock || !clock.running || clock.timeLost) {
@@ -1465,6 +1623,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       justEnded = true;
+      await this.syncDailyGameIndex();
     }
 
     if (game.ended || !clock.running || clock.timeLost) {
@@ -1598,6 +1757,35 @@ export class GameRoom {
         displayName = cleanDisplayName(authUser.username);
       }
       const preferredRole = cleanPreferredRole(data.preferredRole || data.preferred_role || data.seatRole || data.seat_role);
+      const roomTimeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      if (roomTimeControl && roomTimeControl.mode === 'daily' && !authUser) {
+        info = Object.assign({}, info, {
+          playerId,
+          role: 'spectator',
+          displayName: displayName || guestNameFromPlayerId(playerId),
+          guest: true,
+          userId: null,
+          username: '',
+          seatClaimed: true,
+          claimedAt: Date.now()
+        });
+        ws.serializeAttachment(info);
+        safeSend(ws, {
+          type: 'hello',
+          room: info.room || 'unknown',
+          role: 'spectator',
+          displayName: info.displayName,
+          guest: true,
+          username: '',
+          seatToken: '',
+          seatDenied: true,
+          seatCode: 'DAILY_ACCOUNT_REQUIRED',
+          message: 'Daily Chess ist nur für registrierte und eingeloggte Mitglieder verfügbar.',
+          serverNow: Date.now()
+        });
+        await this.sendRoomState(ws, 'hello_state');
+        return;
+      }
       const claimed = await this.assignRole(playerId, preferredRole, String(data.seatToken || data.seat_token || ''), authUser);
       const profile = await this.savePlayerProfile(playerId, displayName, claimed.role, authUser);
 
@@ -1628,6 +1816,7 @@ export class GameRoom {
         serverNow: Date.now()
       });
       await this.sendRoomState(ws, 'hello_state');
+      await this.syncDailyGameIndex();
       await this.broadcastRoomState('lobby');
       return;
     }
@@ -1697,6 +1886,7 @@ export class GameRoom {
       }
       const profile = await this.savePlayerProfile(info.playerId, displayName, role, authUser);
       ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest, userId: profile.userId || info.userId || null, username: profile.username || '' }));
+      await this.syncDailyGameIndex();
       safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, guest: profile.guest, username: profile.username || '', serverNow: Date.now() });
       await this.broadcastRoomState('room_state');
       return;
@@ -1721,6 +1911,7 @@ export class GameRoom {
       await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('moves', []);
       await this.state.storage.delete('clock');
+      await this.syncDailyGameIndex();
 
       safeSend(ws, {
         type: 'game_setup_ack',
@@ -1753,9 +1944,19 @@ export class GameRoom {
         return;
       }
 
+      if (timeControl.mode === 'daily' && !info.userId) {
+        safeSend(ws, {
+          type: 'error',
+          code: 'DAILY_ACCOUNT_REQUIRED',
+          message: 'Daily Chess ist nur für registrierte und eingeloggte Mitglieder verfügbar.'
+        });
+        return;
+      }
+
       timeControl.updatedByRole = role;
       await this.state.storage.put('timeControl', timeControl);
       await this.state.storage.delete('clock');
+      await this.syncDailyGameIndex();
 
       safeSend(ws, {
         type: 'time_control_ack',
@@ -1802,6 +2003,20 @@ export class GameRoom {
         return;
       }
 
+      if (timeControl.mode === 'daily') {
+        const securePlayers = await this.getSecurePlayers();
+        const whiteRegistered = !!(securePlayers.white && securePlayers.white.userId);
+        const blackRegistered = !!(securePlayers.black && securePlayers.black.userId);
+        if (!whiteRegistered || !blackRegistered) {
+          safeSend(ws, {
+            type: 'error',
+            code: 'DAILY_BOTH_ACCOUNTS_REQUIRED',
+            message: 'Daily Chess kann erst starten, wenn beide Spieler mit einem registrierten Account eingeloggt sind.'
+          });
+          return;
+        }
+      }
+
       const existingGame = (await this.state.storage.get('game')) || { started: false };
       if (existingGame.started) {
         await this.broadcastRoomState('room_state');
@@ -1829,6 +2044,7 @@ export class GameRoom {
       await this.state.storage.put('clock', clock);
       await this.state.storage.delete('drawOffer');
       await this.scheduleClockAlarm(clock, now);
+      await this.syncDailyGameIndex();
 
       safeSend(ws, {
         type: 'start_game_ack',
@@ -1941,6 +2157,7 @@ export class GameRoom {
         await this.state.storage.put('game', game);
         await this.state.storage.delete('drawOffer');
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
+        await this.syncDailyGameIndex();
         safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
         await this.broadcastRoomState('game_finished');
         return;
@@ -1948,7 +2165,8 @@ export class GameRoom {
 
       if (action === 'reject' || action === 'decline' || action === 'rejected' || action === 'declined') {
         await this.state.storage.delete('drawOffer');
-        try { await this.state.storage.deleteAlarm(); } catch (_) {}
+        const clock = timedState.clock || (await this.state.storage.get('clock')) || null;
+        if (clock && clock.running && !clock.timeLost) await this.scheduleClockAlarm(clock, now);
         safeSend(ws, { type: 'draw_response', ok: true, action: 'reject', drawOffer: null, serverNow: now });
         await this.broadcastRoomState('draw_response');
         return;
@@ -1998,6 +2216,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       try { await this.state.storage.deleteAlarm(); } catch (_) {}
+      await this.syncDailyGameIndex();
       safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
       return;
@@ -2125,8 +2344,13 @@ export class GameRoom {
         game = finishGameState(game, validation.gameOver.type, validation.gameOver.winner || null, now);
         game.result = resultFromGameOver(validation.gameOver);
       } else {
-        clock[role + 'Ms'] = Math.max(0, clock[role + 'Ms'] + Math.max(0, Number(timeControl.incrementSeconds || 0) * 1000));
-        clock.turn = opposite(role);
+        const nextRole = opposite(role);
+        if (timeControl.mode === 'daily') {
+          clock[nextRole + 'Ms'] = Math.max(0, Math.floor(Number(timeControl.baseSeconds || 0) * 1000));
+        } else {
+          clock[role + 'Ms'] = Math.max(0, clock[role + 'Ms'] + Math.max(0, Number(timeControl.incrementSeconds || 0) * 1000));
+        }
+        clock.turn = nextRole;
         clock.running = true;
         clock.timeLost = false;
         clock.loser = null;
@@ -2163,6 +2387,7 @@ export class GameRoom {
       } else {
         await this.scheduleClockAlarm(clock, now);
       }
+      await this.syncDailyGameIndex();
 
       safeSend(ws, {
         type: 'move_ack',
@@ -2229,9 +2454,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'freestyle960'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'registered_account_seat_reclaim', 'freestyle960'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
