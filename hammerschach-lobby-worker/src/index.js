@@ -44,6 +44,7 @@ function guestNameFromPlayerId(playerId) {
 }
 
 const CHAT_MESSAGE_MAX_LENGTH = 300;
+const CHAT_HISTORY_MAX = 80;
 const CHAT_SEND_COOLDOWN_MS = 1000;
 
 function cleanChatText(value) {
@@ -59,6 +60,48 @@ function fallbackChatName(role, playerId) {
   if (role === 'b') return 'Schwarz';
   if (role === 'spectator') return 'Zuschauer';
   return guestNameFromPlayerId(playerId || '');
+}
+
+function normalizeStoredChatMessage(value) {
+  if (!value || typeof value !== 'object') return null;
+  const text = cleanChatText(value.text || value.message);
+  if (!text) return null;
+  const id = String(value.id || value.messageId || '').trim().slice(0, 80);
+  if (!id) return null;
+  const role = value.role === 'w' || value.role === 'b' || value.role === 'spectator' ? value.role : 'spectator';
+  const senderName = cleanDisplayName(value.senderName || value.name || value.displayName || '') || fallbackChatName(role, value.senderPlayerId || '');
+  const parsedTime = new Date(value.sentAt || value.time || Date.now());
+  const sentAt = Number.isNaN(parsedTime.getTime()) ? new Date().toISOString() : parsedTime.toISOString();
+  return {
+    id,
+    messageId: id,
+    role,
+    senderName,
+    name: senderName,
+    text,
+    sentAt,
+    senderConnectionId: String(value.senderConnectionId || '').slice(0, 80),
+    senderPlayerId: String(value.senderPlayerId || value.playerId || '').slice(0, 128),
+    senderUserId: String(value.senderUserId || value.userId || '').slice(0, 128)
+  };
+}
+
+function safeChatForClient(value, viewerInfo = {}) {
+  const chat = normalizeStoredChatMessage(value);
+  if (!chat) return null;
+  const sameUser = !!(chat.senderUserId && viewerInfo.userId && chat.senderUserId === String(viewerInfo.userId));
+  const samePlayer = !!(chat.senderPlayerId && viewerInfo.playerId && chat.senderPlayerId === String(viewerInfo.playerId));
+  const sameConnection = !!(chat.senderConnectionId && viewerInfo.connectionId && chat.senderConnectionId === String(viewerInfo.connectionId));
+  return {
+    id: chat.id,
+    messageId: chat.messageId,
+    role: chat.role,
+    senderName: chat.senderName,
+    name: chat.name,
+    text: chat.text,
+    sentAt: chat.sentAt,
+    mine: sameUser || samePlayer || sameConnection
+  };
 }
 
 
@@ -1430,6 +1473,7 @@ export class GameRoom {
       roomId
     };
     await this.state.storage.put('cancelled', cancellation);
+    await this.state.storage.delete('chatMessages');
     try { await this.state.storage.deleteAlarm(); } catch (_) {}
     try {
       if (roomId && await ensureDailyGamesTable(this.env)) {
@@ -1877,6 +1921,12 @@ export class GameRoom {
     const createdByRole = (await this.state.storage.get('createdByRole')) || '';
     const moves = ((await this.state.storage.get('moves')) || []).map(safeMoveForClient);
     const drawOffer = safeDrawOfferForClient((await this.state.storage.get('drawOffer')) || null);
+    const storedChatValue = await this.state.storage.get('chatMessages');
+    const storedChatMessages = Array.isArray(storedChatValue) ? storedChatValue : [];
+    const chatMessages = storedChatMessages
+      .map(chat => safeChatForClient(chat, info))
+      .filter(Boolean)
+      .slice(-CHAT_HISTORY_MAX);
 
     return {
       type: 'room_state',
@@ -1894,6 +1944,7 @@ export class GameRoom {
       game,
       moves,
       drawOffer,
+      chatMessages,
       clock: clockPayload(timed.clock, now),
       serverNow: now
     };
@@ -1931,20 +1982,29 @@ export class GameRoom {
     }
   }
 
+  async appendChatToHistory(chat) {
+    const normalized = normalizeStoredChatMessage(chat);
+    if (!normalized) return { chat:null, added:false };
+
+    const stored = await this.state.storage.get('chatMessages');
+    let history = Array.isArray(stored)
+      ? stored.map(normalizeStoredChatMessage).filter(Boolean).slice(-CHAT_HISTORY_MAX)
+      : [];
+    const existing = history.find(item => item.id === normalized.id);
+    if (existing) return { chat:existing, added:false };
+
+    history.push(normalized);
+    history = history.slice(-CHAT_HISTORY_MAX);
+    await this.state.storage.put('chatMessages', history);
+    return { chat:normalized, added:true };
+  }
+
   async broadcastChatMessage(chat, messageId = null) {
     const now = Date.now();
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
-      const publicChat = {
-        id: chat.id,
-        messageId: chat.messageId,
-        role: chat.role,
-        senderName: chat.senderName,
-        name: chat.name,
-        text: chat.text,
-        sentAt: chat.sentAt,
-        mine: !!(chat.senderConnectionId && chat.senderConnectionId === info.connectionId)
-      };
+      const publicChat = safeChatForClient(chat, info);
+      if (!publicChat) continue;
       safeSend(ws, {
         type: 'chat_message',
         ok: true,
@@ -2104,13 +2164,24 @@ export class GameRoom {
         messageId,
         role,
         senderConnectionId: info.connectionId || '',
+        senderPlayerId: info.playerId || '',
+        senderUserId: info.userId || '',
         senderName,
         name: senderName,
         text,
         sentAt: new Date(now).toISOString()
       };
 
-      await this.broadcastChatMessage(chat, messageId);
+      const persisted = await this.appendChatToHistory(chat);
+      if (!persisted.chat) {
+        safeSend(ws, { type: 'error', code: 'CHAT_SAVE_FAILED', message: 'Chatnachricht konnte nicht gespeichert werden.' });
+        return;
+      }
+      if (persisted.added) await this.broadcastChatMessage(persisted.chat, messageId);
+      else {
+        const publicChat = safeChatForClient(persisted.chat, info);
+        safeSend(ws, { type:'chat_ack', ok:true, messageId, room:info.room || 'unknown', role, chat:publicChat, serverNow:Date.now() });
+      }
       return;
     }
 
@@ -2704,8 +2775,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'freestyle960'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
