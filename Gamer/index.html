@@ -45,7 +45,7 @@
   .dot.black{background:#111;}
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
-  .match-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;justify-content:stretch;}
+  .match-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;justify-content:stretch;}
   .match-actions button{width:100%;min-width:0;font-size:15px;padding:9px 10px;min-height:40px;line-height:1.12;}
   .match-actions .name-action-btn{min-width:0;}
   .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%;}
@@ -85,13 +85,21 @@
   .player-time-setup .time-selectors{grid-template-columns:1fr;gap:8px;}
   .player-time-setup .time-control-select{min-height:38px;}
   .clock-title{font-size:17px;font-weight:900;color:#222;}
+  .time-kind-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .time-kind-option{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;min-height:38px;}
+  .time-kind-option.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
+  .time-kind-option:disabled{opacity:.55;cursor:default;}
   .time-selectors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:center;}
+  .time-selectors[hidden]{display:none!important;}
+  .daily-time-selectors{grid-template-columns:1fr;}
   .time-control-select{width:100%;min-height:40px;border-radius:14px;border:1px solid rgba(132,63,70,.18);background:#f7f7f9;color:#333;padding:8px 34px 8px 12px;font-size:14px;font-weight:900;box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 2px 5px rgba(0,0,0,.05);cursor:pointer;line-height:1.2;}
   .time-control-select.active{background:#843f46;color:#fff;border-color:rgba(132,63,70,.45);}
   .time-control-select:disabled{opacity:.50;cursor:not-allowed;box-shadow:none;}
   .time-format-help{text-align:center;font-size:12px;font-weight:800;color:#666;line-height:1.25;margin-top:-2px;}
   .time-status{text-align:center;font-size:13px;font-weight:800;color:#555;line-height:1.35;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.10);border-radius:12px;padding:6px 10px;}
   .time-lock-note{text-align:center;font-size:12px;font-weight:700;color:#9A2D33;min-height:16px;line-height:1.25;}
+  .daily-account-note{text-align:center;font-size:12px;font-weight:800;color:#9A2D33;line-height:1.3;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);border-radius:12px;padding:7px 9px;}
+  .daily-account-note[hidden]{display:none!important;}
   .invite-color-box{padding:13px 16px;display:flex;flex-direction:column;gap:10px;}
   .invite-color-box[hidden]{display:none!important;}
   .invite-color-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
@@ -239,6 +247,21 @@
   .info-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
   .info-actions button{border-radius:12px;min-height:38px;}
 
+  .daily-games-modal{width:680px;max-width:100%;max-height:88vh;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);display:flex;flex-direction:column;}
+  .daily-games-modal h3{margin:0 0 6px;font-size:22px;color:#222;}
+  .daily-games-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
+  .daily-games-list{display:flex;flex-direction:column;gap:9px;overflow:auto;min-height:80px;max-height:58vh;padding:2px 4px 2px 0;}
+  .daily-game-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:11px 12px;}
+  .daily-game-card.my-turn{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.22);box-shadow:inset 0 0 0 1px rgba(132,63,70,.08);}
+  .daily-game-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;}
+  .daily-game-status{font-size:13px;font-weight:900;color:#843f46;margin-top:3px;}
+  .daily-game-meta{font-size:12px;font-weight:800;color:#666;margin-top:4px;line-height:1.35;}
+  .daily-game-open-btn{border-radius:12px;min-height:38px;padding:8px 12px;white-space:nowrap;}
+  .daily-games-empty{font-size:14px;font-weight:800;color:#666;text-align:center;line-height:1.4;padding:22px 10px;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.08);}
+  .daily-games-status{min-height:18px;font-size:13px;font-weight:800;color:#666;margin-top:8px;}
+  .daily-games-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .daily-games-actions button{border-radius:12px;min-height:38px;}
+
 
 
   .site-footnote{
@@ -259,7 +282,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button{width:100%}.member-result-actions{justify-content:stretch}}
 </style>
 </head>
 <body>
@@ -289,6 +312,7 @@
           <button id="newGameBtn" class="button-flat name-action-btn" type="button">Neue Partie</button>
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
+          <button id="dailyGamesOpenBtn" class="button-flat name-action-btn" type="button">Meine Partien</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
         </div>
       </div>
@@ -313,45 +337,50 @@
           <p>Wenn <strong>Freestyle</strong> aktiv ist, erzeugt <strong>„🎲 Freestyle-Stellung würfeln“</strong> eine neue gültige Grundstellung. Diese Stellung wird beim Erstellen des Einladungsraums gespeichert und an beide Spieler synchronisiert.</p>
 
           <h4>5. Bedenkzeit wählen</h4>
-          <p>Vor der Einladung sollte die Bedenkzeit eingestellt werden. In der rechten Spalte findest du <strong>Classic</strong>, <strong>Rapid</strong> und <strong>Blitz</strong>. Nach dem Start der Partie kann die Bedenkzeit nicht mehr geändert werden.</p>
+          <p>Vor der Einladung sollte die Bedenkzeit eingestellt werden. Unter <strong>Live-Partie</strong> findest du <strong>Classic</strong>, <strong>Rapid</strong> und <strong>Blitz</strong>. Nach dem Start der Partie kann die Bedenkzeit nicht mehr geändert werden.</p>
 
-          <h4>6. Zur Partie einladen</h4>
+          <h4>6. Daily Chess</h4>
+          <p>Bei <strong>Daily Chess</strong> wählst du eine Zugfrist von <strong>1, 3 oder 7 Tagen pro Zug</strong>. Nach jedem ausgeführten Zug erhält der Gegner wieder die vollständige Frist. Die Frist läuft serverseitig weiter, auch wenn beide Browser geschlossen sind.</p>
+          <p>Daily Chess ist nur für registrierte und eingeloggte Mitglieder verfügbar. Dadurch kann ein Spieler seinen Platz später mit demselben Account wieder übernehmen.</p>
+          <p>Über <strong>„Meine Partien“</strong> findest du deine laufenden Daily-Partien. Dort siehst du, ob du am Zug bist, wann die Zugfrist endet und kannst die Partie direkt wieder öffnen.</p>
+
+          <h4>7. Zur Partie einladen</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link kopieren, einen Einladungstext kopieren, ein Mitglied suchen oder die Mitgliederliste öffnen.</p>
           <p>Die vorbereitete E-Mail wird nicht automatisch versendet. Dein Mailprogramm öffnet sich, damit du die Nachricht prüfen und selbst absenden kannst.</p>
 
-          <h4>7. Partie starten</h4>
+          <h4>8. Partie starten</h4>
           <p>Wenn beide Spieler im Raum sind und eine Bedenkzeit gewählt wurde, kann Weiß die Partie über <strong>„Partie starten“</strong> starten. Danach laufen die Uhren und die Züge werden online synchronisiert.</p>
 
-          <h4>8. Spielen</h4>
+          <h4>9. Spielen</h4>
           <p>Figuren werden durch Anklicken bewegt. Illegale Züge werden blockiert. Das Brett zeigt mögliche Zielfelder an. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
           <p>Im Freestyle-Modus kann die Rochade je nach Startstellung ungewohnt aussehen. Nach der Rochade stehen König und Turm auf den üblichen Zielfeldern: bei kurzer Rochade König auf der g-Linie und Turm auf der f-Linie, bei langer Rochade König auf der c-Linie und Turm auf der d-Linie.</p>
 
-          <h4>9. Rechte Spalte im Spielraum</h4>
+          <h4>10. Rechte Spalte im Spielraum</h4>
           <ul>
             <li><strong>Spieler &amp; Zeit:</strong> zeigt beide Spieler und die Uhren.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge. Nach der Partie kann die PGN als Datei heruntergeladen werden.</li>
             <li><strong>Chat:</strong> Nachrichten im aktuellen Online-Raum. Neue Nachrichten werden am Chat-Reiter markiert, wenn der Chat nicht geöffnet ist.</li>
           </ul>
 
-          <h4>10. Partieaktionen</h4>
+          <h4>11. Partieaktionen</h4>
           <p>Während einer laufenden Online-Partie erscheinen unter dem Brett die Schaltflächen <strong>„½ Remis anbieten“</strong> und <strong>„🏳️ Aufgeben“</strong>.</p>
 
-          <h4>11. Automatische Partieenden</h4>
+          <h4>12. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial.</p>
 
-          <h4>12. Brett und Darstellung</h4>
+          <h4>13. Brett und Darstellung</h4>
           <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
 
-          <h4>13. PGN-Datei und Freestyle-Startstellung</h4>
+          <h4>14. PGN-Datei und Freestyle-Startstellung</h4>
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Bei Freestyle-Partien enthält die PGN zusätzlich die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
-          <h4>14. Neue Partie</h4>
+          <h4>15. Neue Partie</h4>
           <p>Über <strong>„Neue Partie“</strong> öffnest du einen frischen Tab ohne bestehenden Raum. Für eine neue Online-Partie wird ein neuer Raum bzw. Einladungslink erstellt.</p>
 
-          <h4>15. Verbindung</h4>
+          <h4>16. Verbindung</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Zustand wieder zu synchronisieren. Oft hilft es, den Einladungslink erneut zu öffnen oder die Seite neu zu laden.</p>
 
-          <h4>16. Admin-Funktion</h4>
+          <h4>17. Admin-Funktion</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Diese Funktion ist nur für den Administrator nutzbar.</p>
         </div>
         <div class="info-actions">
@@ -417,6 +446,19 @@
           <button id="authCancelBtn" class="button-flat" type="button">Schließen</button>
           <button id="authLogoutBtn" class="button-flat" type="button" hidden>Logout</button>
           <button id="authSubmitBtn" type="button">Einloggen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dailyGamesBackdrop" class="identity-backdrop" hidden>
+      <div class="daily-games-modal" role="dialog" aria-modal="true" aria-labelledby="dailyGamesTitle">
+        <h3 id="dailyGamesTitle">Meine Daily-Partien</h3>
+        <p class="daily-games-intro">Laufende Daily-Partien deines Accounts. Partien, in denen du am Zug bist, werden hervorgehoben.</p>
+        <div id="dailyGamesList" class="daily-games-list" aria-live="polite"><div class="daily-games-empty">Noch keine Partien geladen.</div></div>
+        <div id="dailyGamesStatus" class="daily-games-status" aria-live="polite"></div>
+        <div class="daily-games-actions">
+          <button id="dailyGamesRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
+          <button id="dailyGamesCloseBtn" type="button">Schließen</button>
         </div>
       </div>
     </div>
@@ -513,7 +555,11 @@
 
             <div id="timeSetupBox" class="time-setup-box player-time-setup">
               <div class="clock-title">Bedenkzeit wählen</div>
-              <div class="time-selectors" aria-label="Bedenkzeit wählen">
+              <div class="time-kind-options" aria-label="Art der Bedenkzeit wählen">
+                <button id="timeKindLiveBtn" class="time-kind-option active" type="button">Live-Partie</button>
+                <button id="timeKindDailyBtn" class="time-kind-option" type="button">Daily Chess</button>
+              </div>
+              <div id="liveTimeSelectors" class="time-selectors" aria-label="Live-Bedenkzeit wählen">
                 <select id="classicTimeSelect" class="time-control-select" data-category="classic" aria-label="Classic Bedenkzeit" title="Classic: Grundzeit in Minuten + Inkrement pro Zug in Sekunden">
                   <option value="" disabled selected>Classic</option>
                   <option value="3600+30" data-time-label="Classic · 60 Min + 30 Sek/Zug">60 Min + 30 Sek/Zug</option>
@@ -535,6 +581,15 @@
                   <option value="600+0" data-time-label="Blitz · 10 Min ohne Inkrement">10 Min · ohne Inkrement</option>
                 </select>
               </div>
+              <div id="dailyTimeSelectors" class="time-selectors daily-time-selectors" aria-label="Daily-Chess-Zugfrist wählen" hidden>
+                <select id="dailyTimeSelect" class="time-control-select" data-category="daily" aria-label="Daily Chess Zugfrist" title="Daily Chess: Nach jedem Zug erhält der Gegner die vollständige Zugfrist">
+                  <option value="" disabled selected>Daily Chess</option>
+                  <option value="86400+0" data-time-label="Daily Chess · 1 Tag pro Zug">1 Tag pro Zug</option>
+                  <option value="259200+0" data-time-label="Daily Chess · 3 Tage pro Zug">3 Tage pro Zug</option>
+                  <option value="604800+0" data-time-label="Daily Chess · 7 Tage pro Zug">7 Tage pro Zug</option>
+                </select>
+              </div>
+              <div id="dailyAccountNote" class="daily-account-note" hidden>Daily Chess ist nur für registrierte und eingeloggte Mitglieder verfügbar.</div>
               <div id="timeStatus" class="time-status" hidden>Keine Bedenkzeit aktiv</div>
               <div id="timeLockNote" class="time-lock-note" hidden></div>
             </div>
@@ -1602,11 +1657,13 @@ let onlineLastMoveMessageId = null;
 let onlineClockSync = null;
 let onlineSeatClaimSent = false;
 let onlineReconnectSuppressed = false;
+let onlineDailyLoginPrompted = false;
 
 const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
+const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
@@ -1650,6 +1707,11 @@ const onlineGameStateEl = document.getElementById('onlineGameState');
 const onlineHintEl = document.getElementById('onlineHint');
 const whitePlayerNameEl = document.getElementById('whitePlayerName');
 const blackPlayerNameEl = document.getElementById('blackPlayerName');
+const dailyGamesBackdrop = document.getElementById('dailyGamesBackdrop');
+const dailyGamesListEl = document.getElementById('dailyGamesList');
+const dailyGamesStatusEl = document.getElementById('dailyGamesStatus');
+const dailyGamesRefreshBtn = document.getElementById('dailyGamesRefreshBtn');
+const dailyGamesCloseBtn = document.getElementById('dailyGamesCloseBtn');
 
 const inviteBackdrop = document.getElementById('inviteBackdrop');
 const inviteLinkInput = document.getElementById('inviteLinkInput');
@@ -1890,6 +1952,9 @@ function saveAuthState(token, user){
   }
   updateAuthUi();
   updateOnlineUi();
+  setTimeout(() => {
+    try{ updateTimeControlsLock(); updateTimePickerUi(); } catch(_){}
+  }, 0);
   if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
 }
 async function authApi(path, options){
@@ -1925,6 +1990,10 @@ function updateAuthUi(){
     authOpenBtn.textContent = loggedIn ? ('Account: ' + accountName) : 'Registrierung / Login';
     authOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — klicken für Account/Logout' : 'Registrierung oder Login öffnen';
   }
+  if(dailyGamesOpenBtn){
+    dailyGamesOpenBtn.disabled = false;
+    dailyGamesOpenBtn.title = loggedIn ? 'Laufende Daily-Partien anzeigen.' : 'Für „Meine Partien“ bitte einloggen.';
+  }
   if(authIntro){
     authIntro.textContent = loggedIn ? 'Dein Accountname wird in Online-Partien automatisch verwendet.' : 'Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.';
   }
@@ -1944,6 +2013,13 @@ function updateAuthUi(){
 function applyLoggedInUserToOnlineRoom(){
   if(!onlineAuthUser) return;
   onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName;
+  if(onlineRoomId && onlineRoleCode === 'spectator'){
+    const roomId = onlineRoomId;
+    onlineLastMessage = 'Account erkannt. Spielerplatz wird erneut geprüft.';
+    closeOnlineSocket();
+    connectOnlineRoom(roomId, {reconnect:true});
+    return;
+  }
   if(onlineRoomId && onlineConnected){
     sendOnlineMessage({type:'set_player_name', displayName: onlineDisplayName, authToken: onlineAuthToken});
     onlineLastMessage = 'Accountname wurde für die Lobby übernommen.';
@@ -2010,6 +2086,95 @@ if(authBackdrop) authBackdrop.addEventListener('click', ev => { if(ev.target ===
   if(input) input.addEventListener('keydown', ev => { if(ev.key === 'Enter') submitAuthDialog(); });
 });
 
+function formatDailyGameDeadline(value){
+  if(!value) return '';
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return '';
+  try{
+    return date.toLocaleString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  } catch(_){ return ''; }
+}
+function formatDailyListRemaining(value){
+  if(!value) return '';
+  const deadline = new Date(value).getTime();
+  if(!Number.isFinite(deadline)) return '';
+  return formatDailyRemaining(Math.max(0, deadline - Date.now()));
+}
+function renderDailyGames(games){
+  if(!dailyGamesListEl) return;
+  dailyGamesListEl.innerHTML = '';
+  if(!games || games.length === 0){
+    dailyGamesListEl.innerHTML = '<div class="daily-games-empty">Du hast derzeit keine laufende Daily-Partie.</div>';
+    return;
+  }
+  games.forEach(game => {
+    const card = document.createElement('div');
+    card.className = 'daily-game-card' + (game.isMyTurn ? ' my-turn' : '');
+    const content = document.createElement('div');
+    const title = document.createElement('div');
+    title.className = 'daily-game-title';
+    title.textContent = 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
+    const status = document.createElement('div');
+    status.className = 'daily-game-status';
+    if(!game.started) status.textContent = 'Wartet auf Partiestart';
+    else if(game.isMyTurn) status.textContent = 'Du bist am Zug' + (game.deadlineAt ? ' · noch ' + formatDailyListRemaining(game.deadlineAt) : '');
+    else status.textContent = 'Gegner ist am Zug';
+    const meta = document.createElement('div');
+    meta.className = 'daily-game-meta';
+    const variant = game.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle' : 'Klassisch';
+    const deadline = game.deadlineAt ? (' · Zugfrist: ' + formatDailyGameDeadline(game.deadlineAt)) : '';
+    meta.textContent = (game.timeLabel || 'Daily Chess') + ' · ' + variant + deadline;
+    content.appendChild(title);
+    content.appendChild(status);
+    content.appendChild(meta);
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'daily-game-open-btn';
+    openBtn.textContent = 'Partie öffnen';
+    openBtn.addEventListener('click', () => {
+      try{
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', String(game.roomId || ''));
+        window.open(url.toString(), '_blank', 'noopener,noreferrer');
+      } catch(_){ statusEl.textContent = 'Partielink konnte nicht geöffnet werden.'; }
+    });
+    card.appendChild(content);
+    card.appendChild(openBtn);
+    dailyGamesListEl.appendChild(card);
+  });
+}
+async function loadDailyGames(){
+  if(!onlineAuthToken || !onlineAuthUser){
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Bitte zuerst einloggen.';
+    openAuthDialog('login');
+    return;
+  }
+  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Partien werden geladen...';
+  if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = true;
+  try{
+    const data = await authApi('/api/daily-games');
+    renderDailyGames(data.games || []);
+    const count = (data.games || []).length;
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = count + ' laufende Daily-Partie' + (count === 1 ? '' : 'n') + '.';
+  } catch(err){
+    renderDailyGames([]);
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Daily-Partien konnten nicht geladen werden.';
+  } finally {
+    if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = false;
+  }
+}
+function openDailyGamesDialog(){
+  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
+  if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
+  loadDailyGames();
+}
+function closeDailyGamesDialog(){ if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = true; }
+if(dailyGamesOpenBtn) dailyGamesOpenBtn.addEventListener('click', openDailyGamesDialog);
+if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDailyGames);
+if(dailyGamesCloseBtn) dailyGamesCloseBtn.addEventListener('click', closeDailyGamesDialog);
+if(dailyGamesBackdrop) dailyGamesBackdrop.addEventListener('click', ev => { if(ev.target === dailyGamesBackdrop) closeDailyGamesDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && dailyGamesBackdrop && !dailyGamesBackdrop.hidden) closeDailyGamesDialog(); });
+
 function openInfoDialog(){
   if(!infoBackdrop) return;
   infoBackdrop.hidden = false;
@@ -2048,7 +2213,7 @@ function applyOnlineOrientationForRole(role){
   return true;
 }
 function sameTimeControl(a,b){
-  return !!(a && b && a.key === b.key && String(a.category || '') === String(b.category || ''));
+  return !!(a && b && a.key === b.key && String(a.category || '') === String(b.category || '') && String(a.mode || 'live') === String(b.mode || 'live'));
 }
 function seatStorageKey(roomId){
   return ONLINE_SEAT_STORAGE_PREFIX + cleanRoomId(roomId || '');
@@ -2362,8 +2527,15 @@ function buildInvitationText(member){
   const recipientName = member && member.username ? cleanDisplayName(member.username) : '';
   const senderName = onlineAuthUser && onlineAuthUser.username ? cleanDisplayName(onlineAuthUser.username) : cleanDisplayName(onlineDisplayName || 'Gast');
   const greeting = recipientName ? ('Hallo ' + recipientName + ',') : 'Hallo,';
+  const timeControl = onlineRoomTimeControl || currentTimeControlPayload();
+  const setup = onlineRoomGameSetup || currentGameSetupPayload();
+  const details = [];
+  if(setup) details.push('Spielmodus: ' + (setup.variant === GAME_VARIANT_FREESTYLE ? ('Freestyle · Stellung #' + setup.positionId) : 'Klassisch'));
+  if(timeControl && timeControl.label) details.push('Bedenkzeit: ' + timeControl.label);
+  if(timeControl && timeControl.mode === 'daily') details.push('Hinweis: Daily Chess erfordert auf beiden Seiten einen registrierten und eingeloggten Account.');
+  const detailText = details.length ? ('\n\n' + details.join('\n')) : '';
   return greeting + '\n\n' +
-    'du wurdest von ' + (senderName || 'Gast') + ' zu einer Schachpartie auf Hammerschach eingeladen.\n\n' +
+    'du wurdest von ' + (senderName || 'Gast') + ' zu einer Schachpartie auf Hammerschach eingeladen.' + detailText + '\n\n' +
     'Klicke einfach auf folgenden Link:\n\n' +
     link + '\n\n' +
     'Viele Grüße\n' +
@@ -2591,10 +2763,15 @@ function normalizeIncomingTimeControl(candidate){
     baseSeconds = parts[0] || 0;
     incrementSeconds = parts[1] || 0;
   }
+  const category = candidate.category || candidate.timeCategory || candidate.time_category || '';
+  const requestedMode = String(candidate.mode || candidate.clockMode || candidate.clock_mode || '').toLowerCase();
+  const mode = requestedMode === 'daily' || category === 'daily' ? 'daily' : 'live';
   return {
     key: normalizedKey,
-    category: candidate.category || candidate.timeCategory || candidate.time_category || '',
+    category,
+    mode,
     label: candidate.label || candidate.timeLabel || candidate.time_label || '',
+    daysPerMove: mode === 'daily' ? Math.max(1, Math.floor(Number(candidate.daysPerMove ?? candidate.days_per_move ?? (baseSeconds / 86400)) || 1)) : 0,
     baseSeconds: Math.floor(baseSeconds || 0),
     incrementSeconds: Math.floor(incrementSeconds || 0),
     updatedByRole: candidate.updatedByRole || candidate.updated_by_role || candidate.byRole || ''
@@ -2753,6 +2930,9 @@ function normalizeIncomingClock(candidate){
     timeLost: !!(candidate.timeLost || candidate.time_lost || candidate.flagged),
     loser: candidate.loser || '',
     winner: candidate.winner || '',
+    deadlineAt: Number(candidate.deadlineAt ?? candidate.deadline_at ?? 0) || null,
+    mode: String(candidate.mode || candidate.clockMode || candidate.clock_mode || ''),
+    daysPerMove: Math.max(0, Math.floor(Number(candidate.daysPerMove ?? candidate.days_per_move ?? 0) || 0)),
     serverNow,
     syncedAtClient: Date.now()
   };
@@ -2955,6 +3135,7 @@ function connectOnlineRoom(roomId, opts){
   onlineClockSync = null;
   onlineSeatClaimSent = false;
   onlineReconnectSuppressed = false;
+  if(!opts.reconnect) onlineDailyLoginPrompted = false;
   onlineLastMessage = 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
@@ -3023,6 +3204,10 @@ function connectOnlineRoom(roomId, opts){
       if(String(msg.code || '').indexOf('CHAT_') === 0) setChatStatus(msg.message || 'Chat-Fehler.', true);
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
       updateOnlineUi();
+      if(statusEl){
+        statusEl.textContent = onlineLastMessage;
+        setTimeout(refreshHeaderStatusFromState, 3200);
+      }
       return;
     }
 
@@ -3119,7 +3304,8 @@ function connectOnlineRoom(roomId, opts){
     onlineConnected = true;
     onlineConnectionState = 'connected';
 
-    if(appliedMoveCount || appliedSingleMove) onlineLastMessage = 'Online-Zug wurde übernommen.';
+    if(msg.type === 'hello' && msg.seatDenied && msg.message) onlineLastMessage = msg.message;
+    else if(appliedMoveCount || appliedSingleMove) onlineLastMessage = 'Online-Zug wurde übernommen.';
     else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
     else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
@@ -3145,6 +3331,10 @@ function connectOnlineRoom(roomId, opts){
     }
     if(orientationChanged) renderBoard();
     updateOnlineUi();
+    if(msg.type === 'hello' && msg.seatCode === 'DAILY_ACCOUNT_REQUIRED' && !onlineAuthUser){
+      if(statusEl) statusEl.textContent = msg.message || 'Daily Chess erfordert einen Login.';
+      setTimeout(() => openAuthDialog('login'), 120);
+    }
   });
   onlineSocket.addEventListener('close', event => {
     onlineConnected = false;
@@ -3203,6 +3393,7 @@ function currentTimeControlPayload(){
   return {
     key: activeTimeKey,
     category: activeTimeCategory,
+    mode: activeTimeCategory === 'daily' ? 'daily' : 'live',
     label: activeTimeLabel,
     baseSeconds: Math.floor(baseTimeMs / 1000),
     incrementSeconds: Math.floor(incrementMs / 1000)
@@ -3261,6 +3452,12 @@ function applyTimeControlFromOnline(timeControl){
     } catch(_){}
   } finally {
     applyingRemoteTimeControl = false;
+  }
+
+  if(timeControl.mode === 'daily' && !onlineAuthUser && !onlineDailyLoginPrompted){
+    onlineDailyLoginPrompted = true;
+    if(statusEl) statusEl.textContent = 'Daily Chess erfordert einen registrierten und eingeloggten Account.';
+    setTimeout(() => openAuthDialog('login'), 120);
   }
 
   if(mayResetClock || changed && !onlineGameStarted && masterHistory.length === 0){
@@ -3387,6 +3584,11 @@ function onlineInteractionBlockReason(gameState){
 async function createNewOnlineRoom(opts){
   opts = opts || {};
   if(isOnlineGameLiveForUi()) return false;
+  if(isDailyTimeControl() && !onlineAuthUser){
+    statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
+    openAuthDialog('login');
+    return false;
+  }
   if(!(await ensureDisplayNameForOnline())) return false;
   const selectedGameSetupForRoom = currentGameSetupPayload();
   closeOnlineSocket();
@@ -3788,7 +3990,7 @@ function pgnPlayerNameForRole(role){
   return role === 'w' ? 'Weiß' : 'Schwarz';
 }
 function pgnTimeControlTag(){
-  if(!timeMode || !baseTimeMs) return '-';
+  if(!timeMode || !baseTimeMs || isDailyTimeControl()) return '-';
   return Math.floor(baseTimeMs / 1000) + '+' + Math.floor(incrementMs / 1000);
 }
 function pgnResultFromState(go){
@@ -3826,6 +4028,10 @@ function buildPgn(){
     ['Result', result],
     ['TimeControl', pgnTimeControlTag()]
   ];
+  if(isDailyTimeControl()){
+    tags.push(['HammerschachMode', 'Daily']);
+    tags.push(['HammerschachDaysPerMove', String(Math.max(1, Math.round(baseTimeMs / 86400000)))]);
+  }
   if(setup.variant === GAME_VARIANT_FREESTYLE){
     tags.push(['Variant', 'Chess960']);
     tags.push(['SetUp', '1']);
@@ -3994,12 +4200,19 @@ const clockCardB = document.getElementById('clockCardB');
 const timeStatusEl = document.getElementById('timeStatus');
 const timeLockNoteEl = document.getElementById('timeLockNote');
 const timeSelects = document.querySelectorAll('.time-control-select');
+const timeKindLiveBtn = document.getElementById('timeKindLiveBtn');
+const timeKindDailyBtn = document.getElementById('timeKindDailyBtn');
+const liveTimeSelectorsEl = document.getElementById('liveTimeSelectors');
+const dailyTimeSelectorsEl = document.getElementById('dailyTimeSelectors');
+const dailyAccountNoteEl = document.getElementById('dailyAccountNote');
+let timePickerMode = 'live';
 try{
   const savedTimeKey = localStorage.getItem(TIME_STORAGE_KEY);
   const savedTimeCategory = localStorage.getItem(TIME_CATEGORY_STORAGE_KEY) || '';
   if(savedTimeKey && getTimeOption(savedTimeKey, savedTimeCategory)){
     activeTimeKey = savedTimeKey;
     activeTimeCategory = savedTimeCategory;
+    timePickerMode = savedTimeCategory === 'daily' ? 'daily' : 'live';
   }
 } catch(_){}
 function formatTime(ms){
@@ -4010,6 +4223,28 @@ function formatTime(ms){
   const s = total % 60;
   if(h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+function isDailyTimeControl(){
+  return activeTimeCategory === 'daily' || !!(onlineRoomTimeControl && onlineRoomTimeControl.mode === 'daily');
+}
+function formatDailyRemaining(ms){
+  if(ms < 0) ms = 0;
+  const totalMinutes = Math.ceil(ms / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if(days > 0) return days + ' T ' + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0');
+  if(hours > 0) return hours + ' Std ' + String(minutes).padStart(2,'0') + ' Min';
+  return Math.max(0, minutes) + ' Min';
+}
+function formatDailyDeadline(value){
+  const timestamp = Number(value || 0);
+  if(!timestamp) return '';
+  try{
+    return new Date(timestamp).toLocaleString('de-DE', {
+      weekday:'short', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+  } catch(_){ return ''; }
 }
 function getDisplayClocks(gameState){
   const g = gameState || buildGameFromHistory(viewIndex);
@@ -4026,9 +4261,18 @@ function getDisplayClocks(gameState){
 function updateClockDisplay(gameState){
   const g = gameState || buildGameFromHistory(viewIndex);
   const shown = getDisplayClocks(g);
-  clockWEl.textContent = timeMode ? formatTime(shown.w) : '--:--';
-  clockBEl.textContent = timeMode ? formatTime(shown.b) : '--:--';
   const activeSide = onlineClockSync && onlineClockSync.running ? (onlineClockSync.active || g.turn) : g.turn;
+  const daily = isDailyTimeControl();
+  if(timeMode && daily){
+    clockWEl.textContent = activeSide === 'w' ? formatDailyRemaining(shown.w) : 'Wartet';
+    clockBEl.textContent = activeSide === 'b' ? formatDailyRemaining(shown.b) : 'Wartet';
+  } else {
+    clockWEl.textContent = timeMode ? formatTime(shown.w) : '--:--';
+    clockBEl.textContent = timeMode ? formatTime(shown.b) : '--:--';
+  }
+  const deadlineText = daily && onlineClockSync ? formatDailyDeadline(onlineClockSync.deadlineAt) : '';
+  clockWEl.title = deadlineText && activeSide === 'w' ? ('Zugfrist: ' + deadlineText) : '';
+  clockBEl.title = deadlineText && activeSide === 'b' ? ('Zugfrist: ' + deadlineText) : '';
   clockCardW.classList.toggle('active', timeMode && activeSide === 'w' && clockRunning && viewIndex === masterHistory.length);
   clockCardB.classList.toggle('active', timeMode && activeSide === 'b' && clockRunning && viewIndex === masterHistory.length);
   updateTimeControlsLock();
@@ -4087,8 +4331,9 @@ function afterMoveClock(movedSide){
   if(!timeMode || timeLost) return;
   if(onlineRoomId && onlineClockSync){
     const shown = getDisplayClocks(buildGameFromHistory(masterHistory.length));
-    shown[movedSide] = Math.max(0, shown[movedSide]) + incrementMs;
     const nextSide = movedSide === 'w' ? 'b' : 'w';
+    if(isDailyTimeControl()) shown[nextSide] = baseTimeMs;
+    else shown[movedSide] = Math.max(0, shown[movedSide]) + incrementMs;
     clocks = {w: shown.w, b: shown.b};
     onlineClockSync = {
       wMs: clocks.w,
@@ -4098,6 +4343,7 @@ function afterMoveClock(movedSide){
       timeLost: false,
       loser: '',
       winner: '',
+      deadlineAt: isDailyTimeControl() ? Date.now() + baseTimeMs : null,
       serverNow: Date.now(),
       syncedAtClient: Date.now()
     };
@@ -4105,7 +4351,8 @@ function afterMoveClock(movedSide){
     startClock();
     return;
   }
-  clocks[movedSide] += incrementMs;
+  if(isDailyTimeControl()) clocks[movedSide === 'w' ? 'b' : 'w'] = baseTimeMs;
+  else clocks[movedSide] += incrementMs;
   if(!firstMoveDone){ firstMoveDone = true; }
   startClock();
 }
@@ -4132,23 +4379,52 @@ function isTimeControlLocked(){
   return false;
 }
 function updateTimeStatus(){
+  if(timeStatusEl) timeStatusEl.hidden = false;
   if(timeMode){
-    const incText = incrementMs ? Math.floor(incrementMs/1000) + ' Sek/Zug' : 'ohne Inkrement';
-    timeStatusEl.textContent = 'Gewählt: ' + activeTimeLabel + ' · Start: ' + formatTime(baseTimeMs) + ' · ' + incText;
+    if(isDailyTimeControl()){
+      const days = Math.round(baseTimeMs / 86400000);
+      timeStatusEl.textContent = 'Gewählt: ' + activeTimeLabel + ' · nach jedem Zug erneut ' + days + (days === 1 ? ' Tag' : ' Tage') + ' Zeit';
+    } else {
+      const incText = incrementMs ? Math.floor(incrementMs/1000) + ' Sek/Zug' : 'ohne Inkrement';
+      timeStatusEl.textContent = 'Gewählt: ' + activeTimeLabel + ' · Start: ' + formatTime(baseTimeMs) + ' · ' + incText;
+    }
   } else {
     timeStatusEl.textContent = 'Keine Bedenkzeit aktiv';
   }
 }
+function updateTimePickerUi(){
+  const dailyView = timePickerMode === 'daily';
+  if(timeKindLiveBtn) timeKindLiveBtn.classList.toggle('active', !dailyView);
+  if(timeKindDailyBtn) timeKindDailyBtn.classList.toggle('active', dailyView);
+  if(liveTimeSelectorsEl) liveTimeSelectorsEl.hidden = dailyView;
+  if(dailyTimeSelectorsEl) dailyTimeSelectorsEl.hidden = !dailyView;
+  if(dailyAccountNoteEl) dailyAccountNoteEl.hidden = !dailyView || !!onlineAuthUser;
+}
+function setTimePickerMode(mode){
+  timePickerMode = mode === 'daily' ? 'daily' : 'live';
+  updateTimePickerUi();
+  updateTimeControlsLock();
+}
 function updateTimeControlsLock(){
   const locked = isTimeControlLocked();
   timeSelects.forEach(select => {
-    select.disabled = locked;
-    select.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    const dailyNeedsLogin = select.dataset.category === 'daily' && !onlineAuthUser;
+    const disabled = locked || dailyNeedsLogin;
+    select.disabled = disabled;
+    select.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    if(select.dataset.category === 'daily'){
+      select.title = dailyNeedsLogin
+        ? 'Bitte zuerst registrieren oder einloggen.'
+        : 'Daily Chess: Nach jedem Zug erhält der Gegner die vollständige Zugfrist.';
+    }
   });
+  if(timeKindLiveBtn) timeKindLiveBtn.disabled = locked;
+  if(timeKindDailyBtn) timeKindDailyBtn.disabled = locked;
   if(timeLockNoteEl){
     timeLockNoteEl.hidden = true;
     timeLockNoteEl.textContent = '';
   }
+  updateTimePickerUi();
   updateTimeSetupVisibility();
   updateOnlineStartButton();
 }
@@ -4163,6 +4439,7 @@ function applyTimeControlFromKey(key, label, category){
   const found = getTimeOption(key, category);
   activeTimeKey = key;
   activeTimeCategory = found ? found.select.dataset.category : '';
+  if(activeTimeCategory) timePickerMode = activeTimeCategory === 'daily' ? 'daily' : 'live';
   const [base, inc] = key.split('+').map(v => parseInt(v,10));
   activeTimeLabel = label || (found ? (found.option.dataset.timeLabel || found.option.textContent.trim()) : 'Keine Bedenkzeit');
   if(!base){
@@ -4188,6 +4465,13 @@ function setTimeControl(key, label, category){
     updateTimeSelectValues();
     return;
   }
+  if(category === 'daily' && !onlineAuthUser){
+    statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
+    openAuthDialog('login');
+    updateTimeControlsLock();
+    updateTimeSelectValues();
+    return;
+  }
   if(!key){ updateTimeSelectValues(); return; }
   applyTimeControlFromKey(key, label, category);
   try{
@@ -4201,6 +4485,8 @@ timeSelects.forEach(select => select.addEventListener('change', () => {
   const option = select.selectedOptions && select.selectedOptions[0];
   setTimeControl(select.value, option ? (option.dataset.timeLabel || option.textContent.trim()) : '', select.dataset.category);
 }));
+if(timeKindLiveBtn) timeKindLiveBtn.addEventListener('click', () => setTimePickerMode('live'));
+if(timeKindDailyBtn) timeKindDailyBtn.addEventListener('click', () => setTimePickerMode('daily'));
 const initialTimeOption = getTimeOption(activeTimeKey, activeTimeCategory);
 applyTimeControlFromKey(activeTimeKey, initialTimeOption?.option?.dataset.timeLabel, activeTimeCategory);
 resetClockForNewGame();
