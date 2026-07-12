@@ -1714,6 +1714,7 @@ const ONLINE_AUTH_TOKEN_STORAGE_KEY = 'hammerschachGamerAuthToken';
 const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
 const ONLINE_INVITE_COLOR_STORAGE_KEY = 'hammerschachGamerInviteColorPreference';
 const ONLINE_SEAT_STORAGE_PREFIX = 'hammerschachGamerSeat:';
+const ONLINE_LAST_ROOM_STORAGE_KEY = 'hammerschachGamerLastActiveRoom';
 let inviteColorPreference = 'w';
 try{ inviteColorPreference = normalizeInviteColorPreference(localStorage.getItem(ONLINE_INVITE_COLOR_STORAGE_KEY) || 'w'); } catch(_){ inviteColorPreference = 'w'; }
 let onlinePreferredRoleForNextConnect = '';
@@ -1751,6 +1752,7 @@ let onlineLastMoveMessageId = null;
 let onlineClockSync = null;
 let onlineSeatClaimSent = false;
 let onlineReconnectSuppressed = false;
+let onlineRoomCreationPromise = null;
 let onlineDailyLoginPrompted = false;
 
 const siteStatsEl = document.getElementById('siteStats');
@@ -2352,12 +2354,25 @@ function sendSeatClaim(){
   } catch(_){ return false; }
 }
 function updateInviteUrlInAddressBar(roomId){
+  roomId = cleanRoomId(roomId);
   if(!roomId) return;
+  try{
+    sessionStorage.setItem(ONLINE_LAST_ROOM_STORAGE_KEY, roomId);
+  } catch(_){}
   try{
     const url = new URL(window.location.href);
     url.searchParams.set('room', roomId);
+    url.searchParams.delete('fresh');
     history.replaceState(null, '', url.toString());
   } catch(_){}
+}
+function getRememberedRoomForReload(){
+  try{
+    const navigation = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    const isReload = navigation ? navigation.type === 'reload' : (performance.navigation && performance.navigation.type === 1);
+    if(!isReload) return '';
+    return cleanRoomId(sessionStorage.getItem(ONLINE_LAST_ROOM_STORAGE_KEY) || '');
+  } catch(_){ return ''; }
 }
 function getInviteUrl(){
   const url = new URL(window.location.href);
@@ -2831,7 +2846,16 @@ function scheduleMemberSearch(){
 }
 async function openInviteDialogForCurrentOrNewRoom(){
   if(isOnlineGameLiveForUi()) return false;
-  if(!onlineRoomId || onlineGameStarted || onlineGameEnded || gameEnded || timeLost){
+  if(!onlineRoomId){
+    let roomFromUrl = '';
+    try{ roomFromUrl = cleanRoomId(new URL(window.location.href).searchParams.get('room')); } catch(_){}
+    if(roomFromUrl){
+      connectOnlineRoom(roomFromUrl, {reconnect:true});
+    } else {
+      const created = await createNewOnlineRoom({copyLink:false});
+      if(!created) return false;
+    }
+  } else if(onlineGameStarted || onlineGameEnded || gameEnded || timeLost){
     const created = await createNewOnlineRoom({copyLink:false});
     if(!created) return false;
   }
@@ -3716,43 +3740,70 @@ function onlineInteractionBlockReason(gameState){
   return '';
 }
 async function createNewOnlineRoom(opts){
-  opts = opts || {};
-  if(isOnlineGameLiveForUi()) return false;
-  if(isDailyTimeControl() && !onlineAuthUser){
-    statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
-    openAuthDialog('login');
-    return false;
+  if(onlineRoomCreationPromise) return onlineRoomCreationPromise;
+  onlineRoomCreationPromise = (async () => {
+    opts = opts || {};
+    if(isOnlineGameLiveForUi()) return false;
+
+    // Ein vorhandener Raum in der Adresszeile wird bei Reload/Wiederaufnahme
+    // niemals durch einen neuen Raum ersetzt.
+    let roomFromUrl = '';
+    try{ roomFromUrl = cleanRoomId(new URL(window.location.href).searchParams.get('room')); } catch(_){}
+    if(!onlineRoomId && roomFromUrl){
+      connectOnlineRoom(roomFromUrl, {reconnect:true});
+      return true;
+    }
+
+    if(isDailyTimeControl() && !onlineAuthUser){
+      statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
+      openAuthDialog('login');
+      return false;
+    }
+    if(!(await ensureDisplayNameForOnline())) return false;
+    const selectedGameSetupForRoom = currentGameSetupPayload();
+    closeOnlineSocket();
+    onlineRoomId = null;
+    onlineRoleCode = 'local';
+    onlineConnected = false;
+    onlineConnectionState = 'local';
+    onlineGameStarted = false;
+    onlineGameEnded = false;
+    onlineGameResult = '*';
+    onlineGameEndReason = null;
+    onlineGameWinner = null;
+    onlineDrawOffer = null;
+    onlineRoomTimeControl = null;
+    onlineRoomGameSetup = null;
+    onlineDesiredGameSetupForNewRoom = selectedGameSetupForRoom;
+    onlinePendingGameSetupMessageId = null;
+    onlineAutoSyncedInitialSetup = false;
+    onlineCanSetTimeControl = false;
+    onlineClockSync = null;
+    onlineSeatClaimSent = false;
+    newGame();
+    const roomId = createRoomId();
+    onlinePreferredRoleForNextConnect = resolveInviteCreatorRole();
+    // URL und Sitzungsmerker werden vor dem WebSocket-Aufbau gesetzt. Ein sofortiger
+    // Browser-Reload kann dadurch denselben Raum wieder aufnehmen.
+    updateInviteUrlInAddressBar(roomId);
+    connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect, initialGameSetup: selectedGameSetupForRoom});
+    if(opts.copyLink !== false) setTimeout(copyInviteLink, 250);
+    return true;
+  })();
+  try{
+    return await onlineRoomCreationPromise;
+  } finally {
+    onlineRoomCreationPromise = null;
   }
-  if(!(await ensureDisplayNameForOnline())) return false;
-  const selectedGameSetupForRoom = currentGameSetupPayload();
-  closeOnlineSocket();
-  onlineRoomId = null;
-  onlineRoleCode = 'local';
-  onlineConnected = false;
-  onlineConnectionState = 'local';
-  onlineGameStarted = false;
-  onlineGameEnded = false;
-  onlineGameResult = '*';
-  onlineGameEndReason = null;
-  onlineGameWinner = null;
-  onlineDrawOffer = null;
-  onlineRoomTimeControl = null;
-  onlineRoomGameSetup = null;
-  onlineDesiredGameSetupForNewRoom = selectedGameSetupForRoom;
-  onlinePendingGameSetupMessageId = null;
-  onlineAutoSyncedInitialSetup = false;
-  onlineCanSetTimeControl = false;
-  onlineClockSync = null;
-  onlineSeatClaimSent = false;
-  newGame();
-  const roomId = createRoomId();
-  onlinePreferredRoleForNextConnect = resolveInviteCreatorRole();
-  connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect, initialGameSetup: selectedGameSetupForRoom});
-  if(opts.copyLink !== false) setTimeout(copyInviteLink, 250);
-  return true;
 }
-async function inviteToOnlineGame(){
-  await openInviteDialogForCurrentOrNewRoom();
+async function inviteToOnlineGame(event){
+  if(event && event.isTrusted === false) return;
+  if(createOnlineBtn) createOnlineBtn.disabled = true;
+  try{
+    await openInviteDialogForCurrentOrNewRoom();
+  } finally {
+    updateOnlineActionButtons();
+  }
 }
 inviteColorButtons.forEach(btn => btn.addEventListener('click', () => setInviteColorPreference(btn.dataset.inviteColor)));
 updateInviteColorUi();
@@ -4243,9 +4294,10 @@ function openNewGameTab(){
     url.searchParams.delete('room');
     url.searchParams.delete('role');
     url.searchParams.delete('player');
+    url.searchParams.set('fresh', '1');
     window.open(url.toString(), '_blank', 'noopener,noreferrer');
   } catch(_){
-    window.open(window.location.pathname || '/', '_blank', 'noopener,noreferrer');
+    window.open((window.location.pathname || '/') + '?fresh=1', '_blank', 'noopener,noreferrer');
   }
 }
 if(newGameBtn) newGameBtn.addEventListener('click', openNewGameTab);
@@ -4634,11 +4686,23 @@ resetClockForNewGame();
 updateVariantUi();
 renderBoard();
 refreshSiteStats(true);
-const initialRoomId = cleanRoomId(new URL(window.location.href).searchParams.get('room'));
+let initialRoomId = '';
+let freshGameRequested = false;
+try{
+  const initialUrl = new URL(window.location.href);
+  initialRoomId = cleanRoomId(initialUrl.searchParams.get('room'));
+  freshGameRequested = initialUrl.searchParams.get('fresh') === '1';
+  if(freshGameRequested){
+    initialUrl.searchParams.delete('fresh');
+    history.replaceState(null, '', initialUrl.toString());
+  }
+} catch(_){}
+if(!initialRoomId && !freshGameRequested) initialRoomId = getRememberedRoomForReload();
 if(initialRoomId){
+  updateInviteUrlInAddressBar(initialRoomId);
   onlinePreferredRoleForNextConnect = '';
   ensureDisplayNameForOnline().then(ok => {
-    if(ok) connectOnlineRoom(initialRoomId);
+    if(ok) connectOnlineRoom(initialRoomId, {reconnect:true});
     else updateOnlineUi();
   });
 } else {
