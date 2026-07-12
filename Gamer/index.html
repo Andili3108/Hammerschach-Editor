@@ -331,7 +331,7 @@
           <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden in den Einladungsraum übernommen und sind nach dem Partiestart gesperrt.</p>
 
           <h4>3. Farbe wählen</h4>
-          <p>Du kannst wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß führt den ersten Zug aus und startet die Partie, sobald beide Spieler im Raum sind.</p>
+          <p>Du kannst wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß führt immer den ersten Zug aus. Bei Live-Partien startet Weiß die Partie manuell; bei Daily Chess beginnt sie automatisch, sobald beide registrierten Spielerplätze angenommen wurden.</p>
 
           <h4>4. Spielmodus wählen</h4>
           <p>Du kannst zwischen <strong>Klassisch</strong> und <strong>Freestyle</strong> wählen. Klassisch verwendet die normale Schach-Startstellung. Freestyle verwendet eine gültige Chess960-Startstellung mit den dazugehörigen Rochade-Regeln.</p>
@@ -347,12 +347,12 @@
 
           <h4>6. So funktioniert Daily Chess</h4>
           <p>Bei Daily Chess erhält immer der Spieler am Zug die vollständige gewählte Zugfrist. Nach seinem Zug beginnt für den Gegner eine neue Frist von <strong>1, 3 oder 7 Tagen</strong>. Nicht verbrauchte Zeit wird nicht angespart und nicht auf den nächsten Zug übertragen.</p>
-          <p>Beim Partiestart beginnt die erste Frist für Weiß. Läuft eine Zugfrist ab, verliert der Spieler am Zug auf Zeit. Die Frist wird serverseitig überwacht und läuft deshalb auch weiter, wenn ein Browser geschlossen oder die Internetverbindung unterbrochen ist.</p>
+          <p>Sobald der zweite registrierte Spieler die Einladung angenommen hat, startet die Daily-Partie automatisch und die erste Frist für Weiß beginnt. Läuft eine Zugfrist ab, verliert der Spieler am Zug auf Zeit. Die Frist wird serverseitig überwacht und läuft deshalb auch weiter, wenn ein Browser geschlossen oder die Internetverbindung unterbrochen ist.</p>
           <p>Nach dem Start müssen die Spieler nicht gleichzeitig online bleiben. Öffne die Partie später erneut, führe deinen Zug aus und schließe die Seite anschließend wieder, wenn du möchtest.</p>
 
-          <h4>7. Daily Chess vorbereiten und starten</h4>
+          <h4>7. Daily Chess vorbereiten und annehmen</h4>
           <p>Der Einladende muss vor der Auswahl von Daily Chess eingeloggt sein. Auch der eingeladene Spieler öffnet den Link und meldet sich mit seinem Account an. Gäste können einem Daily-Raum nur als Zuschauer beitreten.</p>
-          <p>Sobald beide registrierten Spieler ihre Plätze eingenommen haben, startet Weiß die Partie über <strong>„Partie starten“</strong>. Erst danach beginnt die Zugfrist für Weiß.</p>
+          <p>Sobald beide registrierten Spielerplätze angenommen wurden, startet die Partie <strong>automatisch</strong>. Eine zusätzliche Betätigung von <strong>„Partie starten“</strong> ist bei Daily Chess nicht erforderlich. Weiß kann unmittelbar den ersten Zug ausführen; Schwarz darf anschließend offline gehen und später über <strong>„Meine Partien“</strong> zurückkehren.</p>
 
           <h4>8. Meine Daily-Partien</h4>
           <p>Über <strong>„Meine Partien“</strong> öffnest du die Übersicht deiner laufenden Daily-Partien. Dort werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und – soweit die Partie bereits läuft – das Ende der aktuellen Zugfrist angezeigt.</p>
@@ -363,11 +363,10 @@
           <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link oder den vollständigen Einladungstext kopieren. Nach dem Login kannst du außerdem ein registriertes Mitglied suchen oder die Mitgliederliste öffnen.</p>
           <p>Beim Einladen eines Mitglieds öffnet sich dein eigenes Mailprogramm mit einer vorbereiteten Nachricht. Die E-Mail wird nicht automatisch versendet. Für Daily Chess werden auch keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
 
-          <h4>10. Partie starten</h4>
-          <p>Wenn beide Spieler im Raum sind und eine Bedenkzeit gewählt wurde, kann Weiß die Partie über <strong>„Partie starten“</strong> starten.</p>
+          <h4>10. Partiebeginn</h4>
           <ul>
-            <li>Bei einer <strong>Live-Partie</strong> läuft anschließend die Uhr des Spielers am Zug fortlaufend herunter.</li>
-            <li>Bei <strong>Daily Chess</strong> beginnt die serverseitige Zugfrist für Weiß.</li>
+            <li><strong>Live-Partie:</strong> Wenn beide Spieler gleichzeitig verbunden sind, startet Weiß die Partie über <strong>„Partie starten“</strong>. Anschließend läuft die Uhr des Spielers am Zug fortlaufend herunter.</li>
+            <li><strong>Daily Chess:</strong> Die Partie startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden. Gleichzeitig beginnt die serverseitige Zugfrist für Weiß; eine gleichzeitige Online-Verbindung beider Spieler ist nicht nötig.</li>
           </ul>
 
           <h4>11. Spielen</h4>
@@ -1655,6 +1654,7 @@ let onlineRoleCode = 'local';
 let onlineConnected = false;
 let onlineConnectionState = 'local';
 let onlinePlayers = emptyOnlinePlayers();
+let onlineAssignedSeats = {white:false, black:false};
 let onlineLastMessage = 'Keine Online-Partie aktiv.';
 let onlineGameStarted = false;
 let onlineGameStartedAt = null;
@@ -1860,7 +1860,7 @@ function onlineSideText(role){
   const connected = isOnlineSideConnected(role);
   if(role === onlineRoleCode) return name + ' (Du)';
   if(connected) return name;
-  if(name && name !== side) return name + ' (getrennt)';
+  if(name && name !== side) return name + (isDailyTimeControl() ? ' (offline)' : ' (getrennt)');
   return 'Warte auf ' + side;
 }
 let playerNameDialogResolve = null;
@@ -2358,6 +2358,14 @@ function updateGameActionButtons(){
 }
 function updateOnlineStartButton(){
   if(!startOnlineBtn) return;
+  const daily = isDailyTimeControl();
+  startOnlineBtn.hidden = daily;
+  if(daily){
+    startOnlineBtn.disabled = true;
+    startOnlineBtn.textContent = 'Partie startet automatisch';
+    startOnlineBtn.title = 'Daily Chess startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden.';
+    return;
+  }
   if(!onlineRoomId){
     startOnlineBtn.disabled = true;
     startOnlineBtn.textContent = 'Partie starten';
@@ -2393,6 +2401,7 @@ function updateOnlineStartButton(){
 function updateOnlineUi(){
   if(!onlineRoomId){
     onlineCanSetTimeControl = false;
+    onlineAssignedSeats = {white:false, black:false};
     onlineStatusEl.textContent = 'Nicht verbunden';
     onlineRoleEl.textContent = '—';
     onlineRoomEl.textContent = '—';
@@ -2428,6 +2437,9 @@ function updateOnlineUi(){
   } else if(!onlineConnected){
     onlineStatusEl.textContent = 'Verbinde...';
     setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(isDailyTimeControl() && onlineGameStarted){
+    onlineStatusEl.textContent = 'Daily aktiv';
+    setOnlineValueClass(onlineStatusEl, 'good');
   } else if(bothConnected){
     onlineStatusEl.textContent = 'Verbunden';
     setOnlineValueClass(onlineStatusEl, 'good');
@@ -2451,7 +2463,18 @@ function updateOnlineUi(){
   whitePlayerNameEl.textContent = onlineSideText('w');
   blackPlayerNameEl.textContent = onlineSideText('b');
 
-  let syncNote = onlineGameEnded || gameEnded || timeLost ? 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.' : (onlineGameStarted ? 'Partie gestartet. Züge werden synchronisiert und serverseitig geprüft.' : 'Weiß startet die Partie. Die Bedenkzeit wählt Weiß oder der Einladende. Züge werden synchronisiert und serverseitig geprüft.');
+  let syncNote;
+  if(onlineGameEnded || gameEnded || timeLost){
+    syncNote = 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.';
+  } else if(isDailyTimeControl()){
+    syncNote = onlineGameStarted
+      ? 'Daily-Partie läuft. Der Gegner muss nicht gleichzeitig online sein; Züge und Zugfristen werden serverseitig gespeichert.'
+      : 'Daily Chess startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden.';
+  } else {
+    syncNote = onlineGameStarted
+      ? 'Partie gestartet. Züge werden synchronisiert und serverseitig geprüft.'
+      : 'Weiß startet die Partie. Die Bedenkzeit wählt Weiß oder der Einladende. Züge werden synchronisiert und serverseitig geprüft.';
+  }
   if(onlineRoomTimeControl && onlineRoomTimeControl.label){
     syncNote = 'Raum-Bedenkzeit: ' + onlineRoomTimeControl.label + '. ' + syncNote;
   }
@@ -3137,6 +3160,7 @@ function connectOnlineRoom(roomId, opts){
   onlineConnected = false;
   onlineConnectionState = 'connecting';
   onlinePlayers = emptyOnlinePlayers();
+  onlineAssignedSeats = {white:false, black:false};
   onlineGameStarted = false;
   onlineGameStartedAt = null;
   onlineGameEnded = false;
@@ -3259,6 +3283,11 @@ function connectOnlineRoom(roomId, opts){
       onlinePlayers = normalizeOnlinePlayers(players);
       handled = true;
     }
+    if(msg.assigned || (msg.state && msg.state.assigned) || (msg.roomState && msg.roomState.assigned)){
+      const assigned = msg.assigned || (msg.state && msg.state.assigned) || (msg.roomState && msg.roomState.assigned) || {};
+      onlineAssignedSeats = {white:!!assigned.white, black:!!assigned.black};
+      handled = true;
+    }
 
     const incomingGameSetup = extractOnlineGameSetup(msg);
     if(incomingGameSetup){
@@ -3333,7 +3362,7 @@ function connectOnlineRoom(roomId, opts){
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
     else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
     else if(msg.type === 'game_finished' || msg.type === 'resignation') onlineLastMessage = 'Online-Partie beendet.';
-    else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = 'Online-Partie wurde gestartet.';
+    else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
     else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){
       if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
       else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
@@ -3512,7 +3541,7 @@ function applyOnlineGameState(game){
     onlineDrawOffer = null;
     resetClockForNewGame();
     onlineClockSync = null;
-    onlineLastMessage = 'Online-Partie wurde gestartet.';
+    onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
     renderBoard();
   }
   if(onlineGameEnded && !wasEnded){
@@ -3527,6 +3556,11 @@ function applyOnlineGameState(game){
 }
 
 function startOnlineGame(){
+  if(isDailyTimeControl()){
+    statusEl.textContent = 'Daily Chess startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden.';
+    updateOnlineStartButton();
+    return;
+  }
   if(!onlineRoomId || onlineRoleCode !== 'w' || onlineGameStarted || onlinePendingStartMessageId) return;
   if(!timeMode){
     statusEl.textContent = 'Bitte zuerst eine Bedenkzeit auswählen.';
@@ -3597,7 +3631,13 @@ function handleResignButtonClick(){
 function onlineInteractionBlockReason(gameState){
   if(!onlineRoomId) return 'Bitte zuerst eine Online-Partie erstellen oder einem Einladungslink folgen.';
   if(!onlineConnected) return 'Online-Verbindung ist noch nicht bereit.';
-  if(!onlineGameStarted) return onlineRoleCode === 'w' ? 'Online-Partie noch nicht gestartet. Bitte „Partie starten“ verwenden.' : 'Online-Partie noch nicht gestartet. Warte auf Weiß.';
+  if(!onlineGameStarted){
+    if(isDailyTimeControl()){
+      if(!onlineAssignedSeats.black) return 'Daily-Partie noch nicht angenommen. Warte auf den zweiten registrierten Spieler.';
+      return 'Daily-Partie wird automatisch gestartet. Bitte den Raumzustand kurz aktualisieren.';
+    }
+    return onlineRoleCode === 'w' ? 'Online-Partie noch nicht gestartet. Bitte „Partie starten“ verwenden.' : 'Online-Partie noch nicht gestartet. Warte auf Weiß.';
+  }
   if(onlineGameEnded || gameEnded || timeLost) return 'Diese Online-Partie ist beendet. Bitte eine neue Online-Partie erstellen.';
   if(onlineRoleCode === 'spectator') return 'Zuschauer können keine Züge ausführen.';
   if(onlineRoleCode !== 'w' && onlineRoleCode !== 'b') return 'Keine Spielerrolle zugewiesen.';
@@ -3783,10 +3823,17 @@ function updateStatus(g){
       return;
     }
     if(!onlineGameStarted){
-      if(onlineRoleCode === 'w') statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — Partie kann gestartet werden.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
-      else if(onlineRoleCode === 'b') statusEl.textContent = isOnlineSideConnected('w') ? 'Online-Lobby — warte auf Partiestart durch Weiß.' : 'Du spielst Schwarz — warte auf Weiß.';
-      else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
-      else statusEl.textContent = 'Online-Lobby wird verbunden.';
+      if(isDailyTimeControl()){
+        if(onlineRoleCode === 'w') statusEl.textContent = onlineAssignedSeats.black ? 'Daily-Partie angenommen — automatischer Start wird vorbereitet.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Annahme durch Schwarz.' : 'Daily-Partie erstellt — warte auf Annahme durch Schwarz.');
+        else if(onlineRoleCode === 'b') statusEl.textContent = 'Daily-Partie angenommen — sie startet automatisch. Weiß führt den ersten Zug aus.';
+        else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — Daily-Partie wartet auf Annahme.';
+        else statusEl.textContent = 'Daily-Raum wird verbunden.';
+      } else {
+        if(onlineRoleCode === 'w') statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — Partie kann gestartet werden.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
+        else if(onlineRoleCode === 'b') statusEl.textContent = isOnlineSideConnected('w') ? 'Online-Lobby — warte auf Partiestart durch Weiß.' : 'Du spielst Schwarz — warte auf Weiß.';
+        else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
+        else statusEl.textContent = 'Online-Lobby wird verbunden.';
+      }
       return;
     }
     if(onlineRoleCode === 'spectator'){
