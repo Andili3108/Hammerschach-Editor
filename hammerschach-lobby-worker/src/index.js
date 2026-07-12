@@ -313,6 +313,15 @@ async function ensureDailyGamesTable(env) {
   ).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS daily_game_archives (
+       room_id TEXT NOT NULL,
+       user_id TEXT NOT NULL,
+       archived_at TEXT NOT NULL,
+       PRIMARY KEY (room_id, user_id)
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_game_archives_user ON daily_game_archives (user_id, archived_at)`).run();
   dailyGamesTableReady = true;
   return true;
 }
@@ -325,12 +334,22 @@ async function listDailyGames(env, sessionUser) {
             turn, deadline_at, ended, ended_at, result, end_reason
        FROM daily_games
       WHERE (white_user_id = ? OR black_user_id = ?)
-        AND ended = 0
+        AND NOT EXISTS (
+          SELECT 1
+            FROM daily_game_archives archived
+           WHERE archived.room_id = daily_games.room_id
+             AND archived.user_id = ?
+        )
       ORDER BY
-        CASE WHEN turn = CASE WHEN white_user_id = ? THEN 'w' ELSE 'b' END THEN 0 ELSE 1 END,
-        COALESCE(deadline_at, updated_at) ASC
-      LIMIT 100`
-  ).bind(sessionUser.id, sessionUser.id, sessionUser.id).all();
+        ended ASC,
+        CASE
+          WHEN ended = 0 AND turn = CASE WHEN white_user_id = ? THEN 'w' ELSE 'b' END THEN 0
+          ELSE 1
+        END ASC,
+        CASE WHEN ended = 0 THEN COALESCE(deadline_at, updated_at) END ASC,
+        CASE WHEN ended = 1 THEN COALESCE(ended_at, updated_at) END DESC
+      LIMIT 200`
+  ).bind(sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id).all();
 
   return (result && result.results ? result.results : []).map(row => {
     const role = String(row.white_user_id || '') === String(sessionUser.id) ? 'w' : 'b';
@@ -340,7 +359,7 @@ async function listDailyGames(env, sessionUser) {
       role,
       opponentName: role === 'w' ? (row.black_name || 'noch offen') : (row.white_name || 'noch offen'),
       opponentJoined: role === 'w' ? !!row.black_user_id : !!row.white_user_id,
-      pendingInvitation: !row.started && !(role === 'w' ? row.black_user_id : row.white_user_id),
+      pendingInvitation: !row.started && !row.ended && !(role === 'w' ? row.black_user_id : row.white_user_id),
       canDeleteInvitation: !row.started && !row.ended && !(role === 'w' ? row.black_user_id : row.white_user_id),
       timeLabel: row.time_label || ((row.days_per_move || 1) + ' Tag(e) pro Zug'),
       daysPerMove: Math.max(1, Number(row.days_per_move || 1)),
@@ -349,9 +368,10 @@ async function listDailyGames(env, sessionUser) {
       startedAt: row.started_at || null,
       updatedAt: row.updated_at || null,
       turn,
-      isMyTurn: !!row.started && turn === role,
-      deadlineAt: row.deadline_at || null,
+      isMyTurn: !row.ended && !!row.started && turn === role,
+      deadlineAt: row.ended ? null : (row.deadline_at || null),
       ended: !!row.ended,
+      endedAt: row.ended_at || null,
       result: row.result || '*',
       endReason: row.end_reason || null
     };
@@ -483,6 +503,85 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: true, games, serverNow: Date.now() });
     } catch (_) {
       return json({ ok: false, code: 'DAILY_GAMES_UNAVAILABLE', message: 'Daily-Partien konnten nicht aus der Datenbank geladen werden.' }, { status: 500 });
+    }
+  }
+
+  const dailyHistoryDeleteMatch = url.pathname.match(/^\/api\/daily-games\/([^/]+)\/history$/);
+  if (dailyHistoryDeleteMatch && request.method === 'DELETE') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const roomId = cleanRoomId(decodeURIComponent(dailyHistoryDeleteMatch[1]));
+    if (!roomId) return json({ ok: false, code: 'INVALID_ROOM', message: 'Ungültiger Spielraum.' }, { status: 400 });
+    try {
+      if (!(await ensureDailyGamesTable(env))) throw new Error('D1 unavailable');
+      const indexedGame = await env.DB.prepare(
+        `SELECT room_id, ended
+           FROM daily_games
+          WHERE room_id = ?
+            AND (white_user_id = ? OR black_user_id = ?)
+          LIMIT 1`
+      ).bind(roomId, session.user.id, session.user.id).first();
+      if (!indexedGame) return json({ ok: false, code: 'GAME_NOT_FOUND', message: 'Diese Daily-Partie gehört nicht zu deinem Account.' }, { status: 404 });
+      if (!indexedGame.ended) return json({ ok: false, code: 'GAME_NOT_ENDED', message: 'Nur beendete Partien können aus dem Verlauf entfernt werden.' }, { status: 409 });
+      const archivedAt = new Date().toISOString();
+      await env.DB.prepare(
+        `INSERT INTO daily_game_archives (room_id, user_id, archived_at)
+         VALUES (?, ?, ?)
+         ON CONFLICT(room_id, user_id) DO UPDATE SET archived_at = excluded.archived_at`
+      ).bind(roomId, session.user.id, archivedAt).run();
+      return json({ ok:true, roomId, archivedAt });
+    } catch (_) {
+      return json({ ok:false, code:'HISTORY_REMOVE_FAILED', message:'Die Partie konnte nicht aus deinem Verlauf entfernt werden.' }, { status:500 });
+    }
+  }
+
+  const dailyPgnMatch = url.pathname.match(/^\/api\/daily-games\/([^/]+)\/pgn$/);
+  if (dailyPgnMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const roomId = cleanRoomId(decodeURIComponent(dailyPgnMatch[1]));
+    if (!roomId) return json({ ok: false, code: 'INVALID_ROOM', message: 'Ungültiger Spielraum.' }, { status: 400 });
+    if (!env.GAME_ROOM) return json({ ok: false, code: 'ROOM_SERVICE_UNAVAILABLE', message: 'Der Spielraum-Dienst ist nicht verfügbar.' }, { status: 503 });
+
+    try {
+      if (!(await ensureDailyGamesTable(env))) throw new Error('D1 unavailable');
+      const indexedGame = await env.DB.prepare(
+        `SELECT room_id, white_user_id, black_user_id, ended
+           FROM daily_games
+          WHERE room_id = ?
+            AND (white_user_id = ? OR black_user_id = ?)
+          LIMIT 1`
+      ).bind(roomId, session.user.id, session.user.id).first();
+      if (!indexedGame) return json({ ok: false, code: 'GAME_NOT_FOUND', message: 'Diese Daily-Partie gehört nicht zu deinem Account.' }, { status: 404 });
+      if (!indexedGame.ended) return json({ ok: false, code: 'GAME_NOT_ENDED', message: 'Die PGN-Datei steht nach Partieende bereit.' }, { status: 409 });
+
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = env.GAME_ROOM.get(id);
+      const response = await stub.fetch(new Request('https://game-room.internal/daily-pgn?room=' + encodeURIComponent(roomId), {
+        method: 'GET',
+        headers: { 'x-hammerschach-user-id': String(session.user.id || '') }
+      }));
+      if (!response.ok) {
+        let message = 'PGN-Datei konnte nicht erstellt werden.';
+        try {
+          const detail = await response.json();
+          if (detail && detail.message) message = detail.message;
+        } catch (_) {}
+        return json({ ok: false, code: 'PGN_UNAVAILABLE', message }, { status: response.status || 500 });
+      }
+      const pgn = await response.text();
+      const filename = response.headers.get('content-disposition') || ('attachment; filename="Hammerschach-' + safePgnFilePart(roomId) + '.pgn"');
+      return new Response(pgn, {
+        status: 200,
+        headers: {
+          'content-type': 'application/x-chess-pgn; charset=utf-8',
+          'content-disposition': filename,
+          'access-control-allow-origin': '*',
+          'access-control-expose-headers': 'content-disposition'
+        }
+      });
+    } catch (_) {
+      return json({ ok: false, code: 'PGN_UNAVAILABLE', message: 'PGN-Datei konnte nicht erstellt werden.' }, { status: 500 });
     }
   }
 
@@ -1394,6 +1493,95 @@ function finishGameState(game, reason, winner, now = Date.now()) {
   return finished;
 }
 
+function pgnEscapeTagValue(value) {
+  return String(value || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/[\r\n]/g, ' ')
+    .trim();
+}
+
+function pgnDateFromIso(value) {
+  const date = value ? new Date(value) : new Date();
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  return [
+    String(safeDate.getUTCFullYear()).padStart(4, '0'),
+    String(safeDate.getUTCMonth() + 1).padStart(2, '0'),
+    String(safeDate.getUTCDate()).padStart(2, '0')
+  ].join('.');
+}
+
+function fenBoardPartFromServerBoard(board) {
+  return board.map(row => {
+    let out = '';
+    let empty = 0;
+    for (const piece of row) {
+      if (!piece || piece === '.') {
+        empty += 1;
+        continue;
+      }
+      if (empty) {
+        out += String(empty);
+        empty = 0;
+      }
+      out += piece;
+    }
+    if (empty) out += String(empty);
+    return out;
+  }).join('/');
+}
+
+function initialFenForServerSetup(setup) {
+  const game = new ChessGame(setup);
+  return fenBoardPartFromServerBoard(game.board) + ' w KQkq - 0 1';
+}
+
+function pgnMoveTextFromStoredMoves(moves, result) {
+  const parts = [];
+  const safeMoves = Array.isArray(moves) ? moves : [];
+  for (let i = 0; i < safeMoves.length; i += 2) {
+    parts.push((Math.floor(i / 2) + 1) + '.');
+    if (safeMoves[i] && safeMoves[i].san) parts.push(String(safeMoves[i].san));
+    if (safeMoves[i + 1] && safeMoves[i + 1].san) parts.push(String(safeMoves[i + 1].san));
+  }
+  parts.push(result || '*');
+  return parts.join(' ');
+}
+
+function buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, blackName }) {
+  const normalizedSetup = cleanGameSetup(setup || (game && game.gameSetup) || null);
+  const result = game && game.result ? String(game.result) : '*';
+  const tags = [
+    ['Event', 'Hammerschach-Gamer'],
+    ['Site', 'Andili.de'],
+    ['Date', pgnDateFromIso((game && (game.endedAt || game.startedAt)) || null)],
+    ['Round', '-'],
+    ['White', cleanDisplayName(whiteName) || 'Weiß'],
+    ['Black', cleanDisplayName(blackName) || 'Schwarz'],
+    ['Result', result],
+    ['TimeControl', '-'],
+    ['HammerschachMode', 'Daily'],
+    ['HammerschachDaysPerMove', String(Math.max(1, Number(timeControl && timeControl.daysPerMove || 1)))]
+  ];
+  if (normalizedSetup.variant === GAME_VARIANT_FREESTYLE) {
+    tags.push(['Variant', 'Chess960']);
+    tags.push(['SetUp', '1']);
+    tags.push(['FEN', initialFenForServerSetup(normalizedSetup)]);
+    tags.push(['HammerschachPosition', String(normalizedSetup.positionId)]);
+    tags.push(['HammerschachBackRank', normalizedSetup.backRank]);
+  }
+  const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
+  return header + '\n\n' + pgnMoveTextFromStoredMoves(moves, result) + '\n';
+}
+
+function safePgnFilePart(value) {
+  return String(value || '')
+    .replace(/[^A-Za-z0-9_-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 36) || 'Partie';
+}
+
 export class GameRoom {
   constructor(state, env) {
     this.state = state;
@@ -1498,12 +1686,60 @@ export class GameRoom {
     return { ok:true, status:200, roomId, cancelledAt };
   }
 
+  async buildDailyPgnForUser(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
+
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    if (!timeControl || timeControl.mode !== 'daily') {
+      return { ok:false, status:400, code:'NOT_DAILY_GAME', message:'Dieser Raum ist keine Daily-Partie.' };
+    }
+
+    const players = await this.getSecurePlayers();
+    const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+    const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+    if (userId !== whiteUserId && userId !== blackUserId) {
+      return { ok:false, status:403, code:'NOT_A_PLAYER', message:'Diese Daily-Partie gehört nicht zu deinem Account.' };
+    }
+
+    const timed = await this.refreshTimedGameState(Date.now());
+    const game = timed.game || { started:false, ended:false, result:'*' };
+    if (!game.ended) {
+      return { ok:false, status:409, code:'GAME_NOT_ENDED', message:'Die PGN-Datei steht nach Partieende bereit.' };
+    }
+
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const whitePlayerId = playerIdFromSlot(players.white);
+    const blackPlayerId = playerIdFromSlot(players.black);
+    const whiteName = cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
+    const blackName = cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+    const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    const moves = (await this.state.storage.get('moves')) || [];
+    const pgn = buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, blackName });
+    const datePart = pgnDateFromIso(game.endedAt || game.startedAt || null).replace(/\./g, '-');
+    const variantPart = setup.variant === GAME_VARIANT_FREESTYLE ? ('Freestyle-' + setup.positionId) : 'Klassisch';
+    const filename = safePgnFilePart('Hammerschach-' + datePart + '-' + variantPart + '-' + whiteName + '-vs-' + blackName) + '.pgn';
+    return { ok:true, status:200, pgn, filename };
+  }
+
   async fetch(request) {
     const url = new URL(request.url);
     const room = cleanRoomId(url.searchParams.get('room'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
     await this.state.storage.put('roomId', room);
+
+    if (request.method === 'GET' && url.pathname === '/daily-pgn') {
+      const result = await this.buildDailyPgnForUser(request.headers.get('x-hammerschach-user-id') || '');
+      if (!result.ok) return json({ ok:false, code:result.code || 'PGN_UNAVAILABLE', message:result.message || 'PGN-Datei konnte nicht erstellt werden.' }, { status:result.status || 400 });
+      return new Response(result.pgn, {
+        status:200,
+        headers:{
+          'content-type':'application/x-chess-pgn; charset=utf-8',
+          'content-disposition':'attachment; filename="' + result.filename + '"'
+        }
+      });
+    }
 
     if (request.method === 'DELETE' && url.pathname === '/cancel-invitation') {
       const result = await this.cancelDailyInvitation(request.headers.get('x-hammerschach-user-id') || '');
@@ -2774,8 +3010,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
