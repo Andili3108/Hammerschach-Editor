@@ -324,63 +324,86 @@
         <p class="info-modal-intro">Die wichtigsten Funktionen kurz erklärt. Die Anleitung kann gescrollt werden.</p>
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
-          <p>Du kannst mit einem registrierten Account spielen oder als Gast teilnehmen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
+          <p>Live-Partien kannst du mit einem registrierten Account oder als Gast spielen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
+          <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
 
           <h4>2. Vor der Einladung einstellen</h4>
-          <p>In der rechten Spalte stellst du vor dem Erstellen des Spielraums die wichtigsten Partieoptionen ein: Farbe, Spielmodus und Bedenkzeit. Diese Vorbereitung wird in den Einladungsraum übernommen.</p>
+          <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden in den Einladungsraum übernommen und sind nach dem Partiestart gesperrt.</p>
 
           <h4>3. Farbe wählen</h4>
-          <p>Vor dem Erstellen der Einladung kannst du wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß startet die Partie.</p>
+          <p>Du kannst wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß führt den ersten Zug aus und startet die Partie, sobald beide Spieler im Raum sind.</p>
 
           <h4>4. Spielmodus wählen</h4>
-          <p>Du kannst zwischen <strong>Klassisch</strong> und <strong>Freestyle</strong> wählen. Klassisch verwendet die normale Schach-Startstellung. Freestyle verwendet eine zufällige Chess960-Startstellung mit allen dazugehörigen Rochade-Regeln.</p>
-          <p>Wenn <strong>Freestyle</strong> aktiv ist, erzeugt <strong>„🎲 Freestyle-Stellung würfeln“</strong> eine neue gültige Grundstellung. Diese Stellung wird beim Erstellen des Einladungsraums gespeichert und an beide Spieler synchronisiert.</p>
+          <p>Du kannst zwischen <strong>Klassisch</strong> und <strong>Freestyle</strong> wählen. Klassisch verwendet die normale Schach-Startstellung. Freestyle verwendet eine gültige Chess960-Startstellung mit den dazugehörigen Rochade-Regeln.</p>
+          <p>Wenn <strong>Freestyle</strong> aktiv ist, erzeugt <strong>„🎲 Freestyle-Stellung würfeln“</strong> eine neue Stellung. Die gewählte Stellungsnummer wird beim Erstellen des Raums gespeichert und an beide Spieler übertragen. Daily Chess kann sowohl klassisch als auch im Freestyle-Modus gespielt werden.</p>
 
-          <h4>5. Bedenkzeit wählen</h4>
-          <p>Vor der Einladung sollte die Bedenkzeit eingestellt werden. Unter <strong>Live-Partie</strong> findest du <strong>Classic</strong>, <strong>Rapid</strong> und <strong>Blitz</strong>. Nach dem Start der Partie kann die Bedenkzeit nicht mehr geändert werden.</p>
-
-          <h4>6. Daily Chess</h4>
-          <p>Bei <strong>Daily Chess</strong> wählst du eine Zugfrist von <strong>1, 3 oder 7 Tagen pro Zug</strong>. Nach jedem ausgeführten Zug erhält der Gegner wieder die vollständige Frist. Die Frist läuft serverseitig weiter, auch wenn beide Browser geschlossen sind.</p>
-          <p>Daily Chess ist nur für registrierte und eingeloggte Mitglieder verfügbar. Dadurch kann ein Spieler seinen Platz später mit demselben Account wieder übernehmen.</p>
-          <p>Über <strong>„Meine Partien“</strong> findest du deine laufenden Daily-Partien. Dort siehst du, ob du am Zug bist, wann die Zugfrist endet und kannst die Partie direkt wieder öffnen.</p>
-
-          <h4>7. Zur Partie einladen</h4>
-          <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link kopieren, einen Einladungstext kopieren, ein Mitglied suchen oder die Mitgliederliste öffnen.</p>
-          <p>Die vorbereitete E-Mail wird nicht automatisch versendet. Dein Mailprogramm öffnet sich, damit du die Nachricht prüfen und selbst absenden kannst.</p>
-
-          <h4>8. Partie starten</h4>
-          <p>Wenn beide Spieler im Raum sind und eine Bedenkzeit gewählt wurde, kann Weiß die Partie über <strong>„Partie starten“</strong> starten. Danach laufen die Uhren und die Züge werden online synchronisiert.</p>
-
-          <h4>9. Spielen</h4>
-          <p>Figuren werden durch Anklicken bewegt. Illegale Züge werden blockiert. Das Brett zeigt mögliche Zielfelder an. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
-          <p>Im Freestyle-Modus kann die Rochade je nach Startstellung ungewohnt aussehen. Nach der Rochade stehen König und Turm auf den üblichen Zielfeldern: bei kurzer Rochade König auf der g-Linie und Turm auf der f-Linie, bei langer Rochade König auf der c-Linie und Turm auf der d-Linie.</p>
-
-          <h4>10. Rechte Spalte im Spielraum</h4>
+          <h4>5. Bedenkzeit wählen: Live-Partie oder Daily Chess</h4>
+          <p>Unter <strong>„Bedenkzeit wählen“</strong> entscheidest du zuerst zwischen <strong>Live-Partie</strong> und <strong>Daily Chess</strong>.</p>
           <ul>
-            <li><strong>Spieler &amp; Zeit:</strong> zeigt beide Spieler und die Uhren.</li>
-            <li><strong>Zugliste:</strong> zeigt die gespielten Züge. Nach der Partie kann die PGN als Datei heruntergeladen werden.</li>
-            <li><strong>Chat:</strong> Nachrichten im aktuellen Online-Raum. Neue Nachrichten werden am Chat-Reiter markiert, wenn der Chat nicht geöffnet ist.</li>
+            <li><strong>Live-Partie:</strong> Classic, Rapid oder Blitz mit fortlaufender Gesamtbedenkzeit und gegebenenfalls Inkrement pro Zug.</li>
+            <li><strong>Daily Chess:</strong> 1, 3 oder 7 Tage für jeden einzelnen Zug.</li>
+          </ul>
+          <p>Nach dem Partiestart kann die gewählte Zeitart nicht mehr geändert werden.</p>
+
+          <h4>6. So funktioniert Daily Chess</h4>
+          <p>Bei Daily Chess erhält immer der Spieler am Zug die vollständige gewählte Zugfrist. Nach seinem Zug beginnt für den Gegner eine neue Frist von <strong>1, 3 oder 7 Tagen</strong>. Nicht verbrauchte Zeit wird nicht angespart und nicht auf den nächsten Zug übertragen.</p>
+          <p>Beim Partiestart beginnt die erste Frist für Weiß. Läuft eine Zugfrist ab, verliert der Spieler am Zug auf Zeit. Die Frist wird serverseitig überwacht und läuft deshalb auch weiter, wenn ein Browser geschlossen oder die Internetverbindung unterbrochen ist.</p>
+          <p>Nach dem Start müssen die Spieler nicht gleichzeitig online bleiben. Öffne die Partie später erneut, führe deinen Zug aus und schließe die Seite anschließend wieder, wenn du möchtest.</p>
+
+          <h4>7. Daily Chess vorbereiten und starten</h4>
+          <p>Der Einladende muss vor der Auswahl von Daily Chess eingeloggt sein. Auch der eingeladene Spieler öffnet den Link und meldet sich mit seinem Account an. Gäste können einem Daily-Raum nur als Zuschauer beitreten.</p>
+          <p>Sobald beide registrierten Spieler ihre Plätze eingenommen haben, startet Weiß die Partie über <strong>„Partie starten“</strong>. Erst danach beginnt die Zugfrist für Weiß.</p>
+
+          <h4>8. Meine Daily-Partien</h4>
+          <p>Über <strong>„Meine Partien“</strong> öffnest du die Übersicht deiner laufenden Daily-Partien. Dort werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und – soweit die Partie bereits läuft – das Ende der aktuellen Zugfrist angezeigt.</p>
+          <p>Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand der Übersicht.</p>
+          <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz wieder zuordnen. Beendete Daily-Partien werden nicht mehr in der Liste der laufenden Partien angezeigt.</p>
+
+          <h4>9. Zur Partie einladen</h4>
+          <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link oder den vollständigen Einladungstext kopieren. Nach dem Login kannst du außerdem ein registriertes Mitglied suchen oder die Mitgliederliste öffnen.</p>
+          <p>Beim Einladen eines Mitglieds öffnet sich dein eigenes Mailprogramm mit einer vorbereiteten Nachricht. Die E-Mail wird nicht automatisch versendet. Für Daily Chess werden auch keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
+
+          <h4>10. Partie starten</h4>
+          <p>Wenn beide Spieler im Raum sind und eine Bedenkzeit gewählt wurde, kann Weiß die Partie über <strong>„Partie starten“</strong> starten.</p>
+          <ul>
+            <li>Bei einer <strong>Live-Partie</strong> läuft anschließend die Uhr des Spielers am Zug fortlaufend herunter.</li>
+            <li>Bei <strong>Daily Chess</strong> beginnt die serverseitige Zugfrist für Weiß.</li>
           </ul>
 
-          <h4>11. Partieaktionen</h4>
-          <p>Während einer laufenden Online-Partie erscheinen unter dem Brett die Schaltflächen <strong>„½ Remis anbieten“</strong> und <strong>„🏳️ Aufgeben“</strong>.</p>
+          <h4>11. Spielen</h4>
+          <p>Figuren werden durch Anklicken bewegt. Illegale Züge werden blockiert, und mögliche Zielfelder werden auf dem Brett markiert. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
+          <p>Im Freestyle-Modus kann die Rochade je nach Startstellung ungewohnt aussehen. Nach der Rochade stehen König und Turm auf den üblichen Zielfeldern: bei kurzer Rochade König auf der g-Linie und Turm auf der f-Linie, bei langer Rochade König auf der c-Linie und Turm auf der d-Linie.</p>
 
-          <h4>12. Automatische Partieenden</h4>
-          <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial.</p>
+          <h4>12. Spieler- und Zeitanzeige</h4>
+          <p>Im Spielraum kannst du die rechte Spalte zwischen <strong>„Spieler &amp; Zeit“</strong>, <strong>„Zugliste“</strong> und <strong>„Chat“</strong> umschalten.</p>
+          <ul>
+            <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt.</li>
+            <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Das genaue Fristende ist zusätzlich in der Zeitanzeige hinterlegt.</li>
+            <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
+            <li><strong>Chat:</strong> enthält die Nachrichten des aktuellen Raums. Neue Nachrichten werden am Chat-Reiter markiert.</li>
+          </ul>
 
-          <h4>13. Brett und Darstellung</h4>
+          <h4>13. Partieaktionen</h4>
+          <p>Während einer laufenden Online-Partie erscheinen unter dem Brett die Schaltflächen <strong>„½ Remis anbieten“</strong> und <strong>„🏳️ Aufgeben“</strong>. Diese Funktionen stehen auch bei Daily Chess zur Verfügung.</p>
+
+          <h4>14. Automatische Partieenden</h4>
+          <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
+
+          <h4>15. Brett und Darstellung</h4>
           <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
 
-          <h4>14. PGN-Datei und Freestyle-Startstellung</h4>
-          <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Bei Freestyle-Partien enthält die PGN zusätzlich die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
+          <h4>16. PGN-Datei</h4>
+          <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
+          <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
-          <h4>15. Neue Partie</h4>
-          <p>Über <strong>„Neue Partie“</strong> öffnest du einen frischen Tab ohne bestehenden Raum. Für eine neue Online-Partie wird ein neuer Raum bzw. Einladungslink erstellt.</p>
+          <h4>17. Neue Partie</h4>
+          <p>Über <strong>„Neue Partie“</strong> öffnest du einen frischen Tab ohne bestehenden Raum. Für jede neue Online-Partie wird ein neuer Raum mit einem eigenen Einladungslink erstellt.</p>
 
-          <h4>16. Verbindung</h4>
-          <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Zustand wieder zu synchronisieren. Oft hilft es, den Einladungslink erneut zu öffnen oder die Seite neu zu laden.</p>
+          <h4>18. Verbindung und Wiederaufnahme</h4>
+          <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
+          <p>Bei Daily Chess solltest du dich zuerst mit dem verwendeten Account anmelden und die Partie anschließend über <strong>„Meine Partien“</strong> öffnen. Dadurch kann dein gesicherter Spielerplatz wieder übernommen werden.</p>
 
-          <h4>17. Admin-Funktion</h4>
+          <h4>19. Admin-Funktion</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Diese Funktion ist nur für den Administrator nutzbar.</p>
         </div>
         <div class="info-actions">
