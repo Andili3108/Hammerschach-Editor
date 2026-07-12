@@ -393,7 +393,7 @@
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Das genaue Fristende ist zusätzlich in der Zeitanzeige hinterlegt.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
-            <li><strong>Chat:</strong> enthält die Nachrichten des aktuellen Raums. Neue Nachrichten werden am Chat-Reiter markiert.</li>
+            <li><strong>Chat:</strong> enthält die Nachrichten des aktuellen Raums. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Neue Nachrichten werden am Chat-Reiter markiert.</li>
           </ul>
 
           <h4>13. Partieaktionen</h4>
@@ -1403,7 +1403,8 @@ function normalizeChatMessage(message){
     mine: typeof chat.mine === 'boolean' ? chat.mine : !!(playerId && playerId === onlinePlayerId)
   };
 }
-function appendChatMessage(message){
+function appendChatMessage(message, options){
+  options = options || {};
   const chat = normalizeChatMessage(message);
   if(!chat) return false;
   if(chatMessageIds.has(chat.id)) return false;
@@ -1413,12 +1414,33 @@ function appendChatMessage(message){
     chatMessages = chatMessages.slice(-CHAT_HISTORY_MAX);
     chatMessageIds = new Set(chatMessages.map(m => m.id));
   }
-  if(!chat.mine && rightPanelMode !== 'chat'){
+  if(!options.suppressUnread && !chat.mine && rightPanelMode !== 'chat'){
     chatUnreadCount = Math.min(99, chatUnreadCount + 1);
   }
-  renderChatMessages();
-  updateChatUnreadIndicator();
+  if(!options.deferRender){
+    renderChatMessages();
+    updateChatUnreadIndicator();
+  }
   return true;
+}
+function applyChatHistory(messages){
+  if(!Array.isArray(messages)) return 0;
+  let added = 0;
+  messages.slice(-CHAT_HISTORY_MAX).forEach(message => {
+    if(appendChatMessage(message, {suppressUnread:true, deferRender:true})) added++;
+  });
+  if(added){
+    chatMessages.sort((a,b) => {
+      const at = Date.parse(a.sentAt || '') || 0;
+      const bt = Date.parse(b.sentAt || '') || 0;
+      return at - bt;
+    });
+    chatMessages = chatMessages.slice(-CHAT_HISTORY_MAX);
+    chatMessageIds = new Set(chatMessages.map(message => message.id));
+    renderChatMessages();
+    updateChatUnreadIndicator();
+  }
+  return added;
 }
 function renderChatMessages(){
   if(chatCountEl) chatCountEl.textContent = String(chatMessages.length);
@@ -1464,8 +1486,16 @@ function updateChatControls(){
     if(!onlineRoomId) setChatStatus('Chat verfügbar, sobald ein Online-Raum erstellt ist.', false);
     else setChatStatus('Chat wird freigegeben, sobald die Lobby verbunden ist.', false);
   } else if(chatStatusEl && (!chatStatusEl.textContent || chatStatusEl.textContent.includes('sobald') || chatStatusEl.textContent.includes('freigegeben'))){
-    setChatStatus('Chat ist verbunden. Maximal 300 Zeichen pro Nachricht.', false);
+    setChatStatus('Chat ist verbunden. Die letzten 80 Nachrichten bleiben gespeichert.', false);
   }
+}
+function extractOnlineChatHistory(msg){
+  if(!msg) return null;
+  const history = msg.chatMessages || msg.chatHistory ||
+    (msg.state && (msg.state.chatMessages || msg.state.chatHistory)) ||
+    (msg.roomState && (msg.roomState.chatMessages || msg.roomState.chatHistory)) ||
+    (msg.lobby && (msg.lobby.chatMessages || msg.lobby.chatHistory));
+  return Array.isArray(history) ? history : null;
 }
 function extractOnlineChatMessage(msg){
   if(!msg) return null;
@@ -3512,10 +3542,17 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    const incomingChatHistory = extractOnlineChatHistory(msg);
+    if(incomingChatHistory){
+      applyChatHistory(incomingChatHistory);
+      setChatStatus('Chat ist verbunden. Die letzten 80 Nachrichten bleiben gespeichert.', false);
+      handled = true;
+    }
+
     const incomingChatMessage = extractOnlineChatMessage(msg);
     if(incomingChatMessage){
       appendChatMessage(incomingChatMessage);
-      setChatStatus('Chat ist verbunden. Maximal 300 Zeichen pro Nachricht.', false);
+      setChatStatus('Chat ist verbunden. Die letzten 80 Nachrichten bleiben gespeichert.', false);
       handled = true;
     }
 
