@@ -235,33 +235,76 @@ function escapeSqlLike(value) {
   return String(value || '').replace(/[\\%_]/g, match => '\\' + match);
 }
 
+
+const USER_PRESENCE_ONLINE_WINDOW_MS = 150000;
+let userPresenceTableReady = false;
+
+async function ensureUserPresenceTable(env) {
+  if (!env || !env.DB) return false;
+  if (userPresenceTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS user_presence (
+       user_id TEXT PRIMARY KEY,
+       last_seen_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_presence_last_seen ON user_presence (last_seen_at)`).run();
+  userPresenceTableReady = true;
+  return true;
+}
+
+function presenceOnlineSinceIso() {
+  return new Date(Date.now() - USER_PRESENCE_ONLINE_WINDOW_MS).toISOString();
+}
+
+async function setUserPresence(env, userId, online) {
+  if (!(await ensureUserPresenceTable(env)) || !userId) return false;
+  if (!online) {
+    await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(String(userId)).run();
+    return true;
+  }
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO user_presence (user_id, last_seen_at)
+     VALUES (?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET last_seen_at = excluded.last_seen_at`
+  ).bind(String(userId), nowIso).run();
+  return true;
+}
+
 async function searchMembers(env, sessionUser, query) {
   const cleaned = cleanMemberSearchQuery(query);
   if (!env || !env.DB || !sessionUser || cleaned.length < 2) return [];
+  await ensureUserPresenceTable(env);
 
   const escaped = escapeSqlLike(cleaned);
   const contains = '%' + escaped + '%';
   const prefix = escaped + '%';
+  const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
-    `SELECT id, username, email, created_at
+    `SELECT users.id, users.username, users.email, users.created_at,
+            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
        FROM users
-      WHERE id <> ?
-        AND (username_lc LIKE ? ESCAPE '\\' OR email_lc LIKE ? ESCAPE '\\')
+       LEFT JOIN user_presence presence ON presence.user_id = users.id
+      WHERE users.id <> ?
+        AND (users.username_lc LIKE ? ESCAPE '\\' OR users.email_lc LIKE ? ESCAPE '\\')
       ORDER BY
+        is_online DESC,
         CASE
-          WHEN username_lc = ? THEN 0
-          WHEN username_lc LIKE ? ESCAPE '\\' THEN 1
+          WHEN users.username_lc = ? THEN 0
+          WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1
           ELSE 2
         END,
-        username_lc ASC
+        users.username_lc ASC
       LIMIT 8`
-  ).bind(sessionUser.id, contains, contains, cleaned, prefix).all();
+  ).bind(onlineSince, sessionUser.id, contains, contains, cleaned, prefix).all();
 
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
     username: row.username,
     email: row.email || '',
-    createdAt: row.created_at || null
+    createdAt: row.created_at || null,
+    isOnline: Number(row.is_online || 0) === 1
   }));
 }
 
@@ -269,20 +312,25 @@ async function searchMembers(env, sessionUser, query) {
 
 async function listMembers(env, sessionUser, limit = 50) {
   if (!env || !env.DB || !sessionUser) return [];
+  await ensureUserPresenceTable(env);
   const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
+  const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
-    `SELECT id, username, email, created_at
+    `SELECT users.id, users.username, users.email, users.created_at,
+            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
        FROM users
-      WHERE id <> ?
-      ORDER BY username_lc ASC
+       LEFT JOIN user_presence presence ON presence.user_id = users.id
+      WHERE users.id <> ?
+      ORDER BY is_online DESC, users.username_lc ASC
       LIMIT ?`
-  ).bind(sessionUser.id, safeLimit).all();
+  ).bind(onlineSince, sessionUser.id, safeLimit).all();
 
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
     username: row.username,
     email: row.email || '',
-    createdAt: row.created_at || null
+    createdAt: row.created_at || null,
+    isOnline: Number(row.is_online || 0) === 1
   }));
 }
 
@@ -328,12 +376,23 @@ async function ensureDailyGamesTable(env) {
 
 async function listDailyGames(env, sessionUser) {
   if (!(await ensureDailyGamesTable(env)) || !sessionUser) return [];
+  await ensureUserPresenceTable(env);
+  const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
-    `SELECT room_id, white_user_id, black_user_id, white_name, black_name,
-            time_label, days_per_move, variant, started, started_at, updated_at,
-            turn, deadline_at, ended, ended_at, result, end_reason
+    `SELECT daily_games.room_id, daily_games.white_user_id, daily_games.black_user_id,
+            daily_games.white_name, daily_games.black_name, daily_games.time_label,
+            daily_games.days_per_move, daily_games.variant, daily_games.started,
+            daily_games.started_at, daily_games.updated_at, daily_games.turn,
+            daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
+            daily_games.result, daily_games.end_reason,
+            CASE WHEN opponent_presence.last_seen_at >= ? THEN 1 ELSE 0 END AS opponent_online
        FROM daily_games
-      WHERE (white_user_id = ? OR black_user_id = ?)
+       LEFT JOIN user_presence opponent_presence
+         ON opponent_presence.user_id = CASE
+              WHEN daily_games.white_user_id = ? THEN daily_games.black_user_id
+              ELSE daily_games.white_user_id
+            END
+      WHERE (daily_games.white_user_id = ? OR daily_games.black_user_id = ?)
         AND NOT EXISTS (
           SELECT 1
             FROM daily_game_archives archived
@@ -341,26 +400,28 @@ async function listDailyGames(env, sessionUser) {
              AND archived.user_id = ?
         )
       ORDER BY
-        ended ASC,
+        daily_games.ended ASC,
         CASE
-          WHEN ended = 0 AND turn = CASE WHEN white_user_id = ? THEN 'w' ELSE 'b' END THEN 0
+          WHEN daily_games.ended = 0 AND daily_games.turn = CASE WHEN daily_games.white_user_id = ? THEN 'w' ELSE 'b' END THEN 0
           ELSE 1
         END ASC,
-        CASE WHEN ended = 0 THEN COALESCE(deadline_at, updated_at) END ASC,
-        CASE WHEN ended = 1 THEN COALESCE(ended_at, updated_at) END DESC
+        CASE WHEN daily_games.ended = 0 THEN COALESCE(daily_games.deadline_at, daily_games.updated_at) END ASC,
+        CASE WHEN daily_games.ended = 1 THEN COALESCE(daily_games.ended_at, daily_games.updated_at) END DESC
       LIMIT 200`
-  ).bind(sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id).all();
+  ).bind(onlineSince, sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id).all();
 
   return (result && result.results ? result.results : []).map(row => {
     const role = String(row.white_user_id || '') === String(sessionUser.id) ? 'w' : 'b';
     const turn = row.turn === 'b' ? 'b' : row.turn === 'w' ? 'w' : '';
+    const opponentJoined = role === 'w' ? !!row.black_user_id : !!row.white_user_id;
     return {
       roomId: row.room_id,
       role,
       opponentName: role === 'w' ? (row.black_name || 'noch offen') : (row.white_name || 'noch offen'),
-      opponentJoined: role === 'w' ? !!row.black_user_id : !!row.white_user_id,
-      pendingInvitation: !row.started && !row.ended && !(role === 'w' ? row.black_user_id : row.white_user_id),
-      canDeleteInvitation: !row.started && !row.ended && !(role === 'w' ? row.black_user_id : row.white_user_id),
+      opponentJoined,
+      opponentOnline: opponentJoined && !row.ended && Number(row.opponent_online || 0) === 1,
+      pendingInvitation: !row.started && !row.ended && !opponentJoined,
+      canDeleteInvitation: !row.started && !row.ended && !opponentJoined,
       timeLabel: row.time_label || ((row.days_per_move || 1) + ' Tag(e) pro Zug'),
       daysPerMove: Math.max(1, Number(row.days_per_move || 1)),
       variant: row.variant || 'standard',
@@ -402,6 +463,7 @@ async function deleteUserAsAdmin(env, adminUser, targetId) {
   }
 
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(id).run();
+  try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
   return { ok: true, deletedUser: publicUser(target, env) };
 }
@@ -493,6 +555,20 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
     return json({ ok: true, user: session.user });
+  }
+
+
+  if (url.pathname === '/api/presence' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
+    const body = await readJsonBody(request);
+    const online = !(body && body.online === false);
+    try {
+      await setUserPresence(env, session.user.id, online);
+      return json({ ok: true, online, onlineWindowSeconds: Math.floor(USER_PRESENCE_ONLINE_WINDOW_MS / 1000) });
+    } catch (_) {
+      return json({ ok: false, code: 'PRESENCE_UNAVAILABLE', message: 'Online-Status konnte nicht aktualisiert werden.' }, { status: 500 });
+    }
   }
 
   if (url.pathname === '/api/daily-games' && request.method === 'GET') {
@@ -3010,9 +3086,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/presence', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
