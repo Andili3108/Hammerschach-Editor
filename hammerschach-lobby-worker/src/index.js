@@ -1662,6 +1662,7 @@ export class GameRoom {
   constructor(state, env) {
     this.state = state;
     this.env = env;
+    this.userPresenceCache = { key:'', expiresAt:0, values:{} };
   }
 
   async cancelDailyInvitation(requestingUserId) {
@@ -1997,16 +1998,53 @@ export class GameRoom {
     return profile;
   }
 
-  async getActivePlayers(players = null) {
+  async getGamerPresenceByUserIds(userIds) {
+    const ids = Array.from(new Set((userIds || []).map(value => String(value || '').trim()).filter(Boolean))).sort();
+    if(ids.length === 0 || !this.env || !this.env.DB) return {};
+
+    const now = Date.now();
+    const cacheKey = ids.join('|');
+    if(this.userPresenceCache && this.userPresenceCache.key === cacheKey && this.userPresenceCache.expiresAt > now){
+      return this.userPresenceCache.values || {};
+    }
+
+    const values = Object.fromEntries(ids.map(id => [id, false]));
+    try {
+      await ensureUserPresenceTable(this.env);
+      const placeholders = ids.map(() => '?').join(',');
+      const result = await this.env.DB.prepare(
+        `SELECT user_id, last_seen_at FROM user_presence WHERE user_id IN (${placeholders})`
+      ).bind(...ids).all();
+      const onlineSince = Date.now() - USER_PRESENCE_ONLINE_WINDOW_MS;
+      for(const row of (result && result.results ? result.results : [])){
+        const userId = String(row.user_id || '');
+        const lastSeen = Date.parse(row.last_seen_at || '');
+        if(userId && Number.isFinite(lastSeen)) values[userId] = lastSeen >= onlineSince;
+      }
+    } catch (_) {
+      // Der allgemeine Anwesenheitsstatus darf die Partie niemals beeinträchtigen.
+    }
+
+    this.userPresenceCache = { key:cacheKey, expiresAt:now + 30000, values };
+    return values;
+  }
+
+  async getActivePlayers(players = null, options = {}) {
     const assigned = players || (await this.state.storage.get('players')) || { white: null, black: null };
     const profiles = (await this.state.storage.get('playerProfiles')) || {};
     const whiteId = playerIdFromSlot(assigned.white);
     const blackId = playerIdFromSlot(assigned.black);
-    const makeSlot = (playerId) => {
+    const whiteUserId = assigned.white && assigned.white.userId ? String(assigned.white.userId) : '';
+    const blackUserId = assigned.black && assigned.black.userId ? String(assigned.black.userId) : '';
+    const presence = options.includePresence
+      ? await this.getGamerPresenceByUserIds([whiteUserId, blackUserId])
+      : {};
+    const makeSlot = (playerId, userId) => {
       const profile = playerId ? (profiles[playerId] || {}) : {};
       const displayName = cleanDisplayName(profile.displayName || profile.name) || (playerId ? guestNameFromPlayerId(playerId) : '');
       return {
         connected: false,
+        gamerOnline: !!(userId && presence[userId]),
         name: displayName,
         displayName,
         guest: profile.guest !== false
@@ -2014,8 +2052,8 @@ export class GameRoom {
     };
 
     const active = {
-      white: makeSlot(whiteId),
-      black: makeSlot(blackId),
+      white: makeSlot(whiteId, whiteUserId),
+      black: makeSlot(blackId, blackUserId),
       spectators: 0
     };
 
@@ -2248,7 +2286,7 @@ export class GameRoom {
         white: !!players.white,
         black: !!players.black
       },
-      players: await this.getActivePlayers(players),
+      players: await this.getActivePlayers(players, { includePresence: !!(storedTimeControl && storedTimeControl.mode === 'daily') }),
       canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByRole && info.role === createdByRole))),
       createdByMe: !!(createdByRole && info.role === createdByRole),
       timeControl: safeTimeControlForClient(storedTimeControl),
@@ -3087,7 +3125,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/presence', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
