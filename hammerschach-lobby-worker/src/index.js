@@ -295,7 +295,10 @@ async function listDailyGames(env, sessionUser) {
     return {
       roomId: row.room_id,
       role,
-      opponentName: role === 'w' ? (row.black_name || 'Schwarz') : (row.white_name || 'Weiß'),
+      opponentName: role === 'w' ? (row.black_name || 'noch offen') : (row.white_name || 'noch offen'),
+      opponentJoined: role === 'w' ? !!row.black_user_id : !!row.white_user_id,
+      pendingInvitation: !row.started && !(role === 'w' ? row.black_user_id : row.white_user_id),
+      canDeleteInvitation: !row.started && !row.ended && !(role === 'w' ? row.black_user_id : row.white_user_id),
       timeLabel: row.time_label || ((row.days_per_move || 1) + ' Tag(e) pro Zug'),
       daysPerMove: Math.max(1, Number(row.days_per_move || 1)),
       variant: row.variant || 'standard',
@@ -437,6 +440,37 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: true, games, serverNow: Date.now() });
     } catch (_) {
       return json({ ok: false, code: 'DAILY_GAMES_UNAVAILABLE', message: 'Daily-Partien konnten nicht aus der Datenbank geladen werden.' }, { status: 500 });
+    }
+  }
+
+  const dailyDeleteMatch = url.pathname.match(/^\/api\/daily-games\/([^/]+)$/);
+  if (dailyDeleteMatch && request.method === 'DELETE') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const roomId = cleanRoomId(decodeURIComponent(dailyDeleteMatch[1]));
+    if (!roomId) return json({ ok: false, code: 'INVALID_ROOM', message: 'Ungültiger Spielraum.' }, { status: 400 });
+    if (!env.GAME_ROOM) return json({ ok: false, code: 'ROOM_SERVICE_UNAVAILABLE', message: 'Der Spielraum-Dienst ist nicht verfügbar.' }, { status: 503 });
+
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = env.GAME_ROOM.get(id);
+      const response = await stub.fetch(new Request('https://game-room.internal/cancel-invitation?room=' + encodeURIComponent(roomId), {
+        method: 'DELETE',
+        headers: { 'x-hammerschach-user-id': String(session.user.id || '') }
+      }));
+      let result = null;
+      try { result = await response.json(); } catch (_) { result = null; }
+      if (!response.ok || !result || !result.ok) {
+        return json({
+          ok: false,
+          code: result && result.code ? result.code : 'INVITATION_DELETE_FAILED',
+          message: result && result.message ? result.message : 'Die Einladung konnte nicht gelöscht werden.'
+        }, { status: response.status || 400 });
+      }
+      try { await env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run(); } catch (_) {}
+      return json({ ok: true, roomId, cancelledAt: result.cancelledAt || new Date().toISOString() });
+    } catch (_) {
+      return json({ ok: false, code: 'INVITATION_DELETE_FAILED', message: 'Die Einladung konnte nicht gelöscht werden.' }, { status: 500 });
     }
   }
 
@@ -1323,16 +1357,138 @@ export class GameRoom {
     this.env = env;
   }
 
-  async fetch(request) {
-    if (request.headers.get('Upgrade') !== 'websocket') {
-      return new Response('Expected WebSocket upgrade', { status: 426 });
+  async cancelDailyInvitation(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
+
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    let indexedGame = null;
+    try {
+      if (roomId && await ensureDailyGamesTable(this.env)) {
+        indexedGame = await this.env.DB.prepare(
+          `SELECT room_id, white_user_id, black_user_id, started, ended
+             FROM daily_games
+            WHERE room_id = ?
+            LIMIT 1`
+        ).bind(roomId).first();
+      }
+    } catch (_) {}
+
+    const existingCancellation = await this.state.storage.get('cancelled');
+    if (existingCancellation && existingCancellation.cancelled) {
+      try {
+        if (roomId && await ensureDailyGamesTable(this.env)) {
+          await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+        }
+      } catch (_) {}
+      return { ok:true, status:200, roomId, cancelledAt:existingCancellation.cancelledAt || null, alreadyCancelled:true };
     }
 
+    const indexedCreatorRole = indexedGame && !indexedGame.started && !indexedGame.ended
+      ? (String(indexedGame.white_user_id || '') === userId && !indexedGame.black_user_id
+          ? 'w'
+          : (String(indexedGame.black_user_id || '') === userId && !indexedGame.white_user_id ? 'b' : ''))
+      : '';
+
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    if (timeControl && timeControl.mode !== 'daily') {
+      return { ok:false, status:400, code:'NOT_DAILY_INVITATION', message:'Dieser Raum ist keine offene Daily-Einladung.' };
+    }
+    if (!timeControl && !indexedCreatorRole) {
+      return { ok:false, status:400, code:'NOT_DAILY_INVITATION', message:'Dieser Raum ist keine offene Daily-Einladung.' };
+    }
+
+    const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
+    if (game.started || game.ended || (indexedGame && (indexedGame.started || indexedGame.ended))) {
+      return { ok:false, status:409, code:'INVITATION_ALREADY_ACCEPTED', message:'Die Einladung kann nicht mehr gelöscht werden, weil die Partie bereits angenommen oder gestartet wurde.' };
+    }
+
+    const players = await this.getSecurePlayers();
+    let creatorRole = (await this.state.storage.get('createdByRole')) || '';
+    if (creatorRole !== 'w' && creatorRole !== 'b') {
+      if (players.white && !players.black) creatorRole = 'w';
+      else if (players.black && !players.white) creatorRole = 'b';
+      else creatorRole = indexedCreatorRole;
+    }
+    const creatorSlot = creatorRole === 'b' ? players.black : creatorRole === 'w' ? players.white : null;
+    const opponentSlot = creatorRole === 'b' ? players.white : creatorRole === 'w' ? players.black : null;
+    const creatorMatchesRoom = !!(creatorSlot && creatorSlot.userId && String(creatorSlot.userId) === userId);
+
+    if ((creatorSlot && !creatorMatchesRoom) || (!creatorSlot && creatorRole !== indexedCreatorRole)) {
+      return { ok:false, status:403, code:'NOT_INVITATION_CREATOR', message:'Nur der Ersteller kann diese Einladung löschen.' };
+    }
+    if (opponentSlot || (indexedGame && (creatorRole === 'w' ? indexedGame.black_user_id : indexedGame.white_user_id))) {
+      return { ok:false, status:409, code:'OPPONENT_ALREADY_JOINED', message:'Die Einladung kann nicht mehr gelöscht werden, weil der Gegner den Spielerplatz bereits angenommen hat.' };
+    }
+
+    const cancelledAt = new Date().toISOString();
+    const cancellation = {
+      cancelled:true,
+      cancelledAt,
+      cancelledByUserId:userId,
+      creatorRole,
+      roomId
+    };
+    await this.state.storage.put('cancelled', cancellation);
+    try { await this.state.storage.deleteAlarm(); } catch (_) {}
+    try {
+      if (roomId && await ensureDailyGamesTable(this.env)) {
+        await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+      }
+    } catch (_) {}
+
+    for (const socket of this.state.getWebSockets()) {
+      const socketInfo = socket.deserializeAttachment() || {};
+      socket.serializeAttachment(Object.assign({}, socketInfo, { role:'revoked', seatClaimed:false, cancelledAt }));
+      safeSend(socket, {
+        type:'room_cancelled',
+        room:roomId || socketInfo.room || 'unknown',
+        code:'INVITATION_CANCELLED',
+        message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
+        cancelledAt,
+        serverNow:Date.now()
+      });
+      try { socket.close(4004, 'Einladung zurückgezogen'); } catch (_) {}
+    }
+
+    return { ok:true, status:200, roomId, cancelledAt };
+  }
+
+  async fetch(request) {
     const url = new URL(request.url);
     const room = cleanRoomId(url.searchParams.get('room'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
     await this.state.storage.put('roomId', room);
+
+    if (request.method === 'DELETE' && url.pathname === '/cancel-invitation') {
+      const result = await this.cancelDailyInvitation(request.headers.get('x-hammerschach-user-id') || '');
+      return json({ ok:result.ok, code:result.code || '', message:result.message || '', roomId:result.roomId || room, cancelledAt:result.cancelledAt || null }, { status:result.status || (result.ok ? 200 : 400) });
+    }
+
+    const cancellation = await this.state.storage.get('cancelled');
+    if (cancellation && cancellation.cancelled) {
+      if (request.headers.get('Upgrade') !== 'websocket') {
+        return json({ ok:false, code:'INVITATION_CANCELLED', message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.', cancelledAt:cancellation.cancelledAt || null }, { status:410 });
+      }
+      const cancelledPair = new WebSocketPair();
+      const [cancelledClient, cancelledServer] = Object.values(cancelledPair);
+      cancelledServer.accept();
+      safeSend(cancelledServer, {
+        type:'room_cancelled',
+        room,
+        code:'INVITATION_CANCELLED',
+        message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
+        cancelledAt:cancellation.cancelledAt || null,
+        serverNow:Date.now()
+      });
+      try { cancelledServer.close(4004, 'Einladung zurückgezogen'); } catch (_) {}
+      return new Response(null, { status:101, webSocket:cancelledClient });
+    }
+
+    if (request.headers.get('Upgrade') !== 'websocket') {
+      return new Response('Expected WebSocket upgrade', { status: 426 });
+    }
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
@@ -1532,6 +1688,12 @@ export class GameRoom {
       const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
       if (!roomId) return;
 
+      const cancellation = await this.state.storage.get('cancelled');
+      if (cancellation && cancellation.cancelled) {
+        await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+        return;
+      }
+
       const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
       if (!timeControl || timeControl.mode !== 'daily') {
         await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
@@ -1541,13 +1703,20 @@ export class GameRoom {
       const players = await this.getSecurePlayers();
       const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
       const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
-      if (!whiteUserId && !blackUserId) return;
+
+      // Offene Daily-Einladungen bleiben für den Ersteller unter „Meine Partien“
+      // sichtbar, damit er sie löschen kann. Ein Raum ohne registrierten Ersteller
+      // wird dagegen nicht in die persönliche Übersicht aufgenommen.
+      if (!whiteUserId && !blackUserId) {
+        await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+        return;
+      }
 
       const profiles = (await this.state.storage.get('playerProfiles')) || {};
       const whitePlayerId = playerIdFromSlot(players.white);
       const blackPlayerId = playerIdFromSlot(players.black);
-      const whiteName = cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
-      const blackName = cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+      const whiteName = cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || (whiteUserId ? 'Weiß' : 'noch offen');
+      const blackName = cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || (blackUserId ? 'Schwarz' : 'noch offen');
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
       const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
       const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
@@ -1635,6 +1804,8 @@ export class GameRoom {
   }
 
   async autoStartDailyGameIfReady(startedByRole = 'automatic') {
+    const cancellation = await this.state.storage.get('cancelled');
+    if (cancellation && cancellation.cancelled) return { started:false, reason:'cancelled' };
     const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
     if (!timeControl || timeControl.mode !== 'daily') return { started:false, reason:'not_daily' };
 
@@ -1796,6 +1967,20 @@ export class GameRoom {
     }
 
     let info = ws.deserializeAttachment() || {};
+
+    const cancellation = await this.state.storage.get('cancelled');
+    if (cancellation && cancellation.cancelled) {
+      safeSend(ws, {
+        type:'room_cancelled',
+        room:info.room || 'unknown',
+        code:'INVITATION_CANCELLED',
+        message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
+        cancelledAt:cancellation.cancelledAt || null,
+        serverNow:Date.now()
+      });
+      try { ws.close(4004, 'Einladung zurückgezogen'); } catch (_) {}
+      return;
+    }
 
     if (data.type === 'claim_seat') {
       if (info.seatClaimed) {
@@ -2470,11 +2655,13 @@ export class GameRoom {
   }
 
   async webSocketClose() {
-    await this.broadcastRoomState('lobby');
+    const cancellation = await this.state.storage.get('cancelled');
+    if (!cancellation || !cancellation.cancelled) await this.broadcastRoomState('lobby');
   }
 
   async webSocketError() {
-    await this.broadcastRoomState('lobby');
+    const cancellation = await this.state.storage.get('cancelled');
+    if (!cancellation || !cancellation.cancelled) await this.broadcastRoomState('lobby');
   }
 }
 
@@ -2516,8 +2703,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'registered_account_seat_reclaim', 'freestyle960'],
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/daily-games', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'freestyle960'],
       note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr und prüft Züge serverseitig auf Legalität.'
     });
   }
