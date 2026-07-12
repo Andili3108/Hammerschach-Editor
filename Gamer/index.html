@@ -233,7 +233,12 @@
   .member-result-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;}
   .member-result-card.clickable{cursor:pointer;}
   .member-result-card.clickable:hover{box-shadow:0 7px 18px rgba(0,0,0,.10);transform:translateY(-1px);}
-  .member-result-name{font-size:16px;font-weight:900;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .member-result-name{font-size:16px;font-weight:900;color:#222;display:flex;align-items:center;gap:7px;min-width:0;}
+  .member-result-name-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .presence-badge{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;border-radius:999px;padding:3px 7px;font-size:11px;font-weight:900;line-height:1;border:1px solid rgba(0,0,0,.10);background:#f1f1f3;color:#666;}
+  .presence-badge.online{background:rgba(34,107,54,.10);border-color:rgba(34,107,54,.22);color:#226b36;}
+  .presence-dot{width:8px;height:8px;border-radius:999px;background:#999;box-shadow:inset 0 0 0 1px rgba(0,0,0,.10);}
+  .presence-badge.online .presence-dot{background:#2b9a4b;box-shadow:0 0 0 3px rgba(43,154,75,.12);}
   .member-result-meta{font-size:12px;font-weight:800;color:#666;margin-top:2px;}
   .member-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;padding:6px 2px;}
   .member-search-status{min-height:18px;font-size:13px;font-weight:800;color:#9A2D33;margin-top:6px;}
@@ -276,7 +281,8 @@
   .daily-game-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:11px 12px;}
   .daily-game-card.my-turn{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.22);box-shadow:inset 0 0 0 1px rgba(132,63,70,.08);}
   .daily-game-card.completed{background:#fbfbfc;border-color:rgba(0,0,0,.08);}
-  .daily-game-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;}
+  .daily-game-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .daily-game-title-text{min-width:0;}
   .daily-game-status{font-size:13px;font-weight:900;color:#843f46;margin-top:3px;}
   .daily-game-card.completed .daily-game-status{color:#444;}
   .daily-game-status.result-win{color:#226b36!important;}
@@ -388,13 +394,13 @@
 
           <h4>8. Meine Daily-Partien</h4>
           <p>Über <strong>„Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
-          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
+          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
 
           <h4>9. Zur Partie einladen</h4>
-          <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link oder den vollständigen Einladungstext kopieren. Nach dem Login kannst du außerdem ein registriertes Mitglied suchen oder die Mitgliederliste öffnen.</p>
+          <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link oder den vollständigen Einladungstext kopieren. Nach dem Login kannst du außerdem ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Beim Einladen eines Mitglieds öffnet sich dein eigenes Mailprogramm mit einer vorbereiteten Nachricht. Die E-Mail wird nicht automatisch versendet. Für Daily Chess werden auch keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
 
           <h4>10. Partiebeginn</h4>
@@ -509,7 +515,7 @@
     <div id="dailyGamesBackdrop" class="identity-backdrop" hidden>
       <div class="daily-games-modal" role="dialog" aria-modal="true" aria-labelledby="dailyGamesTitle">
         <h3 id="dailyGamesTitle">Meine Daily-Partien</h3>
-        <p class="daily-games-intro">Laufende Partien, offene Einladungen und dein Verlauf beendeter Daily-Partien. Beendete Partien kannst du ansehen, als PGN herunterladen oder aus deiner eigenen Übersicht entfernen.</p>
+        <p class="daily-games-intro">Laufende Partien, offene Einladungen und dein Verlauf beendeter Daily-Partien. Bei laufenden Partien siehst du außerdem, ob der Gegner aktuell im Hammerschach-Gamer aktiv ist.</p>
         <div id="dailyGamesList" class="daily-games-list" aria-live="polite"><div class="daily-games-empty">Noch keine Partien geladen.</div></div>
         <div id="dailyGamesStatus" class="daily-games-status" aria-live="polite"></div>
         <div class="daily-games-actions">
@@ -1913,6 +1919,35 @@ let onlinePlayerId = getOnlinePlayerId();
 let onlineAuthToken = '';
 let onlineAuthUser = null;
 let authMode = 'login';
+const PRESENCE_HEARTBEAT_MS = 60000;
+const PRESENCE_MIN_SEND_INTERVAL_MS = 25000;
+let presenceHeartbeatTimer = null;
+let presenceLastSentAt = 0;
+
+function stopPresenceHeartbeat(){
+  if(presenceHeartbeatTimer){ clearInterval(presenceHeartbeatTimer); presenceHeartbeatTimer = null; }
+}
+async function sendPresenceHeartbeat(force, online){
+  const active = online !== false;
+  if(!onlineAuthToken || !onlineAuthUser) return false;
+  const now = Date.now();
+  if(active && !force && now - presenceLastSentAt < PRESENCE_MIN_SEND_INTERVAL_MS) return false;
+  try{
+    await authApi('/api/presence', {method:'POST', body:JSON.stringify({online:active})});
+    if(active) presenceLastSentAt = now;
+    return true;
+  } catch(_){ return false; }
+}
+function startPresenceHeartbeat(){
+  stopPresenceHeartbeat();
+  if(!onlineAuthToken || !onlineAuthUser) return;
+  sendPresenceHeartbeat(true, true);
+  presenceHeartbeatTimer = setInterval(() => sendPresenceHeartbeat(false, true), PRESENCE_HEARTBEAT_MS);
+}
+window.addEventListener('focus', () => sendPresenceHeartbeat(true, true));
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible') sendPresenceHeartbeat(true, true);
+});
 function cleanDisplayName(value){
   return String(value || '')
     .replace(/[<>\u0000-\u001F\u007F]/g, '')
@@ -2090,6 +2125,7 @@ function loadAuthState(){
     onlineDisplayName = cleanDisplayName(onlineAuthUser.username) || onlineDisplayName;
   }
   updatePlayerNameButton();
+  if(onlineAuthToken && onlineAuthUser) startPresenceHeartbeat();
 }
 function saveAuthState(token, user){
   onlineAuthToken = token || '';
@@ -2114,6 +2150,8 @@ function saveAuthState(token, user){
   }
   updateAuthUi();
   updateOnlineUi();
+  if(onlineAuthToken && onlineAuthUser) startPresenceHeartbeat();
+  else stopPresenceHeartbeat();
   setTimeout(() => {
     try{ updateTimeControlsLock(); updateTimePickerUi(); } catch(_){}
   }, 0);
@@ -2229,6 +2267,7 @@ async function submitAuthDialog(){
 }
 async function logoutAuth(){
   const oldToken = onlineAuthToken;
+  try{ if(oldToken) await sendPresenceHeartbeat(true, false); } catch(_){}
   try{ if(oldToken) await authApi('/api/logout', {method:'POST', body:JSON.stringify({})}); } catch(_){}
   saveAuthState('', null);
   if(onlineRoomId && onlineConnected){
@@ -2362,9 +2401,13 @@ function createDailyGameCard(game){
   const content = document.createElement('div');
   const title = document.createElement('div');
   title.className = 'daily-game-title';
-  title.textContent = game.pendingInvitation
+  const titleText = document.createElement('span');
+  titleText.className = 'daily-game-title-text';
+  titleText.textContent = game.pendingInvitation
     ? 'Offene Daily-Einladung'
     : 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
+  title.appendChild(titleText);
+  if(!game.ended && game.opponentJoined) title.appendChild(createPresenceBadge(!!game.opponentOnline));
   const status = document.createElement('div');
   status.className = 'daily-game-status';
   if(game.ended){
@@ -2485,34 +2528,52 @@ async function deleteDailyInvitation(game, button){
     if(button){ button.disabled = false; button.textContent = oldText || 'Einladung löschen'; }
   }
 }
-async function loadDailyGames(){
+let dailyGamesPresenceRefreshTimer = null;
+async function loadDailyGames(options){
+  options = options || {};
+  const silent = !!options.silent;
   if(!onlineAuthToken || !onlineAuthUser){
-    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Bitte zuerst einloggen.';
-    openAuthDialog('login');
+    if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Bitte zuerst einloggen.';
+    if(!silent) openAuthDialog('login');
     return;
   }
-  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Partien werden geladen...';
-  if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = true;
+  if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Partien werden geladen...';
+  if(!silent && dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = true;
   try{
     const data = await authApi('/api/daily-games');
     const games = data.games || [];
     renderDailyGames(games);
     const activeCount = games.filter(game => !game.ended).length;
     const completedCount = games.filter(game => !!game.ended).length;
-    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = activeCount + ' laufend/offen · ' + completedCount + ' beendet.';
+    if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = activeCount + ' laufend/offen · ' + completedCount + ' beendet.';
   } catch(err){
-    renderDailyGames([]);
-    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Daily-Partien konnten nicht geladen werden.';
+    if(!silent){
+      renderDailyGames([]);
+      if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Daily-Partien konnten nicht geladen werden.';
+    }
   } finally {
-    if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = false;
+    if(!silent && dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = false;
   }
+}
+function startDailyGamesPresenceRefresh(){
+  if(dailyGamesPresenceRefreshTimer) clearInterval(dailyGamesPresenceRefreshTimer);
+  dailyGamesPresenceRefreshTimer = setInterval(() => {
+    if(dailyGamesBackdrop && !dailyGamesBackdrop.hidden) loadDailyGames({silent:true});
+  }, 60000);
+}
+function stopDailyGamesPresenceRefresh(){
+  if(dailyGamesPresenceRefreshTimer){ clearInterval(dailyGamesPresenceRefreshTimer); dailyGamesPresenceRefreshTimer = null; }
 }
 function openDailyGamesDialog(){
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
   loadDailyGames();
+  startDailyGamesPresenceRefresh();
 }
-function closeDailyGamesDialog(){ if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = true; }
+function closeDailyGamesDialog(){
+  if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = true;
+  stopDailyGamesPresenceRefresh();
+}
 if(dailyGamesOpenBtn) dailyGamesOpenBtn.addEventListener('click', openDailyGamesDialog);
 if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDailyGames);
 if(dailyGamesCloseBtn) dailyGamesCloseBtn.addEventListener('click', closeDailyGamesDialog);
@@ -2886,7 +2947,7 @@ function updateInviteDialog(){
   }
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? (isCurrentUserAdmin() ? 'Suche oder öffne die Mitgliederliste. Als Andili kannst du User zusätzlich löschen.' : 'Suche nach Benutzername oder öffne die Mitgliederliste. Beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.')
+      ? (isCurrentUserAdmin() ? 'Suche oder öffne die Mitgliederliste. Als Andili kannst du User zusätzlich löschen.' : 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.')
       : 'Mitgliedersuche und Mitgliederliste sind nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -2990,6 +3051,22 @@ function openMailInvitationToMember(member, button){
   updateOnlineUi();
 }
 
+function createPresenceBadge(isOnline){
+  const badge = document.createElement('span');
+  badge.className = 'presence-badge' + (isOnline ? ' online' : '');
+  badge.title = isOnline
+    ? 'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv.'
+    : 'Derzeit keine aktuelle Aktivität im Hammerschach-Gamer erkannt.';
+  const dot = document.createElement('span');
+  dot.className = 'presence-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  const label = document.createElement('span');
+  label.textContent = isOnline ? 'Online' : 'Offline';
+  badge.appendChild(dot);
+  badge.appendChild(label);
+  return badge;
+}
+
 function renderMemberSearchResults(users, options){
   options = options || {};
   if(!memberSearchResults) return;
@@ -3013,12 +3090,16 @@ function renderMemberSearchResults(users, options){
     info.style.minWidth = '0';
     const name = document.createElement('div');
     name.className = 'member-result-name';
-    name.textContent = user.username || 'Mitglied';
+    const nameText = document.createElement('span');
+    nameText.className = 'member-result-name-text';
+    nameText.textContent = user.username || 'Mitglied';
+    name.appendChild(nameText);
+    name.appendChild(createPresenceBadge(!!user.isOnline));
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
     meta.textContent = canAdminDelete
       ? 'Registriertes Mitglied · Admin: Einladung oder User löschen'
-      : 'Registriertes Mitglied · Mailadresse wird nur für die vorbereitete E-Mail verwendet';
+      : 'Registriertes Mitglied · Online-Status zeigt aktuelle Gamer-Aktivität';
     info.appendChild(name);
     info.appendChild(meta);
 
