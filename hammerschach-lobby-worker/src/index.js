@@ -1634,6 +1634,61 @@ export class GameRoom {
     return { game, clock, justEnded };
   }
 
+  async autoStartDailyGameIfReady(startedByRole = 'automatic') {
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    if (!timeControl || timeControl.mode !== 'daily') return { started:false, reason:'not_daily' };
+
+    const existingGame = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
+    if (existingGame.started || existingGame.ended) {
+      return {
+        started:false,
+        reason: existingGame.started ? 'already_started' : 'already_ended',
+        game: existingGame,
+        clock: (await this.state.storage.get('clock')) || null,
+        timeControl,
+        gameSetup: cleanGameSetup((await this.state.storage.get('gameSetup')) || (existingGame && existingGame.gameSetup) || null)
+      };
+    }
+
+    // Die vorbereitete Stellung muss bereits im Raum gespeichert sein. So kann eine
+    // Freestyle-Auswahl nicht durch einen zu frühen automatischen Start verloren gehen.
+    const storedGameSetup = await this.state.storage.get('gameSetup');
+    if (!storedGameSetup) return { started:false, reason:'setup_missing' };
+
+    const players = await this.getSecurePlayers();
+    const whiteRegistered = !!(players.white && players.white.userId);
+    const blackRegistered = !!(players.black && players.black.userId);
+    if (!whiteRegistered || !blackRegistered) return { started:false, reason:'accounts_missing' };
+
+    const now = Date.now();
+    const gameSetup = cleanGameSetup(storedGameSetup);
+    const game = {
+      started: true,
+      startedAt: new Date(now).toISOString(),
+      startedByRole: startedByRole || 'automatic',
+      autoStarted: true,
+      ended: false,
+      endedAt: null,
+      endReason: null,
+      winner: null,
+      result: '*',
+      gameSetup,
+      playStatsCounted: false,
+      playStatsCountedAt: null
+    };
+    const clock = makeInitialClock(timeControl, now);
+
+    await this.state.storage.put('gameSetup', gameSetup);
+    await this.state.storage.put('game', game);
+    await this.state.storage.put('moves', []);
+    await this.state.storage.put('clock', clock);
+    await this.state.storage.delete('drawOffer');
+    await this.scheduleClockAlarm(clock, now);
+    await this.syncDailyGameIndex();
+
+    return { started:true, reason:'auto_started', game, clock, timeControl, gameSetup };
+  }
+
   async alarm() {
     const current = await this.refreshTimedGameState(Date.now());
     if (current.justEnded) await this.broadcastRoomState('game_finished');
@@ -1802,6 +1857,8 @@ export class GameRoom {
       ws.serializeAttachment(info);
       this.replaceExistingSeatConnection(claimed.role, ws);
 
+      const dailyAutoStart = await this.autoStartDailyGameIfReady(claimed.role);
+
       safeSend(ws, {
         type: 'hello',
         room: info.room || 'unknown',
@@ -1816,8 +1873,8 @@ export class GameRoom {
         serverNow: Date.now()
       });
       await this.sendRoomState(ws, 'hello_state');
-      await this.syncDailyGameIndex();
-      await this.broadcastRoomState('lobby');
+      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
+      await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'lobby');
       return;
     }
 
@@ -1886,9 +1943,10 @@ export class GameRoom {
       }
       const profile = await this.savePlayerProfile(info.playerId, displayName, role, authUser);
       ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest, userId: profile.userId || info.userId || null, username: profile.username || '' }));
-      await this.syncDailyGameIndex();
+      const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
+      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
       safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, guest: profile.guest, username: profile.username || '', serverNow: Date.now() });
-      await this.broadcastRoomState('room_state');
+      await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'room_state');
       return;
     }
 
@@ -1911,7 +1969,8 @@ export class GameRoom {
       await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('moves', []);
       await this.state.storage.delete('clock');
-      await this.syncDailyGameIndex();
+      const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
+      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
 
       safeSend(ws, {
         type: 'game_setup_ack',
@@ -1920,7 +1979,7 @@ export class GameRoom {
         gameSetup: safeSetupForClient(gameSetup),
         serverNow: Date.now()
       });
-      await this.broadcastRoomState('room_state');
+      await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'room_state');
       return;
     }
 
@@ -1956,7 +2015,8 @@ export class GameRoom {
       timeControl.updatedByRole = role;
       await this.state.storage.put('timeControl', timeControl);
       await this.state.storage.delete('clock');
-      await this.syncDailyGameIndex();
+      const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
+      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
 
       safeSend(ws, {
         type: 'time_control_ack',
@@ -1965,19 +2025,13 @@ export class GameRoom {
         timeControl: safeTimeControlForClient(timeControl),
         serverNow: Date.now()
       });
-      await this.broadcastRoomState('room_state');
+      await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'room_state');
       return;
     }
 
     if (data.type === 'start_game') {
       if (role !== 'w') {
         safeSend(ws, { type: 'error', code: 'ONLY_WHITE_CAN_START', message: 'Nur Weiß kann die Partie starten.' });
-        return;
-      }
-
-      const active = await this.getActivePlayers();
-      if (!active.black.connected) {
-        safeSend(ws, { type: 'error', code: 'BLACK_NOT_CONNECTED', message: 'Schwarz ist noch nicht verbunden.' });
         return;
       }
 
@@ -2003,6 +2057,14 @@ export class GameRoom {
         return;
       }
 
+      if (timeControl.mode !== 'daily') {
+        const active = await this.getActivePlayers();
+        if (!active.black.connected) {
+          safeSend(ws, { type: 'error', code: 'BLACK_NOT_CONNECTED', message: 'Schwarz ist noch nicht verbunden.' });
+          return;
+        }
+      }
+
       if (timeControl.mode === 'daily') {
         const securePlayers = await this.getSecurePlayers();
         const whiteRegistered = !!(securePlayers.white && securePlayers.white.userId);
@@ -2011,7 +2073,7 @@ export class GameRoom {
           safeSend(ws, {
             type: 'error',
             code: 'DAILY_BOTH_ACCOUNTS_REQUIRED',
-            message: 'Daily Chess kann erst starten, wenn beide Spieler mit einem registrierten Account eingeloggt sind.'
+            message: 'Daily Chess startet automatisch, sobald beide Spielerplätze mit registrierten Accounts angenommen wurden.'
           });
           return;
         }
