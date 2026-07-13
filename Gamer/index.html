@@ -326,6 +326,10 @@
   .daily-game-meta{font-size:12px;font-weight:800;color:#666;margin-top:4px;line-height:1.35;}
   .daily-game-actions{display:flex;gap:7px;align-items:center;justify-content:flex-end;flex-wrap:wrap;}
   .daily-game-open-btn,.daily-game-pgn-btn{border-radius:12px;min-height:38px;padding:8px 12px;white-space:nowrap;}
+  .daily-game-open-btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(180deg,#f3f3f3 0%,#dadada 100%);color:#9A2D33;border:1px solid rgba(0,0,0,.12);font-size:14px;font-weight:900;cursor:pointer;transition:transform .08s ease,box-shadow .12s ease,filter .12s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.05),0 6px 14px rgba(0,0,0,.12);}
+  .daily-game-open-btn:hover{transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(0,0,0,.04),0 10px 18px rgba(0,0,0,.16);filter:brightness(1.02);}
+  .daily-game-open-btn:active{transform:translateY(1px);box-shadow:inset 0 2px 5px rgba(0,0,0,.10),0 3px 8px rgba(0,0,0,.10);}
+  .daily-game-open-btn:focus-visible{outline:3px solid rgba(132,63,70,.24);outline-offset:2px;}
   .daily-game-pgn-btn{background:linear-gradient(180deg,#ffffff 0%,#ececef 100%)!important;color:#333!important;}
   .daily-game-history-delete-btn{border-radius:12px;min-height:34px;padding:7px 10px;white-space:nowrap;background:#f4f4f5!important;color:#666!important;font-size:12px;}
   .daily-game-delete-btn{border-radius:12px;min-height:38px;padding:8px 12px;white-space:nowrap;background:#843f46!important;color:#fff!important;}
@@ -376,7 +380,7 @@
   @media (max-width:1080px){.match-actions{grid-template-columns:repeat(3,minmax(0,1fr));}}
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
   @media (max-width:520px){.auth-ratings-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -2803,12 +2807,20 @@ function dailyOutcomeForUser(game){
   if(result === '0-1') return role === 'b' ? {label:'Gewonnen', className:'result-win'} : {label:'Verloren', className:'result-loss'};
   return {label:'Beendet', className:''};
 }
-function openDailyGameRoom(game){
+function dailyGameRoomUrl(game){
   try{
+    const roomId = cleanRoomId(game && game.roomId);
+    if(!roomId) return '';
     const url = new URL(window.location.href);
-    url.searchParams.set('room', String(game.roomId || ''));
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-  } catch(_){ statusEl.textContent = 'Partielink konnte nicht geöffnet werden.'; }
+    url.searchParams.set('room', roomId);
+    url.searchParams.delete('watch');
+    url.searchParams.delete('fresh');
+    url.searchParams.delete('role');
+    url.searchParams.delete('player');
+    return url.toString();
+  } catch(_){
+    return '';
+  }
 }
 function dailyPgnFilenameFromDisposition(value, game){
   const match = String(value || '').match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);
@@ -2910,12 +2922,19 @@ function createDailyGameCard(game){
 
   const actions = document.createElement('div');
   actions.className = 'daily-game-actions';
-  const openBtn = document.createElement('button');
-  openBtn.type = 'button';
-  openBtn.className = 'daily-game-open-btn';
-  openBtn.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : 'Partie öffnen');
-  openBtn.addEventListener('click', () => openDailyGameRoom(game));
-  actions.appendChild(openBtn);
+  const openLink = document.createElement('a');
+  const roomUrl = dailyGameRoomUrl(game);
+  openLink.className = 'daily-game-open-btn';
+  openLink.href = roomUrl || '#';
+  openLink.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : 'Partie öffnen');
+  openLink.title = 'Partie im aktuellen Tab öffnen';
+  if(!roomUrl){
+    openLink.addEventListener('click', event => {
+      event.preventDefault();
+      if(statusEl) statusEl.textContent = 'Partielink konnte nicht geöffnet werden.';
+    });
+  }
+  actions.appendChild(openLink);
 
   if(game.ended){
     const pgnBtn = document.createElement('button');
