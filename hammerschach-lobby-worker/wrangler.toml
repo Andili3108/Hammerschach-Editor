@@ -1,6 +1,7 @@
 name = "hammerschach-gamer-lobby"
 main = "src/index.js"
 compatibility_date = "2026-06-26"
+keep_vars = true
 
 [durable_objects]
 bindings = [
