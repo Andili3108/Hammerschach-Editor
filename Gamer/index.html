@@ -470,7 +470,8 @@
 
           <h4>9. Zur Partie einladen</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
-          <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden. Für Daily Chess werden keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
+          <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
+          <p><strong>Hinweis zur Zustellung:</strong> Je nach E-Mail-Anbieter kann die Einladung vereinzelt im Spam- oder Junk-Ordner landen. Falls keine Einladung im Posteingang erscheint, sollte der Empfänger dort nachsehen und den Absender <strong>hammerschach-gamer@online.de</strong> gegebenenfalls als vertrauenswürdig markieren. Für Daily Chess werden derzeit keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
 
           <h4>10. Partiebeginn</h4>
           <ul>
@@ -3690,16 +3691,17 @@ async function sendEmailInvitationToMember(member, button){
   const oldText = button ? button.textContent : '';
   if(button){ button.disabled = true; button.textContent = 'Wird gesendet…'; }
   setInviteCopyStatus('Einladung an ' + recipientName + ' wird versendet…', false);
-  if(memberSearchStatus) memberSearchStatus.textContent = 'Der Hammerschach-Gamer übergibt die Einladung sicher an Mailjet…';
+  if(memberSearchStatus) memberSearchStatus.textContent = 'Der Hammerschach-Gamer übergibt die Einladung sicher an den Mailserver…';
 
   try{
     const data = await authApi('/api/invitations/email', {
       method:'POST',
       body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id})
     });
-    const message = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde versendet.');
+    const baseMessage = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde versendet.');
+    const message = baseMessage + ' Falls sie nicht im Posteingang erscheint, bitte auch den Spamordner prüfen.';
     setInviteCopyStatus(message, false);
-    if(memberSearchStatus) memberSearchStatus.textContent = 'Automatischer Mailversand erfolgreich.';
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Automatischer Mailversand erfolgreich. Bitte gegebenenfalls auch den Spamordner kontrollieren.';
     onlineLastMessage = message;
     statusEl.textContent = message;
   } catch(err){
