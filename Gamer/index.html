@@ -45,7 +45,7 @@
   .dot.black{background:#111;}
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
-  .match-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;justify-content:stretch;}
+  .match-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-content:stretch;}
   .match-actions button{width:100%;min-width:0;font-size:15px;padding:9px 10px;min-height:40px;line-height:1.12;}
   .match-actions .name-action-btn{min-width:0;}
   .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%;}
@@ -318,6 +318,27 @@
 
 
 
+  .public-visibility-box{padding:13px 16px;display:flex;flex-direction:column;gap:8px;}
+  .public-visibility-box[hidden]{display:none!important;}
+  .public-visibility-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;font-weight:900;color:#333;line-height:1.3;}
+  .public-visibility-checkbox{width:19px;height:19px;flex:0 0 19px;margin:1px 0 0;accent-color:#843f46;cursor:pointer;}
+  .public-visibility-checkbox:disabled{cursor:not-allowed;opacity:.55;}
+  .public-visibility-hint{font-size:12px;font-weight:800;color:#666;line-height:1.35;padding-left:29px;}
+  .public-games-modal{width:760px;max-width:100%;max-height:88vh;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);display:flex;flex-direction:column;}
+  .public-games-modal h3{margin:0 0 6px;font-size:22px;color:#222;}
+  .public-games-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
+  .public-games-list{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:90px;max-height:62vh;padding:2px 4px 2px 0;}
+  .public-game-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:12px 13px;}
+  .public-game-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;}
+  .public-game-status{font-size:13px;font-weight:900;color:#843f46;margin-top:4px;}
+  .public-game-meta{font-size:12px;font-weight:800;color:#666;margin-top:4px;line-height:1.4;}
+  .public-game-watch-btn{border-radius:12px;min-height:40px;padding:8px 14px;white-space:nowrap;}
+  .public-games-empty{font-size:14px;font-weight:800;color:#666;text-align:center;line-height:1.4;padding:24px 10px;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.08);}
+  .public-games-status{min-height:18px;font-size:13px;font-weight:800;color:#666;margin-top:8px;}
+  .public-games-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .public-games-actions button{border-radius:12px;min-height:38px;}
+  .side-toggle-row.spectator{grid-template-columns:repeat(2,minmax(0,1fr));}
+
   .site-footnote{
     text-align:center;
     font-size:12px;
@@ -336,7 +357,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
 </style>
 </head>
 <body>
@@ -367,6 +388,7 @@
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
           <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
           <button id="dailyGamesOpenBtn" class="button-flat name-action-btn" type="button">Meine Partien</button>
+          <button id="publicGamesOpenBtn" class="button-flat name-action-btn" type="button">Laufende Partien</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
         </div>
       </div>
@@ -415,6 +437,7 @@
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
+          <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
 
           <h4>9. Zur Partie einladen</h4>
@@ -437,7 +460,7 @@
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Das genaue Fristende ist zusätzlich in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
-            <li><strong>Chat:</strong> enthält die Nachrichten des aktuellen Raums. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Neue Nachrichten werden am Chat-Reiter markiert.</li>
+            <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
           </ul>
 
           <h4>13. Partieaktionen</h4>
@@ -596,6 +619,19 @@
       </div>
     </div>
 
+    <div id="publicGamesBackdrop" class="identity-backdrop" hidden>
+      <div class="public-games-modal" role="dialog" aria-modal="true" aria-labelledby="publicGamesTitle">
+        <h3 id="publicGamesTitle">Laufende öffentliche Partien</h3>
+        <p class="public-games-intro">Hier können Mitglieder und Gäste freigegebene Live- und Daily-Partien beobachten. Der Zuschauerzugang übernimmt niemals einen Spielerplatz und zeigt keinen privaten Partie-Chat.</p>
+        <div id="publicGamesList" class="public-games-list" aria-live="polite"><div class="public-games-empty">Noch keine Partien geladen.</div></div>
+        <div id="publicGamesStatus" class="public-games-status" aria-live="polite"></div>
+        <div class="public-games-actions">
+          <button id="publicGamesRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
+          <button id="publicGamesCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
     <div id="inviteBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
         <h3 id="inviteTitle">Zur Partie einladen</h3>
@@ -734,6 +770,15 @@
               <div id="timeStatus" class="time-status" hidden>Keine Bedenkzeit aktiv</div>
               <div id="timeLockNote" class="time-lock-note" hidden></div>
             </div>
+
+            <div id="publicVisibilityBox" class="public-visibility-box player-time-setup">
+              <div class="clock-title">Zuschauerfreigabe</div>
+              <label class="public-visibility-label" for="publicGameCheckbox">
+                <input id="publicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
+                <span>Partie öffentlich anzeigen und Zuschauen erlauben</span>
+              </label>
+              <div id="publicVisibilityHint" class="public-visibility-hint">Nur gestartete Partien erscheinen unter „Laufende Partien“. Der private Spielerchat bleibt für Zuschauer verborgen.</div>
+            </div>
           </div>
 
           <div id="sideToggleRow" class="side-toggle-row" aria-label="Rechte Spalte umschalten" hidden>
@@ -769,6 +814,15 @@
               </div>
               <div class="player-clock-time" id="clockB">--:--</div>
             </div>
+            <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
+              <div class="clock-title">Zuschauerfreigabe</div>
+              <label class="public-visibility-label" for="roomPublicGameCheckbox">
+                <input id="roomPublicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
+                <span>Partie öffentlich anzeigen und Zuschauen erlauben</span>
+              </label>
+              <div id="roomPublicVisibilityHint" class="public-visibility-hint">Nur der Ersteller kann die Zuschauerfreigabe ändern.</div>
+            </div>
+
             <div id="dailyMoveConfirmation" class="daily-move-confirmation" hidden aria-live="polite">
               <div class="daily-move-confirmation-hint">Zugvorschau – noch nicht ausgeführt</div>
               <div class="daily-move-confirmation-actions">
@@ -1436,8 +1490,14 @@ let rightPanelMode = 'players';
 
 function updateSidePanelLayout(){
   const inRoom = (typeof onlineRoomId !== 'undefined') && !!onlineRoomId;
+  const spectator = inRoom && onlineRoleCode === 'spectator';
+  if(spectator && rightPanelMode === 'chat') rightPanelMode = 'players';
   if(preRoomSetupPanelEl) preRoomSetupPanelEl.hidden = inRoom;
-  if(sideToggleRowEl) sideToggleRowEl.hidden = !inRoom;
+  if(sideToggleRowEl){
+    sideToggleRowEl.hidden = !inRoom;
+    sideToggleRowEl.classList.toggle('spectator', spectator);
+  }
+  if(showChatPanelBtn) showChatPanelBtn.hidden = spectator;
   if(!inRoom){
     if(playersPanelEl) playersPanelEl.hidden = true;
     if(movesPanelEl) movesPanelEl.hidden = true;
@@ -1445,7 +1505,7 @@ function updateSidePanelLayout(){
   } else {
     if(playersPanelEl) playersPanelEl.hidden = rightPanelMode !== 'players';
     if(movesPanelEl) movesPanelEl.hidden = rightPanelMode !== 'moves';
-    if(chatPanelEl) chatPanelEl.hidden = rightPanelMode !== 'chat';
+    if(chatPanelEl) chatPanelEl.hidden = spectator || rightPanelMode !== 'chat';
   }
   if(showPlayersPanelBtn) showPlayersPanelBtn.classList.toggle('active', rightPanelMode === 'players');
   if(showMovesPanelBtn) showMovesPanelBtn.classList.toggle('active', rightPanelMode === 'moves');
@@ -1595,14 +1655,16 @@ function renderChatMessages(){
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 function updateChatControls(){
-  const enabled = !!(onlineRoomId && onlineConnected);
+  const spectator = onlineRoleCode === 'spectator';
+  const enabled = !!(onlineRoomId && onlineConnected && !spectator);
   if(chatInputEl){
     chatInputEl.disabled = !enabled;
     chatInputEl.placeholder = enabled ? 'Nachricht schreiben…' : 'Chat verfügbar nach Online-Verbindung…';
   }
   if(chatSendBtn) chatSendBtn.disabled = !enabled;
   if(!enabled){
-    if(!onlineRoomId) setChatStatus('Chat verfügbar, sobald ein Online-Raum erstellt ist.', false);
+    if(spectator) setChatStatus('Der Partie-Chat ist privat und nur für Weiß und Schwarz sichtbar.', false);
+    else if(!onlineRoomId) setChatStatus('Chat verfügbar, sobald ein Online-Raum erstellt ist.', false);
     else setChatStatus('Chat wird freigegeben, sobald die Lobby verbunden ist.', false);
   } else if(chatStatusEl && (!chatStatusEl.textContent || chatStatusEl.textContent.includes('sobald') || chatStatusEl.textContent.includes('freigegeben'))){
     setChatStatus('Chat ist verbunden. Die letzten 80 Nachrichten bleiben gespeichert.', false);
@@ -1622,6 +1684,7 @@ function extractOnlineChatMessage(msg){
   return msg.chat || msg;
 }
 function sendChatMessage(){
+  if(onlineRoleCode === 'spectator'){ setChatStatus('Zuschauer können den privaten Partie-Chat nicht verwenden.', true); return; }
   if(!onlineRoomId){ setChatStatus('Bitte zuerst eine Online-Partie erstellen oder einem Link folgen.', true); return; }
   if(!onlineConnected){ setChatStatus('Lobby ist noch nicht verbunden.', true); return; }
   const text = cleanChatText(chatInputEl ? chatInputEl.value : '');
@@ -1867,8 +1930,11 @@ const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
 const ONLINE_INVITE_COLOR_STORAGE_KEY = 'hammerschachGamerInviteColorPreference';
 const ONLINE_SEAT_STORAGE_PREFIX = 'hammerschachGamerSeat:';
 const ONLINE_LAST_ROOM_STORAGE_KEY = 'hammerschachGamerLastActiveRoom';
+const ONLINE_PUBLIC_GAME_STORAGE_KEY = 'hammerschachGamerPublicGamePreference';
 let inviteColorPreference = 'w';
+let publicGamePreference = false;
 try{ inviteColorPreference = normalizeInviteColorPreference(localStorage.getItem(ONLINE_INVITE_COLOR_STORAGE_KEY) || 'w'); } catch(_){ inviteColorPreference = 'w'; }
+try{ publicGamePreference = localStorage.getItem(ONLINE_PUBLIC_GAME_STORAGE_KEY) === 'yes'; } catch(_){ publicGamePreference = false; }
 let onlinePreferredRoleForNextConnect = '';
 let onlineCanSetTimeControl = false;
 let onlineSocket = null;
@@ -1907,12 +1973,19 @@ let onlineReconnectSuppressed = false;
 let onlineRoomCreationPromise = null;
 let onlineDailyLoginPrompted = false;
 let onlineRoomCancelled = false;
+let onlinePublicGame = false;
+let onlineCreatedByMe = false;
+let onlineDesiredPublicGameForNewRoom = false;
+let onlinePendingPublicGameMessageId = null;
+let onlineSpectatorOnly = false;
+let onlinePublicWatchId = '';
 
 const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
+const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
@@ -1987,6 +2060,17 @@ const dailyGamesListEl = document.getElementById('dailyGamesList');
 const dailyGamesStatusEl = document.getElementById('dailyGamesStatus');
 const dailyGamesRefreshBtn = document.getElementById('dailyGamesRefreshBtn');
 const dailyGamesCloseBtn = document.getElementById('dailyGamesCloseBtn');
+const publicGamesBackdrop = document.getElementById('publicGamesBackdrop');
+const publicGamesListEl = document.getElementById('publicGamesList');
+const publicGamesStatusEl = document.getElementById('publicGamesStatus');
+const publicGamesRefreshBtn = document.getElementById('publicGamesRefreshBtn');
+const publicGamesCloseBtn = document.getElementById('publicGamesCloseBtn');
+const publicVisibilityBoxEl = document.getElementById('publicVisibilityBox');
+const publicGameCheckbox = document.getElementById('publicGameCheckbox');
+const publicVisibilityHintEl = document.getElementById('publicVisibilityHint');
+const roomPublicVisibilityBoxEl = document.getElementById('roomPublicVisibilityBox');
+const roomPublicGameCheckbox = document.getElementById('roomPublicGameCheckbox');
+const roomPublicVisibilityHintEl = document.getElementById('roomPublicVisibilityHint');
 
 const inviteBackdrop = document.getElementById('inviteBackdrop');
 const inviteLinkInput = document.getElementById('inviteLinkInput');
@@ -2478,6 +2562,7 @@ function updateAuthUi(){
   }
   if(!loggedIn && accountEditBackdrop) accountEditBackdrop.hidden = true;
   if(authError) authError.textContent = '';
+  updatePublicVisibilityUi();
 }
 function applyLoggedInUserToOnlineRoom(){
   if(!onlineAuthUser) return;
@@ -2870,6 +2955,117 @@ if(dailyGamesCloseBtn) dailyGamesCloseBtn.addEventListener('click', closeDailyGa
 if(dailyGamesBackdrop) dailyGamesBackdrop.addEventListener('click', ev => { if(ev.target === dailyGamesBackdrop) closeDailyGamesDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && dailyGamesBackdrop && !dailyGamesBackdrop.hidden) closeDailyGamesDialog(); });
 
+let publicGamesRefreshTimer = null;
+function formatPublicGameTime(value){
+  if(!value) return '';
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return '';
+  try{ return date.toLocaleString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); }
+  catch(_){ return ''; }
+}
+function publicGameModeLabel(game){
+  return game && game.mode === 'daily' ? 'Daily Chess' : 'Live-Partie';
+}
+function publicGameVariantLabel(game){
+  if(game && game.variant === GAME_VARIANT_FREESTYLE){
+    return Number.isFinite(Number(game.positionId)) ? ('Freestyle #' + Number(game.positionId)) : 'Freestyle';
+  }
+  return 'Klassisch';
+}
+function openPublicGameRoom(game){
+  const watchId = cleanPublicWatchId(game && game.watchId);
+  if(!watchId) return;
+  const url = getSpectatorUrl(watchId);
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+function createPublicGameCard(game){
+  const card = document.createElement('div');
+  card.className = 'public-game-card';
+  const content = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'public-game-title';
+  title.textContent = (cleanDisplayName(game.whiteName) || 'Weiß') + ' – ' + (cleanDisplayName(game.blackName) || 'Schwarz');
+  const status = document.createElement('div');
+  status.className = 'public-game-status';
+  const turnLabel = game.turn === 'b' ? 'Schwarz ist am Zug' : 'Weiß ist am Zug';
+  const movesCount = Math.max(0, Number(game.movesCount || 0));
+  status.textContent = turnLabel + ' · ' + movesCount + ' Halbzug' + (movesCount === 1 ? '' : 'e');
+  const meta = document.createElement('div');
+  meta.className = 'public-game-meta';
+  const parts = [publicGameModeLabel(game), game.timeLabel || '', publicGameVariantLabel(game)];
+  if(game.lastMoveSan) parts.push('letzter Zug: ' + game.lastMoveSan);
+  if(game.startedAt) parts.push('gestartet: ' + formatPublicGameTime(game.startedAt));
+  meta.textContent = parts.filter(Boolean).join(' · ');
+  content.appendChild(title);
+  content.appendChild(status);
+  content.appendChild(meta);
+  const watchBtn = document.createElement('button');
+  watchBtn.type = 'button';
+  watchBtn.className = 'public-game-watch-btn';
+  watchBtn.textContent = 'Zuschauen';
+  watchBtn.title = 'Partie in einem neuen Tab als Zuschauer öffnen';
+  watchBtn.addEventListener('click', () => openPublicGameRoom(game));
+  card.appendChild(content);
+  card.appendChild(watchBtn);
+  return card;
+}
+function renderPublicGames(games){
+  if(!publicGamesListEl) return;
+  publicGamesListEl.innerHTML = '';
+  const list = Array.isArray(games) ? games : [];
+  if(!list.length){
+    const empty = document.createElement('div');
+    empty.className = 'public-games-empty';
+    empty.textContent = 'Derzeit läuft keine öffentlich freigegebene Partie.';
+    publicGamesListEl.appendChild(empty);
+    return;
+  }
+  list.forEach(game => publicGamesListEl.appendChild(createPublicGameCard(game)));
+}
+async function loadPublicGames(options){
+  options = options || {};
+  const silent = !!options.silent;
+  if(!silent && publicGamesStatusEl) publicGamesStatusEl.textContent = 'Laufende Partien werden geladen…';
+  if(!silent && publicGamesRefreshBtn) publicGamesRefreshBtn.disabled = true;
+  try{
+    const response = await fetch(onlineApiBaseUrl() + '/api/public-games', {method:'GET'});
+    let data = null;
+    try{ data = await response.json(); } catch(_){ data = null; }
+    if(!response.ok || !data || !data.ok) throw new Error(data && data.message ? data.message : 'Öffentliche Partien konnten nicht geladen werden.');
+    const games = data.games || [];
+    renderPublicGames(games);
+    if(!silent && publicGamesStatusEl) publicGamesStatusEl.textContent = games.length + ' öffentliche Partie' + (games.length === 1 ? '' : 'n') + ' läuft' + (games.length === 1 ? '' : 'en') + '.';
+  } catch(err){
+    if(!silent) renderPublicGames([]);
+    if(publicGamesStatusEl) publicGamesStatusEl.textContent = err && err.message ? err.message : 'Öffentliche Partien konnten nicht geladen werden.';
+  } finally {
+    if(!silent && publicGamesRefreshBtn) publicGamesRefreshBtn.disabled = false;
+  }
+}
+function startPublicGamesRefresh(){
+  if(publicGamesRefreshTimer) clearInterval(publicGamesRefreshTimer);
+  publicGamesRefreshTimer = setInterval(() => {
+    if(publicGamesBackdrop && !publicGamesBackdrop.hidden) loadPublicGames({silent:true});
+  }, 30000);
+}
+function stopPublicGamesRefresh(){
+  if(publicGamesRefreshTimer){ clearInterval(publicGamesRefreshTimer); publicGamesRefreshTimer = null; }
+}
+function openPublicGamesDialog(){
+  if(publicGamesBackdrop) publicGamesBackdrop.hidden = false;
+  loadPublicGames();
+  startPublicGamesRefresh();
+}
+function closePublicGamesDialog(){
+  if(publicGamesBackdrop) publicGamesBackdrop.hidden = true;
+  stopPublicGamesRefresh();
+}
+if(publicGamesOpenBtn) publicGamesOpenBtn.addEventListener('click', openPublicGamesDialog);
+if(publicGamesRefreshBtn) publicGamesRefreshBtn.addEventListener('click', () => loadPublicGames());
+if(publicGamesCloseBtn) publicGamesCloseBtn.addEventListener('click', closePublicGamesDialog);
+if(publicGamesBackdrop) publicGamesBackdrop.addEventListener('click', ev => { if(ev.target === publicGamesBackdrop) closePublicGamesDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && publicGamesBackdrop && !publicGamesBackdrop.hidden) closePublicGamesDialog(); });
+
 function openInfoDialog(){
   if(!infoBackdrop) return;
   infoBackdrop.hidden = false;
@@ -2891,6 +3087,10 @@ updateAuthUi();
 const initialAuthRefreshPromise = refreshAuthSession();
 function cleanRoomId(value){
   return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+}
+function cleanPublicWatchId(value){
+  const token = String(value || '').trim();
+  return /^[A-Za-z0-9_-]{20,96}$/.test(token) ? token : '';
 }
 function createRoomId(){ return randomToken(10); }
 function roleLabel(role){
@@ -2933,9 +3133,11 @@ function clearSeatCredentials(roomId){
 }
 function sendSeatClaim(){
   if(!onlineSocket || onlineSocket.readyState !== WebSocket.OPEN || onlineSeatClaimSent || !onlineRoomId) return false;
-  const saved = loadSeatCredentials(onlineRoomId);
-  const preferredRole = saved.role || onlinePreferredRoleForNextConnect || '';
-  const displayName = onlineAuthUser ? (onlineDisplayName || defaultGuestName()) : displayNameForOnline(onlineDisplayName || defaultGuestName(), true);
+  const saved = onlineSpectatorOnly ? {role:'', token:''} : loadSeatCredentials(onlineRoomId);
+  const preferredRole = onlineSpectatorOnly ? '' : (saved.role || onlinePreferredRoleForNextConnect || '');
+  const displayName = onlineSpectatorOnly
+    ? 'Zuschauer'
+    : (onlineAuthUser ? (onlineDisplayName || defaultGuestName()) : displayNameForOnline(onlineDisplayName || defaultGuestName(), true));
   try{
     onlineSocket.send(JSON.stringify({
       type:'claim_seat',
@@ -2943,11 +3145,14 @@ function sendSeatClaim(){
       displayName,
       preferredRole,
       seatToken:saved.token || '',
-      authToken:onlineAuthToken || ''
+      authToken:onlineAuthToken || '',
+      spectatorOnly:!!onlineSpectatorOnly,
+      publicWatchId:onlinePublicWatchId || '',
+      publicGame:!!onlineDesiredPublicGameForNewRoom
     }));
     onlineSeatClaimSent = true;
     onlineConnectionState = 'authenticating';
-    onlineLastMessage = 'Spielerplatz wird sicher bestätigt.';
+    onlineLastMessage = onlineSpectatorOnly ? 'Zuschauerzugang wird bestätigt.' : 'Spielerplatz wird sicher bestätigt.';
     updateOnlineUi();
     return true;
   } catch(_){ return false; }
@@ -2960,8 +3165,14 @@ function updateInviteUrlInAddressBar(roomId){
   } catch(_){}
   try{
     const url = new URL(window.location.href);
-    url.searchParams.set('room', roomId);
     url.searchParams.delete('fresh');
+    if(onlineSpectatorOnly && onlinePublicWatchId){
+      url.searchParams.delete('room');
+      url.searchParams.set('watch', onlinePublicWatchId);
+    } else {
+      url.searchParams.set('room', roomId);
+      url.searchParams.delete('watch');
+    }
     history.replaceState(null, '', url.toString());
   } catch(_){}
 }
@@ -2976,21 +3187,33 @@ function getRememberedRoomForReload(){
 function getInviteUrl(){
   const url = new URL(window.location.href);
   if(onlineRoomId) url.searchParams.set('room', onlineRoomId);
+  url.searchParams.delete('watch');
+  url.searchParams.delete('fresh');
+  return url.toString();
+}
+function getSpectatorUrl(watchId){
+  const token = cleanPublicWatchId(watchId || onlinePublicWatchId || '');
+  const url = new URL(window.location.href);
+  url.searchParams.delete('room');
+  url.searchParams.delete('fresh');
+  if(token) url.searchParams.set('watch', token);
   return url.toString();
 }
 function getWebSocketUrl(roomId){
   const configured = (window.HAMMERSCHACH_ONLINE_WORKER_URL || ONLINE_WORKER_URL || '').trim();
   let url;
+  const path = onlineSpectatorOnly && onlinePublicWatchId ? '/watch' : '/ws';
   if(configured){
-    url = new URL('/ws', configured.endsWith('/') ? configured : configured + '/');
+    url = new URL(path, configured.endsWith('/') ? configured : configured + '/');
   } else {
     if(window.location.protocol !== 'http:' && window.location.protocol !== 'https:'){
       throw new Error('Kein Online-Server konfiguriert. HTML über http(s) laden oder ONLINE_WORKER_URL setzen.');
     }
-    url = new URL('/ws', window.location.origin);
+    url = new URL(path, window.location.origin);
   }
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  url.searchParams.set('room', roomId);
+  if(path === '/watch') url.searchParams.set('game', onlinePublicWatchId);
+  else url.searchParams.set('room', roomId);
   return url.toString();
 }
 function setOnlineValueClass(el, state){
@@ -3091,6 +3314,9 @@ function updateOnlineStartButton(){
 function updateOnlineUi(){
   if(!onlineRoomId){
     onlineCanSetTimeControl = false;
+    onlinePublicGame = false;
+    onlineCreatedByMe = false;
+    onlinePendingPublicGameMessageId = null;
     onlineAssignedSeats = {white:false, black:false};
     onlineStatusEl.textContent = 'Nicht verbunden';
     onlineRoleEl.textContent = '—';
@@ -3112,6 +3338,7 @@ function updateOnlineUi(){
     updateTimeSetupVisibility();
     updateVariantUi();
     updateInviteColorUi();
+    updatePublicVisibilityUi();
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
     refreshHeaderStatusFromState();
@@ -3135,6 +3362,7 @@ function updateOnlineUi(){
     updateOnlineActionButtons();
     updateGameActionButtons();
     updateChatControls();
+    updatePublicVisibilityUi();
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
     refreshHeaderStatusFromState();
@@ -3151,6 +3379,9 @@ function updateOnlineUi(){
   } else if(!onlineConnected){
     onlineStatusEl.textContent = 'Verbinde...';
     setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(onlineRoleCode === 'spectator'){
+    onlineStatusEl.textContent = 'Zuschauen';
+    setOnlineValueClass(onlineStatusEl, 'good');
   } else if(isDailyTimeControl() && onlineGameStarted){
     onlineStatusEl.textContent = 'Daily aktiv';
     setOnlineValueClass(onlineStatusEl, 'good');
@@ -3163,8 +3394,8 @@ function updateOnlineUi(){
   }
 
   onlineRoleEl.textContent = roleLabel(onlineRoleCode);
-  onlineRoomEl.textContent = onlineRoomId;
-  if(copyInviteBtn) copyInviteBtn.disabled = false;
+  onlineRoomEl.textContent = onlineSpectatorOnly ? 'Öffentlich' : onlineRoomId;
+  if(copyInviteBtn) copyInviteBtn.disabled = onlineRoleCode === 'spectator';
   setOnlineValueClass(onlineRoleEl, onlineRoleCode === 'spectator' ? 'wait' : 'good');
   setOnlineValueClass(onlineRoomEl, 'neutral');
 
@@ -3179,7 +3410,9 @@ function updateOnlineUi(){
   updatePlayerPresenceBadges();
 
   let syncNote;
-  if(onlineGameEnded || gameEnded || timeLost){
+  if(onlineRoleCode === 'spectator'){
+    syncNote = 'Zuschauermodus: Du kannst Brett, Zugliste und Zeiten verfolgen. Spielerplätze, Züge und der private Partie-Chat bleiben gesperrt.';
+  } else if(onlineGameEnded || gameEnded || timeLost){
     syncNote = 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.';
   } else if(isDailyTimeControl()){
     syncNote = onlineGameStarted
@@ -3202,6 +3435,7 @@ function updateOnlineUi(){
   updateTimeSetupVisibility();
   updateVariantUi();
   updateInviteColorUi();
+  updatePublicVisibilityUi();
   updateSidePanelLayout();
   refreshHeaderStatusFromState();
 }
@@ -3904,6 +4138,9 @@ function extractOnlineRoom(msg){
 function applyRoomCancelled(message){
   pendingDailyMove = null;
   onlineRoomCancelled = true;
+  onlinePublicGame = false;
+  onlineCreatedByMe = false;
+  onlinePendingPublicGameMessageId = null;
   onlineReconnectSuppressed = true;
   onlineConnected = false;
   onlineConnectionState = 'cancelled';
@@ -3921,8 +4158,12 @@ function applyRoomCancelled(message){
 }
 function connectOnlineRoom(roomId, opts){
   opts = opts || {};
-  if(opts.preferredRole) onlinePreferredRoleForNextConnect = normalizeInviteColorPreference(opts.preferredRole) === 'b' ? 'b' : 'w';
-  if(opts.initialGameSetup) onlineDesiredGameSetupForNewRoom = normalizeGameSetup(opts.initialGameSetup);
+  if(typeof opts.spectatorOnly === 'boolean') onlineSpectatorOnly = opts.spectatorOnly;
+  else if(!opts.reconnect) onlineSpectatorOnly = false;
+  if(opts.publicWatchId) onlinePublicWatchId = cleanPublicWatchId(opts.publicWatchId);
+  else if(!opts.reconnect && !onlineSpectatorOnly) onlinePublicWatchId = '';
+  if(opts.preferredRole && !onlineSpectatorOnly) onlinePreferredRoleForNextConnect = normalizeInviteColorPreference(opts.preferredRole) === 'b' ? 'b' : 'w';
+  if(opts.initialGameSetup && !onlineSpectatorOnly) onlineDesiredGameSetupForNewRoom = normalizeGameSetup(opts.initialGameSetup);
   else if(!opts.reconnect) onlineDesiredGameSetupForNewRoom = null;
   roomId = cleanRoomId(roomId);
   if(!roomId) return;
@@ -3945,6 +4186,8 @@ function connectOnlineRoom(roomId, opts){
   onlineRoomGameSetup = null;
   onlinePendingGameSetupMessageId = null;
   onlineCanSetTimeControl = false;
+  onlineCreatedByMe = false;
+  onlinePendingPublicGameMessageId = null;
   onlineAutoSyncedInitialSetup = false;
   onlineAutoSyncedInitialTime = false;
   onlineOrientationRoleApplied = null;
@@ -3957,8 +4200,9 @@ function connectOnlineRoom(roomId, opts){
   onlineSeatClaimSent = false;
   onlineReconnectSuppressed = false;
   onlineRoomCancelled = false;
+  onlinePublicGame = false;
   if(!opts.reconnect) onlineDailyLoginPrompted = false;
-  onlineLastMessage = 'Online-Raum wird verbunden.';
+  onlineLastMessage = onlineSpectatorOnly ? 'Öffentliche Partie wird im Zuschauermodus geöffnet.' : 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
   updateOnlineUi();
   closeOnlineSocket();
@@ -3987,7 +4231,7 @@ function connectOnlineRoom(roomId, opts){
   onlineSocket.addEventListener('open', () => {
     onlineConnected = false;
     onlineConnectionState = 'authenticating';
-    onlineLastMessage = 'Verbindung geöffnet. Spielerplatz wird bestätigt.';
+    onlineLastMessage = onlineSpectatorOnly ? 'Verbindung geöffnet. Zuschauerzugang wird bestätigt.' : 'Verbindung geöffnet. Spielerplatz wird bestätigt.';
     updateOnlineUi();
   });
   onlineSocket.addEventListener('message', ev => {
@@ -4013,11 +4257,12 @@ function connectOnlineRoom(roomId, opts){
     }
     if(msg.type === 'hello'){
       if(msg.seatDenied) clearSeatCredentials(onlineRoomId);
+      if(msg.spectatorMode === true) onlineSpectatorOnly = true;
       if((msg.role === 'w' || msg.role === 'b') && msg.seatToken) saveSeatCredentials(onlineRoomId, msg.role, msg.seatToken);
       onlineConnected = true;
       onlineConnectionState = 'connected';
-      onlineLastMessage = msg.seatDenied ? (msg.message || 'Spielerplatz konnte nicht übernommen werden; Zuschauerrolle aktiv.') : 'Mit Lobby verbunden.';
-      if(onlineDesiredGameSetupForNewRoom){
+      onlineLastMessage = msg.seatDenied ? (msg.message || 'Spielerplatz konnte nicht übernommen werden; Zuschauerrolle aktiv.') : (onlineSpectatorOnly ? 'Zuschauerzugang verbunden.' : 'Mit Lobby verbunden.');
+      if(onlineDesiredGameSetupForNewRoom && !onlineSpectatorOnly){
         setTimeout(syncCurrentGameSetupToOnline, 180);
         setTimeout(syncCurrentGameSetupToOnline, 750);
       }
@@ -4027,8 +4272,10 @@ function connectOnlineRoom(roomId, opts){
     }
     if(msg.type === 'error'){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
+      if(msg.code === 'PUBLIC_SPECTATOR_ACCESS_UNAVAILABLE' || msg.code === 'PUBLIC_GAME_VISIBILITY_REVOKED') onlineReconnectSuppressed = true;
       if(String(msg.code || '').indexOf('CHAT_') === 0) setChatStatus(msg.message || 'Chat-Fehler.', true);
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
+      if(String(msg.code || '').indexOf('PUBLIC_GAME_') === 0 || msg.code === 'ONLY_CREATOR_CAN_SET_PUBLIC_GAME' || msg.code === 'GAME_ALREADY_ENDED') onlinePendingPublicGameMessageId = null;
       updateOnlineUi();
       if(statusEl){
         statusEl.textContent = onlineLastMessage;
@@ -4054,6 +4301,18 @@ function connectOnlineRoom(roomId, opts){
 
     if(Object.prototype.hasOwnProperty.call(msg, 'canSetTimeControl')){
       onlineCanSetTimeControl = !!msg.canSetTimeControl;
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'createdByMe')){
+      onlineCreatedByMe = !!msg.createdByMe;
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'publicGame')){
+      onlinePublicGame = !!msg.publicGame;
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'spectatorMode') && msg.spectatorMode){
+      onlineSpectatorOnly = true;
       handled = true;
     }
 
@@ -4131,12 +4390,17 @@ function connectOnlineRoom(roomId, opts){
       onlinePendingTimeControlMessageId = null;
       handled = true;
     }
+    if(msg.type === 'public_game_ack'){
+      onlinePendingPublicGameMessageId = null;
+      if(Object.prototype.hasOwnProperty.call(msg, 'publicGame')) onlinePublicGame = !!msg.publicGame;
+      handled = true;
+    }
     if((msg.type === 'start_game_ack' || (incomingGame && incomingGame.started)) && onlineGameStarted){
       onlinePendingStartMessageId = null;
       handled = true;
     }
 
-    const knownStateTypes = ['seat_challenge','seat_replaced','hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','public_game_ack','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -4153,17 +4417,18 @@ function connectOnlineRoom(roomId, opts){
       if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
       else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
     } else if(msg.type === 'time_control_ack') onlineLastMessage = 'Bedenkzeit vom Server bestätigt.';
+    else if(msg.type === 'public_game_ack') onlineLastMessage = onlinePublicGame ? 'Zuschauerfreigabe wurde aktiviert.' : 'Zuschauerfreigabe wurde aufgehoben.';
     else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
     else if(isOnlineSideConnected('w') && isOnlineSideConnected('b')) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
     else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
     else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
-    else if(onlineRoleCode === 'spectator') onlineLastMessage = 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
+    else if(onlineRoleCode === 'spectator') onlineLastMessage = onlineSpectatorOnly ? 'Du schaust dieser öffentlichen Partie zu.' : 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
 
-    if(!onlineAutoSyncedInitialSetup && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && (!incomingGameSetup || onlineDesiredGameSetupForNewRoom) && !onlineGameStarted){
+    if(!onlineSpectatorOnly && !onlineAutoSyncedInitialSetup && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && (!incomingGameSetup || onlineDesiredGameSetupForNewRoom) && !onlineGameStarted){
       onlineAutoSyncedInitialSetup = true;
       setTimeout(syncCurrentGameSetupToOnline, 80);
     }
-    if(!onlineAutoSyncedInitialTime && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && !incomingTimeControl && timeMode && !onlineGameStarted){
+    if(!onlineSpectatorOnly && !onlineAutoSyncedInitialTime && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && !incomingTimeControl && timeMode && !onlineGameStarted){
       onlineAutoSyncedInitialTime = true;
       setTimeout(syncCurrentTimeControlToOnline, 100);
     }
@@ -4191,10 +4456,14 @@ function connectOnlineRoom(roomId, opts){
       onlineReconnectSuppressed = true;
       clearSeatCredentials(onlineRoomId);
     }
+    if(event && event.code === 4003){
+      onlineReconnectSuppressed = true;
+      onlineLastMessage = 'Dieser öffentliche Zuschauerzugang ist nicht mehr verfügbar.';
+    }
     if(!onlineReconnectSuppressed) onlineLastMessage = 'Lobby-Verbindung getrennt.';
     updateOnlineUi();
     if(onlineRoomId && !onlineReconnectSuppressed){
-      onlineReconnectTimer = setTimeout(() => connectOnlineRoom(onlineRoomId, {reconnect:true}), opts.reconnect ? 3500 : 2000);
+      onlineReconnectTimer = setTimeout(() => connectOnlineRoom(onlineRoomId, {reconnect:true, spectatorOnly:onlineSpectatorOnly, publicWatchId:onlinePublicWatchId}), opts.reconnect ? 3500 : 2000);
     }
   });
   onlineSocket.addEventListener('error', () => {
@@ -4452,9 +4721,18 @@ async function createNewOnlineRoom(opts){
     // Ein vorhandener Raum in der Adresszeile wird bei Reload/Wiederaufnahme
     // niemals durch einen neuen Raum ersetzt.
     let roomFromUrl = '';
-    try{ roomFromUrl = cleanRoomId(new URL(window.location.href).searchParams.get('room')); } catch(_){}
+    let watchFromUrl = '';
+    try{
+      const currentUrl = new URL(window.location.href);
+      roomFromUrl = cleanRoomId(currentUrl.searchParams.get('room'));
+      watchFromUrl = cleanPublicWatchId(currentUrl.searchParams.get('watch'));
+    } catch(_){}
+    if(!onlineRoomId && watchFromUrl){
+      connectOnlineRoom(watchFromUrl, {reconnect:true, spectatorOnly:true, publicWatchId:watchFromUrl});
+      return true;
+    }
     if(!onlineRoomId && roomFromUrl){
-      connectOnlineRoom(roomFromUrl, {reconnect:true});
+      connectOnlineRoom(roomFromUrl, {reconnect:true, spectatorOnly:false});
       return true;
     }
 
@@ -4466,6 +4744,10 @@ async function createNewOnlineRoom(opts){
     }
     if(!(await ensureDisplayNameForOnline())) return false;
     const selectedGameSetupForRoom = currentGameSetupPayload();
+    onlineSpectatorOnly = false;
+    onlinePublicWatchId = '';
+    onlineDesiredPublicGameForNewRoom = !!publicGamePreference;
+    onlinePublicGame = !!publicGamePreference;
     closeOnlineSocket();
     onlineRoomId = null;
     onlineRoleCode = 'local';
@@ -4483,6 +4765,8 @@ async function createNewOnlineRoom(opts){
     onlinePendingGameSetupMessageId = null;
     onlineAutoSyncedInitialSetup = false;
     onlineCanSetTimeControl = false;
+    onlineCreatedByMe = false;
+    onlinePendingPublicGameMessageId = null;
     onlineClockSync = null;
     onlineSeatClaimSent = false;
     onlineRoomCancelled = false;
@@ -4492,7 +4776,7 @@ async function createNewOnlineRoom(opts){
     // URL und Sitzungsmerker werden vor dem WebSocket-Aufbau gesetzt. Ein sofortiger
     // Browser-Reload kann dadurch denselben Raum wieder aufnehmen.
     updateInviteUrlInAddressBar(roomId);
-    connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect, initialGameSetup: selectedGameSetupForRoom});
+    connectOnlineRoom(roomId, {preferredRole: onlinePreferredRoleForNextConnect, initialGameSetup: selectedGameSetupForRoom, spectatorOnly:false});
     if(opts.copyLink !== false) setTimeout(copyInviteLink, 250);
     return true;
   })();
@@ -4511,8 +4795,100 @@ async function inviteToOnlineGame(event){
     updateOnlineActionButtons();
   }
 }
+function updatePublicVisibilityUi(){
+  const inRoom = !!onlineRoomId;
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  const ended = !!(onlineGameEnded || gameEnded || timeLost);
+  const pending = !!onlinePendingPublicGameMessageId;
+
+  if(publicVisibilityBoxEl) publicVisibilityBoxEl.hidden = inRoom;
+  if(publicGameCheckbox){
+    publicGameCheckbox.checked = !!publicGamePreference;
+    publicGameCheckbox.disabled = inRoom || !loggedIn;
+    publicGameCheckbox.title = !loggedIn
+      ? 'Zum Erstellen einer öffentlichen Partie bitte einloggen.'
+      : 'Gestartete Partie öffentlich in der Zuschauerübersicht anzeigen.';
+  }
+  if(publicVisibilityHintEl){
+    if(!loggedIn){
+      publicVisibilityHintEl.textContent = 'Nur eingeloggte Mitglieder können Partien erstellen und öffentlich freigeben.';
+    } else {
+      publicVisibilityHintEl.textContent = publicGamePreference
+        ? 'Nach dem Partiestart erscheint die Partie unter „Laufende Partien“. Der private Spielerchat bleibt verborgen.'
+        : 'Die Partie bleibt privat und erscheint nicht unter „Laufende Partien“.';
+    }
+  }
+
+  const canChangeRoomVisibility = !!(inRoom && onlineConnected && onlineCreatedByMe && !ended && onlineRoleCode !== 'spectator');
+  if(roomPublicVisibilityBoxEl) roomPublicVisibilityBoxEl.hidden = !inRoom || !onlineCreatedByMe || onlineRoleCode === 'spectator';
+  if(roomPublicGameCheckbox){
+    roomPublicGameCheckbox.checked = !!onlinePublicGame;
+    roomPublicGameCheckbox.disabled = !canChangeRoomVisibility || pending;
+    roomPublicGameCheckbox.title = ended
+      ? 'Nach Partieende kann die Zuschauerfreigabe nicht mehr geändert werden.'
+      : (!onlineCreatedByMe ? 'Nur der Ersteller kann die Zuschauerfreigabe ändern.' : (pending ? 'Änderung wird vom Server verarbeitet.' : 'Zuschauerfreigabe dieser Partie ändern.'));
+  }
+  if(roomPublicVisibilityHintEl){
+    if(pending){
+      roomPublicVisibilityHintEl.textContent = 'Änderung wird gespeichert…';
+    } else if(ended){
+      roomPublicVisibilityHintEl.textContent = onlinePublicGame
+        ? 'Die Partie ist beendet; die öffentliche Freigabe kann nicht mehr geändert werden.'
+        : 'Die Partie ist beendet und nicht öffentlich gelistet.';
+    } else if(!onlineConnected){
+      roomPublicVisibilityHintEl.textContent = 'Die Zuschauerfreigabe kann nach Wiederherstellung der Verbindung geändert werden.';
+    } else if(onlinePublicGame){
+      roomPublicVisibilityHintEl.textContent = 'Öffentlich freigegeben. Beim Abschalten verschwinden die Partie und der bisherige Zuschauerzugang sofort.';
+    } else {
+      roomPublicVisibilityHintEl.textContent = onlineGameStarted
+        ? 'Privat. Du kannst die laufende Partie jetzt öffentlich freigeben.'
+        : 'Privat. Eine Freigabe erscheint erst nach dem Partiestart in der öffentlichen Übersicht.';
+    }
+  }
+}
+function setPublicGamePreference(enabled){
+  if(onlineRoomId){ updatePublicVisibilityUi(); return; }
+  publicGamePreference = !!enabled;
+  try{ localStorage.setItem(ONLINE_PUBLIC_GAME_STORAGE_KEY, publicGamePreference ? 'yes' : 'no'); } catch(_){}
+  updatePublicVisibilityUi();
+}
+function setCurrentRoomPublicGame(enabled){
+  if(!onlineRoomId || !onlineConnected || !onlineCreatedByMe || onlineRoleCode === 'spectator'){
+    updatePublicVisibilityUi();
+    return;
+  }
+  if(onlineGameEnded || gameEnded || timeLost){
+    onlineLastMessage = 'Nach Partieende kann die Zuschauerfreigabe nicht mehr geändert werden.';
+    updateOnlineUi();
+    return;
+  }
+  if(onlinePendingPublicGameMessageId){ updatePublicVisibilityUi(); return; }
+  const desired = !!enabled;
+  if(desired === !!onlinePublicGame){ updatePublicVisibilityUi(); return; }
+  const messageId = 'pub_' + Date.now() + '_' + randomToken(5);
+  onlinePendingPublicGameMessageId = messageId;
+  onlineLastMessage = desired ? 'Zuschauerfreigabe wird aktiviert…' : 'Zuschauerfreigabe wird aufgehoben…';
+  updateOnlineUi();
+  if(!sendOnlineMessage({type:'set_public_game', publicGame:desired, messageId})){
+    onlinePendingPublicGameMessageId = null;
+    onlineLastMessage = 'Zuschauerfreigabe konnte nicht gesendet werden.';
+    updateOnlineUi();
+    return;
+  }
+  setTimeout(() => {
+    if(onlinePendingPublicGameMessageId !== messageId) return;
+    onlinePendingPublicGameMessageId = null;
+    requestOnlineState();
+    onlineLastMessage = 'Zuschauerfreigabe wurde noch nicht bestätigt. Raumzustand wird aktualisiert.';
+    updateOnlineUi();
+  }, 3500);
+}
+if(publicGameCheckbox) publicGameCheckbox.addEventListener('change', () => setPublicGamePreference(publicGameCheckbox.checked));
+if(roomPublicGameCheckbox) roomPublicGameCheckbox.addEventListener('change', () => setCurrentRoomPublicGame(roomPublicGameCheckbox.checked));
+
 inviteColorButtons.forEach(btn => btn.addEventListener('click', () => setInviteColorPreference(btn.dataset.inviteColor)));
 updateInviteColorUi();
+updatePublicVisibilityUi();
 createOnlineBtn.addEventListener('click', inviteToOnlineGame);
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', copyInviteLink);
 if(inviteCopyLinkBtn) inviteCopyLinkBtn.addEventListener('click', copyInviteLinkFromDialog);
@@ -5107,6 +5483,7 @@ function openNewGameTab(){
     url.searchParams.delete('room');
     url.searchParams.delete('role');
     url.searchParams.delete('player');
+    url.searchParams.delete('watch');
     url.searchParams.set('fresh', '1');
     window.open(url.toString(), '_blank', 'noopener,noreferrer');
   } catch(_){
@@ -5500,26 +5877,46 @@ updateVariantUi();
 renderBoard();
 refreshSiteStats(true);
 let initialRoomId = '';
+let initialPublicWatchId = '';
+let initialSpectatorOnly = false;
 let freshGameRequested = false;
 try{
   const initialUrl = new URL(window.location.href);
   initialRoomId = cleanRoomId(initialUrl.searchParams.get('room'));
+  initialPublicWatchId = cleanPublicWatchId(initialUrl.searchParams.get('watch'));
+  initialSpectatorOnly = !!initialPublicWatchId;
   freshGameRequested = initialUrl.searchParams.get('fresh') === '1';
   if(freshGameRequested){
     initialUrl.searchParams.delete('fresh');
+    initialUrl.searchParams.delete('watch');
+    initialSpectatorOnly = false;
+    initialPublicWatchId = '';
     history.replaceState(null, '', initialUrl.toString());
   }
 } catch(_){}
-if(!initialRoomId && !freshGameRequested) initialRoomId = getRememberedRoomForReload();
+if(!initialRoomId && !initialPublicWatchId && !freshGameRequested){
+  initialRoomId = getRememberedRoomForReload();
+  initialSpectatorOnly = false;
+  initialPublicWatchId = '';
+}
 initialAuthRefreshPromise.finally(() => {
-  if(initialRoomId){
+  if(initialPublicWatchId){
+    onlineSpectatorOnly = true;
+    onlinePublicWatchId = initialPublicWatchId;
+    onlinePreferredRoleForNextConnect = '';
+    connectOnlineRoom(initialPublicWatchId, {reconnect:true, spectatorOnly:true, publicWatchId:initialPublicWatchId});
+  } else if(initialRoomId){
+    onlineSpectatorOnly = false;
+    onlinePublicWatchId = '';
     updateInviteUrlInAddressBar(initialRoomId);
     onlinePreferredRoleForNextConnect = '';
     ensureDisplayNameForOnline().then(ok => {
-      if(ok) connectOnlineRoom(initialRoomId, {reconnect:true});
+      if(ok) connectOnlineRoom(initialRoomId, {reconnect:true, spectatorOnly:false});
       else updateOnlineUi();
     });
   } else {
+    onlineSpectatorOnly = false;
+    onlinePublicWatchId = '';
     updateOnlineUi();
   }
 });
