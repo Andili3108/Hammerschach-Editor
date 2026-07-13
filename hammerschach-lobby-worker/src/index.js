@@ -139,7 +139,7 @@ function isAdminUser(row, env = null) {
   if (!row) return false;
   const configuredAdminId = String((env && env.ADMIN_USER_ID) || '').trim();
   return !!(
-    row.is_admin === 1 || row.is_admin === true || String(row.is_admin || '') === '1' ||
+    row.is_admin === 1 || row.is_admin === true || String(row.is_admin || '') === '1' || row.isAdmin === true ||
     (configuredAdminId && String(row.id || '') === configuredAdminId)
   );
 }
@@ -522,6 +522,391 @@ async function listPublicGames(env) {
   })).filter(game => !!game.watchId);
 }
 
+
+const RATING_START = 1500;
+const RATING_START_DEVIATION = 350;
+const RATING_START_VOLATILITY = 0.06;
+const RATING_PROVISIONAL_DEVIATION = 110;
+const RATING_GLICKO2_TAU = 0.75;
+const RATING_GLICKO2_SCALE = 173.7178;
+const RATING_PERIOD_MS = 24 * 60 * 60 * 1000;
+const RATING_SYSTEM_VERSION = 1;
+const RATING_SERVICE_ROOM = '__hammerschach_rating_service_v1__';
+const RATING_TYPES = Object.freeze([
+  { key:'daily_classic', label:'Daily Classic' },
+  { key:'daily_freestyle', label:'Daily Freestyle' },
+  { key:'live_classic', label:'Live Classic' },
+  { key:'live_rapid', label:'Live Rapid' },
+  { key:'live_blitz', label:'Live Blitz' },
+  { key:'live_freestyle', label:'Live Freestyle' }
+]);
+const RATING_TYPE_KEYS = new Set(RATING_TYPES.map(item => item.key));
+let ratingTablesReady = false;
+
+function ratingTypeInfo(key) {
+  return RATING_TYPES.find(item => item.key === String(key || '')) || null;
+}
+
+function ratingTypeFromGame(timeControl, setup) {
+  const control = cleanTimeControl(timeControl || null);
+  if (!control) return null;
+  const variant = setup && String(setup.variant || '').toLowerCase() === 'freestyle960' ? 'freestyle960' : 'standard';
+  if (control.mode === 'daily') return variant === 'freestyle960' ? 'daily_freestyle' : 'daily_classic';
+  if (variant === 'freestyle960') return 'live_freestyle';
+  const category = String(control.category || '').toLowerCase();
+  if (category === 'classic') return 'live_classic';
+  if (category === 'rapid') return 'live_rapid';
+  if (category === 'blitz') return 'live_blitz';
+  return null;
+}
+
+function ratingDisplayValue(rating, deviation) {
+  const rounded = Math.round(Number.isFinite(Number(rating)) ? Number(rating) : RATING_START);
+  return String(rounded) + (Number(deviation || RATING_START_DEVIATION) > RATING_PROVISIONAL_DEVIATION ? '?' : '');
+}
+
+async function ensureRatingTables(env) {
+  if (!env || !env.DB) return false;
+  if (ratingTablesReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS user_ratings (
+       user_id TEXT NOT NULL,
+       rating_type TEXT NOT NULL,
+       rating REAL NOT NULL DEFAULT 1500,
+       deviation REAL NOT NULL DEFAULT 350,
+       volatility REAL NOT NULL DEFAULT 0.06,
+       games INTEGER NOT NULL DEFAULT 0,
+       wins INTEGER NOT NULL DEFAULT 0,
+       draws INTEGER NOT NULL DEFAULT 0,
+       losses INTEGER NOT NULL DEFAULT 0,
+       last_played_at TEXT,
+       updated_at TEXT NOT NULL,
+       PRIMARY KEY (user_id, rating_type)
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_ratings_user ON user_ratings (user_id, rating_type)`).run();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS rated_games (
+       room_id TEXT PRIMARY KEY,
+       rating_type TEXT NOT NULL,
+       white_user_id TEXT NOT NULL,
+       black_user_id TEXT NOT NULL,
+       result TEXT NOT NULL,
+       white_rating_before REAL NOT NULL,
+       white_deviation_before REAL NOT NULL,
+       white_rating_after REAL NOT NULL,
+       white_deviation_after REAL NOT NULL,
+       black_rating_before REAL NOT NULL,
+       black_deviation_before REAL NOT NULL,
+       black_rating_after REAL NOT NULL,
+       black_deviation_after REAL NOT NULL,
+       rated_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rated_games_white ON rated_games (white_user_id, rated_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rated_games_black ON rated_games (black_user_id, rated_at)`).run();
+  ratingTablesReady = true;
+  return true;
+}
+
+async function ensureRatingRowsForUser(env, userId) {
+  if (!(await ensureRatingTables(env)) || !userId) return false;
+  const nowIso = new Date().toISOString();
+  const statements = RATING_TYPES.map(item => env.DB.prepare(
+    `INSERT OR IGNORE INTO user_ratings (
+       user_id, rating_type, rating, deviation, volatility,
+       games, wins, draws, losses, last_played_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, NULL, ?)`
+  ).bind(String(userId), item.key, RATING_START, RATING_START_DEVIATION, RATING_START_VOLATILITY, nowIso));
+  await env.DB.batch(statements);
+  return true;
+}
+
+function normalizeRatingRow(row, typeKey = '') {
+  const info = ratingTypeInfo(typeKey || (row && row.rating_type));
+  if (!info) return null;
+  const rating = Number.isFinite(Number(row && row.rating)) ? Number(row.rating) : RATING_START;
+  const deviation = Number.isFinite(Number(row && row.deviation)) ? Number(row.deviation) : RATING_START_DEVIATION;
+  const volatility = Number.isFinite(Number(row && row.volatility)) ? Number(row.volatility) : RATING_START_VOLATILITY;
+  const games = Math.max(0, Math.floor(Number(row && row.games || 0)));
+  return {
+    key: info.key,
+    label: info.label,
+    rating: Math.round(rating),
+    ratingExact: rating,
+    deviation: Math.round(deviation * 100) / 100,
+    volatility,
+    games,
+    wins: Math.max(0, Math.floor(Number(row && row.wins || 0))),
+    draws: Math.max(0, Math.floor(Number(row && row.draws || 0))),
+    losses: Math.max(0, Math.floor(Number(row && row.losses || 0))),
+    provisional: deviation > RATING_PROVISIONAL_DEVIATION,
+    display: ratingDisplayValue(rating, deviation),
+    lastPlayedAt: row && row.last_played_at ? row.last_played_at : null,
+    updatedAt: row && row.updated_at ? row.updated_at : null
+  };
+}
+
+async function getUserRatings(env, userId) {
+  if (!userId || !(await ensureRatingRowsForUser(env, userId))) return {};
+  const result = await env.DB.prepare(
+    `SELECT user_id, rating_type, rating, deviation, volatility,
+            games, wins, draws, losses, last_played_at, updated_at
+       FROM user_ratings
+      WHERE user_id = ?`
+  ).bind(String(userId)).all();
+  const byKey = {};
+  for (const row of (result && result.results ? result.results : [])) {
+    const normalized = normalizeRatingRow(row);
+    if (normalized) byKey[normalized.key] = normalized;
+  }
+  for (const item of RATING_TYPES) {
+    if (!byKey[item.key]) byKey[item.key] = normalizeRatingRow(null, item.key);
+  }
+  return byKey;
+}
+
+
+async function getRatingTypeForUsers(env, userIds, ratingType) {
+  const info = ratingTypeInfo(ratingType);
+  const ids = Array.from(new Set((userIds || []).map(value => String(value || '').trim()).filter(Boolean)));
+  if (!info || ids.length === 0 || !(await ensureRatingTables(env))) return {};
+  const nowIso = new Date().toISOString();
+  await env.DB.batch(ids.map(userId => env.DB.prepare(
+    `INSERT OR IGNORE INTO user_ratings (
+       user_id, rating_type, rating, deviation, volatility,
+       games, wins, draws, losses, last_played_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, NULL, ?)`
+  ).bind(userId, info.key, RATING_START, RATING_START_DEVIATION, RATING_START_VOLATILITY, nowIso)));
+  const placeholders = ids.map(() => '?').join(',');
+  const result = await env.DB.prepare(
+    `SELECT user_id, rating_type, rating, deviation, volatility,
+            games, wins, draws, losses, last_played_at, updated_at
+       FROM user_ratings
+      WHERE rating_type = ? AND user_id IN (${placeholders})`
+  ).bind(info.key, ...ids).all();
+  const out = {};
+  for (const row of (result && result.results ? result.results : [])) {
+    const userId = String(row.user_id || '');
+    const normalized = normalizeRatingRow(row, info.key);
+    if (userId && normalized) out[userId] = normalized;
+  }
+  return out;
+}
+
+async function publicUserWithRatings(env, row) {
+  const user = publicUser(row, env);
+  if (!user) return null;
+  user.ratings = await getUserRatings(env, user.id);
+  return user;
+}
+
+function inflateRatingDeviationForInactivity(row, nowMs) {
+  const rating = Number.isFinite(Number(row.rating)) ? Number(row.rating) : RATING_START;
+  const deviation = Number.isFinite(Number(row.deviation)) ? Number(row.deviation) : RATING_START_DEVIATION;
+  const volatility = Number.isFinite(Number(row.volatility)) ? Number(row.volatility) : RATING_START_VOLATILITY;
+  const lastPlayedMs = Date.parse(row.last_played_at || '');
+  const periods = Number.isFinite(lastPlayedMs) ? Math.max(0, Math.floor((nowMs - lastPlayedMs) / RATING_PERIOD_MS)) : 0;
+  if (!periods) return { rating, deviation, volatility };
+  const phi = deviation / RATING_GLICKO2_SCALE;
+  const inflatedPhi = Math.min(RATING_START_DEVIATION / RATING_GLICKO2_SCALE, Math.sqrt(phi * phi + volatility * volatility * periods));
+  return { rating, deviation: inflatedPhi * RATING_GLICKO2_SCALE, volatility };
+}
+
+function glicko2G(phi) {
+  return 1 / Math.sqrt(1 + (3 * phi * phi) / (Math.PI * Math.PI));
+}
+
+function glicko2E(mu, opponentMu, opponentPhi) {
+  return 1 / (1 + Math.exp(-glicko2G(opponentPhi) * (mu - opponentMu)));
+}
+
+function glicko2Update(player, opponent, score) {
+  const mu = (player.rating - RATING_START) / RATING_GLICKO2_SCALE;
+  const phi = Math.max(0.000001, player.deviation / RATING_GLICKO2_SCALE);
+  const sigma = Math.max(0.000001, player.volatility);
+  const opponentMu = (opponent.rating - RATING_START) / RATING_GLICKO2_SCALE;
+  const opponentPhi = Math.max(0.000001, opponent.deviation / RATING_GLICKO2_SCALE);
+  const g = glicko2G(opponentPhi);
+  const expected = glicko2E(mu, opponentMu, opponentPhi);
+  const variance = 1 / Math.max(0.000000000001, g * g * expected * (1 - expected));
+  const delta = variance * g * (score - expected);
+  const a = Math.log(sigma * sigma);
+
+  const f = x => {
+    const ex = Math.exp(x);
+    const numerator = ex * (delta * delta - phi * phi - variance - ex);
+    const denominator = 2 * Math.pow(phi * phi + variance + ex, 2);
+    return numerator / denominator - (x - a) / (RATING_GLICKO2_TAU * RATING_GLICKO2_TAU);
+  };
+
+  let A = a;
+  let B;
+  if (delta * delta > phi * phi + variance) {
+    B = Math.log(delta * delta - phi * phi - variance);
+  } else {
+    let k = 1;
+    B = a - k * RATING_GLICKO2_TAU;
+    while (f(B) >= 0 && k < 100) {
+      k += 1;
+      B = a - k * RATING_GLICKO2_TAU;
+    }
+  }
+
+  let fA = f(A);
+  let fB = f(B);
+  let guard = 0;
+  while (Math.abs(B - A) > 0.000001 && guard < 100) {
+    const C = A + (A - B) * fA / (fB - fA || 0.000000000001);
+    const fC = f(C);
+    if (fC * fB <= 0) {
+      A = B;
+      fA = fB;
+    } else {
+      fA /= 2;
+    }
+    B = C;
+    fB = fC;
+    guard += 1;
+  }
+
+  const newVolatility = Math.exp(A / 2);
+  const phiStar = Math.sqrt(phi * phi + newVolatility * newVolatility);
+  const newPhi = 1 / Math.sqrt(1 / (phiStar * phiStar) + 1 / variance);
+  const newMu = mu + newPhi * newPhi * g * (score - expected);
+  return {
+    rating: Math.max(100, Math.min(4000, RATING_START + RATING_GLICKO2_SCALE * newMu)),
+    deviation: Math.max(30, Math.min(RATING_START_DEVIATION, RATING_GLICKO2_SCALE * newPhi)),
+    volatility: Math.max(0.000001, Math.min(1, newVolatility))
+  };
+}
+
+function ratedGamePayload(row) {
+  if (!row) return null;
+  const info = ratingTypeInfo(row.rating_type);
+  if (!info) return null;
+  const whiteBefore = Number(row.white_rating_before);
+  const whiteAfter = Number(row.white_rating_after);
+  const blackBefore = Number(row.black_rating_before);
+  const blackAfter = Number(row.black_rating_after);
+  const whiteDeviationAfter = Number(row.white_deviation_after);
+  const blackDeviationAfter = Number(row.black_deviation_after);
+  return {
+    rated: true,
+    system: 'glicko2',
+    systemVersion: RATING_SYSTEM_VERSION,
+    type: info.key,
+    label: info.label,
+    result: row.result,
+    ratedAt: row.rated_at || null,
+    players: {
+      white: {
+        before: Math.round(whiteBefore),
+        after: Math.round(whiteAfter),
+        delta: Math.round(whiteAfter) - Math.round(whiteBefore),
+        deviation: Math.round(whiteDeviationAfter * 100) / 100,
+        provisional: whiteDeviationAfter > RATING_PROVISIONAL_DEVIATION,
+        display: ratingDisplayValue(whiteAfter, whiteDeviationAfter)
+      },
+      black: {
+        before: Math.round(blackBefore),
+        after: Math.round(blackAfter),
+        delta: Math.round(blackAfter) - Math.round(blackBefore),
+        deviation: Math.round(blackDeviationAfter * 100) / 100,
+        provisional: blackDeviationAfter > RATING_PROVISIONAL_DEVIATION,
+        display: ratingDisplayValue(blackAfter, blackDeviationAfter)
+      }
+    }
+  };
+}
+
+async function rateCompletedGame(env, payload) {
+  if (!(await ensureRatingTables(env))) return { ok:false, code:'DB_NOT_CONFIGURED', message:'Rating-Datenbank ist nicht verfügbar.' };
+  const roomId = cleanRoomId(payload && payload.roomId);
+  const ratingType = String(payload && payload.ratingType || '');
+  const whiteUserId = String(payload && payload.whiteUserId || '').trim();
+  const blackUserId = String(payload && payload.blackUserId || '').trim();
+  const result = String(payload && payload.result || '');
+  if (!roomId || !RATING_TYPE_KEYS.has(ratingType) || !whiteUserId || !blackUserId || !['1-0','0-1','1/2-1/2'].includes(result)) {
+    return { ok:false, code:'INVALID_RATING_GAME', message:'Die Ratingdaten der Partie sind unvollständig.' };
+  }
+  if (whiteUserId === blackUserId) return { ok:true, rating:{ rated:false, type:ratingType, label:ratingTypeInfo(ratingType).label, reason:'same_account' } };
+
+  const existing = await env.DB.prepare(`SELECT * FROM rated_games WHERE room_id = ? LIMIT 1`).bind(roomId).first();
+  if (existing) return { ok:true, rating:ratedGamePayload(existing), alreadyRated:true };
+
+  const users = await env.DB.prepare(`SELECT id FROM users WHERE id IN (?, ?)`).bind(whiteUserId, blackUserId).all();
+  const userIds = new Set((users && users.results ? users.results : []).map(row => String(row.id || '')));
+  if (!userIds.has(whiteUserId) || !userIds.has(blackUserId)) {
+    return { ok:true, rating:{ rated:false, type:ratingType, label:ratingTypeInfo(ratingType).label, reason:'members_required' } };
+  }
+
+  await ensureRatingRowsForUser(env, whiteUserId);
+  await ensureRatingRowsForUser(env, blackUserId);
+  const rows = await env.DB.prepare(
+    `SELECT * FROM user_ratings
+      WHERE rating_type = ? AND user_id IN (?, ?)`
+  ).bind(ratingType, whiteUserId, blackUserId).all();
+  const byUser = Object.fromEntries((rows && rows.results ? rows.results : []).map(row => [String(row.user_id), row]));
+  const whiteRow = byUser[whiteUserId];
+  const blackRow = byUser[blackUserId];
+  if (!whiteRow || !blackRow) return { ok:false, code:'RATING_ROW_MISSING', message:'Ratingkonto konnte nicht geladen werden.' };
+
+  const now = Date.now();
+  const ratedAt = new Date(now).toISOString();
+  const whiteBefore = inflateRatingDeviationForInactivity(whiteRow, now);
+  const blackBefore = inflateRatingDeviationForInactivity(blackRow, now);
+  const whiteScore = result === '1-0' ? 1 : result === '0-1' ? 0 : 0.5;
+  const blackScore = 1 - whiteScore;
+  const whiteAfter = glicko2Update(whiteBefore, blackBefore, whiteScore);
+  const blackAfter = glicko2Update(blackBefore, whiteBefore, blackScore);
+  const whiteWin = whiteScore === 1 ? 1 : 0;
+  const whiteDraw = whiteScore === 0.5 ? 1 : 0;
+  const whiteLoss = whiteScore === 0 ? 1 : 0;
+  const blackWin = blackScore === 1 ? 1 : 0;
+  const blackDraw = blackScore === 0.5 ? 1 : 0;
+  const blackLoss = blackScore === 0 ? 1 : 0;
+
+  try {
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO rated_games (
+           room_id, rating_type, white_user_id, black_user_id, result,
+           white_rating_before, white_deviation_before, white_rating_after, white_deviation_after,
+           black_rating_before, black_deviation_before, black_rating_after, black_deviation_after,
+           rated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        roomId, ratingType, whiteUserId, blackUserId, result,
+        whiteBefore.rating, whiteBefore.deviation, whiteAfter.rating, whiteAfter.deviation,
+        blackBefore.rating, blackBefore.deviation, blackAfter.rating, blackAfter.deviation,
+        ratedAt
+      ),
+      env.DB.prepare(
+        `UPDATE user_ratings
+            SET rating = ?, deviation = ?, volatility = ?,
+                games = games + 1, wins = wins + ?, draws = draws + ?, losses = losses + ?,
+                last_played_at = ?, updated_at = ?
+          WHERE user_id = ? AND rating_type = ?`
+      ).bind(whiteAfter.rating, whiteAfter.deviation, whiteAfter.volatility, whiteWin, whiteDraw, whiteLoss, ratedAt, ratedAt, whiteUserId, ratingType),
+      env.DB.prepare(
+        `UPDATE user_ratings
+            SET rating = ?, deviation = ?, volatility = ?,
+                games = games + 1, wins = wins + ?, draws = draws + ?, losses = losses + ?,
+                last_played_at = ?, updated_at = ?
+          WHERE user_id = ? AND rating_type = ?`
+      ).bind(blackAfter.rating, blackAfter.deviation, blackAfter.volatility, blackWin, blackDraw, blackLoss, ratedAt, ratedAt, blackUserId, ratingType)
+    ]);
+  } catch (err) {
+    const duplicate = await env.DB.prepare(`SELECT * FROM rated_games WHERE room_id = ? LIMIT 1`).bind(roomId).first();
+    if (duplicate) return { ok:true, rating:ratedGamePayload(duplicate), alreadyRated:true };
+    throw err;
+  }
+
+  const stored = await env.DB.prepare(`SELECT * FROM rated_games WHERE room_id = ? LIMIT 1`).bind(roomId).first();
+  return { ok:true, rating:ratedGamePayload(stored) };
+}
+
 async function loadPrivateUser(env, userId) {
   if (!env || !env.DB || !userId) return null;
   return env.DB.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).bind(String(userId)).first();
@@ -610,6 +995,7 @@ async function deleteUserAccount(env, target, options = {}) {
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(target.id).run();
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
   return { ok: true, deletedUser: publicUser(target, env), cancelledInvitations: cancellation.cancelled || 0 };
 }
@@ -722,7 +1108,7 @@ async function handleAuthApi(request, env, url) {
   if (url.pathname === '/api/me' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
-    return json({ ok: true, user: session.user });
+    return json({ ok: true, user: await publicUserWithRatings(env, session.user) });
   }
 
   if (url.pathname === '/api/account/username' && request.method === 'POST') {
@@ -744,7 +1130,7 @@ async function handleAuthApi(request, env, url) {
     await env.DB.prepare(`UPDATE users SET username = ?, username_lc = ? WHERE id = ?`).bind(username, usernameLc, user.id).run();
     user.username = username;
     user.username_lc = usernameLc;
-    return json({ ok: true, user: publicUser(user, env), message: 'Benutzername wurde geändert.' });
+    return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Benutzername wurde geändert.' });
   }
 
   if (url.pathname === '/api/account/email' && request.method === 'POST') {
@@ -764,7 +1150,7 @@ async function handleAuthApi(request, env, url) {
     await env.DB.prepare(`UPDATE users SET email = ?, email_lc = ? WHERE id = ?`).bind(email, email, user.id).run();
     user.email = email;
     user.email_lc = email;
-    return json({ ok: true, user: publicUser(user, env), message: 'Mailadresse wurde geändert.' });
+    return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Mailadresse wurde geändert.' });
   }
 
   if (url.pathname === '/api/account/password' && request.method === 'POST') {
@@ -787,7 +1173,7 @@ async function handleAuthApi(request, env, url) {
         WHERE id = ?`
     ).bind('pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, user.id).run();
     await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND id <> ?`).bind(user.id, session.sessionId).run();
-    return json({ ok: true, user: publicUser(user, env), message: 'Kennwort wurde geändert. Andere Anmeldungen wurden beendet.' });
+    return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Kennwort wurde geändert. Andere Anmeldungen wurden beendet.' });
   }
 
   if (url.pathname === '/api/account' && request.method === 'DELETE') {
@@ -980,8 +1366,9 @@ async function handleAuthApi(request, env, url) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
 
+    await ensureRatingRowsForUser(env, id);
     const token = await createSession(env, id);
-    return json({ ok: true, sessionToken: token, user: publicUser({ id, username, email, created_at: nowIso }, env) });
+    return json({ ok: true, sessionToken: token, user: await publicUserWithRatings(env, { id, username, email, created_at: nowIso }) });
   }
 
   if (url.pathname === '/api/login' && request.method === 'POST') {
@@ -1006,8 +1393,9 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: false, code: 'ACCOUNT_DISABLED', message: 'Dieser Account ist deaktiviert.' }, { status: 403 });
     }
 
+    await ensureRatingRowsForUser(env, user.id);
     const token = await createSession(env, user.id);
-    return json({ ok: true, sessionToken: token, user: publicUser(user, env) });
+    return json({ ok: true, sessionToken: token, user: await publicUserWithRatings(env, user) });
   }
 
   if (url.pathname === '/api/members/search' && request.method === 'GET') {
@@ -1925,6 +2313,135 @@ export class GameRoom {
     this.env = env;
     this.userPresenceCache = { key:'', expiresAt:0, values:{} };
     this.accountNameCache = { key:'', expiresAt:0, values:{} };
+    this.ratingStateCache = { key:'', expiresAt:0, value:null };
+  }
+
+  async ratingMetaForStart(timeControl, gameSetup) {
+    const ratingType = ratingTypeFromGame(timeControl, gameSetup);
+    const typeInfo = ratingTypeInfo(ratingType);
+    const players = await this.getSecurePlayers();
+    const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+    const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+    let ratingRated = !!(typeInfo && whiteUserId && blackUserId && whiteUserId !== blackUserId);
+    let ratingReason = '';
+    if (!typeInfo) ratingReason = 'unsupported_time_control';
+    else if (!whiteUserId || !blackUserId) ratingReason = 'members_required';
+    else if (whiteUserId === blackUserId) ratingReason = 'same_account';
+    return {
+      ratingSystemVersion: RATING_SYSTEM_VERSION,
+      ratingType: typeInfo ? typeInfo.key : null,
+      ratingLabel: typeInfo ? typeInfo.label : 'Ungewertet',
+      ratingRated,
+      ratingReason: ratingRated ? '' : ratingReason
+    };
+  }
+
+  async finalizeRatingIfNeeded(game) {
+    if (!game || !game.ended || Number(game.ratingSystemVersion || 0) !== RATING_SYSTEM_VERSION) return null;
+    const stored = await this.state.storage.get('ratingResult');
+    if (stored) return stored;
+
+    const typeInfo = ratingTypeInfo(game.ratingType);
+    if (!game.ratingRated || !typeInfo) {
+      const unrated = {
+        rated:false,
+        system:'glicko2',
+        systemVersion:RATING_SYSTEM_VERSION,
+        type:typeInfo ? typeInfo.key : null,
+        label:typeInfo ? typeInfo.label : 'Ungewertet',
+        reason:game.ratingReason || 'not_rated'
+      };
+      await this.state.storage.put('ratingResult', unrated);
+      return unrated;
+    }
+
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const players = await this.getSecurePlayers();
+    const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+    const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+    if (!roomId || !whiteUserId || !blackUserId || whiteUserId === blackUserId) return null;
+    if (!this.env || !this.env.GAME_ROOM) return null;
+
+    try {
+      const id = this.env.GAME_ROOM.idFromName(RATING_SERVICE_ROOM);
+      const stub = this.env.GAME_ROOM.get(id);
+      const response = await stub.fetch(new Request('https://rating-service.internal/rate-game', {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          roomId,
+          ratingType:typeInfo.key,
+          whiteUserId,
+          blackUserId,
+          result:game.result || '*'
+        })
+      }));
+      const data = await response.json();
+      if (!response.ok || !data || !data.ok || !data.rating) return null;
+      await this.state.storage.put('ratingResult', data.rating);
+      this.ratingStateCache = { key:'', expiresAt:0, value:null };
+      return data.rating;
+    } catch (_) {
+      // Bei einem vorübergehenden D1-Fehler wird die Wertung beim nächsten Zustandsabruf erneut versucht.
+      return null;
+    }
+  }
+
+  async buildRatingState(game, timeControl, gameSetup) {
+    const storedResult = await this.state.storage.get('ratingResult');
+    if (game && game.ended && storedResult) return storedResult;
+
+    const fixedType = game && game.started && game.ratingType ? game.ratingType : ratingTypeFromGame(timeControl, gameSetup);
+    const typeInfo = ratingTypeInfo(fixedType);
+    if (!typeInfo) {
+      return {
+        rated:false,
+        system:'glicko2',
+        systemVersion:RATING_SYSTEM_VERSION,
+        type:null,
+        label:'Ungewertet',
+        reason:game && game.started ? (game.ratingReason || 'unsupported_time_control') : 'time_control_required',
+        players:{white:{member:false}, black:{member:false}}
+      };
+    }
+
+    const players = await this.getSecurePlayers();
+    const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+    const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+    const legacyStartedGame = !!(game && game.started && Number(game.ratingSystemVersion || 0) !== RATING_SYSTEM_VERSION);
+    const fixedRated = legacyStartedGame
+      ? false
+      : (game && game.started && Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION
+          ? !!game.ratingRated
+          : !!(whiteUserId && blackUserId && whiteUserId !== blackUserId));
+    const reason = fixedRated ? '' : (legacyStartedGame
+      ? 'rating_not_enabled_for_game'
+      : (game && game.started && game.ratingReason
+          ? game.ratingReason
+          : (!whiteUserId || !blackUserId ? 'members_required' : whiteUserId === blackUserId ? 'same_account' : 'not_rated')));
+    const cacheKey = [typeInfo.key, whiteUserId, blackUserId, fixedRated ? '1' : '0', game && game.ended ? 'ended' : 'open'].join('|');
+    const now = Date.now();
+    if (this.ratingStateCache && this.ratingStateCache.key === cacheKey && this.ratingStateCache.expiresAt > now) {
+      return this.ratingStateCache.value;
+    }
+
+    let ratings = {};
+    try { ratings = await getRatingTypeForUsers(this.env, [whiteUserId, blackUserId], typeInfo.key); } catch (_) {}
+    const state = {
+      rated:fixedRated,
+      system:'glicko2',
+      systemVersion:RATING_SYSTEM_VERSION,
+      type:typeInfo.key,
+      label:typeInfo.label,
+      reason,
+      provisionalDeviation:RATING_PROVISIONAL_DEVIATION,
+      players:{
+        white:whiteUserId && ratings[whiteUserId] ? Object.assign({member:true}, ratings[whiteUserId]) : {member:!!whiteUserId},
+        black:blackUserId && ratings[blackUserId] ? Object.assign({member:true}, ratings[blackUserId]) : {member:!!blackUserId}
+      }
+    };
+    this.ratingStateCache = { key:cacheKey, expiresAt:now + 10000, value:state };
+    return state;
   }
 
   async cancelDailyInvitation(requestingUserId) {
@@ -2067,6 +2584,18 @@ export class GameRoom {
 
   async fetch(request) {
     const url = new URL(request.url);
+
+    if (request.method === 'POST' && url.pathname === '/rate-game') {
+      const body = await readJsonBody(request);
+      if (!body) return json({ok:false, code:'BAD_JSON', message:'Ratingdaten konnten nicht gelesen werden.'}, {status:400});
+      try {
+        const result = await rateCompletedGame(this.env, body);
+        return json(result, {status:result.ok ? 200 : 400});
+      } catch (_) {
+        return json({ok:false, code:'RATING_UPDATE_FAILED', message:'Die Ratingwertung konnte nicht gespeichert werden.'}, {status:500});
+      }
+    }
+
     const room = cleanRoomId(url.searchParams.get('room'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
@@ -2585,6 +3114,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       justEnded = true;
+      await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
     }
 
@@ -2626,7 +3156,9 @@ export class GameRoom {
 
     const now = Date.now();
     const gameSetup = cleanGameSetup(storedGameSetup);
+    const ratingMeta = await this.ratingMetaForStart(timeControl, gameSetup);
     const game = {
+      ...ratingMeta,
       started: true,
       startedAt: new Date(now).toISOString(),
       startedByRole: startedByRole || 'automatic',
@@ -2644,6 +3176,8 @@ export class GameRoom {
 
     await this.state.storage.put('gameSetup', gameSetup);
     await this.state.storage.put('game', game);
+    await this.state.storage.delete('ratingResult');
+    this.ratingStateCache = { key:'', expiresAt:0, value:null };
     await this.state.storage.put('moves', []);
     await this.state.storage.put('clock', clock);
     await this.state.storage.delete('drawOffer');
@@ -2682,6 +3216,8 @@ export class GameRoom {
       .filter(Boolean)
       .slice(-CHAT_HISTORY_MAX);
     const publicGame = (await this.state.storage.get('publicGame')) === true;
+    if (timed.game && timed.game.ended) await this.finalizeRatingIfNeeded(timed.game);
+    const rating = await this.buildRatingState(timed.game || null, storedTimeControl, storedGameSetup);
 
     return {
       type: 'room_state',
@@ -2699,6 +3235,7 @@ export class GameRoom {
       timeControl: safeTimeControlForClient(storedTimeControl),
       gameSetup,
       game,
+      rating,
       moves,
       drawOffer,
       chatMessages,
@@ -2736,6 +3273,9 @@ export class GameRoom {
   async broadcastMove(move, messageId = null, clock = null, game = null) {
     const now = Date.now();
     const drawOffer = (await this.state.storage.get('drawOffer')) || null;
+    const timeControl = (await this.state.storage.get('timeControl')) || null;
+    const gameSetup = (await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null;
+    const rating = await this.buildRatingState(game || null, timeControl, gameSetup);
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
       safeSend(ws, {
@@ -2746,6 +3286,7 @@ export class GameRoom {
         role: info.role || 'spectator',
         move: safeMoveForClient(move),
         game: safeGameForClient(game),
+        rating,
         drawOffer: safeDrawOfferForClient(drawOffer),
         clock: clockPayload(clock, now),
         serverNow: now
@@ -3267,7 +3808,9 @@ export class GameRoom {
       }
 
       const now = Date.now();
+      const ratingMeta = await this.ratingMetaForStart(timeControl, gameSetup);
       const game = {
+        ...ratingMeta,
         started: true,
         startedAt: new Date(now).toISOString(),
         startedByRole: role,
@@ -3283,6 +3826,8 @@ export class GameRoom {
       const clock = makeInitialClock(timeControl, now);
       await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('game', game);
+      await this.state.storage.delete('ratingResult');
+      this.ratingStateCache = { key:'', expiresAt:0, value:null };
       await this.state.storage.put('moves', []);
       await this.state.storage.put('clock', clock);
       await this.state.storage.delete('drawOffer');
@@ -3400,6 +3945,7 @@ export class GameRoom {
         await this.state.storage.put('game', game);
         await this.state.storage.delete('drawOffer');
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
+        await this.finalizeRatingIfNeeded(game);
         await this.syncGameIndexes();
         safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
         await this.broadcastRoomState('game_finished');
@@ -3459,6 +4005,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       try { await this.state.storage.deleteAlarm(); } catch (_) {}
+      await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
       safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
@@ -3627,6 +4174,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       if (game.ended) {
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
+        await this.finalizeRatingIfNeeded(game);
       } else {
         await this.scheduleClockAlarm(clock, now);
       }
@@ -3728,8 +4276,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
