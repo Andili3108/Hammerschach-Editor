@@ -770,7 +770,53 @@ const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 const AUTH_MAIL_RATE_WINDOW_MS = 60 * 60 * 1000;
 const AUTH_MAIL_RATE_ACCOUNT_LIMIT = 3;
 const AUTH_MAIL_RATE_IP_LIMIT = 8;
+const AUTH_RATE_LOG_RETENTION_MS = 48 * 60 * 60 * 1000;
+const AUTH_SECURITY_EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+const AUTH_LOGIN_MIN_RESPONSE_MS = 550;
+const DUMMY_PASSWORD_SALT = 'AAAAAAAAAAAAAAAAAAAAAA';
+const DUMMY_PASSWORD_HASH = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const LOGIN_RATE_POLICY = Object.freeze({
+  outcomes:['failure'],
+  subjectRules:[
+    { count:5, windowMs:15 * 60 * 1000, cooldownMs:60 * 1000 },
+    { count:8, windowMs:30 * 60 * 1000, cooldownMs:5 * 60 * 1000 },
+    { count:12, windowMs:60 * 60 * 1000, cooldownMs:15 * 60 * 1000 }
+  ],
+  ipRules:[
+    { count:20, windowMs:15 * 60 * 1000, cooldownMs:5 * 60 * 1000 },
+    { count:40, windowMs:60 * 60 * 1000, cooldownMs:15 * 60 * 1000 }
+  ]
+});
+const REGISTRATION_RATE_POLICY = Object.freeze({
+  outcomes:['attempt'],
+  subjectRules:[
+    { count:4, windowMs:60 * 60 * 1000, cooldownMs:30 * 60 * 1000 }
+  ],
+  ipRules:[
+    { count:8, windowMs:15 * 60 * 1000, cooldownMs:10 * 60 * 1000 },
+    { count:20, windowMs:24 * 60 * 60 * 1000, cooldownMs:60 * 60 * 1000 }
+  ]
+});
+const RECOVERY_REQUEST_RATE_POLICY = Object.freeze({
+  outcomes:['attempt'],
+  subjectRules:[
+    { count:5, windowMs:60 * 60 * 1000, cooldownMs:15 * 60 * 1000 }
+  ],
+  ipRules:[
+    { count:12, windowMs:15 * 60 * 1000, cooldownMs:15 * 60 * 1000 },
+    { count:30, windowMs:60 * 60 * 1000, cooldownMs:30 * 60 * 1000 }
+  ]
+});
+const TOKEN_CONFIRM_RATE_POLICY = Object.freeze({
+  outcomes:['failure'],
+  subjectRules:[],
+  ipRules:[
+    { count:12, windowMs:15 * 60 * 1000, cooldownMs:10 * 60 * 1000 },
+    { count:30, windowMs:60 * 60 * 1000, cooldownMs:30 * 60 * 1000 }
+  ]
+});
 let accountSecurityTablesReady = false;
+let authSecurityLastPruneAt = 0;
 
 async function ensureAccountSecurityTables(env) {
   if (!env || !env.DB) return false;
@@ -805,13 +851,41 @@ async function ensureAccountSecurityTables(env) {
          ip_hash TEXT NOT NULL,
          created_at TEXT NOT NULL
        )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS auth_rate_limit_log (
+         id TEXT PRIMARY KEY,
+         action TEXT NOT NULL,
+         subject_hash TEXT,
+         ip_hash TEXT NOT NULL,
+         outcome TEXT NOT NULL,
+         created_at TEXT NOT NULL
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS auth_security_events (
+         id TEXT PRIMARY KEY,
+         event_type TEXT NOT NULL,
+         outcome TEXT NOT NULL,
+         user_id TEXT,
+         subject_hash TEXT,
+         ip_hash TEXT NOT NULL,
+         detail_code TEXT,
+         created_at TEXT NOT NULL
+       )`
     )
   ]);
   await env.DB.batch([
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_action_tokens_user_purpose ON account_action_tokens (user_id, purpose, created_at)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_action_tokens_expiry ON account_action_tokens (expires_at)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_mail_subject_time ON auth_mail_request_log (subject_hash, created_at)`),
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_mail_ip_time ON auth_mail_request_log (ip_hash, created_at)`)
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_mail_ip_time ON auth_mail_request_log (ip_hash, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_rate_action_subject_time ON auth_rate_limit_log (action, subject_hash, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_rate_action_ip_time ON auth_rate_limit_log (action, ip_hash, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_rate_time ON auth_rate_limit_log (created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_security_event_time ON auth_security_events (event_type, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_security_user_time ON auth_security_events (user_id, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_security_ip_time ON auth_security_events (ip_hash, created_at)`)
   ]);
   accountSecurityTablesReady = true;
   return true;
@@ -940,6 +1014,175 @@ async function markAccountActionTokenUsed(env, tokenRow) {
 
 function requestClientIp(request) {
   return String(request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim().slice(0, 80);
+}
+
+function cleanAuthLogPart(value, maxLength = 80) {
+  return String(value || '')
+    .replace(/[^A-Za-z0-9_.:@|+-]/g, '')
+    .slice(0, maxLength);
+}
+
+function normalizeAuthSubject(value) {
+  return String(value || '').trim().toLowerCase().slice(0, 320);
+}
+
+async function buildAuthSecurityContext(request, action, subjectValue = '') {
+  const safeAction = cleanAuthLogPart(action, 48) || 'auth';
+  const subject = normalizeAuthSubject(subjectValue);
+  const ip = requestClientIp(request);
+  return {
+    action:safeAction,
+    subjectHash:subject ? await sha256Hex(`hammerschach-auth-v1|subject|${safeAction}|${subject}`) : '',
+    ipHash:await sha256Hex(`hammerschach-auth-v1|ip|${safeAction}|${ip}`)
+  };
+}
+
+async function pruneAuthDefenseLogs(env) {
+  const now = Date.now();
+  if (now - authSecurityLastPruneAt < 6 * 60 * 60 * 1000) return;
+  authSecurityLastPruneAt = now;
+  try {
+    await env.DB.batch([
+      env.DB.prepare(`DELETE FROM auth_rate_limit_log WHERE created_at < ?`).bind(new Date(now - AUTH_RATE_LOG_RETENTION_MS).toISOString()),
+      env.DB.prepare(`DELETE FROM auth_security_events WHERE created_at < ?`).bind(new Date(now - AUTH_SECURITY_EVENT_RETENTION_MS).toISOString())
+    ]);
+  } catch (_) {}
+}
+
+async function recordAuthRateLimitEvent(env, context, outcome) {
+  if (!(await ensureAccountSecurityTables(env))) return false;
+  const safeOutcome = cleanAuthLogPart(outcome, 24) || 'attempt';
+  await env.DB.prepare(
+    `INSERT INTO auth_rate_limit_log (id, action, subject_hash, ip_hash, outcome, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(
+    crypto.randomUUID(),
+    context.action,
+    context.subjectHash || null,
+    context.ipHash,
+    safeOutcome,
+    new Date().toISOString()
+  ).run();
+  await pruneAuthDefenseLogs(env);
+  return true;
+}
+
+async function recordAuthSecurityEvent(env, request, eventType, outcome, options = {}) {
+  if (!(await ensureAccountSecurityTables(env))) return false;
+  const context = options.context || await buildAuthSecurityContext(request, eventType, options.subjectValue || '');
+  const detailCode = cleanAuthLogPart(options.detailCode, 64) || null;
+  const userId = options.userId ? String(options.userId).slice(0, 128) : null;
+  await env.DB.prepare(
+    `INSERT INTO auth_security_events (id, event_type, outcome, user_id, subject_hash, ip_hash, detail_code, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    crypto.randomUUID(),
+    cleanAuthLogPart(eventType, 48) || 'auth',
+    cleanAuthLogPart(outcome, 24) || 'unknown',
+    userId,
+    context.subjectHash || null,
+    context.ipHash,
+    detailCode,
+    new Date().toISOString()
+  ).run();
+  await pruneAuthDefenseLogs(env);
+  return true;
+}
+
+function maximumPolicyWindow(rules) {
+  return Math.max(0, ...(Array.isArray(rules) ? rules : []).map(rule => Number(rule.windowMs || 0)));
+}
+
+async function loadAuthRateTimes(env, action, column, hash, outcomes, sinceIso) {
+  if (!hash || !Array.isArray(outcomes) || outcomes.length === 0) return [];
+  const safeColumn = column === 'subject_hash' ? 'subject_hash' : 'ip_hash';
+  const placeholders = outcomes.map(() => '?').join(', ');
+  const statement = env.DB.prepare(
+    `SELECT created_at
+       FROM auth_rate_limit_log
+      WHERE action = ? AND ${safeColumn} = ?
+        AND outcome IN (${placeholders})
+        AND created_at >= ?
+      ORDER BY created_at DESC
+      LIMIT 250`
+  );
+  const result = await statement.bind(action, hash, ...outcomes, sinceIso).all();
+  return (result && Array.isArray(result.results) ? result.results : [])
+    .map(row => Date.parse(row && row.created_at || ''))
+    .filter(Number.isFinite);
+}
+
+function evaluateAuthRateRules(times, rules, now) {
+  let retryAfterMs = 0;
+  for (const rule of Array.isArray(rules) ? rules : []) {
+    const windowMs = Math.max(1000, Number(rule.windowMs || 0));
+    const threshold = Math.max(1, Math.floor(Number(rule.count || 1)));
+    const cooldownMs = Math.max(1000, Number(rule.cooldownMs || 0));
+    const recent = times.filter(time => now - time <= windowMs);
+    if (recent.length < threshold || recent.length === 0) continue;
+    const elapsedSinceLatest = Math.max(0, now - recent[0]);
+    if (elapsedSinceLatest < cooldownMs) retryAfterMs = Math.max(retryAfterMs, cooldownMs - elapsedSinceLatest);
+  }
+  return retryAfterMs;
+}
+
+async function checkAuthRateLimit(env, request, action, subjectValue, policy) {
+  if (!(await ensureAccountSecurityTables(env))) return { allowed:true, context:await buildAuthSecurityContext(request, action, subjectValue), retryAfterSeconds:0 };
+  const context = await buildAuthSecurityContext(request, action, subjectValue);
+  const outcomes = Array.isArray(policy && policy.outcomes) && policy.outcomes.length ? policy.outcomes : ['failure'];
+  const subjectRules = Array.isArray(policy && policy.subjectRules) ? policy.subjectRules : [];
+  const ipRules = Array.isArray(policy && policy.ipRules) ? policy.ipRules : [];
+  const now = Date.now();
+  const maxWindow = Math.max(maximumPolicyWindow(subjectRules), maximumPolicyWindow(ipRules), 60 * 1000);
+  const sinceIso = new Date(now - maxWindow).toISOString();
+  const [subjectTimes, ipTimes] = await Promise.all([
+    subjectRules.length && context.subjectHash
+      ? loadAuthRateTimes(env, context.action, 'subject_hash', context.subjectHash, outcomes, sinceIso)
+      : Promise.resolve([]),
+    ipRules.length
+      ? loadAuthRateTimes(env, context.action, 'ip_hash', context.ipHash, outcomes, sinceIso)
+      : Promise.resolve([])
+  ]);
+  const retryAfterMs = Math.max(
+    evaluateAuthRateRules(subjectTimes, subjectRules, now),
+    evaluateAuthRateRules(ipTimes, ipRules, now)
+  );
+  return {
+    allowed:retryAfterMs <= 0,
+    context,
+    retryAfterSeconds:retryAfterMs > 0 ? Math.max(1, Math.ceil(retryAfterMs / 1000)) : 0
+  };
+}
+
+async function clearAuthSubjectFailures(env, action, subjectHash) {
+  if (!subjectHash || !(await ensureAccountSecurityTables(env))) return;
+  try {
+    await env.DB.prepare(
+      `DELETE FROM auth_rate_limit_log WHERE action = ? AND subject_hash = ? AND outcome = 'failure'`
+    ).bind(cleanAuthLogPart(action, 48), subjectHash).run();
+  } catch (_) {}
+}
+
+function authRateLimitResponse(message, retryAfterSeconds) {
+  const retry = Math.max(1, Math.floor(Number(retryAfterSeconds || 60)));
+  return json({
+    ok:false,
+    code:'TOO_MANY_ATTEMPTS',
+    message:message || 'Zu viele Versuche. Bitte warte kurz und versuche es später erneut.',
+    retryAfterSeconds:retry
+  }, { status:429, headers:{ 'retry-after':String(retry) } });
+}
+
+async function verifyPasswordConstantTime(password, user) {
+  const candidateUser = user && user.password_alg === 'pbkdf2-sha256'
+    ? user
+    : {
+        password_alg:'pbkdf2-sha256',
+        password_salt:DUMMY_PASSWORD_SALT,
+        password_iterations:PASSWORD_ITERATIONS,
+        password_hash:DUMMY_PASSWORD_HASH
+      };
+  return verifyPassword(password, candidateUser);
 }
 
 async function claimAuthMailRequest(env, request, requestType, subjectKey) {
@@ -2387,13 +2630,25 @@ async function handleAuthApi(request, env, url) {
     const startedAt = Date.now();
     const body = await readJsonBody(request);
     const identifier = body ? String(body.identifier || '').trim() : '';
+    const rate = await checkAuthRateLimit(env, request, 'password_reset_request', identifier, RECOVERY_REQUEST_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'password_reset_request', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt);
+      return json({ ok:true, message:'Falls ein passender bestätigter Account existiert, wurde eine Mail zum Zurücksetzen des Kennworts versendet.' });
+    }
+    try { await recordAuthRateLimitEvent(env, rate.context, 'attempt'); } catch (_) {}
     try {
       const user = await findUserByIdentifier(env, identifier);
       if (user && !(user.disabled === 1 || user.disabled === true || user.deleted_at)) {
         const result = await sendPasswordResetEmail(env, user, request);
+        const outcome = result && result.ok && !result.skipped ? 'accepted' : result && result.skipped ? 'skipped' : 'error';
+        try { await recordAuthSecurityEvent(env, request, 'password_reset_request', outcome, { context:rate.context, userId:user.id, detailCode:result && (result.reason || result.code) }); } catch (_) {}
         if (!result.ok) console.error('Password reset mail failed', result.code || '', result.message || '');
+      } else {
+        try { await recordAuthSecurityEvent(env, request, 'password_reset_request', 'not_found', { context:rate.context, detailCode:'GENERIC_RESPONSE' }); } catch (_) {}
       }
     } catch (error) {
+      try { await recordAuthSecurityEvent(env, request, 'password_reset_request', 'error', { context:rate.context, detailCode:'INTERNAL_ERROR' }); } catch (_) {}
       console.error('Password reset request failed', error && error.message ? error.message : String(error || 'unknown'));
     }
     await waitForMinimumResponseTime(startedAt);
@@ -2402,15 +2657,42 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/auth/password-reset/confirm' && request.method === 'POST') {
     const body = await readJsonBody(request);
-    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Angaben konnten nicht gelesen werden.' }, { status:400 });
+    const tokenValue = body ? String(body.token || '').trim() : '';
+    const rate = await checkAuthRateLimit(env, request, 'password_reset_confirm', tokenValue, TOKEN_CONFIRM_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      return authRateLimitResponse('Zu viele ungültige Bestätigungsversuche. Bitte warte kurz und öffne den Link später erneut.', rate.retryAfterSeconds);
+    }
+    if (!body) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'failure', { context:rate.context, detailCode:'BAD_JSON' });
+      } catch (_) {}
+      return json({ ok:false, code:'BAD_JSON', message:'Die Angaben konnten nicht gelesen werden.' }, { status:400 });
+    }
     const tokenRow = await loadValidAccountActionToken(env, body.token, 'password_reset');
-    if (!tokenRow) return json({ ok:false, code:'INVALID_OR_EXPIRED_TOKEN', message:'Der Link ist ungültig, abgelaufen oder wurde bereits verwendet.' }, { status:400 });
+    if (!tokenRow) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'failure', { context:rate.context, detailCode:'INVALID_OR_EXPIRED_TOKEN' });
+      } catch (_) {}
+      return json({ ok:false, code:'INVALID_OR_EXPIRED_TOKEN', message:'Der Link ist ungültig, abgelaufen oder wurde bereits verwendet.' }, { status:400 });
+    }
     const newPassword = String(body.newPassword || '');
-    if (newPassword.length < 8 || newPassword.length > 128) return json({ ok:false, code:'WEAK_PASSWORD', message:'Das neue Kennwort muss 8 bis 128 Zeichen haben.' }, { status:400 });
+    if (newPassword.length < 8 || newPassword.length > 128) {
+      try { await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'rejected', { context:rate.context, userId:tokenRow.user_id, detailCode:'WEAK_PASSWORD' }); } catch (_) {}
+      return json({ ok:false, code:'WEAK_PASSWORD', message:'Das neue Kennwort muss 8 bis 128 Zeichen haben.' }, { status:400 });
+    }
     const salt = randomBase64Url(16);
     const passwordHash = await hashPassword(newPassword, salt, PASSWORD_ITERATIONS);
     const used = await markAccountActionTokenUsed(env, tokenRow);
-    if (!used) return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Link wurde bereits verwendet.' }, { status:409 });
+    if (!used) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'failure', { context:rate.context, userId:tokenRow.user_id, detailCode:'TOKEN_ALREADY_USED' });
+      } catch (_) {}
+      return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Link wurde bereits verwendet.' }, { status:409 });
+    }
     await env.DB.batch([
       env.DB.prepare(
         `UPDATE users SET password_alg = ?, password_hash = ?, password_salt = ?, password_iterations = ? WHERE id = ?`
@@ -2418,6 +2700,10 @@ async function handleAuthApi(request, env, url) {
       env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(tokenRow.user_id),
       env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND purpose = 'password_reset' AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id)
     ]);
+    try {
+      await clearAuthSubjectFailures(env, 'password_reset_confirm', rate.context.subjectHash);
+      await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'success', { context:rate.context, userId:tokenRow.user_id, detailCode:'PASSWORD_CHANGED' });
+    } catch (_) {}
     return json({ ok:true, message:'Das Kennwort wurde geändert. Bitte melde dich neu an.' });
   }
 
@@ -2425,16 +2711,30 @@ async function handleAuthApi(request, env, url) {
     const startedAt = Date.now();
     const body = await readJsonBody(request);
     const identifier = body ? String(body.identifier || '').trim() : '';
+    const rate = await checkAuthRateLimit(env, request, 'email_verification_request', identifier, RECOVERY_REQUEST_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'email_verification_request', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt);
+      return json({ ok:true, message:'Falls der Account noch nicht bestätigt ist, wurde eine neue Bestätigungsmail versendet.' });
+    }
+    try { await recordAuthRateLimitEvent(env, rate.context, 'attempt'); } catch (_) {}
     try {
       const user = await findUserByIdentifier(env, identifier);
       if (user && !(user.disabled === 1 || user.disabled === true || user.deleted_at)) {
         const state = await getUserEmailSecurityState(env, user);
         if (!state.emailVerified) {
           const result = await sendRegistrationVerificationEmail(env, user, request);
+          const outcome = result && result.ok && !result.skipped ? 'accepted' : result && result.skipped ? 'skipped' : 'error';
+          try { await recordAuthSecurityEvent(env, request, 'email_verification_request', outcome, { context:rate.context, userId:user.id, detailCode:result && (result.reason || result.code) }); } catch (_) {}
           if (!result.ok) console.error('Verification resend failed', result.code || '', result.message || '');
+        } else {
+          try { await recordAuthSecurityEvent(env, request, 'email_verification_request', 'skipped', { context:rate.context, userId:user.id, detailCode:'ALREADY_VERIFIED' }); } catch (_) {}
         }
+      } else {
+        try { await recordAuthSecurityEvent(env, request, 'email_verification_request', 'not_found', { context:rate.context, detailCode:'GENERIC_RESPONSE' }); } catch (_) {}
       }
     } catch (error) {
+      try { await recordAuthSecurityEvent(env, request, 'email_verification_request', 'error', { context:rate.context, detailCode:'INTERNAL_ERROR' }); } catch (_) {}
       console.error('Verification request failed', error && error.message ? error.message : String(error || 'unknown'));
     }
     await waitForMinimumResponseTime(startedAt);
@@ -2443,64 +2743,159 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/auth/email-verification/confirm' && request.method === 'POST') {
     const body = await readJsonBody(request);
-    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Der Bestätigungslink konnte nicht gelesen werden.' }, { status:400 });
+    const tokenValue = body ? String(body.token || '').trim() : '';
+    const rate = await checkAuthRateLimit(env, request, 'email_verification_confirm', tokenValue, TOKEN_CONFIRM_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      return authRateLimitResponse('Zu viele ungültige Bestätigungsversuche. Bitte warte kurz und öffne den Link später erneut.', rate.retryAfterSeconds);
+    }
+    if (!body) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'failure', { context:rate.context, detailCode:'BAD_JSON' });
+      } catch (_) {}
+      return json({ ok:false, code:'BAD_JSON', message:'Der Bestätigungslink konnte nicht gelesen werden.' }, { status:400 });
+    }
     const tokenRow = await loadValidAccountActionToken(env, body.token, ['verify_registration', 'email_change']);
-    if (!tokenRow) return json({ ok:false, code:'INVALID_OR_EXPIRED_TOKEN', message:'Der Bestätigungslink ist ungültig, abgelaufen oder wurde bereits verwendet.' }, { status:400 });
+    if (!tokenRow) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'failure', { context:rate.context, detailCode:'INVALID_OR_EXPIRED_TOKEN' });
+      } catch (_) {}
+      return json({ ok:false, code:'INVALID_OR_EXPIRED_TOKEN', message:'Der Bestätigungslink ist ungültig, abgelaufen oder wurde bereits verwendet.' }, { status:400 });
+    }
     const targetEmail = normalizeEmail(tokenRow.email);
-    if (!targetEmail) return json({ ok:false, code:'INVALID_EMAIL', message:'Die Mailadresse im Bestätigungslink ist ungültig.' }, { status:400 });
+    if (!targetEmail) {
+      try { await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'rejected', { context:rate.context, userId:tokenRow.user_id, detailCode:'INVALID_EMAIL' }); } catch (_) {}
+      return json({ ok:false, code:'INVALID_EMAIL', message:'Die Mailadresse im Bestätigungslink ist ungültig.' }, { status:400 });
+    }
 
     if (tokenRow.purpose === 'email_change') {
       const existing = await env.DB.prepare(`SELECT id FROM users WHERE email_lc = ? AND id <> ? LIMIT 1`).bind(targetEmail, tokenRow.user_id).first();
-      if (existing) return json({ ok:false, code:'EMAIL_TAKEN', message:'Diese Mailadresse wurde inzwischen einem anderen Account zugeordnet.' }, { status:409 });
+      if (existing) {
+        try { await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'rejected', { context:rate.context, userId:tokenRow.user_id, detailCode:'EMAIL_TAKEN' }); } catch (_) {}
+        return json({ ok:false, code:'EMAIL_TAKEN', message:'Diese Mailadresse wurde inzwischen einem anderen Account zugeordnet.' }, { status:409 });
+      }
       const used = await markAccountActionTokenUsed(env, tokenRow);
-      if (!used) return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Bestätigungslink wurde bereits verwendet.' }, { status:409 });
+      if (!used) {
+        try {
+          await recordAuthRateLimitEvent(env, rate.context, 'failure');
+          await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'failure', { context:rate.context, userId:tokenRow.user_id, detailCode:'TOKEN_ALREADY_USED' });
+        } catch (_) {}
+        return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Bestätigungslink wurde bereits verwendet.' }, { status:409 });
+      }
       await env.DB.batch([
         env.DB.prepare(`UPDATE users SET email = ?, email_lc = ? WHERE id = ?`).bind(targetEmail, targetEmail, tokenRow.user_id),
         env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(tokenRow.user_id),
         env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id)
       ]);
       await setCurrentEmailVerified(env, tokenRow.user_id, targetEmail, true);
+      try {
+        await clearAuthSubjectFailures(env, 'email_verification_confirm', rate.context.subjectHash);
+        await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'success', { context:rate.context, userId:tokenRow.user_id, detailCode:'EMAIL_CHANGED' });
+      } catch (_) {}
       return json({ ok:true, emailChanged:true, message:'Die neue Mailadresse wurde bestätigt. Bitte melde dich erneut an.' });
     }
 
     const used = await markAccountActionTokenUsed(env, tokenRow);
-    if (!used) return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Bestätigungslink wurde bereits verwendet.' }, { status:409 });
+    if (!used) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'failure', { context:rate.context, userId:tokenRow.user_id, detailCode:'TOKEN_ALREADY_USED' });
+      } catch (_) {}
+      return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Bestätigungslink wurde bereits verwendet.' }, { status:409 });
+    }
     await setCurrentEmailVerified(env, tokenRow.user_id, targetEmail, true);
     await env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND purpose = 'verify_registration' AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id).run();
+    try {
+      await clearAuthSubjectFailures(env, 'email_verification_confirm', rate.context.subjectHash);
+      await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'success', { context:rate.context, userId:tokenRow.user_id, detailCode:'REGISTRATION_VERIFIED' });
+    } catch (_) {}
     return json({ ok:true, message:'Deine Mailadresse ist bestätigt. Du kannst dich jetzt einloggen.' });
   }
 
   if (url.pathname === '/api/register' && request.method === 'POST') {
+    const startedAt = Date.now();
     const body = await readJsonBody(request);
-    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Registrierungsdaten konnten nicht gelesen werden.' }, { status: 400 });
+    const rawUsername = body ? String(body.username || '').trim() : '';
+    const rawEmail = body ? String(body.email || '').trim() : '';
+    const registrationSubject = `${rawUsername.toLowerCase()}|${rawEmail.toLowerCase()}`;
+    const rate = await checkAuthRateLimit(env, request, 'register', registrationSubject, REGISTRATION_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'register', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      return authRateLimitResponse('Zu viele Registrierungsversuche. Bitte warte und versuche es später erneut.', rate.retryAfterSeconds);
+    }
+    try { await recordAuthRateLimitEvent(env, rate.context, 'attempt'); } catch (_) {}
+    if (!body) {
+      try { await recordAuthSecurityEvent(env, request, 'register', 'rejected', { context:rate.context, detailCode:'BAD_JSON' }); } catch (_) {}
+      return json({ ok: false, code: 'BAD_JSON', message: 'Registrierungsdaten konnten nicht gelesen werden.' }, { status: 400 });
+    }
 
     const username = cleanUsername(body.username);
     const email = normalizeEmail(body.email);
     const password = String(body.password || '');
-    if (!username) return json({ ok: false, code: 'INVALID_USERNAME', message: 'Benutzername: 3 bis 24 Zeichen, erlaubt sind Buchstaben, Zahlen, _ und -.' }, { status: 400 });
-    if (!email) return json({ ok: false, code: 'INVALID_EMAIL', message: 'Bitte eine gültige Mailadresse eingeben.' }, { status: 400 });
-    if (password.length < 8 || password.length > 128) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das Kennwort muss 8 bis 128 Zeichen haben.' }, { status: 400 });
+    if (!username) {
+      try { await recordAuthSecurityEvent(env, request, 'register', 'rejected', { context:rate.context, detailCode:'INVALID_USERNAME' }); } catch (_) {}
+      return json({ ok: false, code: 'INVALID_USERNAME', message: 'Benutzername: 3 bis 24 Zeichen, erlaubt sind Buchstaben, Zahlen, _ und -.' }, { status: 400 });
+    }
+    if (!email) {
+      try { await recordAuthSecurityEvent(env, request, 'register', 'rejected', { context:rate.context, detailCode:'INVALID_EMAIL' }); } catch (_) {}
+      return json({ ok: false, code: 'INVALID_EMAIL', message: 'Bitte eine gültige Mailadresse eingeben.' }, { status: 400 });
+    }
+    if (password.length < 8 || password.length > 128) {
+      try { await recordAuthSecurityEvent(env, request, 'register', 'rejected', { context:rate.context, detailCode:'WEAK_PASSWORD' }); } catch (_) {}
+      return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das Kennwort muss 8 bis 128 Zeichen haben.' }, { status: 400 });
+    }
 
     const usernameLc = username.toLowerCase();
     const existing = await env.DB.prepare(
       `SELECT id, username_lc, email_lc FROM users WHERE username_lc = ? OR email_lc = ? LIMIT 1`
     ).bind(usernameLc, email).first();
-    if (existing && existing.username_lc === usernameLc) return json({ ok: false, code: 'USERNAME_TAKEN', message: 'Dieser Benutzername ist bereits vergeben.' }, { status: 409 });
-    if (existing && existing.email_lc === email) return json({ ok: false, code: 'EMAIL_TAKEN', message: 'Diese Mailadresse ist bereits registriert.' }, { status: 409 });
+    if (existing) {
+      try { await recordAuthSecurityEvent(env, request, 'register', 'rejected', { context:rate.context, userId:existing.id, detailCode:'DUPLICATE_ACCOUNT_DATA' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({
+        ok:false,
+        code:'REGISTRATION_NOT_AVAILABLE',
+        message:'Die Registrierung konnte mit diesen Angaben nicht abgeschlossen werden. Bitte Benutzername und Mailadresse prüfen oder im Login die Bestätigungsmail erneut anfordern.'
+      }, { status:409 });
+    }
 
     const id = crypto.randomUUID();
     const salt = randomBase64Url(16);
     const passwordHash = await hashPassword(password, salt, PASSWORD_ITERATIONS);
     const nowIso = new Date().toISOString();
-    await env.DB.prepare(
-      `INSERT INTO users (id, username, username_lc, email, email_lc, password_alg, password_hash, password_salt, password_iterations, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
+    try {
+      await env.DB.prepare(
+        `INSERT INTO users (id, username, username_lc, email, email_lc, password_alg, password_hash, password_salt, password_iterations, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
+    } catch (error) {
+      const message = String(error && error.message || '');
+      if (/unique|constraint/i.test(message)) {
+        try { await recordAuthSecurityEvent(env, request, 'register', 'rejected', { context:rate.context, detailCode:'DUPLICATE_ACCOUNT_DATA' }); } catch (_) {}
+        await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+        return json({
+          ok:false,
+          code:'REGISTRATION_NOT_AVAILABLE',
+          message:'Die Registrierung konnte mit diesen Angaben nicht abgeschlossen werden. Bitte Benutzername und Mailadresse prüfen oder im Login die Bestätigungsmail erneut anfordern.'
+        }, { status:409 });
+      }
+      throw error;
+    }
 
     await ensureRatingRowsForUser(env, id);
     await setCurrentEmailVerified(env, id, email, false);
     const createdUser = { id, username, email, created_at: nowIso };
     const mailResult = await sendRegistrationVerificationEmail(env, createdUser, request);
+    try {
+      await recordAuthSecurityEvent(env, request, 'register', 'success', {
+        context:rate.context,
+        userId:id,
+        detailCode:mailResult && mailResult.ok && !mailResult.skipped ? 'VERIFICATION_SENT' : mailResult && mailResult.skipped ? 'VERIFICATION_THROTTLED' : 'VERIFICATION_SEND_FAILED'
+      });
+    } catch (_) {}
+    await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
     return json({
       ok:true,
       verificationRequired:true,
@@ -2512,15 +2907,43 @@ async function handleAuthApi(request, env, url) {
   }
 
   if (url.pathname === '/api/login' && request.method === 'POST') {
+    const startedAt = Date.now();
     const body = await readJsonBody(request);
-    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Login-Daten konnten nicht gelesen werden.' }, { status: 400 });
+    const identifier = body ? String(body.identifier || '').trim() : '';
+    const password = body ? String(body.password || '') : '';
+    const rate = await checkAuthRateLimit(env, request, 'login', identifier, LOGIN_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'login', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return authRateLimitResponse('Zu viele fehlgeschlagene Login-Versuche. Bitte warte kurz und versuche es erneut.', rate.retryAfterSeconds);
+    }
+    if (!body) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'login', 'failure', { context:rate.context, detailCode:'BAD_JSON' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok: false, code: 'BAD_JSON', message: 'Login-Daten konnten nicht gelesen werden.' }, { status: 400 });
+    }
 
-    const identifier = String(body.identifier || '').trim();
-    const password = String(body.password || '');
     const email = normalizeEmail(identifier);
     const usernameLc = identifier.toLowerCase();
-    if (!identifier || !password) return json({ ok: false, code: 'MISSING_LOGIN', message: 'Bitte Benutzername/Mailadresse und Kennwort eingeben.' }, { status: 400 });
-    if (password.length > 128) return json({ ok:false, code:'INVALID_LOGIN', message:'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status:401 });
+    if (!identifier || !password) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'login', 'failure', { context:rate.context, detailCode:'MISSING_LOGIN' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok: false, code: 'MISSING_LOGIN', message: 'Bitte Benutzername/Mailadresse und Kennwort eingeben.' }, { status: 400 });
+    }
+    if (password.length > 128) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'login', 'failure', { context:rate.context, detailCode:'INVALID_LOGIN' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'INVALID_LOGIN', message:'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status:401 });
+    }
 
     const user = await env.DB.prepare(
       email
@@ -2528,18 +2951,33 @@ async function handleAuthApi(request, env, url) {
         : `SELECT * FROM users WHERE username_lc = ? LIMIT 1`
     ).bind(email || usernameLc).first();
 
-    const valid = await verifyPassword(password, user);
-    if (!valid) return json({ ok: false, code: 'INVALID_LOGIN', message: 'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status: 401 });
-    if (user && (user.disabled === 1 || user.disabled === true || user.deleted_at)) {
+    const valid = await verifyPasswordConstantTime(password, user);
+    if (!valid || !user) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'login', 'failure', { context:rate.context, detailCode:'INVALID_CREDENTIALS' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok: false, code: 'INVALID_LOGIN', message: 'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status: 401 });
+    }
+
+    try { await clearAuthSubjectFailures(env, 'login', rate.context.subjectHash); } catch (_) {}
+    if (user.disabled === 1 || user.disabled === true || user.deleted_at) {
+      try { await recordAuthSecurityEvent(env, request, 'login', 'blocked', { context:rate.context, userId:user.id, detailCode:'ACCOUNT_DISABLED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
       return json({ ok: false, code: 'ACCOUNT_DISABLED', message: 'Dieser Account ist deaktiviert.' }, { status: 403 });
     }
     const emailSecurity = await getUserEmailSecurityState(env, user);
     if (!emailSecurity.emailVerified) {
+      try { await recordAuthSecurityEvent(env, request, 'login', 'blocked', { context:rate.context, userId:user.id, detailCode:'EMAIL_NOT_VERIFIED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
       return json({ ok:false, code:'EMAIL_NOT_VERIFIED', message:'Bitte bestätige zuerst deine Mailadresse. Im Login kannst du die Bestätigungsmail erneut anfordern.' }, { status:403 });
     }
 
     await ensureRatingRowsForUser(env, user.id);
     const token = await createSession(env, user.id);
+    try { await recordAuthSecurityEvent(env, request, 'login', 'success', { context:rate.context, userId:user.id, detailCode:'SESSION_CREATED' }); } catch (_) {}
+    await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
     return json({ ok: true, sessionToken: token, user: await publicUserWithRatings(env, user) });
   }
 
@@ -5658,8 +6096,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen und sichere Kennwort-Wiederherstellung, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
