@@ -2536,14 +2536,22 @@ async function submitAuthDialog(){
 }
 async function logoutAuth(){
   const oldToken = onlineAuthToken;
+  const roomToReopen = onlineRoomId;
+  const hadRoomConnection = !!(roomToReopen && onlineSocket);
   try{ if(oldToken) await sendPresenceHeartbeat(true, false); } catch(_){}
   try{ if(oldToken) await authApi('/api/logout', {method:'POST', body:JSON.stringify({})}); } catch(_){}
+
+  // Vor dem Wechsel zur Gastidentität die accountgebundene Verbindung schließen.
+  // Andernfalls könnte der alte Gastname denselben Spielerplatz umbenennen.
+  if(hadRoomConnection) closeOnlineSocket();
   saveAuthState('', null);
-  if(onlineRoomId && onlineConnected){
-    saveDisplayName(displayNameForOnline(getStoredDisplayName(), true), true);
-    sendOnlineMessage({type:'set_player_name', displayName: onlineDisplayName});
-  }
+  clearSeatCredentials(roomToReopen);
   closeAuthDialog();
+
+  if(roomToReopen){
+    onlineLastMessage = 'Logout abgeschlossen. Der Raum wird als Zuschauer neu verbunden.';
+    connectOnlineRoom(roomToReopen, {reconnect:true});
+  }
 }
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
 if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
@@ -2880,7 +2888,7 @@ document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && infoBackd
 
 loadAuthState();
 updateAuthUi();
-refreshAuthSession();
+const initialAuthRefreshPromise = refreshAuthSession();
 function cleanRoomId(value){
   return String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
 }
@@ -5485,16 +5493,18 @@ try{
   }
 } catch(_){}
 if(!initialRoomId && !freshGameRequested) initialRoomId = getRememberedRoomForReload();
-if(initialRoomId){
-  updateInviteUrlInAddressBar(initialRoomId);
-  onlinePreferredRoleForNextConnect = '';
-  ensureDisplayNameForOnline().then(ok => {
-    if(ok) connectOnlineRoom(initialRoomId, {reconnect:true});
-    else updateOnlineUi();
-  });
-} else {
-  updateOnlineUi();
-}
+initialAuthRefreshPromise.finally(() => {
+  if(initialRoomId){
+    updateInviteUrlInAddressBar(initialRoomId);
+    onlinePreferredRoleForNextConnect = '';
+    ensureDisplayNameForOnline().then(ok => {
+      if(ok) connectOnlineRoom(initialRoomId, {reconnect:true});
+      else updateOnlineUi();
+    });
+  } else {
+    updateOnlineUi();
+  }
+});
 </script>
 </body>
 </html>
