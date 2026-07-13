@@ -231,6 +231,17 @@
   .auth-account{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:10px 12px;margin-top:10px;}
   .auth-account-name{font-size:18px;font-weight:900;color:#222;}
   .auth-account-mail{font-size:13px;font-weight:800;color:#666;margin-top:2px;word-break:break-word;}
+  .auth-email-state{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:7px;font-size:12px;font-weight:900;line-height:1.25;}
+  .auth-email-state-badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;border:1px solid rgba(0,0,0,.10);background:#f1f1f3;color:#666;}
+  .auth-email-state-badge.verified{background:rgba(34,107,54,.10);border-color:rgba(34,107,54,.22);color:#226b36;}
+  .auth-email-state-badge.pending{background:rgba(132,63,70,.08);border-color:rgba(132,63,70,.22);color:#843f46;}
+  .auth-email-state-action{min-height:31px!important;padding:5px 9px!important;border-radius:10px!important;font-size:11px!important;}
+  .auth-inline-link{display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent!important;box-shadow:none!important;color:#843f46!important;padding:4px 2px!important;min-height:28px!important;text-decoration:underline;font-size:13px;font-weight:900;}
+  .auth-inline-link:hover:not(:disabled){transform:none!important;box-shadow:none!important;filter:none!important;text-decoration:none;}
+  .auth-login-help{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px;}
+  .recovery-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
+  .recovery-status.error{color:#9A2D33;}
+  .recovery-status.success{color:#226b36;}
   .auth-ratings{margin-top:12px;border-radius:14px;background:#fff;border:1px solid rgba(132,63,70,.14);padding:10px 11px;}
   .auth-ratings-title{font-size:15px;font-weight:900;color:#222;margin-bottom:8px;}
   .auth-ratings-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
@@ -440,7 +451,8 @@
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
-          <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Dort legst du außerdem fest, ob du bei Daily Chess eine E-Mail erhalten möchtest, wenn du am Zug bist oder wenn eine Partie beendet wurde. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Daily-Partie mehr besteht; offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
+          <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
+          <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Daily-Partie mehr besteht; offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
 
           <h4>2. Vor der Einladung einstellen</h4>
           <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden in den Einladungsraum übernommen und sind nach dem Partiestart gesperrt.</p>
@@ -568,6 +580,10 @@
             <input id="loginIdentifierInput" class="identity-input" type="text" autocomplete="username" placeholder="z. B. Andi" />
             <label class="identity-label" for="loginPasswordInput">Kennwort</label>
             <input id="loginPasswordInput" class="identity-input" type="password" autocomplete="current-password" minlength="8" />
+            <div class="auth-login-help">
+              <button id="forgotPasswordBtn" class="auth-inline-link" type="button">Kennwort vergessen?</button>
+              <button id="resendVerificationLoggedOutBtn" class="auth-inline-link" type="button">Bestätigungsmail erneut senden</button>
+            </div>
           </div>
 
           <div id="authRegisterForm" class="auth-form" hidden>
@@ -576,9 +592,9 @@
             <label class="identity-label" for="registerEmailInput">Mailadresse</label>
             <input id="registerEmailInput" class="identity-input" type="email" autocomplete="email" placeholder="name@example.de" />
             <label class="identity-label" for="registerPasswordInput">Kennwort</label>
-            <input id="registerPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" />
+            <input id="registerPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
             <label class="identity-label" for="registerPasswordRepeatInput">Kennwort wiederholen</label>
-            <input id="registerPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" />
+            <input id="registerPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
           </div>
         </div>
 
@@ -586,6 +602,11 @@
           <div>Angemeldet als</div>
           <div id="authAccountName" class="auth-account-name">—</div>
           <div id="authAccountEmail" class="auth-account-mail">—</div>
+          <div id="authEmailState" class="auth-email-state">
+            <span id="authEmailStateBadge" class="auth-email-state-badge verified">✓ Mailadresse bestätigt</span>
+            <span id="authPendingEmailText" hidden></span>
+            <button id="resendPendingEmailBtn" class="button-flat auth-email-state-action" type="button" hidden>Bestätigung erneut senden</button>
+          </div>
           <div id="authRatings" class="auth-ratings">
             <div class="auth-ratings-title">Meine Ratings</div>
             <div id="authRatingsGrid" class="auth-ratings-grid" aria-live="polite"></div>
@@ -601,7 +622,7 @@
               <input id="dailyResultEmailCheckbox" type="checkbox" checked />
               <span>Mail senden, wenn eine meiner Daily-Partien beendet wurde</span>
             </label>
-            <div class="auth-email-notifications-note">Die Mails werden an die oben angezeigte Account-Mailadresse geschickt. Es gibt keine wiederholten Erinnerungen vor Ablauf einer Zugfrist.</div>
+            <div class="auth-email-notifications-note">Die Mails werden nur an die bestätigte Account-Mailadresse geschickt. Es gibt keine wiederholten Erinnerungen vor Ablauf einer Zugfrist.</div>
             <div class="auth-email-notifications-actions">
               <button id="emailNotificationsSaveBtn" class="button-flat auth-email-notifications-save" type="button">Einstellungen speichern</button>
               <div id="emailNotificationsStatus" class="auth-email-notifications-status" aria-live="polite"></div>
@@ -621,6 +642,28 @@
           <button id="authCancelBtn" class="button-flat" type="button">Schließen</button>
           <button id="authLogoutBtn" class="button-flat" type="button" hidden>Logout</button>
           <button id="authSubmitBtn" type="button">Einloggen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="authRecoveryBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="authRecoveryTitle">
+        <h3 id="authRecoveryTitle">Kennwort zurücksetzen</h3>
+        <p id="authRecoveryIntro">Gib deinen Benutzernamen oder deine Mailadresse ein. Falls ein passender bestätigter Account existiert, erhältst du einen zeitlich begrenzten Link.</p>
+        <div id="authRecoveryRequestForm">
+          <label class="identity-label" for="authRecoveryIdentifierInput">Benutzername oder Mailadresse</label>
+          <input id="authRecoveryIdentifierInput" class="identity-input" type="text" autocomplete="username" />
+        </div>
+        <div id="authRecoveryResetForm" hidden>
+          <label class="identity-label" for="authRecoveryPasswordInput">Neues Kennwort</label>
+          <input id="authRecoveryPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
+          <label class="identity-label" for="authRecoveryPasswordRepeatInput">Neues Kennwort wiederholen</label>
+          <input id="authRecoveryPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
+        </div>
+        <div id="authRecoveryStatus" class="recovery-status" aria-live="polite"></div>
+        <div class="identity-actions">
+          <button id="authRecoveryCloseBtn" class="button-flat" type="button">Schließen</button>
+          <button id="authRecoverySubmitBtn" type="button">Link anfordern</button>
         </div>
       </div>
     </div>
@@ -649,9 +692,9 @@
           <label class="identity-label" for="accountCurrentPasswordInput">Aktuelles Kennwort</label>
           <input id="accountCurrentPasswordInput" class="identity-input" type="password" autocomplete="current-password" minlength="8" />
           <label class="identity-label" for="accountNewPasswordInput">Neues Kennwort</label>
-          <input id="accountNewPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" />
+          <input id="accountNewPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
           <label class="identity-label" for="accountNewPasswordRepeatInput">Neues Kennwort wiederholen</label>
-          <input id="accountNewPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" />
+          <input id="accountNewPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
           <div class="account-edit-hint">Das neue Kennwort muss mindestens 8 Zeichen haben.</div>
         </div>
 
@@ -2078,6 +2121,23 @@ const authLoggedOut = document.getElementById('authLoggedOut');
 const authLoggedIn = document.getElementById('authLoggedIn');
 const authAccountName = document.getElementById('authAccountName');
 const authAccountEmail = document.getElementById('authAccountEmail');
+const authEmailState = document.getElementById('authEmailState');
+const authEmailStateBadge = document.getElementById('authEmailStateBadge');
+const authPendingEmailText = document.getElementById('authPendingEmailText');
+const resendPendingEmailBtn = document.getElementById('resendPendingEmailBtn');
+const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+const resendVerificationLoggedOutBtn = document.getElementById('resendVerificationLoggedOutBtn');
+const authRecoveryBackdrop = document.getElementById('authRecoveryBackdrop');
+const authRecoveryTitle = document.getElementById('authRecoveryTitle');
+const authRecoveryIntro = document.getElementById('authRecoveryIntro');
+const authRecoveryRequestForm = document.getElementById('authRecoveryRequestForm');
+const authRecoveryIdentifierInput = document.getElementById('authRecoveryIdentifierInput');
+const authRecoveryResetForm = document.getElementById('authRecoveryResetForm');
+const authRecoveryPasswordInput = document.getElementById('authRecoveryPasswordInput');
+const authRecoveryPasswordRepeatInput = document.getElementById('authRecoveryPasswordRepeatInput');
+const authRecoveryStatus = document.getElementById('authRecoveryStatus');
+const authRecoveryCloseBtn = document.getElementById('authRecoveryCloseBtn');
+const authRecoverySubmitBtn = document.getElementById('authRecoverySubmitBtn');
 const authRatingsGrid = document.getElementById('authRatingsGrid');
 const authEmailNotifications = document.getElementById('authEmailNotifications');
 const dailyTurnEmailCheckbox = document.getElementById('dailyTurnEmailCheckbox');
@@ -2519,7 +2579,7 @@ function openAccountEditDialog(mode){
   }
   const config = {
     username:{title:'Benutzernamen ändern', intro:'Der neue Benutzername muss eindeutig sein. Deine interne Benutzer-ID und deine Partien bleiben unverändert.', submit:'Benutzername speichern', focus:accountUsernameInput},
-    email:{title:'Mailadresse ändern', intro:'Die neue Mailadresse darf noch keinem anderen Account zugeordnet sein.', submit:'Mailadresse speichern', focus:accountEmailInput},
+    email:{title:'Mailadresse ändern', intro:'Die neue Mailadresse darf noch keinem anderen Account zugeordnet sein. Sie wird erst nach Klick auf den zugesandten Bestätigungslink übernommen.', submit:'Mailadresse speichern', focus:accountEmailInput},
     password:{title:'Kennwort ändern', intro:'Nach der Änderung werden alle anderen Anmeldungen dieses Accounts beendet.', submit:'Kennwort speichern', focus:accountCurrentPasswordInput},
     delete:{title:'Account löschen', intro:'Prüfe die Hinweise sorgfältig. Dieser Vorgang kann nicht rückgängig gemacht werden.', submit:'Account endgültig löschen', focus:accountDeletePasswordInput}
   }[accountEditMode];
@@ -2563,7 +2623,7 @@ async function submitAccountEdit(){
       const newPassword = String(accountNewPasswordInput ? accountNewPasswordInput.value : '');
       const repeat = String(accountNewPasswordRepeatInput ? accountNewPasswordRepeatInput.value : '');
       if(!currentPassword) throw new Error('Bitte das aktuelle Kennwort eingeben.');
-      if(newPassword.length < 8) throw new Error('Das neue Kennwort muss mindestens 8 Zeichen haben.');
+      if(newPassword.length < 8 || newPassword.length > 128) throw new Error('Das neue Kennwort muss 8 bis 128 Zeichen haben.');
       if(newPassword !== repeat) throw new Error('Die neuen Kennwörter stimmen nicht überein.');
       data = await authApi('/api/account/password', {method:'POST', body:JSON.stringify({currentPassword, newPassword})});
       saveAuthState(onlineAuthToken, data.user);
@@ -2592,6 +2652,112 @@ async function submitAccountEdit(){
     if(accountEditSubmitBtn) accountEditSubmitBtn.disabled = false;
   }
 }
+
+let authRecoveryMode = 'password-request';
+let authRecoveryToken = '';
+function setAuthRecoveryStatus(message, kind){
+  if(!authRecoveryStatus) return;
+  authRecoveryStatus.textContent = message || '';
+  authRecoveryStatus.classList.toggle('error', kind === 'error');
+  authRecoveryStatus.classList.toggle('success', kind === 'success');
+}
+function openAuthRecoveryDialog(mode, token){
+  authRecoveryMode = mode || 'password-request';
+  authRecoveryToken = String(token || '').trim();
+  if(authBackdrop) authBackdrop.hidden = true;
+  if(authRecoveryRequestForm) authRecoveryRequestForm.hidden = authRecoveryMode === 'password-reset';
+  if(authRecoveryResetForm) authRecoveryResetForm.hidden = authRecoveryMode !== 'password-reset';
+  if(authRecoveryTitle) authRecoveryTitle.textContent = authRecoveryMode === 'password-reset' ? 'Neues Kennwort festlegen' : authRecoveryMode === 'verification-request' ? 'Bestätigungsmail erneut senden' : 'Kennwort zurücksetzen';
+  if(authRecoveryIntro){
+    authRecoveryIntro.textContent = authRecoveryMode === 'password-reset'
+      ? 'Lege ein neues Kennwort für deinen Account fest. Der Link kann nur einmal verwendet werden.'
+      : authRecoveryMode === 'verification-request'
+        ? 'Gib deinen Benutzernamen oder deine Mailadresse ein. Falls der Account noch nicht bestätigt ist, wird eine neue Bestätigungsmail versendet.'
+        : 'Gib deinen Benutzernamen oder deine Mailadresse ein. Falls ein passender bestätigter Account existiert, erhältst du einen zeitlich begrenzten Link.';
+  }
+  if(authRecoverySubmitBtn) authRecoverySubmitBtn.textContent = authRecoveryMode === 'password-reset' ? 'Kennwort speichern' : authRecoveryMode === 'verification-request' ? 'Bestätigungsmail anfordern' : 'Link anfordern';
+  if(authRecoveryIdentifierInput && authRecoveryMode !== 'password-reset') authRecoveryIdentifierInput.value = loginIdentifierInput ? loginIdentifierInput.value : '';
+  if(authRecoveryPasswordInput) authRecoveryPasswordInput.value = '';
+  if(authRecoveryPasswordRepeatInput) authRecoveryPasswordRepeatInput.value = '';
+  setAuthRecoveryStatus('', '');
+  if(authRecoveryBackdrop) authRecoveryBackdrop.hidden = false;
+  setTimeout(() => {
+    try{
+      const focus = authRecoveryMode === 'password-reset' ? authRecoveryPasswordInput : authRecoveryIdentifierInput;
+      if(focus) focus.focus();
+    } catch(_){}
+  }, 0);
+}
+function closeAuthRecoveryDialog(reopenLogin){
+  if(authRecoveryBackdrop) authRecoveryBackdrop.hidden = true;
+  authRecoveryToken = '';
+  if(reopenLogin) openAuthDialog('login');
+}
+async function submitAuthRecovery(){
+  if(!authRecoverySubmitBtn) return;
+  authRecoverySubmitBtn.disabled = true;
+  setAuthRecoveryStatus('Anfrage wird verarbeitet…', '');
+  try{
+    if(authRecoveryMode === 'password-reset'){
+      const password = String(authRecoveryPasswordInput ? authRecoveryPasswordInput.value : '');
+      const repeat = String(authRecoveryPasswordRepeatInput ? authRecoveryPasswordRepeatInput.value : '');
+      if(password.length < 8 || password.length > 128) throw new Error('Das neue Kennwort muss 8 bis 128 Zeichen haben.');
+      if(password !== repeat) throw new Error('Die neuen Kennwörter stimmen nicht überein.');
+      const data = await authApi('/api/auth/password-reset/confirm', {method:'POST', body:JSON.stringify({token:authRecoveryToken, newPassword:password})});
+      setAuthRecoveryStatus(data.message || 'Kennwort wurde geändert.', 'success');
+      authRecoverySubmitBtn.hidden = true;
+      setTimeout(() => { authRecoverySubmitBtn.hidden = false; closeAuthRecoveryDialog(true); }, 1300);
+    } else {
+      const identifier = String(authRecoveryIdentifierInput ? authRecoveryIdentifierInput.value : '').trim();
+      if(!identifier) throw new Error('Bitte Benutzername oder Mailadresse eingeben.');
+      const path = authRecoveryMode === 'verification-request' ? '/api/auth/email-verification/request' : '/api/auth/password-reset/request';
+      const data = await authApi(path, {method:'POST', body:JSON.stringify({identifier})});
+      setAuthRecoveryStatus(data.message || 'Anfrage wurde verarbeitet.', 'success');
+    }
+  } catch(err){
+    setAuthRecoveryStatus(err && err.message ? err.message : 'Die Anfrage konnte nicht verarbeitet werden.', 'error');
+  } finally {
+    if(authRecoverySubmitBtn) authRecoverySubmitBtn.disabled = false;
+  }
+}
+async function resendPendingEmailVerification(){
+  if(!onlineAuthToken || !onlineAuthUser) return;
+  if(resendPendingEmailBtn) resendPendingEmailBtn.disabled = true;
+  try{
+    const data = await authApi('/api/account/email/resend', {method:'POST', body:JSON.stringify({})});
+    setEmailNotificationsStatus(data.message || 'Bestätigungsmail wurde versendet.', 'success');
+  } catch(err){
+    setEmailNotificationsStatus(err && err.message ? err.message : 'Bestätigungsmail konnte nicht versendet werden.', 'error');
+  } finally {
+    if(resendPendingEmailBtn) resendPendingEmailBtn.disabled = false;
+  }
+}
+async function confirmInitialEmailToken(token){
+  openAuthRecoveryDialog('verification-result', '');
+  if(authRecoveryTitle) authRecoveryTitle.textContent = 'Mailadresse bestätigen';
+  if(authRecoveryIntro) authRecoveryIntro.textContent = 'Der Bestätigungslink wird geprüft.';
+  if(authRecoveryRequestForm) authRecoveryRequestForm.hidden = true;
+  if(authRecoveryResetForm) authRecoveryResetForm.hidden = true;
+  if(authRecoverySubmitBtn) authRecoverySubmitBtn.hidden = true;
+  setAuthRecoveryStatus('Bestätigung wird geprüft…', '');
+  try{
+    const data = await authApi('/api/auth/email-verification/confirm', {method:'POST', body:JSON.stringify({token})});
+    saveAuthState('', null);
+    setAuthRecoveryStatus(data.message || 'Mailadresse wurde bestätigt.', 'success');
+    if(authRecoveryIntro) authRecoveryIntro.textContent = data.emailChanged ? 'Die Mailadressänderung ist abgeschlossen.' : 'Die Registrierung ist jetzt abgeschlossen.';
+  } catch(err){
+    setAuthRecoveryStatus(err && err.message ? err.message : 'Der Bestätigungslink konnte nicht verwendet werden.', 'error');
+  }
+}
+if(forgotPasswordBtn) forgotPasswordBtn.addEventListener('click', () => openAuthRecoveryDialog('password-request'));
+if(resendVerificationLoggedOutBtn) resendVerificationLoggedOutBtn.addEventListener('click', () => openAuthRecoveryDialog('verification-request'));
+if(resendPendingEmailBtn) resendPendingEmailBtn.addEventListener('click', resendPendingEmailVerification);
+if(authRecoveryCloseBtn) authRecoveryCloseBtn.addEventListener('click', () => closeAuthRecoveryDialog(true));
+if(authRecoverySubmitBtn) authRecoverySubmitBtn.addEventListener('click', submitAuthRecovery);
+if(authRecoveryBackdrop) authRecoveryBackdrop.addEventListener('click', ev => { if(ev.target === authRecoveryBackdrop) closeAuthRecoveryDialog(true); });
+[authRecoveryIdentifierInput, authRecoveryPasswordRepeatInput].forEach(input => {
+  if(input) input.addEventListener('keydown', ev => { if(ev.key === 'Enter') submitAuthRecovery(); });
+});
 
 function openAuthDialog(mode){
   authMode = mode === 'register' ? 'register' : 'login';
@@ -2736,6 +2902,19 @@ function updateAuthUi(){
   if(authRegisterForm) authRegisterForm.hidden = loggedIn || authMode !== 'register';
   if(authAccountName) authAccountName.textContent = loggedIn ? (onlineAuthUser.username || '—') : '—';
   if(authAccountEmail) authAccountEmail.textContent = loggedIn ? (onlineAuthUser.email || '—') : '—';
+  const emailVerified = !loggedIn || onlineAuthUser.emailVerified !== false;
+  const pendingEmail = loggedIn ? String(onlineAuthUser.pendingEmail || '') : '';
+  if(authEmailState) authEmailState.hidden = !loggedIn;
+  if(authEmailStateBadge){
+    authEmailStateBadge.classList.toggle('verified', emailVerified);
+    authEmailStateBadge.classList.toggle('pending', !emailVerified || !!pendingEmail);
+    authEmailStateBadge.textContent = emailVerified ? '✓ Mailadresse bestätigt' : '⚠ Bestätigung ausstehend';
+  }
+  if(authPendingEmailText){
+    authPendingEmailText.hidden = !pendingEmail;
+    authPendingEmailText.textContent = pendingEmail ? ('Neue Adresse wartet auf Bestätigung: ' + pendingEmail) : '';
+  }
+  if(resendPendingEmailBtn) resendPendingEmailBtn.hidden = !pendingEmail;
   renderAccountRatings();
   renderEmailNotificationSettings();
   if(accountUsernameOpenBtn){
@@ -2753,7 +2932,7 @@ function updateAuthUi(){
     authAccountProtectionNote.textContent = isAdmin ? 'Admin-Schutz: Benutzername und Selbstlöschung sind für diesen Account gesperrt. Mailadresse und Kennwort können geändert werden.' : '';
   }
   if(!loggedIn && accountEditBackdrop) accountEditBackdrop.hidden = true;
-  if(authError) authError.textContent = '';
+  if(authError){ authError.textContent = ''; authError.style.color = '#9A2D33'; }
   updatePublicVisibilityUi();
 }
 function applyLoggedInUserToOnlineRoom(){
@@ -2784,6 +2963,7 @@ async function refreshAuthSession(){
 async function submitAuthDialog(){
   if(!authError || !authSubmitBtn) return;
   authError.textContent = '';
+  authError.style.color = '#9A2D33';
   authSubmitBtn.disabled = true;
   try{
     let payload;
@@ -2792,10 +2972,18 @@ async function submitAuthDialog(){
       const email = String(registerEmailInput ? registerEmailInput.value : '').trim();
       const password = String(registerPasswordInput ? registerPasswordInput.value : '');
       const passwordRepeat = String(registerPasswordRepeatInput ? registerPasswordRepeatInput.value : '');
+      if(password.length < 8 || password.length > 128) throw new Error('Das Kennwort muss 8 bis 128 Zeichen haben.');
       if(password !== passwordRepeat) throw new Error('Die Kennwörter stimmen nicht überein.');
       payload = {username, email, password};
       const data = await authApi('/api/register', {method:'POST', body:JSON.stringify(payload)});
-      saveAuthState(data.sessionToken, data.user);
+      saveAuthState('', null);
+      setAuthMode('login');
+      if(authError){
+        authError.style.color = '#226b36';
+        authError.textContent = data.message || 'Account wurde angelegt. Bitte Mailadresse bestätigen.';
+      }
+      if(loginIdentifierInput) loginIdentifierInput.value = email || username;
+      return;
     } else {
       const identifier = String(loginIdentifierInput ? loginIdentifierInput.value : '').trim();
       const password = String(loginPasswordInput ? loginPasswordInput.value : '');
@@ -6211,8 +6399,17 @@ let initialRoomId = '';
 let initialPublicWatchId = '';
 let initialSpectatorOnly = false;
 let freshGameRequested = false;
+let initialVerifyEmailToken = '';
+let initialResetPasswordToken = '';
 try{
   const initialUrl = new URL(window.location.href);
+  initialVerifyEmailToken = String(initialUrl.searchParams.get('verifyEmail') || '').trim();
+  initialResetPasswordToken = String(initialUrl.searchParams.get('resetPassword') || '').trim();
+  if(initialVerifyEmailToken || initialResetPasswordToken){
+    initialUrl.searchParams.delete('verifyEmail');
+    initialUrl.searchParams.delete('resetPassword');
+    history.replaceState(null, '', initialUrl.toString());
+  }
   initialRoomId = cleanRoomId(initialUrl.searchParams.get('room'));
   initialPublicWatchId = cleanPublicWatchId(initialUrl.searchParams.get('watch'));
   initialSpectatorOnly = !!initialPublicWatchId;
@@ -6231,6 +6428,8 @@ if(!initialRoomId && !initialPublicWatchId && !freshGameRequested){
   initialPublicWatchId = '';
 }
 initialAuthRefreshPromise.finally(() => {
+  if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
+  else if(initialResetPasswordToken) openAuthRecoveryDialog('password-reset', initialResetPasswordToken);
   if(initialPublicWatchId){
     onlineSpectatorOnly = true;
     onlinePublicWatchId = initialPublicWatchId;
