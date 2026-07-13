@@ -295,7 +295,7 @@ async function searchMembers(env, sessionUser, query) {
   const prefix = escaped + '%';
   const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
-    `SELECT users.id, users.username, users.email, users.created_at,
+    `SELECT users.id, users.username, users.created_at,
             CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
@@ -315,7 +315,6 @@ async function searchMembers(env, sessionUser, query) {
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
     username: row.username,
-    email: row.email || '',
     createdAt: row.created_at || null,
     isOnline: Number(row.is_online || 0) === 1
   }));
@@ -329,7 +328,7 @@ async function listMembers(env, sessionUser, limit = 50) {
   const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
   const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
-    `SELECT users.id, users.username, users.email, users.created_at,
+    `SELECT users.id, users.username, users.created_at,
             CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
@@ -341,10 +340,211 @@ async function listMembers(env, sessionUser, limit = 50) {
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
     username: row.username,
-    email: row.email || '',
     createdAt: row.created_at || null,
     isOnline: Number(row.is_online || 0) === 1
   }));
+}
+
+
+
+const INVITATION_EMAIL_MIN_INTERVAL_MS = 20 * 1000;
+const INVITATION_EMAIL_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
+const INVITATION_EMAIL_SENDER_HOURLY_LIMIT = 20;
+const INVITATION_EMAIL_RECIPIENT_HOURLY_LIMIT = 12;
+let invitationEmailLogTableReady = false;
+
+async function ensureInvitationEmailLogTable(env) {
+  if (!env || !env.DB) return false;
+  if (invitationEmailLogTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS invitation_email_log (
+       id TEXT PRIMARY KEY,
+       sender_user_id TEXT NOT NULL,
+       recipient_user_id TEXT NOT NULL,
+       room_id TEXT NOT NULL,
+       sent_at TEXT NOT NULL,
+       mailjet_message_id TEXT
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_invitation_email_sender_time ON invitation_email_log (sender_user_id, sent_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_invitation_email_recipient_time ON invitation_email_log (recipient_user_id, sent_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_invitation_email_room_recipient ON invitation_email_log (room_id, recipient_user_id, sent_at)`).run();
+  invitationEmailLogTableReady = true;
+  return true;
+}
+
+function cleanInvitationRecipientUserId(value) {
+  const id = String(value || '').trim();
+  return /^[A-Za-z0-9_-]{8,128}$/.test(id) ? id : '';
+}
+
+function escapeEmailHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function gamerInvitationUrl(env, roomId) {
+  const configured = String((env && env.GAMER_PUBLIC_URL) || '').trim();
+  if (!configured) return '';
+  try {
+    const url = new URL(configured);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
+    url.hash = '';
+    url.search = '';
+    url.searchParams.set('room', roomId);
+    return url.toString();
+  } catch (_) {
+    return '';
+  }
+}
+
+function invitationVariantLabel(setup) {
+  if (!setup || typeof setup !== 'object') return '';
+  const normalized = cleanGameSetup(setup);
+  return normalized.variant === GAME_VARIANT_FREESTYLE
+    ? `Freestyle · Stellung #${normalized.positionId}`
+    : 'Klassisch';
+}
+
+function invitationTimeLabel(timeControl) {
+  const normalized = cleanTimeControl(timeControl || null);
+  return normalized && normalized.label ? normalized.label : '';
+}
+
+async function checkInvitationEmailRateLimit(env, senderUserId, recipientUserId, roomId) {
+  if (!(await ensureInvitationEmailLogTable(env))) {
+    return { ok:false, status:503, code:'INVITATION_LOG_UNAVAILABLE', message:'Der Einladungsversand ist momentan nicht verfügbar.' };
+  }
+  const now = Date.now();
+  const minIntervalIso = new Date(now - INVITATION_EMAIL_MIN_INTERVAL_MS).toISOString();
+  const duplicateIso = new Date(now - INVITATION_EMAIL_DUPLICATE_WINDOW_MS).toISOString();
+  const hourIso = new Date(now - 60 * 60 * 1000).toISOString();
+
+  const lastSender = await env.DB.prepare(
+    `SELECT sent_at FROM invitation_email_log WHERE sender_user_id = ? AND sent_at >= ? ORDER BY sent_at DESC LIMIT 1`
+  ).bind(senderUserId, minIntervalIso).first();
+  if (lastSender) {
+    return { ok:false, status:429, code:'INVITATION_TOO_FAST', message:'Bitte warte kurz, bevor du eine weitere Einladung sendest.' };
+  }
+
+  const duplicate = await env.DB.prepare(
+    `SELECT id FROM invitation_email_log WHERE sender_user_id = ? AND recipient_user_id = ? AND room_id = ? AND sent_at >= ? LIMIT 1`
+  ).bind(senderUserId, recipientUserId, roomId, duplicateIso).first();
+  if (duplicate) {
+    return { ok:false, status:429, code:'INVITATION_RECENTLY_SENT', message:'An dieses Mitglied wurde für diese Partie bereits vor Kurzem eine Einladung gesendet.' };
+  }
+
+  const senderCountRow = await env.DB.prepare(
+    `SELECT COUNT(*) AS count FROM invitation_email_log WHERE sender_user_id = ? AND sent_at >= ?`
+  ).bind(senderUserId, hourIso).first();
+  if (Number(senderCountRow && senderCountRow.count || 0) >= INVITATION_EMAIL_SENDER_HOURLY_LIMIT) {
+    return { ok:false, status:429, code:'INVITATION_SENDER_LIMIT', message:'Das stündliche Versandlimit wurde erreicht. Bitte versuche es später erneut.' };
+  }
+
+  const recipientCountRow = await env.DB.prepare(
+    `SELECT COUNT(*) AS count FROM invitation_email_log WHERE recipient_user_id = ? AND sent_at >= ?`
+  ).bind(recipientUserId, hourIso).first();
+  if (Number(recipientCountRow && recipientCountRow.count || 0) >= INVITATION_EMAIL_RECIPIENT_HOURLY_LIMIT) {
+    return { ok:false, status:429, code:'INVITATION_RECIPIENT_LIMIT', message:'Dieses Mitglied hat zuletzt bereits mehrere Einladungen erhalten. Bitte versuche es später erneut.' };
+  }
+
+  return { ok:true };
+}
+
+async function recordInvitationEmail(env, senderUserId, recipientUserId, roomId, mailjetMessageId) {
+  if (!(await ensureInvitationEmailLogTable(env))) return false;
+  const sentAt = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO invitation_email_log (id, sender_user_id, recipient_user_id, room_id, sent_at, mailjet_message_id)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(crypto.randomUUID(), senderUserId, recipientUserId, roomId, sentAt, String(mailjetMessageId || '').slice(0, 120)).run();
+  try {
+    const pruneBefore = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sent_at < ?`).bind(pruneBefore).run();
+  } catch (_) {}
+  return true;
+}
+
+async function sendMailjetInvitation(env, payload) {
+  const apiKey = String((env && env.MAILJET_API_KEY) || '').trim();
+  const secretKey = String((env && env.MAILJET_SECRET_KEY) || '').trim();
+  const fromEmail = normalizeEmail((env && env.MAILJET_FROM_EMAIL) || '');
+  const fromName = cleanDisplayName((env && env.MAILJET_FROM_NAME) || '') || 'Hammerschach-Gamer';
+  if (!apiKey || !secretKey || !fromEmail) {
+    return { ok:false, status:503, code:'MAIL_NOT_CONFIGURED', message:'Der automatische Mailversand ist noch nicht vollständig konfiguriert.' };
+  }
+
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const senderName = cleanDisplayName(payload && payload.senderName) || 'Ein Mitglied';
+  const inviteUrl = String(payload && payload.inviteUrl || '').trim();
+  const variantLabel = String(payload && payload.variantLabel || '').slice(0, 120);
+  const timeLabel = String(payload && payload.timeLabel || '').slice(0, 120);
+  const daily = !!(payload && payload.daily);
+  if (!recipientEmail || !inviteUrl) {
+    return { ok:false, status:400, code:'INVALID_INVITATION_MAIL', message:'Die Einladungsmail konnte nicht vorbereitet werden.' };
+  }
+
+  const subject = `${senderName} lädt dich zu einer Schachpartie ein`;
+  const detailLines = [];
+  if (variantLabel) detailLines.push(`Spielmodus: ${variantLabel}`);
+  if (timeLabel) detailLines.push(`Bedenkzeit: ${timeLabel}`);
+  if (daily) detailLines.push('Hinweis: Daily Chess erfordert auf beiden Seiten einen registrierten und eingeloggten Account.');
+  const detailText = detailLines.length ? `\n\n${detailLines.join('\n')}` : '';
+  const textPart = `Hallo ${recipientName},\n\n${senderName} lädt dich zu einer Schachpartie auf Hammerschach ein.${detailText}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.\n\nViele Grüße\nHammerschach-Gamer`;
+
+  const detailHtml = detailLines.length
+    ? `<div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailLines.map(line => escapeEmailHtml(line)).join('<br>')}</div>`
+    : '';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer Schachpartie</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer Schachpartie auf Hammerschach ein.</p>${detailHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+
+  let response;
+  let result = null;
+  try {
+    response = await fetch('https://api.mailjet.com/v3.1/send', {
+      method:'POST',
+      headers:{
+        'authorization':'Basic ' + btoa(apiKey + ':' + secretKey),
+        'content-type':'application/json'
+      },
+      body:JSON.stringify({
+        Messages:[{
+          From:{ Email:fromEmail, Name:fromName },
+          To:[{ Email:recipientEmail, Name:recipientName }],
+          Subject:subject,
+          TextPart:textPart,
+          HTMLPart:htmlPart
+        }]
+      })
+    });
+    try { result = await response.json(); } catch (_) { result = null; }
+  } catch (error) {
+    console.error('Mailjet request failed', error && error.message ? error.message : String(error || 'unknown'));
+    return { ok:false, status:502, code:'MAILJET_UNREACHABLE', message:'Mailjet ist momentan nicht erreichbar. Bitte den Einladungslink kopieren.' };
+  }
+
+  const firstMessage = result && Array.isArray(result.Messages) ? result.Messages[0] : null;
+  const success = !!(response && response.ok && firstMessage && String(firstMessage.Status || '').toLowerCase() === 'success');
+  if (!success) {
+    let safeDetail = '';
+    try {
+      const firstError = firstMessage && Array.isArray(firstMessage.Errors) ? firstMessage.Errors[0] : null;
+      safeDetail = String(firstError && (firstError.ErrorMessage || firstError.ErrorCode) || '').slice(0, 240);
+    } catch (_) {}
+    console.error('Mailjet send rejected', response ? response.status : 0, safeDetail);
+    return { ok:false, status:502, code:'MAILJET_SEND_FAILED', message:'Die Einladung konnte nicht versendet werden. Bitte den Einladungslink kopieren.' };
+  }
+
+  const recipientResult = firstMessage && Array.isArray(firstMessage.To) ? firstMessage.To[0] : null;
+  return {
+    ok:true,
+    status:200,
+    messageId:recipientResult && (recipientResult.MessageID || recipientResult.MessageUUID) ? String(recipientResult.MessageID || recipientResult.MessageUUID) : ''
+  };
 }
 
 let dailyGamesTableReady = false;
@@ -1398,6 +1598,77 @@ async function handleAuthApi(request, env, url) {
     return json({ ok: true, sessionToken: token, user: await publicUserWithRatings(env, user) });
   }
 
+  if (url.pathname === '/api/invitations/email' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Einladung konnte nicht gelesen werden.' }, { status:400 });
+
+    const roomId = cleanRoomId(body.roomId || body.room);
+    const recipientUserId = cleanInvitationRecipientUserId(body.recipientUserId || body.memberId || body.userId);
+    if (!roomId) return json({ ok:false, code:'INVALID_ROOM', message:'Der Spielraum ist ungültig.' }, { status:400 });
+    if (!recipientUserId) return json({ ok:false, code:'INVALID_RECIPIENT', message:'Bitte ein gültiges Mitglied auswählen.' }, { status:400 });
+    if (String(recipientUserId) === String(session.user.id)) {
+      return json({ ok:false, code:'CANNOT_INVITE_SELF', message:'Du kannst deinen eigenen Account nicht einladen.' }, { status:400 });
+    }
+    if (!env.GAME_ROOM) return json({ ok:false, code:'ROOM_SERVICE_UNAVAILABLE', message:'Der Spielraum-Dienst ist momentan nicht verfügbar.' }, { status:503 });
+
+    let access = null;
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = env.GAME_ROOM.get(id);
+      const accessResponse = await stub.fetch(new Request('https://game-room.internal/invitation-email-context?room=' + encodeURIComponent(roomId), {
+        method:'POST',
+        headers:{ 'x-hammerschach-user-id':String(session.user.id || '') }
+      }));
+      try { access = await accessResponse.json(); } catch (_) { access = null; }
+      if (!accessResponse.ok || !access || !access.ok) {
+        return json({
+          ok:false,
+          code:access && access.code ? access.code : 'INVITATION_NOT_ALLOWED',
+          message:access && access.message ? access.message : 'Für diesen Spielraum darf keine Einladung versendet werden.'
+        }, { status:accessResponse.status || 403 });
+      }
+    } catch (_) {
+      return json({ ok:false, code:'ROOM_ACCESS_FAILED', message:'Der Spielraum konnte nicht geprüft werden.' }, { status:503 });
+    }
+
+    const recipient = await env.DB.prepare(
+      `SELECT id, username, email FROM users WHERE id = ? LIMIT 1`
+    ).bind(recipientUserId).first();
+    const recipientEmail = normalizeEmail(recipient && recipient.email);
+    if (!recipient || !recipientEmail) {
+      return json({ ok:false, code:'RECIPIENT_NOT_FOUND', message:'Das ausgewählte Mitglied oder seine Mailadresse wurde nicht gefunden.' }, { status:404 });
+    }
+
+    const rate = await checkInvitationEmailRateLimit(env, String(session.user.id), recipientUserId, roomId);
+    if (!rate.ok) return json({ ok:false, code:rate.code, message:rate.message }, { status:rate.status || 429 });
+
+    const inviteUrl = gamerInvitationUrl(env, roomId);
+    if (!inviteUrl) {
+      return json({ ok:false, code:'PUBLIC_URL_NOT_CONFIGURED', message:'Die öffentliche Gamer-Adresse ist im Worker nicht korrekt hinterlegt.' }, { status:503 });
+    }
+
+    const mail = await sendMailjetInvitation(env, {
+      roomId,
+      recipientEmail,
+      recipientName:recipient.username,
+      senderName:session.user.username,
+      inviteUrl,
+      variantLabel:invitationVariantLabel(access.gameSetup),
+      timeLabel:invitationTimeLabel(access.timeControl),
+      daily:access.timeControl && access.timeControl.mode === 'daily'
+    });
+    if (!mail.ok) return json({ ok:false, code:mail.code, message:mail.message }, { status:mail.status || 502 });
+
+    try { await recordInvitationEmail(env, String(session.user.id), recipientUserId, roomId, mail.messageId); } catch (_) {}
+    return json({
+      ok:true,
+      recipient:{ id:recipient.id, username:recipient.username },
+      message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde versendet.'
+    });
+  }
+
   if (url.pathname === '/api/members/search' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Mitgliedersuche ist nur nach Login verfügbar.' }, { status: 401 });
@@ -2444,6 +2715,52 @@ export class GameRoom {
     return state;
   }
 
+  async invitationEmailContext(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
+
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    if (!roomId) return { ok:false, status:404, code:'ROOM_NOT_FOUND', message:'Der Spielraum wurde nicht gefunden.' };
+    const cancellation = await this.state.storage.get('cancelled');
+    if (cancellation && cancellation.cancelled) {
+      return { ok:false, status:410, code:'INVITATION_CANCELLED', message:'Diese Einladung wurde bereits zurückgezogen.' };
+    }
+
+    const players = await this.getSecurePlayers();
+    let creatorRole = (await this.state.storage.get('createdByRole')) || '';
+    const storedCreatorUserId = String((await this.state.storage.get('createdByUserId')) || '').trim();
+    if (creatorRole !== 'w' && creatorRole !== 'b') {
+      if (players.white && !players.black) creatorRole = 'w';
+      else if (players.black && !players.white) creatorRole = 'b';
+    }
+    const creatorSlot = creatorRole === 'b' ? players.black : creatorRole === 'w' ? players.white : null;
+    const creatorUserId = storedCreatorUserId || String(creatorSlot && creatorSlot.userId || '').trim();
+    if (!creatorUserId || creatorUserId !== userId) {
+      return { ok:false, status:403, code:'NOT_INVITATION_CREATOR', message:'Nur der Ersteller dieses Spielraums kann Einladungen versenden.' };
+    }
+
+    const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
+    if (game.ended) return { ok:false, status:409, code:'GAME_ENDED', message:'Diese Partie ist bereits beendet.' };
+    const opponentSlot = creatorRole === 'b' ? players.white : players.black;
+    if (opponentSlot) {
+      return { ok:false, status:409, code:'OPPONENT_ALREADY_JOINED', message:'Der gegnerische Spielerplatz ist bereits belegt.' };
+    }
+
+    const rawTimeControl = (await this.state.storage.get('timeControl')) || null;
+    const rawGameSetup = (await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null;
+    const timeControl = cleanTimeControl(rawTimeControl);
+    const gameSetup = rawGameSetup ? cleanGameSetup(rawGameSetup) : null;
+    return {
+      ok:true,
+      status:200,
+      roomId,
+      creatorRole,
+      timeControl,
+      gameSetup,
+      gameStarted:!!game.started
+    };
+  }
+
   async cancelDailyInvitation(requestingUserId) {
     const userId = String(requestingUserId || '').trim();
     if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
@@ -2600,6 +2917,20 @@ export class GameRoom {
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
     await this.state.storage.put('roomId', room);
+
+    if (request.method === 'POST' && url.pathname === '/invitation-email-context') {
+      const result = await this.invitationEmailContext(request.headers.get('x-hammerschach-user-id') || '');
+      return json({
+        ok:result.ok,
+        code:result.code || '',
+        message:result.message || '',
+        roomId:result.roomId || room,
+        creatorRole:result.creatorRole || '',
+        timeControl:result.timeControl || null,
+        gameSetup:result.gameSetup || null,
+        gameStarted:!!result.gameStarted
+      }, { status:result.status || (result.ok ? 200 : 400) });
+    }
 
     if (request.method === 'GET' && url.pathname === '/daily-pgn') {
       const result = await this.buildDailyPgnForUser(request.headers.get('x-hammerschach-user-id') || '');
@@ -4275,9 +4606,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailjet_email_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete Mailjet-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
