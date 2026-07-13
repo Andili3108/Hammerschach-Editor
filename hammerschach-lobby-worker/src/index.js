@@ -524,7 +524,7 @@ function prepareInvitationEmail(payload) {
     : '';
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer Schachpartie</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer Schachpartie auf Hammerschach ein.</p>${detailHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
 
-  return { ok:true, recipientEmail, recipientName, senderName, subject, textPart, htmlPart };
+  return { ok:true, mailType:'invitation', recipientEmail, recipientName, senderName, subject, textPart, htmlPart };
 }
 
 
@@ -536,10 +536,11 @@ function preparedMailFromPayload(payload) {
   const subject = String(supplied.subject || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 180);
   const textPart = String(supplied.textPart || '').trim();
   const htmlPart = String(supplied.htmlPart || '').trim();
+  const mailType = cleanMailLogType(supplied.mailType || payload && payload.mailType || 'transactional');
   if (!recipientEmail || !subject || !textPart || !htmlPart) {
     return { ok:false, status:400, code:'INVALID_PREPARED_MAIL', message:'Die automatische Nachricht konnte nicht vorbereitet werden.' };
   }
-  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+  return { ok:true, mailType, recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
 async function sendMailjetInvitation(env, payload) {
@@ -756,12 +757,76 @@ async function sendSmtpInvitation(env, payload) {
   }
 }
 
+let mailDeliveryLogTableReady = false;
+let mailDeliveryLastPruneAt = 0;
+const MAIL_DELIVERY_LOG_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
+
+function cleanMailLogType(value) {
+  const cleaned = String(value || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 48);
+  return cleaned || 'transactional';
+}
+
+async function ensureMailDeliveryLogTable(env) {
+  if (!env || !env.DB) return false;
+  if (mailDeliveryLogTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS mail_delivery_log (
+       id TEXT PRIMARY KEY,
+       mail_type TEXT NOT NULL,
+       provider TEXT NOT NULL,
+       status TEXT NOT NULL,
+       error_code TEXT,
+       error_message TEXT,
+       created_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_mail_delivery_status_time ON mail_delivery_log (status, created_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_mail_delivery_type_time ON mail_delivery_log (mail_type, created_at)`).run();
+  mailDeliveryLogTableReady = true;
+  return true;
+}
+
+function mailTypeFromPayload(payload) {
+  if (payload && payload.mailType) return cleanMailLogType(payload.mailType);
+  if (payload && payload.preparedMail && payload.preparedMail.mailType) return cleanMailLogType(payload.preparedMail.mailType);
+  return payload && payload.preparedMail ? 'transactional' : 'invitation';
+}
+
+async function recordMailDeliveryEvent(env, mailType, provider, result) {
+  if (!(await ensureMailDeliveryLogTable(env))) return false;
+  const ok = !!(result && result.ok);
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO mail_delivery_log (id, mail_type, provider, status, error_code, error_message, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    crypto.randomUUID(),
+    cleanMailLogType(mailType),
+    cleanMailLogType(provider || result && result.provider || 'unknown'),
+    ok ? 'sent' : 'failed',
+    ok ? null : cleanAuthLogPart(result && result.code || 'MAIL_FAILED', 64),
+    ok ? null : String(result && result.message || 'Versand fehlgeschlagen').replace(/[\r\n]+/g, ' ').slice(0, 240),
+    new Date(now).toISOString()
+  ).run();
+  if (now - mailDeliveryLastPruneAt > 24 * 60 * 60 * 1000) {
+    mailDeliveryLastPruneAt = now;
+    try {
+      await env.DB.prepare(`DELETE FROM mail_delivery_log WHERE created_at < ?`)
+        .bind(new Date(now - MAIL_DELIVERY_LOG_RETENTION_MS).toISOString()).run();
+    } catch (_) {}
+  }
+  return true;
+}
+
 async function sendInvitationEmail(env, payload) {
   const configured = String((env && env.MAIL_PROVIDER) || '').trim().toLowerCase();
   const provider = configured || ((env && env.SMTP_HOST && env.SMTP_USERNAME && env.SMTP_PASSWORD) ? 'smtp' : 'mailjet');
-  if (provider === 'smtp') return sendSmtpInvitation(env, payload);
-  if (provider === 'mailjet') return sendMailjetInvitation(env, payload);
-  return { ok:false, status:503, code:'UNKNOWN_MAIL_PROVIDER', message:'Der konfigurierte Mailanbieter ist unbekannt.' };
+  let result;
+  if (provider === 'smtp') result = await sendSmtpInvitation(env, payload);
+  else if (provider === 'mailjet') result = await sendMailjetInvitation(env, payload);
+  else result = { ok:false, status:503, code:'UNKNOWN_MAIL_PROVIDER', message:'Der konfigurierte Mailanbieter ist unbekannt.' };
+  try { await recordMailDeliveryEvent(env, mailTypeFromPayload(payload), provider, result); } catch (_) {}
+  return result;
 }
 
 
@@ -1229,7 +1294,7 @@ function prepareSecurityActionEmail(payload) {
   }
   const textPart = `Hallo ${recipientName},\n\n${intro}\n\n${actionLabel}:\n${actionUrl}${expiryText ? `\n\n${expiryText}` : ''}\n\nFalls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.\n\nViele Grüße\nHammerschach-Gamer`;
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p style="line-height:1.55;">${escapeEmailHtml(intro)}</p><p style="margin:22px 0;"><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${escapeEmailHtml(actionLabel)}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(actionUrl)}</p>${expiryText ? `<p style="font-size:13px;color:#666;">${escapeEmailHtml(expiryText)}</p>` : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Falls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
-  return { ok:true, recipientEmail, recipientName, subject:title, textPart, htmlPart };
+  return { ok:true, mailType:cleanMailLogType(payload && payload.mailType || 'security_action'), recipientEmail, recipientName, subject:title, textPart, htmlPart };
 }
 
 function prepareEmailChangeNoticeEmail(payload) {
@@ -1240,7 +1305,7 @@ function prepareEmailChangeNoticeEmail(payload) {
   const subject = 'Änderung deiner Hammerschach-Mailadresse angefordert';
   const textPart = `Hallo ${recipientName},\n\nfür deinen Hammerschach-Account wurde die Änderung der Mailadresse auf ${pendingEmail} angefordert. Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.\n\nFalls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.\n\nViele Grüße\nHammerschach-Gamer`;
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Mailadressänderung angefordert</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>für deinen Hammerschach-Account wurde die Änderung der Mailadresse auf <strong>${escapeEmailHtml(pendingEmail)}</strong> angefordert.</p><p>Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.</p><p style="font-size:13px;color:#843f46;font-weight:bold;">Falls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
-  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+  return { ok:true, mailType:'email_change_notice', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
 async function sendRegistrationVerificationEmail(env, user, request = null) {
@@ -1252,13 +1317,14 @@ async function sendRegistrationVerificationEmail(env, user, request = null) {
   const mail = prepareSecurityActionEmail({
     recipientEmail:email,
     recipientName:user.username,
+    mailType:'email_verification',
     title:'Mailadresse für Hammerschach bestätigen',
     intro:'Bitte bestätige deine Mailadresse. Erst danach kannst du dich mit dem neu angelegten Account einloggen.',
     actionUrl,
     actionLabel:'Mailadresse bestätigen',
     expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
   });
-  return sendInvitationEmail(env, { preparedMail:mail });
+  return sendInvitationEmail(env, { preparedMail:mail, mailType:'email_verification' });
 }
 
 async function sendPasswordResetEmail(env, user, request) {
@@ -1270,13 +1336,14 @@ async function sendPasswordResetEmail(env, user, request) {
   const mail = prepareSecurityActionEmail({
     recipientEmail:user.email,
     recipientName:user.username,
+    mailType:'password_reset',
     title:'Hammerschach-Kennwort zurücksetzen',
     intro:'Über den folgenden Link kannst du ein neues Kennwort für deinen Hammerschach-Account festlegen.',
     actionUrl,
     actionLabel:'Neues Kennwort festlegen',
     expiryText:'Der Link ist 30 Minuten gültig und kann nur einmal verwendet werden.'
   });
-  return sendInvitationEmail(env, { preparedMail:mail });
+  return sendInvitationEmail(env, { preparedMail:mail, mailType:'password_reset' });
 }
 
 async function waitForMinimumResponseTime(startedAt, minimumMs = 450) {
@@ -1479,7 +1546,7 @@ function prepareDailyTurnEmail(payload) {
   const textPart = `Hallo ${recipientName},\n\n${moveSentence}Du bist jetzt in deiner Daily-Partie gegen ${opponentName} am Zug.\n\n${textDetails.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nHammerschach-Gamer`;
   const detailHtml = textDetails.map(line => escapeEmailHtml(line)).join('<br>');
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Du bist am Zug</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>${lastMoveSan ? `<strong>${escapeEmailHtml(opponentName)}</strong> hat <strong>${escapeEmailHtml(lastMoveSan)}</strong> gezogen. ` : ''}Du bist jetzt in deiner Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
-  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+  return { ok:true, mailType:'daily_turn', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
 function prepareDailyResultEmail(payload) {
@@ -1500,7 +1567,7 @@ function prepareDailyResultEmail(payload) {
   const textPart = `Hallo ${recipientName},\n\ndeine Daily-Partie gegen ${opponentName} ist beendet.\n\n${details.join('\n')}\n\nPartie ansehen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nHammerschach-Gamer`;
   const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Partie beendet</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>deine Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> ist beendet.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie ansehen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
-  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+  return { ok:true, mailType:'daily_result', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
 async function loadEmailNotificationRecipient(env, userId, preferenceName) {
@@ -1518,7 +1585,7 @@ async function loadEmailNotificationRecipient(env, userId, preferenceName) {
 
 async function sendPreparedTransactionalEmail(env, mail) {
   if (!mail || !mail.ok) return mail || { ok:false, status:400, code:'MAIL_NOT_PREPARED', message:'Die Nachricht konnte nicht vorbereitet werden.' };
-  return sendInvitationEmail(env, { preparedMail:mail });
+  return sendInvitationEmail(env, { preparedMail:mail, mailType:mail.mailType || 'transactional' });
 }
 
 async function sendDailyTurnEmailNotification(env, payload) {
@@ -2239,6 +2306,242 @@ async function deleteUserAsAdmin(env, adminUser, targetId) {
 }
 
 
+let adminSettingsTableReady = false;
+async function ensureAdminSettingsTable(env) {
+  if (!env || !env.DB) return false;
+  if (adminSettingsTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS admin_settings (
+       setting_key TEXT PRIMARY KEY,
+       setting_value TEXT,
+       updated_at TEXT NOT NULL,
+       updated_by TEXT
+     )`
+  ).run();
+  adminSettingsTableReady = true;
+  return true;
+}
+
+async function requireAdminSession(request, env) {
+  const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+  if (!session) return { ok:false, response:json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte als Andili einloggen.' }, { status:401 }) };
+  if (!isAdminUser(session.user, env)) return { ok:false, response:json({ ok:false, code:'NOT_ADMIN', message:'Diese Systemübersicht ist ausschließlich für Andili verfügbar.' }, { status:403 }) };
+  return { ok:true, session };
+}
+
+function numberValue(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : 0;
+}
+
+async function countActiveLoginBlocks(env) {
+  if (!(await ensureAccountSecurityTables(env))) return { subjects:0, ips:0 };
+  const now = Date.now();
+  const sinceIso = new Date(now - Math.max(maximumPolicyWindow(LOGIN_RATE_POLICY.subjectRules), maximumPolicyWindow(LOGIN_RATE_POLICY.ipRules))).toISOString();
+  const result = await env.DB.prepare(
+    `SELECT subject_hash, ip_hash, created_at
+       FROM auth_rate_limit_log
+      WHERE action = 'login' AND outcome = 'failure' AND created_at >= ?
+      ORDER BY created_at DESC
+      LIMIT 5000`
+  ).bind(sinceIso).all();
+  const subjectTimes = new Map();
+  const ipTimes = new Map();
+  for (const row of result && result.results ? result.results : []) {
+    const time = Date.parse(row && row.created_at || '');
+    if (!Number.isFinite(time)) continue;
+    if (row.subject_hash) {
+      const key = String(row.subject_hash);
+      if (!subjectTimes.has(key)) subjectTimes.set(key, []);
+      subjectTimes.get(key).push(time);
+    }
+    if (row.ip_hash) {
+      const key = String(row.ip_hash);
+      if (!ipTimes.has(key)) ipTimes.set(key, []);
+      ipTimes.get(key).push(time);
+    }
+  }
+  let subjects = 0;
+  let ips = 0;
+  for (const times of subjectTimes.values()) if (evaluateAuthRateRules(times, LOGIN_RATE_POLICY.subjectRules, now) > 0) subjects += 1;
+  for (const times of ipTimes.values()) if (evaluateAuthRateRules(times, LOGIN_RATE_POLICY.ipRules, now) > 0) ips += 1;
+  return { subjects, ips };
+}
+
+async function buildAdminOverview(env) {
+  await Promise.all([
+    ensureAccountSecurityTables(env),
+    ensureDailyGamesTable(env),
+    ensurePublicGamesTable(env),
+    ensureEmailNotificationLogTable(env),
+    ensureMailDeliveryLogTable(env),
+    ensureAdminSettingsTable(env),
+    ensureStatsTable(env)
+  ]);
+
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const since24h = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+  const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [accountsRow, sessionsRow, gamesRow, publicRow, securityRow, mailRow, backupRow, activeBlocks, stats] = await Promise.all([
+    env.DB.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN status.user_id IS NULL OR (LOWER(status.email) = LOWER(users.email) AND status.verified = 1) THEN 1 ELSE 0 END) AS verified,
+              SUM(CASE WHEN status.user_id IS NOT NULL AND NOT (LOWER(status.email) = LOWER(users.email) AND status.verified = 1) THEN 1 ELSE 0 END) AS unverified,
+              SUM(CASE WHEN users.created_at >= ? THEN 1 ELSE 0 END) AS new_7d
+         FROM users
+         LEFT JOIN user_email_status status ON status.user_id = users.id`
+    ).bind(since7d).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS active FROM sessions WHERE expires_at > ?`).bind(nowIso).first(),
+    env.DB.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN ended = 0 AND started = 0 THEN 1 ELSE 0 END) AS invitations,
+              SUM(CASE WHEN ended = 0 AND started = 1 THEN 1 ELSE 0 END) AS running,
+              SUM(CASE WHEN ended = 1 THEN 1 ELSE 0 END) AS ended
+         FROM daily_games`
+    ).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS running FROM public_games WHERE public_game = 1 AND ended = 0`).first(),
+    env.DB.prepare(
+      `SELECT
+         SUM(CASE WHEN event_type = 'login' AND outcome = 'failure' AND created_at >= ? THEN 1 ELSE 0 END) AS failed_login_24h,
+         SUM(CASE WHEN event_type = 'login' AND outcome = 'failure' AND created_at >= ? THEN 1 ELSE 0 END) AS failed_login_7d,
+         SUM(CASE WHEN outcome = 'throttled' AND created_at >= ? THEN 1 ELSE 0 END) AS throttled_24h,
+         SUM(CASE WHEN event_type = 'password_reset_request' AND created_at >= ? THEN 1 ELSE 0 END) AS reset_requests_24h,
+         SUM(CASE WHEN event_type = 'email_verification_request' AND created_at >= ? THEN 1 ELSE 0 END) AS verification_requests_24h,
+         SUM(CASE WHEN event_type = 'register' AND outcome = 'success' AND created_at >= ? THEN 1 ELSE 0 END) AS registrations_7d
+       FROM auth_security_events`
+    ).bind(since24h, since7d, since24h, since24h, since24h, since7d).first(),
+    env.DB.prepare(
+      `SELECT
+         SUM(CASE WHEN status = 'sent' AND created_at >= ? THEN 1 ELSE 0 END) AS sent_7d,
+         SUM(CASE WHEN status = 'failed' AND created_at >= ? THEN 1 ELSE 0 END) AS failed_7d,
+         SUM(CASE WHEN status = 'failed' AND created_at >= ? THEN 1 ELSE 0 END) AS failed_24h
+       FROM mail_delivery_log`
+    ).bind(since7d, since7d, since24h).first(),
+    env.DB.prepare(`SELECT setting_value, updated_at, updated_by FROM admin_settings WHERE setting_key = 'last_manual_backup' LIMIT 1`).first(),
+    countActiveLoginBlocks(env),
+    readGamerStats(env)
+  ]);
+
+  const [recentSecurityResult, recentMailFailuresResult, notificationRow, tablesResult] = await Promise.all([
+    env.DB.prepare(
+      `SELECT events.event_type, events.outcome, events.detail_code, events.created_at,
+              CASE WHEN events.user_id IS NOT NULL THEN COALESCE(users.username, 'gelöschter Account') ELSE '' END AS username
+         FROM auth_security_events events
+         LEFT JOIN users ON users.id = events.user_id
+        ORDER BY events.created_at DESC
+        LIMIT 35`
+    ).all(),
+    env.DB.prepare(
+      `SELECT mail_type, provider, error_code, error_message, created_at
+         FROM mail_delivery_log
+        WHERE status = 'failed'
+        ORDER BY created_at DESC
+        LIMIT 15`
+    ).all(),
+    env.DB.prepare(
+      `SELECT
+         SUM(CASE WHEN status = 'sent' AND updated_at >= ? THEN 1 ELSE 0 END) AS daily_sent_7d,
+         SUM(CASE WHEN status = 'failed' AND updated_at >= ? THEN 1 ELSE 0 END) AS daily_failed_7d,
+         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS daily_pending
+       FROM email_notification_log`
+    ).bind(since7d, since7d).first(),
+    env.DB.prepare(`SELECT name FROM sqlite_schema WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY name`).all()
+  ]);
+
+  const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
+  const importantTableNames = [
+    'users','sessions','daily_games','public_games','rated_games','user_ratings',
+    'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log'
+  ];
+  const rowCounts = {};
+  for (const tableName of importantTableNames) {
+    if (!tableNames.includes(tableName)) continue;
+    try {
+      const row = await env.DB.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).first();
+      rowCounts[tableName] = numberValue(row && row.count);
+    } catch (_) {}
+  }
+
+  return {
+    generatedAt:nowIso,
+    accounts:{
+      total:numberValue(accountsRow && accountsRow.total),
+      verified:numberValue(accountsRow && accountsRow.verified),
+      unverified:numberValue(accountsRow && accountsRow.unverified),
+      new7d:numberValue(accountsRow && accountsRow.new_7d),
+      activeSessions:numberValue(sessionsRow && sessionsRow.active)
+    },
+    games:{
+      dailyTotal:numberValue(gamesRow && gamesRow.total),
+      dailyInvitations:numberValue(gamesRow && gamesRow.invitations),
+      dailyRunning:numberValue(gamesRow && gamesRow.running),
+      dailyEnded:numberValue(gamesRow && gamesRow.ended),
+      publicRunning:numberValue(publicRow && publicRow.running),
+      gamesPlayed:numberValue(stats && stats.gamesPlayed),
+      pageViews:numberValue(stats && stats.visits)
+    },
+    security:{
+      failedLogins24h:numberValue(securityRow && securityRow.failed_login_24h),
+      failedLogins7d:numberValue(securityRow && securityRow.failed_login_7d),
+      throttled24h:numberValue(securityRow && securityRow.throttled_24h),
+      resetRequests24h:numberValue(securityRow && securityRow.reset_requests_24h),
+      verificationRequests24h:numberValue(securityRow && securityRow.verification_requests_24h),
+      registrations7d:numberValue(securityRow && securityRow.registrations_7d),
+      activeSubjectBlocks:numberValue(activeBlocks && activeBlocks.subjects),
+      activeIpBlocks:numberValue(activeBlocks && activeBlocks.ips),
+      recentEvents:(recentSecurityResult && recentSecurityResult.results ? recentSecurityResult.results : []).map(row => ({
+        eventType:String(row.event_type || '').slice(0, 48),
+        outcome:String(row.outcome || '').slice(0, 24),
+        detailCode:String(row.detail_code || '').slice(0, 64),
+        username:cleanDisplayName(row.username || ''),
+        createdAt:row.created_at || null
+      }))
+    },
+    mail:{
+      sent7d:numberValue(mailRow && mailRow.sent_7d),
+      failed7d:numberValue(mailRow && mailRow.failed_7d),
+      failed24h:numberValue(mailRow && mailRow.failed_24h),
+      dailySent7d:numberValue(notificationRow && notificationRow.daily_sent_7d),
+      dailyFailed7d:numberValue(notificationRow && notificationRow.daily_failed_7d),
+      dailyPending:numberValue(notificationRow && notificationRow.daily_pending),
+      recentFailures:(recentMailFailuresResult && recentMailFailuresResult.results ? recentMailFailuresResult.results : []).map(row => ({
+        mailType:cleanMailLogType(row.mail_type),
+        provider:cleanMailLogType(row.provider),
+        errorCode:String(row.error_code || '').slice(0, 64),
+        errorMessage:String(row.error_message || '').replace(/[\r\n]+/g, ' ').slice(0, 240),
+        createdAt:row.created_at || null
+      }))
+    },
+    database:{
+      tableCount:tableNames.length,
+      importantRows:rowCounts,
+      importantRowsTotal:Object.values(rowCounts).reduce((sum, value) => sum + numberValue(value), 0)
+    },
+    backup:{
+      lastManualAt:backupRow && backupRow.setting_value || null,
+      markedAt:backupRow && backupRow.updated_at || null,
+      markedBy:backupRow && backupRow.updated_by || ''
+    }
+  };
+}
+
+async function markManualBackup(env, adminUser) {
+  if (!(await ensureAdminSettingsTable(env))) throw new Error('Admin-Einstellungen sind momentan nicht verfügbar.');
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO admin_settings (setting_key, setting_value, updated_at, updated_by)
+     VALUES ('last_manual_backup', ?, ?, ?)
+     ON CONFLICT(setting_key) DO UPDATE SET
+       setting_value = excluded.setting_value,
+       updated_at = excluded.updated_at,
+       updated_by = excluded.updated_by`
+  ).bind(nowIso, nowIso, String(adminUser && adminUser.id || '').slice(0, 128)).run();
+  return nowIso;
+}
+
+
 async function ensureStatsTable(env) {
   if (!env || !env.DB) return false;
   await env.DB.prepare(
@@ -2370,19 +2673,20 @@ async function handleAuthApi(request, env, url) {
     const verificationMail = prepareSecurityActionEmail({
       recipientEmail:email,
       recipientName:user.username,
+      mailType:'email_change_verification',
       title:'Neue Hammerschach-Mailadresse bestätigen',
       intro:`Bitte bestätige, dass ${email} künftig als Mailadresse für deinen Hammerschach-Account verwendet werden soll.`,
       actionUrl,
       actionLabel:'Neue Mailadresse bestätigen',
       expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
     });
-    const result = await sendInvitationEmail(env, { preparedMail:verificationMail });
+    const result = await sendInvitationEmail(env, { preparedMail:verificationMail, mailType:'email_change_verification' });
     if (!result.ok) {
       return json({ ok:false, code:result.code || 'EMAIL_SEND_FAILED', message:'Die Bestätigungsmail konnte nicht versendet werden. Deine bisherige Mailadresse bleibt unverändert.' }, { status:result.status || 502 });
     }
     try {
       const noticeMail = prepareEmailChangeNoticeEmail({ recipientEmail:user.email, recipientName:user.username, pendingEmail:email });
-      await sendInvitationEmail(env, { preparedMail:noticeMail });
+      await sendInvitationEmail(env, { preparedMail:noticeMail, mailType:'email_change_notice' });
     } catch (_) {}
     return json({
       ok:true,
@@ -2407,13 +2711,14 @@ async function handleAuthApi(request, env, url) {
     const mail = prepareSecurityActionEmail({
       recipientEmail:state.pendingEmail,
       recipientName:user.username,
+      mailType:'email_change_verification',
       title:'Neue Hammerschach-Mailadresse bestätigen',
       intro:`Bitte bestätige, dass ${state.pendingEmail} künftig als Mailadresse für deinen Hammerschach-Account verwendet werden soll.`,
       actionUrl,
       actionLabel:'Neue Mailadresse bestätigen',
       expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
     });
-    const result = await sendInvitationEmail(env, { preparedMail:mail });
+    const result = await sendInvitationEmail(env, { preparedMail:mail, mailType:'email_change_verification' });
     if (!result.ok) return json({ ok:false, code:result.code || 'EMAIL_SEND_FAILED', message:'Die Bestätigungsmail konnte nicht versendet werden.' }, { status:result.status || 502 });
     return json({ ok:true, message:'Eine neue Bestätigungsmail wurde versendet.' });
   }
@@ -3072,6 +3377,29 @@ async function handleAuthApi(request, env, url) {
     const limit = url.searchParams.get('limit') || 50;
     const users = await listMembers(env, session.user, limit);
     return json({ ok: true, users, isAdmin: isAdminUser(session.user, env) });
+  }
+
+  if (url.pathname === '/api/admin/overview' && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      return json({ ok:true, overview:await buildAdminOverview(env) });
+    } catch (error) {
+      console.error('Admin overview failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ ok:false, code:'ADMIN_OVERVIEW_FAILED', message:'Die Systemübersicht konnte nicht geladen werden.' }, { status:500 });
+    }
+  }
+
+  if (url.pathname === '/api/admin/backup-mark' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      const lastManualAt = await markManualBackup(env, admin.session.user);
+      return json({ ok:true, lastManualAt, message:'Das manuelle Datenbank-Backup wurde mit dem aktuellen Zeitpunkt vermerkt.' });
+    } catch (error) {
+      console.error('Admin backup mark failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ ok:false, code:'BACKUP_MARK_FAILED', message:'Der Backup-Zeitpunkt konnte nicht gespeichert werden.' }, { status:500 });
+    }
   }
 
   const adminDeleteMatch = url.pathname.match(/^\/api\/admin\/users\/([^/]+)$/);
@@ -6095,8 +6423,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'GET /api/admin/overview', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'manual_backup_marker'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
