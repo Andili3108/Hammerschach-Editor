@@ -21,6 +21,14 @@ function cleanPlayerId(value) {
   return /^[A-Za-z0-9_.:-]{8,128}$/.test(player) ? player : crypto.randomUUID();
 }
 
+function cleanGuestPlayerId(value) {
+  const playerId = cleanPlayerId(value);
+  // IDs mit "u_" sind ausschließlich für serverseitig bestätigte Accounts reserviert.
+  // Ein Gast darf dadurch niemals das Profil eines registrierten Mitglieds überschreiben.
+  if (/^u_/i.test(playerId)) return cleanPlayerId('g_' + playerId);
+  return playerId;
+}
+
 function cleanDisplayName(value) {
   const name = String(value || '')
     .replace(/[<>\u0000-\u001F\u007F]/g, '')
@@ -380,13 +388,16 @@ async function listDailyGames(env, sessionUser) {
   const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
     `SELECT daily_games.room_id, daily_games.white_user_id, daily_games.black_user_id,
-            daily_games.white_name, daily_games.black_name, daily_games.time_label,
-            daily_games.days_per_move, daily_games.variant, daily_games.started,
+            COALESCE(white_account.username, daily_games.white_name) AS white_name,
+            COALESCE(black_account.username, daily_games.black_name) AS black_name,
+            daily_games.time_label, daily_games.days_per_move, daily_games.variant, daily_games.started,
             daily_games.started_at, daily_games.updated_at, daily_games.turn,
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
             daily_games.result, daily_games.end_reason,
             CASE WHEN opponent_presence.last_seen_at >= ? THEN 1 ELSE 0 END AS opponent_online
        FROM daily_games
+       LEFT JOIN users white_account ON white_account.id = daily_games.white_user_id
+       LEFT JOIN users black_account ON black_account.id = daily_games.black_user_id
        LEFT JOIN user_presence opponent_presence
          ON opponent_presence.user_id = CASE
               WHEN daily_games.white_user_id = ? THEN daily_games.black_user_id
@@ -1832,6 +1843,7 @@ export class GameRoom {
     this.state = state;
     this.env = env;
     this.userPresenceCache = { key:'', expiresAt:0, values:{} };
+    this.accountNameCache = { key:'', expiresAt:0, values:{} };
   }
 
   async cancelDailyInvitation(requestingUserId) {
@@ -2150,6 +2162,13 @@ export class GameRoom {
   async savePlayerProfile(playerId, requestedDisplayName, role = '', accountUser = null) {
     const profiles = (await this.state.storage.get('playerProfiles')) || {};
     const previous = profiles[playerId] || {};
+    const previousUserId = String(previous.userId || '').trim();
+    const currentUserId = accountUser && accountUser.id ? String(accountUser.id) : '';
+
+    // Ein einmal accountgebundenes Profil darf weder durch einen Gast noch durch
+    // einen anderen Account umbenannt oder in ein Gastprofil zurückverwandelt werden.
+    if (previousUserId && previousUserId !== currentUserId) return previous;
+
     const accountName = accountUser ? cleanDisplayName(accountUser.username) : '';
     const displayName = accountName || cleanDisplayName(requestedDisplayName) || cleanDisplayName(previous.displayName) || guestNameFromPlayerId(playerId);
     const profile = {
@@ -2164,7 +2183,35 @@ export class GameRoom {
     };
     profiles[playerId] = profile;
     await this.state.storage.put('playerProfiles', profiles);
+    if (accountUser) this.accountNameCache = { key:'', expiresAt:0, values:{} };
     return profile;
+  }
+
+  async getAccountNamesByUserIds(userIds) {
+    const ids = Array.from(new Set((userIds || []).map(value => String(value || '').trim()).filter(Boolean))).sort();
+    if (ids.length === 0 || !this.env || !this.env.DB) return {};
+
+    const now = Date.now();
+    const cacheKey = ids.join('|');
+    if (this.accountNameCache && this.accountNameCache.key === cacheKey && this.accountNameCache.expiresAt > now) {
+      return this.accountNameCache.values || {};
+    }
+
+    const values = Object.fromEntries(ids.map(id => [id, '']));
+    try {
+      const placeholders = ids.map(() => '?').join(',');
+      const result = await this.env.DB.prepare(
+        `SELECT id, username FROM users WHERE id IN (${placeholders})`
+      ).bind(...ids).all();
+      for (const row of (result && result.results ? result.results : [])) {
+        const userId = String(row.id || '');
+        const username = cleanDisplayName(row.username || '');
+        if (userId && username) values[userId] = username;
+      }
+    } catch (_) {}
+
+    this.accountNameCache = { key:cacheKey, expiresAt:now + 30000, values };
+    return values;
   }
 
   async getGamerPresenceByUserIds(userIds) {
@@ -2208,15 +2255,17 @@ export class GameRoom {
     const presence = options.includePresence
       ? await this.getGamerPresenceByUserIds([whiteUserId, blackUserId])
       : {};
+    const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
     const makeSlot = (playerId, userId) => {
       const profile = playerId ? (profiles[playerId] || {}) : {};
-      const displayName = cleanDisplayName(profile.displayName || profile.name) || (playerId ? guestNameFromPlayerId(playerId) : '');
+      const accountName = userId ? cleanDisplayName(accountNames[userId] || '') : '';
+      const displayName = accountName || cleanDisplayName(profile.displayName || profile.name) || (playerId ? guestNameFromPlayerId(playerId) : '');
       return {
         connected: false,
         gamerOnline: !!(userId && presence[userId]),
         name: displayName,
         displayName,
-        guest: profile.guest !== false
+        guest: userId ? false : profile.guest !== false
       };
     };
 
@@ -2231,12 +2280,12 @@ export class GameRoom {
       const name = cleanDisplayName(info.displayName) || (info.playerId ? guestNameFromPlayerId(info.playerId) : '');
       if (info.role === 'w') {
         active.white.connected = true;
-        if (name) { active.white.name = name; active.white.displayName = name; }
-        active.white.guest = info.guest !== false;
+        if (!whiteUserId && name) { active.white.name = name; active.white.displayName = name; }
+        active.white.guest = whiteUserId ? false : info.guest !== false;
       } else if (info.role === 'b') {
         active.black.connected = true;
-        if (name) { active.black.name = name; active.black.displayName = name; }
-        active.black.guest = info.guest !== false;
+        if (!blackUserId && name) { active.black.name = name; active.black.displayName = name; }
+        active.black.guest = blackUserId ? false : info.guest !== false;
       } else {
         active.spectators += 1;
       }
@@ -2278,8 +2327,9 @@ export class GameRoom {
       const profiles = (await this.state.storage.get('playerProfiles')) || {};
       const whitePlayerId = playerIdFromSlot(players.white);
       const blackPlayerId = playerIdFromSlot(players.black);
-      const whiteName = cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || (whiteUserId ? 'Weiß' : 'noch offen');
-      const blackName = cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || (blackUserId ? 'Schwarz' : 'noch offen');
+      const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
+      const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || (whiteUserId ? 'Weiß' : 'noch offen');
+      const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || (blackUserId ? 'Schwarz' : 'noch offen');
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
       const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
       const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
@@ -2569,12 +2619,11 @@ export class GameRoom {
 
       const authSession = await lookupAuthSession(this.env, data.authToken || data.auth || data.token || '');
       const authUser = authSession ? authSession.user : null;
-      let playerId = cleanPlayerId(data.player || data.playerId || data.player_id);
+      let playerId = authUser && authUser.id
+        ? cleanPlayerId('u_' + authUser.id)
+        : cleanGuestPlayerId(data.player || data.playerId || data.player_id);
       let displayName = cleanDisplayName(data.displayName || data.name);
-      if (authUser && authUser.id) {
-        playerId = cleanPlayerId('u_' + authUser.id);
-        displayName = cleanDisplayName(authUser.username);
-      }
+      if (authUser && authUser.id) displayName = cleanDisplayName(authUser.username);
       const preferredRole = cleanPreferredRole(data.preferredRole || data.preferred_role || data.seatRole || data.seat_role);
       const roomTimeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
       if (roomTimeControl && roomTimeControl.mode === 'daily' && !authUser) {
@@ -2707,6 +2756,13 @@ export class GameRoom {
     if (data.type === 'set_player_name') {
       const authSession = await lookupAuthSession(this.env, data.authToken || data.token || '');
       const authUser = authSession ? authSession.user : null;
+      const securePlayers = await this.getSecurePlayers();
+      const currentSeat = role === 'w' ? securePlayers.white : role === 'b' ? securePlayers.black : null;
+      const seatUserId = currentSeat && currentSeat.userId ? String(currentSeat.userId) : '';
+      if (seatUserId && (!authUser || String(authUser.id) !== seatUserId)) {
+        safeSend(ws, { type: 'error', code: 'ACCOUNT_NAME_PROTECTED', message: 'Der Name dieses Spielerplatzes ist an den registrierten Account gebunden.' });
+        return;
+      }
       const displayName = authUser ? cleanDisplayName(authUser.username) : cleanDisplayName(data.displayName || data.name);
       if (displayName.length < 2) {
         safeSend(ws, { type: 'error', code: 'INVALID_PLAYER_NAME', message: 'Spielername muss mindestens 2 Zeichen haben.' });
