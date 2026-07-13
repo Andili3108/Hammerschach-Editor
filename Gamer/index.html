@@ -470,7 +470,7 @@
 
           <h4>9. Zur Partie einladen</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
-          <p>Beim Einladen eines Mitglieds öffnet sich dein eigenes Mailprogramm mit einer vorbereiteten Nachricht. Die E-Mail wird nicht automatisch versendet. Für Daily Chess werden auch keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
+          <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden. Für Daily Chess werden keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
 
           <h4>10. Partiebeginn</h4>
           <ul>
@@ -673,7 +673,7 @@
     <div id="inviteBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
         <h3 id="inviteTitle">Zur Partie einladen</h3>
-        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und öffne eine vorbereitete E-Mail in deinem Mailprogramm.</p>
+        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und versende die Einladung automatisch per E-Mail.</p>
         <div id="inviteColorSummary" class="invite-color-summary" hidden></div>
 
         <label class="identity-label" for="inviteLinkInput">Einladungslink</label>
@@ -685,7 +685,7 @@
 
         <div class="member-search-box">
           <div class="member-search-head">Mitglied suchen</div>
-          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.</p>
+          <p id="memberSearchHint" class="member-search-hint">Suche nach Benutzername oder Mailadresse. Über „Einladung senden“ wird die Partieeinladung automatisch an die im Account hinterlegte Mailadresse gesendet.</p>
           <label class="identity-label" for="memberSearchInput">Suchbegriff</label>
           <input id="memberSearchInput" class="identity-input" type="search" autocomplete="off" placeholder="z. B. Andreas" />
           <div id="memberSearchStatus" class="member-search-status" aria-live="polite"></div>
@@ -3601,7 +3601,7 @@ function updateInviteDialog(){
   }
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? (isCurrentUserAdmin() ? 'Suche oder öffne die Mitgliederliste. Als Andili kannst du User zusätzlich löschen.' : 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; beim Klick öffnet sich dein Mailprogramm mit vorbereiteter Einladung.')
+      ? (isCurrentUserAdmin() ? 'Suche oder öffne die Mitgliederliste. Als Andili kannst du Einladungen automatisch senden und User zusätzlich löschen.' : 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.')
       : 'Mitgliedersuche und Mitgliederliste sind nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -3677,32 +3677,40 @@ async function copyInvitationText(member){
   updateOnlineUi();
 }
 
-function openMailInvitationToMember(member, button){
+async function sendEmailInvitationToMember(member, button){
   const link = onlineRoomId ? getInviteUrl() : '';
   if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Mitglieder per Mail einzuladen.', true); return; }
   if(!link || !onlineRoomId){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
   if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
-
-  const recipientEmail = String(member.email || '').trim();
-  if(!recipientEmail){ setInviteCopyStatus('Für dieses Mitglied ist keine Mailadresse verfügbar.', true); return; }
+  if(invitationSendBusy){ setInviteCopyStatus('Eine Einladung wird bereits versendet.', true); return; }
 
   inviteSelectedMember = member;
-  const subject = 'Einladung zu einer Partie auf Hammerschach';
-  const body = buildInvitationText(member);
-  const mailtoUrl = 'mailto:' + encodeURIComponent(recipientEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  invitationSendBusy = true;
+  const recipientName = member.username || 'Mitglied';
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Wird gesendet…'; }
+  setInviteCopyStatus('Einladung an ' + recipientName + ' wird versendet…', false);
+  if(memberSearchStatus) memberSearchStatus.textContent = 'Der Hammerschach-Gamer übergibt die Einladung sicher an Mailjet…';
 
   try{
-    window.location.href = mailtoUrl;
-    const recipientName = member.username || 'Mitglied';
-    const message = 'Mailprogramm für Einladung an ' + recipientName + ' wurde geöffnet.';
+    const data = await authApi('/api/invitations/email', {
+      method:'POST',
+      body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id})
+    });
+    const message = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde versendet.');
     setInviteCopyStatus(message, false);
-    if(memberSearchStatus) memberSearchStatus.textContent = 'E-Mail im Mailprogramm prüfen und absenden.';
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Automatischer Mailversand erfolgreich.';
     onlineLastMessage = message;
     statusEl.textContent = message;
-  } catch(_){
-    setInviteCopyStatus('Mailprogramm konnte nicht geöffnet werden. Bitte Einladungstext kopieren.', true);
+  } catch(err){
+    const message = err && err.message ? err.message : 'Die Einladung konnte nicht versendet werden. Bitte den Einladungslink kopieren.';
+    setInviteCopyStatus(message, true);
+    if(memberSearchStatus) memberSearchStatus.textContent = 'Versand fehlgeschlagen. Link und Einladungstext können weiterhin kopiert werden.';
+  } finally {
+    invitationSendBusy = false;
+    if(button){ button.disabled = false; button.textContent = oldText || 'Einladung senden'; }
+    updateOnlineUi();
   }
-  updateOnlineUi();
 }
 
 function createPresenceBadge(isOnline){
@@ -3736,9 +3744,7 @@ function renderMemberSearchResults(users, options){
   const canAdminDelete = isCurrentUserAdmin();
   users.forEach(user => {
     const card = document.createElement('div');
-    card.className = 'member-result-card clickable';
-    card.tabIndex = 0;
-    card.title = 'E-Mail-Einladung an ' + (user.username || 'dieses Mitglied') + ' im Mailprogramm öffnen';
+    card.className = 'member-result-card';
 
     const info = document.createElement('div');
     info.style.minWidth = '0';
@@ -3763,8 +3769,9 @@ function renderMemberSearchResults(users, options){
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'button-flat';
-    btn.textContent = 'E-Mail öffnen';
-    btn.addEventListener('click', ev => { ev.stopPropagation(); openMailInvitationToMember(user, btn); });
+    btn.textContent = 'Einladung senden';
+    btn.title = 'Partieeinladung automatisch an ' + (user.username || 'dieses Mitglied') + ' senden';
+    btn.addEventListener('click', ev => { ev.stopPropagation(); sendEmailInvitationToMember(user, btn); });
     actions.appendChild(btn);
 
     if(canAdminDelete && onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
@@ -3776,11 +3783,6 @@ function renderMemberSearchResults(users, options){
       deleteBtn.addEventListener('click', ev => { ev.stopPropagation(); deleteMemberAsAdmin(user, deleteBtn); });
       actions.appendChild(deleteBtn);
     }
-
-    card.addEventListener('click', () => openMailInvitationToMember(user, btn));
-    card.addEventListener('keydown', ev => {
-      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); openMailInvitationToMember(user, btn); }
-    });
 
     card.appendChild(info);
     card.appendChild(actions);
@@ -3796,7 +3798,7 @@ async function loadMemberList(){
     const data = await authApi('/api/members/list?limit=50');
     renderMemberSearchResults(data.users || [], {source:'list'});
     const count = (data.users || []).length;
-    if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Mitglied anklicken, um E-Mail im Mailprogramm zu öffnen.') : 'Keine weiteren Mitglieder gefunden.';
+    if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Mitglied anklicken, um die Einladung automatisch zu senden.') : 'Keine weiteren Mitglieder gefunden.';
   } catch(err){
     renderMemberSearchResults([], {source:'list'});
     if(memberSearchStatus) memberSearchStatus.textContent = err && err.message ? err.message : 'Mitgliederliste konnte nicht geladen werden.';
@@ -3828,7 +3830,7 @@ async function performMemberSearch(query, requestId){
     const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
     if(requestId !== memberSearchRequestId) return;
     renderMemberSearchResults(data.users || [], {source:'search'});
-    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um E-Mail im Mailprogramm zu öffnen.' : 'Keine Treffer.';
+    if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um die Einladung automatisch zu senden.' : 'Keine Treffer.';
   } catch(err){
     if(requestId !== memberSearchRequestId) return;
     renderMemberSearchResults([], {source:'search'});
