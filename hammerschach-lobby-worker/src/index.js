@@ -1,3 +1,5 @@
+import { connect } from 'cloudflare:sockets';
+
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -469,15 +471,35 @@ async function recordInvitationEmail(env, senderUserId, recipientUserId, roomId,
   return true;
 }
 
-async function sendMailjetInvitation(env, payload) {
-  const apiKey = String((env && env.MAILJET_API_KEY) || '').trim();
-  const secretKey = String((env && env.MAILJET_SECRET_KEY) || '').trim();
-  const fromEmail = normalizeEmail((env && env.MAILJET_FROM_EMAIL) || '');
-  const fromName = cleanDisplayName((env && env.MAILJET_FROM_NAME) || '') || 'Hammerschach-Gamer';
-  if (!apiKey || !secretKey || !fromEmail) {
-    return { ok:false, status:503, code:'MAIL_NOT_CONFIGURED', message:'Der automatische Mailversand ist noch nicht vollständig konfiguriert.' };
+function utf8ToBase64(value) {
+  const bytes = new TextEncoder().encode(String(value || ''));
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
   }
+  return btoa(binary);
+}
 
+function wrapBase64(value, lineLength = 76) {
+  const encoded = utf8ToBase64(value);
+  const lines = [];
+  for (let i = 0; i < encoded.length; i += lineLength) lines.push(encoded.slice(i, i + lineLength));
+  return lines.join('\r\n');
+}
+
+function encodeEmailHeader(value) {
+  const cleaned = String(value || '').replace(/[\r\n]+/g, ' ').trim();
+  if (!cleaned) return '';
+  return `=?UTF-8?B?${utf8ToBase64(cleaned)}?=`;
+}
+
+function emailAddressHeader(name, email) {
+  const safeEmail = normalizeEmail(email);
+  const safeName = cleanDisplayName(name);
+  return safeName ? `${encodeEmailHeader(safeName)} <${safeEmail}>` : `<${safeEmail}>`;
+}
+
+function prepareInvitationEmail(payload) {
   const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
   const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
   const senderName = cleanDisplayName(payload && payload.senderName) || 'Ein Mitglied';
@@ -502,6 +524,21 @@ async function sendMailjetInvitation(env, payload) {
     : '';
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer Schachpartie</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer Schachpartie auf Hammerschach ein.</p>${detailHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
 
+  return { ok:true, recipientEmail, recipientName, senderName, subject, textPart, htmlPart };
+}
+
+async function sendMailjetInvitation(env, payload) {
+  const apiKey = String((env && env.MAILJET_API_KEY) || '').trim();
+  const secretKey = String((env && env.MAILJET_SECRET_KEY) || '').trim();
+  const fromEmail = normalizeEmail((env && env.MAILJET_FROM_EMAIL) || '');
+  const fromName = cleanDisplayName((env && env.MAILJET_FROM_NAME) || '') || 'Hammerschach-Gamer';
+  if (!apiKey || !secretKey || !fromEmail) {
+    return { ok:false, status:503, code:'MAIL_NOT_CONFIGURED', message:'Der automatische Mailversand ist noch nicht vollständig konfiguriert.' };
+  }
+
+  const mail = prepareInvitationEmail(payload);
+  if (!mail.ok) return mail;
+
   let response;
   let result = null;
   try {
@@ -514,10 +551,12 @@ async function sendMailjetInvitation(env, payload) {
       body:JSON.stringify({
         Messages:[{
           From:{ Email:fromEmail, Name:fromName },
-          To:[{ Email:recipientEmail, Name:recipientName }],
-          Subject:subject,
-          TextPart:textPart,
-          HTMLPart:htmlPart
+          To:[{ Email:mail.recipientEmail, Name:mail.recipientName }],
+          Subject:mail.subject,
+          TextPart:mail.textPart,
+          HTMLPart:mail.htmlPart,
+          TrackOpens:'disabled',
+          TrackClicks:'disabled'
         }]
       })
     });
@@ -543,8 +582,171 @@ async function sendMailjetInvitation(env, payload) {
   return {
     ok:true,
     status:200,
+    provider:'mailjet',
     messageId:recipientResult && (recipientResult.MessageID || recipientResult.MessageUUID) ? String(recipientResult.MessageID || recipientResult.MessageUUID) : ''
   };
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  let timer = null;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(label || 'Zeitüberschreitung')), timeoutMs);
+    })
+  ]).finally(() => { if (timer) clearTimeout(timer); });
+}
+
+async function readSmtpResponse(reader, state, timeoutMs = 12000) {
+  const lines = [];
+  let responseCode = '';
+  while (true) {
+    let newlineIndex = state.buffer.indexOf('\n');
+    while (newlineIndex < 0) {
+      const chunk = await withTimeout(reader.read(), timeoutMs, 'SMTP-Antwort dauerte zu lange.');
+      if (!chunk || chunk.done) throw new Error('SMTP-Verbindung wurde unerwartet geschlossen.');
+      state.buffer += state.decoder.decode(chunk.value, { stream:true });
+      newlineIndex = state.buffer.indexOf('\n');
+    }
+
+    const rawLine = state.buffer.slice(0, newlineIndex);
+    state.buffer = state.buffer.slice(newlineIndex + 1);
+    const line = rawLine.replace(/\r$/, '');
+    lines.push(line);
+    const match = line.match(/^(\d{3})([ -])/);
+    if (!match) continue;
+    if (!responseCode) responseCode = match[1];
+    if (match[1] === responseCode && match[2] === ' ') {
+      return { code:Number(responseCode), lines, text:lines.join('\n') };
+    }
+  }
+}
+
+async function writeSmtpLine(writer, value) {
+  await writer.write(new TextEncoder().encode(String(value || '') + '\r\n'));
+}
+
+async function smtpCommand(writer, reader, state, command, expectedCodes, options = {}) {
+  if (command !== null && command !== undefined) await writeSmtpLine(writer, command);
+  const response = await readSmtpResponse(reader, state, options.timeoutMs || 12000);
+  const expected = Array.isArray(expectedCodes) ? expectedCodes : [expectedCodes];
+  if (!expected.includes(response.code)) {
+    const safeCommand = options.sensitive ? '[vertraulicher SMTP-Befehl]' : String(command || '[Serverantwort]').slice(0, 80);
+    const error = new Error(`SMTP ${response.code} nach ${safeCommand}`);
+    error.smtpCode = response.code;
+    error.smtpResponse = response.text.slice(0, 400);
+    throw error;
+  }
+  return response;
+}
+
+function buildSmtpMimeMessage(mail, fromEmail, fromName) {
+  const boundary = 'hammerschach_' + crypto.randomUUID().replace(/-/g, '');
+  const messageIdDomain = String(fromEmail.split('@')[1] || 'online.de').replace(/[^A-Za-z0-9.-]/g, '') || 'online.de';
+  const messageId = `${Date.now()}.${crypto.randomUUID().replace(/-/g, '')}@${messageIdDomain}`;
+  const headers = [
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${messageId}>`,
+    `From: ${emailAddressHeader(fromName, fromEmail)}`,
+    `To: ${emailAddressHeader(mail.recipientName, mail.recipientEmail)}`,
+    `Reply-To: ${emailAddressHeader(fromName, fromEmail)}`,
+    `Subject: ${encodeEmailHeader(mail.subject)}`,
+    'MIME-Version: 1.0',
+    'Auto-Submitted: auto-generated',
+    'X-Auto-Response-Suppress: All',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`
+  ];
+  const body = [
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrapBase64(mail.textPart),
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrapBase64(mail.htmlPart),
+    `--${boundary}--`,
+    ''
+  ];
+  return { messageId, raw:headers.concat([''], body).join('\r\n') };
+}
+
+function dotStuffSmtpData(value) {
+  return String(value || '').replace(/(^|\r\n)\./g, '$1..');
+}
+
+async function sendSmtpInvitation(env, payload) {
+  const host = String((env && env.SMTP_HOST) || '').trim();
+  const port = Number((env && env.SMTP_PORT) || 465);
+  const username = String((env && env.SMTP_USERNAME) || '').trim();
+  const password = String((env && env.SMTP_PASSWORD) || '');
+  const fromEmail = normalizeEmail((env && env.SMTP_FROM_EMAIL) || username);
+  const fromName = cleanDisplayName((env && env.SMTP_FROM_NAME) || '') || 'Hammerschach-Gamer';
+  if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !username || !password || !fromEmail) {
+    return { ok:false, status:503, code:'SMTP_NOT_CONFIGURED', message:'Der SMTP-Mailversand ist noch nicht vollständig konfiguriert.' };
+  }
+  if (port !== 465) {
+    return { ok:false, status:503, code:'SMTP_PORT_UNSUPPORTED', message:'Für den aktuellen SMTP-Versand muss Port 465 mit SSL/TLS verwendet werden.' };
+  }
+
+  const mail = prepareInvitationEmail(payload);
+  if (!mail.ok) return mail;
+
+  let socket = null;
+  let reader = null;
+  let writer = null;
+  try {
+    socket = connect({ hostname:host, port }, { secureTransport:'on', allowHalfOpen:false });
+    await withTimeout(socket.opened, 12000, 'SMTP-Verbindung konnte nicht rechtzeitig aufgebaut werden.');
+    reader = socket.readable.getReader();
+    writer = socket.writable.getWriter();
+    const state = { buffer:'', decoder:new TextDecoder() };
+
+    await smtpCommand(writer, reader, state, null, 220);
+    let heloName = 'hammerschach-gamer';
+    try {
+      const publicUrl = String((env && env.GAMER_PUBLIC_URL) || '').trim();
+      if (publicUrl) heloName = new URL(publicUrl).hostname.replace(/[^A-Za-z0-9.-]/g, '') || heloName;
+    } catch (_) {}
+    await smtpCommand(writer, reader, state, `EHLO ${heloName}`, 250);
+    await smtpCommand(writer, reader, state, 'AUTH LOGIN', 334);
+    await smtpCommand(writer, reader, state, utf8ToBase64(username), 334, { sensitive:true });
+    await smtpCommand(writer, reader, state, utf8ToBase64(password), 235, { sensitive:true });
+    await smtpCommand(writer, reader, state, `MAIL FROM:<${fromEmail}>`, 250);
+    await smtpCommand(writer, reader, state, `RCPT TO:<${mail.recipientEmail}>`, [250, 251]);
+    await smtpCommand(writer, reader, state, 'DATA', 354);
+
+    const mime = buildSmtpMimeMessage(mail, fromEmail, fromName);
+    const smtpData = dotStuffSmtpData(mime.raw) + '\r\n.';
+    await smtpCommand(writer, reader, state, smtpData, 250, { sensitive:true, timeoutMs:20000 });
+    try { await smtpCommand(writer, reader, state, 'QUIT', 221, { timeoutMs:5000 }); } catch (_) {}
+
+    return { ok:true, status:200, provider:'smtp', messageId:mime.messageId };
+  } catch (error) {
+    console.error('SMTP invitation failed', error && error.message ? error.message : String(error || 'unknown'), error && error.smtpResponse ? error.smtpResponse : '');
+    const code = error && error.smtpCode;
+    if (code === 535 || code === 534) {
+      return { ok:false, status:502, code:'SMTP_AUTH_FAILED', message:'Die Anmeldung am 1&1-Postfach ist fehlgeschlagen. Bitte Benutzername und Postfachkennwort prüfen.' };
+    }
+    if (code === 550 || code === 551 || code === 553) {
+      return { ok:false, status:502, code:'SMTP_RECIPIENT_REJECTED', message:'Der 1&1-Mailserver hat die Empfängeradresse abgelehnt.' };
+    }
+    return { ok:false, status:502, code:'SMTP_SEND_FAILED', message:'Die Einladung konnte über das 1&1-Postfach nicht versendet werden. Bitte den Einladungslink kopieren.' };
+  } finally {
+    try { if (writer) writer.releaseLock(); } catch (_) {}
+    try { if (reader) reader.releaseLock(); } catch (_) {}
+    try { if (socket) await socket.close(); } catch (_) {}
+  }
+}
+
+async function sendInvitationEmail(env, payload) {
+  const configured = String((env && env.MAIL_PROVIDER) || '').trim().toLowerCase();
+  const provider = configured || ((env && env.SMTP_HOST && env.SMTP_USERNAME && env.SMTP_PASSWORD) ? 'smtp' : 'mailjet');
+  if (provider === 'smtp') return sendSmtpInvitation(env, payload);
+  if (provider === 'mailjet') return sendMailjetInvitation(env, payload);
+  return { ok:false, status:503, code:'UNKNOWN_MAIL_PROVIDER', message:'Der konfigurierte Mailanbieter ist unbekannt.' };
 }
 
 let dailyGamesTableReady = false;
@@ -1649,7 +1851,7 @@ async function handleAuthApi(request, env, url) {
       return json({ ok:false, code:'PUBLIC_URL_NOT_CONFIGURED', message:'Die öffentliche Gamer-Adresse ist im Worker nicht korrekt hinterlegt.' }, { status:503 });
     }
 
-    const mail = await sendMailjetInvitation(env, {
+    const mail = await sendInvitationEmail(env, {
       roomId,
       recipientEmail,
       recipientName:recipient.username,
@@ -4607,8 +4809,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailjet_email_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete Mailjet-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
