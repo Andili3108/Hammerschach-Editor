@@ -765,6 +765,276 @@ async function sendInvitationEmail(env, payload) {
 }
 
 
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
+const AUTH_MAIL_RATE_WINDOW_MS = 60 * 60 * 1000;
+const AUTH_MAIL_RATE_ACCOUNT_LIMIT = 3;
+const AUTH_MAIL_RATE_IP_LIMIT = 8;
+let accountSecurityTablesReady = false;
+
+async function ensureAccountSecurityTables(env) {
+  if (!env || !env.DB) return false;
+  if (accountSecurityTablesReady) return true;
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS user_email_status (
+         user_id TEXT PRIMARY KEY,
+         email TEXT NOT NULL,
+         verified INTEGER NOT NULL DEFAULT 0,
+         verified_at TEXT,
+         updated_at TEXT NOT NULL
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS account_action_tokens (
+         id TEXT PRIMARY KEY,
+         user_id TEXT NOT NULL,
+         purpose TEXT NOT NULL,
+         token_hash TEXT NOT NULL UNIQUE,
+         email TEXT NOT NULL,
+         created_at TEXT NOT NULL,
+         expires_at TEXT NOT NULL,
+         used_at TEXT
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS auth_mail_request_log (
+         id TEXT PRIMARY KEY,
+         request_type TEXT NOT NULL,
+         subject_hash TEXT NOT NULL,
+         ip_hash TEXT NOT NULL,
+         created_at TEXT NOT NULL
+       )`
+    )
+  ]);
+  await env.DB.batch([
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_action_tokens_user_purpose ON account_action_tokens (user_id, purpose, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_action_tokens_expiry ON account_action_tokens (expires_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_mail_subject_time ON auth_mail_request_log (subject_hash, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_auth_mail_ip_time ON auth_mail_request_log (ip_hash, created_at)`)
+  ]);
+  accountSecurityTablesReady = true;
+  return true;
+}
+
+function publicActionUrl(env, parameterName, token) {
+  const configured = String((env && env.GAMER_PUBLIC_URL) || '').trim();
+  if (!configured || !token) return '';
+  try {
+    const url = new URL(configured);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
+    url.hash = '';
+    url.search = '';
+    url.searchParams.set(parameterName, token);
+    return url.toString();
+  } catch (_) {
+    return '';
+  }
+}
+
+async function getUserEmailSecurityState(env, rowOrUserId) {
+  const userId = String(rowOrUserId && typeof rowOrUserId === 'object' ? rowOrUserId.id : rowOrUserId || '').trim();
+  if (!userId || !(await ensureAccountSecurityTables(env))) {
+    return { emailVerified:true, verifiedAt:null, pendingEmail:'' };
+  }
+  const user = rowOrUserId && typeof rowOrUserId === 'object' && rowOrUserId.email
+    ? rowOrUserId
+    : await env.DB.prepare(`SELECT id, email FROM users WHERE id = ? LIMIT 1`).bind(userId).first();
+  if (!user) return { emailVerified:false, verifiedAt:null, pendingEmail:'' };
+  const currentEmail = normalizeEmail(user.email);
+  const row = await env.DB.prepare(
+    `SELECT email, verified, verified_at FROM user_email_status WHERE user_id = ? LIMIT 1`
+  ).bind(userId).first();
+  // Bestehende Accounts vor Einführung der Verifizierung gelten als bestätigt.
+  const emailVerified = !row || (normalizeEmail(row.email) === currentEmail && Number(row.verified) === 1);
+  const nowIso = new Date().toISOString();
+  const pending = await env.DB.prepare(
+    `SELECT email FROM account_action_tokens
+      WHERE user_id = ? AND purpose = 'email_change' AND used_at IS NULL AND expires_at > ?
+      ORDER BY created_at DESC LIMIT 1`
+  ).bind(userId, nowIso).first();
+  return {
+    emailVerified,
+    verifiedAt:row && row.verified_at ? row.verified_at : null,
+    pendingEmail:normalizeEmail(pending && pending.email) || ''
+  };
+}
+
+async function setCurrentEmailVerified(env, userId, email, verified) {
+  if (!(await ensureAccountSecurityTables(env))) return false;
+  const normalized = normalizeEmail(email);
+  if (!userId || !normalized) return false;
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO user_email_status (user_id, email, verified, verified_at, updated_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       email = excluded.email,
+       verified = excluded.verified,
+       verified_at = excluded.verified_at,
+       updated_at = excluded.updated_at`
+  ).bind(String(userId), normalized, verified ? 1 : 0, verified ? nowIso : null, nowIso).run();
+  return true;
+}
+
+async function createAccountActionToken(env, userId, purpose, email, ttlMs) {
+  if (!(await ensureAccountSecurityTables(env))) throw new Error('Account-Sicherheit ist momentan nicht verfügbar.');
+  const uid = String(userId || '').trim();
+  const action = String(purpose || '').trim().slice(0, 40);
+  const normalizedEmail = normalizeEmail(email);
+  if (!uid || !action || !normalizedEmail) throw new Error('Token-Daten sind unvollständig.');
+  const rawToken = randomBase64Url(32);
+  const tokenHash = await sha256Hex(rawToken);
+  const now = new Date();
+  const expires = new Date(now.getTime() + Math.max(5 * 60 * 1000, Number(ttlMs || 0)));
+  const nowIso = now.toISOString();
+  await env.DB.prepare(
+    `UPDATE account_action_tokens SET used_at = ?
+      WHERE user_id = ? AND purpose = ? AND used_at IS NULL`
+  ).bind(nowIso, uid, action).run();
+  await env.DB.prepare(
+    `INSERT INTO account_action_tokens (id, user_id, purpose, token_hash, email, created_at, expires_at, used_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`
+  ).bind(crypto.randomUUID(), uid, action, tokenHash, normalizedEmail, nowIso, expires.toISOString()).run();
+  try {
+    const pruneBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare(`DELETE FROM account_action_tokens WHERE expires_at < ? OR (used_at IS NOT NULL AND used_at < ?)`).bind(nowIso, pruneBefore).run();
+  } catch (_) {}
+  return { token:rawToken, expiresAt:expires.toISOString(), email:normalizedEmail, purpose:action };
+}
+
+async function loadValidAccountActionToken(env, token, allowedPurposes) {
+  if (!(await ensureAccountSecurityTables(env))) return null;
+  const raw = String(token || '').trim();
+  if (!/^[A-Za-z0-9_-]{40,100}$/.test(raw)) return null;
+  const tokenHash = await sha256Hex(raw);
+  const nowIso = new Date().toISOString();
+  const row = await env.DB.prepare(
+    `SELECT t.*, u.username, u.email AS current_email, u.disabled, u.deleted_at
+       FROM account_action_tokens t
+       JOIN users u ON u.id = t.user_id
+      WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?
+      LIMIT 1`
+  ).bind(tokenHash, nowIso).first();
+  if (!row || row.disabled === 1 || row.disabled === true || row.deleted_at) return null;
+  const allowed = Array.isArray(allowedPurposes) ? allowedPurposes : [allowedPurposes];
+  if (!allowed.includes(String(row.purpose || ''))) return null;
+  return row;
+}
+
+async function markAccountActionTokenUsed(env, tokenRow) {
+  if (!tokenRow || !tokenRow.id) return false;
+  const nowIso = new Date().toISOString();
+  const result = await env.DB.prepare(
+    `UPDATE account_action_tokens SET used_at = ? WHERE id = ? AND used_at IS NULL`
+  ).bind(nowIso, tokenRow.id).run();
+  return Number(result && result.meta && result.meta.changes || 0) > 0;
+}
+
+function requestClientIp(request) {
+  return String(request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim().slice(0, 80);
+}
+
+async function claimAuthMailRequest(env, request, requestType, subjectKey) {
+  if (!(await ensureAccountSecurityTables(env))) return false;
+  const now = Date.now();
+  const fromIso = new Date(now - AUTH_MAIL_RATE_WINDOW_MS).toISOString();
+  const subjectHash = await sha256Hex(`subject:${requestType}:${String(subjectKey || '').toLowerCase()}`);
+  const ipHash = await sha256Hex(`ip:${requestType}:${requestClientIp(request)}`);
+  const [subjectCount, ipCount] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM auth_mail_request_log WHERE subject_hash = ? AND created_at >= ?`).bind(subjectHash, fromIso).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM auth_mail_request_log WHERE ip_hash = ? AND created_at >= ?`).bind(ipHash, fromIso).first()
+  ]);
+  if (Number(subjectCount && subjectCount.count || 0) >= AUTH_MAIL_RATE_ACCOUNT_LIMIT) return false;
+  if (Number(ipCount && ipCount.count || 0) >= AUTH_MAIL_RATE_IP_LIMIT) return false;
+  await env.DB.prepare(
+    `INSERT INTO auth_mail_request_log (id, request_type, subject_hash, ip_hash, created_at) VALUES (?, ?, ?, ?, ?)`
+  ).bind(crypto.randomUUID(), String(requestType || '').slice(0, 40), subjectHash, ipHash, new Date(now).toISOString()).run();
+  try {
+    const pruneBefore = new Date(now - 48 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare(`DELETE FROM auth_mail_request_log WHERE created_at < ?`).bind(pruneBefore).run();
+  } catch (_) {}
+  return true;
+}
+
+async function findUserByIdentifier(env, identifier) {
+  const raw = String(identifier || '').trim();
+  if (!raw) return null;
+  const email = normalizeEmail(raw);
+  return env.DB.prepare(
+    email ? `SELECT * FROM users WHERE email_lc = ? LIMIT 1` : `SELECT * FROM users WHERE username_lc = ? LIMIT 1`
+  ).bind(email || raw.toLowerCase()).first();
+}
+
+function prepareSecurityActionEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const title = String(payload && payload.title || '').replace(/[\r\n<>]/g, '').trim().slice(0, 120);
+  const intro = String(payload && payload.intro || '').trim().slice(0, 1200);
+  const actionUrl = String(payload && payload.actionUrl || '').trim();
+  const actionLabel = String(payload && payload.actionLabel || 'Öffnen').replace(/[\r\n<>]/g, '').trim().slice(0, 80);
+  const expiryText = String(payload && payload.expiryText || '').trim().slice(0, 180);
+  if (!recipientEmail || !title || !intro || !actionUrl) {
+    return { ok:false, status:400, code:'INVALID_SECURITY_MAIL', message:'Die Sicherheitsmail konnte nicht vorbereitet werden.' };
+  }
+  const textPart = `Hallo ${recipientName},\n\n${intro}\n\n${actionLabel}:\n${actionUrl}${expiryText ? `\n\n${expiryText}` : ''}\n\nFalls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.\n\nViele Grüße\nHammerschach-Gamer`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p style="line-height:1.55;">${escapeEmailHtml(intro)}</p><p style="margin:22px 0;"><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${escapeEmailHtml(actionLabel)}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(actionUrl)}</p>${expiryText ? `<p style="font-size:13px;color:#666;">${escapeEmailHtml(expiryText)}</p>` : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Falls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, recipientEmail, recipientName, subject:title, textPart, htmlPart };
+}
+
+function prepareEmailChangeNoticeEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const pendingEmail = normalizeEmail(payload && payload.pendingEmail);
+  if (!recipientEmail || !pendingEmail) return { ok:false, status:400, code:'INVALID_EMAIL_CHANGE_NOTICE', message:'Die Hinweis-Mail konnte nicht vorbereitet werden.' };
+  const subject = 'Änderung deiner Hammerschach-Mailadresse angefordert';
+  const textPart = `Hallo ${recipientName},\n\nfür deinen Hammerschach-Account wurde die Änderung der Mailadresse auf ${pendingEmail} angefordert. Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.\n\nFalls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.\n\nViele Grüße\nHammerschach-Gamer`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Mailadressänderung angefordert</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>für deinen Hammerschach-Account wurde die Änderung der Mailadresse auf <strong>${escapeEmailHtml(pendingEmail)}</strong> angefordert.</p><p>Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.</p><p style="font-size:13px;color:#843f46;font-weight:bold;">Falls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
+async function sendRegistrationVerificationEmail(env, user, request = null) {
+  const email = normalizeEmail(user && user.email);
+  if (!user || !email) return { ok:false, code:'INVALID_USER_EMAIL' };
+  if (request && !(await claimAuthMailRequest(env, request, 'verify_email', user.id))) return { ok:true, skipped:true, reason:'rate_limited' };
+  const action = await createAccountActionToken(env, user.id, 'verify_registration', email, EMAIL_VERIFICATION_TTL_MS);
+  const actionUrl = publicActionUrl(env, 'verifyEmail', action.token);
+  const mail = prepareSecurityActionEmail({
+    recipientEmail:email,
+    recipientName:user.username,
+    title:'Mailadresse für Hammerschach bestätigen',
+    intro:'Bitte bestätige deine Mailadresse. Erst danach kannst du dich mit dem neu angelegten Account einloggen.',
+    actionUrl,
+    actionLabel:'Mailadresse bestätigen',
+    expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
+  });
+  return sendInvitationEmail(env, { preparedMail:mail });
+}
+
+async function sendPasswordResetEmail(env, user, request) {
+  const emailState = await getUserEmailSecurityState(env, user);
+  if (!emailState.emailVerified) return { ok:true, skipped:true, reason:'email_not_verified' };
+  if (!(await claimAuthMailRequest(env, request, 'password_reset', user.id))) return { ok:true, skipped:true, reason:'rate_limited' };
+  const action = await createAccountActionToken(env, user.id, 'password_reset', user.email, PASSWORD_RESET_TTL_MS);
+  const actionUrl = publicActionUrl(env, 'resetPassword', action.token);
+  const mail = prepareSecurityActionEmail({
+    recipientEmail:user.email,
+    recipientName:user.username,
+    title:'Hammerschach-Kennwort zurücksetzen',
+    intro:'Über den folgenden Link kannst du ein neues Kennwort für deinen Hammerschach-Account festlegen.',
+    actionUrl,
+    actionLabel:'Neues Kennwort festlegen',
+    expiryText:'Der Link ist 30 Minuten gültig und kann nur einmal verwendet werden.'
+  });
+  return sendInvitationEmail(env, { preparedMail:mail });
+}
+
+async function waitForMinimumResponseTime(startedAt, minimumMs = 450) {
+  const remaining = minimumMs - (Date.now() - startedAt);
+  if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
+}
+
+
 const DEFAULT_EMAIL_NOTIFICATIONS = Object.freeze({
   dailyTurnEnabled:true,
   dailyResultEnabled:true
@@ -989,6 +1259,8 @@ async function loadEmailNotificationRecipient(env, userId, preferenceName) {
   const user = await env.DB.prepare(`SELECT id, username, email FROM users WHERE id = ? LIMIT 1`).bind(id).first();
   const email = normalizeEmail(user && user.email);
   if (!user || !email) return { ok:false, reason:'user_or_email_missing' };
+  const emailSecurity = await getUserEmailSecurityState(env, user);
+  if (!emailSecurity.emailVerified) return { ok:false, reason:'email_not_verified' };
   const preferences = await getUserEmailPreferences(env, id);
   if (preferenceName && preferences[preferenceName] === false) return { ok:false, reason:'disabled' };
   return { ok:true, user, email, preferences };
@@ -1383,6 +1655,10 @@ async function publicUserWithRatings(env, row) {
   if (!user) return null;
   user.ratings = await getUserRatings(env, user.id);
   user.emailNotifications = await getUserEmailPreferences(env, user.id);
+  const emailSecurity = await getUserEmailSecurityState(env, row || user);
+  user.emailVerified = emailSecurity.emailVerified;
+  user.emailVerifiedAt = emailSecurity.verifiedAt;
+  user.pendingEmail = emailSecurity.pendingEmail;
   return user;
 }
 
@@ -1684,6 +1960,8 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM email_notification_log WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sender_user_id = ? OR recipient_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM account_action_tokens WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM user_email_status WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
   return { ok: true, deletedUser: publicUser(target, env), cancelledInvitations: cancellation.cancelled || 0 };
 }
@@ -1833,12 +2111,61 @@ async function handleAuthApi(request, env, url) {
     }
     const email = normalizeEmail(body.email);
     if (!email) return json({ ok: false, code: 'INVALID_EMAIL', message: 'Bitte eine gültige Mailadresse eingeben.' }, { status: 400 });
+    if (email === normalizeEmail(user.email)) return json({ ok:false, code:'EMAIL_UNCHANGED', message:'Diese Mailadresse ist bereits deinem Account zugeordnet.' }, { status:400 });
     const existing = await env.DB.prepare(`SELECT id FROM users WHERE email_lc = ? AND id <> ? LIMIT 1`).bind(email, user.id).first();
     if (existing) return json({ ok: false, code: 'EMAIL_TAKEN', message: 'Diese Mailadresse ist bereits registriert.' }, { status: 409 });
-    await env.DB.prepare(`UPDATE users SET email = ?, email_lc = ? WHERE id = ?`).bind(email, email, user.id).run();
-    user.email = email;
-    user.email_lc = email;
-    return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Mailadresse wurde geändert.' });
+
+    const action = await createAccountActionToken(env, user.id, 'email_change', email, EMAIL_VERIFICATION_TTL_MS);
+    const actionUrl = publicActionUrl(env, 'verifyEmail', action.token);
+    const verificationMail = prepareSecurityActionEmail({
+      recipientEmail:email,
+      recipientName:user.username,
+      title:'Neue Hammerschach-Mailadresse bestätigen',
+      intro:`Bitte bestätige, dass ${email} künftig als Mailadresse für deinen Hammerschach-Account verwendet werden soll.`,
+      actionUrl,
+      actionLabel:'Neue Mailadresse bestätigen',
+      expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
+    });
+    const result = await sendInvitationEmail(env, { preparedMail:verificationMail });
+    if (!result.ok) {
+      return json({ ok:false, code:result.code || 'EMAIL_SEND_FAILED', message:'Die Bestätigungsmail konnte nicht versendet werden. Deine bisherige Mailadresse bleibt unverändert.' }, { status:result.status || 502 });
+    }
+    try {
+      const noticeMail = prepareEmailChangeNoticeEmail({ recipientEmail:user.email, recipientName:user.username, pendingEmail:email });
+      await sendInvitationEmail(env, { preparedMail:noticeMail });
+    } catch (_) {}
+    return json({
+      ok:true,
+      user:await publicUserWithRatings(env, user),
+      pendingEmail:email,
+      message:'Bestätigungsmail wurde an die neue Adresse versendet. Bis zur Bestätigung bleibt die bisherige Adresse aktiv.'
+    });
+  }
+
+  if (url.pathname === '/api/account/email/resend' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const user = await loadPrivateUser(env, session.user.id);
+    if (!user) return json({ ok:false, code:'USER_NOT_FOUND', message:'Account wurde nicht gefunden.' }, { status:404 });
+    const state = await getUserEmailSecurityState(env, user);
+    if (!state.pendingEmail) return json({ ok:false, code:'NO_PENDING_EMAIL', message:'Es gibt keine noch ausstehende Mailadressänderung.' }, { status:400 });
+    if (!(await claimAuthMailRequest(env, request, 'email_change_resend', user.id))) {
+      return json({ ok:true, message:'Falls ein Versand möglich ist, wurde eine neue Bestätigungsmail vorbereitet.' });
+    }
+    const action = await createAccountActionToken(env, user.id, 'email_change', state.pendingEmail, EMAIL_VERIFICATION_TTL_MS);
+    const actionUrl = publicActionUrl(env, 'verifyEmail', action.token);
+    const mail = prepareSecurityActionEmail({
+      recipientEmail:state.pendingEmail,
+      recipientName:user.username,
+      title:'Neue Hammerschach-Mailadresse bestätigen',
+      intro:`Bitte bestätige, dass ${state.pendingEmail} künftig als Mailadresse für deinen Hammerschach-Account verwendet werden soll.`,
+      actionUrl,
+      actionLabel:'Neue Mailadresse bestätigen',
+      expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
+    });
+    const result = await sendInvitationEmail(env, { preparedMail:mail });
+    if (!result.ok) return json({ ok:false, code:result.code || 'EMAIL_SEND_FAILED', message:'Die Bestätigungsmail konnte nicht versendet werden.' }, { status:result.status || 502 });
+    return json({ ok:true, message:'Eine neue Bestätigungsmail wurde versendet.' });
   }
 
   if (url.pathname === '/api/account/notifications' && request.method === 'POST') {
@@ -1874,7 +2201,7 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: false, code: 'INVALID_PASSWORD', message: 'Das aktuelle Kennwort ist nicht korrekt.' }, { status: 401 });
     }
     const newPassword = String(body.newPassword || '');
-    if (newPassword.length < 8) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das neue Kennwort muss mindestens 8 Zeichen haben.' }, { status: 400 });
+    if (newPassword.length < 8 || newPassword.length > 128) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das neue Kennwort muss 8 bis 128 Zeichen haben.' }, { status: 400 });
     const salt = randomBase64Url(16);
     const passwordHash = await hashPassword(newPassword, salt, PASSWORD_ITERATIONS);
     await env.DB.prepare(
@@ -2049,6 +2376,93 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  if (url.pathname === '/api/auth/password-reset/request' && request.method === 'POST') {
+    const startedAt = Date.now();
+    const body = await readJsonBody(request);
+    const identifier = body ? String(body.identifier || '').trim() : '';
+    try {
+      const user = await findUserByIdentifier(env, identifier);
+      if (user && !(user.disabled === 1 || user.disabled === true || user.deleted_at)) {
+        const result = await sendPasswordResetEmail(env, user, request);
+        if (!result.ok) console.error('Password reset mail failed', result.code || '', result.message || '');
+      }
+    } catch (error) {
+      console.error('Password reset request failed', error && error.message ? error.message : String(error || 'unknown'));
+    }
+    await waitForMinimumResponseTime(startedAt);
+    return json({ ok:true, message:'Falls ein passender bestätigter Account existiert, wurde eine Mail zum Zurücksetzen des Kennworts versendet.' });
+  }
+
+  if (url.pathname === '/api/auth/password-reset/confirm' && request.method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Angaben konnten nicht gelesen werden.' }, { status:400 });
+    const tokenRow = await loadValidAccountActionToken(env, body.token, 'password_reset');
+    if (!tokenRow) return json({ ok:false, code:'INVALID_OR_EXPIRED_TOKEN', message:'Der Link ist ungültig, abgelaufen oder wurde bereits verwendet.' }, { status:400 });
+    const newPassword = String(body.newPassword || '');
+    if (newPassword.length < 8 || newPassword.length > 128) return json({ ok:false, code:'WEAK_PASSWORD', message:'Das neue Kennwort muss 8 bis 128 Zeichen haben.' }, { status:400 });
+    const salt = randomBase64Url(16);
+    const passwordHash = await hashPassword(newPassword, salt, PASSWORD_ITERATIONS);
+    const used = await markAccountActionTokenUsed(env, tokenRow);
+    if (!used) return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Link wurde bereits verwendet.' }, { status:409 });
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE users SET password_alg = ?, password_hash = ?, password_salt = ?, password_iterations = ? WHERE id = ?`
+      ).bind('pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, tokenRow.user_id),
+      env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(tokenRow.user_id),
+      env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND purpose = 'password_reset' AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id)
+    ]);
+    return json({ ok:true, message:'Das Kennwort wurde geändert. Bitte melde dich neu an.' });
+  }
+
+  if (url.pathname === '/api/auth/email-verification/request' && request.method === 'POST') {
+    const startedAt = Date.now();
+    const body = await readJsonBody(request);
+    const identifier = body ? String(body.identifier || '').trim() : '';
+    try {
+      const user = await findUserByIdentifier(env, identifier);
+      if (user && !(user.disabled === 1 || user.disabled === true || user.deleted_at)) {
+        const state = await getUserEmailSecurityState(env, user);
+        if (!state.emailVerified) {
+          const result = await sendRegistrationVerificationEmail(env, user, request);
+          if (!result.ok) console.error('Verification resend failed', result.code || '', result.message || '');
+        }
+      }
+    } catch (error) {
+      console.error('Verification request failed', error && error.message ? error.message : String(error || 'unknown'));
+    }
+    await waitForMinimumResponseTime(startedAt);
+    return json({ ok:true, message:'Falls der Account noch nicht bestätigt ist, wurde eine neue Bestätigungsmail versendet.' });
+  }
+
+  if (url.pathname === '/api/auth/email-verification/confirm' && request.method === 'POST') {
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Der Bestätigungslink konnte nicht gelesen werden.' }, { status:400 });
+    const tokenRow = await loadValidAccountActionToken(env, body.token, ['verify_registration', 'email_change']);
+    if (!tokenRow) return json({ ok:false, code:'INVALID_OR_EXPIRED_TOKEN', message:'Der Bestätigungslink ist ungültig, abgelaufen oder wurde bereits verwendet.' }, { status:400 });
+    const targetEmail = normalizeEmail(tokenRow.email);
+    if (!targetEmail) return json({ ok:false, code:'INVALID_EMAIL', message:'Die Mailadresse im Bestätigungslink ist ungültig.' }, { status:400 });
+
+    if (tokenRow.purpose === 'email_change') {
+      const existing = await env.DB.prepare(`SELECT id FROM users WHERE email_lc = ? AND id <> ? LIMIT 1`).bind(targetEmail, tokenRow.user_id).first();
+      if (existing) return json({ ok:false, code:'EMAIL_TAKEN', message:'Diese Mailadresse wurde inzwischen einem anderen Account zugeordnet.' }, { status:409 });
+      const used = await markAccountActionTokenUsed(env, tokenRow);
+      if (!used) return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Bestätigungslink wurde bereits verwendet.' }, { status:409 });
+      await env.DB.batch([
+        env.DB.prepare(`UPDATE users SET email = ?, email_lc = ? WHERE id = ?`).bind(targetEmail, targetEmail, tokenRow.user_id),
+        env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(tokenRow.user_id),
+        env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id)
+      ]);
+      await setCurrentEmailVerified(env, tokenRow.user_id, targetEmail, true);
+      return json({ ok:true, emailChanged:true, message:'Die neue Mailadresse wurde bestätigt. Bitte melde dich erneut an.' });
+    }
+
+    const used = await markAccountActionTokenUsed(env, tokenRow);
+    if (!used) return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Bestätigungslink wurde bereits verwendet.' }, { status:409 });
+    await setCurrentEmailVerified(env, tokenRow.user_id, targetEmail, true);
+    await env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND purpose = 'verify_registration' AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id).run();
+    return json({ ok:true, message:'Deine Mailadresse ist bestätigt. Du kannst dich jetzt einloggen.' });
+  }
+
   if (url.pathname === '/api/register' && request.method === 'POST') {
     const body = await readJsonBody(request);
     if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Registrierungsdaten konnten nicht gelesen werden.' }, { status: 400 });
@@ -2058,7 +2472,7 @@ async function handleAuthApi(request, env, url) {
     const password = String(body.password || '');
     if (!username) return json({ ok: false, code: 'INVALID_USERNAME', message: 'Benutzername: 3 bis 24 Zeichen, erlaubt sind Buchstaben, Zahlen, _ und -.' }, { status: 400 });
     if (!email) return json({ ok: false, code: 'INVALID_EMAIL', message: 'Bitte eine gültige Mailadresse eingeben.' }, { status: 400 });
-    if (password.length < 8) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das Kennwort muss mindestens 8 Zeichen haben.' }, { status: 400 });
+    if (password.length < 8 || password.length > 128) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das Kennwort muss 8 bis 128 Zeichen haben.' }, { status: 400 });
 
     const usernameLc = username.toLowerCase();
     const existing = await env.DB.prepare(
@@ -2077,8 +2491,17 @@ async function handleAuthApi(request, env, url) {
     ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
 
     await ensureRatingRowsForUser(env, id);
-    const token = await createSession(env, id);
-    return json({ ok: true, sessionToken: token, user: await publicUserWithRatings(env, { id, username, email, created_at: nowIso }) });
+    await setCurrentEmailVerified(env, id, email, false);
+    const createdUser = { id, username, email, created_at: nowIso };
+    const mailResult = await sendRegistrationVerificationEmail(env, createdUser, request);
+    return json({
+      ok:true,
+      verificationRequired:true,
+      mailSent:!!(mailResult && mailResult.ok && !mailResult.skipped),
+      message:mailResult && mailResult.ok
+        ? 'Account wurde angelegt. Bitte bestätige jetzt deine Mailadresse über den zugesandten Link.'
+        : 'Account wurde angelegt. Die Bestätigungsmail konnte nicht versendet werden; nutze im Login „Bestätigungsmail erneut senden“.'
+    });
   }
 
   if (url.pathname === '/api/login' && request.method === 'POST') {
@@ -2090,6 +2513,7 @@ async function handleAuthApi(request, env, url) {
     const email = normalizeEmail(identifier);
     const usernameLc = identifier.toLowerCase();
     if (!identifier || !password) return json({ ok: false, code: 'MISSING_LOGIN', message: 'Bitte Benutzername/Mailadresse und Kennwort eingeben.' }, { status: 400 });
+    if (password.length > 128) return json({ ok:false, code:'INVALID_LOGIN', message:'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status:401 });
 
     const user = await env.DB.prepare(
       email
@@ -2101,6 +2525,10 @@ async function handleAuthApi(request, env, url) {
     if (!valid) return json({ ok: false, code: 'INVALID_LOGIN', message: 'Login fehlgeschlagen. Bitte Daten prüfen.' }, { status: 401 });
     if (user && (user.disabled === 1 || user.disabled === true || user.deleted_at)) {
       return json({ ok: false, code: 'ACCOUNT_DISABLED', message: 'Dieser Account ist deaktiviert.' }, { status: 403 });
+    }
+    const emailSecurity = await getUserEmailSecurityState(env, user);
+    if (!emailSecurity.emailVerified) {
+      return json({ ok:false, code:'EMAIL_NOT_VERIFIED', message:'Bitte bestätige zuerst deine Mailadresse. Im Login kannst du die Bestätigungsmail erneut anfordern.' }, { status:403 });
     }
 
     await ensureRatingRowsForUser(env, user.id);
@@ -2149,6 +2577,10 @@ async function handleAuthApi(request, env, url) {
     const recipientEmail = normalizeEmail(recipient && recipient.email);
     if (!recipient || !recipientEmail) {
       return json({ ok:false, code:'RECIPIENT_NOT_FOUND', message:'Das ausgewählte Mitglied oder seine Mailadresse wurde nicht gefunden.' }, { status:404 });
+    }
+    const recipientEmailSecurity = await getUserEmailSecurityState(env, recipient);
+    if (!recipientEmailSecurity.emailVerified) {
+      return json({ ok:false, code:'RECIPIENT_EMAIL_NOT_VERIFIED', message:'Dieses Mitglied hat seine Mailadresse noch nicht bestätigt.' }, { status:409 });
     }
 
     const rate = await checkInvitationEmailRateLimit(env, String(session.user.id), recipientUserId, roomId);
@@ -5209,9 +5641,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen und sichere Kennwort-Wiederherstellung, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
