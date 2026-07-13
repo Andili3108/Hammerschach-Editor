@@ -527,6 +527,21 @@ function prepareInvitationEmail(payload) {
   return { ok:true, recipientEmail, recipientName, senderName, subject, textPart, htmlPart };
 }
 
+
+function preparedMailFromPayload(payload) {
+  const supplied = payload && payload.preparedMail;
+  if (!supplied) return prepareInvitationEmail(payload);
+  const recipientEmail = normalizeEmail(supplied.recipientEmail);
+  const recipientName = cleanDisplayName(supplied.recipientName) || 'Schachfreund';
+  const subject = String(supplied.subject || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 180);
+  const textPart = String(supplied.textPart || '').trim();
+  const htmlPart = String(supplied.htmlPart || '').trim();
+  if (!recipientEmail || !subject || !textPart || !htmlPart) {
+    return { ok:false, status:400, code:'INVALID_PREPARED_MAIL', message:'Die automatische Nachricht konnte nicht vorbereitet werden.' };
+  }
+  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
 async function sendMailjetInvitation(env, payload) {
   const apiKey = String((env && env.MAILJET_API_KEY) || '').trim();
   const secretKey = String((env && env.MAILJET_SECRET_KEY) || '').trim();
@@ -536,7 +551,7 @@ async function sendMailjetInvitation(env, payload) {
     return { ok:false, status:503, code:'MAIL_NOT_CONFIGURED', message:'Der automatische Mailversand ist noch nicht vollständig konfiguriert.' };
   }
 
-  const mail = prepareInvitationEmail(payload);
+  const mail = preparedMailFromPayload(payload);
   if (!mail.ok) return mail;
 
   let response;
@@ -691,7 +706,7 @@ async function sendSmtpInvitation(env, payload) {
     return { ok:false, status:503, code:'SMTP_PORT_UNSUPPORTED', message:'Für den aktuellen SMTP-Versand muss Port 465 mit SSL/TLS verwendet werden.' };
   }
 
-  const mail = prepareInvitationEmail(payload);
+  const mail = preparedMailFromPayload(payload);
   if (!mail.ok) return mail;
 
   let socket = null;
@@ -747,6 +762,273 @@ async function sendInvitationEmail(env, payload) {
   if (provider === 'smtp') return sendSmtpInvitation(env, payload);
   if (provider === 'mailjet') return sendMailjetInvitation(env, payload);
   return { ok:false, status:503, code:'UNKNOWN_MAIL_PROVIDER', message:'Der konfigurierte Mailanbieter ist unbekannt.' };
+}
+
+
+const DEFAULT_EMAIL_NOTIFICATIONS = Object.freeze({
+  dailyTurnEnabled:true,
+  dailyResultEnabled:true
+});
+let userEmailPreferencesTableReady = false;
+let emailNotificationLogTableReady = false;
+const EMAIL_NOTIFICATION_PENDING_STALE_MS = 5 * 60 * 1000;
+
+async function ensureUserEmailPreferencesTable(env) {
+  if (!env || !env.DB) return false;
+  if (userEmailPreferencesTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS user_email_preferences (
+       user_id TEXT PRIMARY KEY,
+       daily_turn_enabled INTEGER NOT NULL DEFAULT 1,
+       daily_result_enabled INTEGER NOT NULL DEFAULT 1,
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  userEmailPreferencesTableReady = true;
+  return true;
+}
+
+function normalizeEmailNotificationPreferences(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  const boolValue = (camel, snake, fallback) => {
+    const raw = source[camel] !== undefined ? source[camel] : source[snake];
+    if (raw === undefined || raw === null) return fallback;
+    return !(raw === false || raw === 0 || raw === '0' || String(raw).toLowerCase() === 'false');
+  };
+  return {
+    dailyTurnEnabled:boolValue('dailyTurnEnabled', 'daily_turn_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyTurnEnabled),
+    dailyResultEnabled:boolValue('dailyResultEnabled', 'daily_result_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyResultEnabled)
+  };
+}
+
+async function getUserEmailPreferences(env, userId) {
+  const id = String(userId || '').trim();
+  if (!id || !(await ensureUserEmailPreferencesTable(env))) return { ...DEFAULT_EMAIL_NOTIFICATIONS };
+  const row = await env.DB.prepare(
+    `SELECT daily_turn_enabled, daily_result_enabled
+       FROM user_email_preferences
+      WHERE user_id = ?
+      LIMIT 1`
+  ).bind(id).first();
+  return normalizeEmailNotificationPreferences(row || DEFAULT_EMAIL_NOTIFICATIONS);
+}
+
+async function setUserEmailPreferences(env, userId, preferences) {
+  const id = String(userId || '').trim();
+  if (!id || !(await ensureUserEmailPreferencesTable(env))) throw new Error('E-Mail-Einstellungen sind momentan nicht verfügbar.');
+  const normalized = normalizeEmailNotificationPreferences(preferences);
+  const updatedAt = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO user_email_preferences (user_id, daily_turn_enabled, daily_result_enabled, updated_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       daily_turn_enabled = excluded.daily_turn_enabled,
+       daily_result_enabled = excluded.daily_result_enabled,
+       updated_at = excluded.updated_at`
+  ).bind(id, normalized.dailyTurnEnabled ? 1 : 0, normalized.dailyResultEnabled ? 1 : 0, updatedAt).run();
+  return normalized;
+}
+
+async function ensureEmailNotificationLogTable(env) {
+  if (!env || !env.DB) return false;
+  if (emailNotificationLogTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS email_notification_log (
+       notification_key TEXT PRIMARY KEY,
+       notification_type TEXT NOT NULL,
+       user_id TEXT NOT NULL,
+       room_id TEXT NOT NULL,
+       status TEXT NOT NULL,
+       attempts INTEGER NOT NULL DEFAULT 1,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL,
+       sent_at TEXT,
+       message_id TEXT,
+       last_error TEXT
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_email_notification_user_time ON email_notification_log (user_id, updated_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_email_notification_room_type ON email_notification_log (room_id, notification_type)`).run();
+  emailNotificationLogTableReady = true;
+  return true;
+}
+
+async function claimEmailNotification(env, notificationKey, notificationType, userId, roomId) {
+  if (!(await ensureEmailNotificationLogTable(env))) return { claimed:false, reason:'log_unavailable' };
+  const key = String(notificationKey || '').slice(0, 220);
+  const type = String(notificationType || '').slice(0, 50);
+  const uid = String(userId || '').slice(0, 128);
+  const room = cleanRoomId(roomId);
+  if (!key || !type || !uid || !room) return { claimed:false, reason:'invalid_key' };
+  const nowIso = new Date().toISOString();
+  const inserted = await env.DB.prepare(
+    `INSERT OR IGNORE INTO email_notification_log
+       (notification_key, notification_type, user_id, room_id, status, attempts, created_at, updated_at)
+     VALUES (?, ?, ?, ?, 'pending', 1, ?, ?)`
+  ).bind(key, type, uid, room, nowIso, nowIso).run();
+  if (Number(inserted && inserted.meta && inserted.meta.changes || 0) > 0) return { claimed:true, key };
+
+  const existing = await env.DB.prepare(
+    `SELECT status, created_at, updated_at FROM email_notification_log WHERE notification_key = ? LIMIT 1`
+  ).bind(key).first();
+  if (!existing || existing.status === 'sent') return { claimed:false, reason:existing ? 'already_sent' : 'not_found' };
+  if (existing.status === 'pending' && existing.created_at === nowIso && existing.updated_at === nowIso) return { claimed:true, key };
+  const updatedMs = Date.parse(existing.updated_at || '');
+  if (existing.status === 'pending' && Number.isFinite(updatedMs) && Date.now() - updatedMs < EMAIL_NOTIFICATION_PENDING_STALE_MS) {
+    return { claimed:false, reason:'already_pending' };
+  }
+  const retried = await env.DB.prepare(
+    `UPDATE email_notification_log
+        SET status = 'pending', attempts = attempts + 1, updated_at = ?, last_error = NULL
+      WHERE notification_key = ? AND status <> 'sent'`
+  ).bind(nowIso, key).run();
+  return { claimed:Number(retried && retried.meta && retried.meta.changes || 0) > 0, key, reason:'retry' };
+}
+
+async function completeEmailNotification(env, notificationKey, result) {
+  if (!env || !env.DB || !notificationKey) return;
+  const ok = !!(result && result.ok);
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE email_notification_log
+        SET status = ?, updated_at = ?, sent_at = ?, message_id = ?, last_error = ?
+      WHERE notification_key = ?`
+  ).bind(
+    ok ? 'sent' : 'failed',
+    nowIso,
+    ok ? nowIso : null,
+    ok ? String(result.messageId || '').slice(0, 180) : null,
+    ok ? null : String(result && (result.message || result.code) || 'Versand fehlgeschlagen').slice(0, 300),
+    String(notificationKey)
+  ).run();
+  try {
+    const pruneBefore = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare(`DELETE FROM email_notification_log WHERE updated_at < ?`).bind(pruneBefore).run();
+  } catch (_) {}
+}
+
+function formatNotificationDateTime(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return '';
+  try {
+    return new Intl.DateTimeFormat('de-DE', {
+      timeZone:'Europe/Berlin', weekday:'long', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+    }).format(date) + ' Uhr';
+  } catch (_) {
+    return date.toISOString();
+  }
+}
+
+function dailyNotificationVariantLabel(setup) {
+  const normalized = cleanGameSetup(setup || null);
+  return normalized.variant === GAME_VARIANT_FREESTYLE
+    ? `Daily Freestyle · Stellung #${normalized.positionId}`
+    : 'Daily Classic';
+}
+
+function dailyNotificationResultLabel(result) {
+  if (result === '1-0') return '1–0';
+  if (result === '0-1') return '0–1';
+  if (result === '1/2-1/2') return '½–½';
+  return String(result || '—');
+}
+
+function dailyNotificationEndReasonLabel(reason) {
+  const labels = {
+    time:'Zeitüberschreitung', resignation:'Aufgabe', draw_agreed:'Remis vereinbart', checkmate:'Schachmatt',
+    stalemate:'Patt', insufficient_material:'Unzureichendes Mattmaterial', fifty_move_rule:'50-Züge-Regel',
+    threefold_repetition:'Dreifache Stellungswiederholung'
+  };
+  return labels[String(reason || '')] || 'Partie beendet';
+}
+
+function prepareDailyTurnEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const opponentName = cleanDisplayName(payload && payload.opponentName) || 'dein Gegner';
+  const inviteUrl = String(payload && payload.inviteUrl || '').trim();
+  const timeLabel = String(payload && payload.timeLabel || 'Daily Chess').slice(0, 120);
+  const variantLabel = String(payload && payload.variantLabel || 'Daily Chess').slice(0, 120);
+  const deadlineLabel = formatNotificationDateTime(payload && payload.deadlineAt);
+  const lastMoveSan = String(payload && payload.lastMoveSan || '').replace(/[\r\n<>]/g, '').trim().slice(0, 24);
+  if (!recipientEmail || !inviteUrl) return { ok:false, status:400, code:'INVALID_DAILY_TURN_MAIL', message:'Die Zugbenachrichtigung konnte nicht vorbereitet werden.' };
+  const subject = `Du bist am Zug – Daily-Partie gegen ${opponentName}`;
+  const moveSentence = lastMoveSan ? `${opponentName} hat ${lastMoveSan} gezogen. ` : '';
+  const textDetails = [`Spielmodus: ${variantLabel}`, `Zugfrist: ${timeLabel}`];
+  if (deadlineLabel) textDetails.push(`Fristende: ${deadlineLabel}`);
+  const textPart = `Hallo ${recipientName},\n\n${moveSentence}Du bist jetzt in deiner Daily-Partie gegen ${opponentName} am Zug.\n\n${textDetails.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const detailHtml = textDetails.map(line => escapeEmailHtml(line)).join('<br>');
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Du bist am Zug</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>${lastMoveSan ? `<strong>${escapeEmailHtml(opponentName)}</strong> hat <strong>${escapeEmailHtml(lastMoveSan)}</strong> gezogen. ` : ''}Du bist jetzt in deiner Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
+function prepareDailyResultEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const opponentName = cleanDisplayName(payload && payload.opponentName) || 'dein Gegner';
+  const inviteUrl = String(payload && payload.inviteUrl || '').trim();
+  const role = payload && payload.role === 'b' ? 'b' : 'w';
+  const result = String(payload && payload.result || '*');
+  const endReason = dailyNotificationEndReasonLabel(payload && payload.endReason);
+  const endedAt = formatNotificationDateTime(payload && payload.endedAt);
+  const variantLabel = String(payload && payload.variantLabel || 'Daily Chess').slice(0, 120);
+  const outcome = result === '1/2-1/2' ? 'Remis' : result === '1-0' ? (role === 'w' ? 'Gewonnen' : 'Verloren') : result === '0-1' ? (role === 'b' ? 'Gewonnen' : 'Verloren') : 'Beendet';
+  if (!recipientEmail || !inviteUrl) return { ok:false, status:400, code:'INVALID_DAILY_RESULT_MAIL', message:'Die Ergebnisbenachrichtigung konnte nicht vorbereitet werden.' };
+  const subject = `Daily-Partie beendet – ${outcome} gegen ${opponentName}`;
+  const details = [`Ergebnis: ${dailyNotificationResultLabel(result)}`, `Ausgang für dich: ${outcome}`, `Beendigungsgrund: ${endReason}`, `Spielmodus: ${variantLabel}`];
+  if (endedAt) details.push(`Beendet: ${endedAt}`);
+  const textPart = `Hallo ${recipientName},\n\ndeine Daily-Partie gegen ${opponentName} ist beendet.\n\n${details.join('\n')}\n\nPartie ansehen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Partie beendet</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>deine Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> ist beendet.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie ansehen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
+async function loadEmailNotificationRecipient(env, userId, preferenceName) {
+  const id = String(userId || '').trim();
+  if (!id || !env || !env.DB) return { ok:false, reason:'invalid_user' };
+  const user = await env.DB.prepare(`SELECT id, username, email FROM users WHERE id = ? LIMIT 1`).bind(id).first();
+  const email = normalizeEmail(user && user.email);
+  if (!user || !email) return { ok:false, reason:'user_or_email_missing' };
+  const preferences = await getUserEmailPreferences(env, id);
+  if (preferenceName && preferences[preferenceName] === false) return { ok:false, reason:'disabled' };
+  return { ok:true, user, email, preferences };
+}
+
+async function sendPreparedTransactionalEmail(env, mail) {
+  if (!mail || !mail.ok) return mail || { ok:false, status:400, code:'MAIL_NOT_PREPARED', message:'Die Nachricht konnte nicht vorbereitet werden.' };
+  return sendInvitationEmail(env, { preparedMail:mail });
+}
+
+async function sendDailyTurnEmailNotification(env, payload) {
+  const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, 'dailyTurnEnabled');
+  if (!recipient.ok) return { ok:true, skipped:true, reason:recipient.reason };
+  const claim = await claimEmailNotification(env, payload.notificationKey, 'daily_turn', recipient.user.id, payload.roomId);
+  if (!claim.claimed) return { ok:true, skipped:true, reason:claim.reason };
+  let result;
+  try {
+    const mail = prepareDailyTurnEmail({ ...payload, recipientEmail:recipient.email, recipientName:recipient.user.username });
+    result = await sendPreparedTransactionalEmail(env, mail);
+  } catch (error) {
+    result = { ok:false, code:'DAILY_TURN_MAIL_FAILED', message:error && error.message ? error.message : 'Zugbenachrichtigung fehlgeschlagen.' };
+  }
+  try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
+  return result;
+}
+
+async function sendDailyResultEmailNotification(env, payload) {
+  const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, 'dailyResultEnabled');
+  if (!recipient.ok) return { ok:true, skipped:true, reason:recipient.reason };
+  const claim = await claimEmailNotification(env, payload.notificationKey, 'daily_result', recipient.user.id, payload.roomId);
+  if (!claim.claimed) return { ok:true, skipped:true, reason:claim.reason };
+  let result;
+  try {
+    const mail = prepareDailyResultEmail({ ...payload, recipientEmail:recipient.email, recipientName:recipient.user.username });
+    result = await sendPreparedTransactionalEmail(env, mail);
+  } catch (error) {
+    result = { ok:false, code:'DAILY_RESULT_MAIL_FAILED', message:error && error.message ? error.message : 'Ergebnisbenachrichtigung fehlgeschlagen.' };
+  }
+  try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
+  return result;
 }
 
 let dailyGamesTableReady = false;
@@ -1100,6 +1382,7 @@ async function publicUserWithRatings(env, row) {
   const user = publicUser(row, env);
   if (!user) return null;
   user.ratings = await getUserRatings(env, user.id);
+  user.emailNotifications = await getUserEmailPreferences(env, user.id);
   return user;
 }
 
@@ -1398,6 +1681,9 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM email_notification_log WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sender_user_id = ? OR recipient_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
   return { ok: true, deletedUser: publicUser(target, env), cancelledInvitations: cancellation.cancelled || 0 };
 }
@@ -1553,6 +1839,28 @@ async function handleAuthApi(request, env, url) {
     user.email = email;
     user.email_lc = email;
     return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Mailadresse wurde geändert.' });
+  }
+
+  if (url.pathname === '/api/account/notifications' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die E-Mail-Einstellungen konnten nicht gelesen werden.' }, { status:400 });
+    try {
+      const preferences = await setUserEmailPreferences(env, session.user.id, {
+        dailyTurnEnabled:body.dailyTurnEnabled,
+        dailyResultEnabled:body.dailyResultEnabled
+      });
+      const user = await loadPrivateUser(env, session.user.id) || session.user;
+      return json({
+        ok:true,
+        preferences,
+        user:await publicUserWithRatings(env, user),
+        message:'E-Mail-Benachrichtigungen wurden gespeichert.'
+      });
+    } catch (_) {
+      return json({ ok:false, code:'NOTIFICATION_SETTINGS_FAILED', message:'Die E-Mail-Einstellungen konnten nicht gespeichert werden.' }, { status:500 });
+    }
   }
 
   if (url.pathname === '/api/account/password' && request.method === 'POST') {
@@ -2676,7 +2984,7 @@ function validateMoveOnServer(storedMoves, incoming, gameSetup = null) {
 function resultFromGameOver(gameOver) {
   if (!gameOver) return '*';
   if (gameOver.type === 'checkmate') return gameOver.winner === 'w' ? '1-0' : '0-1';
-  if (gameOver.type === 'stalemate') return '1/2-1/2';
+  if (['stalemate', 'insufficient_material', 'fifty_move_rule', 'threefold_repetition'].includes(gameOver.type)) return '1/2-1/2';
   return '*';
 }
 
@@ -2787,6 +3095,93 @@ export class GameRoom {
     this.userPresenceCache = { key:'', expiresAt:0, values:{} };
     this.accountNameCache = { key:'', expiresAt:0, values:{} };
     this.ratingStateCache = { key:'', expiresAt:0, value:null };
+  }
+
+
+  runBackgroundTask(task, label = 'Hintergrundaufgabe') {
+    const guarded = Promise.resolve(task).catch(error => {
+      console.error(label, error && error.message ? error.message : String(error || 'unknown'));
+    });
+    if (this.state && typeof this.state.waitUntil === 'function') this.state.waitUntil(guarded);
+    return guarded;
+  }
+
+  async dailyEmailRoomContext() {
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    if (!roomId || !timeControl || timeControl.mode !== 'daily') return null;
+    const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
+    const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    const players = await this.getSecurePlayers();
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const whitePlayerId = playerIdFromSlot(players.white);
+    const blackPlayerId = playerIdFromSlot(players.black);
+    const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+    const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+    const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
+    const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
+    const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+    return { roomId, timeControl, game, setup, players, whiteUserId, blackUserId, whiteName, blackName };
+  }
+
+  async sendDailyTurnNotification(role, move = null, clock = null) {
+    const context = await this.dailyEmailRoomContext();
+    if (!context || !context.game.started || context.game.ended || (role !== 'w' && role !== 'b')) return { ok:true, skipped:true, reason:'not_applicable' };
+    const recipientUserId = role === 'w' ? context.whiteUserId : context.blackUserId;
+    const opponentName = role === 'w' ? context.blackName : context.whiteName;
+    if (!recipientUserId) return { ok:true, skipped:true, reason:'recipient_missing' };
+    const activeClock = clock || (await this.state.storage.get('clock')) || null;
+    const now = Date.now();
+    const clockBaseTs = activeClock && Number.isFinite(Number(activeClock.lastTs)) ? Number(activeClock.lastTs) : now;
+    const deadlineAt = activeClock && activeClock.running && !activeClock.timeLost && activeClock.turn === role
+      ? new Date(clockBaseTs + Math.max(0, Number(activeClock[role + 'Ms'] || 0))).toISOString()
+      : null;
+    const ply = move && Number.isFinite(Number(move.ply)) ? Math.max(0, Math.floor(Number(move.ply))) : 0;
+    const inviteUrl = gamerInvitationUrl(this.env, context.roomId);
+    if (!inviteUrl) return { ok:true, skipped:true, reason:'public_url_missing' };
+    return sendDailyTurnEmailNotification(this.env, {
+      notificationKey:`daily_turn:${context.roomId}:${ply}:${recipientUserId}`,
+      roomId:context.roomId,
+      recipientUserId,
+      opponentName,
+      inviteUrl,
+      timeLabel:context.timeControl.label || `${context.timeControl.daysPerMove || 1} Tag(e) pro Zug`,
+      variantLabel:dailyNotificationVariantLabel(context.setup),
+      deadlineAt,
+      lastMoveSan:move && move.san ? String(move.san) : ''
+    });
+  }
+
+  queueDailyTurnNotification(role, move = null, clock = null) {
+    this.runBackgroundTask(this.sendDailyTurnNotification(role, move, clock), 'Daily-Zugbenachrichtigung fehlgeschlagen');
+  }
+
+  async sendDailyResultNotifications(gameOverride = null) {
+    const context = await this.dailyEmailRoomContext();
+    const game = gameOverride || (context && context.game) || null;
+    if (!context || !game || !game.ended) return { ok:true, skipped:true, reason:'not_applicable' };
+    const inviteUrl = gamerInvitationUrl(this.env, context.roomId);
+    if (!inviteUrl) return { ok:true, skipped:true, reason:'public_url_missing' };
+    const payloads = [];
+    if (context.whiteUserId) payloads.push({ role:'w', recipientUserId:context.whiteUserId, opponentName:context.blackName });
+    if (context.blackUserId) payloads.push({ role:'b', recipientUserId:context.blackUserId, opponentName:context.whiteName });
+    const results = await Promise.all(payloads.map(item => sendDailyResultEmailNotification(this.env, {
+      notificationKey:`daily_result:${context.roomId}:${item.recipientUserId}`,
+      roomId:context.roomId,
+      recipientUserId:item.recipientUserId,
+      opponentName:item.opponentName,
+      role:item.role,
+      result:game.result || '*',
+      endReason:game.endReason || '',
+      endedAt:game.endedAt || null,
+      variantLabel:dailyNotificationVariantLabel(context.setup),
+      inviteUrl
+    })));
+    return { ok:true, results };
+  }
+
+  queueDailyResultNotifications(game = null) {
+    this.runBackgroundTask(this.sendDailyResultNotifications(game), 'Daily-Ergebnisbenachrichtigung fehlgeschlagen');
   }
 
   async ratingMetaForStart(timeControl, gameSetup) {
@@ -3649,6 +4044,7 @@ export class GameRoom {
       justEnded = true;
       await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
+      this.queueDailyResultNotifications(game);
     }
 
     if (game.ended || !clock.running || clock.timeLost) {
@@ -3716,6 +4112,7 @@ export class GameRoom {
     await this.state.storage.delete('drawOffer');
     await this.scheduleClockAlarm(clock, now);
     await this.syncGameIndexes();
+    this.queueDailyTurnNotification('w', null, clock);
 
     return { started:true, reason:'auto_started', game, clock, timeControl, gameSetup };
   }
@@ -4480,6 +4877,7 @@ export class GameRoom {
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
         await this.finalizeRatingIfNeeded(game);
         await this.syncGameIndexes();
+        this.queueDailyResultNotifications(game);
         safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
         await this.broadcastRoomState('game_finished');
         return;
@@ -4540,6 +4938,7 @@ export class GameRoom {
       try { await this.state.storage.deleteAlarm(); } catch (_) {}
       await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
+      this.queueDailyResultNotifications(game);
       safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
       return;
@@ -4712,6 +5111,8 @@ export class GameRoom {
         await this.scheduleClockAlarm(clock, now);
       }
       await this.syncGameIndexes();
+      if (game.ended) this.queueDailyResultNotifications(game);
+      else if (timeControl.mode === 'daily') this.queueDailyTurnNotification(clock.turn, move, clock);
 
       safeSend(ws, {
         type: 'move_ack',
@@ -4808,7 +5209,7 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
       features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
