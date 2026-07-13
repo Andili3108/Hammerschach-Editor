@@ -141,6 +141,13 @@
   .side-content{min-height:0;flex:1;overflow:auto;}
   .side-content[hidden]{display:none!important;}
   .players-panel{display:flex;flex-direction:column;gap:12px;}
+  .spectator-game-info{border-radius:16px;background:linear-gradient(135deg,rgba(132,63,70,.08),rgba(255,255,255,.98));border:1px solid rgba(132,63,70,.20);padding:12px 13px;display:flex;flex-direction:column;gap:7px;box-shadow:inset 0 1px 0 rgba(255,255,255,.78);}
+  .spectator-game-info[hidden]{display:none!important;}
+  .spectator-game-info-title{font-size:16px;font-weight:900;color:#843f46;margin-bottom:1px;}
+  .spectator-game-info-row{display:grid;grid-template-columns:82px minmax(0,1fr);gap:8px;align-items:start;font-size:13px;line-height:1.28;}
+  .spectator-game-info-label{font-weight:800;color:#666;}
+  .spectator-game-info-value{min-width:0;font-weight:900;color:#222;overflow-wrap:anywhere;}
+  .spectator-game-info-status{margin-top:2px;border-radius:10px;background:#fff;border:1px solid rgba(132,63,70,.12);padding:7px 8px;text-align:center;font-size:13px;font-weight:900;color:#843f46;line-height:1.25;}
   .daily-move-confirmation{margin-top:auto;border-radius:16px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.16);padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.72);}
   .daily-move-confirmation[hidden]{display:none!important;}
   .daily-move-confirmation-hint{text-align:center;font-size:13px;font-weight:900;color:#555;line-height:1.25;margin-bottom:9px;}
@@ -438,53 +445,58 @@
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
-          <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
 
-          <h4>9. Zur Partie einladen</h4>
+          <h4>9. Laufende Partien und Zuschauen</h4>
+          <p>Über <strong>„Laufende Partien“</strong> können Mitglieder und Gäste öffentlich freigegebene Live- und Daily-Partien öffnen. In der Liste erscheinen ausschließlich gestartete, noch laufende Partien, deren Ersteller das Zuschauen ausdrücklich erlaubt hat.</p>
+          <p>Die Zuschaueransicht verwendet einen eigenen geschützten Zugang und übernimmt niemals einen freien Spielerplatz. Zuschauer können weder ziehen noch Remis anbieten, aufgeben oder den privaten Partie-Chat lesen und verwenden. In der rechten Spalte werden stattdessen die Partieart, die Bedenkzeit, der Spielmodus und der aktuelle Zugstand angezeigt.</p>
+          <p>Der Ersteller kann die Zuschauerfreigabe vor dem Erstellen des Raums wählen und später im Bereich <strong>„Spieler &amp; Zeit“</strong> ein- oder ausschalten. Beim Ausschalten verschwindet die Partie sofort aus der öffentlichen Übersicht, verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Eine erneute Freigabe erzeugt einen neuen Zuschauerzugang.</p>
+
+          <h4>10. Zur Partie einladen</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Beim Einladen eines Mitglieds öffnet sich dein eigenes Mailprogramm mit einer vorbereiteten Nachricht. Die E-Mail wird nicht automatisch versendet. Für Daily Chess werden auch keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
 
-          <h4>10. Partiebeginn</h4>
+          <h4>11. Partiebeginn</h4>
           <ul>
             <li><strong>Live-Partie:</strong> Wenn beide Spieler gleichzeitig verbunden sind, startet Weiß die Partie über <strong>„Partie starten“</strong>. Anschließend läuft die Uhr des Spielers am Zug fortlaufend herunter.</li>
             <li><strong>Daily Chess:</strong> Die Partie startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden. Gleichzeitig beginnt die serverseitige Zugfrist für Weiß; eine gleichzeitige Online-Verbindung beider Spieler ist nicht nötig.</li>
           </ul>
 
-          <h4>11. Spielen</h4>
+          <h4>12. Spielen</h4>
           <p>Figuren werden durch Anklicken bewegt. Illegale Züge werden blockiert, und mögliche Zielfelder werden auf dem Brett markiert. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
           <p>Im Freestyle-Modus kann die Rochade je nach Startstellung ungewohnt aussehen. Nach der Rochade stehen König und Turm auf den üblichen Zielfeldern: bei kurzer Rochade König auf der g-Linie und Turm auf der f-Linie, bei langer Rochade König auf der c-Linie und Turm auf der d-Linie.</p>
 
-          <h4>12. Spieler- und Zeitanzeige</h4>
-          <p>Im Spielraum kannst du die rechte Spalte zwischen <strong>„Spieler &amp; Zeit“</strong>, <strong>„Zugliste“</strong> und <strong>„Chat“</strong> umschalten.</p>
+          <h4>13. Spieler- und Zeitanzeige</h4>
+          <p>Weiß und Schwarz können die rechte Spalte zwischen <strong>„Spieler &amp; Zeit“</strong>, <strong>„Zugliste“</strong> und <strong>„Chat“</strong> umschalten. Zuschauer sehen ausschließlich <strong>„Spieler &amp; Zeit“</strong> und <strong>„Zugliste“</strong>; der private Chat-Reiter wird ausgeblendet.</p>
           <ul>
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Das genaue Fristende ist zusätzlich in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
+            <li><strong>Zuschauerinformation:</strong> Oberhalb der Spielerkarten stehen Partieart, genaue Bedenkzeit, klassischer oder Freestyle-Modus sowie der aktuelle Zugstand.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
             <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
           </ul>
 
-          <h4>13. Partieaktionen</h4>
+          <h4>14. Partieaktionen</h4>
           <p>Während einer laufenden Online-Partie erscheinen unter dem Brett die Schaltflächen <strong>„½ Remis anbieten“</strong> und <strong>„🏳️ Aufgeben“</strong>. Diese Funktionen stehen auch bei Daily Chess zur Verfügung.</p>
 
-          <h4>14. Automatische Partieenden</h4>
+          <h4>15. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
 
-          <h4>15. Brett und Darstellung</h4>
+          <h4>16. Brett und Darstellung</h4>
           <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
 
-          <h4>16. PGN-Datei</h4>
+          <h4>17. PGN-Datei</h4>
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
-          <h4>17. Neue Partie</h4>
+          <h4>18. Neue Partie</h4>
           <p>Über <strong>„Neue Partie“</strong> öffnest du einen frischen Tab ohne bestehenden Raum. Für jede neue Online-Partie wird ein neuer Raum mit einem eigenen Einladungslink erstellt.</p>
 
-          <h4>18. Verbindung und Wiederaufnahme</h4>
+          <h4>19. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
           <p>Bei Daily Chess solltest du dich zuerst mit dem verwendeten Account anmelden und die Partie anschließend über <strong>„Meine Partien“</strong> öffnen. Dadurch kann dein gesicherter Spielerplatz wieder übernommen werden.</p>
 
-          <h4>19. Admin-Funktion</h4>
+          <h4>20. Admin-Funktion</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Diese Funktion ist nur für den Administrator nutzbar.</p>
         </div>
         <div class="info-actions">
@@ -789,6 +801,13 @@
           </div>
 
           <div id="playersPanel" class="side-content players-panel" hidden>
+            <div id="spectatorGameInfo" class="spectator-game-info" hidden aria-live="polite">
+              <div class="spectator-game-info-title">Partieinformationen</div>
+              <div class="spectator-game-info-row"><span class="spectator-game-info-label">Partieart</span><span id="spectatorGameType" class="spectator-game-info-value">—</span></div>
+              <div class="spectator-game-info-row"><span class="spectator-game-info-label">Bedenkzeit</span><span id="spectatorGameTime" class="spectator-game-info-value">—</span></div>
+              <div class="spectator-game-info-row"><span class="spectator-game-info-label">Spielmodus</span><span id="spectatorGameVariant" class="spectator-game-info-value">—</span></div>
+              <div id="spectatorGameStatus" class="spectator-game-info-status">Partiestand wird geladen…</div>
+            </div>
             <div class="player-clock-card" id="clockCardW">
               <div class="player-clock-head">
                 <span class="dot white"></span>
@@ -1468,6 +1487,11 @@ const inviteColorStatusEl = document.getElementById('inviteColorStatus');
 const inviteColorSummaryEl = document.getElementById('inviteColorSummary');
 const inviteColorButtons = document.querySelectorAll('.invite-color-option');
 const playersPanelEl = document.getElementById('playersPanel');
+const spectatorGameInfoEl = document.getElementById('spectatorGameInfo');
+const spectatorGameTypeEl = document.getElementById('spectatorGameType');
+const spectatorGameTimeEl = document.getElementById('spectatorGameTime');
+const spectatorGameVariantEl = document.getElementById('spectatorGameVariant');
+const spectatorGameStatusEl = document.getElementById('spectatorGameStatus');
 const dailyMoveConfirmationEl = document.getElementById('dailyMoveConfirmation');
 const dailyMoveCancelBtn = document.getElementById('dailyMoveCancelBtn');
 const dailyMoveConfirmBtn = document.getElementById('dailyMoveConfirmBtn');
@@ -1489,6 +1513,41 @@ let chatMessageIds = new Set();
 let chatLastSentAt = 0;
 let chatUnreadCount = 0;
 let rightPanelMode = 'players';
+
+function spectatorGameStatusText(gameState){
+  if(onlineRoomCancelled) return 'Partie nicht mehr verfügbar';
+  if(onlineGameEnded || gameEnded || timeLost){
+    if(timeLost) return 'Partie beendet · Zeitüberschreitung';
+    if(onlineGameResult && onlineGameResult !== '*') return 'Partie beendet · Ergebnis ' + String(onlineGameResult).replace('1/2-1/2','½–½').replace('1-0','1–0').replace('0-1','0–1');
+    return 'Partie beendet';
+  }
+  if(!onlineGameStarted) return isDailyTimeControl() ? 'Daily-Partie wartet auf den Start' : 'Live-Partie noch nicht gestartet';
+  let g = gameState || null;
+  try{ if(!g) g = buildGameFromHistory(masterHistory.length); } catch(_){}
+  if(!g) return 'Partiestand wird geladen…';
+  const side = g.turn === 'b' ? 'Schwarz' : 'Weiß';
+  const moveNumber = Number.isFinite(Number(g.fullmove)) ? Math.max(1, Number(g.fullmove)) : (Math.floor(masterHistory.length / 2) + 1);
+  return side + ' am Zug · Zug ' + moveNumber;
+}
+function updateSpectatorGameInfo(gameState){
+  if(!spectatorGameInfoEl) return;
+  const visible = !!(onlineRoomId && onlineRoleCode === 'spectator');
+  spectatorGameInfoEl.hidden = !visible;
+  if(!visible) return;
+
+  const timeControl = onlineRoomTimeControl || currentTimeControlPayload();
+  const setup = normalizeGameSetup(onlineRoomGameSetup || currentGameSetupPayload());
+  const daily = !!(timeControl && timeControl.mode === 'daily') || isDailyTimeControl();
+
+  if(spectatorGameTypeEl) spectatorGameTypeEl.textContent = daily ? 'Daily Chess' : 'Live-Partie';
+  if(spectatorGameTimeEl) spectatorGameTimeEl.textContent = timeControl && timeControl.label ? timeControl.label : 'Wird geladen…';
+  if(spectatorGameVariantEl){
+    spectatorGameVariantEl.textContent = setup.variant === GAME_VARIANT_FREESTYLE
+      ? ('Freestyle · Stellung #' + setup.positionId)
+      : 'Klassisches Schach';
+  }
+  if(spectatorGameStatusEl) spectatorGameStatusEl.textContent = spectatorGameStatusText(gameState);
+}
 
 function updateSidePanelLayout(){
   const inRoom = (typeof onlineRoomId !== 'undefined') && !!onlineRoomId;
@@ -1512,6 +1571,7 @@ function updateSidePanelLayout(){
   if(showPlayersPanelBtn) showPlayersPanelBtn.classList.toggle('active', rightPanelMode === 'players');
   if(showMovesPanelBtn) showMovesPanelBtn.classList.toggle('active', rightPanelMode === 'moves');
   if(showChatPanelBtn) showChatPanelBtn.classList.toggle('active', rightPanelMode === 'chat');
+  updateSpectatorGameInfo();
   updateDailyMoveConfirmationUi();
 }
 function setRightPanelMode(mode){
@@ -4998,6 +5058,7 @@ function renderBoard(){
   renderMoveList();
   updateNavControls();
   updateClockDisplay(g);
+  updateSpectatorGameInfo(g);
   updateGameActionButtons();
   updateDailyMoveConfirmationUi();
 }
@@ -5659,6 +5720,7 @@ function updateClockDisplay(gameState){
   clockBEl.title = deadlineText && activeSide === 'b' ? ('Zugfrist: ' + deadlineText) : '';
   clockCardW.classList.toggle('active', timeMode && activeSide === 'w' && clockRunning && viewIndex === masterHistory.length);
   clockCardB.classList.toggle('active', timeMode && activeSide === 'b' && clockRunning && viewIndex === masterHistory.length);
+  updateSpectatorGameInfo(g);
   updateTimeControlsLock();
 }
 function stopClock(){
