@@ -239,6 +239,16 @@
   .auth-rating-value{font-size:19px;font-weight:900;color:#843f46;line-height:1.15;margin-top:2px;}
   .auth-rating-meta{font-size:11px;font-weight:800;color:#777;line-height:1.25;margin-top:2px;}
   .auth-ratings-note{font-size:11px;font-weight:800;color:#777;line-height:1.3;margin-top:8px;}
+  .auth-email-notifications{margin-top:12px;border-radius:14px;background:#fff;border:1px solid rgba(132,63,70,.14);padding:10px 11px;}
+  .auth-email-notifications-title{font-size:15px;font-weight:900;color:#222;margin-bottom:8px;}
+  .auth-email-option{display:flex;align-items:flex-start;gap:9px;border-radius:10px;background:#f7f7f9;border:1px solid rgba(0,0,0,.08);padding:8px 9px;margin-top:7px;font-size:13px;font-weight:900;color:#444;line-height:1.3;cursor:pointer;}
+  .auth-email-option input{width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#843f46;cursor:pointer;}
+  .auth-email-notifications-note{font-size:11px;font-weight:800;color:#777;line-height:1.35;margin-top:8px;}
+  .auth-email-notifications-actions{display:flex;align-items:center;gap:9px;margin-top:9px;flex-wrap:wrap;}
+  .auth-email-notifications-save{min-height:36px!important;border-radius:11px!important;padding:7px 11px!important;}
+  .auth-email-notifications-status{min-height:16px;min-width:150px;flex:1;font-size:11px;font-weight:800;color:#666;line-height:1.25;}
+  .auth-email-notifications-status.error{color:#9A2D33;}
+  .auth-email-notifications-status.success{color:#226b36;}
   .auth-account-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
   .auth-account-actions button{border-radius:12px;min-height:38px;padding:8px 10px;white-space:normal;line-height:1.15;}
   .auth-account-delete-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
@@ -430,7 +440,7 @@
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
-          <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Daily-Partie mehr besteht; offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
+          <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Dort legst du außerdem fest, ob du bei Daily Chess eine E-Mail erhalten möchtest, wenn du am Zug bist oder wenn eine Partie beendet wurde. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Daily-Partie mehr besteht; offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
 
           <h4>2. Vor der Einladung einstellen</h4>
           <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden in den Einladungsraum übernommen und sind nach dem Partiestart gesperrt.</p>
@@ -454,16 +464,16 @@
           <p>Bei Daily Chess erhält immer der Spieler am Zug die vollständige gewählte Zugfrist. Nach seinem Zug beginnt für den Gegner eine neue Frist von <strong>1, 3 oder 7 Tagen</strong>. Nicht verbrauchte Zeit wird nicht angespart und nicht auf den nächsten Zug übertragen.</p>
           <p>Sobald der zweite registrierte Spieler die Einladung angenommen hat, startet die Daily-Partie automatisch und die erste Frist für Weiß beginnt. Läuft eine Zugfrist ab, verliert der Spieler am Zug auf Zeit. Die Frist wird serverseitig überwacht und läuft deshalb auch weiter, wenn ein Browser geschlossen oder die Internetverbindung unterbrochen ist.</p>
           <p>Nach dem Start müssen die Spieler nicht gleichzeitig online bleiben. Öffne die Partie später erneut, führe deinen Zug aus und schließe die Seite anschließend wieder, wenn du möchtest.</p>
-          <p>Ein gewählter Daily-Zug wird zunächst nur als Vorschau angezeigt. Erst über <strong>„Zug bestätigen“</strong> in der rechten Spalte wird er ausgeführt und an den Server übertragen. Mit <strong>„Zug zurücknehmen“</strong> kannst du die Vorschau verwerfen und einen anderen Zug wählen.</p>
+          <p>Ein gewählter Daily-Zug wird zunächst nur als Vorschau angezeigt. Erst über <strong>„Zug bestätigen“</strong> in der rechten Spalte wird er ausgeführt und an den Server übertragen. Mit <strong>„Zug zurücknehmen“</strong> kannst du die Vorschau verwerfen und einen anderen Zug wählen. Nach jedem bestätigten Zug erhält der nun ziehende Spieler automatisch eine E-Mail mit Gegner, Zugfrist, Fristende und direktem Partielink, sofern diese Benachrichtigung in seiner Accountverwaltung aktiviert ist.</p>
 
           <h4>7. Daily Chess vorbereiten und annehmen</h4>
           <p>Der Einladende muss vor der Auswahl von Daily Chess eingeloggt sein. Auch der eingeladene Spieler öffnet den Link und meldet sich mit seinem Account an. Gäste können einem Daily-Raum nur als Zuschauer beitreten.</p>
-          <p>Sobald beide registrierten Spielerplätze angenommen wurden, startet die Partie <strong>automatisch</strong>. Eine zusätzliche Betätigung von <strong>„Partie starten“</strong> ist bei Daily Chess nicht erforderlich. Weiß kann unmittelbar den ersten Zug ausführen; Schwarz darf anschließend offline gehen und später über <strong>„Meine Partien“</strong> zurückkehren.</p>
+          <p>Sobald beide registrierten Spielerplätze angenommen wurden, startet die Partie <strong>automatisch</strong>. Eine zusätzliche Betätigung von <strong>„Partie starten“</strong> ist bei Daily Chess nicht erforderlich. Weiß kann unmittelbar den ersten Zug ausführen und erhält – sofern aktiviert – die erste „Du bist am Zug“-Mail. Schwarz darf anschließend offline gehen und später über <strong>„Meine Partien“</strong> zurückkehren.</p>
 
           <h4>8. Meine Daily-Partien</h4>
           <p>Über <strong>„Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
-          <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
+          <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
@@ -471,7 +481,7 @@
           <h4>9. Zur Partie einladen</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
-          <p><strong>Hinweis zur Zustellung:</strong> Je nach E-Mail-Anbieter kann die Einladung vereinzelt im Spam- oder Junk-Ordner landen. Falls keine Einladung im Posteingang erscheint, sollte der Empfänger dort nachsehen und den Absender <strong>hammerschach-gamer@online.de</strong> gegebenenfalls als vertrauenswürdig markieren. Für Daily Chess werden derzeit keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
+          <p><strong>Hinweis zur Zustellung:</strong> Je nach E-Mail-Anbieter können Einladungen und Daily-Benachrichtigungen vereinzelt im Spam- oder Junk-Ordner landen. Falls keine Nachricht im Posteingang erscheint, sollte der Empfänger dort nachsehen und den Absender <strong>hammerschach-gamer@online.de</strong> gegebenenfalls als vertrauenswürdig markieren. Die Daily-Mails werden nur bei einem tatsächlichen Zugwechsel beziehungsweise Partieende verschickt; wiederholte Erinnerungen vor Fristablauf gibt es nicht.</p>
 
           <h4>10. Partiebeginn</h4>
           <ul>
@@ -580,6 +590,22 @@
             <div class="auth-ratings-title">Meine Ratings</div>
             <div id="authRatingsGrid" class="auth-ratings-grid" aria-live="polite"></div>
             <div class="auth-ratings-note">Startwert 1500. Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating.</div>
+          </div>
+          <div id="authEmailNotifications" class="auth-email-notifications">
+            <div class="auth-email-notifications-title">Daily-E-Mail-Benachrichtigungen</div>
+            <label class="auth-email-option" for="dailyTurnEmailCheckbox">
+              <input id="dailyTurnEmailCheckbox" type="checkbox" checked />
+              <span>Mail senden, sobald ich in einer Daily-Partie am Zug bin</span>
+            </label>
+            <label class="auth-email-option" for="dailyResultEmailCheckbox">
+              <input id="dailyResultEmailCheckbox" type="checkbox" checked />
+              <span>Mail senden, wenn eine meiner Daily-Partien beendet wurde</span>
+            </label>
+            <div class="auth-email-notifications-note">Die Mails werden an die oben angezeigte Account-Mailadresse geschickt. Es gibt keine wiederholten Erinnerungen vor Ablauf einer Zugfrist.</div>
+            <div class="auth-email-notifications-actions">
+              <button id="emailNotificationsSaveBtn" class="button-flat auth-email-notifications-save" type="button">Einstellungen speichern</button>
+              <div id="emailNotificationsStatus" class="auth-email-notifications-status" aria-live="polite"></div>
+            </div>
           </div>
           <div class="auth-account-actions" aria-label="Account verwalten">
             <button id="accountUsernameOpenBtn" class="button-flat" type="button">Benutzername ändern</button>
@@ -2053,6 +2079,11 @@ const authLoggedIn = document.getElementById('authLoggedIn');
 const authAccountName = document.getElementById('authAccountName');
 const authAccountEmail = document.getElementById('authAccountEmail');
 const authRatingsGrid = document.getElementById('authRatingsGrid');
+const authEmailNotifications = document.getElementById('authEmailNotifications');
+const dailyTurnEmailCheckbox = document.getElementById('dailyTurnEmailCheckbox');
+const dailyResultEmailCheckbox = document.getElementById('dailyResultEmailCheckbox');
+const emailNotificationsSaveBtn = document.getElementById('emailNotificationsSaveBtn');
+const emailNotificationsStatus = document.getElementById('emailNotificationsStatus');
 const accountUsernameOpenBtn = document.getElementById('accountUsernameOpenBtn');
 const accountEmailOpenBtn = document.getElementById('accountEmailOpenBtn');
 const accountPasswordOpenBtn = document.getElementById('accountPasswordOpenBtn');
@@ -2569,8 +2600,14 @@ function openAuthDialog(mode){
   if(authBackdrop) authBackdrop.hidden = false;
   setTimeout(() => {
     try{
-      const first = onlineAuthUser ? authCancelBtn : (authMode === 'login' ? loginIdentifierInput : registerUsernameInput);
-      if(first) first.focus();
+      if(onlineAuthUser){
+        const modal = authBackdrop ? authBackdrop.querySelector('.identity-modal') : null;
+        if(modal) modal.scrollTop = 0;
+        if(authCancelBtn) authCancelBtn.focus({preventScroll:true});
+      } else {
+        const first = authMode === 'login' ? loginIdentifierInput : registerUsernameInput;
+        if(first) first.focus();
+      }
     } catch(_){}
   }, 0);
 }
@@ -2624,6 +2661,55 @@ function renderAccountRatings(){
   authRatingsGrid.appendChild(frag);
 }
 
+function normalizeClientEmailNotifications(value){
+  const source = value && typeof value === 'object' ? value : {};
+  const enabled = (camel, snake) => {
+    const raw = source[camel] !== undefined ? source[camel] : source[snake];
+    if(raw === undefined || raw === null) return true;
+    return !(raw === false || raw === 0 || raw === '0' || String(raw).toLowerCase() === 'false');
+  };
+  return {
+    dailyTurnEnabled:enabled('dailyTurnEnabled', 'daily_turn_enabled'),
+    dailyResultEnabled:enabled('dailyResultEnabled', 'daily_result_enabled')
+  };
+}
+function setEmailNotificationsStatus(message, kind){
+  if(!emailNotificationsStatus) return;
+  emailNotificationsStatus.textContent = message || '';
+  emailNotificationsStatus.classList.toggle('error', kind === 'error');
+  emailNotificationsStatus.classList.toggle('success', kind === 'success');
+}
+function renderEmailNotificationSettings(){
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  const preferences = normalizeClientEmailNotifications(onlineAuthUser && onlineAuthUser.emailNotifications);
+  if(authEmailNotifications) authEmailNotifications.hidden = !loggedIn;
+  if(dailyTurnEmailCheckbox){ dailyTurnEmailCheckbox.checked = preferences.dailyTurnEnabled; dailyTurnEmailCheckbox.disabled = !loggedIn; }
+  if(dailyResultEmailCheckbox){ dailyResultEmailCheckbox.checked = preferences.dailyResultEnabled; dailyResultEmailCheckbox.disabled = !loggedIn; }
+  if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.disabled = !loggedIn;
+  if(!loggedIn) setEmailNotificationsStatus('', '');
+}
+async function saveEmailNotificationSettings(){
+  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
+  if(!emailNotificationsSaveBtn) return;
+  emailNotificationsSaveBtn.disabled = true;
+  setEmailNotificationsStatus('Einstellungen werden gespeichert…', '');
+  try{
+    const data = await authApi('/api/account/notifications', {
+      method:'POST',
+      body:JSON.stringify({
+        dailyTurnEnabled:!!(dailyTurnEmailCheckbox && dailyTurnEmailCheckbox.checked),
+        dailyResultEnabled:!!(dailyResultEmailCheckbox && dailyResultEmailCheckbox.checked)
+      })
+    });
+    saveAuthState(onlineAuthToken, data.user);
+    setEmailNotificationsStatus(data.message || 'Einstellungen wurden gespeichert.', 'success');
+  } catch(err){
+    setEmailNotificationsStatus(err && err.message ? err.message : 'Einstellungen konnten nicht gespeichert werden.', 'error');
+  } finally {
+    if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.disabled = false;
+  }
+}
+
 function updateAuthUi(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);
@@ -2651,6 +2737,7 @@ function updateAuthUi(){
   if(authAccountName) authAccountName.textContent = loggedIn ? (onlineAuthUser.username || '—') : '—';
   if(authAccountEmail) authAccountEmail.textContent = loggedIn ? (onlineAuthUser.email || '—') : '—';
   renderAccountRatings();
+  renderEmailNotificationSettings();
   if(accountUsernameOpenBtn){
     accountUsernameOpenBtn.disabled = !loggedIn || isAdmin;
     accountUsernameOpenBtn.title = isAdmin ? 'Der Benutzername des Administrator-Accounts ist geschützt.' : 'Eigenen Benutzernamen ändern.';
@@ -2753,6 +2840,10 @@ if(accountUsernameOpenBtn) accountUsernameOpenBtn.addEventListener('click', () =
 if(accountEmailOpenBtn) accountEmailOpenBtn.addEventListener('click', () => openAccountEditDialog('email'));
 if(accountPasswordOpenBtn) accountPasswordOpenBtn.addEventListener('click', () => openAccountEditDialog('password'));
 if(accountDeleteOpenBtn) accountDeleteOpenBtn.addEventListener('click', () => openAccountEditDialog('delete'));
+if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.addEventListener('click', saveEmailNotificationSettings);
+[dailyTurnEmailCheckbox, dailyResultEmailCheckbox].forEach(input => {
+  if(input) input.addEventListener('change', () => setEmailNotificationsStatus('Änderung noch nicht gespeichert.', ''));
+});
 if(accountEditCancelBtn) accountEditCancelBtn.addEventListener('click', () => closeAccountEditDialog(true));
 if(accountEditSubmitBtn) accountEditSubmitBtn.addEventListener('click', submitAccountEdit);
 if(authBackdrop) authBackdrop.addEventListener('click', ev => { if(ev.target === authBackdrop) closeAuthDialog(); });
