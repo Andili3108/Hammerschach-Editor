@@ -910,16 +910,23 @@ async function loadValidAccountActionToken(env, token, allowedPurposes) {
   const tokenHash = await sha256Hex(raw);
   const nowIso = new Date().toISOString();
   const row = await env.DB.prepare(
-    `SELECT t.*, u.username, u.email AS current_email, u.disabled, u.deleted_at
-       FROM account_action_tokens t
-       JOIN users u ON u.id = t.user_id
-      WHERE t.token_hash = ? AND t.used_at IS NULL AND t.expires_at > ?
+    `SELECT *
+       FROM account_action_tokens
+      WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?
       LIMIT 1`
   ).bind(tokenHash, nowIso).first();
-  if (!row || row.disabled === 1 || row.disabled === true || row.deleted_at) return null;
+  if (!row) return null;
+  const user = await env.DB.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).bind(row.user_id).first();
+  if (!user || user.disabled === 1 || user.disabled === true || user.deleted_at) return null;
   const allowed = Array.isArray(allowedPurposes) ? allowedPurposes : [allowedPurposes];
   if (!allowed.includes(String(row.purpose || ''))) return null;
-  return row;
+  return {
+    ...row,
+    username:user.username || '',
+    current_email:user.email || '',
+    disabled:user.disabled,
+    deleted_at:user.deleted_at
+  };
 }
 
 async function markAccountActionTokenUsed(env, tokenRow) {
@@ -5591,7 +5598,16 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/')) {
-      return handleAuthApi(request, env, url);
+      try {
+        return await handleAuthApi(request, env, url);
+      } catch (error) {
+        console.error('API request failed', url.pathname, error && error.message ? error.message : String(error || 'unknown'));
+        return json({
+          ok:false,
+          code:'INTERNAL_ERROR',
+          message:'Die Anfrage konnte wegen eines Serverfehlers nicht abgeschlossen werden.'
+        }, { status:500 });
+      }
     }
 
     if (url.pathname === '/health') {
