@@ -274,6 +274,38 @@
   .account-edit-status.error{color:#9A2D33;}
   .account-edit-status.success{color:#226b36;}
   .account-edit-submit-danger{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .admin-overview-open-btn{grid-column:1 / -1;background:linear-gradient(180deg,#fff7e7 0%,#f0dfb8 100%)!important;color:#6b4a10!important;border-color:rgba(107,74,16,.26)!important;}
+  .admin-overview-modal{width:920px;max-width:100%;max-height:90vh;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);display:flex;flex-direction:column;}
+  .admin-overview-modal h3{margin:0 0 5px;font-size:24px;color:#222;}
+  .admin-overview-intro{margin:0 0 8px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
+  .admin-overview-generated{min-height:17px;font-size:12px;font-weight:800;color:#777;margin-bottom:10px;}
+  .admin-overview-scroll{overflow:auto;min-height:120px;padding:2px 5px 2px 0;}
+  .admin-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;}
+  .admin-stat-card{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:10px 11px;min-width:0;}
+  .admin-stat-card.alert{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.22);}
+  .admin-stat-label{font-size:12px;font-weight:900;color:#666;line-height:1.2;}
+  .admin-stat-value{font-size:25px;font-weight:900;color:#843f46;line-height:1.08;margin-top:3px;overflow-wrap:anywhere;}
+  .admin-section{margin-top:13px;border-radius:15px;border:1px solid rgba(0,0,0,.09);background:#fbfbfc;padding:11px 12px;}
+  .admin-section h4{margin:0 0 9px;font-size:17px;color:#222;}
+  .admin-inline-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:10px;}
+  .admin-inline-stat{border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;font-size:12px;font-weight:900;color:#666;line-height:1.3;}
+  .admin-inline-stat strong{display:block;font-size:18px;color:#843f46;margin-top:2px;}
+  .admin-list{display:flex;flex-direction:column;gap:6px;}
+  .admin-list-empty{border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.07);padding:10px;font-size:13px;font-weight:800;color:#777;text-align:center;}
+  .admin-event-row{display:grid;grid-template-columns:128px minmax(0,1fr) auto;gap:9px;align-items:center;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.07);padding:7px 8px;font-size:12px;font-weight:800;color:#555;}
+  .admin-event-row.failure{border-color:rgba(132,63,70,.20);background:rgba(132,63,70,.04);}
+  .admin-event-main{min-width:0;line-height:1.3;overflow-wrap:anywhere;}
+  .admin-event-time{white-space:nowrap;color:#777;text-align:right;}
+  .admin-database-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}
+  .admin-database-item{display:flex;justify-content:space-between;gap:8px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.07);padding:7px 8px;font-size:12px;font-weight:900;color:#555;}
+  .admin-backup-box{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-radius:12px;background:rgba(34,107,54,.06);border:1px solid rgba(34,107,54,.16);padding:10px 11px;}
+  .admin-backup-text{font-size:13px;font-weight:900;color:#444;line-height:1.35;}
+  .admin-backup-btn{border-radius:12px;min-height:38px;padding:8px 11px;white-space:normal;}
+  .admin-overview-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;line-height:1.3;}
+  .admin-overview-status.error{color:#9A2D33;}
+  .admin-overview-status.success{color:#226b36;}
+  .admin-overview-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .admin-overview-actions button{border-radius:12px;min-height:38px;}
 
   .invite-modal{width:560px;max-width:100%;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);}
   .invite-modal h3{margin:0 0 8px;font-size:22px;color:#222;}
@@ -402,7 +434,8 @@
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
-  @media (max-width:520px){.auth-ratings-grid{grid-template-columns:1fr}}
+  @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
+  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -540,8 +573,9 @@
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
 
-          <h4>20. Admin-Funktion</h4>
-          <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Diese Funktion ist nur für den Administrator nutzbar.</p>
+          <h4>20. Admin-Funktion und Systemübersicht</h4>
+          <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
+          <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -634,6 +668,7 @@
             <button id="accountEmailOpenBtn" class="button-flat" type="button">Mailadresse ändern</button>
             <button id="accountPasswordOpenBtn" class="button-flat" type="button">Kennwort ändern</button>
             <button id="accountDeleteOpenBtn" class="auth-account-delete-btn" type="button">Account löschen</button>
+            <button id="adminOverviewOpenBtn" class="button-flat admin-overview-open-btn" type="button" hidden>Admin-Systemübersicht</button>
           </div>
           <div id="authAccountProtectionNote" class="auth-account-protection-note" hidden></div>
         </div>
@@ -711,6 +746,49 @@
         <div class="identity-actions">
           <button id="accountEditCancelBtn" class="button-flat" type="button">Abbrechen</button>
           <button id="accountEditSubmitBtn" type="button">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminOverviewBackdrop" class="identity-backdrop" hidden>
+      <div class="admin-overview-modal" role="dialog" aria-modal="true" aria-labelledby="adminOverviewTitle">
+        <h3 id="adminOverviewTitle">Admin-Systemübersicht</h3>
+        <p class="admin-overview-intro">Kompakter Systemstatus ohne Kennwörter, Token, Mailadressen oder vollständige IP-Adressen.</p>
+        <div id="adminOverviewGenerated" class="admin-overview-generated"></div>
+        <div class="admin-overview-scroll">
+          <div id="adminOverviewSummary" class="admin-summary-grid" aria-live="polite"></div>
+
+          <section class="admin-section" aria-labelledby="adminSecurityTitle">
+            <h4 id="adminSecurityTitle">Sicherheit</h4>
+            <div id="adminSecurityStats" class="admin-inline-stats"></div>
+            <div id="adminSecurityEvents" class="admin-list"></div>
+          </section>
+
+          <section class="admin-section" aria-labelledby="adminMailTitle">
+            <h4 id="adminMailTitle">Mailversand</h4>
+            <div id="adminMailStats" class="admin-inline-stats"></div>
+            <div class="auth-ratings-note">Das allgemeine Mailprotokoll beginnt mit diesem Update; ältere Mails werden nicht rückwirkend erfasst.</div>
+            <div id="adminMailFailures" class="admin-list" style="margin-top:8px"></div>
+          </section>
+
+          <section class="admin-section" aria-labelledby="adminDatabaseTitle">
+            <h4 id="adminDatabaseTitle">Datenbank und Partien</h4>
+            <div id="adminDatabaseStats" class="admin-inline-stats"></div>
+            <div id="adminDatabaseRows" class="admin-database-grid"></div>
+          </section>
+
+          <section class="admin-section" aria-labelledby="adminBackupTitle">
+            <h4 id="adminBackupTitle">Manuelles D1-Backup</h4>
+            <div class="admin-backup-box">
+              <div id="adminBackupText" class="admin-backup-text">Noch kein manueller Export im System vermerkt.</div>
+              <button id="adminBackupMarkBtn" class="button-flat admin-backup-btn" type="button">SQL-Export als erledigt markieren</button>
+            </div>
+          </section>
+        </div>
+        <div id="adminOverviewStatus" class="admin-overview-status" aria-live="polite"></div>
+        <div class="admin-overview-actions">
+          <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
+          <button id="adminOverviewCloseBtn" type="button">Schließen</button>
         </div>
       </div>
     </div>
@@ -2150,6 +2228,21 @@ const accountEmailOpenBtn = document.getElementById('accountEmailOpenBtn');
 const accountPasswordOpenBtn = document.getElementById('accountPasswordOpenBtn');
 const accountDeleteOpenBtn = document.getElementById('accountDeleteOpenBtn');
 const authAccountProtectionNote = document.getElementById('authAccountProtectionNote');
+const adminOverviewOpenBtn = document.getElementById('adminOverviewOpenBtn');
+const adminOverviewBackdrop = document.getElementById('adminOverviewBackdrop');
+const adminOverviewGenerated = document.getElementById('adminOverviewGenerated');
+const adminOverviewSummary = document.getElementById('adminOverviewSummary');
+const adminSecurityStats = document.getElementById('adminSecurityStats');
+const adminSecurityEvents = document.getElementById('adminSecurityEvents');
+const adminMailStats = document.getElementById('adminMailStats');
+const adminMailFailures = document.getElementById('adminMailFailures');
+const adminDatabaseStats = document.getElementById('adminDatabaseStats');
+const adminDatabaseRows = document.getElementById('adminDatabaseRows');
+const adminBackupText = document.getElementById('adminBackupText');
+const adminBackupMarkBtn = document.getElementById('adminBackupMarkBtn');
+const adminOverviewStatus = document.getElementById('adminOverviewStatus');
+const adminOverviewRefreshBtn = document.getElementById('adminOverviewRefreshBtn');
+const adminOverviewCloseBtn = document.getElementById('adminOverviewCloseBtn');
 const accountEditBackdrop = document.getElementById('accountEditBackdrop');
 const accountEditTitle = document.getElementById('accountEditTitle');
 const accountEditIntro = document.getElementById('accountEditIntro');
@@ -2543,6 +2636,250 @@ async function authApi(path, options){
   return data;
 }
 
+
+let adminOverviewLoading = false;
+function setAdminOverviewStatus(message, kind){
+  if(!adminOverviewStatus) return;
+  adminOverviewStatus.textContent = message || '';
+  adminOverviewStatus.classList.toggle('error', kind === 'error');
+  adminOverviewStatus.classList.toggle('success', kind === 'success');
+}
+function formatAdminDateTime(value){
+  const date = value ? new Date(value) : null;
+  if(!date || Number.isNaN(date.getTime())) return '—';
+  try{ return date.toLocaleString('de-DE', {dateStyle:'medium', timeStyle:'short'}); } catch(_){ return date.toISOString(); }
+}
+function adminNumber(value){
+  const number = Number(value || 0);
+  if(!Number.isFinite(number)) return '0';
+  try{ return Math.max(0, Math.floor(number)).toLocaleString('de-DE'); } catch(_){ return String(Math.max(0, Math.floor(number))); }
+}
+function replaceChildrenWithCards(container, cards){
+  if(!container) return;
+  container.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  cards.forEach(card => {
+    const item = document.createElement('div');
+    item.className = 'admin-stat-card' + (card.alert ? ' alert' : '');
+    const label = document.createElement('div');
+    label.className = 'admin-stat-label';
+    label.textContent = card.label;
+    const value = document.createElement('div');
+    value.className = 'admin-stat-value';
+    value.textContent = card.value;
+    item.appendChild(label);
+    item.appendChild(value);
+    frag.appendChild(item);
+  });
+  container.appendChild(frag);
+}
+function replaceInlineStats(container, stats){
+  if(!container) return;
+  container.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  stats.forEach(stat => {
+    const item = document.createElement('div');
+    item.className = 'admin-inline-stat';
+    item.appendChild(document.createTextNode(stat.label));
+    const strong = document.createElement('strong');
+    strong.textContent = stat.value;
+    item.appendChild(strong);
+    frag.appendChild(item);
+  });
+  container.appendChild(frag);
+}
+const ADMIN_EVENT_LABELS = {
+  login:'Login', register:'Registrierung', password_reset_request:'Kennwort-Reset angefordert',
+  password_reset_confirm:'Kennwort-Reset bestätigt', email_verification_request:'Mailbestätigung angefordert',
+  email_verification_confirm:'Mailbestätigung bestätigt'
+};
+const ADMIN_OUTCOME_LABELS = {
+  success:'Erfolg', failure:'Fehlgeschlagen', rejected:'Abgelehnt', blocked:'Blockiert', throttled:'Rate-Limit',
+  error:'Fehler', skipped:'Übersprungen', not_found:'Nicht gefunden', sent:'Gesendet'
+};
+const ADMIN_DETAIL_LABELS = {
+  RATE_LIMITED:'Zu viele Versuche', INVALID_CREDENTIALS:'Falsche Zugangsdaten', INVALID_LOGIN:'Ungültiger Login',
+  MISSING_LOGIN:'Angaben fehlen', EMAIL_NOT_VERIFIED:'Mail noch nicht bestätigt', ACCOUNT_DISABLED:'Account deaktiviert',
+  SESSION_CREATED:'Sitzung erstellt', REGISTRATION_VERIFIED:'Registrierung bestätigt', EMAIL_CHANGED:'Mailadresse geändert',
+  PASSWORD_CHANGED:'Kennwort geändert', INVALID_OR_EXPIRED_TOKEN:'Link ungültig oder abgelaufen', TOKEN_ALREADY_USED:'Link bereits verwendet',
+  DUPLICATE_ACCOUNT_DATA:'Doppelte Accountdaten', WEAK_PASSWORD:'Kennwort zu schwach', INTERNAL_ERROR:'Interner Fehler',
+  GENERIC_RESPONSE:'Neutrale Antwort', ALREADY_VERIFIED:'Bereits bestätigt'
+};
+const ADMIN_MAIL_TYPE_LABELS = {
+  invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset',
+  email_change_verification:'Neue Mailadresse', email_change_notice:'Hinweis zur Mailänderung',
+  daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', transactional:'Systemmail'
+};
+const ADMIN_TABLE_LABELS = {
+  users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',
+  rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', auth_security_events:'Sicherheitsereignisse',
+  auth_rate_limit_log:'Rate-Limit-Einträge', account_action_tokens:'Aktionslinks', mail_delivery_log:'Mailprotokoll',
+  email_notification_log:'Daily-Mailprotokoll'
+};
+function renderAdminSecurityEvents(events){
+  if(!adminSecurityEvents) return;
+  adminSecurityEvents.innerHTML = '';
+  const list = Array.isArray(events) ? events : [];
+  if(!list.length){
+    const empty = document.createElement('div'); empty.className = 'admin-list-empty'; empty.textContent = 'Noch keine Sicherheitsereignisse protokolliert.'; adminSecurityEvents.appendChild(empty); return;
+  }
+  const frag = document.createDocumentFragment();
+  list.forEach(event => {
+    const row = document.createElement('div');
+    const negative = ['failure','rejected','blocked','throttled','error'].includes(String(event.outcome || ''));
+    row.className = 'admin-event-row' + (negative ? ' failure' : '');
+    const type = document.createElement('div');
+    type.textContent = ADMIN_EVENT_LABELS[event.eventType] || event.eventType || 'Ereignis';
+    const main = document.createElement('div'); main.className = 'admin-event-main';
+    const parts = [ADMIN_OUTCOME_LABELS[event.outcome] || event.outcome || '—'];
+    if(event.username) parts.push(event.username);
+    if(event.detailCode) parts.push(ADMIN_DETAIL_LABELS[event.detailCode] || event.detailCode);
+    main.textContent = parts.join(' · ');
+    const time = document.createElement('div'); time.className = 'admin-event-time'; time.textContent = formatAdminDateTime(event.createdAt);
+    row.appendChild(type); row.appendChild(main); row.appendChild(time); frag.appendChild(row);
+  });
+  adminSecurityEvents.appendChild(frag);
+}
+function renderAdminMailFailures(failures){
+  if(!adminMailFailures) return;
+  adminMailFailures.innerHTML = '';
+  const list = Array.isArray(failures) ? failures : [];
+  if(!list.length){
+    const empty = document.createElement('div'); empty.className = 'admin-list-empty'; empty.textContent = 'Keine protokollierten Mailfehler.'; adminMailFailures.appendChild(empty); return;
+  }
+  const frag = document.createDocumentFragment();
+  list.forEach(item => {
+    const row = document.createElement('div'); row.className = 'admin-event-row failure';
+    const type = document.createElement('div'); type.textContent = ADMIN_MAIL_TYPE_LABELS[item.mailType] || item.mailType || 'Systemmail';
+    const main = document.createElement('div'); main.className = 'admin-event-main';
+    main.textContent = [item.provider || 'unbekannt', item.errorCode || 'MAIL_FAILED', item.errorMessage || 'Versand fehlgeschlagen'].join(' · ');
+    const time = document.createElement('div'); time.className = 'admin-event-time'; time.textContent = formatAdminDateTime(item.createdAt);
+    row.appendChild(type); row.appendChild(main); row.appendChild(time); frag.appendChild(row);
+  });
+  adminMailFailures.appendChild(frag);
+}
+function renderAdminOverview(data){
+  const overview = data && data.overview ? data.overview : data || {};
+  const accounts = overview.accounts || {};
+  const games = overview.games || {};
+  const security = overview.security || {};
+  const mail = overview.mail || {};
+  const database = overview.database || {};
+  const backup = overview.backup || {};
+  if(adminOverviewGenerated) adminOverviewGenerated.textContent = 'Stand: ' + formatAdminDateTime(overview.generatedAt);
+  replaceChildrenWithCards(adminOverviewSummary, [
+    {label:'Accounts', value:adminNumber(accounts.total)},
+    {label:'Mail bestätigt', value:adminNumber(accounts.verified)},
+    {label:'Neue Accounts · 7 Tage', value:adminNumber(accounts.new7d)},
+    {label:'Aktive Sitzungen', value:adminNumber(accounts.activeSessions)},
+    {label:'Laufende Daily-Partien', value:adminNumber(games.dailyRunning)},
+    {label:'Offene Daily-Einladungen', value:adminNumber(games.dailyInvitations)},
+    {label:'Loginfehler · 24 Std.', value:adminNumber(security.failedLogins24h), alert:Number(security.failedLogins24h || 0) > 0},
+    {label:'Mailfehler · 7 Tage', value:adminNumber(mail.failed7d), alert:Number(mail.failed7d || 0) > 0}
+  ]);
+  replaceInlineStats(adminSecurityStats, [
+    {label:'Aktive Account-Sperren', value:adminNumber(security.activeSubjectBlocks)},
+    {label:'Aktive IP-Sperren', value:adminNumber(security.activeIpBlocks)},
+    {label:'Rate-Limits · 24 Std.', value:adminNumber(security.throttled24h)},
+    {label:'Reset-Anfragen · 24 Std.', value:adminNumber(security.resetRequests24h)},
+    {label:'Bestätigungs-Anfragen · 24 Std.', value:adminNumber(security.verificationRequests24h)},
+    {label:'Loginfehler · 7 Tage', value:adminNumber(security.failedLogins7d)},
+    {label:'Registrierungen · 7 Tage', value:adminNumber(security.registrations7d)},
+    {label:'Unbestätigte Accounts', value:adminNumber(accounts.unverified)}
+  ]);
+  renderAdminSecurityEvents(security.recentEvents);
+  replaceInlineStats(adminMailStats, [
+    {label:'Alle Systemmails · 7 Tage', value:adminNumber(mail.sent7d)},
+    {label:'Fehler · 24 Std.', value:adminNumber(mail.failed24h)},
+    {label:'Daily-Mails gesendet · 7 Tage', value:adminNumber(mail.dailySent7d)},
+    {label:'Daily-Mailfehler · 7 Tage', value:adminNumber(mail.dailyFailed7d)},
+    {label:'Daily-Mails ausstehend', value:adminNumber(mail.dailyPending)}
+  ]);
+  renderAdminMailFailures(mail.recentFailures);
+  replaceInlineStats(adminDatabaseStats, [
+    {label:'D1-Tabellen', value:adminNumber(database.tableCount)},
+    {label:'Wichtige Tabellenzeilen', value:adminNumber(database.importantRowsTotal)},
+    {label:'Gespielte Online-Partien', value:adminNumber(games.gamesPlayed)},
+    {label:'Gamer-Aufrufe', value:adminNumber(games.pageViews)},
+    {label:'Beendete Daily-Partien', value:adminNumber(games.dailyEnded)},
+    {label:'Öffentlich laufend', value:adminNumber(games.publicRunning)}
+  ]);
+  if(adminDatabaseRows){
+    adminDatabaseRows.innerHTML = '';
+    const entries = Object.entries(database.importantRows || {});
+    if(!entries.length){
+      const empty = document.createElement('div'); empty.className = 'admin-list-empty'; empty.textContent = 'Keine Tabellenzahlen verfügbar.'; adminDatabaseRows.appendChild(empty);
+    } else {
+      const frag = document.createDocumentFragment();
+      entries.forEach(([key, value]) => {
+        const item = document.createElement('div'); item.className = 'admin-database-item';
+        const label = document.createElement('span'); label.textContent = ADMIN_TABLE_LABELS[key] || key;
+        const count = document.createElement('strong'); count.textContent = adminNumber(value);
+        item.appendChild(label); item.appendChild(count); frag.appendChild(item);
+      });
+      adminDatabaseRows.appendChild(frag);
+    }
+  }
+  if(adminBackupText){
+    adminBackupText.textContent = backup.lastManualAt
+      ? 'Letzter manuell vermerkter SQL-Export: ' + formatAdminDateTime(backup.lastManualAt)
+      : 'Noch kein manueller SQL-Export im System vermerkt.';
+  }
+}
+async function refreshAdminOverview(){
+  if(adminOverviewLoading || !onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  adminOverviewLoading = true;
+  if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.disabled = true;
+  if(adminBackupMarkBtn) adminBackupMarkBtn.disabled = true;
+  setAdminOverviewStatus('Systemdaten werden geladen…', '');
+  try{
+    const data = await authApi('/api/admin/overview');
+    renderAdminOverview(data);
+    setAdminOverviewStatus('Systemübersicht wurde aktualisiert.', 'success');
+  } catch(err){
+    setAdminOverviewStatus(err && err.message ? err.message : 'Die Systemübersicht konnte nicht geladen werden.', 'error');
+  } finally {
+    adminOverviewLoading = false;
+    if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.disabled = false;
+    if(adminBackupMarkBtn) adminBackupMarkBtn.disabled = false;
+  }
+}
+function openAdminOverview(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true){
+    if(authError) authError.textContent = 'Diese Übersicht ist ausschließlich für den Administrator verfügbar.';
+    return;
+  }
+  if(authBackdrop) authBackdrop.hidden = true;
+  if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = false;
+  refreshAdminOverview();
+}
+function closeAdminOverview(reopenAccount){
+  if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  setAdminOverviewStatus('', '');
+  if(reopenAccount && onlineAuthToken && onlineAuthUser) openAuthDialog('login');
+}
+async function markAdminBackupNow(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  if(!window.confirm('Hast du den manuellen SQL-Export der D1-Datenbank tatsächlich erstellt und sicher gespeichert?')) return;
+  if(adminBackupMarkBtn) adminBackupMarkBtn.disabled = true;
+  setAdminOverviewStatus('Backup-Zeitpunkt wird gespeichert…', '');
+  try{
+    const data = await authApi('/api/admin/backup-mark', {method:'POST', body:JSON.stringify({})});
+    if(adminBackupText) adminBackupText.textContent = 'Letzter manuell vermerkter SQL-Export: ' + formatAdminDateTime(data.lastManualAt);
+    setAdminOverviewStatus(data.message || 'Backup wurde vermerkt.', 'success');
+    setTimeout(refreshAdminOverview, 250);
+  } catch(err){
+    setAdminOverviewStatus(err && err.message ? err.message : 'Backup-Zeitpunkt konnte nicht gespeichert werden.', 'error');
+  } finally {
+    if(adminBackupMarkBtn) adminBackupMarkBtn.disabled = false;
+  }
+}
+if(adminOverviewOpenBtn) adminOverviewOpenBtn.addEventListener('click', openAdminOverview);
+if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.addEventListener('click', refreshAdminOverview);
+if(adminBackupMarkBtn) adminBackupMarkBtn.addEventListener('click', markAdminBackupNow);
+if(adminOverviewCloseBtn) adminOverviewCloseBtn.addEventListener('click', () => closeAdminOverview(true));
+if(adminOverviewBackdrop) adminOverviewBackdrop.addEventListener('click', ev => { if(ev.target === adminOverviewBackdrop) closeAdminOverview(true); });
+
 let accountEditMode = '';
 function setAccountEditStatus(message, kind){
   if(!accountEditStatus) return;
@@ -2664,6 +3001,7 @@ function setAuthRecoveryStatus(message, kind){
 }
 function openAuthRecoveryDialog(mode, token){
   authRecoveryMode = mode || 'password-request';
+  if(authRecoverySubmitBtn) authRecoverySubmitBtn.hidden = false;
   authRecoveryToken = String(token || '').trim();
   if(authBackdrop) authBackdrop.hidden = true;
   if(authRecoveryRequestForm) authRecoveryRequestForm.hidden = authRecoveryMode === 'password-reset';
@@ -2928,6 +3266,11 @@ function updateAuthUi(){
     accountDeleteOpenBtn.disabled = !loggedIn || isAdmin;
     accountDeleteOpenBtn.title = isAdmin ? 'Der Administrator-Account kann nicht selbst gelöscht werden.' : 'Eigenen Account endgültig löschen.';
   }
+  if(adminOverviewOpenBtn){
+    adminOverviewOpenBtn.hidden = !isAdmin;
+    adminOverviewOpenBtn.disabled = !isAdmin;
+  }
+  if(!isAdmin && adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
   if(authAccountProtectionNote){
     authAccountProtectionNote.hidden = !isAdmin;
     authAccountProtectionNote.textContent = isAdmin ? 'Admin-Schutz: Benutzername und Selbstlöschung sind für diesen Account gesperrt. Mailadresse und Kennwort können geändert werden.' : '';
