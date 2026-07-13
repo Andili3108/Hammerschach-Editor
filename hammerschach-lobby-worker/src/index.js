@@ -2118,7 +2118,10 @@ export class GameRoom {
       else players.white = slot;
       await this.state.storage.put('players', players);
       const creatorRole = (await this.state.storage.get('createdByRole')) || '';
-      if (!creatorRole) await this.state.storage.put('createdByRole', role);
+      if (!creatorRole) {
+        await this.state.storage.put('createdByRole', role);
+        if (authUser && authUser.id) await this.state.storage.put('createdByUserId', String(authUser.id));
+      }
       return { role, seatToken: token, denied: false, reclaimed: false };
     };
 
@@ -2625,6 +2628,41 @@ export class GameRoom {
       let displayName = cleanDisplayName(data.displayName || data.name);
       if (authUser && authUser.id) displayName = cleanDisplayName(authUser.username);
       const preferredRole = cleanPreferredRole(data.preferredRole || data.preferred_role || data.seatRole || data.seat_role);
+      const securePlayersBeforeClaim = await this.getSecurePlayers();
+      const roomAlreadyCreatedByMember = !!(securePlayersBeforeClaim.white || securePlayersBeforeClaim.black);
+
+      // Ein neuer Raum darf ausschließlich durch ein registriertes Mitglied eröffnet
+      // werden. Sobald dieser erste accountgebundene Platz existiert, darf der zweite
+      // Spieler einer Live-Partie weiterhin als Gast über den Einladungslink beitreten.
+      if (!roomAlreadyCreatedByMember && !authUser) {
+        info = Object.assign({}, info, {
+          playerId,
+          role: 'spectator',
+          displayName: displayName || guestNameFromPlayerId(playerId),
+          guest: true,
+          userId: null,
+          username: '',
+          seatClaimed: true,
+          claimedAt: Date.now()
+        });
+        ws.serializeAttachment(info);
+        safeSend(ws, {
+          type: 'hello',
+          room: info.room || 'unknown',
+          role: 'spectator',
+          displayName: info.displayName,
+          guest: true,
+          username: '',
+          seatToken: '',
+          seatDenied: true,
+          seatCode: 'ROOM_CREATOR_ACCOUNT_REQUIRED',
+          message: 'Zum Erstellen einer Partie ist ein registrierter und eingeloggter Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.',
+          serverNow: Date.now()
+        });
+        await this.sendRoomState(ws, 'hello_state');
+        return;
+      }
+
       const roomTimeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
       if (roomTimeControl && roomTimeControl.mode === 'daily' && !authUser) {
         info = Object.assign({}, info, {
@@ -3350,8 +3388,8 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'persistent_room_chat', 'freestyle960'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
