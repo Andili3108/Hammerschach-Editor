@@ -439,6 +439,98 @@ async function listDailyGames(env, sessionUser) {
   });
 }
 
+async function loadPrivateUser(env, userId) {
+  if (!env || !env.DB || !userId) return null;
+  return env.DB.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).bind(String(userId)).first();
+}
+
+async function pendingAndActiveDailyGamesForUser(env, userId) {
+  if (!(await ensureDailyGamesTable(env)) || !userId) return { openInvitations: [], activeGames: [] };
+  const result = await env.DB.prepare(
+    `SELECT room_id, white_user_id, black_user_id, started, ended
+       FROM daily_games
+      WHERE ended = 0
+        AND (white_user_id = ? OR black_user_id = ?)
+      ORDER BY updated_at ASC`
+  ).bind(String(userId), String(userId)).all();
+  const rows = result && result.results ? result.results : [];
+  const openInvitations = [];
+  const activeGames = [];
+  for (const row of rows) {
+    const isWhite = String(row.white_user_id || '') === String(userId);
+    const opponentJoined = isWhite ? !!row.black_user_id : !!row.white_user_id;
+    if (!row.started && !opponentJoined) openInvitations.push(row);
+    else activeGames.push(row);
+  }
+  return { openInvitations, activeGames };
+}
+
+async function cancelOpenDailyInvitationsForUser(env, userId, invitations) {
+  const rows = Array.isArray(invitations) ? invitations : [];
+  if (rows.length === 0) return { ok: true, cancelled: 0 };
+  if (!env || !env.GAME_ROOM) {
+    return { ok: false, status: 503, code: 'ROOM_SERVICE_UNAVAILABLE', message: 'Offene Daily-Einladungen konnten nicht sicher zurückgezogen werden.' };
+  }
+
+  let cancelled = 0;
+  for (const invitation of rows) {
+    const roomId = cleanRoomId(invitation && invitation.room_id);
+    if (!roomId) continue;
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = env.GAME_ROOM.get(id);
+      const response = await stub.fetch(new Request('https://game-room.internal/cancel-invitation?room=' + encodeURIComponent(roomId), {
+        method: 'DELETE',
+        headers: { 'x-hammerschach-user-id': String(userId) }
+      }));
+      let result = null;
+      try { result = await response.json(); } catch (_) { result = null; }
+      if (!response.ok || !result || !result.ok) {
+        return {
+          ok: false,
+          status: response.status || 409,
+          code: result && result.code ? result.code : 'INVITATION_DELETE_FAILED',
+          message: result && result.message ? result.message : 'Eine offene Daily-Einladung konnte nicht zurückgezogen werden.'
+        };
+      }
+      try { await env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run(); } catch (_) {}
+      cancelled += 1;
+    } catch (_) {
+      return { ok: false, status: 500, code: 'INVITATION_DELETE_FAILED', message: 'Eine offene Daily-Einladung konnte nicht zurückgezogen werden.' };
+    }
+  }
+  return { ok: true, cancelled };
+}
+
+async function deleteUserAccount(env, target, options = {}) {
+  if (!env || !env.DB || !target) {
+    return { ok: false, status: 503, code: 'DB_NOT_CONFIGURED', message: 'Account-Datenbank ist nicht verfügbar.' };
+  }
+  if (isAdminUser(target, env)) {
+    return { ok: false, status: 400, code: 'CANNOT_DELETE_ADMIN', message: 'Der Administrator-Account kann nicht gelöscht werden.' };
+  }
+
+  const daily = await pendingAndActiveDailyGamesForUser(env, target.id);
+  if (daily.activeGames.length > 0) {
+    return {
+      ok: false,
+      status: 409,
+      code: 'ACTIVE_DAILY_GAMES',
+      activeDailyGames: daily.activeGames.length,
+      message: 'Der Account kann erst gelöscht werden, wenn alle laufenden Daily-Partien beendet sind.'
+    };
+  }
+
+  const cancellation = await cancelOpenDailyInvitationsForUser(env, target.id, daily.openInvitations);
+  if (!cancellation.ok) return cancellation;
+
+  await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(target.id).run();
+  try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
+  return { ok: true, deletedUser: publicUser(target, env), cancelledInvitations: cancellation.cancelled || 0 };
+}
+
 async function deleteUserAsAdmin(env, adminUser, targetId) {
   if (!env || !env.DB || !adminUser) {
     return { ok: false, status: 503, code: 'DB_NOT_CONFIGURED', message: 'Account-Datenbank ist nicht verfügbar.' };
@@ -454,18 +546,11 @@ async function deleteUserAsAdmin(env, adminUser, targetId) {
     return { ok: false, status: 400, code: 'CANNOT_DELETE_SELF', message: 'Der eigene Admin-Account kann nicht gelöscht werden.' };
   }
 
-  const target = await env.DB.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).bind(id).first();
+  const target = await loadPrivateUser(env, id);
   if (!target) {
     return { ok: false, status: 404, code: 'USER_NOT_FOUND', message: 'User wurde nicht gefunden.' };
   }
-  if (isAdminUser(target, env)) {
-    return { ok: false, status: 400, code: 'CANNOT_DELETE_ADMIN', message: 'Ein Admin-Account kann nicht über diese Oberfläche gelöscht werden.' };
-  }
-
-  await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(id).run();
-  try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(id).run(); } catch (_) {}
-  await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
-  return { ok: true, deletedUser: publicUser(target, env) };
+  return deleteUserAccount(env, target, { deletedByAdmin: true });
 }
 
 
@@ -555,6 +640,90 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
     return json({ ok: true, user: session.user });
+  }
+
+  if (url.pathname === '/api/account/username' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Die Änderungen konnten nicht gelesen werden.' }, { status: 400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    if (!user) return json({ ok: false, code: 'USER_NOT_FOUND', message: 'Account wurde nicht gefunden.' }, { status: 404 });
+    if (isAdminUser(user, env)) return json({ ok: false, code: 'ADMIN_USERNAME_LOCKED', message: 'Der Benutzername des Administrator-Accounts kann nicht geändert werden.' }, { status: 403 });
+    if (!(await verifyPassword(String(body.currentPassword || ''), user))) {
+      return json({ ok: false, code: 'INVALID_PASSWORD', message: 'Das aktuelle Kennwort ist nicht korrekt.' }, { status: 401 });
+    }
+    const username = cleanUsername(body.username);
+    if (!username) return json({ ok: false, code: 'INVALID_USERNAME', message: 'Benutzername: 3 bis 24 Zeichen, erlaubt sind Buchstaben, Zahlen, _ und -.' }, { status: 400 });
+    const usernameLc = username.toLowerCase();
+    const existing = await env.DB.prepare(`SELECT id FROM users WHERE username_lc = ? AND id <> ? LIMIT 1`).bind(usernameLc, user.id).first();
+    if (existing) return json({ ok: false, code: 'USERNAME_TAKEN', message: 'Dieser Benutzername ist bereits vergeben.' }, { status: 409 });
+    await env.DB.prepare(`UPDATE users SET username = ?, username_lc = ? WHERE id = ?`).bind(username, usernameLc, user.id).run();
+    user.username = username;
+    user.username_lc = usernameLc;
+    return json({ ok: true, user: publicUser(user, env), message: 'Benutzername wurde geändert.' });
+  }
+
+  if (url.pathname === '/api/account/email' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Die Änderungen konnten nicht gelesen werden.' }, { status: 400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    if (!user) return json({ ok: false, code: 'USER_NOT_FOUND', message: 'Account wurde nicht gefunden.' }, { status: 404 });
+    if (!(await verifyPassword(String(body.currentPassword || ''), user))) {
+      return json({ ok: false, code: 'INVALID_PASSWORD', message: 'Das aktuelle Kennwort ist nicht korrekt.' }, { status: 401 });
+    }
+    const email = normalizeEmail(body.email);
+    if (!email) return json({ ok: false, code: 'INVALID_EMAIL', message: 'Bitte eine gültige Mailadresse eingeben.' }, { status: 400 });
+    const existing = await env.DB.prepare(`SELECT id FROM users WHERE email_lc = ? AND id <> ? LIMIT 1`).bind(email, user.id).first();
+    if (existing) return json({ ok: false, code: 'EMAIL_TAKEN', message: 'Diese Mailadresse ist bereits registriert.' }, { status: 409 });
+    await env.DB.prepare(`UPDATE users SET email = ?, email_lc = ? WHERE id = ?`).bind(email, email, user.id).run();
+    user.email = email;
+    user.email_lc = email;
+    return json({ ok: true, user: publicUser(user, env), message: 'Mailadresse wurde geändert.' });
+  }
+
+  if (url.pathname === '/api/account/password' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Die Änderungen konnten nicht gelesen werden.' }, { status: 400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    if (!user) return json({ ok: false, code: 'USER_NOT_FOUND', message: 'Account wurde nicht gefunden.' }, { status: 404 });
+    if (!(await verifyPassword(String(body.currentPassword || ''), user))) {
+      return json({ ok: false, code: 'INVALID_PASSWORD', message: 'Das aktuelle Kennwort ist nicht korrekt.' }, { status: 401 });
+    }
+    const newPassword = String(body.newPassword || '');
+    if (newPassword.length < 8) return json({ ok: false, code: 'WEAK_PASSWORD', message: 'Das neue Kennwort muss mindestens 8 Zeichen haben.' }, { status: 400 });
+    const salt = randomBase64Url(16);
+    const passwordHash = await hashPassword(newPassword, salt, PASSWORD_ITERATIONS);
+    await env.DB.prepare(
+      `UPDATE users
+          SET password_alg = ?, password_hash = ?, password_salt = ?, password_iterations = ?
+        WHERE id = ?`
+    ).bind('pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, user.id).run();
+    await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND id <> ?`).bind(user.id, session.sessionId).run();
+    return json({ ok: true, user: publicUser(user, env), message: 'Kennwort wurde geändert. Andere Anmeldungen wurden beendet.' });
+  }
+
+  if (url.pathname === '/api/account' && request.method === 'DELETE') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Bitte zuerst einloggen.' }, { status: 401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok: false, code: 'BAD_JSON', message: 'Die Löschbestätigung konnte nicht gelesen werden.' }, { status: 400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    if (!user) return json({ ok: false, code: 'USER_NOT_FOUND', message: 'Account wurde nicht gefunden.' }, { status: 404 });
+    if (isAdminUser(user, env)) return json({ ok: false, code: 'CANNOT_DELETE_ADMIN', message: 'Der Administrator-Account kann nicht selbst gelöscht werden.' }, { status: 403 });
+    if (!(await verifyPassword(String(body.currentPassword || ''), user))) {
+      return json({ ok: false, code: 'INVALID_PASSWORD', message: 'Das aktuelle Kennwort ist nicht korrekt.' }, { status: 401 });
+    }
+    if (String(body.confirmation || '').trim().toUpperCase() !== 'LÖSCHEN') {
+      return json({ ok: false, code: 'DELETE_CONFIRMATION_REQUIRED', message: 'Bitte zur Bestätigung LÖSCHEN eingeben.' }, { status: 400 });
+    }
+    const result = await deleteUserAccount(env, user);
+    if (!result.ok) return json({ ok: false, code: result.code, message: result.message, activeDailyGames: result.activeDailyGames || 0 }, { status: result.status || 400 });
+    return json({ ok: true, deletedUser: result.deletedUser, cancelledInvitations: result.cancelledInvitations || 0 });
   }
 
 
@@ -3124,9 +3293,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', '/api/presence', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
-      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'persistent_room_chat', 'freestyle960'],
+      note: 'Diese Stufe synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
