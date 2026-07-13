@@ -809,7 +809,6 @@
     <div id="publicGamesBackdrop" class="identity-backdrop" hidden>
       <div class="public-games-modal" role="dialog" aria-modal="true" aria-labelledby="publicGamesTitle">
         <h3 id="publicGamesTitle">Laufende öffentliche Partien</h3>
-        <p class="public-games-intro">Hier können Mitglieder und Gäste freigegebene Live- und Daily-Partien beobachten. Der Zuschauerzugang übernimmt niemals einen Spielerplatz und zeigt keinen privaten Partie-Chat.</p>
         <div id="publicGamesList" class="public-games-list" aria-live="polite"><div class="public-games-empty">Noch keine Partien geladen.</div></div>
         <div id="publicGamesStatus" class="public-games-status" aria-live="polite"></div>
         <div class="public-games-actions">
@@ -3777,7 +3776,7 @@ async function loadPublicGames(options){
     if(!response.ok || !data || !data.ok) throw new Error(data && data.message ? data.message : 'Öffentliche Partien konnten nicht geladen werden.');
     const games = data.games || [];
     renderPublicGames(games);
-    if(!silent && publicGamesStatusEl) publicGamesStatusEl.textContent = games.length + ' öffentliche Partie' + (games.length === 1 ? '' : 'n') + ' läuft' + (games.length === 1 ? '' : 'en') + '.';
+    if(!silent && publicGamesStatusEl) publicGamesStatusEl.textContent = games.length === 1 ? '1 öffentliche Partie läuft.' : games.length + ' öffentliche Partien laufen.';
   } catch(err){
     if(!silent) renderPublicGames([]);
     if(publicGamesStatusEl) publicGamesStatusEl.textContent = err && err.message ? err.message : 'Öffentliche Partien konnten nicht geladen werden.';
