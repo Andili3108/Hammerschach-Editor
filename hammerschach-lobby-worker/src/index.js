@@ -16,6 +16,11 @@ function cleanRoomId(value) {
   return /^[A-Za-z0-9_-]{3,64}$/.test(room) ? room : '';
 }
 
+function cleanPublicWatchId(value) {
+  const token = String(value || '').trim();
+  return /^[A-Za-z0-9_-]{20,96}$/.test(token) ? token : '';
+}
+
 function cleanPlayerId(value) {
   const player = String(value || '').trim();
   return /^[A-Za-z0-9_.:-]{8,128}$/.test(player) ? player : crypto.randomUUID();
@@ -450,6 +455,73 @@ async function listDailyGames(env, sessionUser) {
   });
 }
 
+
+let publicGamesTableReady = false;
+async function ensurePublicGamesTable(env) {
+  if (!env || !env.DB) return false;
+  if (publicGamesTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS public_games (
+       room_id TEXT PRIMARY KEY,
+       spectator_id TEXT NOT NULL UNIQUE,
+       white_user_id TEXT,
+       black_user_id TEXT,
+       white_name TEXT NOT NULL,
+       black_name TEXT NOT NULL,
+       mode TEXT NOT NULL,
+       time_label TEXT,
+       days_per_move INTEGER,
+       variant TEXT,
+       position_id INTEGER,
+       started_at TEXT,
+       updated_at TEXT NOT NULL,
+       turn TEXT,
+       moves_count INTEGER NOT NULL DEFAULT 0,
+       last_move_san TEXT,
+       public_game INTEGER NOT NULL DEFAULT 1,
+       ended INTEGER NOT NULL DEFAULT 0
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_public_games_running ON public_games (public_game, ended, updated_at)`).run();
+  publicGamesTableReady = true;
+  return true;
+}
+
+async function listPublicGames(env) {
+  if (!(await ensurePublicGamesTable(env))) return [];
+  const result = await env.DB.prepare(
+    `SELECT public_games.spectator_id,
+            COALESCE(white_account.username, public_games.white_name) AS white_name,
+            COALESCE(black_account.username, public_games.black_name) AS black_name,
+            public_games.mode, public_games.time_label, public_games.days_per_move,
+            public_games.variant, public_games.position_id, public_games.started_at,
+            public_games.updated_at, public_games.turn, public_games.moves_count,
+            public_games.last_move_san
+       FROM public_games
+       LEFT JOIN users white_account ON white_account.id = public_games.white_user_id
+       LEFT JOIN users black_account ON black_account.id = public_games.black_user_id
+      WHERE public_games.public_game = 1
+        AND public_games.ended = 0
+      ORDER BY public_games.updated_at DESC
+      LIMIT 100`
+  ).all();
+  return (result && result.results ? result.results : []).map(row => ({
+    watchId: cleanPublicWatchId(row.spectator_id),
+    whiteName: cleanDisplayName(row.white_name) || 'Weiß',
+    blackName: cleanDisplayName(row.black_name) || 'Schwarz',
+    mode: row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel: row.time_label || '',
+    daysPerMove: Math.max(0, Number(row.days_per_move || 0)),
+    variant: row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    positionId: row.position_id === null || row.position_id === undefined ? null : Number(row.position_id),
+    startedAt: row.started_at || null,
+    updatedAt: row.updated_at || null,
+    turn: row.turn === 'b' ? 'b' : 'w',
+    movesCount: Math.max(0, Number(row.moves_count || 0)),
+    lastMoveSan: String(row.last_move_san || '').slice(0, 24)
+  })).filter(game => !!game.watchId);
+}
+
 async function loadPrivateUser(env, userId) {
   if (!env || !env.DB || !userId) return null;
   return env.DB.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).bind(String(userId)).first();
@@ -748,6 +820,15 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: true, online, onlineWindowSeconds: Math.floor(USER_PRESENCE_ONLINE_WINDOW_MS / 1000) });
     } catch (_) {
       return json({ ok: false, code: 'PRESENCE_UNAVAILABLE', message: 'Online-Status konnte nicht aktualisiert werden.' }, { status: 500 });
+    }
+  }
+
+  if (url.pathname === '/api/public-games' && request.method === 'GET') {
+    try {
+      const games = await listPublicGames(env);
+      return json({ ok: true, games, serverNow: Date.now() });
+    } catch (_) {
+      return json({ ok: false, code: 'PUBLIC_GAMES_UNAVAILABLE', message: 'Öffentliche Partien konnten nicht geladen werden.' }, { status: 500 });
     }
   }
 
@@ -1868,6 +1949,7 @@ export class GameRoom {
       try {
         if (roomId && await ensureDailyGamesTable(this.env)) {
           await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+          if (await ensurePublicGamesTable(this.env)) await this.env.DB.prepare(`DELETE FROM public_games WHERE room_id = ?`).bind(roomId).run();
         }
       } catch (_) {}
       return { ok:true, status:200, roomId, cancelledAt:existingCancellation.cancelledAt || null, alreadyCancelled:true };
@@ -1924,6 +2006,9 @@ export class GameRoom {
     try {
       if (roomId && await ensureDailyGamesTable(this.env)) {
         await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+      }
+      if (roomId && await ensurePublicGamesTable(this.env)) {
+        await this.env.DB.prepare(`DELETE FROM public_games WHERE room_id = ?`).bind(roomId).run();
       }
     } catch (_) {}
 
@@ -2041,6 +2126,8 @@ export class GameRoom {
       userId: null,
       username: '',
       seatClaimed: false,
+      viewerMode: '',
+      publicWatchId: cleanPublicWatchId(url.searchParams.get('publicWatchId') || ''),
       joinedAt: Date.now()
     });
 
@@ -2376,6 +2463,96 @@ export class GameRoom {
     }
   }
 
+  async syncPublicGameIndex() {
+    try {
+      if (!(await ensurePublicGamesTable(this.env))) return;
+      const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+      if (!roomId) return;
+
+      const removeFromIndex = async () => {
+        await this.env.DB.prepare(`DELETE FROM public_games WHERE room_id = ?`).bind(roomId).run();
+      };
+      const cancellation = await this.state.storage.get('cancelled');
+      const isPublic = (await this.state.storage.get('publicGame')) === true;
+      const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
+      if ((cancellation && cancellation.cancelled) || !isPublic || !game.started || game.ended) {
+        await removeFromIndex();
+        return;
+      }
+
+      const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      if (!timeControl) {
+        await removeFromIndex();
+        return;
+      }
+      const players = await this.getSecurePlayers();
+      if (!players.white || !players.black) {
+        await removeFromIndex();
+        return;
+      }
+      const profiles = (await this.state.storage.get('playerProfiles')) || {};
+      const whitePlayerId = playerIdFromSlot(players.white);
+      const blackPlayerId = playerIdFromSlot(players.black);
+      const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+      const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+      const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
+      const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
+      const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+      const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+      let spectatorId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
+      if (!spectatorId) {
+        spectatorId = randomBase64Url(24);
+        await this.state.storage.put('publicWatchId', spectatorId);
+      }
+      const moves = (await this.state.storage.get('moves')) || [];
+      const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
+      const turn = clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : (moves.length % 2 ? 'b' : 'w');
+      const lastMove = moves.length ? moves[moves.length - 1] : null;
+      const updatedAt = new Date().toISOString();
+
+      await this.env.DB.prepare(
+        `INSERT INTO public_games (
+           room_id, spectator_id, white_user_id, black_user_id, white_name, black_name,
+           mode, time_label, days_per_move, variant, position_id,
+           started_at, updated_at, turn, moves_count, last_move_san,
+           public_game, ended
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
+         ON CONFLICT(room_id) DO UPDATE SET
+           spectator_id = excluded.spectator_id,
+           white_user_id = excluded.white_user_id,
+           black_user_id = excluded.black_user_id,
+           white_name = excluded.white_name,
+           black_name = excluded.black_name,
+           mode = excluded.mode,
+           time_label = excluded.time_label,
+           days_per_move = excluded.days_per_move,
+           variant = excluded.variant,
+           position_id = excluded.position_id,
+           started_at = excluded.started_at,
+           updated_at = excluded.updated_at,
+           turn = excluded.turn,
+           moves_count = excluded.moves_count,
+           last_move_san = excluded.last_move_san,
+           public_game = 1,
+           ended = 0`
+      ).bind(
+        roomId, spectatorId, whiteUserId || null, blackUserId || null, whiteName, blackName,
+        timeControl.mode === 'daily' ? 'daily' : 'live', timeControl.label || '',
+        timeControl.mode === 'daily' ? Math.max(1, Number(timeControl.daysPerMove || 1)) : null,
+        setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
+        game.startedAt || updatedAt, updatedAt, turn, moves.length,
+        lastMove && lastMove.san ? String(lastMove.san).slice(0, 24) : null
+      ).run();
+    } catch (_) {
+      // Die öffentliche Übersicht darf die Partie niemals unterbrechen.
+    }
+  }
+
+  async syncGameIndexes() {
+    await this.syncDailyGameIndex();
+    await this.syncPublicGameIndex();
+  }
+
   async scheduleClockAlarm(clock, now = Date.now()) {
     try {
       if (!clock || !clock.running || clock.timeLost) {
@@ -2408,7 +2585,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       justEnded = true;
-      await this.syncDailyGameIndex();
+      await this.syncGameIndexes();
     }
 
     if (game.ended || !clock.running || clock.timeLost) {
@@ -2471,7 +2648,7 @@ export class GameRoom {
     await this.state.storage.put('clock', clock);
     await this.state.storage.delete('drawOffer');
     await this.scheduleClockAlarm(clock, now);
-    await this.syncDailyGameIndex();
+    await this.syncGameIndexes();
 
     return { started:true, reason:'auto_started', game, clock, timeControl, gameSetup };
   }
@@ -2491,14 +2668,20 @@ export class GameRoom {
     const timed = await this.refreshTimedGameState(now);
     const game = safeGameForClient(Object.assign({}, timed.game || { started: false, ended: false, result: '*' }, { gameSetup }));
     const createdByRole = (await this.state.storage.get('createdByRole')) || '';
+    const createdByUserId = String((await this.state.storage.get('createdByUserId')) || '');
+    const createdByMe = createdByUserId
+      ? !!(info.userId && String(info.userId) === createdByUserId)
+      : !!(createdByRole && info.role === createdByRole);
     const moves = ((await this.state.storage.get('moves')) || []).map(safeMoveForClient);
     const drawOffer = safeDrawOfferForClient((await this.state.storage.get('drawOffer')) || null);
     const storedChatValue = await this.state.storage.get('chatMessages');
     const storedChatMessages = Array.isArray(storedChatValue) ? storedChatValue : [];
-    const chatMessages = storedChatMessages
+    const isSpectator = info.role === 'spectator';
+    const chatMessages = isSpectator ? [] : storedChatMessages
       .map(chat => safeChatForClient(chat, info))
       .filter(Boolean)
       .slice(-CHAT_HISTORY_MAX);
+    const publicGame = (await this.state.storage.get('publicGame')) === true;
 
     return {
       type: 'room_state',
@@ -2510,7 +2693,9 @@ export class GameRoom {
       },
       players: await this.getActivePlayers(players, { includePresence: !!(storedTimeControl && storedTimeControl.mode === 'daily') }),
       canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByRole && info.role === createdByRole))),
-      createdByMe: !!(createdByRole && info.role === createdByRole),
+      createdByMe,
+      publicGame,
+      spectatorMode: info.viewerMode === 'public',
       timeControl: safeTimeControlForClient(storedTimeControl),
       gameSetup,
       game,
@@ -2526,6 +2711,20 @@ export class GameRoom {
     const payload = await this.buildStateFor(ws);
     payload.type = type;
     safeSend(ws, payload);
+  }
+
+  disconnectPublicSpectators(message = 'Die Zuschauerfreigabe wurde vom Ersteller aufgehoben.') {
+    for (const ws of this.state.getWebSockets()) {
+      const info = ws.deserializeAttachment() || {};
+      if (info.viewerMode !== 'public') continue;
+      safeSend(ws, {
+        type:'error',
+        code:'PUBLIC_GAME_VISIBILITY_REVOKED',
+        message,
+        serverNow:Date.now()
+      });
+      try { ws.close(4003, 'Zuschauerfreigabe aufgehoben'); } catch (_) {}
+    }
   }
 
   async broadcastRoomState(type = 'room_state') {
@@ -2575,6 +2774,7 @@ export class GameRoom {
     const now = Date.now();
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
+      if (info.role === 'spectator') continue;
       const publicChat = safeChatForClient(chat, info);
       if (!publicChat) continue;
       safeSend(ws, {
@@ -2630,6 +2830,66 @@ export class GameRoom {
       const preferredRole = cleanPreferredRole(data.preferredRole || data.preferred_role || data.seatRole || data.seat_role);
       const securePlayersBeforeClaim = await this.getSecurePlayers();
       const roomAlreadyCreatedByMember = !!(securePlayersBeforeClaim.white || securePlayersBeforeClaim.black);
+      const spectatorOnly = data.spectatorOnly === true || data.spectator_only === true || data.watchOnly === true || data.watch_only === true;
+
+      if (spectatorOnly) {
+        const publicGame = (await this.state.storage.get('publicGame')) === true;
+        const publicGameState = (await this.state.storage.get('game')) || { started:false, ended:false };
+        const storedWatchId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
+        const routedWatchId = cleanPublicWatchId(info.publicWatchId || '');
+        const submittedWatchId = cleanPublicWatchId(data.publicWatchId || data.public_watch_id || data.watchId || '');
+        const watchAuthorized = !!(storedWatchId && routedWatchId === storedWatchId && submittedWatchId === storedWatchId);
+        if (!publicGame || !publicGameState.started || publicGameState.ended || !watchAuthorized) {
+          safeSend(ws, {
+            type:'error',
+            code:'PUBLIC_SPECTATOR_ACCESS_UNAVAILABLE',
+            message:'Diese Partie ist nicht mehr öffentlich verfügbar.'
+          });
+          try { ws.close(4003, 'Öffentliche Zuschauerfreigabe nicht verfügbar'); } catch (_) {}
+          return;
+        }
+        info = Object.assign({}, info, {
+          playerId,
+          role:'spectator',
+          displayName:'Zuschauer',
+          guest:true,
+          userId:null,
+          username:'',
+          seatClaimed:true,
+          viewerMode:'public',
+          claimedAt:Date.now()
+        });
+        ws.serializeAttachment(info);
+        safeSend(ws, {
+          type:'hello',
+          room:info.room || 'unknown',
+          role:'spectator',
+          displayName:'Zuschauer',
+          guest:true,
+          username:'',
+          seatToken:'',
+          spectatorMode:true,
+          message:'Zuschauerzugang verbunden.',
+          serverNow:Date.now()
+        });
+        await this.sendRoomState(ws, 'hello_state');
+        await this.broadcastRoomState('lobby');
+        return;
+      }
+
+      if (!roomAlreadyCreatedByMember && authUser) {
+        const publicGame = data.publicGame === true || data.public_game === true;
+        await this.state.storage.put('publicGame', publicGame);
+        if (publicGame) {
+          let publicWatchId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
+          if (!publicWatchId) {
+            publicWatchId = randomBase64Url(24);
+            await this.state.storage.put('publicWatchId', publicWatchId);
+          }
+        } else {
+          await this.state.storage.delete('publicWatchId');
+        }
+      }
 
       // Ein neuer Raum darf ausschließlich durch ein registriertes Mitglied eröffnet
       // werden. Sobald dieser erste accountgebundene Platz existiert, darf der zweite
@@ -2724,7 +2984,7 @@ export class GameRoom {
         serverNow: Date.now()
       });
       await this.sendRoomState(ws, 'hello_state');
-      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
+      if (!dailyAutoStart.started) await this.syncGameIndexes();
       await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'lobby');
       return;
     }
@@ -2746,7 +3006,59 @@ export class GameRoom {
       return;
     }
 
+    if (data.type === 'set_public_game') {
+      const game = (await this.state.storage.get('game')) || { started:false, ended:false };
+      if (game.ended) {
+        safeSend(ws, { type:'error', code:'GAME_ALREADY_ENDED', message:'Nach Partieende kann die Zuschauerfreigabe nicht mehr geändert werden.' });
+        return;
+      }
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type:'error', code:'PUBLIC_GAME_PLAYERS_ONLY', message:'Zuschauer können die Zuschauerfreigabe nicht ändern.' });
+        return;
+      }
+      const createdByRole = (await this.state.storage.get('createdByRole')) || '';
+      const createdByUserId = String((await this.state.storage.get('createdByUserId')) || '');
+      const isCreator = createdByUserId
+        ? !!(info.userId && String(info.userId) === createdByUserId)
+        : !!(createdByRole && role === createdByRole);
+      if (!isCreator) {
+        safeSend(ws, { type:'error', code:'ONLY_CREATOR_CAN_SET_PUBLIC_GAME', message:'Nur der Ersteller der Partie kann die Zuschauerfreigabe ändern.' });
+        return;
+      }
+
+      const publicGame = data.publicGame === true || data.public_game === true;
+      await this.state.storage.put('publicGame', publicGame);
+      if (publicGame) {
+        let publicWatchId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
+        if (!publicWatchId) {
+          publicWatchId = randomBase64Url(24);
+          await this.state.storage.put('publicWatchId', publicWatchId);
+        }
+      } else {
+        await this.state.storage.delete('publicWatchId');
+      }
+
+      await this.syncPublicGameIndex();
+      safeSend(ws, {
+        type:'public_game_ack',
+        ok:true,
+        messageId:data.messageId || null,
+        publicGame,
+        message:publicGame
+          ? (game.started ? 'Die laufende Partie wurde öffentlich freigegeben.' : 'Die Partie wird nach dem Start öffentlich angezeigt.')
+          : 'Die Zuschauerfreigabe wurde aufgehoben.',
+        serverNow:Date.now()
+      });
+      await this.broadcastRoomState('room_state');
+      if (!publicGame) this.disconnectPublicSpectators('Der Ersteller hat die Zuschauerfreigabe aufgehoben. Dieser Zuschauerzugang ist nicht mehr gültig.');
+      return;
+    }
+
     if (data.type === 'chat_message') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, { type:'error', code:'CHAT_PLAYERS_ONLY', message:'Der Partie-Chat ist ausschließlich für Weiß und Schwarz verfügbar.' });
+        return;
+      }
       const text = cleanChatText(data.text || data.message || (data.chat && data.chat.text));
       if (!text) {
         safeSend(ws, { type: 'error', code: 'EMPTY_CHAT_MESSAGE', message: 'Chatnachricht ist leer.' });
@@ -2813,7 +3125,7 @@ export class GameRoom {
       const profile = await this.savePlayerProfile(info.playerId, displayName, role, authUser);
       ws.serializeAttachment(Object.assign({}, info, { displayName: profile.displayName, guest: profile.guest, userId: profile.userId || info.userId || null, username: profile.username || '' }));
       const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
-      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
+      if (!dailyAutoStart.started) await this.syncGameIndexes();
       safeSend(ws, { type: 'player_name', ok: true, role, displayName: profile.displayName, name: profile.displayName, guest: profile.guest, username: profile.username || '', serverNow: Date.now() });
       await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'room_state');
       return;
@@ -2839,7 +3151,7 @@ export class GameRoom {
       await this.state.storage.put('moves', []);
       await this.state.storage.delete('clock');
       const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
-      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
+      if (!dailyAutoStart.started) await this.syncGameIndexes();
 
       safeSend(ws, {
         type: 'game_setup_ack',
@@ -2885,7 +3197,7 @@ export class GameRoom {
       await this.state.storage.put('timeControl', timeControl);
       await this.state.storage.delete('clock');
       const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
-      if (!dailyAutoStart.started) await this.syncDailyGameIndex();
+      if (!dailyAutoStart.started) await this.syncGameIndexes();
 
       safeSend(ws, {
         type: 'time_control_ack',
@@ -2975,7 +3287,7 @@ export class GameRoom {
       await this.state.storage.put('clock', clock);
       await this.state.storage.delete('drawOffer');
       await this.scheduleClockAlarm(clock, now);
-      await this.syncDailyGameIndex();
+      await this.syncGameIndexes();
 
       safeSend(ws, {
         type: 'start_game_ack',
@@ -3088,7 +3400,7 @@ export class GameRoom {
         await this.state.storage.put('game', game);
         await this.state.storage.delete('drawOffer');
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
-        await this.syncDailyGameIndex();
+        await this.syncGameIndexes();
         safeSend(ws, { type: 'draw_response', ok: true, action: 'accept', game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
         await this.broadcastRoomState('game_finished');
         return;
@@ -3147,7 +3459,7 @@ export class GameRoom {
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       try { await this.state.storage.deleteAlarm(); } catch (_) {}
-      await this.syncDailyGameIndex();
+      await this.syncGameIndexes();
       safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
       return;
@@ -3318,7 +3630,7 @@ export class GameRoom {
       } else {
         await this.scheduleClockAlarm(clock, now);
       }
-      await this.syncDailyGameIndex();
+      await this.syncGameIndexes();
 
       safeSend(ws, {
         type: 'move_ack',
@@ -3372,6 +3684,34 @@ export default {
       return json({ ok: true, service: 'hammerschach-gamer-lobby' });
     }
 
+    if (url.pathname === '/watch') {
+      const watchId = cleanPublicWatchId(url.searchParams.get('game'));
+      if (!watchId) return new Response('Missing or invalid public game', { status: 400 });
+      if (request.headers.get('Upgrade') !== 'websocket') {
+        return new Response('Expected WebSocket upgrade', { status: 426 });
+      }
+      try {
+        if (!(await ensurePublicGamesTable(env))) throw new Error('Public game index unavailable');
+        const indexed = await env.DB.prepare(
+          `SELECT room_id FROM public_games
+            WHERE spectator_id = ? AND public_game = 1 AND ended = 0
+            LIMIT 1`
+        ).bind(watchId).first();
+        const room = cleanRoomId(indexed && indexed.room_id);
+        if (!room) return new Response('Public game not found', { status: 404 });
+        const id = env.GAME_ROOM.idFromName(room);
+        const stub = env.GAME_ROOM.get(id);
+        const forwardedUrl = new URL(request.url);
+        forwardedUrl.pathname = '/ws';
+        forwardedUrl.search = '';
+        forwardedUrl.searchParams.set('room', room);
+        forwardedUrl.searchParams.set('publicWatchId', watchId);
+        return stub.fetch(new Request(forwardedUrl.toString(), request));
+      } catch (_) {
+        return new Response('Public game unavailable', { status: 503 });
+      }
+    }
+
     if (url.pathname === '/ws') {
       const room = cleanRoomId(url.searchParams.get('room'));
       if (!room) return new Response('Missing or invalid room', { status: 400 });
@@ -3387,9 +3727,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'persistent_room_chat', 'freestyle960'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', '/api/stats', '/api/stats/visit', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'mailto_invitations', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, Admin-Userlöschung, vorbereitete Mailprogramm-Einladungen, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
