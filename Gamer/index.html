@@ -378,7 +378,7 @@
         <p class="info-modal-intro">Die wichtigsten Funktionen kurz erklärt. Die Anleitung kann gescrollt werden.</p>
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
-          <p>Live-Partien kannst du mit einem registrierten Account oder als Gast spielen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
+          <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Daily-Partie mehr besteht; offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
 
@@ -418,7 +418,7 @@
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
 
           <h4>9. Zur Partie einladen</h4>
-          <p>Über <strong>„Zur Partie einladen“</strong> öffnest du das Einladungsfenster. Dort kannst du den Link oder den vollständigen Einladungstext kopieren. Nach dem Login kannst du außerdem ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
+          <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Beim Einladen eines Mitglieds öffnet sich dein eigenes Mailprogramm mit einer vorbereiteten Nachricht. Die E-Mail wird nicht automatisch versendet. Für Daily Chess werden auch keine automatischen Zugerinnerungen per E-Mail verschickt.</p>
 
           <h4>10. Partiebeginn</h4>
@@ -3004,11 +3004,14 @@ function refreshHeaderStatusFromState(){
 }
 function updateOnlineActionButtons(){
   const live = isOnlineGameLiveForUi();
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   if(createOnlineBtn){
     createOnlineBtn.disabled = live;
     createOnlineBtn.title = live
       ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.'
-      : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.'));
+      : (!loggedIn
+          ? 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.'
+          : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.')));
   }
   if(newGameBtn){
     newGameBtn.disabled = false;
@@ -3490,8 +3493,17 @@ function scheduleMemberSearch(){
   const requestId = memberSearchRequestId;
   memberSearchTimer = setTimeout(() => performMemberSearch(query, requestId), 260);
 }
+function requireAccountForInvitationCreation(){
+  if(onlineAuthToken && onlineAuthUser) return true;
+  const message = 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Ein eingeladener Gegner darf einer Live-Partie weiterhin als Gast per Link beitreten.';
+  onlineLastMessage = message;
+  if(statusEl) statusEl.textContent = message;
+  openAuthDialog('login');
+  return false;
+}
 async function openInviteDialogForCurrentOrNewRoom(){
   if(isOnlineGameLiveForUi()) return false;
+  if(!requireAccountForInvitationCreation()) return false;
   if(!onlineRoomId){
     let roomFromUrl = '';
     try{ roomFromUrl = cleanRoomId(new URL(window.location.href).searchParams.get('room')); } catch(_){}
@@ -4161,6 +4173,11 @@ function connectOnlineRoom(roomId, opts){
       if(statusEl) statusEl.textContent = msg.message || 'Daily Chess erfordert einen Login.';
       setTimeout(() => openAuthDialog('login'), 120);
     }
+    if(msg.type === 'hello' && msg.seatCode === 'ROOM_CREATOR_ACCOUNT_REQUIRED'){
+      saveAuthState('', null);
+      if(statusEl) statusEl.textContent = msg.message || 'Zum Erstellen einer Partie ist ein Mitglieder-Account erforderlich.';
+      setTimeout(() => openAuthDialog('login'), 120);
+    }
   });
   onlineSocket.addEventListener('close', event => {
     onlineConnected = false;
@@ -4441,6 +4458,7 @@ async function createNewOnlineRoom(opts){
       return true;
     }
 
+    if(!requireAccountForInvitationCreation()) return false;
     if(isDailyTimeControl() && !onlineAuthUser){
       statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
       openAuthDialog('login');
