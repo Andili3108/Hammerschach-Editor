@@ -2223,6 +2223,7 @@ function setInviteColorPreference(value){
      z. B. 'https://hammerschach-gamer-lobby.DEIN-ACCOUNT.workers.dev'.
 */
 const ONLINE_WORKER_URL = 'https://hammerschach-hammerschach-lobby-worker.webmaster-5bb.workers.dev';
+const HAMMERSCHACH_PUBLIC_PAGE_URL = 'https://www.andili.de/page-hammerschach-gamer.html';
 const ONLINE_PLAYER_STORAGE_KEY = 'hammerschachGamerOnlinePlayerId';
 const ONLINE_PLAYER_NAME_STORAGE_KEY = 'hammerschachGamerOnlineDisplayName';
 const ONLINE_PLAYER_NAME_CONFIRMED_KEY = 'hammerschachGamerOnlineDisplayNameConfirmed';
@@ -4029,20 +4030,27 @@ function getRememberedRoomForReload(){
     return cleanRoomId(sessionStorage.getItem(ONLINE_LAST_ROOM_STORAGE_KEY) || '');
   } catch(_){ return ''; }
 }
+function buildPublicGamerUrl(parameters){
+  try{
+    const url = new URL(HAMMERSCHACH_PUBLIC_PAGE_URL);
+    url.hash = '';
+    url.search = '';
+    Object.entries(parameters || {}).forEach(([key, value]) => {
+      const text = String(value || '').trim();
+      if(text) url.searchParams.set(key, text);
+    });
+    return url.toString();
+  } catch(_){
+    return window.location.href;
+  }
+}
 function getInviteUrl(){
-  const url = new URL(window.location.href);
-  if(onlineRoomId) url.searchParams.set('room', onlineRoomId);
-  url.searchParams.delete('watch');
-  url.searchParams.delete('fresh');
-  return url.toString();
+  const roomId = cleanRoomId(onlineRoomId || '');
+  return buildPublicGamerUrl(roomId ? {room:roomId} : {});
 }
 function getSpectatorUrl(watchId){
   const token = cleanPublicWatchId(watchId || onlinePublicWatchId || '');
-  const url = new URL(window.location.href);
-  url.searchParams.delete('room');
-  url.searchParams.delete('fresh');
-  if(token) url.searchParams.set('watch', token);
-  return url.toString();
+  return buildPublicGamerUrl(token ? {watch:token} : {});
 }
 function getWebSocketUrl(roomId){
   const configured = (window.HAMMERSCHACH_ONLINE_WORKER_URL || ONLINE_WORKER_URL || '').trim();
