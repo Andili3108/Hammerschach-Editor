@@ -1057,6 +1057,17 @@
 <script>
 'use strict';
 
+/*
+  Einbettungsmodus:
+  Dieselbe HTML-Datei funktioniert sowohl als eigenständige Seite als auch
+  innerhalb eines iFrames. Weitere iFrame-spezifische Funktionen dürfen
+  ausschließlich von HAMMERSCHACH_IS_EMBEDDED abhängig gemacht werden.
+*/
+const HAMMERSCHACH_IS_EMBEDDED = window.self !== window.top;
+document.documentElement.classList.toggle('hammerschach-embedded', HAMMERSCHACH_IS_EMBEDDED);
+document.documentElement.classList.toggle('hammerschach-standalone', !HAMMERSCHACH_IS_EMBEDDED);
+document.documentElement.dataset.displayMode = HAMMERSCHACH_IS_EMBEDDED ? 'embedded' : 'standalone';
+
 const files = ['a','b','c','d','e','f','g','h'];
 const pieceImg = {
   P:'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
