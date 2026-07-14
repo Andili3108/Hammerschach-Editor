@@ -8,6 +8,10 @@
 <link rel="shortcut icon" type="image/png" href="Gamer-Logo.png" />
 <link rel="apple-touch-icon" href="Gamer-Logo.png" />
 <meta name="theme-color" content="#843f46" />
+<script>
+  /* Anzeigemodus vor dem ersten Rendern markieren, damit iFrame-spezifische Elemente nicht kurz aufblitzen. */
+  document.documentElement.classList.add(window.self !== window.top ? 'hammerschach-embedded' : 'hammerschach-standalone');
+</script>
 <!-- Design v5: Kompakter Header und Brettfarben-Popup über der Icon-Leiste -->
 <style>
   :root{
@@ -31,6 +35,7 @@
   .brand-link{display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit;min-width:0;}
   .brand-link:focus-visible{outline:3px solid rgba(132,63,70,.28);outline-offset:4px;border-radius:18px;}
   .brand-origin-line{grid-column:1 / -1;justify-self:stretch;width:100%;display:flex;align-items:center;justify-content:flex-end;gap:8px;max-width:100%;box-sizing:border-box;color:#555;font-size:13px;font-weight:900;line-height:1.15;white-space:nowrap;}
+  html.hammerschach-embedded .brand-origin-line{display:none!important;}
   .brand-origin-button{display:inline-flex;align-items:center;justify-content:center;width:110px;min-width:110px;flex:0 0 110px;min-height:25px;box-sizing:border-box;padding:3px 11px;border:1px solid rgba(132,63,70,.22);border-radius:999px;background:linear-gradient(180deg,#fff 0%,#f1edef 100%);color:var(--andili-rot);text-decoration:none;font-size:12px;font-weight:900;line-height:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 2px 6px rgba(0,0,0,.08);transition:transform .08s ease,box-shadow .12s ease,background .12s ease;}
   .brand-origin-button:hover{transform:translateY(-1px);background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 5px 10px rgba(0,0,0,.11);}
   .brand-origin-button:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.08);}
