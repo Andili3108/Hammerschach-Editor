@@ -395,6 +395,50 @@ function escapeEmailHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function configuredMailLogoUrl(env) {
+  const explicit = String((env && env.MAIL_LOGO_URL) || '').trim();
+  const candidates = [explicit];
+  try {
+    const publicUrl = configuredGamerPublicUrl(env);
+    if (publicUrl) candidates.push(new URL('Gamer-Logo.png', publicUrl).toString());
+  } catch (_) {}
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const url = new URL(candidate);
+      if (url.protocol === 'https:') return url.toString();
+    } catch (_) {}
+  }
+  return '';
+}
+
+function mailBrandHeaderHtml(env) {
+  const logoUrl = configuredMailLogoUrl(env);
+  if (!logoUrl) return '';
+  const publicUrl = configuredGamerPublicUrl(env);
+  const image = `<img src="${escapeEmailHtml(logoUrl)}" width="190" alt="Hammerschach-Gamer" style="display:block;width:190px;max-width:72%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">`;
+  const linked = publicUrl
+    ? `<a href="${escapeEmailHtml(publicUrl)}" style="display:inline-block;text-decoration:none;border:0;">${image}</a>`
+    : image;
+  return `<div data-hammerschach-mail-logo="1" style="text-align:center;margin:0 0 22px;padding:2px 0 18px;border-bottom:1px solid #eee;">${linked}</div>`;
+}
+
+function applyMailBranding(env, mail) {
+  if (!mail || !mail.ok || !mail.htmlPart) return mail;
+  if (String(mail.htmlPart).includes('data-hammerschach-mail-logo=')) return mail;
+  const header = mailBrandHeaderHtml(env);
+  if (!header) return mail;
+  let htmlPart = String(mail.htmlPart);
+  const cardStart = htmlPart.indexOf('<div style="max-width:620px;');
+  if (cardStart >= 0) {
+    const cardOpenEnd = htmlPart.indexOf('>', cardStart);
+    if (cardOpenEnd >= 0) htmlPart = htmlPart.slice(0, cardOpenEnd + 1) + header + htmlPart.slice(cardOpenEnd + 1);
+  } else {
+    htmlPart = htmlPart.replace(/<body\b[^>]*>/i, match => match + header);
+  }
+  return { ...mail, htmlPart };
+}
+
 function gamerInvitationUrl(env, roomId) {
   const configured = configuredGamerPublicUrl(env);
   if (!configured) return '';
@@ -493,6 +537,108 @@ function wrapBase64(value, lineLength = 76) {
   return lines.join('\r\n');
 }
 
+function wrapExistingBase64(value, lineLength = 76) {
+  const encoded = String(value || '').replace(/\s+/g, '');
+  const lines = [];
+  for (let i = 0; i < encoded.length; i += lineLength) lines.push(encoded.slice(i, i + lineLength));
+  return lines.join('\r\n');
+}
+
+const MAIL_ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
+const MAIL_ATTACHMENT_MAX_BASE64_LENGTH = Math.ceil(MAIL_ATTACHMENT_MAX_BYTES / 3) * 4 + 8;
+const MAIL_ATTACHMENT_ALLOWED_TYPES = {
+  'application/pdf':['pdf'],
+  'image/jpeg':['jpg', 'jpeg'],
+  'image/png':['png'],
+  'image/webp':['webp']
+};
+
+function cleanMailAttachmentFilename(value) {
+  const basename = String(value || '').split(/[\/\\]/).pop() || '';
+  return basename
+    .replace(/[\r\n\u0000-\u001F\u007F<>":|?*]+/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
+function mailAttachmentExtension(filename) {
+  const match = String(filename || '').toLowerCase().match(/\.([a-z0-9]{1,8})$/);
+  return match ? match[1] : '';
+}
+
+function normalizedBase64Content(value) {
+  const raw = String(value || '');
+  if (!raw || raw.length > MAIL_ATTACHMENT_MAX_BASE64_LENGTH + 256) return '';
+  const compact = raw.replace(/\s+/g, '');
+  if (!compact || compact.length > MAIL_ATTACHMENT_MAX_BASE64_LENGTH || compact.length % 4 === 1) return '';
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(compact)) return '';
+  return compact;
+}
+
+function decodedBase64ByteLength(base64) {
+  const compact = String(base64 || '');
+  if (!compact) return 0;
+  let padding = 0;
+  if (compact.endsWith('==')) padding = 2;
+  else if (compact.endsWith('=')) padding = 1;
+  return Math.floor(compact.length * 3 / 4) - padding;
+}
+
+function attachmentSignatureMatches(type, base64) {
+  try {
+    const prefix = atob(String(base64 || '').slice(0, 40));
+    const bytes = Array.from(prefix, ch => ch.charCodeAt(0));
+    if (type === 'application/pdf') return prefix.startsWith('%PDF-');
+    if (type === 'image/jpeg') return bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+    if (type === 'image/png') return bytes.slice(0, 8).join(',') === '137,80,78,71,13,10,26,10';
+    if (type === 'image/webp') return prefix.slice(0, 4) === 'RIFF' && prefix.slice(8, 12) === 'WEBP';
+  } catch (_) {}
+  return false;
+}
+
+function normalizeMailAttachment(value) {
+  if (!value) return { ok:true, attachment:null };
+  const name = cleanMailAttachmentFilename(value.name || value.filename);
+  const type = String(value.type || value.contentType || '').toLowerCase().trim();
+  const extension = mailAttachmentExtension(name);
+  const allowedExtensions = MAIL_ATTACHMENT_ALLOWED_TYPES[type];
+  const base64 = normalizedBase64Content(value.base64 || value.base64Content || value.content);
+  if (!name || !allowedExtensions || !allowedExtensions.includes(extension) || !base64) {
+    return { ok:false, status:400, code:'INVALID_MAIL_ATTACHMENT', message:'Der Anhang ist ungültig. Erlaubt sind PDF, JPG, PNG und WebP.' };
+  }
+  const size = decodedBase64ByteLength(base64);
+  if (!size || size > MAIL_ATTACHMENT_MAX_BYTES) {
+    return { ok:false, status:400, code:'MAIL_ATTACHMENT_TOO_LARGE', message:'Der Anhang darf höchstens 3 MB groß sein.' };
+  }
+  if (!attachmentSignatureMatches(type, base64)) {
+    return { ok:false, status:400, code:'MAIL_ATTACHMENT_TYPE_MISMATCH', message:'Dateityp und Dateiinhalt des Anhangs stimmen nicht überein.' };
+  }
+  const inline = value.inline === true && type.startsWith('image/');
+  const contentId = inline
+    ? String(value.contentId || 'hammerschach-member-image').replace(/[^A-Za-z0-9_.@-]/g, '').slice(0, 80) || 'hammerschach-member-image'
+    : '';
+  return { ok:true, attachment:{ name, type, size, base64, inline, contentId } };
+}
+
+function normalizeMailAttachments(value) {
+  if (!value) return { ok:true, attachments:[] };
+  const source = Array.isArray(value) ? value : [value];
+  if (source.length > 1) {
+    return { ok:false, status:400, code:'TOO_MANY_MAIL_ATTACHMENTS', message:'Pro Nachricht ist derzeit höchstens ein Anhang möglich.' };
+  }
+  const normalized = normalizeMailAttachment(source[0]);
+  if (!normalized.ok) return normalized;
+  return { ok:true, attachments:normalized.attachment ? [normalized.attachment] : [] };
+}
+
+function formatMailAttachmentSize(bytes) {
+  const size = Number(bytes || 0);
+  if (size < 1024) return `${size} Byte`;
+  if (size < 1024 * 1024) return `${Math.round(size / 102.4) / 10} KB`;
+  return `${Math.round(size / (1024 * 102.4)) / 10} MB`;
+}
+
 function encodeEmailHeader(value) {
   const cleaned = String(value || '').replace(/[\r\n]+/g, ' ').trim();
   if (!cleaned) return '';
@@ -534,19 +680,21 @@ function prepareInvitationEmail(payload) {
 }
 
 
-function preparedMailFromPayload(payload) {
+function preparedMailFromPayload(payload, env) {
   const supplied = payload && payload.preparedMail;
-  if (!supplied) return prepareInvitationEmail(payload);
+  if (!supplied) return applyMailBranding(env, prepareInvitationEmail(payload));
   const recipientEmail = normalizeEmail(supplied.recipientEmail);
   const recipientName = cleanDisplayName(supplied.recipientName) || 'Schachfreund';
   const subject = String(supplied.subject || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 180);
   const textPart = String(supplied.textPart || '').trim();
   const htmlPart = String(supplied.htmlPart || '').trim();
   const mailType = cleanMailLogType(supplied.mailType || payload && payload.mailType || 'transactional');
+  const attachmentResult = normalizeMailAttachments(supplied.attachments || supplied.attachment || null);
+  if (!attachmentResult.ok) return attachmentResult;
   if (!recipientEmail || !subject || !textPart || !htmlPart) {
     return { ok:false, status:400, code:'INVALID_PREPARED_MAIL', message:'Die automatische Nachricht konnte nicht vorbereitet werden.' };
   }
-  return { ok:true, mailType, recipientEmail, recipientName, subject, textPart, htmlPart };
+  return applyMailBranding(env, { ok:true, mailType, recipientEmail, recipientName, subject, textPart, htmlPart, attachments:attachmentResult.attachments });
 }
 
 async function sendMailjetInvitation(env, payload) {
@@ -558,8 +706,31 @@ async function sendMailjetInvitation(env, payload) {
     return { ok:false, status:503, code:'MAIL_NOT_CONFIGURED', message:'Der automatische Mailversand ist noch nicht vollständig konfiguriert.' };
   }
 
-  const mail = preparedMailFromPayload(payload);
+  const mail = preparedMailFromPayload(payload, env);
   if (!mail.ok) return mail;
+
+  const mailjetMessage = {
+    From:{ Email:fromEmail, Name:fromName },
+    To:[{ Email:mail.recipientEmail, Name:mail.recipientName }],
+    Subject:mail.subject,
+    TextPart:mail.textPart,
+    HTMLPart:mail.htmlPart,
+    TrackOpens:'disabled',
+    TrackClicks:'disabled'
+  };
+  const normalAttachments = (mail.attachments || []).filter(item => !item.inline).map(item => ({
+    ContentType:item.type,
+    Filename:item.name,
+    Base64Content:item.base64
+  }));
+  const inlineAttachments = (mail.attachments || []).filter(item => item.inline).map(item => ({
+    ContentType:item.type,
+    Filename:item.name,
+    Base64Content:item.base64,
+    ContentID:item.contentId
+  }));
+  if (normalAttachments.length) mailjetMessage.Attachments = normalAttachments;
+  if (inlineAttachments.length) mailjetMessage.InlinedAttachments = inlineAttachments;
 
   let response;
   let result = null;
@@ -570,22 +741,12 @@ async function sendMailjetInvitation(env, payload) {
         'authorization':'Basic ' + btoa(apiKey + ':' + secretKey),
         'content-type':'application/json'
       },
-      body:JSON.stringify({
-        Messages:[{
-          From:{ Email:fromEmail, Name:fromName },
-          To:[{ Email:mail.recipientEmail, Name:mail.recipientName }],
-          Subject:mail.subject,
-          TextPart:mail.textPart,
-          HTMLPart:mail.htmlPart,
-          TrackOpens:'disabled',
-          TrackClicks:'disabled'
-        }]
-      })
+      body:JSON.stringify({ Messages:[mailjetMessage] })
     });
     try { result = await response.json(); } catch (_) { result = null; }
   } catch (error) {
     console.error('Mailjet request failed', error && error.message ? error.message : String(error || 'unknown'));
-    return { ok:false, status:502, code:'MAILJET_UNREACHABLE', message:'Mailjet ist momentan nicht erreichbar. Bitte den Einladungslink kopieren.' };
+    return { ok:false, status:502, code:'MAILJET_UNREACHABLE', message:'Mailjet ist momentan nicht erreichbar. Die E-Mail konnte nicht versendet werden.' };
   }
 
   const firstMessage = result && Array.isArray(result.Messages) ? result.Messages[0] : null;
@@ -597,7 +758,7 @@ async function sendMailjetInvitation(env, payload) {
       safeDetail = String(firstError && (firstError.ErrorMessage || firstError.ErrorCode) || '').slice(0, 240);
     } catch (_) {}
     console.error('Mailjet send rejected', response ? response.status : 0, safeDetail);
-    return { ok:false, status:502, code:'MAILJET_SEND_FAILED', message:'Die Einladung konnte nicht versendet werden. Bitte den Einladungslink kopieren.' };
+    return { ok:false, status:502, code:'MAILJET_SEND_FAILED', message:'Die E-Mail konnte nicht versendet werden.' };
   }
 
   const recipientResult = firstMessage && Array.isArray(firstMessage.To) ? firstMessage.To[0] : null;
@@ -662,23 +823,13 @@ async function smtpCommand(writer, reader, state, command, expectedCodes, option
   return response;
 }
 
-function buildSmtpMimeMessage(mail, fromEmail, fromName) {
-  const boundary = 'hammerschach_' + crypto.randomUUID().replace(/-/g, '');
-  const messageIdDomain = String(fromEmail.split('@')[1] || 'online.de').replace(/[^A-Za-z0-9.-]/g, '') || 'online.de';
-  const messageId = `${Date.now()}.${crypto.randomUUID().replace(/-/g, '')}@${messageIdDomain}`;
-  const headers = [
-    `Date: ${new Date().toUTCString()}`,
-    `Message-ID: <${messageId}>`,
-    `From: ${emailAddressHeader(fromName, fromEmail)}`,
-    `To: ${emailAddressHeader(mail.recipientName, mail.recipientEmail)}`,
-    `Reply-To: ${emailAddressHeader(fromName, fromEmail)}`,
-    `Subject: ${encodeEmailHeader(mail.subject)}`,
-    'MIME-Version: 1.0',
-    'Auto-Submitted: auto-generated',
-    'X-Auto-Response-Suppress: All',
-    `Content-Type: multipart/alternative; boundary="${boundary}"`
-  ];
-  const body = [
+function smtpAttachmentAsciiFilename(value) {
+  const cleaned = cleanMailAttachmentFilename(value);
+  return cleaned.replace(/[^A-Za-z0-9._-]/g, '_') || 'Anhang';
+}
+
+function smtpAlternativeBody(boundary, mail) {
+  return [
     `--${boundary}`,
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: base64',
@@ -692,6 +843,57 @@ function buildSmtpMimeMessage(mail, fromEmail, fromName) {
     `--${boundary}--`,
     ''
   ];
+}
+
+function smtpAttachmentBodyLines(boundary, attachment) {
+  const asciiName = smtpAttachmentAsciiFilename(attachment.name);
+  const encodedName = encodeURIComponent(attachment.name).replace(/'/g, '%27');
+  const disposition = attachment.inline ? 'inline' : 'attachment';
+  const lines = [
+    `--${boundary}`,
+    `Content-Type: ${attachment.type}; name="${asciiName}"`,
+    'Content-Transfer-Encoding: base64',
+    `Content-Disposition: ${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodedName}`
+  ];
+  if (attachment.inline && attachment.contentId) lines.push(`Content-ID: <${attachment.contentId}>`);
+  lines.push('', wrapExistingBase64(attachment.base64));
+  return lines;
+}
+
+function buildSmtpMimeMessage(mail, fromEmail, fromName) {
+  const token = crypto.randomUUID().replace(/-/g, '');
+  const alternativeBoundary = 'hammerschach_alt_' + token;
+  const attachment = mail.attachments && mail.attachments.length ? mail.attachments[0] : null;
+  const outerBoundary = attachment ? ('hammerschach_' + (attachment.inline ? 'related_' : 'mixed_') + token) : alternativeBoundary;
+  const messageIdDomain = String(fromEmail.split('@')[1] || 'online.de').replace(/[^A-Za-z0-9.-]/g, '') || 'online.de';
+  const messageId = `${Date.now()}.${token}@${messageIdDomain}`;
+  const headers = [
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${messageId}>`,
+    `From: ${emailAddressHeader(fromName, fromEmail)}`,
+    `To: ${emailAddressHeader(mail.recipientName, mail.recipientEmail)}`,
+    `Reply-To: ${emailAddressHeader(fromName, fromEmail)}`,
+    `Subject: ${encodeEmailHeader(mail.subject)}`,
+    'MIME-Version: 1.0',
+    'Auto-Submitted: auto-generated',
+    'X-Auto-Response-Suppress: All',
+    `Content-Type: multipart/${attachment ? (attachment.inline ? 'related' : 'mixed') : 'alternative'}; boundary="${outerBoundary}"`
+  ];
+
+  let body;
+  if (!attachment) {
+    body = smtpAlternativeBody(alternativeBoundary, mail);
+  } else {
+    body = [
+      `--${outerBoundary}`,
+      `Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`,
+      '',
+      ...smtpAlternativeBody(alternativeBoundary, mail),
+      ...smtpAttachmentBodyLines(outerBoundary, attachment),
+      `--${outerBoundary}--`,
+      ''
+    ];
+  }
   return { messageId, raw:headers.concat([''], body).join('\r\n') };
 }
 
@@ -713,7 +915,7 @@ async function sendSmtpInvitation(env, payload) {
     return { ok:false, status:503, code:'SMTP_PORT_UNSUPPORTED', message:'Für den aktuellen SMTP-Versand muss Port 465 mit SSL/TLS verwendet werden.' };
   }
 
-  const mail = preparedMailFromPayload(payload);
+  const mail = preparedMailFromPayload(payload, env);
   if (!mail.ok) return mail;
 
   let socket = null;
@@ -742,7 +944,7 @@ async function sendSmtpInvitation(env, payload) {
 
     const mime = buildSmtpMimeMessage(mail, fromEmail, fromName);
     const smtpData = dotStuffSmtpData(mime.raw) + '\r\n.';
-    await smtpCommand(writer, reader, state, smtpData, 250, { sensitive:true, timeoutMs:20000 });
+    await smtpCommand(writer, reader, state, smtpData, 250, { sensitive:true, timeoutMs:mail.attachments && mail.attachments.length ? 60000 : 20000 });
     try { await smtpCommand(writer, reader, state, 'QUIT', 221, { timeoutMs:5000 }); } catch (_) {}
 
     return { ok:true, status:200, provider:'smtp', messageId:mime.messageId };
@@ -755,7 +957,7 @@ async function sendSmtpInvitation(env, payload) {
     if (code === 550 || code === 551 || code === 553) {
       return { ok:false, status:502, code:'SMTP_RECIPIENT_REJECTED', message:'Der 1&1-Mailserver hat die Empfängeradresse abgelehnt.' };
     }
-    return { ok:false, status:502, code:'SMTP_SEND_FAILED', message:'Die Einladung konnte über das 1&1-Postfach nicht versendet werden. Bitte den Einladungslink kopieren.' };
+    return { ok:false, status:502, code:'SMTP_SEND_FAILED', message:'Die E-Mail konnte über das 1&1-Postfach nicht versendet werden.' };
   } finally {
     try { if (writer) writer.releaseLock(); } catch (_) {}
     try { if (reader) reader.releaseLock(); } catch (_) {}
@@ -1360,7 +1562,8 @@ async function waitForMinimumResponseTime(startedAt, minimumMs = 450) {
 
 const DEFAULT_EMAIL_NOTIFICATIONS = Object.freeze({
   dailyTurnEnabled:true,
-  dailyResultEnabled:true
+  dailyResultEnabled:true,
+  memberNewsEnabled:false
 });
 let userEmailPreferencesTableReady = false;
 let emailNotificationLogTableReady = false;
@@ -1374,9 +1577,15 @@ async function ensureUserEmailPreferencesTable(env) {
        user_id TEXT PRIMARY KEY,
        daily_turn_enabled INTEGER NOT NULL DEFAULT 1,
        daily_result_enabled INTEGER NOT NULL DEFAULT 1,
+       member_news_enabled INTEGER NOT NULL DEFAULT 0,
        updated_at TEXT NOT NULL
      )`
   ).run();
+  try {
+    await env.DB.prepare(`ALTER TABLE user_email_preferences ADD COLUMN member_news_enabled INTEGER NOT NULL DEFAULT 0`).run();
+  } catch (_) {
+    /* Spalte existiert bereits. */
+  }
   userEmailPreferencesTableReady = true;
   return true;
 }
@@ -1390,7 +1599,8 @@ function normalizeEmailNotificationPreferences(value) {
   };
   return {
     dailyTurnEnabled:boolValue('dailyTurnEnabled', 'daily_turn_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyTurnEnabled),
-    dailyResultEnabled:boolValue('dailyResultEnabled', 'daily_result_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyResultEnabled)
+    dailyResultEnabled:boolValue('dailyResultEnabled', 'daily_result_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyResultEnabled),
+    memberNewsEnabled:boolValue('memberNewsEnabled', 'member_news_enabled', DEFAULT_EMAIL_NOTIFICATIONS.memberNewsEnabled)
   };
 }
 
@@ -1398,7 +1608,7 @@ async function getUserEmailPreferences(env, userId) {
   const id = String(userId || '').trim();
   if (!id || !(await ensureUserEmailPreferencesTable(env))) return { ...DEFAULT_EMAIL_NOTIFICATIONS };
   const row = await env.DB.prepare(
-    `SELECT daily_turn_enabled, daily_result_enabled
+    `SELECT daily_turn_enabled, daily_result_enabled, member_news_enabled
        FROM user_email_preferences
       WHERE user_id = ?
       LIMIT 1`
@@ -1412,13 +1622,20 @@ async function setUserEmailPreferences(env, userId, preferences) {
   const normalized = normalizeEmailNotificationPreferences(preferences);
   const updatedAt = new Date().toISOString();
   await env.DB.prepare(
-    `INSERT INTO user_email_preferences (user_id, daily_turn_enabled, daily_result_enabled, updated_at)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO user_email_preferences (user_id, daily_turn_enabled, daily_result_enabled, member_news_enabled, updated_at)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        daily_turn_enabled = excluded.daily_turn_enabled,
        daily_result_enabled = excluded.daily_result_enabled,
+       member_news_enabled = excluded.member_news_enabled,
        updated_at = excluded.updated_at`
-  ).bind(id, normalized.dailyTurnEnabled ? 1 : 0, normalized.dailyResultEnabled ? 1 : 0, updatedAt).run();
+  ).bind(
+    id,
+    normalized.dailyTurnEnabled ? 1 : 0,
+    normalized.dailyResultEnabled ? 1 : 0,
+    normalized.memberNewsEnabled ? 1 : 0,
+    updatedAt
+  ).run();
   return normalized;
 }
 
@@ -2312,6 +2529,272 @@ async function deleteUserAsAdmin(env, adminUser, targetId) {
 }
 
 
+const ADMIN_MEMBER_MESSAGE_MAX_RECIPIENTS = 250;
+const ADMIN_MEMBER_MESSAGE_MAX_LENGTH = 5000;
+const ADMIN_MEMBER_MESSAGE_DUPLICATE_WINDOW_MS = 15 * 60 * 1000;
+let adminMemberMessageTablesReady = false;
+
+function normalizeAdminMemberMessageKind(value) {
+  return String(value || '').toLowerCase() === 'system' ? 'system' : 'news';
+}
+
+function cleanAdminMemberMessageSubject(value) {
+  return String(value || '').replace(/[\r\n<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+function cleanAdminMemberMessageText(value) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim()
+    .slice(0, ADMIN_MEMBER_MESSAGE_MAX_LENGTH);
+}
+
+function adminMemberMessageHtmlParagraphs(value) {
+  const text = cleanAdminMemberMessageText(value);
+  return text.split(/\n{2,}/).map(block => {
+    const body = escapeEmailHtml(block).replace(/\n/g, '<br>');
+    return `<p style="margin:0 0 14px;line-height:1.6;">${body}</p>`;
+  }).join('');
+}
+
+async function ensureAdminMemberMessageTables(env) {
+  if (!env || !env.DB) return false;
+  if (adminMemberMessageTablesReady) return true;
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS admin_member_messages (
+         id TEXT PRIMARY KEY,
+         message_kind TEXT NOT NULL,
+         subject TEXT NOT NULL,
+         content_hash TEXT NOT NULL,
+         audience_count INTEGER NOT NULL DEFAULT 0,
+         sent_count INTEGER NOT NULL DEFAULT 0,
+         failed_count INTEGER NOT NULL DEFAULT 0,
+         status TEXT NOT NULL,
+         created_by TEXT NOT NULL,
+         created_at TEXT NOT NULL,
+         completed_at TEXT
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS admin_member_message_recipients (
+         message_id TEXT NOT NULL,
+         user_id TEXT NOT NULL,
+         status TEXT NOT NULL,
+         error_code TEXT,
+         updated_at TEXT NOT NULL,
+         PRIMARY KEY (message_id, user_id)
+       )`
+    )
+  ]);
+  await env.DB.batch([
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_admin_member_messages_hash_time ON admin_member_messages (content_hash, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_admin_member_message_recipients_status ON admin_member_message_recipients (message_id, status)`)
+  ]);
+  adminMemberMessageTablesReady = true;
+  return true;
+}
+
+async function loadAdminMemberMessageRecipients(env, kind) {
+  const messageKind = normalizeAdminMemberMessageKind(kind);
+  await Promise.all([ensureUserEmailPreferencesTable(env), ensureAccountSecurityTables(env)]);
+  const result = await env.DB.prepare(
+    `SELECT users.id, users.username, users.email, users.disabled, users.deleted_at,
+            status.email AS status_email, status.verified AS status_verified,
+            preferences.member_news_enabled
+       FROM users
+       LEFT JOIN user_email_status status ON status.user_id = users.id
+       LEFT JOIN user_email_preferences preferences ON preferences.user_id = users.id
+      ORDER BY LOWER(users.username), users.created_at`
+  ).all();
+  const recipients = [];
+  for (const row of result && result.results ? result.results : []) {
+    if (!row || row.disabled === 1 || row.disabled === true || row.deleted_at) continue;
+    const email = normalizeEmail(row.email);
+    if (!email) continue;
+    const statusEmail = normalizeEmail(row.status_email);
+    const verified = !row.status_email || (statusEmail === email && Number(row.status_verified) === 1);
+    if (!verified) continue;
+    const adminCopy = isAdminUser(row, env);
+    /* Andili erhält jede tatsächlich versendete Mitglieder-Information als
+       Kontrollkopie. Bei Neuigkeiten gilt für alle anderen Mitglieder weiterhin
+       ausschließlich die freiwillige Einwilligung aus der Accountverwaltung. */
+    if (messageKind === 'news' && !adminCopy && Number(row.member_news_enabled || 0) !== 1) continue;
+    recipients.push({
+      id:String(row.id || ''),
+      username:cleanDisplayName(row.username) || 'Schachfreund',
+      email,
+      adminCopy
+    });
+  }
+  return recipients;
+}
+
+function prepareAdminMemberMessageEmail(env, payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const kind = normalizeAdminMemberMessageKind(payload && payload.kind);
+  const adminCopy = payload && payload.adminCopy === true;
+  const subject = cleanAdminMemberMessageSubject(payload && payload.subject);
+  const messageText = cleanAdminMemberMessageText(payload && payload.message);
+  const attachmentResult = normalizeMailAttachment(payload && payload.attachment);
+  if (!attachmentResult.ok) return attachmentResult;
+  const attachment = attachmentResult.attachment;
+  const publicUrl = configuredGamerPublicUrl(env);
+  if (!recipientEmail || subject.length < 3 || messageText.length < 3) {
+    return { ok:false, status:400, code:'INVALID_MEMBER_MESSAGE', message:'Betreff und Nachricht sind nicht vollständig.' };
+  }
+  const typeLabel = kind === 'system' ? 'Wichtige Systeminformation' : 'Hammerschach-Neuigkeiten';
+  const preferenceText = kind === 'news'
+    ? (adminCopy
+      ? 'Du erhältst diese Nachricht als Administrator-Kontrollkopie des versendeten Mitgliedertextes.'
+      : 'Du erhältst diese Nachricht, weil du Hammerschach-Neuigkeiten in deiner Accountverwaltung aktiviert hast. Dort kannst du diese Einstellung jederzeit wieder abschalten.')
+    : (adminCopy
+      ? 'Du erhältst diese wichtige Systeminformation zugleich als Administrator-Kontrollkopie.'
+      : 'Diese wichtige Systeminformation betrifft die Nutzung deines Hammerschach-Accounts.');
+  const attachmentText = attachment
+    ? `
+
+Anhang: ${attachment.name} (${formatMailAttachmentSize(attachment.size)})${attachment.inline ? ' – das Bild ist zusätzlich im HTML-Mailinhalt eingebunden.' : ''}`
+    : '';
+  const textPart = `Hallo ${recipientName},
+
+${messageText}${attachmentText}
+
+${preferenceText}${publicUrl ? `
+
+Hammerschach-Gamer öffnen:
+${publicUrl}` : ''}
+
+Viele Grüße
+Hammerschach-Gamer`;
+  const buttonHtml = publicUrl
+    ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(publicUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Hammerschach-Gamer öffnen</a></p>`
+    : '';
+  const attachmentHtml = !attachment
+    ? ''
+    : attachment.inline
+      ? `<div style="margin:20px 0;text-align:center;"><img src="cid:${escapeEmailHtml(attachment.contentId)}" alt="${escapeEmailHtml(attachment.name)}" style="display:block;max-width:100%;max-height:460px;width:auto;height:auto;margin:0 auto;border:0;border-radius:10px;"><div style="margin-top:7px;font-size:12px;color:#777;">${escapeEmailHtml(attachment.name)} · ${escapeEmailHtml(formatMailAttachmentSize(attachment.size))}</div></div>`
+      : `<div style="margin:18px 0;padding:11px 13px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;font-size:13px;line-height:1.45;"><strong>Anhang:</strong> ${escapeEmailHtml(attachment.name)} · ${escapeEmailHtml(formatMailAttachmentSize(attachment.size))}</div>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;letter-spacing:.04em;text-transform:uppercase;color:#777;margin-bottom:7px;">${escapeEmailHtml(typeLabel)}</div><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(subject)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p>${adminMemberMessageHtmlParagraphs(messageText)}${attachmentHtml}${buttonHtml}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;line-height:1.45;">${escapeEmailHtml(preferenceText)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return {
+    ok:true,
+    mailType:kind === 'system' ? 'member_system' : 'member_news',
+    recipientEmail,
+    recipientName,
+    subject,
+    textPart,
+    htmlPart,
+    attachments:attachment ? [attachment] : []
+  };
+}
+
+async function adminMemberMessageAudience(env, kind) {
+  const messageKind = normalizeAdminMemberMessageKind(kind);
+  const recipients = await loadAdminMemberMessageRecipients(env, messageKind);
+  return {
+    kind:messageKind,
+    count:recipients.length,
+    description:messageKind === 'system'
+      ? 'Bestätigte Mailadressen aller aktiven Mitglieder – einschließlich Andili'
+      : 'Mitglieder mit bestätigter Mailadresse und Einwilligung – Andili erhält zusätzlich eine Kontrollkopie'
+  };
+}
+
+async function sendAdminMemberMessage(env, adminUser, payload) {
+  const kind = normalizeAdminMemberMessageKind(payload && payload.kind);
+  const subject = cleanAdminMemberMessageSubject(payload && payload.subject);
+  const message = cleanAdminMemberMessageText(payload && payload.message);
+  const attachmentResult = normalizeMailAttachment(payload && payload.attachment);
+  if (!attachmentResult.ok) return attachmentResult;
+  const attachment = attachmentResult.attachment;
+  if (subject.length < 3 || message.length < 3) {
+    return { ok:false, status:400, code:'INVALID_MEMBER_MESSAGE', message:'Bitte Betreff und Nachricht vollständig eingeben.' };
+  }
+  const recipients = await loadAdminMemberMessageRecipients(env, kind);
+  if (!recipients.length) {
+    return { ok:false, status:400, code:'NO_RECIPIENTS', message:'Für diese Nachrichtenart gibt es derzeit keine berechtigten Empfänger.' };
+  }
+  if (recipients.length > ADMIN_MEMBER_MESSAGE_MAX_RECIPIENTS) {
+    return { ok:false, status:400, code:'TOO_MANY_RECIPIENTS', message:`Der Direktversand ist auf ${ADMIN_MEMBER_MESSAGE_MAX_RECIPIENTS} Empfänger begrenzt. Für größere Verteiler muss eine Queue eingerichtet werden.` };
+  }
+  await ensureAdminMemberMessageTables(env);
+  const attachmentDigest = attachment ? await sha256Hex(attachment.base64) : '';
+  const contentHash = await sha256Hex(`${kind}\n${subject}\n${message}\n${attachment ? attachment.name : ''}\n${attachment ? attachment.type : ''}\n${attachment && attachment.inline ? 'inline' : 'attachment'}\n${attachmentDigest}`);
+  const duplicateSince = new Date(Date.now() - ADMIN_MEMBER_MESSAGE_DUPLICATE_WINDOW_MS).toISOString();
+  const duplicate = await env.DB.prepare(
+    `SELECT id, status FROM admin_member_messages WHERE content_hash = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1`
+  ).bind(contentHash, duplicateSince).first();
+  if (duplicate) {
+    return { ok:false, status:409, code:'DUPLICATE_MEMBER_MESSAGE', message:'Eine inhaltlich identische Mitglieder-Nachricht wurde innerhalb der letzten 15 Minuten bereits gestartet.' };
+  }
+
+  const messageId = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO admin_member_messages
+       (id, message_kind, subject, content_hash, audience_count, sent_count, failed_count, status, created_by, created_at, completed_at)
+     VALUES (?, ?, ?, ?, ?, 0, 0, 'sending', ?, ?, NULL)`
+  ).bind(messageId, kind, subject, contentHash, recipients.length, String(adminUser.id || ''), createdAt).run();
+
+  let sent = 0;
+  let failed = 0;
+  const failures = [];
+  const chunkSize = attachment ? 1 : 3;
+  for (let index = 0; index < recipients.length; index += chunkSize) {
+    const chunk = recipients.slice(index, index + chunkSize);
+    const results = await Promise.all(chunk.map(async recipient => {
+      let result;
+      try {
+        const mail = prepareAdminMemberMessageEmail(env, {
+          recipientEmail:recipient.email,
+          recipientName:recipient.username,
+          kind,
+          subject,
+          message,
+          attachment,
+          adminCopy:recipient.adminCopy === true
+        });
+        result = await sendInvitationEmail(env, { preparedMail:mail, mailType:mail.mailType });
+      } catch (error) {
+        result = { ok:false, code:'MEMBER_MESSAGE_SEND_FAILED', message:error && error.message ? error.message : 'Versand fehlgeschlagen.' };
+      }
+      const status = result && result.ok ? 'sent' : 'failed';
+      await env.DB.prepare(
+        `INSERT INTO admin_member_message_recipients (message_id, user_id, status, error_code, updated_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(message_id, user_id) DO UPDATE SET status = excluded.status, error_code = excluded.error_code, updated_at = excluded.updated_at`
+      ).bind(messageId, recipient.id, status, status === 'failed' ? String(result && result.code || 'MAIL_FAILED').slice(0, 64) : null, new Date().toISOString()).run();
+      return { recipient, result };
+    }));
+    for (const item of results) {
+      if (item.result && item.result.ok) sent += 1;
+      else {
+        failed += 1;
+        if (failures.length < 10) failures.push({ username:item.recipient.username, code:String(item.result && item.result.code || 'MAIL_FAILED') });
+      }
+    }
+  }
+  const completedAt = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE admin_member_messages SET sent_count = ?, failed_count = ?, status = ?, completed_at = ? WHERE id = ?`
+  ).bind(sent, failed, failed ? (sent ? 'partial' : 'failed') : 'completed', completedAt, messageId).run();
+  return {
+    ok:true,
+    messageId,
+    kind,
+    audienceCount:recipients.length,
+    sentCount:sent,
+    failedCount:failed,
+    attachmentName:attachment ? attachment.name : '',
+    failures,
+    message:failed
+      ? `${sent} Nachricht${sent === 1 ? '' : 'en'} versendet, ${failed} fehlgeschlagen.`
+      : `${sent} Mitglieder-Nachricht${sent === 1 ? '' : 'en'} erfolgreich versendet.`
+  };
+}
+
 let adminSettingsTableReady = false;
 async function ensureAdminSettingsTable(env) {
   if (!env || !env.DB) return false;
@@ -2382,6 +2865,7 @@ async function buildAdminOverview(env) {
     ensureEmailNotificationLogTable(env),
     ensureMailDeliveryLogTable(env),
     ensureAdminSettingsTable(env),
+    ensureAdminMemberMessageTables(env),
     ensureStatsTable(env)
   ]);
 
@@ -2459,7 +2943,8 @@ async function buildAdminOverview(env) {
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
     'users','sessions','daily_games','public_games','rated_games','user_ratings',
-    'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log'
+    'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
+    'admin_member_messages','admin_member_message_recipients'
   ];
   const rowCounts = {};
   for (const tableName of importantTableNames) {
@@ -2737,7 +3222,8 @@ async function handleAuthApi(request, env, url) {
     try {
       const preferences = await setUserEmailPreferences(env, session.user.id, {
         dailyTurnEnabled:body.dailyTurnEnabled,
-        dailyResultEnabled:body.dailyResultEnabled
+        dailyResultEnabled:body.dailyResultEnabled,
+        memberNewsEnabled:body.memberNewsEnabled
       });
       const user = await loadPrivateUser(env, session.user.id) || session.user;
       return json({
@@ -3383,6 +3869,57 @@ async function handleAuthApi(request, env, url) {
     const limit = url.searchParams.get('limit') || 50;
     const users = await listMembers(env, session.user, limit);
     return json({ ok: true, users, isAdmin: isAdminUser(session.user, env) });
+  }
+
+  if (url.pathname === '/api/admin/member-message/audience' && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      return json({ ok:true, audience:await adminMemberMessageAudience(env, url.searchParams.get('kind')) });
+    } catch (error) {
+      console.error('Admin member-message audience failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ ok:false, code:'MEMBER_MESSAGE_AUDIENCE_FAILED', message:'Die Empfängerzahl konnte nicht ermittelt werden.' }, { status:500 });
+    }
+  }
+
+  if (url.pathname === '/api/admin/member-message/test' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Nachricht konnte nicht gelesen werden.' }, { status:400 });
+    const privateAdmin = await loadPrivateUser(env, admin.session.user.id);
+    const adminEmail = normalizeEmail(privateAdmin && privateAdmin.email);
+    if (!privateAdmin || !adminEmail) return json({ ok:false, code:'ADMIN_EMAIL_MISSING', message:'Beim Admin-Account ist keine gültige Mailadresse hinterlegt.' }, { status:400 });
+    const emailState = await getUserEmailSecurityState(env, privateAdmin);
+    if (!emailState.emailVerified) return json({ ok:false, code:'ADMIN_EMAIL_NOT_VERIFIED', message:'Die Admin-Mailadresse muss vor dem Testversand bestätigt sein.' }, { status:400 });
+    const mail = prepareAdminMemberMessageEmail(env, {
+      recipientEmail:adminEmail,
+      recipientName:privateAdmin.username,
+      kind:body.kind,
+      subject:`TEST: ${cleanAdminMemberMessageSubject(body.subject)}`,
+      message:body.message,
+      attachment:body.attachment
+    });
+    if (!mail.ok) return json({ ok:false, code:mail.code, message:mail.message }, { status:mail.status || 400 });
+    const result = await sendInvitationEmail(env, { preparedMail:mail, mailType:mail.mailType + '_test' });
+    if (!result.ok) return json({ ok:false, code:result.code || 'TEST_MAIL_FAILED', message:result.message || 'Die Testmail konnte nicht versendet werden.' }, { status:result.status || 502 });
+    return json({ ok:true, message:'Testmail wurde an deine bestätigte Admin-Mailadresse versendet' + (mail.attachments && mail.attachments.length ? ' – einschließlich Anhang.' : '.') });
+  }
+
+  if (url.pathname === '/api/admin/member-message/send' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Nachricht konnte nicht gelesen werden.' }, { status:400 });
+    if (body.confirmed !== true) return json({ ok:false, code:'CONFIRMATION_REQUIRED', message:'Bitte den geprüften Versand ausdrücklich bestätigen.' }, { status:400 });
+    try {
+      const result = await sendAdminMemberMessage(env, admin.session.user, body);
+      if (!result.ok) return json({ ok:false, code:result.code, message:result.message }, { status:result.status || 400 });
+      return json(result);
+    } catch (error) {
+      console.error('Admin member-message send failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ ok:false, code:'MEMBER_MESSAGE_SEND_FAILED', message:'Die Mitglieder-Nachricht konnte nicht vollständig verarbeitet werden.' }, { status:500 });
+    }
   }
 
   if (url.pathname === '/api/admin/overview' && request.method === 'GET') {
@@ -6476,8 +7013,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'GET /api/admin/overview', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'manual_backup_marker'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
