@@ -311,6 +311,37 @@
   .admin-overview-status.success{color:#226b36;}
   .admin-overview-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
   .admin-overview-actions button{border-radius:12px;min-height:38px;}
+  .admin-member-message-open-btn{margin-right:auto;background:linear-gradient(180deg,#fff7e7 0%,#f0dfb8 100%)!important;color:#6b4a10!important;border-color:rgba(107,74,16,.26)!important;}
+  .admin-message-modal{width:700px;max-width:100%;max-height:90vh;overflow:auto;}
+  .admin-message-form{display:flex;flex-direction:column;gap:9px;}
+  .admin-message-select,.admin-message-textarea{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-size:15px;font-weight:800;outline:none;}
+  .admin-message-select:focus,.admin-message-textarea:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
+  .admin-message-textarea{min-height:190px;resize:vertical;font-family:Arial,sans-serif;line-height:1.45;}
+  .admin-message-audience{border-radius:12px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.14);padding:9px 10px;font-size:13px;font-weight:900;color:#555;line-height:1.4;}
+  .admin-message-preview{border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.10);padding:13px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.75);}
+  .admin-message-preview-title{font-size:18px;font-weight:900;color:#843f46;margin-bottom:8px;overflow-wrap:anywhere;}
+  .admin-message-preview-body{font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#333;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .admin-message-meta-row{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;font-weight:800;color:#777;}
+  .admin-message-confirm{display:flex;align-items:flex-start;gap:9px;border-radius:11px;background:#fff7e7;border:1px solid rgba(107,74,16,.18);padding:9px 10px;font-size:13px;font-weight:900;color:#5f471c;line-height:1.35;cursor:pointer;}
+  .admin-message-confirm input{width:18px;height:18px;flex:0 0 18px;margin:0;accent-color:#843f46;}
+  .admin-message-status{min-height:19px;font-size:13px;font-weight:900;color:#666;line-height:1.35;}
+  .admin-message-status.error{color:#9A2D33;}
+  .admin-message-status.success{color:#226b36;}
+  .admin-message-send-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .admin-message-attachment-box{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:11px 12px;display:flex;flex-direction:column;gap:8px;}
+  .admin-message-file-input{width:100%;box-sizing:border-box;border-radius:11px;border:1px solid rgba(132,63,70,.18);background:#fff;padding:8px;font-size:13px;font-weight:800;color:#444;}
+  .admin-message-file-input::file-selector-button{margin-right:10px;border:1px solid rgba(0,0,0,.12);border-radius:9px;background:linear-gradient(180deg,#fff 0%,#ececef 100%);color:#843f46;padding:7px 10px;font-family:inherit;font-weight:900;cursor:pointer;}
+  .admin-message-file-note{font-size:12px;font-weight:800;color:#666;line-height:1.35;}
+  .admin-message-attachment-selected{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-radius:11px;background:#fff;border:1px solid rgba(132,63,70,.14);padding:9px 10px;}
+  .admin-message-attachment-selected[hidden]{display:none!important;}
+  .admin-message-attachment-name{font-size:13px;font-weight:900;color:#333;overflow-wrap:anywhere;}
+  .admin-message-attachment-meta{font-size:11px;font-weight:800;color:#777;margin-top:2px;}
+  .admin-message-attachment-remove{min-height:34px!important;border-radius:10px!important;padding:6px 9px!important;font-size:12px!important;}
+  .admin-message-inline-option{display:flex;align-items:flex-start;gap:8px;font-size:12px;font-weight:900;color:#555;line-height:1.35;cursor:pointer;}
+  .admin-message-inline-option[hidden]{display:none!important;}
+  .admin-message-inline-option input{width:17px;height:17px;flex:0 0 17px;margin:0;accent-color:#843f46;}
+  .admin-message-attachment-preview{max-width:100%;max-height:230px;display:block;margin:4px auto 0;border-radius:10px;border:1px solid rgba(0,0,0,.10);object-fit:contain;background:#fff;}
+  .admin-message-attachment-preview[hidden]{display:none!important;}
 
   .invite-modal{width:560px;max-width:100%;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);}
   .invite-modal h3{margin:0 0 8px;font-size:22px;color:#222;}
@@ -581,6 +612,10 @@
           <h4>20. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
           <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
+
+          <h4>21. Mitglieder-Informationen und Maildarstellung</h4>
+          <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden.</p>
+          <p>Die Nachrichten werden einzeln und mit persönlicher Anrede versendet; Mailadressen anderer Mitglieder sind nicht sichtbar. Optional kann eine PDF-, JPG-, PNG- oder WebP-Datei bis 3 MB beigefügt werden. Ausgewählte Bilder lassen sich zusätzlich direkt im Mailinhalt anzeigen. Sämtliche HTML-Mails des Hammerschach-Gamers enthalten oben das Gamer-Logo als einheitlichen Mailkopf. Manche Mailprogramme laden externe Bilder erst nach Zustimmung des Empfängers; der vollständige Text bleibt trotzdem lesbar.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -653,7 +688,7 @@
             <div class="auth-ratings-note">Startwert 1500. Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating.</div>
           </div>
           <div id="authEmailNotifications" class="auth-email-notifications">
-            <div class="auth-email-notifications-title">Daily-E-Mail-Benachrichtigungen</div>
+            <div class="auth-email-notifications-title">E-Mail-Benachrichtigungen</div>
             <label class="auth-email-option" for="dailyTurnEmailCheckbox">
               <input id="dailyTurnEmailCheckbox" type="checkbox" checked />
               <span>Mail senden, sobald ich in einer Daily-Partie am Zug bin</span>
@@ -662,7 +697,11 @@
               <input id="dailyResultEmailCheckbox" type="checkbox" checked />
               <span>Mail senden, wenn eine meiner Daily-Partien beendet wurde</span>
             </label>
-            <div class="auth-email-notifications-note">Die Mails werden nur an die bestätigte Account-Mailadresse geschickt. Es gibt keine wiederholten Erinnerungen vor Ablauf einer Zugfrist.</div>
+            <label class="auth-email-option" for="memberNewsEmailCheckbox">
+              <input id="memberNewsEmailCheckbox" type="checkbox" />
+              <span>Hammerschach-Neuigkeiten und Funktionsupdates per E-Mail erhalten</span>
+            </label>
+            <div class="auth-email-notifications-note">Alle Mails werden ausschließlich an die bestätigte Account-Mailadresse geschickt. Neuigkeiten sind freiwillig und standardmäßig ausgeschaltet.</div>
             <div class="auth-email-notifications-actions">
               <button id="emailNotificationsSaveBtn" class="button-flat auth-email-notifications-save" type="button">Einstellungen speichern</button>
               <div id="emailNotificationsStatus" class="auth-email-notifications-status" aria-live="polite"></div>
@@ -792,8 +831,66 @@
         </div>
         <div id="adminOverviewStatus" class="admin-overview-status" aria-live="polite"></div>
         <div class="admin-overview-actions">
+          <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminMessageBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal admin-message-modal" role="dialog" aria-modal="true" aria-labelledby="adminMessageTitle">
+        <h3 id="adminMessageTitle">Mitglieder-Information</h3>
+        <p>Verfasse eine persönliche Nachricht, die vom Worker einzeln an die berechtigten Mitglieder versendet wird. Mailadressen werden dabei niemals im Browser angezeigt.</p>
+        <div class="admin-message-form">
+          <label class="identity-label" for="adminMessageKindSelect">Nachrichtenart</label>
+          <select id="adminMessageKindSelect" class="admin-message-select">
+            <option value="news">Neuigkeiten und Funktionsupdates</option>
+            <option value="system">Wichtige Systeminformation</option>
+          </select>
+          <div id="adminMessageAudience" class="admin-message-audience" aria-live="polite">Empfängerzahl wird ermittelt…</div>
+
+          <label class="identity-label" for="adminMessageSubjectInput">Betreff</label>
+          <input id="adminMessageSubjectInput" class="identity-input" type="text" maxlength="120" autocomplete="off" placeholder="z. B. Neue Funktionen im Hammerschach-Gamer" />
+
+          <label class="identity-label" for="adminMessageTextInput">Nachricht</label>
+          <textarea id="adminMessageTextInput" class="admin-message-textarea" maxlength="5000" placeholder="Nachricht an die Mitglieder schreiben…"></textarea>
+          <div class="admin-message-meta-row"><span>Die Anrede „Hallo Benutzername“ wird automatisch ergänzt.</span><span id="adminMessageCharCount">0 / 5000</span></div>
+
+          <div class="identity-label">Optionaler Anhang</div>
+          <div class="admin-message-attachment-box">
+            <input id="adminMessageAttachmentInput" class="admin-message-file-input" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" />
+            <div class="admin-message-file-note">Eine Datei bis 3 MB: PDF, JPG, PNG oder WebP. Der Anhang wird sowohl mit der Testmail als auch mit der Mitglieder-Nachricht versendet.</div>
+            <div id="adminMessageAttachmentSelected" class="admin-message-attachment-selected" hidden>
+              <div>
+                <div id="adminMessageAttachmentName" class="admin-message-attachment-name"></div>
+                <div id="adminMessageAttachmentMeta" class="admin-message-attachment-meta"></div>
+              </div>
+              <button id="adminMessageAttachmentRemoveBtn" class="button-flat admin-message-attachment-remove" type="button">Entfernen</button>
+            </div>
+            <label id="adminMessageInlineOption" class="admin-message-inline-option" for="adminMessageInlineCheckbox" hidden>
+              <input id="adminMessageInlineCheckbox" type="checkbox" checked />
+              <span>Bild zusätzlich direkt im Mailinhalt anzeigen</span>
+            </label>
+            <img id="adminMessageAttachmentPreview" class="admin-message-attachment-preview" alt="Vorschau des ausgewählten Bildes" hidden />
+          </div>
+
+          <div class="identity-label">Vorschau des Inhalts</div>
+          <div class="admin-message-preview" aria-live="polite">
+            <div id="adminMessagePreviewTitle" class="admin-message-preview-title">Betreff der Nachricht</div>
+            <div id="adminMessagePreviewBody" class="admin-message-preview-body">Der Nachrichtentext erscheint hier.</div>
+          </div>
+
+          <label class="admin-message-confirm" for="adminMessageConfirmCheckbox">
+            <input id="adminMessageConfirmCheckbox" type="checkbox" />
+            <span>Ich habe Nachrichtenart, Empfängergruppe, Betreff, Text und gegebenenfalls den Anhang geprüft.</span>
+          </label>
+          <div id="adminMessageStatus" class="admin-message-status" aria-live="polite"></div>
+        </div>
+        <div class="identity-actions">
+          <button id="adminMessageCloseBtn" class="button-flat" type="button">Schließen</button>
+          <button id="adminMessageTestBtn" class="button-flat" type="button">Testmail an mich</button>
+          <button id="adminMessageSendBtn" class="admin-message-send-btn" type="button" disabled>Jetzt versenden</button>
         </div>
       </div>
     </div>
@@ -2334,6 +2431,7 @@ const authRatingsGrid = document.getElementById('authRatingsGrid');
 const authEmailNotifications = document.getElementById('authEmailNotifications');
 const dailyTurnEmailCheckbox = document.getElementById('dailyTurnEmailCheckbox');
 const dailyResultEmailCheckbox = document.getElementById('dailyResultEmailCheckbox');
+const memberNewsEmailCheckbox = document.getElementById('memberNewsEmailCheckbox');
 const emailNotificationsSaveBtn = document.getElementById('emailNotificationsSaveBtn');
 const emailNotificationsStatus = document.getElementById('emailNotificationsStatus');
 const accountUsernameOpenBtn = document.getElementById('accountUsernameOpenBtn');
@@ -2356,6 +2454,28 @@ const adminBackupMarkBtn = document.getElementById('adminBackupMarkBtn');
 const adminOverviewStatus = document.getElementById('adminOverviewStatus');
 const adminOverviewRefreshBtn = document.getElementById('adminOverviewRefreshBtn');
 const adminOverviewCloseBtn = document.getElementById('adminOverviewCloseBtn');
+const adminMemberMessageOpenBtn = document.getElementById('adminMemberMessageOpenBtn');
+const adminMessageBackdrop = document.getElementById('adminMessageBackdrop');
+const adminMessageKindSelect = document.getElementById('adminMessageKindSelect');
+const adminMessageAudience = document.getElementById('adminMessageAudience');
+const adminMessageSubjectInput = document.getElementById('adminMessageSubjectInput');
+const adminMessageTextInput = document.getElementById('adminMessageTextInput');
+const adminMessageCharCount = document.getElementById('adminMessageCharCount');
+const adminMessageAttachmentInput = document.getElementById('adminMessageAttachmentInput');
+const adminMessageAttachmentSelected = document.getElementById('adminMessageAttachmentSelected');
+const adminMessageAttachmentName = document.getElementById('adminMessageAttachmentName');
+const adminMessageAttachmentMeta = document.getElementById('adminMessageAttachmentMeta');
+const adminMessageAttachmentRemoveBtn = document.getElementById('adminMessageAttachmentRemoveBtn');
+const adminMessageInlineOption = document.getElementById('adminMessageInlineOption');
+const adminMessageInlineCheckbox = document.getElementById('adminMessageInlineCheckbox');
+const adminMessageAttachmentPreview = document.getElementById('adminMessageAttachmentPreview');
+const adminMessagePreviewTitle = document.getElementById('adminMessagePreviewTitle');
+const adminMessagePreviewBody = document.getElementById('adminMessagePreviewBody');
+const adminMessageConfirmCheckbox = document.getElementById('adminMessageConfirmCheckbox');
+const adminMessageStatus = document.getElementById('adminMessageStatus');
+const adminMessageCloseBtn = document.getElementById('adminMessageCloseBtn');
+const adminMessageTestBtn = document.getElementById('adminMessageTestBtn');
+const adminMessageSendBtn = document.getElementById('adminMessageSendBtn');
 const accountEditBackdrop = document.getElementById('accountEditBackdrop');
 const accountEditTitle = document.getElementById('accountEditTitle');
 const accountEditIntro = document.getElementById('accountEditIntro');
@@ -2821,13 +2941,13 @@ const ADMIN_DETAIL_LABELS = {
 const ADMIN_MAIL_TYPE_LABELS = {
   invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset',
   email_change_verification:'Neue Mailadresse', email_change_notice:'Hinweis zur Mailänderung',
-  daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', transactional:'Systemmail'
+  daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', member_news:'Mitglieder-Neuigkeiten', member_system:'Mitglieder-Systeminfo', member_news_test:'Test: Neuigkeiten', member_system_test:'Test: Systeminfo', transactional:'Systemmail'
 };
 const ADMIN_TABLE_LABELS = {
   users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',
   rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', auth_security_events:'Sicherheitsereignisse',
   auth_rate_limit_log:'Rate-Limit-Einträge', account_action_tokens:'Aktionslinks', mail_delivery_log:'Mailprotokoll',
-  email_notification_log:'Daily-Mailprotokoll'
+  email_notification_log:'Daily-Mailprotokoll', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger'
 };
 function renderAdminSecurityEvents(events){
   if(!adminSecurityEvents) return;
@@ -2992,6 +3112,254 @@ if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.addEventListener('click', re
 if(adminBackupMarkBtn) adminBackupMarkBtn.addEventListener('click', markAdminBackupNow);
 if(adminOverviewCloseBtn) adminOverviewCloseBtn.addEventListener('click', () => closeAdminOverview(true));
 if(adminOverviewBackdrop) adminOverviewBackdrop.addEventListener('click', ev => { if(ev.target === adminOverviewBackdrop) closeAdminOverview(true); });
+
+const ADMIN_MESSAGE_ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
+const ADMIN_MESSAGE_ATTACHMENT_TYPES = {
+  'application/pdf':['pdf'],
+  'image/jpeg':['jpg','jpeg'],
+  'image/png':['png'],
+  'image/webp':['webp']
+};
+let adminMessageAudienceCount = 0;
+let adminMessageBusy = false;
+let selectedAdminMessageAttachment = null;
+function adminMessageFileExtension(name){
+  const match = String(name || '').toLowerCase().match(/\.([a-z0-9]{1,8})$/);
+  return match ? match[1] : '';
+}
+function adminMessageMimeFromFile(file){
+  const browserType = String(file && file.type || '').toLowerCase();
+  if(ADMIN_MESSAGE_ATTACHMENT_TYPES[browserType]) return browserType;
+  const extension = adminMessageFileExtension(file && file.name);
+  for(const [type, extensions] of Object.entries(ADMIN_MESSAGE_ATTACHMENT_TYPES)){
+    if(extensions.includes(extension)) return type;
+  }
+  return '';
+}
+function formatAdminMessageFileSize(bytes){
+  const size = Number(bytes || 0);
+  if(size < 1024) return size + ' Byte';
+  if(size < 1024 * 1024) return (size / 1024).toLocaleString('de-DE', {maximumFractionDigits:1}) + ' KB';
+  return (size / (1024 * 1024)).toLocaleString('de-DE', {maximumFractionDigits:2}) + ' MB';
+}
+function updateAdminMessageAttachmentUi(){
+  const attachment = selectedAdminMessageAttachment;
+  if(adminMessageAttachmentSelected) adminMessageAttachmentSelected.hidden = !attachment;
+  if(adminMessageAttachmentName) adminMessageAttachmentName.textContent = attachment ? attachment.name : '';
+  if(adminMessageAttachmentMeta) adminMessageAttachmentMeta.textContent = attachment ? (formatAdminMessageFileSize(attachment.size) + ' · ' + attachment.type) : '';
+  const isImage = !!(attachment && attachment.type.startsWith('image/'));
+  if(adminMessageInlineOption) adminMessageInlineOption.hidden = !isImage;
+  if(adminMessageInlineCheckbox){
+    adminMessageInlineCheckbox.disabled = adminMessageBusy || !isImage;
+    if(!isImage) adminMessageInlineCheckbox.checked = false;
+  }
+  if(attachment) attachment.inline = isImage && !!(adminMessageInlineCheckbox && adminMessageInlineCheckbox.checked);
+  if(adminMessageAttachmentPreview){
+    adminMessageAttachmentPreview.hidden = !isImage;
+    adminMessageAttachmentPreview.src = isImage ? ('data:' + attachment.type + ';base64,' + attachment.base64) : '';
+  }
+  if(adminMessageAttachmentInput) adminMessageAttachmentInput.disabled = adminMessageBusy;
+  if(adminMessageAttachmentRemoveBtn) adminMessageAttachmentRemoveBtn.disabled = adminMessageBusy;
+  updateAdminMessageSendState();
+}
+function clearAdminMessageAttachment(){
+  selectedAdminMessageAttachment = null;
+  if(adminMessageAttachmentInput) adminMessageAttachmentInput.value = '';
+  if(adminMessageInlineCheckbox) adminMessageInlineCheckbox.checked = true;
+  if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+  updateAdminMessageAttachmentUi();
+}
+function readAdminMessageFileAsBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Die Datei konnte nicht gelesen werden.'));
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const comma = result.indexOf(',');
+      if(comma < 0) reject(new Error('Die Datei konnte nicht verarbeitet werden.'));
+      else resolve(result.slice(comma + 1));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function handleAdminMessageAttachmentSelection(){
+  const file = adminMessageAttachmentInput && adminMessageAttachmentInput.files ? adminMessageAttachmentInput.files[0] : null;
+  if(!file){ clearAdminMessageAttachment(); return; }
+  const type = adminMessageMimeFromFile(file);
+  const extension = adminMessageFileExtension(file.name);
+  if(!type || !ADMIN_MESSAGE_ATTACHMENT_TYPES[type] || !ADMIN_MESSAGE_ATTACHMENT_TYPES[type].includes(extension)){
+    clearAdminMessageAttachment();
+    setAdminMessageStatus('Erlaubt sind ausschließlich PDF-, JPG-, PNG- und WebP-Dateien.', 'error');
+    return;
+  }
+  if(!file.size || file.size > ADMIN_MESSAGE_ATTACHMENT_MAX_BYTES){
+    clearAdminMessageAttachment();
+    setAdminMessageStatus('Der Anhang darf höchstens 3 MB groß sein.', 'error');
+    return;
+  }
+  setAdminMessageStatus('Anhang wird eingelesen…', '');
+  try{
+    const base64 = await readAdminMessageFileAsBase64(file);
+    selectedAdminMessageAttachment = {
+      name:String(file.name || 'Anhang').slice(0, 100),
+      type,
+      size:file.size,
+      base64,
+      inline:type.startsWith('image/')
+    };
+    if(adminMessageInlineCheckbox) adminMessageInlineCheckbox.checked = type.startsWith('image/');
+    if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+    updateAdminMessageAttachmentUi();
+    setAdminMessageStatus('Anhang ausgewählt: ' + selectedAdminMessageAttachment.name, 'success');
+  } catch(err){
+    clearAdminMessageAttachment();
+    setAdminMessageStatus(err && err.message ? err.message : 'Der Anhang konnte nicht gelesen werden.', 'error');
+  }
+}
+function setAdminMessageStatus(message, kind){
+  if(!adminMessageStatus) return;
+  adminMessageStatus.textContent = message || '';
+  adminMessageStatus.classList.toggle('error', kind === 'error');
+  adminMessageStatus.classList.toggle('success', kind === 'success');
+}
+function updateAdminMessagePreview(){
+  const subject = String(adminMessageSubjectInput && adminMessageSubjectInput.value || '').trim();
+  const text = String(adminMessageTextInput && adminMessageTextInput.value || '').trim();
+  if(adminMessagePreviewTitle) adminMessagePreviewTitle.textContent = subject || 'Betreff der Nachricht';
+  if(adminMessagePreviewBody) adminMessagePreviewBody.textContent = text || 'Der Nachrichtentext erscheint hier.';
+  if(adminMessageCharCount) adminMessageCharCount.textContent = String(adminMessageTextInput ? adminMessageTextInput.value.length : 0) + ' / 5000';
+  updateAdminMessageSendState();
+}
+function updateAdminMessageSendState(){
+  const ready = !!(
+    !adminMessageBusy &&
+    adminMessageAudienceCount > 0 &&
+    adminMessageConfirmCheckbox && adminMessageConfirmCheckbox.checked &&
+    adminMessageSubjectInput && adminMessageSubjectInput.value.trim().length >= 3 &&
+    adminMessageTextInput && adminMessageTextInput.value.trim().length >= 3
+  );
+  if(adminMessageSendBtn) adminMessageSendBtn.disabled = !ready;
+  if(adminMessageTestBtn) adminMessageTestBtn.disabled = adminMessageBusy;
+  if(adminMessageKindSelect) adminMessageKindSelect.disabled = adminMessageBusy;
+  if(adminMessageSubjectInput) adminMessageSubjectInput.disabled = adminMessageBusy;
+  if(adminMessageTextInput) adminMessageTextInput.disabled = adminMessageBusy;
+  if(adminMessageAttachmentInput) adminMessageAttachmentInput.disabled = adminMessageBusy;
+  if(adminMessageAttachmentRemoveBtn) adminMessageAttachmentRemoveBtn.disabled = adminMessageBusy;
+  if(adminMessageInlineCheckbox) adminMessageInlineCheckbox.disabled = adminMessageBusy || !(selectedAdminMessageAttachment && selectedAdminMessageAttachment.type.startsWith('image/'));
+}
+async function refreshAdminMessageAudience(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  adminMessageAudienceCount = 0;
+  updateAdminMessageSendState();
+  if(adminMessageAudience) adminMessageAudience.textContent = 'Empfängerzahl wird ermittelt…';
+  try{
+    const kind = adminMessageKindSelect ? adminMessageKindSelect.value : 'news';
+    const data = await authApi('/api/admin/member-message/audience?kind=' + encodeURIComponent(kind));
+    const audience = data.audience || {};
+    adminMessageAudienceCount = Number(audience.count || 0);
+    if(adminMessageAudience){
+      adminMessageAudience.textContent = adminMessageAudienceCount.toLocaleString('de-DE') + ' Empfänger · ' + (audience.description || 'Berechtigte Mitglieder');
+    }
+  } catch(err){
+    adminMessageAudienceCount = 0;
+    if(adminMessageAudience) adminMessageAudience.textContent = err && err.message ? err.message : 'Empfängerzahl konnte nicht geladen werden.';
+  }
+  updateAdminMessageSendState();
+}
+function openAdminMessageDialog(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  if(adminMessageBackdrop) adminMessageBackdrop.hidden = false;
+  if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+  setAdminMessageStatus('', '');
+  updateAdminMessagePreview();
+  refreshAdminMessageAudience();
+  setTimeout(() => { try{ if(adminMessageSubjectInput) adminMessageSubjectInput.focus(); } catch(_){} }, 0);
+}
+function closeAdminMessageDialog(reopenOverview){
+  if(adminMessageBusy) return;
+  if(adminMessageBackdrop) adminMessageBackdrop.hidden = true;
+  setAdminMessageStatus('', '');
+  if(reopenOverview && onlineAuthToken && onlineAuthUser && onlineAuthUser.isAdmin === true){
+    if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = false;
+    refreshAdminOverview();
+  }
+}
+function adminMessagePayload(confirmed){
+  const attachment = selectedAdminMessageAttachment ? {
+    name:selectedAdminMessageAttachment.name,
+    type:selectedAdminMessageAttachment.type,
+    size:selectedAdminMessageAttachment.size,
+    base64:selectedAdminMessageAttachment.base64,
+    inline:!!(selectedAdminMessageAttachment.type.startsWith('image/') && adminMessageInlineCheckbox && adminMessageInlineCheckbox.checked)
+  } : null;
+  return {
+    kind:adminMessageKindSelect ? adminMessageKindSelect.value : 'news',
+    subject:String(adminMessageSubjectInput && adminMessageSubjectInput.value || '').trim(),
+    message:String(adminMessageTextInput && adminMessageTextInput.value || '').trim(),
+    attachment,
+    confirmed:confirmed === true
+  };
+}
+async function sendAdminMessageTest(){
+  if(adminMessageBusy) return;
+  const payload = adminMessagePayload(false);
+  if(payload.subject.length < 3 || payload.message.length < 3){ setAdminMessageStatus('Bitte zuerst Betreff und Nachricht vollständig eingeben.', 'error'); return; }
+  adminMessageBusy = true;
+  updateAdminMessageSendState();
+  setAdminMessageStatus('Testmail wird versendet…', '');
+  try{
+    const data = await authApi('/api/admin/member-message/test', {method:'POST', body:JSON.stringify(payload)});
+    setAdminMessageStatus(data.message || 'Testmail wurde versendet.', 'success');
+  } catch(err){
+    setAdminMessageStatus(err && err.message ? err.message : 'Die Testmail konnte nicht versendet werden.', 'error');
+  } finally {
+    adminMessageBusy = false;
+    updateAdminMessageSendState();
+  }
+}
+async function sendAdminMessageNow(){
+  if(adminMessageBusy || !adminMessageSendBtn || adminMessageSendBtn.disabled) return;
+  const payload = adminMessagePayload(true);
+  const kindLabel = payload.kind === 'system' ? 'wichtige Systeminformation' : 'Neuigkeiten';
+  const attachmentNote = payload.attachment ? (' Der Anhang „' + payload.attachment.name + '“ wird mit jeder Nachricht versendet.') : '';
+  const question = 'Die ' + kindLabel + ' wird jetzt einzeln an ' + adminMessageAudienceCount.toLocaleString('de-DE') + ' Mitglieder versendet.' + attachmentNote + ' Wirklich fortfahren?';
+  if(!window.confirm(question)) return;
+  adminMessageBusy = true;
+  updateAdminMessageSendState();
+  setAdminMessageStatus('Mitglieder-Nachricht wird versendet. Bitte dieses Fenster geöffnet lassen…', '');
+  try{
+    const data = await authApi('/api/admin/member-message/send', {method:'POST', body:JSON.stringify(payload)});
+    setAdminMessageStatus(data.message || 'Mitglieder-Nachricht wurde verarbeitet.', Number(data.failedCount || 0) > 0 ? 'error' : 'success');
+    if(Number(data.failedCount || 0) === 0){
+      if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+      clearAdminMessageAttachment();
+      updateAdminMessageSendState();
+    }
+  } catch(err){
+    setAdminMessageStatus(err && err.message ? err.message : 'Die Mitglieder-Nachricht konnte nicht versendet werden.', 'error');
+  } finally {
+    adminMessageBusy = false;
+    updateAdminMessageSendState();
+    refreshAdminMessageAudience();
+  }
+}
+if(adminMemberMessageOpenBtn) adminMemberMessageOpenBtn.addEventListener('click', openAdminMessageDialog);
+if(adminMessageKindSelect) adminMessageKindSelect.addEventListener('change', () => { if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false; refreshAdminMessageAudience(); updateAdminMessageSendState(); });
+if(adminMessageSubjectInput) adminMessageSubjectInput.addEventListener('input', updateAdminMessagePreview);
+if(adminMessageTextInput) adminMessageTextInput.addEventListener('input', updateAdminMessagePreview);
+if(adminMessageAttachmentInput) adminMessageAttachmentInput.addEventListener('change', handleAdminMessageAttachmentSelection);
+if(adminMessageAttachmentRemoveBtn) adminMessageAttachmentRemoveBtn.addEventListener('click', clearAdminMessageAttachment);
+if(adminMessageInlineCheckbox) adminMessageInlineCheckbox.addEventListener('change', () => {
+  if(selectedAdminMessageAttachment) selectedAdminMessageAttachment.inline = !!adminMessageInlineCheckbox.checked;
+  if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+  updateAdminMessageAttachmentUi();
+});
+if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.addEventListener('change', updateAdminMessageSendState);
+if(adminMessageTestBtn) adminMessageTestBtn.addEventListener('click', sendAdminMessageTest);
+if(adminMessageSendBtn) adminMessageSendBtn.addEventListener('click', sendAdminMessageNow);
+if(adminMessageCloseBtn) adminMessageCloseBtn.addEventListener('click', () => closeAdminMessageDialog(true));
+if(adminMessageBackdrop) adminMessageBackdrop.addEventListener('click', ev => { if(ev.target === adminMessageBackdrop) closeAdminMessageDialog(true); });
 
 let accountEditMode = '';
 function setAccountEditStatus(message, kind){
@@ -3281,14 +3649,15 @@ function renderAccountRatings(){
 
 function normalizeClientEmailNotifications(value){
   const source = value && typeof value === 'object' ? value : {};
-  const enabled = (camel, snake) => {
+  const enabled = (camel, snake, fallback) => {
     const raw = source[camel] !== undefined ? source[camel] : source[snake];
-    if(raw === undefined || raw === null) return true;
+    if(raw === undefined || raw === null) return fallback;
     return !(raw === false || raw === 0 || raw === '0' || String(raw).toLowerCase() === 'false');
   };
   return {
-    dailyTurnEnabled:enabled('dailyTurnEnabled', 'daily_turn_enabled'),
-    dailyResultEnabled:enabled('dailyResultEnabled', 'daily_result_enabled')
+    dailyTurnEnabled:enabled('dailyTurnEnabled', 'daily_turn_enabled', true),
+    dailyResultEnabled:enabled('dailyResultEnabled', 'daily_result_enabled', true),
+    memberNewsEnabled:enabled('memberNewsEnabled', 'member_news_enabled', false)
   };
 }
 function setEmailNotificationsStatus(message, kind){
@@ -3303,6 +3672,7 @@ function renderEmailNotificationSettings(){
   if(authEmailNotifications) authEmailNotifications.hidden = !loggedIn;
   if(dailyTurnEmailCheckbox){ dailyTurnEmailCheckbox.checked = preferences.dailyTurnEnabled; dailyTurnEmailCheckbox.disabled = !loggedIn; }
   if(dailyResultEmailCheckbox){ dailyResultEmailCheckbox.checked = preferences.dailyResultEnabled; dailyResultEmailCheckbox.disabled = !loggedIn; }
+  if(memberNewsEmailCheckbox){ memberNewsEmailCheckbox.checked = preferences.memberNewsEnabled; memberNewsEmailCheckbox.disabled = !loggedIn; }
   if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.disabled = !loggedIn;
   if(!loggedIn) setEmailNotificationsStatus('', '');
 }
@@ -3316,7 +3686,8 @@ async function saveEmailNotificationSettings(){
       method:'POST',
       body:JSON.stringify({
         dailyTurnEnabled:!!(dailyTurnEmailCheckbox && dailyTurnEmailCheckbox.checked),
-        dailyResultEnabled:!!(dailyResultEmailCheckbox && dailyResultEmailCheckbox.checked)
+        dailyResultEnabled:!!(dailyResultEmailCheckbox && dailyResultEmailCheckbox.checked),
+        memberNewsEnabled:!!(memberNewsEmailCheckbox && memberNewsEmailCheckbox.checked)
       })
     });
     saveAuthState(onlineAuthToken, data.user);
@@ -3384,6 +3755,7 @@ function updateAuthUi(){
     adminOverviewOpenBtn.disabled = !isAdmin;
   }
   if(!isAdmin && adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  if(!isAdmin && adminMessageBackdrop) adminMessageBackdrop.hidden = true;
   if(authAccountProtectionNote){
     authAccountProtectionNote.hidden = !isAdmin;
     authAccountProtectionNote.textContent = isAdmin ? 'Admin-Schutz: Benutzername und Selbstlöschung sind für diesen Account gesperrt. Mailadresse und Kennwort können geändert werden.' : '';
