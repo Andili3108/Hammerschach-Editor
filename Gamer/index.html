@@ -539,7 +539,7 @@
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
-          <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Daily-Partie mehr besteht; offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
+          <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
           <h4>2. Vor der Einladung einstellen</h4>
@@ -704,8 +704,8 @@
           <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
 
           <h4>11. Accountlöschung und weitere Löschung</h4>
-          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, Sitzungen, Anwesenheitsstatus, Ratings, E-Mail-Einstellungen, persönliche Aktionstoken und zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
-          <p>Bereits beendete Partien, Rating-Partieaufzeichnungen sowie Daten in dauerhaft gespeicherten Spielräumen können aus Gründen der Partiedokumentation und technischen Zuordnung weiterhin Angaben oder interne Kennungen enthalten. Die vollständige Löschung beziehungsweise Anonymisierung dieser Altdaten ist derzeit nicht in allen Bereichen automatisiert. Für eine weitergehende Prüfung oder Löschanfrage wende dich bitte über die Kontaktdaten im Impressum an den Betreiber.</p>
+          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
+          <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
 
           <h4>12. Deine Rechte und Kontakt</h4>
           <p>Du kannst im Rahmen der gesetzlichen Voraussetzungen Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung oder Datenübertragbarkeit verlangen und einer Verarbeitung widersprechen. Eine erteilte Einwilligung, insbesondere für freiwillige Neuigkeiten, kann für die Zukunft widerrufen werden.</p>
@@ -879,7 +879,7 @@
         </div>
 
         <div id="accountDeleteForm" class="account-edit-form" hidden>
-          <div class="account-danger-note">Das Löschen ist endgültig. Laufende Daily-Partien müssen vorher beendet sein. Offene, noch nicht angenommene Daily-Einladungen werden automatisch zurückgezogen.</div>
+          <div class="account-danger-note">Das Löschen ist endgültig. Laufende Live- und Daily-Partien müssen vorher beendet sein. Offene, noch nicht angenommene Daily-Einladungen werden automatisch zurückgezogen; beendete Partien und Chat-Absender werden anonymisiert.</div>
           <label class="identity-label" for="accountDeletePasswordInput">Aktuelles Kennwort</label>
           <input id="accountDeletePasswordInput" class="identity-input" type="password" autocomplete="current-password" minlength="8" />
           <label class="identity-label" for="accountDeleteConfirmationInput">Zur Bestätigung LÖSCHEN eingeben</label>
@@ -3564,10 +3564,14 @@ async function submitAccountEdit(){
       }
       data = await authApi('/api/account', {method:'DELETE', body:JSON.stringify({currentPassword, confirmation})});
       const cancelled = Number(data.cancelledInvitations || 0);
+      const anonymized = Number(data.anonymizedRooms || 0);
       saveAuthState('', null);
       closeAccountEditDialog(false);
       closeAuthDialog();
-      if(statusEl) statusEl.textContent = 'Account wurde gelöscht' + (cancelled ? ' · ' + cancelled + ' offene Einladung' + (cancelled === 1 ? '' : 'en') + ' zurückgezogen.' : '.');
+      const details = [];
+      if(cancelled) details.push(cancelled + ' offene Einladung' + (cancelled === 1 ? '' : 'en') + ' zurückgezogen');
+      if(anonymized) details.push(anonymized + ' ältere' + (anonymized === 1 ? 'r Spielraum' : ' Spielräume') + ' anonymisiert');
+      if(statusEl) statusEl.textContent = 'Account wurde gelöscht' + (details.length ? ' · ' + details.join(' · ') + '.' : '.');
       return;
     }
     setAccountEditStatus((data && data.message) || 'Änderung wurde gespeichert.', 'success');
