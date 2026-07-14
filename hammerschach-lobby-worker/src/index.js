@@ -3299,6 +3299,102 @@ async function lookupAuthSession(env, token) {
   return { sessionId: row.session_id, user: publicUser(row, env) };
 }
 
+
+
+const MODERATION_STATUS_ACTIVE = 'active';
+let moderationTablesReady = false;
+async function ensureModerationTables(env){
+  if(!env || !env.DB) return false;
+  if(moderationTablesReady) return true;
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS moderation_reports (
+      id TEXT PRIMARY KEY, room_id TEXT NOT NULL, reporter_user_id TEXT NOT NULL,
+      reported_user_id TEXT, reported_role TEXT NOT NULL, reported_name TEXT,
+      reason TEXT NOT NULL, comment TEXT, chat_snapshot TEXT, game_snapshot TEXT,
+      status TEXT NOT NULL DEFAULT 'open', admin_note TEXT, resolution TEXT,
+      created_at TEXT NOT NULL, resolved_at TEXT, resolved_by_user_id TEXT
+    )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS moderation_account_status (
+      user_id TEXT PRIMARY KEY, account_status TEXT NOT NULL DEFAULT 'active',
+      chat_blocked INTEGER NOT NULL DEFAULT 0, reason TEXT, admin_note TEXT,
+      suspended_until TEXT, updated_at TEXT NOT NULL, updated_by_user_id TEXT
+    )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS moderation_actions (
+      id TEXT PRIMARY KEY, target_user_id TEXT NOT NULL, admin_user_id TEXT NOT NULL,
+      action_type TEXT NOT NULL, reason TEXT, note TEXT, expires_at TEXT, created_at TEXT NOT NULL
+    )`)
+  ]);
+  await env.DB.batch([
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_moderation_reports_status_time ON moderation_reports(status, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_moderation_reports_target_time ON moderation_reports(reported_user_id, created_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_moderation_actions_target_time ON moderation_actions(target_user_id, created_at)`)
+  ]);
+  moderationTablesReady = true; return true;
+}
+function cleanModerationReason(value){
+  const allowed=['insult','threat','discrimination','spam','username','stalling','cheating','other'];
+  const v=String(value||'').trim().toLowerCase(); return allowed.includes(v)?v:'other';
+}
+function cleanModerationComment(value){ return String(value||'').replace(/[<>\u0000-\u001F\u007F]/g,' ').replace(/\s+/g,' ').trim().slice(0,600); }
+async function moderationStateForUser(env,userId){
+  if(!userId || !(await ensureModerationTables(env))) return {accountStatus:'active',chatBlocked:false,suspendedUntil:null,reason:''};
+  const row=await env.DB.prepare(`SELECT account_status, chat_blocked, reason, suspended_until FROM moderation_account_status WHERE user_id=? LIMIT 1`).bind(String(userId)).first();
+  if(!row) return {accountStatus:'active',chatBlocked:false,suspendedUntil:null,reason:''};
+  let status=String(row.account_status||'active');
+  const until=row.suspended_until?new Date(row.suspended_until):null;
+  if(status==='suspended' && until && !Number.isNaN(until.getTime()) && until.getTime()<=Date.now()){
+    status='active';
+    await env.DB.prepare(`UPDATE moderation_account_status SET account_status='active', suspended_until=NULL, updated_at=? WHERE user_id=?`).bind(new Date().toISOString(),String(userId)).run();
+  }
+  return {accountStatus:status,chatBlocked:Number(row.chat_blocked||0)===1,suspendedUntil:row.suspended_until||null,reason:row.reason||''};
+}
+async function requireUsableAccount(env,user){
+  const state=await moderationStateForUser(env,user&&user.id);
+  if(state.accountStatus==='banned') return {ok:false,state,code:'ACCOUNT_BANNED',message:'Dieser Account wurde dauerhaft gesperrt.'};
+  if(state.accountStatus==='suspended') return {ok:false,state,code:'ACCOUNT_SUSPENDED',message:'Dieser Account ist vorübergehend gesperrt'+(state.suspendedUntil?' bis '+new Date(state.suspendedUntil).toLocaleString('de-DE'):'')+'.'};
+  return {ok:true,state};
+}
+async function createModerationReport(env,sessionUser,body){
+  await ensureModerationTables(env);
+  const roomId=cleanRoomId(body&&body.roomId); const role=body&&body.reportedRole==='w'?'w':body&&body.reportedRole==='b'?'b':'';
+  if(!roomId||!role) return {ok:false,status:400,code:'INVALID_REPORT',message:'Partie oder gemeldeter Spieler fehlt.'};
+  const id=env.GAME_ROOM.idFromName(roomId), stub=env.GAME_ROOM.get(id);
+  const response=await stub.fetch(new Request('https://game-room.internal/moderation-context?room='+encodeURIComponent(roomId),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reporterUserId:sessionUser.id,reportedRole:role})}));
+  const ctx=await response.json();
+  if(!response.ok||!ctx.ok) return {ok:false,status:response.status||403,code:ctx.code||'REPORT_NOT_ALLOWED',message:ctx.message||'Die Meldung ist für diese Partie nicht möglich.'};
+  if(ctx.reportedUserId && String(ctx.reportedUserId)===String(sessionUser.id)) return {ok:false,status:400,code:'CANNOT_REPORT_SELF',message:'Du kannst dich nicht selbst melden.'};
+  const recent=await env.DB.prepare(`SELECT id FROM moderation_reports WHERE reporter_user_id=? AND room_id=? AND reported_role=? AND created_at>? LIMIT 1`).bind(sessionUser.id,roomId,role,new Date(Date.now()-10*60*1000).toISOString()).first();
+  if(recent) return {ok:false,status:429,code:'REPORT_DUPLICATE',message:'Für diesen Spieler wurde vor Kurzem bereits eine Meldung aus dieser Partie gesendet.'};
+  const reportId=crypto.randomUUID(), now=new Date().toISOString();
+  await env.DB.prepare(`INSERT INTO moderation_reports (id,room_id,reporter_user_id,reported_user_id,reported_role,reported_name,reason,comment,chat_snapshot,game_snapshot,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?, 'open',?)`).bind(reportId,roomId,sessionUser.id,ctx.reportedUserId||null,role,ctx.reportedName||'',cleanModerationReason(body.reason),cleanModerationComment(body.comment),JSON.stringify(ctx.chatSnapshot||[]),JSON.stringify(ctx.gameSnapshot||{}),now).run();
+  return {ok:true,reportId,message:'Die Meldung wurde vertraulich an den Administrator übermittelt.'};
+}
+async function listModerationReports(env){
+  await ensureModerationTables(env);
+  const rows=await env.DB.prepare(`SELECT r.*, reporter.username AS reporter_username, target.username AS target_username FROM moderation_reports r LEFT JOIN users reporter ON reporter.id=r.reporter_user_id LEFT JOIN users target ON target.id=r.reported_user_id ORDER BY CASE r.status WHEN 'open' THEN 0 ELSE 1 END, r.created_at DESC LIMIT 100`).all();
+  return (rows.results||[]).map(r=>({id:r.id,roomId:r.room_id,reporterName:r.reporter_username||'Gelöschter Benutzer',reportedUserId:r.reported_user_id||'',reportedName:r.target_username||r.reported_name||'Gast',reportedRole:r.reported_role,reason:r.reason,comment:r.comment||'',chatSnapshot:JSON.parse(r.chat_snapshot||'[]'),gameSnapshot:JSON.parse(r.game_snapshot||'{}'),status:r.status,adminNote:r.admin_note||'',resolution:r.resolution||'',createdAt:r.created_at,resolvedAt:r.resolved_at||null}));
+}
+async function applyModerationAction(env,adminUser,body){
+  await ensureModerationTables(env);
+  const userId=String(body&&body.userId||'').trim(), action=String(body&&body.action||'').trim();
+  if(!userId) return {ok:false,status:400,message:'Benutzer fehlt.'};
+  const target=await env.DB.prepare(`SELECT * FROM users WHERE id=? LIMIT 1`).bind(userId).first();
+  if(!target) return {ok:false,status:404,message:'Der Benutzer wurde nicht gefunden.'};
+  if(isAdminUser(target,env)) return {ok:false,status:403,message:'Der Administrator-Account kann nicht gesperrt werden.'};
+  const now=new Date().toISOString(), reason=cleanModerationComment(body.reason), note=cleanModerationComment(body.note); let status='active', chat=0, until=null;
+  if(action==='warn'){ status=(await moderationStateForUser(env,userId)).accountStatus; chat=(await moderationStateForUser(env,userId)).chatBlocked?1:0; }
+  else if(action==='chat_block'){ const old=await moderationStateForUser(env,userId); status=old.accountStatus; chat=1; }
+  else if(action==='chat_unblock'){ const old=await moderationStateForUser(env,userId); status=old.accountStatus; chat=0; }
+  else if(action==='suspend'){ status='suspended'; chat=1; const hours=Math.max(1,Math.min(24*365,Number(body.hours||24))); until=new Date(Date.now()+hours*3600000).toISOString(); }
+  else if(action==='ban'){ status='banned'; chat=1; }
+  else if(action==='activate'){ status='active'; chat=0; }
+  else return {ok:false,status:400,message:'Unbekannte Moderationsmaßnahme.'};
+  await env.DB.prepare(`INSERT INTO moderation_account_status(user_id,account_status,chat_blocked,reason,admin_note,suspended_until,updated_at,updated_by_user_id) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET account_status=excluded.account_status,chat_blocked=excluded.chat_blocked,reason=excluded.reason,admin_note=excluded.admin_note,suspended_until=excluded.suspended_until,updated_at=excluded.updated_at,updated_by_user_id=excluded.updated_by_user_id`).bind(userId,status,chat,reason,note,until,now,adminUser.id).run();
+  await env.DB.prepare(`INSERT INTO moderation_actions(id,target_user_id,admin_user_id,action_type,reason,note,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(),userId,adminUser.id,action,reason,note,until,now).run();
+  if(status==='banned'||status==='suspended') await env.DB.prepare(`DELETE FROM sessions WHERE user_id=?`).bind(userId).run();
+  return {ok:true,message:'Moderationsmaßnahme wurde gespeichert.',state:{accountStatus:status,chatBlocked:!!chat,suspendedUntil:until}};
+}
+
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
 
@@ -3316,7 +3412,7 @@ async function handleAuthApi(request, env, url) {
   if (url.pathname === '/api/me' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
-    return json({ ok: true, user: await publicUserWithRatings(env, session.user) });
+    const me = await publicUserWithRatings(env, session.user); me.moderation = await moderationStateForUser(env, session.user.id); return json({ ok: true, user: me });
   }
 
   if (url.pathname === '/api/account/username' && request.method === 'POST') {
@@ -3970,10 +4066,18 @@ async function handleAuthApi(request, env, url) {
     }
 
     await ensureRatingRowsForUser(env, user.id);
+    const usable = await requireUsableAccount(env, user);
+    if(!usable.ok){
+      try { await recordAuthSecurityEvent(env, request, 'login', 'blocked', { context:rate.context, userId:user.id, detailCode:usable.code }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ok:false,code:usable.code,message:usable.message},{status:403});
+    }
     const token = await createSession(env, user.id);
     try { await recordAuthSecurityEvent(env, request, 'login', 'success', { context:rate.context, userId:user.id, detailCode:'SESSION_CREATED' }); } catch (_) {}
     await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
-    return json({ ok: true, sessionToken: token, user: await publicUserWithRatings(env, user) });
+    const publicAccount = await publicUserWithRatings(env, user);
+    publicAccount.moderation = usable.state;
+    return json({ ok: true, sessionToken: token, user: publicAccount });
   }
 
   if (url.pathname === '/api/invitations/email' && request.method === 'POST') {
@@ -4118,6 +4222,33 @@ async function handleAuthApi(request, env, url) {
       console.error('Admin member-message send failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ ok:false, code:'MEMBER_MESSAGE_SEND_FAILED', message:'Die Mitglieder-Nachricht konnte nicht vollständig verarbeitet werden.' }, { status:500 });
     }
+  }
+
+  if (url.pathname === '/api/moderation/report' && request.method === 'POST') {
+    const session=await lookupAuthSession(env,bearerTokenFromRequest(request));
+    if(!session) return json({ok:false,code:'NOT_AUTHENTICATED',message:'Meldungen sind nur nach Login möglich.'},{status:401});
+    const body=await readJsonBody(request); const result=await createModerationReport(env,session.user,body||{});
+    return json(result,{status:result.status||(result.ok?200:400)});
+  }
+
+  if (url.pathname === '/api/admin/moderation/reports' && request.method === 'GET') {
+    const admin=await requireAdminSession(request,env); if(!admin.ok) return admin.response;
+    return json({ok:true,reports:await listModerationReports(env)});
+  }
+
+  if (url.pathname === '/api/admin/moderation/action' && request.method === 'POST') {
+    const admin=await requireAdminSession(request,env); if(!admin.ok) return admin.response;
+    const body=await readJsonBody(request); const result=await applyModerationAction(env,admin.session.user,body||{});
+    return json(result,{status:result.status||(result.ok?200:400)});
+  }
+
+  if (url.pathname === '/api/admin/moderation/resolve' && request.method === 'POST') {
+    const admin=await requireAdminSession(request,env); if(!admin.ok) return admin.response;
+    await ensureModerationTables(env); const body=await readJsonBody(request); const id=String(body&&body.reportId||'').trim();
+    if(!id) return json({ok:false,message:'Meldung fehlt.'},{status:400});
+    const status=body&&body.status==='dismissed'?'dismissed':'resolved';
+    await env.DB.prepare(`UPDATE moderation_reports SET status=?, resolution=?, admin_note=?, resolved_at=?, resolved_by_user_id=? WHERE id=?`).bind(status,cleanModerationComment(body&&body.resolution),cleanModerationComment(body&&body.note),new Date().toISOString(),admin.session.user.id,id).run();
+    return json({ok:true,message:'Meldung wurde abgeschlossen.'});
   }
 
   if (url.pathname === '/api/admin/overview' && request.method === 'GET') {
@@ -5521,6 +5652,15 @@ export class GameRoom {
       }, { status:result.status || (result.ok ? 200 : 400) });
     }
 
+    if (request.method === 'POST' && url.pathname === '/moderation-context') {
+      const body=await readJsonBody(request); const reporterUserId=String(body&&body.reporterUserId||''); const reportedRole=body&&body.reportedRole==='b'?'b':'w';
+      const players=await this.getSecurePlayers(); const reporterIsPlayer=[players.white,players.black].some(slot=>slot&&slot.userId&&String(slot.userId)===reporterUserId);
+      if(!reporterIsPlayer) return json({ok:false,code:'NOT_ROOM_PLAYER',message:'Nur ein beteiligter Spieler kann aus dieser Partie melden.'},{status:403});
+      const target=reportedRole==='w'?players.white:players.black; if(!target) return json({ok:false,code:'PLAYER_NOT_FOUND',message:'Der gemeldete Spielerplatz ist nicht belegt.'},{status:404});
+      const profiles=(await this.state.storage.get('playerProfiles'))||{}; const profile=profiles[target.playerId]||{}; const chats=(await this.state.storage.get('chatMessages'))||[]; const game=(await this.state.storage.get('game'))||{}; const timeControl=(await this.state.storage.get('timeControl'))||null; const gameSetup=(await this.state.storage.get('gameSetup'))||null;
+      return json({ok:true,reportedUserId:target.userId||'',reportedName:profile.displayName||profile.name||(reportedRole==='w'?'Weiß':'Schwarz'),chatSnapshot:(Array.isArray(chats)?chats.slice(-30):[]).map(c=>({senderName:c.senderName||c.name||'',role:c.role||'',text:c.text||'',sentAt:c.sentAt||''})),gameSnapshot:{started:!!game.started,ended:!!game.ended,result:game.result||'*',timeControl,gameSetup}});
+    }
+
     if (request.method === 'POST' && url.pathname === '/prepare-account-deletion') {
       const body = await readJsonBody(request);
       const result = await this.prepareAccountDeletion(body && body.userId);
@@ -6634,6 +6774,7 @@ export class GameRoom {
     }
 
     if (data.type === 'chat_message') {
+      if(info.userId){ const moderation=await moderationStateForUser(this.env,info.userId); if(moderation.chatBlocked){ safeSend(ws,{type:'error',code:'CHAT_BLOCKED',message:'Deine Chatfunktion wurde administrativ gesperrt.'}); return; } }
       if (role !== 'w' && role !== 'b') {
         safeSend(ws, { type:'error', code:'CHAT_PLAYERS_ONLY', message:'Der Partie-Chat ist ausschließlich für Weiß und Schwarz verfügbar.' });
         return;
@@ -7327,8 +7468,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
