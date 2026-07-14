@@ -1,5 +1,11 @@
 import { connect } from 'cloudflare:sockets';
 
+const DEFAULT_GAMER_PUBLIC_URL = 'https://www.andili.de/page-hammerschach-gamer.html';
+
+function configuredGamerPublicUrl(env) {
+  return String((env && env.GAMER_PUBLIC_URL) || DEFAULT_GAMER_PUBLIC_URL).trim();
+}
+
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -390,7 +396,7 @@ function escapeEmailHtml(value) {
 }
 
 function gamerInvitationUrl(env, roomId) {
-  const configured = String((env && env.GAMER_PUBLIC_URL) || '').trim();
+  const configured = configuredGamerPublicUrl(env);
   if (!configured) return '';
   try {
     const url = new URL(configured);
@@ -723,7 +729,7 @@ async function sendSmtpInvitation(env, payload) {
     await smtpCommand(writer, reader, state, null, 220);
     let heloName = 'hammerschach-gamer';
     try {
-      const publicUrl = String((env && env.GAMER_PUBLIC_URL) || '').trim();
+      const publicUrl = configuredGamerPublicUrl(env);
       if (publicUrl) heloName = new URL(publicUrl).hostname.replace(/[^A-Za-z0-9.-]/g, '') || heloName;
     } catch (_) {}
     await smtpCommand(writer, reader, state, `EHLO ${heloName}`, 250);
@@ -957,7 +963,7 @@ async function ensureAccountSecurityTables(env) {
 }
 
 function publicActionUrl(env, parameterName, token) {
-  const configured = String((env && env.GAMER_PUBLIC_URL) || '').trim();
+  const configured = configuredGamerPublicUrl(env);
   if (!configured || !token) return '';
   try {
     const url = new URL(configured);
