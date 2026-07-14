@@ -2471,6 +2471,115 @@ async function cancelOpenDailyInvitationsForUser(env, userId, invitations) {
   return { ok: true, cancelled };
 }
 
+
+let accountGameRoomIndexReady = false;
+async function ensureAccountGameRoomIndex(env) {
+  if (!env || !env.DB) return false;
+  if (accountGameRoomIndexReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS account_game_rooms (
+       user_id TEXT NOT NULL,
+       room_id TEXT NOT NULL,
+       role TEXT,
+       first_seen_at TEXT NOT NULL,
+       last_seen_at TEXT NOT NULL,
+       PRIMARY KEY (user_id, room_id)
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_account_game_rooms_user ON account_game_rooms (user_id, last_seen_at)`).run();
+  accountGameRoomIndexReady = true;
+  return true;
+}
+
+async function indexAccountGameRoom(env, userId, roomId, role = '') {
+  const uid = String(userId || '').trim();
+  const rid = cleanRoomId(roomId);
+  if (!uid || !rid || !(await ensureAccountGameRoomIndex(env))) return false;
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO account_game_rooms (user_id, room_id, role, first_seen_at, last_seen_at)
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, room_id) DO UPDATE SET
+       role = excluded.role,
+       last_seen_at = excluded.last_seen_at`
+  ).bind(uid, rid, role === 'b' ? 'b' : role === 'w' ? 'w' : '', nowIso, nowIso).run();
+  return true;
+}
+
+async function collectAccountRoomIds(env, userId) {
+  const uid = String(userId || '').trim();
+  const ids = new Set();
+  if (!env || !env.DB || !uid) return [];
+  try {
+    if (await ensureAccountGameRoomIndex(env)) {
+      const result = await env.DB.prepare(`SELECT room_id FROM account_game_rooms WHERE user_id = ?`).bind(uid).all();
+      for (const row of (result && result.results) || []) {
+        const roomId = cleanRoomId(row.room_id);
+        if (roomId) ids.add(roomId);
+      }
+    }
+  } catch (_) {}
+  for (const query of [
+    `SELECT room_id FROM daily_games WHERE white_user_id = ? OR black_user_id = ?`,
+    `SELECT room_id FROM public_games WHERE white_user_id = ? OR black_user_id = ?`,
+    `SELECT room_id FROM rated_games WHERE white_user_id = ? OR black_user_id = ?`
+  ]) {
+    try {
+      const result = await env.DB.prepare(query).bind(uid, uid).all();
+      for (const row of (result && result.results) || []) {
+        const roomId = cleanRoomId(row.room_id);
+        if (roomId) ids.add(roomId);
+      }
+    } catch (_) {}
+  }
+  return Array.from(ids);
+}
+
+async function callAccountRoomAction(env, roomId, action, userId, anonymizedId = '') {
+  if (!env || !env.GAME_ROOM) return { ok:false, status:503, code:'ROOM_SERVICE_UNAVAILABLE', message:'Spielräume konnten nicht geprüft werden.' };
+  try {
+    const id = env.GAME_ROOM.idFromName(roomId);
+    const stub = env.GAME_ROOM.get(id);
+    const response = await stub.fetch(new Request(`https://game-room.internal/${action}?room=${encodeURIComponent(roomId)}`, {
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({ userId:String(userId || ''), anonymizedId:String(anonymizedId || '') })
+    }));
+    let data = null;
+    try { data = await response.json(); } catch (_) { data = null; }
+    return Object.assign({ ok:response.ok, status:response.status }, data || {});
+  } catch (_) {
+    return { ok:false, status:500, code:'ROOM_ACTION_FAILED', message:'Ein Spielraum konnte nicht verarbeitet werden.' };
+  }
+}
+
+async function prepareRoomsForAccountDeletion(env, userId, roomIds) {
+  const activeRooms = [];
+  for (const roomId of roomIds) {
+    const result = await callAccountRoomAction(env, roomId, 'prepare-account-deletion', userId);
+    if (result && result.active) activeRooms.push(roomId);
+    else if (!result.ok && result.status !== 404) {
+      return { ok:false, status:result.status || 500, code:result.code || 'ROOM_CHECK_FAILED', message:result.message || 'Ein Spielraum konnte nicht sicher geprüft werden.' };
+    }
+  }
+  if (activeRooms.length) {
+    return { ok:false, status:409, code:'ACTIVE_GAME_ROOMS', activeGameRooms:activeRooms.length, message:'Der Account kann erst gelöscht werden, wenn alle laufenden Live- und Daily-Partien beendet sind.' };
+  }
+  return { ok:true, activeRooms:0 };
+}
+
+async function anonymizeRoomsForDeletedAccount(env, userId, anonymizedId, roomIds) {
+  let anonymized = 0;
+  for (const roomId of roomIds) {
+    const result = await callAccountRoomAction(env, roomId, 'anonymize-account', userId, anonymizedId);
+    if (!result.ok && result.status !== 404) {
+      return { ok:false, status:result.status || 500, code:result.code || 'ROOM_ANONYMIZE_FAILED', message:result.message || 'Ein Spielraum konnte nicht anonymisiert werden.' };
+    }
+    if (result.anonymized) anonymized += 1;
+  }
+  return { ok:true, anonymized };
+}
+
 async function deleteUserAccount(env, target, options = {}) {
   if (!env || !env.DB || !target) {
     return { ok: false, status: 503, code: 'DB_NOT_CONFIGURED', message: 'Account-Datenbank ist nicht verfügbar.' };
@@ -2490,8 +2599,49 @@ async function deleteUserAccount(env, target, options = {}) {
     };
   }
 
+  const roomIds = await collectAccountRoomIds(env, target.id);
+  const roomCheck = await prepareRoomsForAccountDeletion(env, target.id, roomIds);
+  if (!roomCheck.ok) return roomCheck;
+
   const cancellation = await cancelOpenDailyInvitationsForUser(env, target.id, daily.openInvitations);
   if (!cancellation.ok) return cancellation;
+
+  const anonymizedId = 'deleted_' + crypto.randomUUID();
+  const roomAnonymization = await anonymizeRoomsForDeletedAccount(env, target.id, anonymizedId, roomIds);
+  if (!roomAnonymization.ok) return roomAnonymization;
+
+  const deletedLabel = 'Gelöschter Benutzer';
+  try {
+    await env.DB.prepare(
+      `UPDATE daily_games
+          SET white_user_id = CASE WHEN white_user_id = ? THEN NULL ELSE white_user_id END,
+              black_user_id = CASE WHEN black_user_id = ? THEN NULL ELSE black_user_id END,
+              white_name = CASE WHEN white_user_id = ? THEN ? ELSE white_name END,
+              black_name = CASE WHEN black_user_id = ? THEN ? ELSE black_name END
+        WHERE white_user_id = ? OR black_user_id = ?`
+    ).bind(target.id, target.id, target.id, deletedLabel, target.id, deletedLabel, target.id, target.id).run();
+  } catch (_) {}
+  try {
+    await env.DB.prepare(
+      `UPDATE public_games
+          SET white_user_id = CASE WHEN white_user_id = ? THEN NULL ELSE white_user_id END,
+              black_user_id = CASE WHEN black_user_id = ? THEN NULL ELSE black_user_id END,
+              white_name = CASE WHEN white_user_id = ? THEN ? ELSE white_name END,
+              black_name = CASE WHEN black_user_id = ? THEN ? ELSE black_name END,
+              public_game = 0
+        WHERE white_user_id = ? OR black_user_id = ?`
+    ).bind(target.id, target.id, target.id, deletedLabel, target.id, deletedLabel, target.id, target.id).run();
+  } catch (_) {}
+  try {
+    await env.DB.prepare(
+      `UPDATE rated_games
+          SET white_user_id = CASE WHEN white_user_id = ? THEN ? ELSE white_user_id END,
+              black_user_id = CASE WHEN black_user_id = ? THEN ? ELSE black_user_id END
+        WHERE white_user_id = ? OR black_user_id = ?`
+    ).bind(target.id, anonymizedId, target.id, anonymizedId, target.id, target.id).run();
+  } catch (_) {}
+  try { await env.DB.prepare(`UPDATE auth_security_events SET user_id = NULL WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM admin_member_message_recipients WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
 
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(target.id).run();
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
@@ -2502,8 +2652,14 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sender_user_id = ? OR recipient_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM account_action_tokens WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_status WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM account_game_rooms WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
-  return { ok: true, deletedUser: publicUser(target, env), cancelledInvitations: cancellation.cancelled || 0 };
+  return {
+    ok: true,
+    deletedUser: publicUser(target, env),
+    cancelledInvitations: cancellation.cancelled || 0,
+    anonymizedRooms: roomAnonymization.anonymized || 0
+  };
 }
 
 async function deleteUserAsAdmin(env, adminUser, targetId) {
@@ -5365,6 +5521,18 @@ export class GameRoom {
       }, { status:result.status || (result.ok ? 200 : 400) });
     }
 
+    if (request.method === 'POST' && url.pathname === '/prepare-account-deletion') {
+      const body = await readJsonBody(request);
+      const result = await this.prepareAccountDeletion(body && body.userId);
+      return json(result, { status:result.status || (result.ok ? 200 : 400) });
+    }
+
+    if (request.method === 'POST' && url.pathname === '/anonymize-account') {
+      const body = await readJsonBody(request);
+      const result = await this.anonymizeDeletedAccount(body && body.userId, body && body.anonymizedId);
+      return json(result, { status:result.status || (result.ok ? 200 : 400) });
+    }
+
     if (request.method === 'GET' && url.pathname === '/daily-pgn') {
       const result = await this.buildDailyPgnForUser(request.headers.get('x-hammerschach-user-id') || '');
       if (!result.ok) return json({ ok:false, code:result.code || 'PGN_UNAVAILABLE', message:result.message || 'PGN-Datei konnte nicht erstellt werden.' }, { status:result.status || 400 });
@@ -5444,6 +5612,107 @@ export class GameRoom {
     return players;
   }
 
+  async syncAccountRoomIndex(playersOverride = null) {
+    try {
+      const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+      if (!roomId || !this.env || !this.env.DB) return false;
+      const players = playersOverride || await this.getSecurePlayers();
+      const tasks = [];
+      if (players.white && players.white.userId) tasks.push(indexAccountGameRoom(this.env, players.white.userId, roomId, 'w'));
+      if (players.black && players.black.userId) tasks.push(indexAccountGameRoom(this.env, players.black.userId, roomId, 'b'));
+      if (tasks.length) await Promise.all(tasks);
+      return true;
+    } catch (_) {
+      // Der Raumindex unterstützt die spätere Account-Anonymisierung, darf aber niemals den Spielbeitritt blockieren.
+      return false;
+    }
+  }
+
+  async prepareAccountDeletion(userId) {
+    const uid = String(userId || '').trim();
+    if (!uid) return { ok:false, status:400, code:'USER_ID_REQUIRED', message:'Benutzer-ID fehlt.' };
+    const players = await this.getSecurePlayers();
+    const belongs = [players.white, players.black].some(slot => slot && slot.userId && String(slot.userId) === uid);
+    if (!belongs) return { ok:true, status:200, active:false, belongs:false };
+    const game = (await this.state.storage.get('game')) || { started:false, ended:false };
+    return { ok:true, status:200, active:!!(game.started && !game.ended), belongs:true };
+  }
+
+  async anonymizeDeletedAccount(userId, anonymizedId) {
+    const uid = String(userId || '').trim();
+    if (!uid) return { ok:false, status:400, code:'USER_ID_REQUIRED', message:'Benutzer-ID fehlt.' };
+    const game = (await this.state.storage.get('game')) || { started:false, ended:false };
+    if (game.started && !game.ended) {
+      return { ok:false, status:409, code:'ACTIVE_GAME', active:true, message:'Eine laufende Partie kann nicht während der Accountlöschung anonymisiert werden.' };
+    }
+    const deletedLabel = 'Gelöschter Benutzer';
+    const players = await this.getSecurePlayers();
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const affectedPlayerIds = new Set();
+    let changed = false;
+    for (const role of ['white','black']) {
+      const slot = players[role];
+      if (!slot || !slot.userId || String(slot.userId) !== uid) continue;
+      const oldPlayerId = String(slot.playerId || '');
+      if (oldPlayerId) affectedPlayerIds.add(oldPlayerId);
+      const anonymousPlayerId = `${String(anonymizedId || 'deleted').slice(0,60)}_${role}`;
+      players[role] = Object.assign({}, slot, {
+        playerId:anonymousPlayerId,
+        userId:null,
+        seatTokenHash:await sha256Hex(randomBase64Url(32)),
+        deletedAccount:true,
+        updatedAt:Date.now()
+      });
+      if (oldPlayerId && profiles[oldPlayerId]) delete profiles[oldPlayerId];
+      profiles[anonymousPlayerId] = {
+        playerId:anonymousPlayerId,
+        displayName:deletedLabel,
+        name:deletedLabel,
+        guest:true,
+        userId:null,
+        username:'',
+        role:role === 'white' ? 'w' : 'b',
+        deletedAccount:true,
+        updatedAt:Date.now()
+      };
+      changed = true;
+    }
+    for (const [playerId, profile] of Object.entries(profiles)) {
+      if (profile && profile.userId && String(profile.userId) === uid) {
+        affectedPlayerIds.add(String(playerId));
+        profiles[playerId] = Object.assign({}, profile, { displayName:deletedLabel, name:deletedLabel, guest:true, userId:null, username:'', deletedAccount:true, updatedAt:Date.now() });
+        changed = true;
+      }
+    }
+    const chats = (await this.state.storage.get('chatMessages')) || [];
+    let chatChanged = false;
+    const anonymizedChats = Array.isArray(chats) ? chats.map(chat => {
+      if (!chat) return chat;
+      const userMatches = (chat.senderUserId && String(chat.senderUserId) === uid) || (chat.userId && String(chat.userId) === uid);
+      const playerMatches = affectedPlayerIds.has(String(chat.senderPlayerId || chat.playerId || ''));
+      if (!userMatches && !playerMatches) return chat;
+      chatChanged = true;
+      return Object.assign({}, chat, { senderUserId:'', userId:null, senderPlayerId:'', playerId:'', senderName:deletedLabel, name:deletedLabel, displayName:deletedLabel, deletedAccount:true });
+    }) : [];
+    if (changed) {
+      await this.state.storage.put('players', players);
+      await this.state.storage.put('playerProfiles', profiles);
+      const createdByUserId = String((await this.state.storage.get('createdByUserId')) || '');
+      if (createdByUserId === uid) await this.state.storage.delete('createdByUserId');
+      this.accountNameCache = { key:'', expiresAt:0, values:{} };
+      this.ratingStateCache = { key:'', expiresAt:0, value:null };
+    }
+    if (chatChanged) await this.state.storage.put('chatMessages', anonymizedChats);
+    for (const socket of this.state.getWebSockets()) {
+      const info = socket.deserializeAttachment() || {};
+      if (!info.userId || String(info.userId) !== uid) continue;
+      socket.serializeAttachment(Object.assign({}, info, { userId:null, username:'', role:'revoked', seatClaimed:false, deletedAccount:true }));
+      safeSend(socket, { type:'account_deleted', message:'Der zugehörige Account wurde gelöscht.', serverNow:Date.now() });
+      try { socket.close(4003, 'Account gelöscht'); } catch (_) {}
+    }
+    return { ok:true, status:200, anonymized:changed || chatChanged };
+  }
+
   async seatTokenMatches(slot, rawToken) {
     if (!slot || !slot.seatTokenHash || !rawToken) return false;
     const candidateHash = await sha256Hex(String(rawToken));
@@ -5482,6 +5751,7 @@ export class GameRoom {
       if (role === 'b') players.black = renewed;
       else players.white = renewed;
       await this.state.storage.put('players', players);
+      await this.syncAccountRoomIndex(players);
       return { role, seatToken: rotatedToken, denied: false, reclaimed: true };
     }
 
@@ -5497,6 +5767,7 @@ export class GameRoom {
       if (role === 'b') players.black = slot;
       else players.white = slot;
       await this.state.storage.put('players', players);
+      await this.syncAccountRoomIndex(players);
       const creatorRole = (await this.state.storage.get('createdByRole')) || '';
       if (!creatorRole) {
         await this.state.storage.put('createdByRole', role);
@@ -5539,6 +5810,7 @@ export class GameRoom {
     if (role === 'b') players.black = bound;
     else players.white = bound;
     await this.state.storage.put('players', players);
+    await this.syncAccountRoomIndex(players);
     return true;
   }
 
