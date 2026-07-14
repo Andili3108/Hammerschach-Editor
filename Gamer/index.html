@@ -187,6 +187,7 @@
   .resign-btn{background:#843f46!important;color:#fff!important;}
   .chat-panel{display:flex;flex-direction:column;gap:10px;overflow:hidden;}
   .chat-title{font-size:18px;font-weight:900;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .chat-etiquette-note{font-size:12px;font-weight:800;color:#666;line-height:1.3;text-align:center;border-radius:10px;background:rgba(132,63,70,.05);border:1px solid rgba(132,63,70,.10);padding:6px 8px;}
   .chat-messages{min-height:0;flex:1;overflow-y:auto;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:10px;display:flex;flex-direction:column;gap:8px;}
   .chat-empty{font-size:13px;font-weight:800;color:#666;line-height:1.35;text-align:center;padding:14px 8px;}
   .chat-message{border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:8px 9px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
@@ -616,6 +617,11 @@
           <h4>21. Mitglieder-Informationen und Maildarstellung</h4>
           <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden.</p>
           <p>Die Nachrichten werden einzeln und mit persönlicher Anrede versendet; Mailadressen anderer Mitglieder sind nicht sichtbar. Optional kann eine PDF-, JPG-, PNG- oder WebP-Datei bis 3 MB beigefügt werden. Ausgewählte Bilder lassen sich zusätzlich direkt im Mailinhalt anzeigen. Sämtliche HTML-Mails des Hammerschach-Gamers enthalten oben das Gamer-Logo als einheitlichen Mailkopf. Manche Mailprogramme laden externe Bilder erst nach Zustimmung des Empfängers; der vollständige Text bleibt trotzdem lesbar.</p>
+
+          <h4>22. Fair Play und Spielkultur</h4>
+          <p>Behandle deinen Gegner so, wie du selbst behandelt werden möchtest. Beleidigungen, Drohungen, diskriminierende Inhalte, Werbung und absichtliche Störungen haben im Hammerschach-Gamer keinen Platz.</p>
+          <p>Gewertete Partien sollen ohne fremde Hilfe oder den Einsatz von Schachprogrammen gespielt werden. Verwende außerdem keine irreführenden oder anstößigen Benutzernamen und verzögere Partien nicht absichtlich durch unnötige Wartezeiten oder mutwillige Verbindungsabbrüche.</p>
+          <p>Bei schweren oder wiederholten Verstößen kann der Administrator geeignete Maßnahmen ergreifen, insbesondere Hinweise aussprechen sowie Accounts einschränken oder löschen.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -1140,6 +1146,7 @@
 
           <div id="chatPanel" class="side-content chat-panel" hidden>
             <div class="chat-title"><span>Partie-Chat</span><span id="chatCount">0</span></div>
+            <div class="chat-etiquette-note">Bitte bleibe freundlich und respektvoll.</div>
             <div id="chatMessages" class="chat-messages" aria-live="polite" aria-label="Chatnachrichten">
               <div class="chat-empty">Noch keine Chatnachrichten.</div>
             </div>
