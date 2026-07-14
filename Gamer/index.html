@@ -1926,7 +1926,10 @@ function isOnlineGameLiveForUi(){
   return !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
 }
 function isMoveNavigationLocked(){
-  return isOnlineGameLiveForUi();
+  /* Während einer laufenden Partie darf die Zugliste zur Analyse bedient werden.
+     Nur eine noch unbestätigte Daily-Zugvorschau bleibt auf der aktuellen
+     Stellung fixiert, damit Vorschau und Bestätigung eindeutig zusammenpassen. */
+  return !!pendingDailyMove;
 }
 function isGameInProgressForUi(){
   return !!(isOnlineGameLiveForUi() || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost);
@@ -4813,6 +4816,7 @@ function sameMoveCoords(a,b){
     String(a.promotion || '') === String(b.promotion || ''));
 }
 function commitRemoteMove(found, promotion){
+  const wasAtLatestPosition = viewIndex === masterHistory.length;
   const before = buildGameFromHistory(masterHistory.length);
   const mv = {from:found.from, to:found.to, meta:found.meta || {}, promotion};
   const info = before.clone();
@@ -4821,7 +4825,9 @@ function commitRemoteMove(found, promotion){
   mv.taken = applied.taken;
   mv.san = moveToSan(before, mv, info);
   masterHistory.push(mv);
-  viewIndex = masterHistory.length;
+  /* Wer gerade eine ältere Stellung betrachtet, bleibt dort. Nur in der
+     Live-Ansicht folgt das Brett automatisch dem neu eingegangenen Zug. */
+  viewIndex = wasAtLatestPosition ? masterHistory.length : Math.min(viewIndex, masterHistory.length);
   lastMove = {from:mv.from, to:mv.to};
   selected = null;
   afterMoveClock(before.turn);
@@ -6183,7 +6189,7 @@ function renderMoveList(){
     if(c.idx !== null){
       if(viewIndex === c.idx + 1) div.classList.add('current');
       if(navigationLocked){
-        div.title = 'Navigation ist während einer laufenden Online-Partie gesperrt.';
+        div.title = 'Bitte die Daily-Zugvorschau zuerst bestätigen oder zurücknehmen.';
         div.style.cursor = 'default';
       } else {
         div.title = 'Zu dieser Stellung springen';
