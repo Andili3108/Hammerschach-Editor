@@ -542,7 +542,7 @@
 
           <h4>11. Spielen</h4>
           <p>Figuren werden durch Anklicken bewegt. Illegale Züge werden blockiert, und mögliche Zielfelder werden auf dem Brett markiert. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
-          <p>Im Freestyle-Modus kann die Rochade je nach Startstellung ungewohnt aussehen. Nach der Rochade stehen König und Turm auf den üblichen Zielfeldern: bei kurzer Rochade König auf der g-Linie und Turm auf der f-Linie, bei langer Rochade König auf der c-Linie und Turm auf der d-Linie.</p>
+          <p><strong>So rochierst du im Freestyle:</strong> Klicke zuerst deinen König und danach den Turm an, mit dem du rochieren möchtest. Klicke also nicht auf das spätere Zielfeld des Königs. Der Turm auf der Königsseite löst die kurze Rochade aus, der Turm auf der Damenseite die lange Rochade. Ist die Rochade nach den Regeln erlaubt, werden beide Figuren automatisch auf ihre Zielfelder gesetzt: kurze Rochade mit König auf der g-Linie und Turm auf der f-Linie, lange Rochade mit König auf der c-Linie und Turm auf der d-Linie.</p>
 
           <h4>12. Spieler- und Zeitanzeige</h4>
           <p>Im Spielraum kannst du die rechte Spalte zwischen <strong>„Spieler &amp; Zeit“</strong>, <strong>„Zugliste“</strong> und <strong>„Chat“</strong> umschalten.</p>
@@ -1481,7 +1481,12 @@ Game.prototype.castleMove = function(color, side){
   for(const xx of rangeBetweenInclusive(rookFrom, rookTo)){
     if(!mayOccupy(xx)) return null;
   }
-  const displayTo = kingTo === kingFrom ? rookFrom : kingTo;
+  /* Im Freestyle wird die Rochade eindeutig als König-auf-Turm-Eingabe
+     dargestellt. So bleibt z. B. Kf1-g1 ein normaler Königszug, während
+     Kf1-h1 eindeutig die kurze Rochade auslöst. */
+  const displayTo = this.variant === GAME_VARIANT_FREESTYLE
+    ? rookFrom
+    : (kingTo === kingFrom ? rookFrom : kingTo);
   return {from:[kingFrom,rank], to:[displayTo,rank], meta:{castle:key, kingFrom, kingTo, rookFrom, rookTo}};
 };
 Game.prototype.pseudoLegalMovesFrom = function(x,y){
@@ -4892,6 +4897,7 @@ function normalizeIncomingMove(candidate){
     from: [fx, fy],
     to: [tx, ty],
     promotion: promotionRaw && ['Q','R','B','N'].includes(promotionRaw) ? promotionRaw : null,
+    castle: castleSideCode(candidate),
     san: candidate.san || '',
     messageId: candidate.messageId || candidate.message_id || ''
   };
@@ -4912,10 +4918,14 @@ function extractOnlineMoves(msg){
   return list.map(normalizeIncomingMove).filter(Boolean);
 }
 function sameMoveCoords(a,b){
-  return !!(a && b && a.from && b.from && a.to && b.to &&
-    a.from[0] === b.from[0] && a.from[1] === b.from[1] &&
-    a.to[0] === b.to[0] && a.to[1] === b.to[1] &&
-    String(a.promotion || '') === String(b.promotion || ''));
+  if(!(a && b && a.from && b.from && a.to && b.to)) return false;
+  const sameFrom = a.from[0] === b.from[0] && a.from[1] === b.from[1];
+  const samePromotion = String(a.promotion || '') === String(b.promotion || '');
+  if(!sameFrom || !samePromotion) return false;
+  const castleA = castleSideCode(a);
+  const castleB = castleSideCode(b);
+  if(castleA && castleB) return castleA === castleB;
+  return a.to[0] === b.to[0] && a.to[1] === b.to[1];
 }
 function commitRemoteMove(found, promotion){
   const wasAtLatestPosition = viewIndex === masterHistory.length;
@@ -4962,7 +4972,7 @@ function applyOnlineMove(move){
     updateOnlineUi();
     return false;
   }
-  const found = g.legalMoves().find(m => m.from[0] === normalized.from[0] && m.from[1] === normalized.from[1] && m.to[0] === normalized.to[0] && m.to[1] === normalized.to[1]);
+  const found = findMatchingLegalMove(g.legalMoves(), normalized);
   if(!found){
     onlineLastMessage = 'Empfangener Zug ist lokal nicht legal. Raumzustand wird neu abgefragt.';
     requestOnlineState();
@@ -5884,12 +5894,47 @@ startOnlineBtn.addEventListener('click', startOnlineGame);
 if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
 if(resignBtn) resignBtn.addEventListener('click', handleResignButtonClick);
 
+function castleSideCode(value){
+  if(!value) return '';
+  const metaCastle = value.meta && value.meta.castle ? String(value.meta.castle) : '';
+  const explicitCastle = value.castle || value.castling || metaCastle;
+  const raw = String(explicitCastle || '').trim().toUpperCase();
+  if(raw === 'K' || raw === 'Q') return raw;
+  const san = String(value.san || '').trim().toUpperCase().replace(/0/g, 'O');
+  if(/^O-O-O(?:[+#])?$/.test(san)) return 'Q';
+  if(/^O-O(?:[+#])?$/.test(san)) return 'K';
+  return '';
+}
+function findMatchingLegalMove(legalMoves, moveLike){
+  if(!Array.isArray(legalMoves) || !moveLike || !moveLike.from || !moveLike.to) return null;
+  const from = moveLike.from;
+  const to = moveLike.to;
+  const sameFrom = move => move.from[0] === from[0] && move.from[1] === from[1];
+  const sameTo = move => move.to[0] === to[0] && move.to[1] === to[1];
+  const castleHint = castleSideCode(moveLike);
+
+  if(castleHint){
+    const hintedCastle = legalMoves.find(move => {
+      if(!sameFrom(move) || castleSideCode(move) !== castleHint) return false;
+      if(sameTo(move)) return true;
+      const meta = move.meta || {};
+      return Number.isInteger(meta.kingTo) && meta.kingTo === to[0] && move.to[1] === to[1];
+    });
+    if(hintedCastle) return hintedCastle;
+    return null;
+  }
+
+  const exact = legalMoves.filter(move => sameFrom(move) && sameTo(move));
+  if(exact.length <= 1) return exact[0] || null;
+  return exact.find(move => !castleSideCode(move)) || exact[0];
+}
+
 function buildGameFromHistory(n){
   const g = new Game();
   for(let i=0; i<n && i<masterHistory.length; i++){
     const h = masterHistory[i];
     const legal = g.legalMoves();
-    const found = legal.find(lm => lm.from[0] === h.from[0] && lm.from[1] === h.from[1] && lm.to[0] === h.to[0] && lm.to[1] === h.to[1]);
+    const found = findMatchingLegalMove(legal, h);
     const mv = found ? {from:found.from, to:found.to, meta:found.meta || {}, promotion:h.promotion || null} : {from:h.from, to:h.to, meta:h.meta || {}, promotion:h.promotion || null};
     g.makeMove(mv, true);
   }
@@ -5906,7 +5951,7 @@ function repetitionCountForHistory(n){
   for(let i=0; i<n && i<masterHistory.length; i++){
     const h = masterHistory[i];
     const legal = g.legalMoves();
-    const found = legal.find(lm => lm.from[0] === h.from[0] && lm.from[1] === h.from[1] && lm.to[0] === h.to[0] && lm.to[1] === h.to[1]);
+    const found = findMatchingLegalMove(legal, h);
     const mv = found ? {from:found.from, to:found.to, meta:found.meta || {}, promotion:h.promotion || null} : {from:h.from, to:h.to, meta:h.meta || {}, promotion:h.promotion || null};
     g.makeMove(mv, true);
     addCurrent();
@@ -6134,10 +6179,7 @@ function confirmPendingDailyMove(){
     showIllegalMoveFeedback('Der Raumzustand hat sich geändert. Bitte den Zug neu auswählen.');
     return;
   }
-  const found = g.legalMoves().find(m =>
-    m.from[0] === pending.move.from[0] && m.from[1] === pending.move.from[1] &&
-    m.to[0] === pending.move.to[0] && m.to[1] === pending.move.to[1]
-  );
+  const found = findMatchingLegalMove(g.legalMoves(), pending.move);
   if(!found){
     pendingDailyMove = null;
     selected = null;
@@ -6179,7 +6221,7 @@ function onSquareClick(x,y){
     renderBoard();
     return;
   }
-  const selectedLegalMove = g.legalMoves().find(m => m.from[0] === selected[0] && m.from[1] === selected[1] && m.to[0] === x && m.to[1] === y);
+  const selectedLegalMove = findMatchingLegalMove(g.legalMoves(), {from:selected, to:[x,y]});
   if(piece !== '.' && pieceColor(piece) === g.turn && !selectedLegalMove){
     selected = [x,y];
     playMoveSound({pickup:true});
@@ -6215,6 +6257,7 @@ function syncMoveToOnline(mv, movedSide){
     from: mv.from,
     to: mv.to,
     promotion: mv.promotion || null,
+    castle: castleSideCode(mv) || null,
     san: mv.san || '',
     messageId
   };
