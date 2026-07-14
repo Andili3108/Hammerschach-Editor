@@ -2598,31 +2598,73 @@ async function ensureAdminMemberMessageTables(env) {
 
 async function loadAdminMemberMessageRecipients(env, kind) {
   const messageKind = normalizeAdminMemberMessageKind(kind);
-  await Promise.all([ensureUserEmailPreferencesTable(env), ensureAccountSecurityTables(env)]);
-  const result = await env.DB.prepare(
-    `SELECT users.id, users.username, users.email, users.disabled, users.deleted_at,
-            status.email AS status_email, status.verified AS status_verified,
-            preferences.member_news_enabled
+  if (!env || !env.DB) throw new Error('Account-Datenbank ist nicht verfügbar.');
+
+  /* D1-Schemaänderungen bewusst nacheinander ausführen. Zwei parallele
+     CREATE-/ALTER-Vorgänge können bei älteren Datenbankständen kollidieren und
+     würden dann die Empfängerzählung vollständig abbrechen. */
+  await ensureUserEmailPreferencesTable(env);
+  await ensureAccountSecurityTables(env);
+
+  const usersResult = await env.DB.prepare(
+    `SELECT id, username, email
        FROM users
-       LEFT JOIN user_email_status status ON status.user_id = users.id
-       LEFT JOIN user_email_preferences preferences ON preferences.user_id = users.id
-      ORDER BY LOWER(users.username), users.created_at`
+      ORDER BY LOWER(username)`
   ).all();
+  const users = usersResult && Array.isArray(usersResult.results) ? usersResult.results : [];
+
+  /* Bestätigungsstatus und freiwillige Neuigkeiten-Einwilligung getrennt laden.
+     Dadurch bleibt die Abfrage auch mit bereits vorhandenen älteren D1-Tabellen
+     kompatibel und hängt nicht von einer komplexen JOIN-Abfrage ab. */
+  const emailStatusByUser = new Map();
+  try {
+    const statusResult = await env.DB.prepare(
+      `SELECT user_id, email, verified FROM user_email_status`
+    ).all();
+    for (const row of statusResult && Array.isArray(statusResult.results) ? statusResult.results : []) {
+      if (row && row.user_id) emailStatusByUser.set(String(row.user_id), row);
+    }
+  } catch (_) {
+    /* Bestehende Accounts vor Einführung der Verifizierung gelten weiterhin
+       als bestätigt; die Einzelprüfung beim Versand bleibt zusätzlich aktiv. */
+  }
+
+  const newsPreferenceByUser = new Map();
+  if (messageKind === 'news') {
+    try {
+      const preferenceResult = await env.DB.prepare(
+        `SELECT user_id, member_news_enabled FROM user_email_preferences`
+      ).all();
+      for (const row of preferenceResult && Array.isArray(preferenceResult.results) ? preferenceResult.results : []) {
+        if (row && row.user_id) newsPreferenceByUser.set(String(row.user_id), Number(row.member_news_enabled || 0) === 1);
+      }
+    } catch (_) {
+      /* Bei einem unerwartet alten Tabellenstand werden vorsichtshalber keine
+         normalen Neuigkeiten-Empfänger freigegeben. Andili bleibt als
+         Kontrollkopie enthalten. */
+    }
+  }
+
   const recipients = [];
-  for (const row of result && result.results ? result.results : []) {
-    if (!row || row.disabled === 1 || row.disabled === true || row.deleted_at) continue;
+  for (const row of users) {
+    if (!row) continue;
+    const userId = String(row.id || '');
     const email = normalizeEmail(row.email);
-    if (!email) continue;
-    const statusEmail = normalizeEmail(row.status_email);
-    const verified = !row.status_email || (statusEmail === email && Number(row.status_verified) === 1);
+    if (!userId || !email) continue;
+
+    const status = emailStatusByUser.get(userId);
+    const statusEmail = normalizeEmail(status && status.email);
+    const verified = !status || (statusEmail === email && Number(status.verified) === 1);
     if (!verified) continue;
+
     const adminCopy = isAdminUser(row, env);
     /* Andili erhält jede tatsächlich versendete Mitglieder-Information als
        Kontrollkopie. Bei Neuigkeiten gilt für alle anderen Mitglieder weiterhin
        ausschließlich die freiwillige Einwilligung aus der Accountverwaltung. */
-    if (messageKind === 'news' && !adminCopy && Number(row.member_news_enabled || 0) !== 1) continue;
+    if (messageKind === 'news' && !adminCopy && newsPreferenceByUser.get(userId) !== true) continue;
+
     recipients.push({
-      id:String(row.id || ''),
+      id:userId,
       username:cleanDisplayName(row.username) || 'Schachfreund',
       email,
       adminCopy
