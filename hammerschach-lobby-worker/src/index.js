@@ -3551,11 +3551,14 @@ function cleanMove(value) {
 
   const promotionRaw = value.promotion ? String(value.promotion).toUpperCase() : '';
   const promotion = ['Q', 'R', 'B', 'N'].includes(promotionRaw) ? promotionRaw : null;
+  const castleRaw = String(value.castle || value.castling || '').trim().toUpperCase();
+  const castle = castleRaw === 'K' || castleRaw === 'Q' ? castleRaw : null;
 
   return {
     from,
     to,
     promotion,
+    castle,
     san: String(value.san || '').slice(0, 40),
     clientPly: Number.isFinite(Number(value.ply)) ? Math.max(1, Math.floor(Number(value.ply))) : null,
     clientMessageId: String(value.messageId || value.message_id || '').slice(0, 96)
@@ -3916,7 +3919,12 @@ ChessGame.prototype.castleMove = function(color, side) {
     if (!mayOccupy(xx)) return null;
   }
 
-  const displayTo = kingTo === kingFrom ? rookFrom : kingTo;
+  // Chess960-UIs kodieren die Rochade eindeutig als König-auf-Turm-Zug.
+  // Dadurch kann ein normaler Königszug zum späteren Zielfeld nicht mit
+  // der Rochade verwechselt werden.
+  const displayTo = this.variant === GAME_VARIANT_FREESTYLE
+    ? rookFrom
+    : (kingTo === kingFrom ? rookFrom : kingTo);
   return { from:[kingFrom,rank], to:[displayTo,rank], meta:{ castle:key, kingFrom, kingTo, rookFrom, rookTo } };
 };
 
@@ -4153,11 +4161,49 @@ function serverMoveToSan(before, mv, after) {
   return san;
 }
 
+function castleSideCode(value) {
+  if (!value) return '';
+  const metaCastle = value.meta && value.meta.castle ? String(value.meta.castle) : '';
+  const explicitCastle = value.castle || value.castling || metaCastle;
+  const raw = String(explicitCastle || '').trim().toUpperCase();
+  if (raw === 'K' || raw === 'Q') return raw;
+  const san = String(value.san || '').trim().toUpperCase().replace(/0/g, 'O');
+  if (/^O-O-O(?:[+#])?$/.test(san)) return 'Q';
+  if (/^O-O(?:[+#])?$/.test(san)) return 'K';
+  return '';
+}
+
+function findMatchingLegalMove(legalMoves, moveLike) {
+  if (!Array.isArray(legalMoves) || !moveLike || !moveLike.from || !moveLike.to) return null;
+  const from = moveLike.from;
+  const to = moveLike.to;
+  const sameFrom = move => move.from[0] === from[0] && move.from[1] === from[1];
+  const sameTo = move => move.to[0] === to[0] && move.to[1] === to[1];
+  const castleHint = castleSideCode(moveLike);
+
+  if (castleHint) {
+    const hintedCastle = legalMoves.find(move => {
+      if (!sameFrom(move) || castleSideCode(move) !== castleHint) return false;
+      if (sameTo(move)) return true;
+      const meta = move.meta || {};
+      // Rückwärtskompatibilität: ältere Räume speicherten bei Chess960
+      // teilweise das spätere Königszielfeld statt des beteiligten Turmfelds.
+      return Number.isInteger(meta.kingTo) && meta.kingTo === to[0] && move.to[1] === to[1];
+    });
+    if (hintedCastle) return hintedCastle;
+    return null;
+  }
+
+  const exact = legalMoves.filter(move => sameFrom(move) && sameTo(move));
+  if (exact.length <= 1) return exact[0] || null;
+  return exact.find(move => !castleSideCode(move)) || exact[0];
+}
+
 function buildGameFromStoredMoves(moves, gameSetup = null) {
   const g = new ChessGame(cleanGameSetup(gameSetup));
   for (const stored of moves || []) {
     const legal = g.legalMoves();
-    const found = legal.find(lm => lm.from[0] === stored.from[0] && lm.from[1] === stored.from[1] && lm.to[0] === stored.to[0] && lm.to[1] === stored.to[1]);
+    const found = findMatchingLegalMove(legal, stored);
     if (!found) throw new Error('Gespeicherte Zugliste enthält einen illegalen Zug.');
     const mv = { from: found.from, to: found.to, meta: found.meta || {}, promotion: stored.promotion || null };
     g.makeMove(mv, true);
@@ -4168,7 +4214,7 @@ function buildGameFromStoredMoves(moves, gameSetup = null) {
 function validateMoveOnServer(storedMoves, incoming, gameSetup = null) {
   const before = buildGameFromStoredMoves(storedMoves || [], gameSetup);
   const legal = before.legalMoves();
-  const found = legal.find(lm => lm.from[0] === incoming.from[0] && lm.from[1] === incoming.from[1] && lm.to[0] === incoming.to[0] && lm.to[1] === incoming.to[1]);
+  const found = findMatchingLegalMove(legal, incoming);
   if (!found) {
     return { ok:false, code:'ILLEGAL_CHESS_MOVE', message:'Der Server hat den Zug als illegal abgelehnt.' };
   }
@@ -6261,6 +6307,7 @@ export class GameRoom {
         from: validation.move.from,
         to: validation.move.to,
         promotion: validation.move.promotion || null,
+        castle: castleSideCode(validation.move) || null,
         san: validation.move.san,
         piece: validation.move.piece,
         taken: validation.move.taken,
