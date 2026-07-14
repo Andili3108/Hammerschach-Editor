@@ -396,6 +396,23 @@
   .info-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
   .info-actions button{border-radius:12px;min-height:38px;}
 
+  .privacy-backdrop{z-index:3500;}
+  .privacy-modal{width:800px;}
+  .privacy-scroll h4:first-child{margin-top:2px;}
+  .privacy-highlight{border-radius:14px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.14);padding:10px 12px;margin:0 0 12px;font-size:14px;font-weight:800;color:#444;line-height:1.4;}
+  .privacy-storage-list{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,2fr);gap:7px 10px;margin:8px 0 12px;}
+  .privacy-storage-list dt,.privacy-storage-list dd{margin:0;border-radius:10px;padding:7px 9px;line-height:1.3;}
+  .privacy-storage-list dt{background:rgba(132,63,70,.08);font-weight:900;color:#843f46;}
+  .privacy-storage-list dd{background:#f7f7f9;border:1px solid rgba(0,0,0,.07);font-weight:700;color:#444;}
+  .privacy-external-link{color:#843f46;font-weight:900;text-decoration:none;border-bottom:1px solid rgba(132,63,70,.30);}
+  .privacy-external-link:hover{border-bottom-color:#843f46;}
+  .privacy-open-inline{display:inline!important;width:auto!important;min-height:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:#843f46!important;padding:0!important;margin:0!important;border-radius:0!important;font:inherit!important;font-weight:900!important;text-decoration:underline!important;vertical-align:baseline!important;}
+  .privacy-open-inline:hover:not(:disabled){transform:none!important;box-shadow:none!important;filter:none!important;text-decoration:none!important;}
+  .registration-privacy-note,.account-privacy-note{margin-top:10px;border-radius:11px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);padding:8px 10px;font-size:12px;font-weight:800;color:#666;line-height:1.4;}
+  .account-privacy-note{text-align:center;}
+  .site-footnote-button{display:inline!important;width:auto!important;min-height:0!important;border:0!important;border-bottom:1px solid rgba(132,63,70,.22)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:rgba(132,63,70,.72)!important;padding:0!important;margin:0!important;font:inherit!important;font-weight:inherit!important;line-height:inherit!important;vertical-align:baseline!important;}
+  .site-footnote-button:hover:not(:disabled){transform:none!important;box-shadow:none!important;filter:none!important;border-bottom-color:rgba(132,63,70,.72)!important;}
+
   .daily-games-modal{width:680px;max-width:100%;max-height:88vh;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);display:flex;flex-direction:column;}
   .daily-games-modal h3{margin:0 0 6px;font-size:22px;color:#222;}
   .daily-games-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
@@ -472,7 +489,7 @@
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
-  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid{grid-template-columns:1fr}}
+  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}}
 </style>
 </head>
 <body>
@@ -630,6 +647,81 @@
     </div>
 
 
+    <div id="privacyBackdrop" class="info-backdrop privacy-backdrop" hidden>
+      <div class="info-modal privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" aria-describedby="privacyIntro">
+        <h3 id="privacyTitle">Datenschutzhinweise für den Hammerschach-Gamer</h3>
+        <p id="privacyIntro" class="info-modal-intro">Diese Hinweise ergänzen das allgemeine Impressum und die Datenschutzerklärung auf Andili.de speziell für die Nutzung des Hammerschach-Gamers.</p>
+        <div class="info-scroll privacy-scroll" id="privacyScroll" tabindex="0">
+          <div class="privacy-highlight"><strong>Kurz gesagt:</strong> Der Gamer verarbeitet nur die Daten, die für Accounts, Online-Partien, Ratings, Benachrichtigungen und den sicheren Betrieb benötigt werden. Freiwillige Neuigkeiten sind standardmäßig ausgeschaltet. Es werden keine Werbeprofile erstellt.</div>
+
+          <h4>1. Verantwortlicher und Geltungsbereich</h4>
+          <p>Verantwortlich für den Hammerschach-Gamer ist der im <a class="privacy-external-link" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum und allgemeinen Datenschutz auf Andili.de</a> genannte Betreiber. Dort findest du auch die Kontaktmöglichkeiten und die allgemeinen Hinweise zu deinen Datenschutzrechten.</p>
+          <p>Diese ergänzenden Hinweise beziehen sich auf die Registrierung, den Login, die Online-Schachfunktionen, den Partie-Chat, Ratings, E-Mail-Benachrichtigungen und die technische Absicherung des Gamers.</p>
+
+          <h4>2. Nutzung ohne Account</h4>
+          <p>Live-Partien können über einen Einladungslink auch als Gast gespielt werden. Dabei werden ein Gastname, eine zufällig erzeugte Spielerkennung, der belegte Spielerplatz sowie die für die Partie erforderlichen Verbindungs- und Spieldaten verarbeitet. Gäste können keine eigenen Einladungen erstellen und Daily Chess nicht als Spieler verwenden.</p>
+          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe und Spielmodus. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen und die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
+
+          <h4>3. Registrierung, Account und Login</h4>
+          <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen und aktive Anmeldesitzungen verwaltet.</p>
+          <p>Ein Login-Token wird nach erfolgreicher Anmeldung im Browser gespeichert. Serverseitige Sitzungen sind regulär auf 30 Tage begrenzt. Bei einer Kennwortänderung werden andere bestehende Sitzungen beendet.</p>
+          <p>Bestätigungslinks für neue Accounts und Mailadressänderungen sind 24 Stunden gültig; Links zum Zurücksetzen des Kennworts 30 Minuten. Abgelaufene beziehungsweise verwendete Aktionstoken werden regelmäßig bereinigt.</p>
+
+          <h4>4. Partien, Zuglisten und Ratings</h4>
+          <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen und die jeweilige Zugfrist gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt werden kann.</p>
+          <p>Gewertete Partien zwischen registrierten Mitgliedern verändern die getrennten Ratings. Dazu werden Ratingwerte, Unsicherheitswerte, Partiezahlen und Ergebnisse gespeichert. Besucherzähler und die Zahl gespielter Partien werden nur als allgemeine Summen geführt und nicht einem persönlichen Nutzerprofil zugeordnet.</p>
+
+          <h4>5. Partie-Chat</h4>
+          <p>Der private Partie-Chat steht ausschließlich Weiß und Schwarz zur Verfügung. Gespeichert werden Absendername, Spielerrolle, Nachricht, Nachrichtenkennung und Zeitpunkt. Pro Spielraum bleiben höchstens die letzten 80 Nachrichten gespeichert. Zuschauer können den Chat weder lesen noch verwenden.</p>
+          <p>Für gespeicherte Spielräume und Chatnachrichten besteht derzeit keine allgemeine automatische zeitliche Löschfrist. Vermeide deshalb vertrauliche, besonders persönliche oder sensible Angaben im Partie-Chat.</p>
+
+          <h4>6. Online-Status und öffentliche Partien</h4>
+          <p>Bei angemeldeten Mitgliedern wird ein Aktivitätszeitpunkt gespeichert, damit im Gamer ein ungefährer Online-Status angezeigt werden kann. Im Spielraum wird außerdem angezeigt, ob ein Spieler aktuell verbunden ist.</p>
+          <p>Der Ersteller entscheidet, ob eine Partie öffentlich in der Übersicht „Laufende Partien“ erscheint. Öffentlich sichtbar sind dann insbesondere Spielernamen, Partieart, Spielstatus und das Brett. Der private Chat bleibt verborgen. Die Freigabe kann wieder entzogen werden.</p>
+
+          <h4>7. E-Mail-Versand</h4>
+          <p>Die Mailadresse wird für notwendige Accountnachrichten verwendet, zum Beispiel Mailbestätigung, Kennwort-Wiederherstellung und Hinweise zu einer angeforderten Mailadressänderung. Bei der Einladung eines registrierten Mitglieds wird die hinterlegte Mailadresse serverseitig verwendet und nicht an den Browser des Einladenden übertragen.</p>
+          <p>Benachrichtigungen zu Daily-Zügen und Partieergebnissen können in der Accountverwaltung ein- oder ausgeschaltet werden. Neuigkeiten und Funktionsupdates sind freiwillig, standardmäßig ausgeschaltet und können jederzeit wieder deaktiviert werden.</p>
+          <p>Der Versand erfolgt über die im Worker konfigurierte Versandlösung. Der Worker unterstützt einen SMTP-Versand und alternativ Mailjet. Versandprotokolle enthalten Mailart, Versandweg, Erfolg oder Fehler und Zeitpunkt, jedoch nicht den vollständigen Mailinhalt. Optionale Anhänge an Administrator-Nachrichten werden für den Versand verarbeitet.</p>
+
+          <h4>8. Sicherheit und Protokolle</h4>
+          <p>Zum Schutz vor automatisierten Angriffen werden Registrierungs-, Login- und Wiederherstellungsversuche begrenzt. Hierfür werden die eingegebene Kennung und die IP-Adresse nicht im Klartext, sondern als nicht direkt lesbare Hashwerte protokolliert. Zusätzlich können Benutzer-ID, Ereignisart, Ergebnis, Fehlercode und Zeitpunkt gespeichert werden.</p>
+          <dl class="privacy-storage-list">
+            <dt>Rate-Limit-Protokolle</dt><dd>automatische Bereinigung nach 48 Stunden</dd>
+            <dt>Sicherheitsereignisse</dt><dd>automatische Bereinigung nach 90 Tagen</dd>
+            <dt>Anfragen für Sicherheitsmails</dt><dd>automatische Bereinigung nach 48 Stunden</dd>
+            <dt>Einladungs-Mailprotokolle</dt><dd>automatische Bereinigung nach 30 Tagen</dd>
+            <dt>Allgemeine Versandprotokolle</dt><dd>automatische Bereinigung nach 180 Tagen</dd>
+            <dt>Daily-Mailstatus</dt><dd>automatische Bereinigung nach 180 Tagen</dd>
+          </dl>
+          <p>Die Bereinigung wird beim laufenden Betrieb ausgelöst. Falls eine betreffende Funktion längere Zeit nicht verwendet wird, kann die tatsächliche Entfernung technisch später erfolgen.</p>
+
+          <h4>9. Technischer Betrieb und externe Inhalte</h4>
+          <p>Der Gamer wird mit Cloudflare-Technik betrieben. Dabei kommen insbesondere Worker, eine D1-Datenbank und Durable Objects für dauerhaft erreichbare Spielräume zum Einsatz. Bei der Nutzung werden die technisch notwendigen Verbindungsdaten durch die beteiligten Server verarbeitet.</p>
+          <p>Die Schachfiguren werden derzeit als Bilddateien von Wikimedia Commons geladen. Beim Abruf wird eine direkte Verbindung zu Wikimedia-Servern hergestellt, bei der technisch unter anderem die IP-Adresse und Browserinformationen übertragen werden können. Das Gamer-Logo in HTML-Mails kann als externes Bild eingebunden sein; manche Mailprogramme laden solche Bilder erst nach Zustimmung.</p>
+
+          <h4>10. Rechtsgrundlagen und Zwecke</h4>
+          <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
+
+          <h4>11. Accountlöschung und weitere Löschung</h4>
+          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, Sitzungen, Anwesenheitsstatus, Ratings, E-Mail-Einstellungen, persönliche Aktionstoken und zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
+          <p>Bereits beendete Partien, Rating-Partieaufzeichnungen sowie Daten in dauerhaft gespeicherten Spielräumen können aus Gründen der Partiedokumentation und technischen Zuordnung weiterhin Angaben oder interne Kennungen enthalten. Die vollständige Löschung beziehungsweise Anonymisierung dieser Altdaten ist derzeit nicht in allen Bereichen automatisiert. Für eine weitergehende Prüfung oder Löschanfrage wende dich bitte über die Kontaktdaten im Impressum an den Betreiber.</p>
+
+          <h4>12. Deine Rechte und Kontakt</h4>
+          <p>Du kannst im Rahmen der gesetzlichen Voraussetzungen Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung oder Datenübertragbarkeit verlangen und einer Verarbeitung widersprechen. Eine erteilte Einwilligung, insbesondere für freiwillige Neuigkeiten, kann für die Zukunft widerrufen werden.</p>
+          <p>Kontakt, verantwortliche Stelle, allgemeine Datenschutzhinweise und Angaben zur zuständigen Aufsichtsbehörde findest du unter <a class="privacy-external-link" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz auf Andili.de</a>.</p>
+
+          <h4>13. Stand und Änderungen</h4>
+          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>14. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
+        </div>
+        <div class="info-actions">
+          <a class="brand-origin-button" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a>
+          <button id="privacyCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+
     <div id="playerNameBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="playerNameTitle">
         <h3 id="playerNameTitle">Als Gast weiterspielen</h3>
@@ -676,6 +768,7 @@
             <input id="registerPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
             <label class="identity-label" for="registerPasswordRepeatInput">Kennwort wiederholen</label>
             <input id="registerPasswordRepeatInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
+            <div class="registration-privacy-note">Für die Registrierung werden die zur Accountführung erforderlichen Daten verarbeitet. Einzelheiten findest du im <button id="registerPrivacyOpenBtn" class="privacy-open-inline" type="button">Gamer-Datenschutz</button>. Eine zusätzliche Zustimmung zur Datenschutzerklärung ist nicht erforderlich.</div>
           </div>
         </div>
 
@@ -721,6 +814,7 @@
             <button id="adminOverviewOpenBtn" class="button-flat admin-overview-open-btn" type="button" hidden>Admin-Systemübersicht</button>
           </div>
           <div id="authAccountProtectionNote" class="auth-account-protection-note" hidden></div>
+          <div class="account-privacy-note">Informationen zu Account, Partien, Chat und E-Mails: <button id="accountPrivacyOpenBtn" class="privacy-open-inline" type="button">Gamer-Datenschutz öffnen</button></div>
         </div>
 
         <div id="authError" class="identity-error" aria-live="polite"></div>
@@ -987,7 +1081,7 @@
           <button id="resignBtn" class="game-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
         </div>
         <footer class="site-footnote" aria-label="Projekt-Hinweis">
-          <div><a href="https://www.andili.de" target="_blank" rel="noopener noreferrer">Hammerschach-Gamer – ein Produkt von Hammerschach</a> · Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026) · <a href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum</a></div>
+          <div><a href="https://www.andili.de" target="_blank" rel="noopener noreferrer">Hammerschach-Gamer – ein Produkt von Hammerschach</a> · Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026) · <button id="footerPrivacyOpenBtn" class="site-footnote-button" type="button">Gamer-Datenschutz</button> · <a href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a></div>
           <div id="siteStats" class="site-stats" aria-live="polite" hidden>Gamer-Aufrufe: — · Gespielte Online-Partien: —</div>
         </footer>
       </div>
@@ -2407,6 +2501,12 @@ const infoOpenBtn = document.getElementById('infoOpenBtn');
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
 const infoScroll = document.getElementById('infoScroll');
+const privacyBackdrop = document.getElementById('privacyBackdrop');
+const privacyCloseBtn = document.getElementById('privacyCloseBtn');
+const privacyScroll = document.getElementById('privacyScroll');
+const footerPrivacyOpenBtn = document.getElementById('footerPrivacyOpenBtn');
+const registerPrivacyOpenBtn = document.getElementById('registerPrivacyOpenBtn');
+const accountPrivacyOpenBtn = document.getElementById('accountPrivacyOpenBtn');
 const authBackdrop = document.getElementById('authBackdrop');
 const authIntro = document.getElementById('authIntro');
 const authLoginTab = document.getElementById('authLoginTab');
@@ -4316,6 +4416,41 @@ if(infoOpenBtn) infoOpenBtn.addEventListener('click', openInfoDialog);
 if(infoCloseBtn) infoCloseBtn.addEventListener('click', closeInfoDialog);
 if(infoBackdrop) infoBackdrop.addEventListener('click', ev => { if(ev.target === infoBackdrop) closeInfoDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && infoBackdrop && !infoBackdrop.hidden) closeInfoDialog(); });
+
+let privacyPreviousFocus = null;
+function openPrivacyDialog(){
+  if(!privacyBackdrop) return;
+  privacyPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  privacyBackdrop.hidden = false;
+  setTimeout(() => {
+    try{
+      if(privacyScroll){
+        privacyScroll.scrollTop = 0;
+        privacyScroll.focus();
+      }
+    } catch(_){}
+  }, 0);
+}
+function closePrivacyDialog(){
+  if(privacyBackdrop) privacyBackdrop.hidden = true;
+  const returnTarget = privacyPreviousFocus;
+  privacyPreviousFocus = null;
+  setTimeout(() => {
+    try{ if(returnTarget && document.contains(returnTarget)) returnTarget.focus(); }
+    catch(_){}
+  }, 0);
+}
+[footerPrivacyOpenBtn, registerPrivacyOpenBtn, accountPrivacyOpenBtn].forEach(btn => {
+  if(btn) btn.addEventListener('click', openPrivacyDialog);
+});
+if(privacyCloseBtn) privacyCloseBtn.addEventListener('click', closePrivacyDialog);
+if(privacyBackdrop) privacyBackdrop.addEventListener('click', ev => { if(ev.target === privacyBackdrop) closePrivacyDialog(); });
+document.addEventListener('keydown', ev => {
+  if(ev.key === 'Escape' && privacyBackdrop && !privacyBackdrop.hidden){
+    ev.preventDefault();
+    closePrivacyDialog();
+  }
+});
 
 loadAuthState();
 updateAuthUi();
