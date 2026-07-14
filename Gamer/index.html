@@ -616,7 +616,7 @@
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
           <h4>17. Neue Partie</h4>
-          <p>Über <strong>„Neue Partie“</strong> öffnest du einen frischen Tab ohne bestehenden Raum. Für jede neue Online-Partie wird ein neuer Raum mit einem eigenen Einladungslink erstellt.</p>
+          <p>Über <strong>„Neue Partie“</strong> öffnest du eine frische Ansicht ohne bestehenden Raum. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird weiterhin ein neuer Tab geöffnet. Für jede neue Online-Partie wird anschließend ein neuer Raum mit einem eigenen Einladungslink erstellt.</p>
 
           <h4>18. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -4616,7 +4616,9 @@ function updateOnlineActionButtons(){
   if(newGameBtn){
     newGameBtn.disabled = false;
     newGameBtn.hidden = false;
-    newGameBtn.title = 'Neue Partie in einem frischen Tab öffnen.';
+    newGameBtn.title = HAMMERSCHACH_IS_EMBEDDED
+      ? 'Neue Partie im Hammerschach-Gamer öffnen.'
+      : 'Neue Partie in einem frischen Tab öffnen.';
   }
 }
 function updateGameActionButtons(){
@@ -7016,7 +7018,8 @@ function newGame(){
   resetClockForNewGame();
   renderBoard();
 }
-function openNewGameTab(){
+function openNewGameView(){
+  let targetUrl = '';
   try{
     const url = new URL(window.location.href);
     url.searchParams.delete('room');
@@ -7024,12 +7027,21 @@ function openNewGameTab(){
     url.searchParams.delete('player');
     url.searchParams.delete('watch');
     url.searchParams.set('fresh', '1');
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+    targetUrl = url.toString();
   } catch(_){
-    window.open((window.location.pathname || '/') + '?fresh=1', '_blank', 'noopener,noreferrer');
+    targetUrl = (window.location.pathname || '/') + '?fresh=1';
   }
+
+  if(HAMMERSCHACH_IS_EMBEDDED){
+    /* Im iFrame nur dessen Inhalt wechseln. Die Andili-Seite und der
+       eingebettete Darstellungsmodus bleiben dadurch erhalten. */
+    window.location.assign(targetUrl);
+    return;
+  }
+
+  window.open(targetUrl, '_blank', 'noopener,noreferrer');
 }
-if(newGameBtn) newGameBtn.addEventListener('click', openNewGameTab);
+if(newGameBtn) newGameBtn.addEventListener('click', openNewGameView);
 document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
