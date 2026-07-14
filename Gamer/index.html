@@ -484,6 +484,26 @@
   .site-stats{margin-top:4px;font-size:12px;font-weight:700;color:rgba(17,17,17,.46);line-height:1.35;}
   .site-stats[hidden]{display:none!important;}
 
+
+  .chat-moderation-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;}
+  .chat-moderation-actions button{min-height:34px;border-radius:11px;padding:6px 8px;font-size:12px;}
+  .report-player-btn{color:#843f46!important;}
+  .moderation-modal{width:620px;max-width:100%;max-height:88vh;overflow:auto;}
+  .moderation-form{display:flex;flex-direction:column;gap:9px;}
+  .moderation-select,.moderation-textarea,.moderation-input{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:9px 11px;font-size:14px;font-weight:800;outline:none;}
+  .moderation-textarea{min-height:105px;resize:vertical;font-family:Arial,sans-serif;line-height:1.4;}
+  .moderation-note{font-size:12px;font-weight:800;color:#666;line-height:1.35;}
+  .moderation-status{min-height:18px;font-size:13px;font-weight:900;color:#666;}
+  .moderation-status.error{color:#9A2D33}.moderation-status.success{color:#226b36}
+  .admin-moderation-list{display:flex;flex-direction:column;gap:9px;}
+  .admin-report-card{border-radius:13px;background:#fff;border:1px solid rgba(0,0,0,.10);padding:10px 11px;}
+  .admin-report-card.open{border-color:rgba(132,63,70,.28);background:rgba(132,63,70,.035);}
+  .admin-report-head{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:900;color:#333;}
+  .admin-report-meta,.admin-report-comment,.admin-report-chat{font-size:12px;font-weight:800;color:#666;line-height:1.4;margin-top:6px;overflow-wrap:anywhere;}
+  .admin-report-chat{background:#f7f7f9;border-radius:10px;padding:7px 8px;max-height:120px;overflow:auto;white-space:pre-wrap;}
+  .admin-report-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .admin-report-actions button{min-height:32px;border-radius:10px;padding:6px 8px;font-size:11px;}
+
   @media (max-width:1080px){.match-actions{grid-template-columns:repeat(3,minmax(0,1fr));}}
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
@@ -639,6 +659,9 @@
           <p>Behandle deinen Gegner so, wie du selbst behandelt werden möchtest. Beleidigungen, Drohungen, diskriminierende Inhalte, Werbung und absichtliche Störungen haben im Hammerschach-Gamer keinen Platz.</p>
           <p>Gewertete Partien sollen ohne fremde Hilfe oder den Einsatz von Schachprogrammen gespielt werden. Verwende außerdem keine irreführenden oder anstößigen Benutzernamen und verzögere Partien nicht absichtlich durch unnötige Wartezeiten oder mutwillige Verbindungsabbrüche.</p>
           <p>Bei schweren oder wiederholten Verstößen kann der Administrator geeignete Maßnahmen ergreifen, insbesondere Hinweise aussprechen sowie Accounts einschränken oder löschen.</p>
+          <h4>23. Melden, Stummschalten und Moderation</h4>
+          <p>Spieler können den Chat ihres Gegners für die aktuelle Partie auf dem eigenen Gerät stummschalten. Eingeloggte Mitglieder können einen Gegner außerdem vertraulich melden. Dabei werden Partieangaben und ein begrenzter Ausschnitt des Partie-Chats an den Administrator übermittelt. Eine Meldung führt niemals automatisch zu einer Sanktion.</p>
+          <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -921,6 +944,12 @@
             <div id="adminDatabaseRows" class="admin-database-grid"></div>
           </section>
 
+          <section class="admin-section" aria-labelledby="adminModerationTitle">
+            <h4 id="adminModerationTitle">Moderation</h4>
+            <div id="adminModerationStats" class="admin-inline-stats"></div>
+            <div id="adminModerationList" class="admin-moderation-list"><div class="admin-list-empty">Noch keine Meldungen geladen.</div></div>
+          </section>
+
           <section class="admin-section" aria-labelledby="adminBackupTitle">
             <h4 id="adminBackupTitle">Manuelles D1-Backup</h4>
             <div class="admin-backup-box">
@@ -991,6 +1020,34 @@
           <button id="adminMessageCloseBtn" class="button-flat" type="button">Schließen</button>
           <button id="adminMessageTestBtn" class="button-flat" type="button">Testmail an mich</button>
           <button id="adminMessageSendBtn" class="admin-message-send-btn" type="button" disabled>Jetzt versenden</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="moderationReportBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal moderation-modal" role="dialog" aria-modal="true" aria-labelledby="moderationReportTitle">
+        <h3 id="moderationReportTitle">Spieler melden</h3>
+        <p id="moderationReportIntro">Die Meldung wird vertraulich mit der aktuellen Partie und einem begrenzten Chat-Ausschnitt an den Administrator übermittelt.</p>
+        <div class="moderation-form">
+          <label class="identity-label" for="moderationReasonSelect">Grund</label>
+          <select id="moderationReasonSelect" class="moderation-select">
+            <option value="insult">Beleidigung oder unsachlicher Umgang</option>
+            <option value="threat">Drohung</option>
+            <option value="discrimination">Diskriminierender Inhalt</option>
+            <option value="spam">Werbung oder Spam</option>
+            <option value="username">Anstößiger Benutzername</option>
+            <option value="stalling">Absichtliche Störung oder Zeitverzögerung</option>
+            <option value="cheating">Verdacht auf unerlaubte Schachhilfe</option>
+            <option value="other">Sonstiges</option>
+          </select>
+          <label class="identity-label" for="moderationCommentInput">Kurze Erläuterung (optional)</label>
+          <textarea id="moderationCommentInput" class="moderation-textarea" maxlength="600" placeholder="Was ist passiert?"></textarea>
+          <div class="moderation-note">Eine Meldung führt nicht automatisch zu einer Sperre. Der gemeldete Spieler erfährt nicht, wer die Meldung abgegeben hat.</div>
+          <div id="moderationReportStatus" class="moderation-status" aria-live="polite"></div>
+        </div>
+        <div class="identity-actions">
+          <button id="moderationReportCloseBtn" class="button-flat" type="button">Abbrechen</button>
+          <button id="moderationReportSubmitBtn" type="button">Meldung senden</button>
         </div>
       </div>
     </div>
@@ -1249,6 +1306,10 @@
               <button id="chatSendBtn" class="chat-send-btn" type="button" disabled>Senden</button>
             </div>
             <div id="chatStatus" class="chat-status" aria-live="polite">Chat verfügbar, sobald ein Online-Raum verbunden ist.</div>
+            <div class="chat-moderation-actions" aria-label="Chat und Spieler moderieren">
+              <button id="muteOpponentBtn" class="button-flat" type="button" disabled>🔇 Chat stummschalten</button>
+              <button id="reportPlayerBtn" class="button-flat report-player-btn" type="button" disabled>🚩 Spieler melden</button>
+            </div>
           </div>
 
         </div>
@@ -1984,6 +2045,15 @@ const chatMessagesEl = document.getElementById('chatMessages');
 const chatInputEl = document.getElementById('chatInput');
 const chatSendBtn = document.getElementById('chatSendBtn');
 const chatStatusEl = document.getElementById('chatStatus');
+const muteOpponentBtn = document.getElementById('muteOpponentBtn');
+const reportPlayerBtn = document.getElementById('reportPlayerBtn');
+const moderationReportBackdrop = document.getElementById('moderationReportBackdrop');
+const moderationReasonSelect = document.getElementById('moderationReasonSelect');
+const moderationCommentInput = document.getElementById('moderationCommentInput');
+const moderationReportStatus = document.getElementById('moderationReportStatus');
+const moderationReportCloseBtn = document.getElementById('moderationReportCloseBtn');
+const moderationReportSubmitBtn = document.getElementById('moderationReportSubmitBtn');
+let opponentChatMuted = false;
 const chatCountEl = document.getElementById('chatCount');
 const CHAT_MESSAGE_MAX_LENGTH = 300;
 const CHAT_HISTORY_MAX = 80;
@@ -2140,6 +2210,7 @@ function renderChatMessages(){
   }
   const frag = document.createDocumentFragment();
   chatMessages.forEach(chat => {
+    if(opponentChatMuted && !chat.mine) return;
     const item = document.createElement('div');
     item.className = 'chat-message' + (chat.mine ? ' mine' : '');
     const meta = document.createElement('div');
@@ -2161,6 +2232,7 @@ function renderChatMessages(){
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 function updateChatControls(){
+  try{ opponentChatMuted=!!(onlineRoomId && localStorage.getItem('hammerschachMute:'+onlineRoomId)==='yes'); }catch(_){}
   const spectator = onlineRoleCode === 'spectator';
   const enabled = !!(onlineRoomId && onlineConnected && !spectator);
   if(chatInputEl){
@@ -2168,6 +2240,10 @@ function updateChatControls(){
     chatInputEl.placeholder = enabled ? 'Nachricht schreiben…' : 'Chat verfügbar nach Online-Verbindung…';
   }
   if(chatSendBtn) chatSendBtn.disabled = !enabled;
+  const playerActionsEnabled = !!(onlineRoomId && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
+  if(muteOpponentBtn) muteOpponentBtn.disabled = !playerActionsEnabled;
+  if(reportPlayerBtn) reportPlayerBtn.disabled = !playerActionsEnabled || !onlineAuthToken;
+  if(muteOpponentBtn) muteOpponentBtn.textContent = opponentChatMuted ? '🔊 Chat wieder anzeigen' : '🔇 Chat stummschalten';
   if(!enabled){
     if(spectator) setChatStatus('Der Partie-Chat ist privat und nur für Weiß und Schwarz sichtbar.', false);
     else if(!onlineRoomId) setChatStatus('Chat verfügbar, sobald ein Online-Raum erstellt ist.', false);
@@ -2218,6 +2294,38 @@ if(chatInputEl){
     }
   });
 }
+
+function currentOpponentRole(){ return onlineRoleCode === 'w' ? 'b' : onlineRoleCode === 'b' ? 'w' : ''; }
+function setModerationReportStatus(message,kind){ if(!moderationReportStatus)return; moderationReportStatus.textContent=message||''; moderationReportStatus.classList.toggle('error',kind==='error'); moderationReportStatus.classList.toggle('success',kind==='success'); }
+function toggleOpponentMute(){
+  if(!currentOpponentRole()) return;
+  opponentChatMuted=!opponentChatMuted;
+  try{ if(onlineRoomId) localStorage.setItem('hammerschachMute:'+onlineRoomId,opponentChatMuted?'yes':'no'); }catch(_){}
+  renderChatMessages(); updateChatControls();
+  setChatStatus(opponentChatMuted?'Chatnachrichten des Gegners werden auf diesem Gerät ausgeblendet.':'Chatnachrichten des Gegners werden wieder angezeigt.',false);
+}
+function openModerationReport(){
+  if(!onlineAuthToken){ openAuthDialog('login'); if(authError)authError.textContent='Bitte einloggen, um einen Spieler zu melden.'; return; }
+  if(!onlineRoomId||!currentOpponentRole()) return;
+  if(moderationCommentInput) moderationCommentInput.value=''; setModerationReportStatus('','');
+  if(moderationReportBackdrop) moderationReportBackdrop.hidden=false;
+}
+function closeModerationReport(){ if(moderationReportBackdrop) moderationReportBackdrop.hidden=true; setModerationReportStatus('',''); }
+async function submitModerationReport(){
+  if(!onlineRoomId||!currentOpponentRole()) return;
+  if(moderationReportSubmitBtn) moderationReportSubmitBtn.disabled=true;
+  setModerationReportStatus('Meldung wird übermittelt…','');
+  try{
+    const data=await authApi('/api/moderation/report',{method:'POST',body:JSON.stringify({roomId:onlineRoomId,reportedRole:currentOpponentRole(),reason:moderationReasonSelect?moderationReasonSelect.value:'other',comment:moderationCommentInput?moderationCommentInput.value:''})});
+    setModerationReportStatus(data.message||'Meldung wurde gesendet.','success'); setTimeout(closeModerationReport,900);
+  }catch(err){ setModerationReportStatus(err&&err.message?err.message:'Die Meldung konnte nicht gesendet werden.','error'); }
+  finally{ if(moderationReportSubmitBtn) moderationReportSubmitBtn.disabled=false; }
+}
+if(muteOpponentBtn) muteOpponentBtn.addEventListener('click',toggleOpponentMute);
+if(reportPlayerBtn) reportPlayerBtn.addEventListener('click',openModerationReport);
+if(moderationReportCloseBtn) moderationReportCloseBtn.addEventListener('click',closeModerationReport);
+if(moderationReportSubmitBtn) moderationReportSubmitBtn.addEventListener('click',submitModerationReport);
+if(moderationReportBackdrop) moderationReportBackdrop.addEventListener('click',ev=>{if(ev.target===moderationReportBackdrop)closeModerationReport();});
 
 function isOnlineGameLiveForUi(){
   return !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
@@ -2557,6 +2665,8 @@ const adminMailFailures = document.getElementById('adminMailFailures');
 const adminDatabaseStats = document.getElementById('adminDatabaseStats');
 const adminDatabaseRows = document.getElementById('adminDatabaseRows');
 const adminBackupText = document.getElementById('adminBackupText');
+const adminModerationStats = document.getElementById('adminModerationStats');
+const adminModerationList = document.getElementById('adminModerationList');
 const adminBackupMarkBtn = document.getElementById('adminBackupMarkBtn');
 const adminOverviewStatus = document.getElementById('adminOverviewStatus');
 const adminOverviewRefreshBtn = document.getElementById('adminOverviewRefreshBtn');
@@ -3098,6 +3208,34 @@ function renderAdminMailFailures(failures){
   });
   adminMailFailures.appendChild(frag);
 }
+
+const MODERATION_REASON_LABELS={insult:'Beleidigung',threat:'Drohung',discrimination:'Diskriminierung',spam:'Spam/Werbung',username:'Benutzername',stalling:'Störung/Zeitverzögerung',cheating:'Unerlaubte Schachhilfe',other:'Sonstiges'};
+async function moderationAdminAction(report,userId,action){
+  if(!userId){ window.alert('Bei Gästen ist keine dauerhafte Accountsperre möglich. Die Meldung kann dennoch abgeschlossen werden.'); return; }
+  let hours=24; if(action==='suspend'){ const raw=window.prompt('Dauer der Sperre in Stunden:','24'); if(raw===null)return; hours=Math.max(1,Number(raw||24)); }
+  const reason=window.prompt('Interner Grund der Maßnahme:',MODERATION_REASON_LABELS[report.reason]||report.reason||'') ; if(reason===null)return;
+  await authApi('/api/admin/moderation/action',{method:'POST',body:JSON.stringify({userId,action,hours,reason,note:'Meldung '+report.id})});
+  await authApi('/api/admin/moderation/resolve',{method:'POST',body:JSON.stringify({reportId:report.id,status:'resolved',resolution:action,note:reason})});
+  await refreshAdminModeration();
+}
+async function resolveModerationReport(report,status){
+  const note=window.prompt(status==='dismissed'?'Interne Begründung für das Verwerfen:':'Interne Abschlussnotiz:',''); if(note===null)return;
+  await authApi('/api/admin/moderation/resolve',{method:'POST',body:JSON.stringify({reportId:report.id,status,resolution:status,note})}); await refreshAdminModeration();
+}
+function renderAdminModeration(reports){
+  const list=Array.isArray(reports)?reports:[]; const open=list.filter(r=>r.status==='open');
+  replaceInlineStats(adminModerationStats,[{label:'Offene Meldungen',value:adminNumber(open.length)},{label:'Meldungen insgesamt',value:adminNumber(list.length)},{label:'Gemeldete Accounts',value:adminNumber(new Set(list.filter(r=>r.reportedUserId).map(r=>r.reportedUserId)).size)},{label:'Erledigt/verworfen',value:adminNumber(list.length-open.length)}]);
+  if(!adminModerationList)return; adminModerationList.innerHTML=''; if(!list.length){const e=document.createElement('div');e.className='admin-list-empty';e.textContent='Keine Meldungen vorhanden.';adminModerationList.appendChild(e);return;}
+  list.forEach(report=>{ const card=document.createElement('div');card.className='admin-report-card '+(report.status==='open'?'open':'');
+    const head=document.createElement('div');head.className='admin-report-head';head.innerHTML='<span></span><span></span>';head.children[0].textContent=(report.reportedName||'Spieler')+' · '+(MODERATION_REASON_LABELS[report.reason]||report.reason);head.children[1].textContent=report.status==='open'?'OFFEN':String(report.status||'').toUpperCase();card.appendChild(head);
+    const meta=document.createElement('div');meta.className='admin-report-meta';meta.textContent='Gemeldet von '+(report.reporterName||'—')+' · Raum '+report.roomId+' · '+formatAdminDateTime(report.createdAt);card.appendChild(meta);
+    if(report.comment){const c=document.createElement('div');c.className='admin-report-comment';c.textContent='Erläuterung: '+report.comment;card.appendChild(c);}
+    if(Array.isArray(report.chatSnapshot)&&report.chatSnapshot.length){const ch=document.createElement('div');ch.className='admin-report-chat';ch.textContent=report.chatSnapshot.map(m=>(m.senderName||m.role||'Spieler')+': '+(m.text||'')).join('\n');card.appendChild(ch);}
+    if(report.status==='open'){const a=document.createElement('div');a.className='admin-report-actions';[['Verwerfen','dismiss'],['Verwarnen','warn'],['Chat sperren','chat_block'],['24h+ sperren','suspend'],['Dauerhaft sperren','ban']].forEach(([label,act])=>{const b=document.createElement('button');b.type='button';b.className='button-flat';b.textContent=label;b.addEventListener('click',async()=>{try{if(act==='dismiss')await resolveModerationReport(report,'dismissed');else await moderationAdminAction(report,report.reportedUserId,act);}catch(err){setAdminOverviewStatus(err&&err.message?err.message:'Moderationsmaßnahme fehlgeschlagen.','error');}});a.appendChild(b);});card.appendChild(a);} adminModerationList.appendChild(card);
+  });
+}
+async function refreshAdminModeration(){ if(!onlineAuthToken||!onlineAuthUser||onlineAuthUser.isAdmin!==true)return; try{const data=await authApi('/api/admin/moderation/reports');renderAdminModeration(data.reports);}catch(err){if(adminModerationList)adminModerationList.innerHTML='<div class="admin-list-empty">Moderationsdaten konnten nicht geladen werden.</div>';}}
+
 function renderAdminOverview(data){
   const overview = data && data.overview ? data.overview : data || {};
   const accounts = overview.accounts || {};
@@ -3175,6 +3313,7 @@ async function refreshAdminOverview(){
   try{
     const data = await authApi('/api/admin/overview');
     renderAdminOverview(data);
+    await refreshAdminModeration();
     setAdminOverviewStatus('Systemübersicht wurde aktualisiert.', 'success');
   } catch(err){
     setAdminOverviewStatus(err && err.message ? err.message : 'Die Systemübersicht konnte nicht geladen werden.', 'error');
