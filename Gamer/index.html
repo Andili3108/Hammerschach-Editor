@@ -492,6 +492,8 @@
   .public-games-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
   .public-games-list{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:90px;max-height:62vh;padding:2px 4px 2px 0;}
   .public-game-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:12px 13px;}
+  .public-game-card.mine{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.24);box-shadow:inset 0 0 0 1px rgba(132,63,70,.06);}
+  .public-game-kicker{font-size:12px;font-weight:900;color:#843f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
   .public-game-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;}
   .public-game-status{font-size:13px;font-weight:900;color:#843f46;margin-top:4px;}
   .public-game-meta{font-size:12px;font-weight:800;color:#666;margin-top:4px;line-height:1.4;}
@@ -724,7 +726,7 @@
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
-          <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig.</p>
+          <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
 
           <h4>9. Einladen oder eine Partie offen anbieten</h4>
@@ -5080,15 +5082,30 @@ function publicGameVariantLabel(game){
   return 'Klassisch';
 }
 function openPublicGameRoom(game){
+  const ownRoomId = game && game.isParticipant ? cleanRoomId(game.roomId) : '';
+  if(ownRoomId){
+    const roomUrl = dailyGameRoomUrl({roomId:ownRoomId});
+    if(!roomUrl) return;
+    closePublicGamesDialog();
+    window.location.href = roomUrl;
+    return;
+  }
   const watchId = cleanPublicWatchId(game && game.watchId);
   if(!watchId) return;
   const url = getSpectatorUrl(watchId);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 function createPublicGameCard(game){
+  const ownGame = !!(game && game.isParticipant && cleanRoomId(game.roomId));
   const card = document.createElement('div');
-  card.className = 'public-game-card';
+  card.className = 'public-game-card' + (ownGame ? ' mine' : '');
   const content = document.createElement('div');
+  if(ownGame){
+    const kicker = document.createElement('div');
+    kicker.className = 'public-game-kicker';
+    kicker.textContent = 'Deine Partie';
+    content.appendChild(kicker);
+  }
   const title = document.createElement('div');
   title.className = 'public-game-title';
   title.textContent = (cleanDisplayName(game.whiteName) || 'Weiß') + ' – ' + (cleanDisplayName(game.blackName) || 'Schwarz');
@@ -5109,8 +5126,10 @@ function createPublicGameCard(game){
   const watchBtn = document.createElement('button');
   watchBtn.type = 'button';
   watchBtn.className = 'public-game-watch-btn';
-  watchBtn.textContent = 'Zuschauen';
-  watchBtn.title = 'Partie in einem neuen Tab als Zuschauer öffnen';
+  watchBtn.textContent = ownGame ? 'Partie öffnen' : 'Zuschauen';
+  watchBtn.title = ownGame
+    ? 'Eigene Partie im aktuellen Tab öffnen'
+    : 'Partie in einem neuen Tab als Zuschauer öffnen';
   watchBtn.addEventListener('click', () => openPublicGameRoom(game));
   card.appendChild(content);
   card.appendChild(watchBtn);
@@ -5135,10 +5154,7 @@ async function loadPublicGames(options){
   if(!silent && publicGamesStatusEl) publicGamesStatusEl.textContent = 'Laufende Partien werden geladen…';
   if(!silent && publicGamesRefreshBtn) publicGamesRefreshBtn.disabled = true;
   try{
-    const response = await fetch(onlineApiBaseUrl() + '/api/public-games', {method:'GET'});
-    let data = null;
-    try{ data = await response.json(); } catch(_){ data = null; }
-    if(!response.ok || !data || !data.ok) throw new Error(data && data.message ? data.message : 'Öffentliche Partien konnten nicht geladen werden.');
+    const data = await authApi('/api/public-games');
     const games = data.games || [];
     renderPublicGames(games);
     if(!silent && publicGamesStatusEl) publicGamesStatusEl.textContent = games.length === 1 ? '1 öffentliche Partie läuft.' : games.length + ' öffentliche Partien laufen.';
