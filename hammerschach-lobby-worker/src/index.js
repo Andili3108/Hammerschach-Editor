@@ -2019,6 +2019,72 @@ async function listPublicGames(env) {
 }
 
 
+let openGameOffersTableReady = false;
+async function ensureOpenGameOffersTable(env) {
+  if (!env || !env.DB) return false;
+  if (openGameOffersTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS open_game_offers (
+       room_id TEXT PRIMARY KEY,
+       creator_user_id TEXT NOT NULL,
+       creator_name TEXT NOT NULL,
+       creator_role TEXT NOT NULL,
+       opponent_role TEXT NOT NULL,
+       mode TEXT NOT NULL,
+       time_label TEXT,
+       days_per_move INTEGER,
+       variant TEXT,
+       position_id INTEGER,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL,
+       offer_status TEXT NOT NULL DEFAULT 'open'
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_open_game_offers_status ON open_game_offers (offer_status, updated_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_open_game_offers_creator ON open_game_offers (creator_user_id, offer_status)`).run();
+  openGameOffersTableReady = true;
+  return true;
+}
+
+async function listOpenGameOffers(env, sessionUser = null) {
+  if (!(await ensureOpenGameOffersTable(env))) return [];
+  const currentUserId = sessionUser && sessionUser.id ? String(sessionUser.id) : '';
+  const result = await env.DB.prepare(
+    `SELECT open_game_offers.room_id,
+            open_game_offers.creator_user_id,
+            COALESCE(users.username, open_game_offers.creator_name) AS creator_name,
+            open_game_offers.creator_role,
+            open_game_offers.opponent_role,
+            open_game_offers.mode,
+            open_game_offers.time_label,
+            open_game_offers.days_per_move,
+            open_game_offers.variant,
+            open_game_offers.position_id,
+            open_game_offers.created_at,
+            open_game_offers.updated_at
+       FROM open_game_offers
+       LEFT JOIN users ON users.id = open_game_offers.creator_user_id
+      WHERE open_game_offers.offer_status = 'open'
+      ORDER BY open_game_offers.updated_at DESC
+      LIMIT 100`
+  ).all();
+  return (result && result.results ? result.results : []).map(row => ({
+    roomId: cleanRoomId(row.room_id),
+    creatorName: cleanDisplayName(row.creator_name) || 'Mitglied',
+    creatorRole: row.creator_role === 'b' ? 'b' : 'w',
+    opponentRole: row.opponent_role === 'w' ? 'w' : 'b',
+    mode: row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel: String(row.time_label || ''),
+    daysPerMove: Math.max(0, Number(row.days_per_move || 0)),
+    variant: row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    positionId: row.position_id === null || row.position_id === undefined ? null : Number(row.position_id),
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    mine: !!(currentUserId && String(row.creator_user_id || '') === currentUserId)
+  })).filter(offer => !!offer.roomId);
+}
+
+
 const RATING_START = 1500;
 const RATING_START_DEVIATION = 350;
 const RATING_START_VOLATILITY = 0.06;
@@ -2519,6 +2585,15 @@ async function collectAccountRoomIds(env, userId) {
       }
     }
   } catch (_) {}
+  try {
+    if (await ensureOpenGameOffersTable(env)) {
+      const result = await env.DB.prepare(`SELECT room_id FROM open_game_offers WHERE creator_user_id = ?`).bind(uid).all();
+      for (const row of (result && result.results) || []) {
+        const roomId = cleanRoomId(row.room_id);
+        if (roomId) ids.add(roomId);
+      }
+    }
+  } catch (_) {}
   for (const query of [
     `SELECT room_id FROM daily_games WHERE white_user_id = ? OR black_user_id = ?`,
     `SELECT room_id FROM public_games WHERE white_user_id = ? OR black_user_id = ?`,
@@ -2653,6 +2728,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM account_action_tokens WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_status WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM account_game_rooms WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM open_game_offers WHERE creator_user_id = ?`).bind(target.id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
   return {
     ok: true,
@@ -3593,6 +3669,54 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: true, games, serverNow: Date.now() });
     } catch (_) {
       return json({ ok: false, code: 'PUBLIC_GAMES_UNAVAILABLE', message: 'Öffentliche Partien konnten nicht geladen werden.' }, { status: 500 });
+    }
+  }
+
+  if (url.pathname === '/api/open-offers' && request.method === 'GET') {
+    try {
+      const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+      const offers = await listOpenGameOffers(env, session ? session.user : null);
+      return json({ ok:true, offers, serverNow:Date.now() });
+    } catch (_) {
+      return json({ ok:false, code:'OPEN_OFFERS_UNAVAILABLE', message:'Offene Partien konnten nicht geladen werden.' }, { status:500 });
+    }
+  }
+
+  const openOfferActionMatch = url.pathname.match(/^\/api\/open-offers\/([^/]+)$/);
+  if (openOfferActionMatch && (request.method === 'POST' || request.method === 'DELETE')) {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const roomId = cleanRoomId(decodeURIComponent(openOfferActionMatch[1]));
+    if (!roomId) return json({ ok:false, code:'INVALID_ROOM', message:'Ungültiger Spielraum.' }, { status:400 });
+    if (!env.GAME_ROOM) return json({ ok:false, code:'ROOM_SERVICE_UNAVAILABLE', message:'Der Spielraum-Dienst ist nicht verfügbar.' }, { status:503 });
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = env.GAME_ROOM.get(id);
+      const internalPath = request.method === 'POST' ? '/accept-open-offer' : '/withdraw-open-offer';
+      const response = await stub.fetch(new Request('https://game-room.internal' + internalPath + '?room=' + encodeURIComponent(roomId), {
+        method:'POST',
+        headers:{
+          'content-type':'application/json',
+          'x-hammerschach-user-id':String(session.user.id || ''),
+          'x-hammerschach-username':String(session.user.username || '')
+        },
+        body:JSON.stringify({ userId:String(session.user.id || ''), username:String(session.user.username || '') })
+      }));
+      let result = null;
+      try { result = await response.json(); } catch (_) { result = null; }
+      if (!response.ok || !result || !result.ok) {
+        return json({
+          ok:false,
+          code:result && result.code ? result.code : (request.method === 'POST' ? 'OPEN_OFFER_ACCEPT_FAILED' : 'OPEN_OFFER_WITHDRAW_FAILED'),
+          message:result && result.message ? result.message : (request.method === 'POST' ? 'Das Partieangebot konnte nicht angenommen werden.' : 'Das Partieangebot konnte nicht zurückgezogen werden.')
+        }, { status:response.status || 400 });
+      }
+      try {
+        if (await ensureOpenGameOffersTable(env)) await env.DB.prepare(`DELETE FROM open_game_offers WHERE room_id = ?`).bind(roomId).run();
+      } catch (_) {}
+      return json(Object.assign({ ok:true, roomId }, result));
+    } catch (_) {
+      return json({ ok:false, code:request.method === 'POST' ? 'OPEN_OFFER_ACCEPT_FAILED' : 'OPEN_OFFER_WITHDRAW_FAILED', message:request.method === 'POST' ? 'Das Partieangebot konnte nicht angenommen werden.' : 'Das Partieangebot konnte nicht zurückgezogen werden.' }, { status:500 });
     }
   }
 
@@ -5564,6 +5688,9 @@ export class GameRoom {
       if (roomId && await ensurePublicGamesTable(this.env)) {
         await this.env.DB.prepare(`DELETE FROM public_games WHERE room_id = ?`).bind(roomId).run();
       }
+      if (roomId && await ensureOpenGameOffersTable(this.env)) {
+        await this.env.DB.prepare(`DELETE FROM open_game_offers WHERE room_id = ?`).bind(roomId).run();
+      }
     } catch (_) {}
 
     for (const socket of this.state.getWebSockets()) {
@@ -5572,8 +5699,8 @@ export class GameRoom {
       safeSend(socket, {
         type:'room_cancelled',
         room:roomId || socketInfo.room || 'unknown',
-        code:'INVITATION_CANCELLED',
-        message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
+        code:cancellationCode,
+        message:cancellationMessage,
         cancelledAt,
         serverNow:Date.now()
       });
@@ -5581,6 +5708,115 @@ export class GameRoom {
     }
 
     return { ok:true, status:200, roomId, cancelledAt };
+  }
+
+  async acceptOpenOffer(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    if (!roomId) return { ok:false, status:404, code:'ROOM_NOT_FOUND', message:'Das Partieangebot wurde nicht gefunden.' };
+
+    const reservation = await this.state.storage.transaction(async transaction => {
+      const cancellation = await transaction.get('cancelled');
+      if (cancellation && cancellation.cancelled) {
+        return { ok:false, status:410, code:cancellation.code || 'OPEN_OFFER_WITHDRAWN', message:cancellation.message || 'Dieses Partieangebot wurde zurückgezogen.' };
+      }
+
+      const values = await transaction.get([
+        'openOffer', 'openOfferStatus', 'openOfferAcceptedByUserId', 'createdByUserId',
+        'game', 'players', 'timeControl', 'gameSetup'
+      ]);
+      const openOffer = values.get('openOffer') === true;
+      const offerStatus = String(values.get('openOfferStatus') || (openOffer ? 'open' : ''));
+      const acceptedBy = String(values.get('openOfferAcceptedByUserId') || '');
+      if (!openOffer || (offerStatus !== 'open' && !(offerStatus === 'accepted' && acceptedBy === userId))) {
+        return { ok:false, status:409, code:'OPEN_OFFER_NOT_AVAILABLE', message:'Dieses Partieangebot ist nicht mehr verfügbar.' };
+      }
+
+      const creatorUserId = String(values.get('createdByUserId') || '');
+      if (!creatorUserId) return { ok:false, status:409, code:'OPEN_OFFER_CREATOR_MISSING', message:'Der Ersteller des Partieangebots konnte nicht ermittelt werden.' };
+      if (creatorUserId === userId) return { ok:false, status:409, code:'CANNOT_ACCEPT_OWN_OFFER', message:'Dein eigenes Partieangebot kannst du nicht annehmen.' };
+      if (acceptedBy && acceptedBy !== userId) return { ok:false, status:409, code:'OPEN_OFFER_ALREADY_ACCEPTED', message:'Ein anderes Mitglied hat dieses Partieangebot bereits angenommen.' };
+
+      const game = values.get('game') || { started:false, ended:false };
+      if (game.started || game.ended) return { ok:false, status:409, code:'OPEN_OFFER_ALREADY_STARTED', message:'Diese Partie wurde bereits angenommen oder gestartet.' };
+      const rawPlayers = values.get('players') || { white:null, black:null };
+      const players = { white:normalizeSeatSlot(rawPlayers.white), black:normalizeSeatSlot(rawPlayers.black) };
+      const occupied = Number(!!players.white) + Number(!!players.black);
+      if (occupied !== 1) return { ok:false, status:409, code:'OPEN_OFFER_NOT_AVAILABLE', message:'Dieses Partieangebot ist nicht mehr verfügbar.' };
+      const creatorRole = players.white ? 'w' : 'b';
+      const creatorSlot = creatorRole === 'w' ? players.white : players.black;
+      if (!creatorSlot || String(creatorSlot.userId || '') !== creatorUserId) return { ok:false, status:409, code:'OPEN_OFFER_CREATOR_MISMATCH', message:'Das Partieangebot ist nicht mehr gültig.' };
+      const timeControl = cleanTimeControl(values.get('timeControl') || null);
+      const gameSetupRaw = values.get('gameSetup') || null;
+      if (!timeControl || !gameSetupRaw) return { ok:false, status:409, code:'OPEN_OFFER_NOT_READY', message:'Das Partieangebot wird noch vorbereitet. Bitte die Liste kurz aktualisieren.' };
+
+      const opponentRole = creatorRole === 'w' ? 'b' : 'w';
+      if (!acceptedBy) {
+        await transaction.put({
+          openOfferAcceptedByUserId:userId,
+          openOfferAcceptedAt:new Date().toISOString(),
+          openOfferStatus:'accepted'
+        });
+      }
+      return { ok:true, status:200, roomId, preferredRole:opponentRole, newlyAccepted:!acceptedBy, message:'Partieangebot wurde angenommen. Der Spielraum wird geöffnet.' };
+    });
+
+    if (reservation.ok && reservation.newlyAccepted) {
+      await this.syncOpenOfferIndex();
+      await this.broadcastRoomState('room_state');
+    }
+    return reservation;
+  }
+
+  async withdrawOpenOffer(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    if (!roomId) return { ok:false, status:404, code:'ROOM_NOT_FOUND', message:'Das Partieangebot wurde nicht gefunden.' };
+    const cancelledAt = new Date().toISOString();
+    const cancellationMessage = 'Dieses Partieangebot wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.';
+
+    const withdrawal = await this.state.storage.transaction(async transaction => {
+      const values = await transaction.get(['cancelled', 'createdByUserId', 'openOffer', 'openOfferStatus', 'game', 'players']);
+      const existingCancellation = values.get('cancelled');
+      if (existingCancellation && existingCancellation.cancelled) {
+        if (existingCancellation.kind === 'open_offer' && String(existingCancellation.cancelledByUserId || '') === userId) {
+          return { ok:true, status:200, roomId, cancelledAt:existingCancellation.cancelledAt || cancelledAt, alreadyWithdrawn:true, message:'Partieangebot wurde bereits zurückgezogen.' };
+        }
+        return { ok:false, status:410, code:existingCancellation.code || 'ROOM_CANCELLED', message:existingCancellation.message || 'Dieser Spielraum ist nicht mehr verfügbar.' };
+      }
+      const creatorUserId = String(values.get('createdByUserId') || '');
+      if (!creatorUserId || creatorUserId !== userId) return { ok:false, status:403, code:'NOT_OPEN_OFFER_CREATOR', message:'Nur der Ersteller kann dieses Partieangebot zurückziehen.' };
+      const openOffer = values.get('openOffer') === true;
+      const offerStatus = String(values.get('openOfferStatus') || (openOffer ? 'open' : ''));
+      if (!openOffer || offerStatus !== 'open') return { ok:false, status:409, code:'OPEN_OFFER_ALREADY_ACCEPTED', message:'Das Partieangebot kann nicht mehr zurückgezogen werden, weil es bereits angenommen wurde.' };
+      const game = values.get('game') || { started:false, ended:false };
+      const rawPlayers = values.get('players') || { white:null, black:null };
+      const players = { white:normalizeSeatSlot(rawPlayers.white), black:normalizeSeatSlot(rawPlayers.black) };
+      const occupied = Number(!!players.white) + Number(!!players.black);
+      if (game.started || game.ended || occupied !== 1) return { ok:false, status:409, code:'OPEN_OFFER_ALREADY_ACCEPTED', message:'Das Partieangebot kann nicht mehr zurückgezogen werden, weil es bereits angenommen wurde.' };
+
+      const cancellation = { cancelled:true, cancelledAt, cancelledByUserId:userId, roomId, kind:'open_offer', code:'OPEN_OFFER_WITHDRAWN', message:cancellationMessage };
+      await transaction.put({ cancelled:cancellation, openOfferStatus:'withdrawn' });
+      await transaction.delete('chatMessages');
+      return { ok:true, status:200, roomId, cancelledAt, message:'Partieangebot wurde zurückgezogen.' };
+    });
+
+    if (!withdrawal.ok || withdrawal.alreadyWithdrawn) return withdrawal;
+    try { await this.state.storage.deleteAlarm(); } catch (_) {}
+    try {
+      if (roomId && await ensureOpenGameOffersTable(this.env)) await this.env.DB.prepare(`DELETE FROM open_game_offers WHERE room_id = ?`).bind(roomId).run();
+      if (roomId && await ensureDailyGamesTable(this.env)) await this.env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run();
+      if (roomId && await ensurePublicGamesTable(this.env)) await this.env.DB.prepare(`DELETE FROM public_games WHERE room_id = ?`).bind(roomId).run();
+    } catch (_) {}
+    for (const socket of this.state.getWebSockets()) {
+      const socketInfo = socket.deserializeAttachment() || {};
+      socket.serializeAttachment(Object.assign({}, socketInfo, { role:'revoked', seatClaimed:false, cancelledAt }));
+      safeSend(socket, { type:'room_cancelled', room:roomId || socketInfo.room || 'unknown', code:'OPEN_OFFER_WITHDRAWN', message:cancellationMessage, cancelledAt, serverNow:Date.now() });
+      try { socket.close(4004, 'Partieangebot zurückgezogen'); } catch (_) {}
+    }
+    return withdrawal;
   }
 
   async buildDailyPgnForUser(requestingUserId) {
@@ -5690,10 +5926,22 @@ export class GameRoom {
       return json({ ok:result.ok, code:result.code || '', message:result.message || '', roomId:result.roomId || room, cancelledAt:result.cancelledAt || null }, { status:result.status || (result.ok ? 200 : 400) });
     }
 
+    if (request.method === 'POST' && url.pathname === '/accept-open-offer') {
+      const result = await this.acceptOpenOffer(request.headers.get('x-hammerschach-user-id') || '');
+      return json(result, { status:result.status || (result.ok ? 200 : 400) });
+    }
+
+    if (request.method === 'POST' && url.pathname === '/withdraw-open-offer') {
+      const result = await this.withdrawOpenOffer(request.headers.get('x-hammerschach-user-id') || '');
+      return json(result, { status:result.status || (result.ok ? 200 : 400) });
+    }
+
     const cancellation = await this.state.storage.get('cancelled');
     if (cancellation && cancellation.cancelled) {
+      const cancellationMessage = cancellation.message || 'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.';
+      const cancellationCode = cancellation.code || 'INVITATION_CANCELLED';
       if (request.headers.get('Upgrade') !== 'websocket') {
-        return json({ ok:false, code:'INVITATION_CANCELLED', message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.', cancelledAt:cancellation.cancelledAt || null }, { status:410 });
+        return json({ ok:false, code:cancellationCode, message:cancellationMessage, cancelledAt:cancellation.cancelledAt || null }, { status:410 });
       }
       const cancelledPair = new WebSocketPair();
       const [cancelledClient, cancelledServer] = Object.values(cancelledPair);
@@ -5701,12 +5949,12 @@ export class GameRoom {
       safeSend(cancelledServer, {
         type:'room_cancelled',
         room,
-        code:'INVITATION_CANCELLED',
-        message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
+        code:cancellationCode,
+        message:cancellationMessage,
         cancelledAt:cancellation.cancelledAt || null,
         serverNow:Date.now()
       });
-      try { cancelledServer.close(4004, 'Einladung zurückgezogen'); } catch (_) {}
+      try { cancelledServer.close(4004, cancellation.kind === 'open_offer' ? 'Partieangebot zurückgezogen' : 'Einladung zurückgezogen'); } catch (_) {}
       return new Response(null, { status:101, webSocket:cancelledClient });
     }
 
@@ -5781,6 +6029,14 @@ export class GameRoom {
   async anonymizeDeletedAccount(userId, anonymizedId) {
     const uid = String(userId || '').trim();
     if (!uid) return { ok:false, status:400, code:'USER_ID_REQUIRED', message:'Benutzer-ID fehlt.' };
+    const creatorUserId = String((await this.state.storage.get('createdByUserId')) || '');
+    const openOffer = (await this.state.storage.get('openOffer')) === true;
+    const openOfferStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : ''));
+    if (creatorUserId === uid && openOffer && openOfferStatus === 'open') {
+      const withdrawal = await this.withdrawOpenOffer(uid);
+      if (!withdrawal.ok) return withdrawal;
+      return { ok:true, status:200, anonymized:true, openOfferWithdrawn:true };
+    }
     const game = (await this.state.storage.get('game')) || { started:false, ended:false };
     if (game.started && !game.ended) {
       return { ok:false, status:409, code:'ACTIVE_GAME', active:true, message:'Eine laufende Partie kann nicht während der Accountlöschung anonymisiert werden.' };
@@ -6253,9 +6509,83 @@ export class GameRoom {
     }
   }
 
+  async syncOpenOfferIndex() {
+    try {
+      if (!(await ensureOpenGameOffersTable(this.env))) return;
+      const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+      if (!roomId) return;
+      const removeFromIndex = async () => {
+        await this.env.DB.prepare(`DELETE FROM open_game_offers WHERE room_id = ?`).bind(roomId).run();
+      };
+      const cancellation = await this.state.storage.get('cancelled');
+      const openOffer = (await this.state.storage.get('openOffer')) === true;
+      const offerStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : 'none'));
+      const acceptedBy = String((await this.state.storage.get('openOfferAcceptedByUserId')) || '');
+      const game = (await this.state.storage.get('game')) || { started:false, ended:false };
+      if ((cancellation && cancellation.cancelled) || !openOffer || offerStatus !== 'open' || acceptedBy || game.started || game.ended) {
+        await removeFromIndex();
+        return;
+      }
+      const players = await this.getSecurePlayers();
+      const occupied = Number(!!players.white) + Number(!!players.black);
+      if (occupied !== 1) {
+        await removeFromIndex();
+        return;
+      }
+      const creatorRole = players.white ? 'w' : 'b';
+      const creatorSlot = creatorRole === 'w' ? players.white : players.black;
+      const creatorUserId = String((await this.state.storage.get('createdByUserId')) || (creatorSlot && creatorSlot.userId) || '');
+      if (!creatorUserId || !creatorSlot || String(creatorSlot.userId || '') !== creatorUserId) {
+        await removeFromIndex();
+        return;
+      }
+      const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || null);
+      if (!timeControl || !setup) {
+        await removeFromIndex();
+        return;
+      }
+      const accountNames = await this.getAccountNamesByUserIds([creatorUserId]);
+      const profiles = (await this.state.storage.get('playerProfiles')) || {};
+      const creatorPlayerId = playerIdFromSlot(creatorSlot);
+      const creatorName = cleanDisplayName(accountNames[creatorUserId] || '') || cleanDisplayName(creatorPlayerId && profiles[creatorPlayerId] && (profiles[creatorPlayerId].displayName || profiles[creatorPlayerId].name)) || 'Mitglied';
+      const nowIso = new Date().toISOString();
+      const createdAt = String((await this.state.storage.get('openOfferCreatedAt')) || nowIso);
+      if (!(await this.state.storage.get('openOfferCreatedAt'))) await this.state.storage.put('openOfferCreatedAt', createdAt);
+      await this.env.DB.prepare(
+        `INSERT INTO open_game_offers (
+           room_id, creator_user_id, creator_name, creator_role, opponent_role,
+           mode, time_label, days_per_move, variant, position_id,
+           created_at, updated_at, offer_status
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+         ON CONFLICT(room_id) DO UPDATE SET
+           creator_user_id = excluded.creator_user_id,
+           creator_name = excluded.creator_name,
+           creator_role = excluded.creator_role,
+           opponent_role = excluded.opponent_role,
+           mode = excluded.mode,
+           time_label = excluded.time_label,
+           days_per_move = excluded.days_per_move,
+           variant = excluded.variant,
+           position_id = excluded.position_id,
+           updated_at = excluded.updated_at,
+           offer_status = 'open'`
+      ).bind(
+        roomId, creatorUserId, creatorName, creatorRole, creatorRole === 'w' ? 'b' : 'w',
+        timeControl.mode === 'daily' ? 'daily' : 'live', timeControl.label || '',
+        timeControl.mode === 'daily' ? Math.max(1, Number(timeControl.daysPerMove || 1)) : null,
+        setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
+        createdAt, nowIso
+      ).run();
+    } catch (_) {
+      // Die Vermittlung offener Partien darf den Spielraum nicht unterbrechen.
+    }
+  }
+
   async syncGameIndexes() {
     await this.syncDailyGameIndex();
     await this.syncPublicGameIndex();
+    await this.syncOpenOfferIndex();
   }
 
   async scheduleClockAlarm(clock, now = Date.now()) {
@@ -6394,6 +6724,8 @@ export class GameRoom {
       .filter(Boolean)
       .slice(-CHAT_HISTORY_MAX);
     const publicGame = (await this.state.storage.get('publicGame')) === true;
+    const openOffer = (await this.state.storage.get('openOffer')) === true;
+    const openOfferStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : 'none'));
     if (timed.game && timed.game.ended) await this.finalizeRatingIfNeeded(timed.game);
     const rating = await this.buildRatingState(timed.game || null, storedTimeControl, storedGameSetup);
 
@@ -6409,6 +6741,8 @@ export class GameRoom {
       canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByRole && info.role === createdByRole))),
       createdByMe,
       publicGame,
+      openOffer,
+      openOfferStatus,
       spectatorMode: info.viewerMode === 'public',
       timeControl: safeTimeControlForClient(storedTimeControl),
       gameSetup,
@@ -6524,8 +6858,8 @@ export class GameRoom {
       safeSend(ws, {
         type:'room_cancelled',
         room:info.room || 'unknown',
-        code:'INVITATION_CANCELLED',
-        message:'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
+        code:cancellation.code || 'INVITATION_CANCELLED',
+        message:cancellation.message || 'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.',
         cancelledAt:cancellation.cancelledAt || null,
         serverNow:Date.now()
       });
@@ -6598,7 +6932,14 @@ export class GameRoom {
 
       if (!roomAlreadyCreatedByMember && authUser) {
         const publicGame = data.publicGame === true || data.public_game === true;
+        const openOffer = data.openOffer === true || data.open_offer === true;
         await this.state.storage.put('publicGame', publicGame);
+        await this.state.storage.put('openOffer', openOffer);
+        await this.state.storage.put('openOfferStatus', openOffer ? 'open' : 'none');
+        if (!openOffer) {
+          await this.state.storage.delete('openOfferAcceptedByUserId');
+          await this.state.storage.delete('openOfferAcceptedAt');
+        }
         if (publicGame) {
           let publicWatchId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
           if (!publicWatchId) {
@@ -6671,6 +7012,29 @@ export class GameRoom {
         await this.sendRoomState(ws, 'hello_state');
         return;
       }
+      const openOffer = (await this.state.storage.get('openOffer')) === true;
+      const offerStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : ''));
+      const offerAcceptedByUserId = String((await this.state.storage.get('openOfferAcceptedByUserId')) || '');
+      const creatorUserId = String((await this.state.storage.get('createdByUserId')) || '');
+      const creatorReclaim = !!(authUser && creatorUserId && String(authUser.id) === creatorUserId);
+      if (roomAlreadyCreatedByMember && openOffer && !creatorReclaim) {
+        if (!authUser) {
+          safeSend(ws, { type:'error', code:'OPEN_OFFER_ACCOUNT_REQUIRED', message:'Offene Partien können nur von eingeloggten Mitgliedern angenommen werden.' });
+          try { ws.close(4003, 'Login erforderlich'); } catch (_) {}
+          return;
+        }
+        if (offerStatus === 'open' || !offerAcceptedByUserId) {
+          safeSend(ws, { type:'error', code:'OPEN_OFFER_ACCEPT_REQUIRED', message:'Bitte nimm dieses Partieangebot zuerst über „Offene Partien“ an.' });
+          try { ws.close(4003, 'Annahme erforderlich'); } catch (_) {}
+          return;
+        }
+        if (offerAcceptedByUserId !== String(authUser.id)) {
+          safeSend(ws, { type:'error', code:'OPEN_OFFER_RESERVED', message:'Dieses Partieangebot wurde bereits von einem anderen Mitglied angenommen.' });
+          try { ws.close(4003, 'Partieangebot reserviert'); } catch (_) {}
+          return;
+        }
+      }
+
       const claimed = await this.assignRole(playerId, preferredRole, String(data.seatToken || data.seat_token || ''), authUser);
       const profile = await this.savePlayerProfile(playerId, displayName, claimed.role, authUser);
 
@@ -7468,8 +7832,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
