@@ -75,7 +75,20 @@
   .top-layout{display:flex;align-items:flex-start;justify-content:center;gap:var(--gap);flex-wrap:nowrap;width:100%;}
   .board-column{width:var(--board-size);display:flex;flex-direction:column;gap:12px;flex:0 0 var(--board-size);}
   .board-wrapper{position:relative;width:var(--board-size);max-width:100%;aspect-ratio:1/1;}
-  #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;}
+  #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;transition:opacity .22s ease,filter .22s ease;}
+  .visitor-board-overlay{position:absolute;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:clamp(18px,5vw,54px);box-sizing:border-box;border-radius:10px;}
+  .visitor-board-overlay[hidden]{display:none!important;}
+  .visitor-board-welcome{width:min(430px,88%);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:clamp(18px,4vw,30px);border:1px solid rgba(132,63,70,.22);border-radius:24px;background:rgba(255,255,255,.86);box-shadow:0 20px 48px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.94);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
+  .visitor-board-logo{display:block;width:min(270px,78%);max-height:190px;object-fit:contain;filter:drop-shadow(0 8px 13px rgba(0,0,0,.13));}
+  .visitor-board-title{font-size:clamp(21px,3.2vw,30px);font-weight:900;color:#222;line-height:1.08;}
+  .visitor-board-text{max-width:360px;font-size:clamp(14px,2vw,17px);font-weight:800;color:#555;line-height:1.38;}
+  .visitor-board-login-btn{min-width:210px;min-height:44px;border-radius:14px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;font-size:15px;}
+  html.visitor-start-view .moves-right{display:none!important;}
+  html.visitor-start-view .top-layout{justify-content:center;}
+  html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
+  html.visitor-start-view .board-tools{display:none!important;}
+  html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn{display:none!important;}
+  html.visitor-start-view .match-actions{grid-template-columns:repeat(3,minmax(0,1fr));}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
   .dark{background:var(--dark-square);}
@@ -573,6 +586,7 @@
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
+          <p>Auf der anonymen Startseite wird die Vorbereitungsspalte ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Nach dem Login erscheinen Farbe, Spielmodus, Bedenkzeit und Zuschauerfreigabe. Öffnest du dagegen einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
@@ -1144,6 +1158,14 @@
       <div class="board-column">
         <div class="board-wrapper">
           <div id="board" aria-label="Schachbrett"></div>
+          <div id="visitorBoardOverlay" class="visitor-board-overlay" hidden aria-label="Willkommen im Hammerschach-Gamer">
+            <div class="visitor-board-welcome">
+              <img class="visitor-board-logo" src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" />
+              <div class="visitor-board-title">Willkommen im Hammerschach-Gamer</div>
+              <div class="visitor-board-text">Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.</div>
+              <button id="visitorBoardLoginBtn" class="visitor-board-login-btn" type="button">Registrierung / Login</button>
+            </div>
+          </div>
           <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
         </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
@@ -2637,6 +2659,8 @@ const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
+const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
+const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
@@ -3992,6 +4016,28 @@ async function saveEmailNotificationSettings(){
   }
 }
 
+function hasOnlineTargetInAddress(){
+  try{
+    const params = new URLSearchParams(window.location.search || '');
+    return !!(String(params.get('room') || '').trim() || String(params.get('watch') || '').trim());
+  } catch(_){
+    return false;
+  }
+}
+function isAnonymousVisitorStartView(){
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  return !loggedIn && !onlineRoomId && !hasOnlineTargetInAddress();
+}
+function updateVisitorLandingUi(){
+  const active = isAnonymousVisitorStartView();
+  document.documentElement.classList.toggle('visitor-start-view', active);
+  if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
+  if(active && statusEl){
+    statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+  }
+  hammerschachScheduleHeightReport(false);
+}
+
 function updateAuthUi(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);
@@ -4056,6 +4102,7 @@ function updateAuthUi(){
   if(!loggedIn && accountEditBackdrop) accountEditBackdrop.hidden = true;
   if(authError){ authError.textContent = ''; authError.style.color = '#9A2D33'; }
   updatePublicVisibilityUi();
+  updateVisitorLandingUi();
 }
 function applyLoggedInUserToOnlineRoom(){
   if(!onlineAuthUser) return;
@@ -4141,6 +4188,7 @@ async function logoutAuth(){
   }
 }
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
+if(visitorBoardLoginBtn) visitorBoardLoginBtn.addEventListener('click', () => openAuthDialog('login'));
 if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
 if(authLoginTab) authLoginTab.addEventListener('click', () => setAuthMode('login'));
 if(authRegisterTab) authRegisterTab.addEventListener('click', () => setAuthMode('register'));
@@ -5009,6 +5057,7 @@ function updateOnlineStartButton(){
   startOnlineBtn.title = canStart ? 'Live-Partie mit der gewählten Bedenkzeit starten.' : (timeMode ? 'Partiestart ist noch nicht möglich.' : 'Bitte zuerst eine Bedenkzeit auswählen.');
 }
 function updateOnlineUi(){
+  updateVisitorLandingUi();
   if(!onlineRoomId){
     onlineCanSetTimeControl = false;
     onlinePublicGame = false;
@@ -6941,7 +6990,13 @@ function updateStatus(g){
     return;
   }
   if(!onlineRoomId){
-    statusEl.textContent = 'Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.';
+    if(isAnonymousVisitorStartView()){
+      statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    } else if(hasOnlineTargetInAddress()){
+      statusEl.textContent = 'Spielraum wird geladen…';
+    } else {
+      statusEl.textContent = 'Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.';
+    }
     return;
   }
   if(onlineRoomId){
