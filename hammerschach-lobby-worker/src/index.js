@@ -2085,10 +2085,13 @@ async function ensurePublicGamesTable(env) {
   return true;
 }
 
-async function listPublicGames(env) {
+async function listPublicGames(env, sessionUser = null) {
   if (!(await ensurePublicGamesTable(env))) return [];
   const result = await env.DB.prepare(
-    `SELECT public_games.spectator_id,
+    `SELECT public_games.room_id,
+            public_games.spectator_id,
+            public_games.white_user_id,
+            public_games.black_user_id,
             COALESCE(white_account.username, public_games.white_name) AS white_name,
             COALESCE(black_account.username, public_games.black_name) AS black_name,
             public_games.mode, public_games.time_label, public_games.days_per_move,
@@ -2103,21 +2106,35 @@ async function listPublicGames(env) {
       ORDER BY public_games.updated_at DESC
       LIMIT 100`
   ).all();
-  return (result && result.results ? result.results : []).map(row => ({
-    watchId: cleanPublicWatchId(row.spectator_id),
-    whiteName: cleanDisplayName(row.white_name) || 'Weiß',
-    blackName: cleanDisplayName(row.black_name) || 'Schwarz',
-    mode: row.mode === 'daily' ? 'daily' : 'live',
-    timeLabel: row.time_label || '',
-    daysPerMove: Math.max(0, Number(row.days_per_move || 0)),
-    variant: row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
-    positionId: row.position_id === null || row.position_id === undefined ? null : Number(row.position_id),
-    startedAt: row.started_at || null,
-    updatedAt: row.updated_at || null,
-    turn: row.turn === 'b' ? 'b' : 'w',
-    movesCount: Math.max(0, Number(row.moves_count || 0)),
-    lastMoveSan: String(row.last_move_san || '').slice(0, 24)
-  })).filter(game => !!game.watchId);
+  const currentUserId = sessionUser && sessionUser.id ? String(sessionUser.id) : '';
+  return (result && result.results ? result.results : []).map(row => {
+    const whiteUserId = String(row.white_user_id || '');
+    const blackUserId = String(row.black_user_id || '');
+    const participantRole = currentUserId && currentUserId === whiteUserId
+      ? 'w'
+      : currentUserId && currentUserId === blackUserId
+        ? 'b'
+        : '';
+    const isParticipant = !!participantRole;
+    return {
+      watchId: cleanPublicWatchId(row.spectator_id),
+      roomId: isParticipant ? cleanRoomId(row.room_id) : '',
+      isParticipant,
+      participantRole,
+      whiteName: cleanDisplayName(row.white_name) || 'Weiß',
+      blackName: cleanDisplayName(row.black_name) || 'Schwarz',
+      mode: row.mode === 'daily' ? 'daily' : 'live',
+      timeLabel: row.time_label || '',
+      daysPerMove: Math.max(0, Number(row.days_per_move || 0)),
+      variant: row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+      positionId: row.position_id === null || row.position_id === undefined ? null : Number(row.position_id),
+      startedAt: row.started_at || null,
+      updatedAt: row.updated_at || null,
+      turn: row.turn === 'b' ? 'b' : 'w',
+      movesCount: Math.max(0, Number(row.moves_count || 0)),
+      lastMoveSan: String(row.last_move_san || '').slice(0, 24)
+    };
+  }).filter(game => !!game.watchId);
 }
 
 
@@ -3849,7 +3866,8 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/public-games' && request.method === 'GET') {
     try {
-      const games = await listPublicGames(env);
+      const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+      const games = await listPublicGames(env, session ? session.user : null);
       return json({ ok: true, games, serverNow: Date.now() });
     } catch (_) {
       return json({ ok: false, code: 'PUBLIC_GAMES_UNAVAILABLE', message: 'Öffentliche Partien konnten nicht geladen werden.' }, { status: 500 });
