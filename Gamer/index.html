@@ -58,8 +58,13 @@
   .match-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-content:stretch;align-items:stretch;}
   .match-actions button{width:100%;min-width:0;font-size:14px;padding:8px 7px;min-height:44px;line-height:1.10;white-space:normal;overflow-wrap:normal;border-radius:16px;}
   .match-actions .name-action-btn{min-width:0;}
-  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%;}
-  .icon-btn{width:44px;height:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:23px;line-height:1;padding:0;}
+  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0;white-space:nowrap;}
+  .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:21px;line-height:1;padding:0;}
+  .board-game-actions,.board-daily-actions{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;}
+  .board-game-actions[hidden],.board-daily-actions[hidden]{display:none!important;}
+  .board-action-btn{width:auto!important;min-width:0!important;min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
+  .board-daily-cancel-btn{width:40px!important;min-width:40px!important;padding:0!important;font-size:20px!important;}
+  .board-daily-confirm-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
   .icon-btn .icon-label{display:inline-block;line-height:1;}
   .board-tools .board-color-wrap{position:relative;width:auto;display:flex;justify-content:center;}
   button{background:linear-gradient(180deg,#f3f3f3 0%,#dadada 100%);color:#9A2D33;border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:900;cursor:pointer;transition:transform .08s ease, box-shadow .12s ease, filter .12s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(0,0,0,.05), 0 6px 14px rgba(0,0,0,.12);}
@@ -151,13 +156,10 @@
   .side-content{min-height:0;flex:1;overflow:auto;}
   .side-content[hidden]{display:none!important;}
   .players-panel{display:flex;flex-direction:column;gap:12px;}
-  .daily-move-confirmation{margin-top:auto;border-radius:16px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.16);padding:11px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.72);}
-  .daily-move-confirmation[hidden]{display:none!important;}
-  .daily-move-confirmation-hint{text-align:center;font-size:13px;font-weight:900;color:#555;line-height:1.25;margin-bottom:9px;}
-  .daily-move-confirmation-actions{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:8px;align-items:stretch;}
-  .daily-move-cancel-btn,.daily-move-confirm-btn{width:100%;min-width:0;border-radius:13px;white-space:normal;line-height:1.12;}
-  .daily-move-cancel-btn{min-height:44px;padding:7px 8px;font-size:13px;background:linear-gradient(180deg,#ffffff 0%,#ececef 100%)!important;color:#555!important;}
-  .daily-move-confirm-btn{min-height:48px;padding:9px 10px;font-size:16px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .live-start-box{border-radius:16px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.16);padding:11px 12px;display:flex;flex-direction:column;gap:8px;align-items:stretch;}
+  .live-start-box[hidden]{display:none!important;}
+  .live-start-btn{width:100%;min-height:46px;border-radius:13px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;font-size:16px;}
+  .live-start-hint{text-align:center;font-size:13px;font-weight:900;color:#555;line-height:1.3;}
   .player-clock-card{border-radius:16px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:14px 14px;display:flex;flex-direction:column;gap:8px;}
   .player-clock-card.active{box-shadow:inset 0 0 0 2px rgba(132,63,70,.38);background:#fff;}
   .player-clock-head{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:#555;}
@@ -180,10 +182,6 @@
   .move-nav-group{display:contents;}
   .nav-btn{width:100%;min-width:0;min-height:34px;font-size:18px;padding:4px 0;border-radius:12px;}
   .copy-pgn-btn{width:100%;min-width:0;min-height:34px;padding:4px 4px!important;border-radius:12px;font-size:12px;line-height:1.05;white-space:normal;}
-  .game-actions{width:100%;box-sizing:border-box;margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .game-actions[hidden]{display:none!important;}
-  .board-column > .game-actions{margin-top:0;}
-  .game-action-btn{border-radius:12px;min-height:38px;padding:8px 10px;}
   .resign-btn{background:#843f46!important;color:#fff!important;}
   .chat-panel{display:flex;flex-direction:column;gap:10px;overflow:hidden;}
   .chat-title{font-size:18px;font-weight:900;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -447,6 +445,24 @@
 
 
 
+  .open-offers-modal{width:780px;max-width:100%;max-height:88vh;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);display:flex;flex-direction:column;}
+  .open-offers-modal h3{margin:0 0 6px;font-size:22px;color:#222;}
+  .open-offers-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.35;}
+  .open-offers-list{display:flex;flex-direction:column;gap:10px;overflow:auto;min-height:90px;max-height:62vh;padding:2px 4px 2px 0;}
+  .open-offer-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:12px 13px;}
+  .open-offer-card.mine{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.24);}
+  .open-offer-kicker{font-size:12px;font-weight:900;color:#843f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
+  .open-offer-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;}
+  .open-offer-status{font-size:13px;font-weight:900;color:#843f46;margin-top:4px;}
+  .open-offer-meta{font-size:12px;font-weight:800;color:#666;margin-top:4px;line-height:1.4;}
+  .open-offer-actions{display:flex;gap:7px;align-items:center;justify-content:flex-end;flex-wrap:wrap;}
+  .open-offer-actions button{border-radius:12px;min-height:40px;padding:8px 12px;white-space:nowrap;}
+  .open-offer-withdraw-btn{background:#843f46!important;color:#fff!important;}
+  .open-offers-empty{font-size:14px;font-weight:800;color:#666;text-align:center;line-height:1.4;padding:24px 10px;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.08);}
+  .open-offers-status{min-height:18px;font-size:13px;font-weight:800;color:#666;margin-top:8px;}
+  .open-offers-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .open-offers-actions button{border-radius:12px;min-height:38px;}
+
   .public-visibility-box{padding:13px 16px;display:flex;flex-direction:column;gap:8px;}
   .public-visibility-box[hidden]{display:none!important;}
   .public-visibility-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:14px;font-weight:900;color:#333;line-height:1.3;}
@@ -504,10 +520,10 @@
   .admin-report-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
   .admin-report-actions button{min-height:32px;border-radius:10px;padding:6px 8px;font-size:11px;}
 
-  @media (max-width:1080px){.match-actions{grid-template-columns:repeat(3,minmax(0,1fr));}}
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.auth-account-actions{grid-template-columns:1fr}.game-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions{justify-content:stretch}}
+  @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
+  @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}}
 </style>
@@ -536,13 +552,13 @@
             <span>Ein Produkt von Hammerschach</span>
             <a class="brand-origin-button" href="https://www.andili.de" target="_blank" rel="noopener noreferrer" aria-label="Hammerschach-Website auf Andili.de öffnen">Zur Website</a>
           </div>
-          <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann zur Partie einladen.</div>
+          <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
           <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">Info</button>
         </div>
         <div class="actions match-actions" aria-label="Partieaktionen">
-          <button id="newGameBtn" class="button-flat name-action-btn" type="button">Neue Partie</button>
+          <button id="newGameBtn" class="button-flat name-action-btn" type="button">Partie anbieten</button>
           <button id="createOnlineBtn" type="button">Zur Partie einladen</button>
-          <button id="startOnlineBtn" type="button" disabled>Partie starten</button>
+          <button id="openOffersOpenBtn" class="button-flat name-action-btn" type="button">Offene Partien</button>
           <button id="dailyGamesOpenBtn" class="button-flat name-action-btn" type="button">Meine Partien</button>
           <button id="publicGamesOpenBtn" class="button-flat name-action-btn" type="button">Laufende Partien</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
@@ -562,8 +578,8 @@
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
-          <h4>2. Vor der Einladung einstellen</h4>
-          <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden in den Einladungsraum übernommen und sind nach dem Partiestart gesperrt.</p>
+          <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
+          <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden sowohl in eine gezielte Einladung als auch in ein öffentliches Partieangebot übernommen und sind nach dem Partiestart gesperrt.</p>
 
           <h4>3. Farbe wählen</h4>
           <p>Du kannst wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß führt immer den ersten Zug aus. Bei Live-Partien startet Weiß die Partie manuell; bei Daily Chess beginnt sie automatisch, sobald beide registrierten Spielerplätze angenommen wurden.</p>
@@ -598,14 +614,15 @@
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
 
-          <h4>9. Zur Partie einladen</h4>
+          <h4>9. Einladen oder eine Partie offen anbieten</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
+          <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
           <p><strong>Hinweis zur Zustellung:</strong> Je nach E-Mail-Anbieter können Einladungen und Daily-Benachrichtigungen vereinzelt im Spam- oder Junk-Ordner landen. Falls keine Nachricht im Posteingang erscheint, sollte der Empfänger dort nachsehen und den Absender <strong>hammerschach-gamer@online.de</strong> gegebenenfalls als vertrauenswürdig markieren. Die Daily-Mails werden nur bei einem tatsächlichen Zugwechsel beziehungsweise Partieende verschickt; wiederholte Erinnerungen vor Fristablauf gibt es nicht.</p>
 
           <h4>10. Partiebeginn</h4>
           <ul>
-            <li><strong>Live-Partie:</strong> Wenn beide Spieler gleichzeitig verbunden sind, startet Weiß die Partie über <strong>„Partie starten“</strong>. Anschließend läuft die Uhr des Spielers am Zug fortlaufend herunter.</li>
+            <li><strong>Live-Partie:</strong> Wenn beide Spieler gleichzeitig verbunden sind, erscheint <strong>„Partie starten“</strong> in der rechten Spalte bei „Spieler &amp; Zeit“. Weiß startet dort die Partie; Schwarz erhält den Hinweis, dass Weiß den Start ausführt. Anschließend läuft die Uhr des Spielers am Zug fortlaufend herunter.</li>
             <li><strong>Daily Chess:</strong> Die Partie startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden. Gleichzeitig beginnt die serverseitige Zugfrist für Weiß; eine gleichzeitige Online-Verbindung beider Spieler ist nicht nötig.</li>
           </ul>
 
@@ -623,7 +640,7 @@
           </ul>
 
           <h4>13. Partieaktionen</h4>
-          <p>Während einer laufenden Online-Partie erscheinen unter dem Brett die Schaltflächen <strong>„½ Remis anbieten“</strong> und <strong>„🏳️ Aufgeben“</strong>. Diese Funktionen stehen auch bei Daily Chess zur Verfügung.</p>
+          <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. Bei einer Daily-Zugvorschau erscheinen dort zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
 
           <h4>14. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
@@ -635,8 +652,8 @@
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
-          <h4>17. Neue Partie</h4>
-          <p>Über <strong>„Neue Partie“</strong> öffnest du eine frische Ansicht ohne bestehenden Raum. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird weiterhin ein neuer Tab geöffnet. Für jede neue Online-Partie wird anschließend ein neuer Raum mit einem eigenen Einladungslink erstellt.</p>
+          <h4>17. Partie anbieten und neue Partie</h4>
+          <p>In der Startansicht heißt die erste Header-Schaltfläche <strong>„Partie anbieten“</strong>. Sobald du dich in einem Spielraum befindest, heißt sie an derselben Stelle <strong>„Neue Partie“</strong> und öffnet eine frische Ansicht ohne bestehenden Raum. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird weiterhin ein neuer Tab geöffnet.</p>
 
           <h4>18. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -700,7 +717,8 @@
 
           <h4>6. Online-Status und öffentliche Partien</h4>
           <p>Bei angemeldeten Mitgliedern wird ein Aktivitätszeitpunkt gespeichert, damit im Gamer ein ungefährer Online-Status angezeigt werden kann. Im Spielraum wird außerdem angezeigt, ob ein Spieler aktuell verbunden ist.</p>
-          <p>Der Ersteller entscheidet, ob eine Partie öffentlich in der Übersicht „Laufende Partien“ erscheint. Öffentlich sichtbar sind dann insbesondere Spielernamen, Partieart, Spielstatus und das Brett. Der private Chat bleibt verborgen. Die Freigabe kann wieder entzogen werden.</p>
+          <p>Der Ersteller entscheidet, ob eine gestartete Partie öffentlich in der Übersicht „Laufende Partien“ erscheint. Öffentlich sichtbar sind dann insbesondere Spielernamen, Partieart, Spielstatus und das Brett. Der private Chat bleibt verborgen. Die Freigabe kann wieder entzogen werden.</p>
+          <p>Noch nicht angenommene Partieangebote erscheinen getrennt unter „Offene Partien“. Dort werden der Benutzername des Anbieters sowie Spielmodus, Bedenkzeit, Variante und angebotene Farbe angezeigt. Ein Angebot wird nach Annahme oder Rücknahme sofort entfernt.</p>
 
           <h4>7. E-Mail-Versand</h4>
           <p>Die Mailadresse wird für notwendige Accountnachrichten verwendet, zum Beispiel Mailbestätigung, Kennwort-Wiederherstellung und Hinweise zu einer angeforderten Mailadressänderung. Bei der Einladung eines registrierten Mitglieds wird die hinterlegte Mailadresse serverseitig verwendet und nicht an den Browser des Einladenden übertragen.</p>
@@ -1065,6 +1083,19 @@
       </div>
     </div>
 
+    <div id="openOffersBackdrop" class="identity-backdrop" hidden>
+      <div class="open-offers-modal" role="dialog" aria-modal="true" aria-labelledby="openOffersTitle">
+        <h3 id="openOffersTitle">Offene Partien</h3>
+        <p class="open-offers-intro">Hier bieten Mitglieder vorbereitete Live- oder Daily-Partien offen an. Dein eigenes Angebot wird ebenfalls angezeigt und kann zurückgezogen werden, solange es noch niemand angenommen hat.</p>
+        <div id="openOffersList" class="open-offers-list" aria-live="polite"><div class="open-offers-empty">Noch keine Partieangebote geladen.</div></div>
+        <div id="openOffersStatus" class="open-offers-status" aria-live="polite"></div>
+        <div class="open-offers-actions">
+          <button id="openOffersRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
+          <button id="openOffersCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
     <div id="publicGamesBackdrop" class="identity-backdrop" hidden>
       <div class="public-games-modal" role="dialog" aria-modal="true" aria-labelledby="publicGamesTitle">
         <h3 id="publicGamesTitle">Laufende öffentliche Partien</h3>
@@ -1115,7 +1146,7 @@
           <div id="board" aria-label="Schachbrett"></div>
           <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
         </div>
-        <div class="board-tools" aria-label="Brett- und Anzeigeaktionen">
+        <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
           <button id="flipBoardBtn" class="button-flat icon-btn" type="button" title="Brett drehen" aria-label="Brett drehen"><span class="icon-label">↻</span></button>
           <div class="board-color-wrap" id="boardColorWrap">
             <button id="btnBoardColor" type="button" class="button-flat icon-btn" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe"><span class="icon-label">🎨</span></button>
@@ -1131,11 +1162,14 @@
             </div>
           </div>
           <button id="soundToggleBtn" class="button-flat icon-btn" type="button" aria-pressed="true" title="Ton an/aus" aria-label="Ton an"><span class="icon-label">🔊</span></button>
-        </div>
-
-        <div id="gameActions" class="game-actions" aria-label="Partieaktionen unter dem Brett" hidden>
-          <button id="offerDrawBtn" class="button-flat game-action-btn" type="button">½ Remis anbieten</button>
-          <button id="resignBtn" class="game-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
+          <div id="gameActions" class="board-game-actions" aria-label="Partieaktionen" hidden>
+            <button id="offerDrawBtn" class="button-flat board-action-btn" type="button">½ Remis</button>
+            <button id="resignBtn" class="board-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
+          </div>
+          <div id="dailyMoveConfirmation" class="board-daily-actions" hidden aria-live="polite">
+            <button id="dailyMoveCancelBtn" class="button-flat board-action-btn board-daily-cancel-btn" type="button" title="Zug zurücknehmen" aria-label="Zug zurücknehmen">↩</button>
+            <button id="dailyMoveConfirmBtn" class="board-action-btn board-daily-confirm-btn" type="button">✓ Zug bestätigen</button>
+          </div>
         </div>
         <footer class="site-footnote" aria-label="Projekt-Hinweis">
           <div><a href="https://www.andili.de" target="_blank" rel="noopener noreferrer">Hammerschach-Gamer – ein Produkt von Hammerschach</a> · Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026) · <button id="footerPrivacyOpenBtn" class="site-footnote-button" type="button">Gamer-Datenschutz</button> · <a href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a></div>
@@ -1270,12 +1304,9 @@
               <div id="roomPublicVisibilityHint" class="public-visibility-hint">Nur der Ersteller kann die Zuschauerfreigabe ändern.</div>
             </div>
 
-            <div id="dailyMoveConfirmation" class="daily-move-confirmation" hidden aria-live="polite">
-              <div class="daily-move-confirmation-hint">Zugvorschau – noch nicht ausgeführt</div>
-              <div class="daily-move-confirmation-actions">
-                <button id="dailyMoveCancelBtn" class="button-flat daily-move-cancel-btn" type="button">↩ Zug zurücknehmen</button>
-                <button id="dailyMoveConfirmBtn" class="daily-move-confirm-btn" type="button">✓ Zug bestätigen</button>
-              </div>
+            <div id="liveStartBox" class="live-start-box" hidden>
+              <button id="startOnlineBtn" class="live-start-btn" type="button" disabled>Partie starten</button>
+              <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
             </div>
           </div>
 
@@ -2594,6 +2625,9 @@ let onlineRoomCancelled = false;
 let onlinePublicGame = false;
 let onlineCreatedByMe = false;
 let onlineDesiredPublicGameForNewRoom = false;
+let onlineDesiredOpenOfferForNewRoom = false;
+let onlineOpenOffer = false;
+let onlineOpenOfferStatus = 'none';
 let onlinePendingPublicGameMessageId = null;
 let onlineSpectatorOnly = false;
 let onlinePublicWatchId = '';
@@ -2604,6 +2638,7 @@ const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
+const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const infoBackdrop = document.getElementById('infoBackdrop');
@@ -2730,6 +2765,8 @@ const playerNameGuestBtn = document.getElementById('playerNameGuestBtn');
 const playerNameSaveBtn = document.getElementById('playerNameSaveBtn');
 const copyInviteBtn = document.getElementById('copyInviteBtn');
 const startOnlineBtn = document.getElementById('startOnlineBtn');
+const liveStartBoxEl = document.getElementById('liveStartBox');
+const liveStartHintEl = document.getElementById('liveStartHint');
 const newGameBtn = document.getElementById('newGameBtn');
 const gameActionsEl = document.getElementById('gameActions');
 const offerDrawBtn = document.getElementById('offerDrawBtn');
@@ -2750,6 +2787,12 @@ const dailyGamesListEl = document.getElementById('dailyGamesList');
 const dailyGamesStatusEl = document.getElementById('dailyGamesStatus');
 const dailyGamesRefreshBtn = document.getElementById('dailyGamesRefreshBtn');
 const dailyGamesCloseBtn = document.getElementById('dailyGamesCloseBtn');
+const openOffersBackdrop = document.getElementById('openOffersBackdrop');
+const openOffersListEl = document.getElementById('openOffersList');
+const openOffersStatusEl = document.getElementById('openOffersStatus');
+const openOffersRefreshBtn = document.getElementById('openOffersRefreshBtn');
+const openOffersCloseBtn = document.getElementById('openOffersCloseBtn');
+let openOffersRefreshTimer = null;
 const publicGamesBackdrop = document.getElementById('publicGamesBackdrop');
 const publicGamesListEl = document.getElementById('publicGamesList');
 const publicGamesStatusEl = document.getElementById('publicGamesStatus');
@@ -4441,6 +4484,143 @@ function formatPublicGameTime(value){
   try{ return date.toLocaleString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}); }
   catch(_){ return ''; }
 }
+function openOfferModeLabel(offer){
+  return offer && offer.mode === 'daily' ? 'Daily Chess' : 'Live-Partie';
+}
+function openOfferVariantLabel(offer){
+  if(offer && offer.variant === GAME_VARIANT_FREESTYLE){
+    return Number.isFinite(Number(offer.positionId)) ? ('Freestyle #' + Number(offer.positionId)) : 'Freestyle';
+  }
+  return 'Klassisch';
+}
+function openOfferRoleLabel(role){ return role === 'b' ? 'Schwarz' : 'Weiß'; }
+function createOpenOfferCard(offer){
+  const card = document.createElement('div');
+  card.className = 'open-offer-card' + (offer.mine ? ' mine' : '');
+  const content = document.createElement('div');
+  if(offer.mine){
+    const kicker = document.createElement('div');
+    kicker.className = 'open-offer-kicker';
+    kicker.textContent = 'Dein Angebot';
+    content.appendChild(kicker);
+  }
+  const title = document.createElement('div');
+  title.className = 'open-offer-title';
+  title.textContent = (cleanDisplayName(offer.creatorName) || 'Mitglied') + ' bietet eine Partie an';
+  const status = document.createElement('div');
+  status.className = 'open-offer-status';
+  status.textContent = 'Anbieter spielt ' + openOfferRoleLabel(offer.creatorRole) + ' · frei ist ' + openOfferRoleLabel(offer.opponentRole);
+  const meta = document.createElement('div');
+  meta.className = 'open-offer-meta';
+  const parts = [openOfferModeLabel(offer), offer.timeLabel || '', openOfferVariantLabel(offer)];
+  if(offer.createdAt) parts.push('angeboten: ' + formatPublicGameTime(offer.createdAt));
+  meta.textContent = parts.filter(Boolean).join(' · ');
+  content.appendChild(title); content.appendChild(status); content.appendChild(meta);
+  const actions = document.createElement('div');
+  actions.className = 'open-offer-actions';
+  const actionBtn = document.createElement('button');
+  actionBtn.type = 'button';
+  if(offer.mine){
+    actionBtn.className = 'open-offer-withdraw-btn';
+    actionBtn.textContent = 'Angebot zurückziehen';
+    actionBtn.addEventListener('click', () => withdrawOpenOffer(offer, actionBtn));
+  } else {
+    actionBtn.textContent = 'Partie annehmen';
+    actionBtn.addEventListener('click', () => acceptOpenOffer(offer, actionBtn));
+  }
+  actions.appendChild(actionBtn);
+  card.appendChild(content); card.appendChild(actions);
+  return card;
+}
+function renderOpenOffers(offers){
+  if(!openOffersListEl) return;
+  openOffersListEl.innerHTML = '';
+  const list = Array.isArray(offers) ? offers : [];
+  if(!list.length){
+    const empty = document.createElement('div');
+    empty.className = 'open-offers-empty';
+    empty.textContent = 'Derzeit wird keine offene Partie angeboten.';
+    openOffersListEl.appendChild(empty);
+    return;
+  }
+  list.forEach(offer => openOffersListEl.appendChild(createOpenOfferCard(offer)));
+}
+async function loadOpenOffers(options){
+  options = options || {};
+  const silent = !!options.silent;
+  if(!silent && openOffersStatusEl) openOffersStatusEl.textContent = 'Offene Partien werden geladen…';
+  if(!silent && openOffersRefreshBtn) openOffersRefreshBtn.disabled = true;
+  try{
+    const data = await authApi('/api/open-offers');
+    const offers = data.offers || [];
+    renderOpenOffers(offers);
+    if(!silent && openOffersStatusEl) openOffersStatusEl.textContent = offers.length === 1 ? '1 offene Partie verfügbar.' : offers.length + ' offene Partien verfügbar.';
+  } catch(err){
+    if(!silent) renderOpenOffers([]);
+    if(openOffersStatusEl) openOffersStatusEl.textContent = err && err.message ? err.message : 'Offene Partien konnten nicht geladen werden.';
+  } finally {
+    if(!silent && openOffersRefreshBtn) openOffersRefreshBtn.disabled = false;
+  }
+}
+async function acceptOpenOffer(offer, button){
+  if(!onlineAuthToken || !onlineAuthUser){
+    closeOpenOffersDialog();
+    openAuthDialog('login');
+    if(authError) authError.textContent = 'Bitte einloggen, um eine offene Partie anzunehmen.';
+    return;
+  }
+  if(!offer || !offer.roomId) return;
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Wird angenommen…'; }
+  if(openOffersStatusEl) openOffersStatusEl.textContent = 'Partieangebot wird für dich reserviert…';
+  try{
+    const data = await authApi('/api/open-offers/' + encodeURIComponent(offer.roomId), {method:'POST', body:JSON.stringify({})});
+    closeOpenOffersDialog();
+    onlineDesiredOpenOfferForNewRoom = false;
+    connectOnlineRoom(data.roomId || offer.roomId, {preferredRole:data.preferredRole || offer.opponentRole || '', spectatorOnly:false});
+    if(statusEl) statusEl.textContent = data.message || 'Partieangebot wurde angenommen. Der Spielraum wird geöffnet.';
+  } catch(err){
+    if(openOffersStatusEl) openOffersStatusEl.textContent = err && err.message ? err.message : 'Das Partieangebot konnte nicht angenommen werden.';
+    if(button){ button.disabled = false; button.textContent = oldText || 'Partie annehmen'; }
+    loadOpenOffers({silent:true});
+  }
+}
+async function withdrawOpenOffer(offer, button){
+  if(!offer || !offer.roomId) return;
+  if(!window.confirm('Dieses Partieangebot wirklich zurückziehen?')) return;
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Wird zurückgezogen…'; }
+  if(openOffersStatusEl) openOffersStatusEl.textContent = 'Partieangebot wird zurückgezogen…';
+  try{
+    const data = await authApi('/api/open-offers/' + encodeURIComponent(offer.roomId), {method:'DELETE'});
+    if(openOffersStatusEl) openOffersStatusEl.textContent = data.message || 'Partieangebot wurde zurückgezogen.';
+    await loadOpenOffers({silent:true});
+  } catch(err){
+    if(openOffersStatusEl) openOffersStatusEl.textContent = err && err.message ? err.message : 'Das Partieangebot konnte nicht zurückgezogen werden.';
+    if(button){ button.disabled = false; button.textContent = oldText || 'Angebot zurückziehen'; }
+  }
+}
+function startOpenOffersRefresh(){
+  if(openOffersRefreshTimer) clearInterval(openOffersRefreshTimer);
+  openOffersRefreshTimer = setInterval(() => {
+    if(openOffersBackdrop && !openOffersBackdrop.hidden) loadOpenOffers({silent:true});
+  }, 15000);
+}
+function stopOpenOffersRefresh(){ if(openOffersRefreshTimer){ clearInterval(openOffersRefreshTimer); openOffersRefreshTimer = null; } }
+function openOpenOffersDialog(){
+  if(openOffersBackdrop) openOffersBackdrop.hidden = false;
+  loadOpenOffers(); startOpenOffersRefresh();
+}
+function closeOpenOffersDialog(){
+  if(openOffersBackdrop) openOffersBackdrop.hidden = true;
+  stopOpenOffersRefresh();
+}
+if(openOffersOpenBtn) openOffersOpenBtn.addEventListener('click', openOpenOffersDialog);
+if(openOffersRefreshBtn) openOffersRefreshBtn.addEventListener('click', () => loadOpenOffers());
+if(openOffersCloseBtn) openOffersCloseBtn.addEventListener('click', closeOpenOffersDialog);
+if(openOffersBackdrop) openOffersBackdrop.addEventListener('click', ev => { if(ev.target === openOffersBackdrop) closeOpenOffersDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && openOffersBackdrop && !openOffersBackdrop.hidden) closeOpenOffersDialog(); });
+
 function publicGameModeLabel(game){
   return game && game.mode === 'daily' ? 'Daily Chess' : 'Live-Partie';
 }
@@ -4661,7 +4841,8 @@ function sendSeatClaim(){
       authToken:onlineAuthToken || '',
       spectatorOnly:!!onlineSpectatorOnly,
       publicWatchId:onlinePublicWatchId || '',
-      publicGame:!!onlineDesiredPublicGameForNewRoom
+      publicGame:!!onlineDesiredPublicGameForNewRoom,
+      openOffer:!!onlineDesiredOpenOfferForNewRoom
     }));
     onlineSeatClaimSent = true;
     onlineConnectionState = 'authenticating';
@@ -4748,20 +4929,25 @@ function refreshHeaderStatusFromState(){
 function updateOnlineActionButtons(){
   const live = isOnlineGameLiveForUi();
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   if(createOnlineBtn){
-    createOnlineBtn.disabled = live;
+    createOnlineBtn.disabled = live || offerOpen;
     createOnlineBtn.title = live
       ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.'
-      : (!loggedIn
-          ? 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.'
-          : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.')));
+      : (offerOpen
+          ? 'Diese Partie ist bereits unter „Offene Partien“ angeboten.'
+          : (!loggedIn
+              ? 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.'
+              : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.'))));
   }
   if(newGameBtn){
+    const inRoom = !!onlineRoomId;
     newGameBtn.disabled = false;
     newGameBtn.hidden = false;
-    newGameBtn.title = HAMMERSCHACH_IS_EMBEDDED
-      ? 'Neue Partie im Hammerschach-Gamer öffnen.'
-      : 'Neue Partie in einem frischen Tab öffnen.';
+    newGameBtn.textContent = inRoom ? 'Neue Partie' : 'Partie anbieten';
+    newGameBtn.title = inRoom
+      ? (HAMMERSCHACH_IS_EMBEDDED ? 'Neue Partie im Hammerschach-Gamer öffnen.' : 'Neue Partie in einem frischen Tab öffnen.')
+      : (loggedIn ? 'Die gewählten Einstellungen als offene Partie veröffentlichen.' : 'Zum Anbieten einer Partie bitte einloggen.');
   }
 }
 function updateGameActionButtons(){
@@ -4771,72 +4957,63 @@ function updateGameActionButtons(){
   offerDrawBtn.disabled = !live;
   resignBtn.disabled = !live;
   if(!live){
-    offerDrawBtn.textContent = '½ Remis anbieten';
+    offerDrawBtn.textContent = '½ Remis';
     offerDrawBtn.title = 'Remisangebot ist nur während einer laufenden Online-Partie möglich.';
     resignBtn.title = 'Aufgeben ist nur während einer laufenden Online-Partie möglich.';
     return;
   }
   if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode){
-    offerDrawBtn.textContent = '½ Remis angeboten';
+    offerDrawBtn.textContent = '½ Angeboten';
     offerDrawBtn.disabled = true;
     offerDrawBtn.title = 'Dein Remisangebot wartet auf Antwort.';
   } else if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
-    offerDrawBtn.textContent = '½ Remis annehmen';
+    offerDrawBtn.textContent = '½ Annehmen';
     offerDrawBtn.disabled = false;
     offerDrawBtn.title = 'Remisangebot des Gegners annehmen.';
   } else {
-    offerDrawBtn.textContent = '½ Remis anbieten';
+    offerDrawBtn.textContent = '½ Remis';
     offerDrawBtn.disabled = false;
     offerDrawBtn.title = 'Dem Gegner Remis anbieten.';
   }
   resignBtn.title = onlineRoleCode === 'w' ? 'Als Weiß aufgeben.' : 'Als Schwarz aufgeben.';
 }
 function updateOnlineStartButton(){
-  if(!startOnlineBtn) return;
+  if(!startOnlineBtn || !liveStartBoxEl) return;
   const daily = isDailyTimeControl();
-  startOnlineBtn.hidden = daily;
-  if(daily){
+  const roomWaiting = !!(onlineRoomId && !daily && !onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
+  const bothSeats = !!(onlineAssignedSeats.white && onlineAssignedSeats.black);
+  const bothConnected = !!(isOnlineSideConnected('w') && isOnlineSideConnected('b'));
+  const show = roomWaiting && bothSeats && bothConnected && (onlineRoleCode === 'w' || onlineRoleCode === 'b');
+  liveStartBoxEl.hidden = !show;
+  if(!show){
+    startOnlineBtn.hidden = true;
     startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Partie startet automatisch';
-    startOnlineBtn.title = 'Daily Chess startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden.';
+    if(liveStartHintEl) liveStartHintEl.textContent = 'Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.';
     return;
   }
-  if(!onlineRoomId){
+  if(onlineRoleCode === 'b'){
+    startOnlineBtn.hidden = true;
     startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Partie starten';
-    startOnlineBtn.title = 'Erst eine Online-Partie erstellen oder einem Raum beitreten.';
+    if(liveStartHintEl) liveStartHintEl.textContent = 'Beide Spieler sind verbunden. Weiß startet die Partie.';
     return;
   }
-  if(onlineGameStarted){
-    startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Partie starten';
-    startOnlineBtn.title = onlineGameEnded || gameEnded || timeLost ? 'Für eine neue Partie bitte eine neue Online-Partie erstellen.' : 'Die Online-Partie wurde bereits gestartet.';
-    return;
-  }
-  if(onlinePendingStartMessageId){
-    startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Partie starten';
-    startOnlineBtn.title = 'Der Partiestart wurde gesendet und wartet auf Server-Bestätigung.';
-    return;
-  }
-  if(onlineRoleCode !== 'w'){
-    startOnlineBtn.disabled = true;
-    startOnlineBtn.textContent = 'Partie starten';
-    startOnlineBtn.title = onlineRoleCode === 'b' ? 'Weiß startet die Partie.' : 'Nur Weiß kann die Partie starten.';
-    return;
-  }
-  const canStart = onlineConnected && isOnlineSideConnected('b') && timeMode;
+  startOnlineBtn.hidden = false;
+  const canStart = onlineConnected && bothConnected && !!timeMode && !onlinePendingStartMessageId;
   startOnlineBtn.disabled = !canStart;
-  startOnlineBtn.textContent = 'Partie starten';
-  if(!onlineConnected) startOnlineBtn.title = 'Lobby ist noch nicht verbunden.';
-  else if(!isOnlineSideConnected('b')) startOnlineBtn.title = 'Schwarz muss zuerst beitreten.';
-  else if(!timeMode) startOnlineBtn.title = 'Bitte zuerst eine Bedenkzeit auswählen.';
-  else startOnlineBtn.title = 'Online-Partie mit der gewählten Bedenkzeit starten.';
+  startOnlineBtn.textContent = onlinePendingStartMessageId ? 'Partiestart wird gesendet…' : 'Partie starten';
+  if(liveStartHintEl){
+    if(!timeMode) liveStartHintEl.textContent = 'Bitte zuerst eine Bedenkzeit auswählen.';
+    else if(onlinePendingStartMessageId) liveStartHintEl.textContent = 'Der Partiestart wartet auf die Bestätigung des Servers.';
+    else liveStartHintEl.textContent = 'Beide Spieler sind verbunden. Du spielst Weiß und kannst die Live-Partie starten.';
+  }
+  startOnlineBtn.title = canStart ? 'Live-Partie mit der gewählten Bedenkzeit starten.' : (timeMode ? 'Partiestart ist noch nicht möglich.' : 'Bitte zuerst eine Bedenkzeit auswählen.');
 }
 function updateOnlineUi(){
   if(!onlineRoomId){
     onlineCanSetTimeControl = false;
     onlinePublicGame = false;
+    onlineOpenOffer = false;
+    onlineOpenOfferStatus = 'none';
     onlineCreatedByMe = false;
     onlinePendingPublicGameMessageId = null;
     onlineAssignedSeats = {white:false, black:false};
@@ -4884,7 +5061,7 @@ function updateOnlineUi(){
     setOnlineValueClass(onlineRoomEl, 'neutral');
     setOnlineValueClass(onlineGameStateEl, 'neutral');
     if(copyInviteBtn) copyInviteBtn.disabled = true;
-    if(startOnlineBtn){ startOnlineBtn.hidden = false; startOnlineBtn.disabled = true; startOnlineBtn.textContent = 'Partie nicht verfügbar'; }
+    updateOnlineStartButton();
     updateOnlineActionButtons();
     updateGameActionButtons();
     updateChatControls();
@@ -5274,11 +5451,11 @@ async function openInviteDialogForCurrentOrNewRoom(){
     if(roomFromUrl){
       connectOnlineRoom(roomFromUrl, {reconnect:true});
     } else {
-      const created = await createNewOnlineRoom({copyLink:false});
+      const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
       if(!created) return false;
     }
   } else if(onlineRoomCancelled || onlineGameStarted || onlineGameEnded || gameEnded || timeLost){
-    const created = await createNewOnlineRoom({copyLink:false});
+    const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
     if(!created) return false;
   }
   updateInviteDialog();
@@ -5782,6 +5959,8 @@ function applyRoomCancelled(message){
   pendingDailyMove = null;
   onlineRoomCancelled = true;
   onlinePublicGame = false;
+  onlineOpenOffer = false;
+  onlineOpenOfferStatus = 'withdrawn';
   onlineCreatedByMe = false;
   onlinePendingPublicGameMessageId = null;
   onlineReconnectSuppressed = true;
@@ -5845,6 +6024,8 @@ function connectOnlineRoom(roomId, opts){
   onlineReconnectSuppressed = false;
   onlineRoomCancelled = false;
   onlinePublicGame = false;
+  onlineOpenOffer = false;
+  onlineOpenOfferStatus = 'none';
   if(!opts.reconnect) onlineDailyLoginPrompted = false;
   onlineLastMessage = onlineSpectatorOnly ? 'Öffentliche Partie wird im Zuschauermodus geöffnet.' : 'Online-Raum wird verbunden.';
   updateInviteUrlInAddressBar(roomId);
@@ -5916,7 +6097,7 @@ function connectOnlineRoom(roomId, opts){
     }
     if(msg.type === 'error'){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
-      if(msg.code === 'PUBLIC_SPECTATOR_ACCESS_UNAVAILABLE' || msg.code === 'PUBLIC_GAME_VISIBILITY_REVOKED') onlineReconnectSuppressed = true;
+      if(msg.code === 'PUBLIC_SPECTATOR_ACCESS_UNAVAILABLE' || msg.code === 'PUBLIC_GAME_VISIBILITY_REVOKED' || String(msg.code || '').indexOf('OPEN_OFFER_') === 0) onlineReconnectSuppressed = true;
       if(String(msg.code || '').indexOf('CHAT_') === 0) setChatStatus(msg.message || 'Chat-Fehler.', true);
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
       if(String(msg.code || '').indexOf('PUBLIC_GAME_') === 0 || msg.code === 'ONLY_CREATOR_CAN_SET_PUBLIC_GAME' || msg.code === 'GAME_ALREADY_ENDED') onlinePendingPublicGameMessageId = null;
@@ -5953,6 +6134,14 @@ function connectOnlineRoom(roomId, opts){
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'publicGame')){
       onlinePublicGame = !!msg.publicGame;
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'openOffer')){
+      onlineOpenOffer = !!msg.openOffer;
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'openOfferStatus')){
+      onlineOpenOfferStatus = String(msg.openOfferStatus || 'none');
       handled = true;
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'spectatorMode') && msg.spectatorMode){
@@ -6070,6 +6259,7 @@ function connectOnlineRoom(roomId, opts){
     else if(msg.type === 'public_game_ack') onlineLastMessage = onlinePublicGame ? 'Zuschauerfreigabe wurde aktiviert.' : 'Zuschauerfreigabe wurde aufgehoben.';
     else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
     else if(isOnlineSideConnected('w') && isOnlineSideConnected('b')) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
+    else if(onlineOpenOffer && onlineOpenOfferStatus === 'open' && onlineCreatedByMe) onlineLastMessage = 'Dein Partieangebot ist offen. Warte auf einen Gegner.';
     else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
     else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
     else if(onlineRoleCode === 'spectator') onlineLastMessage = onlineSpectatorOnly ? 'Du schaust dieser öffentlichen Partie zu.' : 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
@@ -6397,7 +6587,10 @@ async function createNewOnlineRoom(opts){
     onlineSpectatorOnly = false;
     onlinePublicWatchId = '';
     onlineDesiredPublicGameForNewRoom = !!publicGamePreference;
+    onlineDesiredOpenOfferForNewRoom = opts.openOffer === true;
     onlinePublicGame = !!publicGamePreference;
+    onlineOpenOffer = onlineDesiredOpenOfferForNewRoom;
+    onlineOpenOfferStatus = onlineDesiredOpenOfferForNewRoom ? 'open' : 'none';
     closeOnlineSocket();
     onlineRoomId = null;
     onlineRoleCode = 'local';
@@ -6437,6 +6630,33 @@ async function createNewOnlineRoom(opts){
     onlineRoomCreationPromise = null;
   }
 }
+async function offerPreparedGame(event){
+  if(event && event.isTrusted === false) return;
+  if(onlineRoomId){ openNewGameView(); return; }
+  if(!requireAccountForInvitationCreation()) return;
+  if(!timeMode || !currentTimeControlPayload()){
+    statusEl.textContent = 'Bitte zuerst eine Bedenkzeit auswählen, bevor du die Partie anbietest.';
+    return;
+  }
+  if(isDailyTimeControl() && !onlineAuthUser){
+    statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
+    openAuthDialog('login');
+    return;
+  }
+  if(newGameBtn) newGameBtn.disabled = true;
+  try{
+    const created = await createNewOnlineRoom({copyLink:false, openOffer:true});
+    if(created){
+      onlineLastMessage = 'Partieangebot wird veröffentlicht. Warte auf einen Gegner.';
+      statusEl.textContent = onlineLastMessage;
+      setTimeout(requestOnlineState, 500);
+      setTimeout(() => loadOpenOffers({silent:true}), 1200);
+    }
+  } finally {
+    updateOnlineActionButtons();
+  }
+}
+
 async function inviteToOnlineGame(event){
   if(event && event.isTrusted === false) return;
   if(createOnlineBtn) createOnlineBtn.disabled = true;
@@ -6721,12 +6941,12 @@ function updateStatus(g){
     return;
   }
   if(!onlineRoomId){
-    statusEl.textContent = 'Spielmodus, Farbe und Bedenkzeit wählen – dann zur Partie einladen.';
+    statusEl.textContent = 'Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.';
     return;
   }
   if(onlineRoomId){
     if(onlineRoomCancelled){
-      statusEl.textContent = 'Diese Einladung wurde zurückgezogen. Der Spielraum ist nicht mehr verfügbar.';
+      statusEl.textContent = onlineLastMessage || 'Dieser Spielraum wurde zurückgezogen und ist nicht mehr verfügbar.';
       return;
     }
     if(onlineGameEnded || timeLost){
@@ -6741,7 +6961,10 @@ function updateStatus(g){
         else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — Daily-Partie wartet auf Annahme.';
         else statusEl.textContent = 'Daily-Raum wird verbunden.';
       } else {
-        if(onlineRoleCode === 'w') statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — Partie kann gestartet werden.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
+        if(onlineRoleCode === 'w'){
+          if(onlineOpenOffer && onlineOpenOfferStatus === 'open' && !onlineAssignedSeats.black) statusEl.textContent = 'Partieangebot ist offen — warte auf einen Gegner.';
+          else statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — starte die Partie rechts bei „Spieler & Zeit“.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
+        }
         else if(onlineRoleCode === 'b') statusEl.textContent = isOnlineSideConnected('w') ? 'Online-Lobby — warte auf Partiestart durch Weiß.' : 'Du spielst Schwarz — warte auf Weiß.';
         else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
         else statusEl.textContent = 'Online-Lobby wird verbunden.';
@@ -6818,7 +7041,6 @@ function stageDailyMove(found, promotion){
   mv.san = moveToSan(before, mv, preview);
   pendingDailyMove = {move:mv, movedSide:before.turn};
   selected = null;
-  setRightPanelMode('players');
   renderBoard();
 }
 function cancelPendingDailyMove(){
@@ -6860,7 +7082,7 @@ if(dailyMoveConfirmBtn) dailyMoveConfirmBtn.addEventListener('click', confirmPen
 function onSquareClick(x,y){
   if(gameEnded) return;
   if(pendingDailyMove){
-    statusEl.textContent = 'Zugvorschau aktiv — bitte rechts bestätigen oder zurücknehmen.';
+    statusEl.textContent = 'Zugvorschau aktiv — bitte unter dem Brett bestätigen oder zurücknehmen.';
     return;
   }
   const g = buildGameFromHistory(masterHistory.length);
@@ -7184,7 +7406,10 @@ function openNewGameView(){
 
   window.open(targetUrl, '_blank', 'noopener,noreferrer');
 }
-if(newGameBtn) newGameBtn.addEventListener('click', openNewGameView);
+if(newGameBtn) newGameBtn.addEventListener('click', event => {
+  if(onlineRoomId) openNewGameView();
+  else offerPreparedGame(event);
+});
 document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
