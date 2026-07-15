@@ -9,12 +9,17 @@ MAIL_LOGO_URL = "https://raw.githubusercontent.com/Andili3108/Hammerschach-Edito
 
 [durable_objects]
 bindings = [
-  { name = "GAME_ROOM", class_name = "GameRoom" }
+  { name = "GAME_ROOM", class_name = "GameRoom" },
+  { name = "GLOBAL_CHAT", class_name = "GlobalChat" }
 ]
 
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["GameRoom"]
+
+[[migrations]]
+tag = "v2-global-chat"
+new_sqlite_classes = ["GlobalChat"]
 
 [[d1_databases]]
 binding = "DB"
