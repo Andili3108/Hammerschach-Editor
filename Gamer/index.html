@@ -502,6 +502,53 @@
   .public-games-actions button{border-radius:12px;min-height:38px;}
   .side-toggle-row.spectator{grid-template-columns:repeat(2,minmax(0,1fr));}
 
+  html.member-lobby-view .top-layout{display:none!important;}
+  .member-lobby{display:flex;flex-direction:column;gap:14px;width:100%;}
+  .member-lobby[hidden]{display:none!important;}
+  .member-lobby-section{padding:16px 18px;}
+  .member-lobby-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:13px;}
+  .member-lobby-heading h2{margin:0;font-size:22px;line-height:1.15;color:#222;}
+  .member-lobby-heading p{margin:4px 0 0;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
+  .member-lobby-settings-mount{min-width:0;}
+  .member-lobby-settings-mount #preRoomSetupPanel{display:grid!important;grid-template-columns:minmax(205px,.9fr) minmax(245px,1.08fr) minmax(345px,1.55fr) minmax(225px,1fr);gap:12px;overflow:visible;min-height:0;}
+  .member-lobby-settings-mount #preRoomSetupPanel>.player-time-setup{height:100%;box-sizing:border-box;}
+  .member-lobby-settings-mount .time-selectors{gap:7px;}
+  .member-lobby-settings-mount .time-control-select{padding-left:9px;padding-right:25px;font-size:13px;}
+  .global-chat-shell{padding:0;overflow:hidden;min-height:500px;display:flex;flex-direction:column;}
+  .global-chat-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 16px;border-bottom:1px solid rgba(132,63,70,.13);background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(246,238,240,.96));}
+  .global-chat-title{font-size:21px;font-weight:900;color:#222;line-height:1.1;}
+  .global-chat-subtitle{font-size:12px;font-weight:800;color:#666;margin-top:3px;line-height:1.3;}
+  .global-chat-presence{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;border-radius:999px;padding:7px 11px;background:rgba(34,107,54,.09);border:1px solid rgba(34,107,54,.20);color:#226b36;font-size:13px;font-weight:900;}
+  .global-chat-presence-dot{width:9px;height:9px;border-radius:999px;background:#2b9a4b;box-shadow:0 0 0 3px rgba(43,154,75,.13);}
+  .global-chat-layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:0;min-height:0;flex:1;}
+  .global-chat-main{display:flex;flex-direction:column;min-width:0;min-height:0;padding:13px 14px 14px;gap:10px;}
+  .global-chat-messages{height:360px;overflow-y:auto;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:11px;display:flex;flex-direction:column;gap:8px;}
+  .global-chat-empty{margin:auto;padding:20px;text-align:center;font-size:14px;font-weight:800;color:#666;line-height:1.45;}
+  .global-chat-message{border-radius:13px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;box-shadow:0 2px 7px rgba(0,0,0,.04);}
+  .global-chat-message.mine{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.15);}
+  .global-chat-message-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;}
+  .global-chat-message-name{font-size:13px;font-weight:900;color:#843f46;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .global-chat-message-time{font-size:11px;font-weight:800;color:#888;white-space:nowrap;}
+  .global-chat-message-text{font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#222;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .global-chat-message-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:6px;}
+  .global-chat-message-action{min-height:27px!important;padding:4px 7px!important;border-radius:9px!important;font-size:10px!important;box-shadow:none!important;}
+  .global-chat-message-delete{background:#843f46!important;color:#fff!important;}
+  .global-chat-input-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;}
+  .global-chat-input{width:100%;min-height:42px;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:13px;background:#f7f7f9;color:#222;padding:9px 11px;font-family:Arial,sans-serif;font-size:14px;font-weight:600;outline:none;}
+  .global-chat-input:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
+  .global-chat-input:disabled{opacity:.58;cursor:not-allowed;}
+  .global-chat-send{min-height:42px;border-radius:13px;padding:9px 15px;}
+  .global-chat-status{min-height:17px;font-size:12px;font-weight:800;color:#666;line-height:1.3;}
+  .global-chat-status.error{color:#9A2D33;}.global-chat-status.success{color:#226b36;}
+  .global-chat-members{border-left:1px solid rgba(132,63,70,.12);background:#fbfbfc;padding:13px 12px;min-height:0;}
+  .global-chat-members-title{font-size:14px;font-weight:900;color:#444;margin-bottom:9px;}
+  .global-chat-members-list{display:flex;flex-direction:column;gap:6px;max-height:410px;overflow:auto;}
+  .global-chat-member{display:flex;align-items:center;gap:7px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.07);padding:7px 8px;font-size:12px;font-weight:900;color:#444;min-width:0;}
+  .global-chat-member-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .global-chat-member.admin{color:#843f46;background:rgba(132,63,70,.06);border-color:rgba(132,63,70,.14);}
+  .global-chat-note{font-size:11px;font-weight:800;color:#777;line-height:1.35;text-align:center;}
+  .global-report-modal{width:560px;max-width:100%;}
+
   .site-footnote{
     text-align:center;
     font-size:12px;
@@ -538,6 +585,9 @@
   .admin-report-chat{background:#f7f7f9;border-radius:10px;padding:7px 8px;max-height:120px;overflow:auto;white-space:pre-wrap;}
   .admin-report-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
   .admin-report-actions button{min-height:32px;border-radius:10px;padding:6px 8px;font-size:11px;}
+
+  @media (max-width:1080px){.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr 1fr}.member-lobby-settings-mount #timeSetupBox{grid-column:1 / -1}.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}}
+  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading{flex-direction:column}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
@@ -585,6 +635,45 @@
       </div>
     </header>
 
+    <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
+      <div class="box member-lobby-section">
+        <div class="member-lobby-heading">
+          <div>
+            <h2>Partie vorbereiten</h2>
+            <p>Farbe, Spielmodus, Bedenkzeit und Zuschauerfreigabe festlegen – danach einladen oder offen anbieten.</p>
+          </div>
+        </div>
+        <div id="memberLobbySetupMount" class="member-lobby-settings-mount"></div>
+      </div>
+
+      <div class="box global-chat-shell" aria-label="Hammerschach Mitglieder-Chat">
+        <div class="global-chat-header">
+          <div>
+            <div class="global-chat-title">💬 Hammerschach-Mitglieder-Chat</div>
+            <div class="global-chat-subtitle">Nur für eingeloggte Mitglieder · freundlich, respektvoll und ohne Werbung</div>
+          </div>
+          <div class="global-chat-presence" aria-live="polite"><span class="global-chat-presence-dot" aria-hidden="true"></span><span id="globalChatOnlineCount">0 Mitglieder online</span></div>
+        </div>
+        <div class="global-chat-layout">
+          <div class="global-chat-main">
+            <div id="globalChatMessages" class="global-chat-messages" aria-live="polite" aria-label="Nachrichten im Mitglieder-Chat">
+              <div class="global-chat-empty">Der Mitglieder-Chat wird verbunden…</div>
+            </div>
+            <div class="global-chat-input-row">
+              <input id="globalChatInput" class="global-chat-input" type="text" maxlength="300" autocomplete="off" placeholder="Nachricht an die Hammerschach-Mitglieder schreiben…" disabled />
+              <button id="globalChatSendBtn" class="global-chat-send" type="button" disabled>Senden</button>
+            </div>
+            <div id="globalChatStatus" class="global-chat-status" aria-live="polite">Verbindung wird vorbereitet…</div>
+            <div class="global-chat-note">Die letzten 200 Nachrichten werden höchstens 30 Tage gespeichert. Nachrichten können stummgeschaltet oder gemeldet werden.</div>
+          </div>
+          <aside class="global-chat-members" aria-label="Mitglieder online">
+            <div class="global-chat-members-title">Gerade online</div>
+            <div id="globalChatMembersList" class="global-chat-members-list"><div class="global-chat-member"><span class="presence-dot"></span><span class="global-chat-member-name">Noch niemand verbunden</span></div></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <div id="infoBackdrop" class="info-backdrop" hidden>
       <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
         <h3 id="infoTitle">Hammerschach-Gamer – Bedienungsanleitung</h3>
@@ -597,6 +686,8 @@
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
+
+          <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby. Das große Schachbrett wird dort durch den horizontalen Bereich <strong>„Partie vorbereiten“</strong> und den festen <strong>Hammerschach-Mitglieder-Chat</strong> ersetzt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
           <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden sowohl in eine gezielte Einladung als auch in ein öffentliches Partieangebot übernommen und sind nach dem Partiestart gesperrt.</p>
@@ -659,44 +750,49 @@
             <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
           </ul>
 
-          <h4>13. Partieaktionen</h4>
+          <h4>13. Mitglieder-Chat</h4>
+          <p>Der Global-Chat ist ausschließlich in der eingeloggten Mitglieder-Lobby sichtbar. Gäste und Zuschauer können ihn weder lesen noch verwenden. Angezeigt werden die aktuell verbundenen Mitglieder und die letzten Chatnachrichten.</p>
+          <p>Nachrichten sind auf 300 Zeichen begrenzt. Zwischen zwei eigenen Nachrichten besteht eine kurze Wartezeit. Einzelne Mitglieder können auf dem eigenen Gerät stummgeschaltet und auffällige Nachrichten vertraulich gemeldet werden. Der Administrator kann Nachrichten löschen sowie Chat- oder Accountsperren aussprechen.</p>
+          <p>Im Global-Chat bleiben höchstens die letzten 200 Nachrichten und höchstens Nachrichten der vergangenen 30 Tage gespeichert. Beim Öffnen eines Spielraums wird der Global-Chat ausgeblendet; dort steht weiterhin ausschließlich der private Partie-Chat zur Verfügung.</p>
+
+          <h4>14. Partieaktionen</h4>
           <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. Bei einer Daily-Zugvorschau erscheinen dort zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
 
-          <h4>14. Automatische Partieenden</h4>
+          <h4>15. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
 
-          <h4>15. Brett und Darstellung</h4>
+          <h4>16. Brett und Darstellung</h4>
           <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
 
-          <h4>16. PGN-Datei</h4>
+          <h4>17. PGN-Datei</h4>
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
-          <h4>17. Partie anbieten und neue Partie</h4>
+          <h4>18. Partie anbieten und neue Partie</h4>
           <p>In der Startansicht heißt die erste Header-Schaltfläche <strong>„Partie anbieten“</strong>. Sobald du dich in einem Spielraum befindest, heißt sie an derselben Stelle <strong>„Neue Partie“</strong> und öffnet eine frische Ansicht ohne bestehenden Raum. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird weiterhin ein neuer Tab geöffnet.</p>
 
-          <h4>18. Verbindung und Wiederaufnahme</h4>
+          <h4>19. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
           <p>Bei Daily Chess solltest du dich zuerst mit dem verwendeten Account anmelden und die Partie anschließend über <strong>„Meine Partien“</strong> öffnen. Dadurch kann dein gesicherter Spielerplatz wieder übernommen werden.</p>
 
-          <h4>19. Ratings für Mitglieder</h4>
+          <h4>20. Ratings für Mitglieder</h4>
           <p>Gewertet werden ausschließlich neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
 
-          <h4>20. Admin-Funktion und Systemübersicht</h4>
+          <h4>21. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
           <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
 
-          <h4>21. Mitglieder-Informationen und Maildarstellung</h4>
+          <h4>22. Mitglieder-Informationen und Maildarstellung</h4>
           <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden.</p>
           <p>Die Nachrichten werden einzeln und mit persönlicher Anrede versendet; Mailadressen anderer Mitglieder sind nicht sichtbar. Optional kann eine PDF-, JPG-, PNG- oder WebP-Datei bis 3 MB beigefügt werden. Ausgewählte Bilder lassen sich zusätzlich direkt im Mailinhalt anzeigen. Sämtliche HTML-Mails des Hammerschach-Gamers enthalten oben das Gamer-Logo als einheitlichen Mailkopf. Manche Mailprogramme laden externe Bilder erst nach Zustimmung des Empfängers; der vollständige Text bleibt trotzdem lesbar.</p>
 
-          <h4>22. Fair Play und Spielkultur</h4>
+          <h4>23. Fair Play und Spielkultur</h4>
           <p>Behandle deinen Gegner so, wie du selbst behandelt werden möchtest. Beleidigungen, Drohungen, diskriminierende Inhalte, Werbung und absichtliche Störungen haben im Hammerschach-Gamer keinen Platz.</p>
           <p>Gewertete Partien sollen ohne fremde Hilfe oder den Einsatz von Schachprogrammen gespielt werden. Verwende außerdem keine irreführenden oder anstößigen Benutzernamen und verzögere Partien nicht absichtlich durch unnötige Wartezeiten oder mutwillige Verbindungsabbrüche.</p>
           <p>Bei schweren oder wiederholten Verstößen kann der Administrator geeignete Maßnahmen ergreifen, insbesondere Hinweise aussprechen sowie Accounts einschränken oder löschen.</p>
-          <h4>23. Melden, Stummschalten und Moderation</h4>
+          <h4>24. Melden, Stummschalten und Moderation</h4>
           <p>Spieler können den Chat ihres Gegners für die aktuelle Partie auf dem eigenen Gerät stummschalten. Eingeloggte Mitglieder können einen Gegner außerdem vertraulich melden. Dabei werden Partieangaben und ein begrenzter Ausschnitt des Partie-Chats an den Administrator übermittelt. Eine Meldung führt niemals automatisch zu einer Sanktion.</p>
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
         </div>
@@ -731,9 +827,11 @@
           <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen und die jeweilige Zugfrist gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt werden kann.</p>
           <p>Gewertete Partien zwischen registrierten Mitgliedern verändern die getrennten Ratings. Dazu werden Ratingwerte, Unsicherheitswerte, Partiezahlen und Ergebnisse gespeichert. Besucherzähler und die Zahl gespielter Partien werden nur als allgemeine Summen geführt und nicht einem persönlichen Nutzerprofil zugeordnet.</p>
 
-          <h4>5. Partie-Chat</h4>
+          <h4>5. Partie-Chat und Mitglieder-Chat</h4>
           <p>Der private Partie-Chat steht ausschließlich Weiß und Schwarz zur Verfügung. Gespeichert werden Absendername, Spielerrolle, Nachricht, Nachrichtenkennung und Zeitpunkt. Pro Spielraum bleiben höchstens die letzten 80 Nachrichten gespeichert. Zuschauer können den Chat weder lesen noch verwenden.</p>
           <p>Für gespeicherte Spielräume und Chatnachrichten besteht derzeit keine allgemeine automatische zeitliche Löschfrist. Vermeide deshalb vertrauliche, besonders persönliche oder sensible Angaben im Partie-Chat.</p>
+          <p>Der Mitglieder-Chat ist ausschließlich für eingeloggte Accounts sichtbar. Gespeichert werden Nachrichtenkennung, Account-Zuordnung, angezeigter Benutzername, Nachricht und Zeitpunkt. Es werden höchstens die letzten 200 Nachrichten gespeichert; Nachrichten, die älter als 30 Tage sind, werden beim laufenden Betrieb entfernt. Andere Mitglieder erhalten keine Account- oder Mailadresse, sondern nur den sichtbaren Benutzernamen und eine nicht rückrechenbare Kennung für lokale Stummschaltungen.</p>
+          <p>Global-Chat-Nachrichten können gemeldet werden. Dabei werden die ausgewählte Nachricht, Meldungsgrund, optionale Erläuterung sowie die Account-Zuordnung des meldenden und gemeldeten Mitglieds für die administrative Prüfung verarbeitet.</p>
 
           <h4>6. Online-Status und öffentliche Partien</h4>
           <p>Bei angemeldeten Mitgliedern wird ein Aktivitätszeitpunkt gespeichert, damit im Gamer ein ungefährer Online-Status angezeigt werden kann. Im Spielraum wird außerdem angezeigt, ob ein Spieler aktuell verbunden ist.</p>
@@ -766,7 +864,7 @@
 
           <h4>11. Accountlöschung und weitere Löschung</h4>
           <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
-          <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
+          <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Partie-Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Eigene Nachrichten im Mitglieder-Chat werden bei der Accountlöschung vollständig entfernt. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
 
           <h4>12. Deine Rechte und Kontakt</h4>
           <p>Du kannst im Rahmen der gesetzlichen Voraussetzungen Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung oder Datenübertragbarkeit verlangen und einer Verarbeitung widersprechen. Eine erteilte Einwilligung, insbesondere für freiwillige Neuigkeiten, kann für die Zukunft widerrufen werden.</p>
@@ -1086,6 +1184,32 @@
         <div class="identity-actions">
           <button id="moderationReportCloseBtn" class="button-flat" type="button">Abbrechen</button>
           <button id="moderationReportSubmitBtn" type="button">Meldung senden</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="globalChatReportBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal global-report-modal" role="dialog" aria-modal="true" aria-labelledby="globalChatReportTitle">
+        <h3 id="globalChatReportTitle">Global-Chat-Nachricht melden</h3>
+        <p id="globalChatReportIntro">Die ausgewählte Nachricht wird vertraulich an den Administrator übermittelt.</p>
+        <div class="moderation-form">
+          <label class="identity-label" for="globalChatReportReason">Grund</label>
+          <select id="globalChatReportReason" class="moderation-select">
+            <option value="insult">Beleidigung oder unsachlicher Umgang</option>
+            <option value="threat">Drohung</option>
+            <option value="discrimination">Diskriminierender Inhalt</option>
+            <option value="spam">Werbung oder Spam</option>
+            <option value="username">Anstößiger Benutzername</option>
+            <option value="other">Sonstiges</option>
+          </select>
+          <label class="identity-label" for="globalChatReportComment">Kurze Erläuterung (optional)</label>
+          <textarea id="globalChatReportComment" class="moderation-textarea" maxlength="600" placeholder="Warum meldest du diese Nachricht?"></textarea>
+          <div class="moderation-note">Eine Meldung führt nicht automatisch zu einer Sperre. Das gemeldete Mitglied erfährt nicht, wer die Meldung abgegeben hat.</div>
+          <div id="globalChatReportStatus" class="moderation-status" aria-live="polite"></div>
+        </div>
+        <div class="identity-actions">
+          <button id="globalChatReportCloseBtn" class="button-flat" type="button">Abbrechen</button>
+          <button id="globalChatReportSubmitBtn" type="button">Meldung senden</button>
         </div>
       </div>
     </div>
@@ -2671,6 +2795,24 @@ const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const matchActionsEl = document.querySelector('.match-actions');
+const memberLobbyEl = document.getElementById('memberLobby');
+const memberLobbySetupMountEl = document.getElementById('memberLobbySetupMount');
+const preRoomSetupPanelHome = preRoomSetupPanelEl ? {parent:preRoomSetupPanelEl.parentNode, nextSibling:preRoomSetupPanelEl.nextSibling} : null;
+const globalChatMessagesEl = document.getElementById('globalChatMessages');
+const globalChatInputEl = document.getElementById('globalChatInput');
+const globalChatSendBtn = document.getElementById('globalChatSendBtn');
+const globalChatStatusEl = document.getElementById('globalChatStatus');
+const globalChatOnlineCountEl = document.getElementById('globalChatOnlineCount');
+const globalChatMembersListEl = document.getElementById('globalChatMembersList');
+const globalChatReportBackdrop = document.getElementById('globalChatReportBackdrop');
+const globalChatReportIntro = document.getElementById('globalChatReportIntro');
+const globalChatReportReason = document.getElementById('globalChatReportReason');
+const globalChatReportComment = document.getElementById('globalChatReportComment');
+const globalChatReportStatus = document.getElementById('globalChatReportStatus');
+const globalChatReportCloseBtn = document.getElementById('globalChatReportCloseBtn');
+const globalChatReportSubmitBtn = document.getElementById('globalChatReportSubmitBtn');
+const siteFootnoteEl = document.querySelector('.site-footnote');
+const siteFootnoteHome = siteFootnoteEl ? {parent:siteFootnoteEl.parentNode, nextSibling:siteFootnoteEl.nextSibling} : null;
 const infoOpenBtnHome = infoOpenBtn ? {parent:infoOpenBtn.parentNode, nextSibling:infoOpenBtn.nextSibling} : null;
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
@@ -3160,6 +3302,241 @@ async function authApi(path, options){
   return data;
 }
 
+const GLOBAL_CHAT_MUTE_STORAGE_KEY = 'hammerschachGlobalChatMutedMembers';
+let globalChatSocket = null;
+let globalChatReconnectTimer = null;
+let globalChatPingTimer = null;
+let globalChatIntentionalClose = false;
+let globalChatConnected = false;
+let globalChatChatBlocked = false;
+let globalChatIsAdmin = false;
+let globalChatAuthenticatedUserId = '';
+let globalChatAuthenticatedUsername = '';
+let globalChatRequestedUserId = '';
+let globalChatRequestedUsername = '';
+let globalChatMessages = [];
+let globalChatOnlineMembers = [];
+let globalChatReportMessageId = '';
+let globalChatMutedKeys = new Set();
+try{
+  const savedMuted = JSON.parse(localStorage.getItem(GLOBAL_CHAT_MUTE_STORAGE_KEY) || '[]');
+  if(Array.isArray(savedMuted)) globalChatMutedKeys = new Set(savedMuted.map(value => String(value || '')).filter(Boolean));
+}catch(_){}
+
+function isMemberLobbyView(){
+  return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
+}
+function saveGlobalChatMutedKeys(){
+  try{ localStorage.setItem(GLOBAL_CHAT_MUTE_STORAGE_KEY, JSON.stringify(Array.from(globalChatMutedKeys).slice(0,200))); }catch(_){}
+}
+function setGlobalChatStatus(message, kind){
+  if(!globalChatStatusEl) return;
+  globalChatStatusEl.textContent = message || '';
+  globalChatStatusEl.classList.toggle('error', kind === 'error');
+  globalChatStatusEl.classList.toggle('success', kind === 'success');
+}
+function globalChatWebSocketUrl(){
+  const configured = (window.HAMMERSCHACH_ONLINE_WORKER_URL || ONLINE_WORKER_URL || '').trim();
+  let url;
+  if(configured) url = new URL('/global-chat', configured.endsWith('/') ? configured : configured + '/');
+  else {
+    if(window.location.protocol !== 'http:' && window.location.protocol !== 'https:') throw new Error('Kein Online-Server für den Mitglieder-Chat erreichbar.');
+    url = new URL('/global-chat', window.location.origin);
+  }
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.toString();
+}
+function formatGlobalChatTime(value){
+  const date = value ? new Date(value) : null;
+  if(!date || Number.isNaN(date.getTime())) return '';
+  try{
+    const today = new Date();
+    const sameDay = date.toDateString() === today.toDateString();
+    return sameDay ? date.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) : date.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }catch(_){ return ''; }
+}
+function normalizeGlobalChatMessage(value){
+  if(!value || typeof value !== 'object') return null;
+  const id = String(value.id || value.messageId || '').trim();
+  const text = cleanChatText(value.text || value.message);
+  const senderName = cleanDisplayName(value.senderName || value.name || 'Mitglied') || 'Mitglied';
+  if(!id || !text) return null;
+  return {id,messageId:id,text,senderName,senderKey:String(value.senderKey || ''),sentAt:value.sentAt || new Date().toISOString(),mine:value.mine === true};
+}
+function renderGlobalChatMembers(){
+  if(globalChatOnlineCountEl){
+    const count = globalChatOnlineMembers.length;
+    globalChatOnlineCountEl.textContent = count + ' Mitglied' + (count === 1 ? '' : 'er') + ' online';
+  }
+  if(!globalChatMembersListEl) return;
+  globalChatMembersListEl.innerHTML = '';
+  if(!globalChatOnlineMembers.length){
+    const empty = document.createElement('div'); empty.className='global-chat-member';
+    const dot=document.createElement('span');dot.className='presence-dot';
+    const name=document.createElement('span');name.className='global-chat-member-name';name.textContent='Noch niemand verbunden';
+    empty.append(dot,name);globalChatMembersListEl.appendChild(empty);return;
+  }
+  const frag=document.createDocumentFragment();
+  globalChatOnlineMembers.forEach(member=>{
+    const row=document.createElement('div');row.className='global-chat-member'+(member.isAdmin?' admin':'');
+    const dot=document.createElement('span');dot.className='presence-dot';
+    const name=document.createElement('span');name.className='global-chat-member-name';name.textContent=(member.isAdmin?'♛ ':'')+(cleanDisplayName(member.name)||'Mitglied');
+    row.append(dot,name);frag.appendChild(row);
+  });
+  globalChatMembersListEl.appendChild(frag);
+}
+function openGlobalChatReport(message){
+  if(!message || message.mine) return;
+  globalChatReportMessageId = message.id;
+  if(globalChatReportIntro) globalChatReportIntro.textContent = 'Nachricht von „' + message.senderName + '“ vertraulich melden.';
+  if(globalChatReportReason) globalChatReportReason.value = 'insult';
+  if(globalChatReportComment) globalChatReportComment.value = '';
+  if(globalChatReportStatus){globalChatReportStatus.textContent='';globalChatReportStatus.className='moderation-status';}
+  if(globalChatReportBackdrop) globalChatReportBackdrop.hidden = false;
+}
+function closeGlobalChatReport(){
+  globalChatReportMessageId = '';
+  if(globalChatReportBackdrop) globalChatReportBackdrop.hidden = true;
+}
+async function submitGlobalChatReport(){
+  if(!globalChatReportMessageId || !globalChatReportSubmitBtn) return;
+  globalChatReportSubmitBtn.disabled = true;
+  if(globalChatReportStatus){globalChatReportStatus.textContent='Meldung wird gesendet…';globalChatReportStatus.className='moderation-status';}
+  try{
+    const data=await authApi('/api/moderation/global-chat-report',{method:'POST',body:JSON.stringify({messageId:globalChatReportMessageId,reason:globalChatReportReason?globalChatReportReason.value:'other',comment:globalChatReportComment?globalChatReportComment.value:''})});
+    if(globalChatReportStatus){globalChatReportStatus.textContent=data.message||'Meldung wurde gesendet.';globalChatReportStatus.className='moderation-status success';}
+    setTimeout(closeGlobalChatReport,900);
+  }catch(err){
+    if(globalChatReportStatus){globalChatReportStatus.textContent=err&&err.message?err.message:'Meldung konnte nicht gesendet werden.';globalChatReportStatus.className='moderation-status error';}
+  }finally{globalChatReportSubmitBtn.disabled=false;}
+}
+function toggleGlobalChatMute(message){
+  if(!message || !message.senderKey) return;
+  if(globalChatMutedKeys.has(message.senderKey)) globalChatMutedKeys.delete(message.senderKey); else globalChatMutedKeys.add(message.senderKey);
+  saveGlobalChatMutedKeys();renderGlobalChatMessages();
+}
+function deleteGlobalChatMessage(message){
+  if(!message || !globalChatSocket || globalChatSocket.readyState!==WebSocket.OPEN || !globalChatIsAdmin) return;
+  if(!window.confirm('Diese Global-Chat-Nachricht wirklich für alle löschen?')) return;
+  globalChatSocket.send(JSON.stringify({type:'delete_message',messageId:message.id}));
+}
+function renderGlobalChatMessages(){
+  if(!globalChatMessagesEl) return;
+  globalChatMessagesEl.innerHTML='';
+  if(!globalChatMessages.length){
+    const empty=document.createElement('div');empty.className='global-chat-empty';empty.textContent='Noch keine Nachrichten. Begrüße die Hammerschach-Mitglieder!';globalChatMessagesEl.appendChild(empty);return;
+  }
+  const frag=document.createDocumentFragment();
+  globalChatMessages.forEach(message=>{
+    const muted=!!(!message.mine&&message.senderKey&&globalChatMutedKeys.has(message.senderKey));
+    const item=document.createElement('div');item.className='global-chat-message'+(message.mine?' mine':'');
+    const head=document.createElement('div');head.className='global-chat-message-head';
+    const name=document.createElement('div');name.className='global-chat-message-name';name.textContent=message.senderName+(message.mine?' (Du)':'');
+    const time=document.createElement('div');time.className='global-chat-message-time';time.textContent=formatGlobalChatTime(message.sentAt);
+    head.append(name,time);
+    const body=document.createElement('div');body.className='global-chat-message-text';body.textContent=muted?'Nachrichten dieses Mitglieds sind auf diesem Gerät stummgeschaltet.':message.text;
+    item.append(head,body);
+    if(!message.mine || globalChatIsAdmin){
+      const actions=document.createElement('div');actions.className='global-chat-message-actions';
+      if(!message.mine && message.senderKey){
+        const mute=document.createElement('button');mute.type='button';mute.className='button-flat global-chat-message-action';mute.textContent=muted?'🔊 Einblenden':'🔇 Stumm';mute.addEventListener('click',()=>toggleGlobalChatMute(message));actions.appendChild(mute);
+        if(!muted){const report=document.createElement('button');report.type='button';report.className='button-flat global-chat-message-action';report.textContent='🚩 Melden';report.addEventListener('click',()=>openGlobalChatReport(message));actions.appendChild(report);}
+      }
+      if(globalChatIsAdmin){const del=document.createElement('button');del.type='button';del.className='global-chat-message-action global-chat-message-delete';del.textContent='Löschen';del.addEventListener('click',()=>deleteGlobalChatMessage(message));actions.appendChild(del);}
+      if(actions.childNodes.length) item.appendChild(actions);
+    }
+    frag.appendChild(item);
+  });
+  globalChatMessagesEl.appendChild(frag);
+  globalChatMessagesEl.scrollTop=globalChatMessagesEl.scrollHeight;
+}
+function updateGlobalChatControls(){
+  const usable=!!(isMemberLobbyView()&&globalChatConnected&&!globalChatChatBlocked);
+  if(globalChatInputEl) globalChatInputEl.disabled=!usable;
+  if(globalChatSendBtn) globalChatSendBtn.disabled=!usable;
+  if(globalChatInputEl) globalChatInputEl.placeholder=globalChatChatBlocked?'Deine Chatfunktion ist derzeit gesperrt.':'Nachricht an die Hammerschach-Mitglieder schreiben…';
+}
+function appendGlobalChatMessage(raw){
+  const message=normalizeGlobalChatMessage(raw);if(!message)return;
+  if(globalChatMessages.some(item=>item.id===message.id))return;
+  globalChatMessages.push(message);globalChatMessages=globalChatMessages.slice(-200);renderGlobalChatMessages();
+}
+function closeGlobalChat(intentional){
+  globalChatIntentionalClose=intentional!==false;
+  if(globalChatReconnectTimer){clearTimeout(globalChatReconnectTimer);globalChatReconnectTimer=null;}
+  if(globalChatPingTimer){clearInterval(globalChatPingTimer);globalChatPingTimer=null;}
+  const socket=globalChatSocket;globalChatSocket=null;globalChatConnected=false;globalChatAuthenticatedUserId='';globalChatAuthenticatedUsername='';globalChatRequestedUserId='';globalChatRequestedUsername='';
+  if(socket){try{socket.close(1000,'Lobby verlassen');}catch(_){}}
+  updateGlobalChatControls();
+}
+function scheduleGlobalChatReconnect(){
+  if(globalChatIntentionalClose||!isMemberLobbyView()||globalChatReconnectTimer)return;
+  globalChatReconnectTimer=setTimeout(()=>{globalChatReconnectTimer=null;connectGlobalChat();},3000);
+}
+function connectGlobalChat(){
+  if(!isMemberLobbyView()||!onlineAuthToken||!onlineAuthUser)return;
+  const expectedUserId=String(onlineAuthUser.id||'');
+  const expectedName=cleanDisplayName(onlineAuthUser.username)||'Mitglied';
+  if(globalChatSocket&&(globalChatSocket.readyState===WebSocket.OPEN||globalChatSocket.readyState===WebSocket.CONNECTING)){
+    if(globalChatRequestedUserId===expectedUserId&&globalChatRequestedUsername===expectedName)return;
+    closeGlobalChat(true);
+  }
+  globalChatIntentionalClose=false;globalChatConnected=false;globalChatChatBlocked=false;updateGlobalChatControls();setGlobalChatStatus('Mitglieder-Chat wird verbunden…','');
+  let socket;try{socket=new WebSocket(globalChatWebSocketUrl());}catch(err){setGlobalChatStatus(err&&err.message?err.message:'Mitglieder-Chat konnte nicht geöffnet werden.','error');scheduleGlobalChatReconnect();return;}
+  globalChatSocket=socket;globalChatRequestedUserId=expectedUserId;globalChatRequestedUsername=expectedName;
+  let authSent=false;
+  const sendAuthentication=()=>{if(authSent||globalChatSocket!==socket||socket.readyState!==WebSocket.OPEN)return;authSent=true;socket.send(JSON.stringify({type:'authenticate',authToken:onlineAuthToken}));};
+  socket.addEventListener('open',sendAuthentication);
+  socket.addEventListener('message',event=>{
+    if(globalChatSocket!==socket)return;let data;try{data=JSON.parse(event.data);}catch(_){return;}
+    if(data.type==='global_chat_challenge'){sendAuthentication();return;}
+    if(data.type==='global_chat_ready'){
+      globalChatConnected=true;globalChatChatBlocked=data.chatBlocked===true;globalChatIsAdmin=data.isAdmin===true;globalChatAuthenticatedUserId=String(onlineAuthUser&&onlineAuthUser.id||'');globalChatAuthenticatedUsername=cleanDisplayName(onlineAuthUser&&onlineAuthUser.username)||'';
+      globalChatMessages=(Array.isArray(data.messages)?data.messages.map(normalizeGlobalChatMessage).filter(Boolean):[]).slice(-200);renderGlobalChatMessages();updateGlobalChatControls();setGlobalChatStatus(globalChatChatBlocked?'Du kannst mitlesen, deine Chatfunktion ist jedoch gesperrt.':'Verbunden – du kannst jetzt schreiben.','success');
+      if(globalChatPingTimer)clearInterval(globalChatPingTimer);globalChatPingTimer=setInterval(()=>{if(socket.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:'ping'}));},25000);return;
+    }
+    if(data.type==='global_chat_presence'){globalChatOnlineMembers=Array.isArray(data.onlineMembers)?data.onlineMembers:[];renderGlobalChatMembers();return;}
+    if(data.type==='global_chat_message'){appendGlobalChatMessage(data.message);return;}
+    if(data.type==='global_chat_message_deleted'){globalChatMessages=globalChatMessages.filter(message=>message.id!==String(data.messageId||''));renderGlobalChatMessages();setGlobalChatStatus('Eine Nachricht wurde administrativ entfernt.','');return;}
+    if(data.type==='global_chat_moderation'){globalChatChatBlocked=data.chatBlocked===true;updateGlobalChatControls();setGlobalChatStatus(globalChatChatBlocked?'Deine Chatfunktion wurde gesperrt.':'Deine Chatfunktion wurde wieder freigeschaltet.',globalChatChatBlocked?'error':'success');return;}
+    if(data.type==='global_chat_error'){if(data.code==='CHAT_BLOCKED')globalChatChatBlocked=true;updateGlobalChatControls();setGlobalChatStatus(data.message||'Chatfehler.', 'error');}
+  });
+  socket.addEventListener('close',()=>{if(globalChatSocket!==socket)return;globalChatSocket=null;globalChatConnected=false;globalChatOnlineMembers=[];renderGlobalChatMembers();updateGlobalChatControls();if(!globalChatIntentionalClose){setGlobalChatStatus('Verbindung unterbrochen – erneuter Versuch folgt.','error');scheduleGlobalChatReconnect();}});
+  socket.addEventListener('error',()=>{if(globalChatSocket===socket)setGlobalChatStatus('Der Mitglieder-Chat ist vorübergehend nicht erreichbar.','error');});
+}
+function sendGlobalChatMessage(){
+  if(!globalChatInputEl||!globalChatSocket||globalChatSocket.readyState!==WebSocket.OPEN||!globalChatConnected)return;
+  const text=cleanChatText(globalChatInputEl.value);if(!text)return;
+  globalChatSocket.send(JSON.stringify({type:'send_message',text}));globalChatInputEl.value='';globalChatInputEl.focus();
+}
+function updateMemberLobbyUi(){
+  const active=isMemberLobbyView();
+  document.documentElement.classList.toggle('member-lobby-view',active);
+  if(memberLobbyEl)memberLobbyEl.hidden=!active;
+  if(preRoomSetupPanelEl&&preRoomSetupPanelHome){
+    if(active&&memberLobbySetupMountEl&&preRoomSetupPanelEl.parentNode!==memberLobbySetupMountEl)memberLobbySetupMountEl.appendChild(preRoomSetupPanelEl);
+    else if(!active&&preRoomSetupPanelEl.parentNode!==preRoomSetupPanelHome.parent){
+      if(preRoomSetupPanelHome.nextSibling&&preRoomSetupPanelHome.nextSibling.parentNode===preRoomSetupPanelHome.parent)preRoomSetupPanelHome.parent.insertBefore(preRoomSetupPanelEl,preRoomSetupPanelHome.nextSibling);else preRoomSetupPanelHome.parent.appendChild(preRoomSetupPanelEl);
+    }
+  }
+  if(siteFootnoteEl&&siteFootnoteHome){
+    if(active&&memberLobbyEl&&siteFootnoteEl.parentNode!==memberLobbyEl)memberLobbyEl.appendChild(siteFootnoteEl);
+    else if(!active&&siteFootnoteEl.parentNode!==siteFootnoteHome.parent){
+      if(siteFootnoteHome.nextSibling&&siteFootnoteHome.nextSibling.parentNode===siteFootnoteHome.parent)siteFootnoteHome.parent.insertBefore(siteFootnoteEl,siteFootnoteHome.nextSibling);else siteFootnoteHome.parent.appendChild(siteFootnoteEl);
+    }
+  }
+  if(active){
+    if(statusEl)statusEl.textContent='Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
+    connectGlobalChat();
+  }else closeGlobalChat(true);
+  hammerschachScheduleHeightReport(false);
+}
+if(globalChatSendBtn)globalChatSendBtn.addEventListener('click',sendGlobalChatMessage);
+if(globalChatInputEl)globalChatInputEl.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendGlobalChatMessage();}});
+if(globalChatReportCloseBtn)globalChatReportCloseBtn.addEventListener('click',closeGlobalChatReport);
+if(globalChatReportSubmitBtn)globalChatReportSubmitBtn.addEventListener('click',submitGlobalChatReport);
+if(globalChatReportBackdrop)globalChatReportBackdrop.addEventListener('click',event=>{if(event.target===globalChatReportBackdrop)closeGlobalChatReport();});
+
 
 let adminOverviewLoading = false;
 function setAdminOverviewStatus(message, kind){
@@ -3302,7 +3679,7 @@ function renderAdminModeration(reports){
   if(!adminModerationList)return; adminModerationList.innerHTML=''; if(!list.length){const e=document.createElement('div');e.className='admin-list-empty';e.textContent='Keine Meldungen vorhanden.';adminModerationList.appendChild(e);return;}
   list.forEach(report=>{ const card=document.createElement('div');card.className='admin-report-card '+(report.status==='open'?'open':'');
     const head=document.createElement('div');head.className='admin-report-head';head.innerHTML='<span></span><span></span>';head.children[0].textContent=(report.reportedName||'Spieler')+' · '+(MODERATION_REASON_LABELS[report.reason]||report.reason);head.children[1].textContent=report.status==='open'?'OFFEN':String(report.status||'').toUpperCase();card.appendChild(head);
-    const meta=document.createElement('div');meta.className='admin-report-meta';meta.textContent='Gemeldet von '+(report.reporterName||'—')+' · Raum '+report.roomId+' · '+formatAdminDateTime(report.createdAt);card.appendChild(meta);
+    const meta=document.createElement('div');meta.className='admin-report-meta';meta.textContent='Gemeldet von '+(report.reporterName||'—')+' · '+(report.roomId==='global-chat'?'Mitglieder-Chat':('Raum '+report.roomId))+' · '+formatAdminDateTime(report.createdAt);card.appendChild(meta);
     if(report.comment){const c=document.createElement('div');c.className='admin-report-comment';c.textContent='Erläuterung: '+report.comment;card.appendChild(c);}
     if(Array.isArray(report.chatSnapshot)&&report.chatSnapshot.length){const ch=document.createElement('div');ch.className='admin-report-chat';ch.textContent=report.chatSnapshot.map(m=>(m.senderName||m.role||'Spieler')+': '+(m.text||'')).join('\n');card.appendChild(ch);}
     if(report.status==='open'){const a=document.createElement('div');a.className='admin-report-actions';[['Verwerfen','dismiss'],['Verwarnen','warn'],['Chat sperren','chat_block'],['24h+ sperren','suspend'],['Dauerhaft sperren','ban']].forEach(([label,act])=>{const b=document.createElement('button');b.type='button';b.className='button-flat';b.textContent=label;b.addEventListener('click',async()=>{try{if(act==='dismiss')await resolveModerationReport(report,'dismissed');else await moderationAdminAction(report,report.reportedUserId,act);}catch(err){setAdminOverviewStatus(err&&err.message?err.message:'Moderationsmaßnahme fehlgeschlagen.','error');}});a.appendChild(b);});card.appendChild(a);} adminModerationList.appendChild(card);
@@ -3778,12 +4155,14 @@ async function submitAccountEdit(){
       data = await authApi('/api/account', {method:'DELETE', body:JSON.stringify({currentPassword, confirmation})});
       const cancelled = Number(data.cancelledInvitations || 0);
       const anonymized = Number(data.anonymizedRooms || 0);
+      const removedGlobalChatMessages = Number(data.removedGlobalChatMessages || 0);
       saveAuthState('', null);
       closeAccountEditDialog(false);
       closeAuthDialog();
       const details = [];
       if(cancelled) details.push(cancelled + ' offene Einladung' + (cancelled === 1 ? '' : 'en') + ' zurückgezogen');
       if(anonymized) details.push(anonymized + ' ältere' + (anonymized === 1 ? 'r Spielraum' : ' Spielräume') + ' anonymisiert');
+      if(removedGlobalChatMessages) details.push(removedGlobalChatMessages + ' Global-Chat-Nachricht' + (removedGlobalChatMessages === 1 ? '' : 'en') + ' entfernt');
       if(statusEl) statusEl.textContent = 'Account wurde gelöscht' + (details.length ? ' · ' + details.join(' · ') + '.' : '.');
       return;
     }
@@ -4054,6 +4433,7 @@ function updateVisitorLandingUi(){
   if(active && statusEl){
     statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
   }
+  updateMemberLobbyUi();
   hammerschachScheduleHeightReport(false);
 }
 
@@ -4991,6 +5371,10 @@ function setOnlineValueClass(el, state){
 }
 function refreshHeaderStatusFromState(){
   if(!statusEl || !boardEl) return;
+  if(isMemberLobbyView()){
+    statusEl.textContent = 'Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
+    return;
+  }
   try{ updateStatus(buildGameFromHistory(viewIndex)); } catch(_){}
 }
 function updateOnlineActionButtons(){
