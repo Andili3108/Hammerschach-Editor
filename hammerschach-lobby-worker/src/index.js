@@ -1772,6 +1772,41 @@ function prepareDailyTurnEmail(payload) {
   return { ok:true, mailType:'daily_turn', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
+function prepareDailyOpenOfferAcceptedEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const opponentName = cleanDisplayName(payload && payload.opponentName) || 'dein Gegner';
+  const inviteUrl = String(payload && payload.inviteUrl || '').trim();
+  const timeLabel = String(payload && payload.timeLabel || 'Daily Chess').slice(0, 120);
+  const variantLabel = String(payload && payload.variantLabel || 'Daily Chess').slice(0, 120);
+  const creatorRole = payload && payload.creatorRole === 'b' ? 'b' : 'w';
+  const creatorColorLabel = creatorRole === 'w' ? 'Weiß' : 'Schwarz';
+  const opponentColorLabel = creatorRole === 'w' ? 'Schwarz' : 'Weiß';
+  const includesTurn = payload && payload.includesTurn === true;
+  const deadlineLabel = includesTurn ? formatNotificationDateTime(payload && payload.deadlineAt) : '';
+  if (!recipientEmail || !inviteUrl) return { ok:false, status:400, code:'INVALID_DAILY_OFFER_ACCEPTED_MAIL', message:'Die Annahmebestätigung konnte nicht vorbereitet werden.' };
+
+  const subject = includesTurn
+    ? `Dein Partieangebot wurde angenommen – du bist am Zug`
+    : `Dein Partieangebot wurde angenommen`;
+  const details = [
+    `Gegner: ${opponentName}`,
+    `Spielmodus: ${variantLabel}`,
+    `Zugfrist: ${timeLabel}`,
+    `Deine Farbe: ${creatorColorLabel}`,
+    `Farbe des Gegners: ${opponentColorLabel}`
+  ];
+  if (deadlineLabel) details.push(`Fristende: ${deadlineLabel}`);
+  const turnText = includesTurn
+    ? ` Die Partie wurde automatisch gestartet und du bist mit Weiß am Zug.`
+    : ` Die Partie wurde automatisch gestartet; zunächst ist ${opponentName} mit Weiß am Zug.`;
+  const textPart = `Hallo ${recipientName},\n\n${opponentName} hat dein offenes Daily-Partieangebot angenommen.${turnText}\n\n${details.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Nachricht ist eine notwendige Information zu deinem angenommenen Partieangebot.\n\nViele Grüße\nHammerschach-Gamer`;
+  const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
+  const heading = includesTurn ? 'Angebot angenommen – du bist am Zug' : 'Dein Partieangebot wurde angenommen';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(heading)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(opponentName)}</strong> hat dein offenes Daily-Partieangebot angenommen.${includesTurn ? ' Die Partie wurde automatisch gestartet und <strong>du bist mit Weiß am Zug</strong>.' : ` Die Partie wurde automatisch gestartet; zunächst ist <strong>${escapeEmailHtml(opponentName)} mit Weiß am Zug</strong>.`}</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht ist eine notwendige Information zu deinem angenommenen Partieangebot.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, mailType:'daily_offer_accepted', recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
 function prepareDailyResultEmail(payload) {
   const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
   const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
@@ -1822,6 +1857,24 @@ async function sendDailyTurnEmailNotification(env, payload) {
     result = await sendPreparedTransactionalEmail(env, mail);
   } catch (error) {
     result = { ok:false, code:'DAILY_TURN_MAIL_FAILED', message:error && error.message ? error.message : 'Zugbenachrichtigung fehlgeschlagen.' };
+  }
+  try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
+  return result;
+}
+
+async function sendDailyOpenOfferAcceptedEmailNotification(env, payload) {
+  // Die Annahme eines eigenen offenen Daily-Angebots ist eine notwendige
+  // Partieinformation und deshalb nicht von den optionalen Zugmails abhängig.
+  const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, null);
+  if (!recipient.ok) return { ok:true, skipped:true, reason:recipient.reason };
+  const claim = await claimEmailNotification(env, payload.notificationKey, 'daily_offer_accepted', recipient.user.id, payload.roomId);
+  if (!claim.claimed) return { ok:true, skipped:true, reason:claim.reason };
+  let result;
+  try {
+    const mail = prepareDailyOpenOfferAcceptedEmail({ ...payload, recipientEmail:recipient.email, recipientName:recipient.user.username });
+    result = await sendPreparedTransactionalEmail(env, mail);
+  } catch (error) {
+    result = { ok:false, code:'DAILY_OFFER_ACCEPTED_MAIL_FAILED', message:error && error.message ? error.message : 'Annahmebestätigung fehlgeschlagen.' };
   }
   try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
   return result;
@@ -5403,6 +5456,53 @@ export class GameRoom {
     this.runBackgroundTask(this.sendDailyTurnNotification(role, move, clock), 'Daily-Zugbenachrichtigung fehlgeschlagen');
   }
 
+  async sendDailyOpenOfferAcceptedNotification(clockOverride = null) {
+    const [openOffer, offerStatusRaw, creatorUserIdRaw, acceptedUserIdRaw] = await Promise.all([
+      this.state.storage.get('openOffer'),
+      this.state.storage.get('openOfferStatus'),
+      this.state.storage.get('createdByUserId'),
+      this.state.storage.get('openOfferAcceptedByUserId')
+    ]);
+    const offerStatus = String(offerStatusRaw || (openOffer === true ? 'open' : ''));
+    const creatorUserId = String(creatorUserIdRaw || '');
+    const acceptedUserId = String(acceptedUserIdRaw || '');
+    if (openOffer !== true || offerStatus !== 'accepted' || !creatorUserId || !acceptedUserId) {
+      return { ok:true, skipped:true, reason:'not_an_accepted_open_offer' };
+    }
+
+    const context = await this.dailyEmailRoomContext();
+    if (!context || !context.game.started || context.game.ended) return { ok:true, skipped:true, reason:'not_applicable' };
+    const creatorRole = context.whiteUserId === creatorUserId ? 'w' : context.blackUserId === creatorUserId ? 'b' : '';
+    if (!creatorRole) return { ok:true, skipped:true, reason:'creator_role_missing' };
+    const opponentName = creatorRole === 'w' ? context.blackName : context.whiteName;
+    const includesTurn = creatorRole === 'w';
+    const activeClock = clockOverride || (await this.state.storage.get('clock')) || null;
+    const now = Date.now();
+    const clockBaseTs = activeClock && Number.isFinite(Number(activeClock.lastTs)) ? Number(activeClock.lastTs) : now;
+    const deadlineAt = includesTurn && activeClock && activeClock.running && !activeClock.timeLost && activeClock.turn === 'w'
+      ? new Date(clockBaseTs + Math.max(0, Number(activeClock.wMs || 0))).toISOString()
+      : null;
+    const inviteUrl = gamerInvitationUrl(this.env, context.roomId);
+    if (!inviteUrl) return { ok:true, skipped:true, reason:'public_url_missing' };
+
+    return sendDailyOpenOfferAcceptedEmailNotification(this.env, {
+      notificationKey:`daily_offer_accepted:${context.roomId}:${creatorUserId}`,
+      roomId:context.roomId,
+      recipientUserId:creatorUserId,
+      opponentName,
+      inviteUrl,
+      timeLabel:context.timeControl.label || `${context.timeControl.daysPerMove || 1} Tag(e) pro Zug`,
+      variantLabel:dailyNotificationVariantLabel(context.setup),
+      creatorRole,
+      includesTurn,
+      deadlineAt
+    });
+  }
+
+  queueDailyOpenOfferAcceptedNotification(clock = null) {
+    this.runBackgroundTask(this.sendDailyOpenOfferAcceptedNotification(clock), 'Daily-Annahmebestätigung fehlgeschlagen');
+  }
+
   async sendDailyResultNotifications(gameOverride = null) {
     const context = await this.dailyEmailRoomContext();
     const game = gameOverride || (context && context.game) || null;
@@ -6690,7 +6790,27 @@ export class GameRoom {
     await this.state.storage.delete('drawOffer');
     await this.scheduleClockAlarm(clock, now);
     await this.syncGameIndexes();
-    this.queueDailyTurnNotification('w', null, clock);
+
+    const openOffer = (await this.state.storage.get('openOffer')) === true;
+    const openOfferStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : ''));
+    const openOfferAcceptedByUserId = String((await this.state.storage.get('openOfferAcceptedByUserId')) || '');
+    const creatorUserId = String((await this.state.storage.get('createdByUserId')) || '');
+    const creatorRole = players.white && String(players.white.userId || '') === creatorUserId
+      ? 'w'
+      : players.black && String(players.black.userId || '') === creatorUserId
+        ? 'b'
+        : '';
+    const acceptedOpenOffer = !!(openOffer && openOfferStatus === 'accepted' && openOfferAcceptedByUserId && creatorRole);
+
+    if (acceptedOpenOffer) {
+      // Der Anbieter erhält genau eine Annahmebestätigung. Spielt er Weiß,
+      // enthält dieselbe Mail zugleich den Hinweis „Du bist am Zug“, damit
+      // nicht unmittelbar zwei Nachrichten für denselben Partiestart eintreffen.
+      this.queueDailyOpenOfferAcceptedNotification(clock);
+      if (creatorRole !== 'w') this.queueDailyTurnNotification('w', null, clock);
+    } else {
+      this.queueDailyTurnNotification('w', null, clock);
+    }
 
     return { started:true, reason:'auto_started', game, clock, timeControl, gameSetup };
   }
@@ -7833,7 +7953,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
