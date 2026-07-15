@@ -87,8 +87,8 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn{display:none!important;}
-  html.visitor-start-view .match-actions{grid-template-columns:repeat(3,minmax(0,1fr));}
+  html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
+  html.visitor-start-view .match-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
   .dark{background:var(--dark-square);}
@@ -504,6 +504,7 @@
     color:rgba(17,17,17,.48);
     line-height:1.35;
     padding:2px 8px 0;
+    margin-top:22px;
     user-select:none;
     width:100%;
     box-sizing:border-box;
