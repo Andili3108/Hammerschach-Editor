@@ -81,14 +81,16 @@
   .visitor-board-welcome{width:min(430px,88%);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:clamp(18px,4vw,30px);border:1px solid rgba(132,63,70,.22);border-radius:24px;background:rgba(255,255,255,.86);box-shadow:0 20px 48px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.94);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
   .visitor-board-logo{display:block;width:min(270px,78%);max-height:190px;object-fit:contain;filter:drop-shadow(0 8px 13px rgba(0,0,0,.13));}
   .visitor-board-title{font-size:clamp(21px,3.2vw,30px);font-weight:900;color:#222;line-height:1.08;}
-  .visitor-board-text{max-width:360px;font-size:clamp(14px,2vw,17px);font-weight:800;color:#555;line-height:1.38;}
   .visitor-board-login-btn{min-width:210px;min-height:44px;border-radius:14px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;font-size:15px;}
   html.visitor-start-view .moves-right{display:none!important;}
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
   html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
-  html.visitor-start-view .match-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
+  html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
+  html.visitor-start-view .header-status{grid-column:1 / -1;}
+  html.visitor-start-view .match-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
+  html.visitor-start-view .match-actions button{width:155px!important;min-width:155px!important;max-width:155px!important;flex:0 0 155px;white-space:nowrap;}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
   .dark{background:var(--dark-square);}
@@ -1163,7 +1165,6 @@
             <div class="visitor-board-welcome">
               <img class="visitor-board-logo" src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" />
               <div class="visitor-board-title">Willkommen im Hammerschach-Gamer</div>
-              <div class="visitor-board-text">Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.</div>
               <button id="visitorBoardLoginBtn" class="visitor-board-login-btn" type="button">Registrierung / Login</button>
             </div>
           </div>
@@ -2666,6 +2667,8 @@ const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
+const matchActionsEl = document.querySelector('.match-actions');
+const infoOpenBtnHome = infoOpenBtn ? {parent:infoOpenBtn.parentNode, nextSibling:infoOpenBtn.nextSibling} : null;
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
 const infoScroll = document.getElementById('infoScroll');
@@ -4033,6 +4036,18 @@ function updateVisitorLandingUi(){
   const active = isAnonymousVisitorStartView();
   document.documentElement.classList.toggle('visitor-start-view', active);
   if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
+
+  /* In der anonymen Startansicht steht „Info“ kompakt neben den beiden
+     Besucheraktionen. Nach Login oder beim Öffnen eines Spielraums kehrt
+     dieselbe Schaltfläche wieder an ihren normalen Platz neben dem Status zurück. */
+  if(infoOpenBtn && matchActionsEl && infoOpenBtnHome){
+    if(active){
+      if(infoOpenBtn.parentNode !== matchActionsEl) matchActionsEl.appendChild(infoOpenBtn);
+    } else if(infoOpenBtn.parentNode !== infoOpenBtnHome.parent){
+      infoOpenBtnHome.parent.insertBefore(infoOpenBtn, infoOpenBtnHome.nextSibling);
+    }
+  }
+
   if(active && statusEl){
     statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
   }
