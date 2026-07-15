@@ -68,6 +68,55 @@ const CHAT_MESSAGE_MAX_LENGTH = 300;
 const CHAT_HISTORY_MAX = 80;
 const CHAT_SEND_COOLDOWN_MS = 1000;
 
+
+const GLOBAL_CHAT_HISTORY_MAX = 200;
+const GLOBAL_CHAT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const GLOBAL_CHAT_SEND_COOLDOWN_MS = 3000;
+
+function cleanGlobalChatMessageId(value) {
+  const id = String(value || '').trim();
+  return /^[A-Za-z0-9_.:-]{8,100}$/.test(id) ? id : '';
+}
+
+async function globalChatSenderKey(userId) {
+  const hash = await sha256Hex('hammerschach-global-chat:' + String(userId || ''));
+  return hash.slice(0, 24);
+}
+
+function normalizeStoredGlobalChatMessage(value) {
+  if (!value || typeof value !== 'object') return null;
+  const text = cleanChatText(value.text || value.message);
+  const id = cleanGlobalChatMessageId(value.id || value.messageId);
+  const senderUserId = String(value.senderUserId || '').trim().slice(0, 128);
+  const senderName = cleanDisplayName(value.senderName || value.name || value.username || '');
+  if (!text || !id || !senderUserId || !senderName) return null;
+  const parsedTime = new Date(value.sentAt || value.time || Date.now());
+  const sentAt = Number.isNaN(parsedTime.getTime()) ? new Date().toISOString() : parsedTime.toISOString();
+  return {
+    id,
+    messageId:id,
+    senderUserId,
+    senderName,
+    senderKey:String(value.senderKey || '').slice(0, 40),
+    text,
+    sentAt
+  };
+}
+
+function safeGlobalChatMessageForClient(value, viewerUserId = '') {
+  const message = normalizeStoredGlobalChatMessage(value);
+  if (!message) return null;
+  return {
+    id:message.id,
+    messageId:message.id,
+    senderName:message.senderName,
+    senderKey:message.senderKey,
+    text:message.text,
+    sentAt:message.sentAt,
+    mine:!!(viewerUserId && String(viewerUserId) === message.senderUserId)
+  };
+}
+
 function cleanChatText(value) {
   return String(value || '')
     .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
@@ -2708,6 +2757,23 @@ async function anonymizeRoomsForDeletedAccount(env, userId, anonymizedId, roomId
   return { ok:true, anonymized };
 }
 
+async function removeGlobalChatDataForDeletedAccount(env, userId) {
+  if (!env || !env.GLOBAL_CHAT || !userId) return {ok:true,removedMessages:0};
+  try {
+    const id = env.GLOBAL_CHAT.idFromName('members');
+    const stub = env.GLOBAL_CHAT.get(id);
+    const response = await stub.fetch(new Request('https://global-chat.internal/delete-account-data', {
+      method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({userId:String(userId)})
+    }));
+    let data = null;
+    try { data = await response.json(); } catch (_) { data = null; }
+    if (!response.ok || !data || !data.ok) return {ok:false,status:response.status || 500,code:'GLOBAL_CHAT_DELETE_FAILED',message:'Die Global-Chat-Daten konnten nicht sicher entfernt werden.'};
+    return data;
+  } catch (_) {
+    return {ok:false,status:503,code:'GLOBAL_CHAT_DELETE_FAILED',message:'Die Global-Chat-Daten konnten nicht sicher entfernt werden.'};
+  }
+}
+
 async function deleteUserAccount(env, target, options = {}) {
   if (!env || !env.DB || !target) {
     return { ok: false, status: 503, code: 'DB_NOT_CONFIGURED', message: 'Account-Datenbank ist nicht verfügbar.' };
@@ -2737,6 +2803,8 @@ async function deleteUserAccount(env, target, options = {}) {
   const anonymizedId = 'deleted_' + crypto.randomUUID();
   const roomAnonymization = await anonymizeRoomsForDeletedAccount(env, target.id, anonymizedId, roomIds);
   if (!roomAnonymization.ok) return roomAnonymization;
+  const globalChatCleanup = await removeGlobalChatDataForDeletedAccount(env, target.id);
+  if (!globalChatCleanup.ok) return globalChatCleanup;
 
   const deletedLabel = 'Gelöschter Benutzer';
   try {
@@ -2787,7 +2855,8 @@ async function deleteUserAccount(env, target, options = {}) {
     ok: true,
     deletedUser: publicUser(target, env),
     cancelledInvitations: cancellation.cancelled || 0,
-    anonymizedRooms: roomAnonymization.anonymized || 0
+    anonymizedRooms: roomAnonymization.anonymized || 0,
+    removedGlobalChatMessages: Number(globalChatCleanup.removedMessages || 0)
   };
 }
 
@@ -3498,6 +3567,58 @@ async function createModerationReport(env,sessionUser,body){
   await env.DB.prepare(`INSERT INTO moderation_reports (id,room_id,reporter_user_id,reported_user_id,reported_role,reported_name,reason,comment,chat_snapshot,game_snapshot,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?, 'open',?)`).bind(reportId,roomId,sessionUser.id,ctx.reportedUserId||null,role,ctx.reportedName||'',cleanModerationReason(body.reason),cleanModerationComment(body.comment),JSON.stringify(ctx.chatSnapshot||[]),JSON.stringify(ctx.gameSnapshot||{}),now).run();
   return {ok:true,reportId,message:'Die Meldung wurde vertraulich an den Administrator übermittelt.'};
 }
+
+async function createGlobalChatModerationReport(env, sessionUser, body) {
+  await ensureModerationTables(env);
+  const messageId = cleanGlobalChatMessageId(body && body.messageId);
+  if (!messageId || !env || !env.GLOBAL_CHAT) {
+    return {ok:false,status:400,code:'INVALID_GLOBAL_CHAT_REPORT',message:'Die Chatnachricht konnte nicht eindeutig zugeordnet werden.'};
+  }
+  const id = env.GLOBAL_CHAT.idFromName('members');
+  const stub = env.GLOBAL_CHAT.get(id);
+  const response = await stub.fetch(new Request('https://global-chat.internal/moderation-context', {
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({messageId, reporterUserId:String(sessionUser.id || '')})
+  }));
+  let context = null;
+  try { context = await response.json(); } catch (_) { context = null; }
+  if (!response.ok || !context || !context.ok) {
+    return {ok:false,status:response.status || 404,code:(context && context.code) || 'GLOBAL_CHAT_MESSAGE_NOT_FOUND',message:(context && context.message) || 'Die gemeldete Nachricht wurde nicht gefunden.'};
+  }
+  if (String(context.reportedUserId || '') === String(sessionUser.id || '')) {
+    return {ok:false,status:400,code:'CANNOT_REPORT_SELF',message:'Du kannst deine eigene Nachricht nicht melden.'};
+  }
+  const recent = await env.DB.prepare(
+    `SELECT id FROM moderation_reports
+      WHERE reporter_user_id = ? AND room_id = 'global-chat' AND reported_user_id = ? AND created_at > ?
+      LIMIT 1`
+  ).bind(String(sessionUser.id), String(context.reportedUserId || ''), new Date(Date.now() - 10 * 60 * 1000).toISOString()).first();
+  if (recent) {
+    return {ok:false,status:429,code:'REPORT_DUPLICATE',message:'Für dieses Mitglied wurde vor Kurzem bereits eine Global-Chat-Meldung gesendet.'};
+  }
+  const reportId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO moderation_reports
+      (id,room_id,reporter_user_id,reported_user_id,reported_role,reported_name,reason,comment,chat_snapshot,game_snapshot,status,created_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?, 'open',?)`
+  ).bind(
+    reportId,
+    'global-chat',
+    String(sessionUser.id),
+    context.reportedUserId || null,
+    'member',
+    context.reportedName || '',
+    cleanModerationReason(body && body.reason),
+    cleanModerationComment(body && body.comment),
+    JSON.stringify(context.chatSnapshot || []),
+    JSON.stringify({kind:'global_chat', messageId}),
+    now
+  ).run();
+  return {ok:true,reportId,message:'Die Global-Chat-Nachricht wurde vertraulich an den Administrator gemeldet.'};
+}
+
 async function listModerationReports(env){
   await ensureModerationTables(env);
   const rows=await env.DB.prepare(`SELECT r.*, reporter.username AS reporter_username, target.username AS target_username FROM moderation_reports r LEFT JOIN users reporter ON reporter.id=r.reporter_user_id LEFT JOIN users target ON target.id=r.reported_user_id ORDER BY CASE r.status WHEN 'open' THEN 0 ELSE 1 END, r.created_at DESC LIMIT 100`).all();
@@ -3521,6 +3642,16 @@ async function applyModerationAction(env,adminUser,body){
   await env.DB.prepare(`INSERT INTO moderation_account_status(user_id,account_status,chat_blocked,reason,admin_note,suspended_until,updated_at,updated_by_user_id) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET account_status=excluded.account_status,chat_blocked=excluded.chat_blocked,reason=excluded.reason,admin_note=excluded.admin_note,suspended_until=excluded.suspended_until,updated_at=excluded.updated_at,updated_by_user_id=excluded.updated_by_user_id`).bind(userId,status,chat,reason,note,until,now,adminUser.id).run();
   await env.DB.prepare(`INSERT INTO moderation_actions(id,target_user_id,admin_user_id,action_type,reason,note,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?)`).bind(crypto.randomUUID(),userId,adminUser.id,action,reason,note,until,now).run();
   if(status==='banned'||status==='suspended') await env.DB.prepare(`DELETE FROM sessions WHERE user_id=?`).bind(userId).run();
+  try {
+    if (env.GLOBAL_CHAT) {
+      const chatId = env.GLOBAL_CHAT.idFromName('members');
+      const chatStub = env.GLOBAL_CHAT.get(chatId);
+      await chatStub.fetch(new Request('https://global-chat.internal/moderation-refresh', {
+        method:'POST', headers:{'content-type':'application/json'},
+        body:JSON.stringify({userId,status,chatBlocked:!!chat,suspendedUntil:until})
+      }));
+    }
+  } catch (_) {}
   return {ok:true,message:'Moderationsmaßnahme wurde gespeichert.',state:{accountStatus:status,chatBlocked:!!chat,suspendedUntil:until}};
 }
 
@@ -3699,7 +3830,7 @@ async function handleAuthApi(request, env, url) {
     }
     const result = await deleteUserAccount(env, user);
     if (!result.ok) return json({ ok: false, code: result.code, message: result.message, activeDailyGames: result.activeDailyGames || 0 }, { status: result.status || 400 });
-    return json({ ok: true, deletedUser: result.deletedUser, cancelledInvitations: result.cancelledInvitations || 0 });
+    return json({ ok: true, deletedUser: result.deletedUser, cancelledInvitations: result.cancelledInvitations || 0, anonymizedRooms: result.anonymizedRooms || 0, removedGlobalChatMessages: result.removedGlobalChatMessages || 0 });
   }
 
 
@@ -4406,6 +4537,16 @@ async function handleAuthApi(request, env, url) {
     if(!session) return json({ok:false,code:'NOT_AUTHENTICATED',message:'Meldungen sind nur nach Login möglich.'},{status:401});
     const body=await readJsonBody(request); const result=await createModerationReport(env,session.user,body||{});
     return json(result,{status:result.status||(result.ok?200:400)});
+  }
+
+  if (url.pathname === '/api/moderation/global-chat-report' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false,code:'NOT_AUTHENTICATED',message:'Global-Chat-Meldungen sind nur nach Login möglich.'},{status:401});
+    const usable = await requireUsableAccount(env, session.user);
+    if (!usable.ok) return json({ok:false,code:usable.code,message:usable.message},{status:403});
+    const body = await readJsonBody(request);
+    const result = await createGlobalChatModerationReport(env, session.user, body || {});
+    return json(result,{status:result.status || (result.ok ? 200 : 400)});
   }
 
   if (url.pathname === '/api/admin/moderation/reports' && request.method === 'GET') {
@@ -5386,6 +5527,242 @@ function safePgnFilePart(value) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 36) || 'Partie';
+}
+
+
+export class GlobalChat {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+  }
+
+  attachment(ws) {
+    try { return ws.deserializeAttachment() || {}; } catch (_) { return {}; }
+  }
+
+  async storedMessages() {
+    const raw = (await this.state.storage.get('messages')) || [];
+    const cutoff = Date.now() - GLOBAL_CHAT_RETENTION_MS;
+    const normalized = Array.isArray(raw)
+      ? raw.map(normalizeStoredGlobalChatMessage).filter(Boolean).filter(message => (Date.parse(message.sentAt) || 0) >= cutoff).slice(-GLOBAL_CHAT_HISTORY_MAX)
+      : [];
+    if (!Array.isArray(raw) || normalized.length !== raw.length) await this.state.storage.put('messages', normalized);
+    return normalized;
+  }
+
+  authenticatedSockets() {
+    return this.state.getWebSockets().filter(ws => {
+      const info = this.attachment(ws);
+      return !!(info.authenticated && info.userId);
+    });
+  }
+
+  presencePayload() {
+    const members = new Map();
+    for (const ws of this.authenticatedSockets()) {
+      const info = this.attachment(ws);
+      const userId = String(info.userId || '');
+      if (!userId || members.has(userId)) continue;
+      members.set(userId, {
+        name:cleanDisplayName(info.username) || 'Mitglied',
+        senderKey:String(info.senderKey || ''),
+        isAdmin:info.isAdmin === true
+      });
+    }
+    const onlineMembers = Array.from(members.values()).sort((a,b) => {
+      if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1;
+      return a.name.localeCompare(b.name, 'de');
+    });
+    return {type:'global_chat_presence', onlineCount:onlineMembers.length, onlineMembers, serverNow:Date.now()};
+  }
+
+  broadcastPresence() {
+    const payload = this.presencePayload();
+    for (const ws of this.authenticatedSockets()) safeSend(ws, payload);
+  }
+
+  broadcastMessage(message) {
+    for (const ws of this.authenticatedSockets()) {
+      const info = this.attachment(ws);
+      const safe = safeGlobalChatMessageForClient(message, info.userId);
+      if (safe) safeSend(ws, {type:'global_chat_message', message:safe, serverNow:Date.now()});
+    }
+  }
+
+  async authenticate(ws, token) {
+    const session = await lookupAuthSession(this.env, String(token || ''));
+    if (!session) {
+      safeSend(ws, {type:'global_chat_error',code:'NOT_AUTHENTICATED',message:'Die Anmeldung für den Mitglieder-Chat ist abgelaufen.'});
+      try { ws.close(4001, 'Anmeldung erforderlich'); } catch (_) {}
+      return;
+    }
+    const usable = await requireUsableAccount(this.env, session.user);
+    if (!usable.ok) {
+      safeSend(ws, {type:'global_chat_error',code:usable.code,message:usable.message});
+      try { ws.close(4003, 'Account gesperrt'); } catch (_) {}
+      return;
+    }
+    const senderKey = await globalChatSenderKey(session.user.id);
+    const info = this.attachment(ws);
+    ws.serializeAttachment(Object.assign({}, info, {
+      authenticated:true,
+      userId:String(session.user.id),
+      username:cleanDisplayName(session.user.username) || 'Mitglied',
+      senderKey,
+      isAdmin:isAdminUser(session.user, this.env),
+      chatBlocked:usable.state.chatBlocked === true,
+      authenticatedAt:Date.now(),
+      lastMessageAt:0
+    }));
+    const history = await this.storedMessages();
+    safeSend(ws, {
+      type:'global_chat_ready',
+      messages:history.map(message => safeGlobalChatMessageForClient(message, session.user.id)).filter(Boolean),
+      chatBlocked:usable.state.chatBlocked === true,
+      isAdmin:isAdminUser(session.user, this.env),
+      serverNow:Date.now()
+    });
+    this.broadcastPresence();
+  }
+
+  async sendMessage(ws, data) {
+    let info = this.attachment(ws);
+    if (!info.authenticated || !info.userId) return safeSend(ws, {type:'global_chat_error',code:'NOT_AUTHENTICATED',message:'Bitte zuerst einloggen.'});
+    const moderation = await moderationStateForUser(this.env, info.userId);
+    if (moderation.accountStatus === 'banned' || moderation.accountStatus === 'suspended') {
+      safeSend(ws, {type:'global_chat_error',code:'ACCOUNT_BLOCKED',message:'Dieser Account kann den Mitglieder-Chat derzeit nicht verwenden.'});
+      try { ws.close(4003, 'Account gesperrt'); } catch (_) {}
+      return;
+    }
+    if (moderation.chatBlocked) {
+      info = Object.assign({}, info, {chatBlocked:true});
+      ws.serializeAttachment(info);
+      return safeSend(ws, {type:'global_chat_error',code:'CHAT_BLOCKED',message:'Deine Chatfunktion ist derzeit gesperrt.'});
+    }
+    const now = Date.now();
+    const rateKey = 'message-rate:' + String(info.senderKey || info.userId);
+    const storedLastMessageAt = Number((await this.state.storage.get(rateKey)) || 0);
+    const lastMessageAt = Math.max(Number(info.lastMessageAt || 0), storedLastMessageAt);
+    if (now - lastMessageAt < GLOBAL_CHAT_SEND_COOLDOWN_MS) {
+      return safeSend(ws, {type:'global_chat_error',code:'CHAT_RATE_LIMIT',message:'Bitte warte kurz, bevor du die nächste Nachricht sendest.'});
+    }
+    const text = cleanChatText(data && (data.text || data.message));
+    if (!text) return safeSend(ws, {type:'global_chat_error',code:'EMPTY_MESSAGE',message:'Bitte eine Nachricht eingeben.'});
+    const message = {
+      id:'gc_' + crypto.randomUUID(),
+      messageId:'gc_' + crypto.randomUUID(),
+      senderUserId:String(info.userId),
+      senderName:cleanDisplayName(info.username) || 'Mitglied',
+      senderKey:String(info.senderKey || ''),
+      text,
+      sentAt:new Date(now).toISOString()
+    };
+    message.messageId = message.id;
+    const messages = await this.storedMessages();
+    messages.push(message);
+    await this.state.storage.put({messages:messages.slice(-GLOBAL_CHAT_HISTORY_MAX), [rateKey]:now});
+    ws.serializeAttachment(Object.assign({}, info, {lastMessageAt:now}));
+    this.broadcastMessage(message);
+  }
+
+  async deleteMessage(ws, data) {
+    const info = this.attachment(ws);
+    if (!info.authenticated || info.isAdmin !== true) {
+      return safeSend(ws, {type:'global_chat_error',code:'NOT_ADMIN',message:'Nur Andili kann Global-Chat-Nachrichten löschen.'});
+    }
+    const messageId = cleanGlobalChatMessageId(data && data.messageId);
+    if (!messageId) return;
+    const messages = await this.storedMessages();
+    const filtered = messages.filter(message => message.id !== messageId);
+    if (filtered.length === messages.length) return;
+    await this.state.storage.put('messages', filtered);
+    for (const socket of this.authenticatedSockets()) safeSend(socket, {type:'global_chat_message_deleted',messageId,serverNow:Date.now()});
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method === 'POST' && url.pathname === '/moderation-context') {
+      const body = await readJsonBody(request);
+      const messageId = cleanGlobalChatMessageId(body && body.messageId);
+      const reporterUserId = String(body && body.reporterUserId || '');
+      const messages = await this.storedMessages();
+      const message = messages.find(item => item.id === messageId);
+      if (!message) return json({ok:false,code:'MESSAGE_NOT_FOUND',message:'Die Nachricht ist nicht mehr vorhanden.'},{status:404});
+      if (message.senderUserId === reporterUserId) return json({ok:false,code:'CANNOT_REPORT_SELF',message:'Eigene Nachrichten können nicht gemeldet werden.'},{status:400});
+      return json({
+        ok:true,
+        reportedUserId:message.senderUserId,
+        reportedName:message.senderName,
+        chatSnapshot:[{senderName:message.senderName,role:'member',text:message.text,sentAt:message.sentAt}]
+      });
+    }
+    if (request.method === 'POST' && url.pathname === '/delete-account-data') {
+      const body = await readJsonBody(request);
+      const userId = String(body && body.userId || '').trim();
+      if (!userId) return json({ok:false,message:'Benutzer fehlt.'},{status:400});
+      const messages = await this.storedMessages();
+      const filtered = messages.filter(message => message.senderUserId !== userId);
+      await this.state.storage.put('messages', filtered);
+      try { await this.state.storage.delete('message-rate:' + await globalChatSenderKey(userId)); } catch (_) {}
+      for (const ws of this.state.getWebSockets()) {
+        const info = this.attachment(ws);
+        if (String(info.userId || '') !== userId) continue;
+        safeSend(ws, {type:'global_chat_error',code:'ACCOUNT_DELETED',message:'Der Account wurde gelöscht.'});
+        try { ws.close(4003, 'Account gelöscht'); } catch (_) {}
+      }
+      this.broadcastPresence();
+      return json({ok:true,removedMessages:messages.length-filtered.length});
+    }
+
+    if (request.method === 'POST' && url.pathname === '/moderation-refresh') {
+      const body = await readJsonBody(request);
+      const userId = String(body && body.userId || '');
+      for (const ws of this.state.getWebSockets()) {
+        const info = this.attachment(ws);
+        if (String(info.userId || '') !== userId) continue;
+        const status = String(body && body.status || 'active');
+        if (status === 'banned' || status === 'suspended') {
+          safeSend(ws, {type:'global_chat_error',code:'ACCOUNT_BLOCKED',message:'Dein Account wurde für den Chat gesperrt.'});
+          try { ws.close(4003, 'Account gesperrt'); } catch (_) {}
+        } else {
+          ws.serializeAttachment(Object.assign({}, info, {chatBlocked:body && body.chatBlocked === true}));
+          safeSend(ws, {type:'global_chat_moderation',chatBlocked:body && body.chatBlocked === true,serverNow:Date.now()});
+        }
+      }
+      this.broadcastPresence();
+      return json({ok:true});
+    }
+    if (request.headers.get('Upgrade') !== 'websocket') return new Response('Expected WebSocket upgrade', {status:426});
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
+    this.state.acceptWebSocket(server);
+    server.serializeAttachment({connectionId:crypto.randomUUID(),authenticated:false,joinedAt:Date.now()});
+    safeSend(server, {type:'global_chat_challenge',serverNow:Date.now()});
+    return new Response(null, {status:101, webSocket:client});
+  }
+
+  async webSocketMessage(ws, rawMessage) {
+    let data = null;
+    try {
+      const text = typeof rawMessage === 'string' ? rawMessage : new TextDecoder().decode(rawMessage);
+      data = JSON.parse(text);
+    } catch (_) {
+      return safeSend(ws, {type:'global_chat_error',code:'BAD_MESSAGE',message:'Die Chatnachricht konnte nicht gelesen werden.'});
+    }
+    if (data.type === 'authenticate') return this.authenticate(ws, data.authToken);
+    if (data.type === 'send_message') return this.sendMessage(ws, data);
+    if (data.type === 'delete_message') return this.deleteMessage(ws, data);
+    if (data.type === 'ping') return safeSend(ws, {type:'pong',serverNow:Date.now()});
+    safeSend(ws, {type:'global_chat_error',code:'UNKNOWN_MESSAGE_TYPE',message:'Unbekannte Global-Chat-Anfrage.'});
+  }
+
+  async webSocketClose() {
+    this.broadcastPresence();
+  }
+
+  async webSocketError() {
+    this.broadcastPresence();
+  }
 }
 
 export class GameRoom {
@@ -7937,6 +8314,16 @@ export default {
       }
     }
 
+    if (url.pathname === '/global-chat') {
+      if (request.headers.get('Upgrade') !== 'websocket') {
+        return new Response('Expected WebSocket upgrade', { status: 426 });
+      }
+      if (!env.GLOBAL_CHAT) return new Response('Global chat unavailable', {status:503});
+      const id = env.GLOBAL_CHAT.idFromName('members');
+      const stub = env.GLOBAL_CHAT.get(id);
+      return stub.fetch(request);
+    }
+
     if (url.pathname === '/ws') {
       const room = cleanRoomId(url.searchParams.get('room'));
       if (!room) return new Response('Missing or invalid room', { status: 400 });
@@ -7952,9 +8339,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
