@@ -510,8 +510,10 @@
   .member-lobby-heading h2{margin:0;font-size:22px;line-height:1.15;color:#222;}
   .member-lobby-heading p{margin:4px 0 0;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
   .member-lobby-settings-mount{min-width:0;}
-  .member-lobby-settings-mount #preRoomSetupPanel{display:grid!important;grid-template-columns:minmax(205px,.9fr) minmax(245px,1.08fr) minmax(345px,1.55fr) minmax(225px,1fr);gap:12px;overflow:visible;min-height:0;}
-  .member-lobby-settings-mount #preRoomSetupPanel>.player-time-setup{height:100%;box-sizing:border-box;}
+  .member-lobby-settings-mount #preRoomSetupPanel{display:grid!important;grid-template-columns:minmax(225px,.95fr) minmax(245px,1.08fr) minmax(345px,1.55fr) minmax(225px,1fr);gap:12px;overflow:visible;min-height:0;align-items:stretch;}
+  .member-lobby-settings-mount #preRoomSetupPanel>.player-time-setup{height:auto;box-sizing:border-box;}
+  .member-lobby-settings-mount #inviteColorBox .invite-color-options{grid-template-columns:1fr;gap:10px;}
+  .member-lobby-settings-mount #inviteColorBox .invite-color-option{width:100%;min-height:54px;padding:10px 15px;font-size:17px;display:flex;align-items:center;justify-content:center;}
   .member-lobby-settings-mount .time-selectors{gap:7px;}
   .member-lobby-settings-mount .time-control-select{padding-left:9px;padding-right:25px;font-size:13px;}
   .global-chat-shell{padding:0;overflow:hidden;min-height:500px;display:flex;flex-direction:column;}
@@ -1332,8 +1334,8 @@
         <div class="side-panel box">
           <div id="preRoomSetupPanel" class="side-content setup-panel">
             <div id="inviteColorBox" class="invite-color-box player-time-setup">
-              <div class="clock-title">Farbe für Einladung wählen</div>
-              <div class="invite-color-options" aria-label="Farbe des Einladenden wählen">
+              <div class="clock-title">Ich spiele mit …</div>
+              <div class="invite-color-options" aria-label="Eigene Farbe wählen">
                 <button id="inviteColorWhiteBtn" class="invite-color-option" type="button" data-invite-color="w">⚪ Weiß</button>
                 <button id="inviteColorBlackBtn" class="invite-color-option" type="button" data-invite-color="b">⚫ Schwarz</button>
                 <button id="inviteColorRandomBtn" class="invite-color-option" type="button" data-invite-color="random">🎲 Zufall</button>
