@@ -5384,14 +5384,18 @@ function updateOnlineActionButtons(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   if(createOnlineBtn){
-    createOnlineBtn.disabled = live || offerOpen;
-    createOnlineBtn.title = live
-      ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.'
-      : (offerOpen
-          ? 'Diese Partie ist bereits unter „Offene Partien“ angeboten.'
-          : (!loggedIn
-              ? 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.'
-              : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : (onlineRoomId && !onlineGameEnded && !onlineGameStarted ? 'Einladungs-Popup erneut öffnen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.'))));
+    const inRoom = !!onlineRoomId;
+    createOnlineBtn.hidden = inRoom;
+    createOnlineBtn.disabled = inRoom || live || offerOpen;
+    createOnlineBtn.title = inRoom
+      ? ''
+      : (live
+          ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.'
+          : (offerOpen
+              ? 'Diese Partie ist bereits unter „Offene Partien“ angeboten.'
+              : (!loggedIn
+                  ? 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.'
+                  : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.'))));
   }
   if(newGameBtn){
     const inRoom = !!onlineRoomId;
