@@ -771,7 +771,7 @@
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
           <h4>18. Partie anbieten und neue Partie</h4>
-          <p>In der Startansicht heißt die erste Header-Schaltfläche <strong>„Partie anbieten“</strong>. Sobald du dich in einem Spielraum befindest, heißt sie an derselben Stelle <strong>„Neue Partie“</strong> und öffnet eine frische Ansicht ohne bestehenden Raum. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird weiterhin ein neuer Tab geöffnet.</p>
+          <p>In der Mitglieder-Lobby heißt die erste Header-Schaltfläche <strong>„Partie anbieten“</strong>. Sobald du dich in einem Spielraum befindest, heißt sie an derselben Stelle <strong>„Zur Lobby“</strong> und führt zurück zur Partievorbereitung und zum Mitglieder-Chat. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
 
           <h4>19. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -4444,7 +4444,7 @@ function updateAuthUi(){
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);
   const accountName = loggedIn ? (onlineAuthUser.username || 'aktiv') : '';
   if(authOpenBtn){
-    authOpenBtn.textContent = loggedIn ? ('Account: ' + accountName) : 'Registrierung / Login';
+    authOpenBtn.textContent = loggedIn ? 'Mein Profil' : 'Registrierung / Login';
     authOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — klicken für Accountverwaltung und Logout' : 'Registrierung oder Login öffnen';
   }
   if(dailyGamesOpenBtn){
@@ -5397,9 +5397,9 @@ function updateOnlineActionButtons(){
     const inRoom = !!onlineRoomId;
     newGameBtn.disabled = false;
     newGameBtn.hidden = false;
-    newGameBtn.textContent = inRoom ? 'Neue Partie' : 'Partie anbieten';
+    newGameBtn.textContent = inRoom ? 'Zur Lobby' : 'Partie anbieten';
     newGameBtn.title = inRoom
-      ? (HAMMERSCHACH_IS_EMBEDDED ? 'Neue Partie im Hammerschach-Gamer öffnen.' : 'Neue Partie in einem frischen Tab öffnen.')
+      ? (HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.')
       : (loggedIn ? 'Die gewählten Einstellungen als offene Partie veröffentlichen.' : 'Zum Anbieten einer Partie bitte einloggen.');
   }
 }
