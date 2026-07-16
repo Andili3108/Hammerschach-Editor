@@ -154,6 +154,11 @@
   .variant-option{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;min-height:38px;}
   .variant-option.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
   .variant-option:disabled{opacity:.55;cursor:default;}
+  .rating-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .rating-option{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;min-height:38px;}
+  .rating-option.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
+  .rating-option:disabled{opacity:.55;cursor:default;}
+  .setup-option-divider{height:1px;background:rgba(132,63,70,.12);margin:2px 0;}
   .freestyle-position-controls{display:flex;flex-direction:column;gap:7px;border-radius:12px;background:rgba(132,63,70,.05);border:1px solid rgba(132,63,70,.12);padding:9px 10px;}
   .freestyle-position-controls[hidden]{display:none!important;}
   .freestyle-position-label{font-size:13px;font-weight:900;color:#444;line-height:1.25;}
@@ -197,6 +202,8 @@
   .player-rating-value{color:#843f46;white-space:nowrap;}
   .player-rating-line.unrated{background:#f3f3f5;border-color:rgba(0,0,0,.08);color:#777;}
   .player-rating-line.unrated .player-rating-value{color:#777;}
+  .room-rating-status{border-radius:12px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:9px 11px;text-align:center;font-size:14px;font-weight:900;color:#843f46;line-height:1.25;}
+  .room-rating-status[hidden]{display:none!important;}
   .player-clock-time{font-size:38px;line-height:1;font-weight:900;letter-spacing:.02em;text-align:right;}
   .moves-title{font-size:18px;font-weight:900;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   #moveList{display:grid;grid-template-columns:34px 1fr 1fr 34px 1fr 1fr;gap:5px 4px;max-height:calc(var(--board-size) - 136px);overflow-y:auto;padding-right:6px;font-size:15px;line-height:1.42;}
@@ -627,16 +634,18 @@
   html.dark-mode .time-kind-option,
   html.dark-mode .invite-color-option,
   html.dark-mode .variant-option,
+  html.dark-mode .rating-option,
   html.dark-mode .daily-game-pgn-btn,
   html.dark-mode .daily-game-history-delete-btn{background:linear-gradient(180deg,#393e46 0%,#292d33 100%)!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.25)!important;}
   html.dark-mode .side-toggle-btn.active,
   html.dark-mode .time-kind-option.active,
   html.dark-mode .invite-color-option.active,
   html.dark-mode .variant-option.active,
+  html.dark-mode .rating-option.active,
   html.dark-mode .board-color-option.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important;}
   html.dark-mode .brand-origin-button{background:linear-gradient(180deg,#383d44 0%,#282c32 100%);color:#efb5bc;border-color:rgba(255,255,255,.12);box-shadow:0 2px 7px rgba(0,0,0,.28);}
   html.dark-mode .brand-origin-button:hover{background:#41464e;}
-  html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.freestyle-position-controls,.next-daily-game-box,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.freestyle-position-controls,.next-daily-game-box,.room-rating-status,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
   html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
   html.dark-mode .daily-game-card.my-turn,
@@ -676,6 +685,20 @@
   html.dark-mode .privacy-external-link,
   html.dark-mode .privacy-open-inline,
   html.dark-mode .auth-inline-link{color:#e5a5ad!important;}
+  /* Anleitung und Datenschutz im Dark Mode: Jede Textebene erhält
+     eine helle Grundfarbe, damit auch verschachtelte Listen, Hinweise
+     und später ergänzte Elemente sicher lesbar bleiben. */
+  html.dark-mode .info-scroll,
+  html.dark-mode .info-scroll *{color:#e4e7eb!important;}
+  html.dark-mode .info-modal-intro{color:#c3c8d0!important;}
+  html.dark-mode .info-scroll h4{color:#f5f6f7!important;}
+  html.dark-mode .info-scroll .privacy-highlight,
+  html.dark-mode .info-scroll .privacy-storage-list dd{color:#d8dce2!important;}
+  html.dark-mode .info-scroll .privacy-storage-list dt{color:#efb5bc!important;}
+  html.dark-mode .info-scroll .privacy-external-link,
+  html.dark-mode .info-scroll .privacy-open-inline{color:#e5a5ad!important;}
+  html.dark-mode .info-scroll code,
+  html.dark-mode .privacy-scroll code{background:#15181d;border:1px solid rgba(255,255,255,.10);border-radius:5px;padding:1px 4px;}
   html.dark-mode ::selection{background:#9f4d56;color:#fff;}
   html.dark-mode *{scrollbar-color:#555b65 #1b1e23;}
 
@@ -786,7 +809,7 @@
           <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby. Das große Schachbrett wird dort durch den horizontalen Bereich <strong>„Partie vorbereiten“</strong> und den festen <strong>Hammerschach-Mitglieder-Chat</strong> ersetzt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
-          <p>In der rechten Spalte legst du vor dem Erstellen des Spielraums Farbe, Spielmodus und Bedenkzeit fest. Diese Einstellungen werden sowohl in eine gezielte Einladung als auch in ein öffentliches Partieangebot übernommen und sind nach dem Partiestart gesperrt.</p>
+          <p>In der Partievorbereitung legst du vor dem Erstellen des Spielraums Farbe, Spielmodus, Bedenkzeit und Wertung fest. Diese Einstellungen werden sowohl in eine gezielte Einladung als auch in ein öffentliches Partieangebot übernommen. Die Auswahl <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong> wird mit dem Erstellen des Raums festgeschrieben und kann danach nicht mehr geändert werden.</p>
 
           <h4>3. Farbe wählen</h4>
           <p>Du kannst wählen, ob du mit <strong>Weiß</strong>, <strong>Schwarz</strong> oder per <strong>Zufall</strong> spielen möchtest. Weiß führt immer den ersten Zug aus. Bei Live-Partien startet Weiß die Partie manuell; bei Daily Chess beginnt sie automatisch, sobald beide registrierten Spielerplätze angenommen wurden.</p>
@@ -815,7 +838,7 @@
 
           <h4>8. Meine Daily-Partien</h4>
           <p>Über <strong>„Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
-          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
+          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
@@ -824,7 +847,7 @@
 
           <h4>9. Einladen oder eine Partie offen anbieten</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
-          <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
+          <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante, Wertung und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
           <p><strong>Hinweis zur Zustellung:</strong> Je nach E-Mail-Anbieter können Einladungen und Daily-Benachrichtigungen vereinzelt im Spam- oder Junk-Ordner landen. Falls keine Nachricht im Posteingang erscheint, sollte der Empfänger dort nachsehen und den Absender <strong>hammerschach-gamer@online.de</strong> gegebenenfalls als vertrauenswürdig markieren. Daily-Mails werden bei der Annahme eines offenen Daily-Angebots, bei einem tatsächlichen Zugwechsel und beim Partieende verschickt; wiederholte Erinnerungen vor Fristablauf gibt es nicht.</p>
 
@@ -841,8 +864,8 @@
           <h4>12. Spieler- und Zeitanzeige</h4>
           <p>Im Spielraum kannst du die rechte Spalte zwischen <strong>„Spieler &amp; Zeit“</strong>, <strong>„Zugliste“</strong> und <strong>„Chat“</strong> umschalten.</p>
           <ul>
-            <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Zusätzlich erscheint das für diese Partie maßgebliche Rating. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
-            <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Zusätzlich erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
+            <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Bei einer gewerteten Partie erscheint zusätzlich das maßgebliche Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
+            <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
             <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
           </ul>
@@ -874,7 +897,7 @@
           <p>Bei Daily Chess solltest du dich zuerst mit dem verwendeten Account anmelden und die Partie anschließend über <strong>„Meine Partien“</strong> öffnen. Dadurch kann dein gesicherter Spielerplatz wieder übernommen werden.</p>
 
           <h4>20. Ratings für Mitglieder</h4>
-          <p>Gewertet werden ausschließlich neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
+          <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
 
@@ -1355,6 +1378,7 @@
         <h3 id="inviteTitle">Zur Partie einladen</h3>
         <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und versende die Einladung automatisch per E-Mail.</p>
         <div id="inviteColorSummary" class="invite-color-summary" hidden></div>
+        <div id="inviteRatingSummary" class="invite-color-summary" hidden></div>
 
         <label class="identity-label" for="inviteLinkInput">Einladungslink</label>
         <div class="invite-link-row">
@@ -1500,6 +1524,13 @@
             </div>
 
             <div id="publicVisibilityBox" class="public-visibility-box player-time-setup">
+              <div class="clock-title">Wertung</div>
+              <div class="rating-options" aria-label="Wertung der Partie wählen">
+                <button id="ratingRatedBtn" class="rating-option active" type="button" data-rated="yes">Gewertet</button>
+                <button id="ratingUnratedBtn" class="rating-option" type="button" data-rated="no">Ungewertet</button>
+              </div>
+              <div id="ratingSetupStatus" class="time-status">Gewertete Partie</div>
+              <div class="setup-option-divider" aria-hidden="true"></div>
               <div class="clock-title">Zuschauerfreigabe</div>
               <label class="public-visibility-label" for="publicGameCheckbox">
                 <input id="publicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
@@ -1544,6 +1575,7 @@
               <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
               <div class="player-clock-time" id="clockB">--:--</div>
             </div>
+            <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
             <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
               <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
               <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
@@ -2316,6 +2348,7 @@ const variantLockNoteEl = document.getElementById('variantLockNote');
 const inviteColorBoxEl = document.getElementById('inviteColorBox');
 const inviteColorStatusEl = document.getElementById('inviteColorStatus');
 const inviteColorSummaryEl = document.getElementById('inviteColorSummary');
+const inviteRatingSummaryEl = document.getElementById('inviteRatingSummary');
 const inviteColorButtons = document.querySelectorAll('.invite-color-option');
 const playersPanelEl = document.getElementById('playersPanel');
 const dailyMoveConfirmationEl = document.getElementById('dailyMoveConfirmation');
@@ -2836,6 +2869,7 @@ const ONLINE_LAST_ROOM_STORAGE_KEY = 'hammerschachGamerLastActiveRoom';
 const ONLINE_PUBLIC_GAME_STORAGE_KEY = 'hammerschachGamerPublicGamePreference';
 let inviteColorPreference = 'w';
 let publicGamePreference = false;
+let ratingPreference = true;
 try{ inviteColorPreference = normalizeInviteColorPreference(localStorage.getItem(ONLINE_INVITE_COLOR_STORAGE_KEY) || 'w'); } catch(_){ inviteColorPreference = 'w'; }
 try{ publicGamePreference = localStorage.getItem(ONLINE_PUBLIC_GAME_STORAGE_KEY) === 'yes'; } catch(_){ publicGamePreference = false; }
 let onlinePreferredRoleForNextConnect = '';
@@ -2886,6 +2920,7 @@ let onlinePendingPublicGameMessageId = null;
 let onlineSpectatorOnly = false;
 let onlinePublicWatchId = '';
 let onlineRatingState = null;
+let onlineRatedRequested = true;
 
 const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
@@ -3100,11 +3135,16 @@ const publicGamesStatusEl = document.getElementById('publicGamesStatus');
 const publicGamesRefreshBtn = document.getElementById('publicGamesRefreshBtn');
 const publicGamesCloseBtn = document.getElementById('publicGamesCloseBtn');
 const publicVisibilityBoxEl = document.getElementById('publicVisibilityBox');
+const ratingRatedBtn = document.getElementById('ratingRatedBtn');
+const ratingUnratedBtn = document.getElementById('ratingUnratedBtn');
+const ratingSetupStatusEl = document.getElementById('ratingSetupStatus');
+const ratingPreferenceButtons = [ratingRatedBtn, ratingUnratedBtn].filter(Boolean);
 const publicGameCheckbox = document.getElementById('publicGameCheckbox');
 const publicVisibilityHintEl = document.getElementById('publicVisibilityHint');
 const roomPublicVisibilityBoxEl = document.getElementById('roomPublicVisibilityBox');
 const roomPublicGameCheckbox = document.getElementById('roomPublicGameCheckbox');
 const roomPublicVisibilityHintEl = document.getElementById('roomPublicVisibilityHint');
+const roomRatingStatusEl = document.getElementById('roomRatingStatus');
 
 const inviteBackdrop = document.getElementById('inviteBackdrop');
 const inviteLinkInput = document.getElementById('inviteLinkInput');
@@ -4888,10 +4928,10 @@ function createDailyGameCard(game){
   const variant = game.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle' : 'Klassisch';
   if(game.ended){
     const endedAt = game.endedAt ? (' · beendet: ' + formatDailyGameDeadline(game.endedAt)) : '';
-    meta.textContent = (game.timeLabel || 'Daily Chess') + ' · ' + variant + ' · ' + dailyEndReasonLabel(game.endReason) + endedAt;
+    meta.textContent = (game.timeLabel || 'Daily Chess') + ' · ' + variant + ' · ' + (game.rated === false ? 'Ungewertet' : 'Gewertet') + ' · ' + dailyEndReasonLabel(game.endReason) + endedAt;
   } else {
     const deadline = game.deadlineAt ? (' · Zugfrist: ' + formatDailyGameDeadline(game.deadlineAt)) : '';
-    meta.textContent = (game.timeLabel || 'Daily Chess') + ' · ' + variant + deadline;
+    meta.textContent = (game.timeLabel || 'Daily Chess') + ' · ' + variant + ' · ' + (game.rated === false ? 'Ungewertet' : 'Gewertet') + deadline;
   }
   content.appendChild(title);
   content.appendChild(status);
@@ -5180,7 +5220,7 @@ function createOpenOfferCard(offer){
   status.textContent = 'Anbieter spielt ' + openOfferRoleLabel(offer.creatorRole) + ' · frei ist ' + openOfferRoleLabel(offer.opponentRole);
   const meta = document.createElement('div');
   meta.className = 'open-offer-meta';
-  const parts = [openOfferModeLabel(offer), offer.timeLabel || '', openOfferVariantLabel(offer)];
+  const parts = [openOfferModeLabel(offer), offer.timeLabel || '', openOfferVariantLabel(offer), offer.rated === false ? 'Ungewertet' : 'Gewertet'];
   if(offer.createdAt) parts.push('angeboten: ' + formatPublicGameTime(offer.createdAt));
   meta.textContent = parts.filter(Boolean).join(' · ');
   content.appendChild(title); content.appendChild(status); content.appendChild(meta);
@@ -5524,7 +5564,8 @@ function sendSeatClaim(){
       spectatorOnly:!!onlineSpectatorOnly,
       publicWatchId:onlinePublicWatchId || '',
       publicGame:!!onlineDesiredPublicGameForNewRoom,
-      openOffer:!!onlineDesiredOpenOfferForNewRoom
+      openOffer:!!onlineDesiredOpenOfferForNewRoom,
+      ratedRequested:!!ratingPreference
     }));
     onlineSeatClaimSent = true;
     onlineConnectionState = 'authenticating';
@@ -5705,6 +5746,7 @@ function updateOnlineUi(){
     onlinePublicGame = false;
     onlineOpenOffer = false;
     onlineOpenOfferStatus = 'none';
+    onlineRatedRequested = !!ratingPreference;
     onlineCreatedByMe = false;
     onlinePendingPublicGameMessageId = null;
     onlineAssignedSeats = {white:false, black:false};
@@ -5730,6 +5772,7 @@ function updateOnlineUi(){
     updateTimeSetupVisibility();
     updateVariantUi();
     updateInviteColorUi();
+    updateRatingPreferenceUi();
     updatePublicVisibilityUi();
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
@@ -5832,6 +5875,7 @@ function updateOnlineUi(){
   updateTimeSetupVisibility();
   updateVariantUi();
   updateInviteColorUi();
+  updateRatingPreferenceUi();
   updatePublicVisibilityUi();
   updateSidePanelLayout();
   refreshHeaderStatusFromState();
@@ -5861,6 +5905,7 @@ function isCurrentUserAdmin(){
 function updateInviteDialog(){
   if(!inviteBackdrop) return;
   updateInviteColorUi();
+  updateRatingPreferenceUi();
   const link = onlineRoomId ? getInviteUrl() : '';
   if(inviteLinkInput) inviteLinkInput.value = link;
   if(inviteCopyTextBtn) inviteCopyTextBtn.disabled = !link;
@@ -5925,6 +5970,7 @@ function buildInvitationText(member){
   const details = [];
   if(setup) details.push('Spielmodus: ' + (setup.variant === GAME_VARIANT_FREESTYLE ? ('Freestyle · Stellung #' + setup.positionId) : 'Klassisch'));
   if(timeControl && timeControl.label) details.push('Bedenkzeit: ' + timeControl.label);
+  details.push('Wertung: ' + (effectiveRatedPreference() ? 'Gewertet' : 'Ungewertet'));
   if(timeControl && timeControl.mode === 'daily') details.push('Hinweis: Daily Chess erfordert auf beiden Seiten einen registrierten und eingeloggten Account.');
   const detailText = details.length ? ('\n\n' + details.join('\n')) : '';
   return greeting + '\n\n' +
@@ -6569,6 +6615,7 @@ function normalizeOnlineRatingState(candidate){
     type,
     label,
     reason:String(candidate.reason || ''),
+    requested:candidate.requested !== false,
     result:String(candidate.result || ''),
     ratedAt:candidate.ratedAt || candidate.rated_at || null,
     players:{white:normalizePlayer(players.white), black:normalizePlayer(players.black)}
@@ -6603,9 +6650,8 @@ function ratingReasonLabel(reason){
 }
 function renderPlayerRatingLine(role, element){
   if(!element) return;
-  const inRoom = !!onlineRoomId;
   const state = onlineRatingState;
-  if(!inRoom || !state){
+  if(!onlineRoomId || !state || !state.rated){
     element.hidden = true;
     return;
   }
@@ -6614,16 +6660,11 @@ function renderPlayerRatingLine(role, element){
   const labelEl = element.querySelector('.player-rating-label');
   const valueEl = element.querySelector('.player-rating-value');
   element.hidden = false;
-  element.classList.toggle('unrated', !state.rated || !player.member);
+  element.classList.remove('unrated');
   if(labelEl) labelEl.textContent = state.label || 'Rating';
   if(!assigned){
     if(valueEl) valueEl.textContent = 'wartet';
     element.title = 'Spielerplatz ist noch nicht besetzt.';
-    return;
-  }
-  if(!player.member){
-    if(valueEl) valueEl.textContent = 'kein Rating';
-    element.title = ratingReasonLabel(state.reason || 'members_required');
     return;
   }
   let value = player.display || (player.rating !== null ? String(player.rating) + (player.provisional ? '?' : '') : '—');
@@ -6631,13 +6672,23 @@ function renderPlayerRatingLine(role, element){
     value += ' (' + (player.delta > 0 ? '+' : '') + player.delta + ')';
   }
   if(valueEl) valueEl.textContent = value;
-  element.title = state.rated
-    ? (state.label + ' · gewertete Partie nach Glicko-2')
-    : (state.label + ' · ' + ratingReasonLabel(state.reason));
+  element.title = state.label + ' · gewertete Partie nach Glicko-2';
 }
 function updateRoomRatingUi(){
+  const state = onlineRatingState;
+  const bothSeats = !!(onlineAssignedSeats.white && onlineAssignedSeats.black);
+  const actuallyRated = !!(onlineRoomId && state && state.rated);
   renderPlayerRatingLine('w', whitePlayerRatingEl);
   renderPlayerRatingLine('b', blackPlayerRatingEl);
+  if(roomRatingStatusEl){
+    if(!onlineRoomId || !state || actuallyRated){
+      roomRatingStatusEl.hidden = true;
+    } else {
+      roomRatingStatusEl.hidden = false;
+      const selectedRatedPending = !!(onlineRatedRequested && (!bothSeats || state.reason === 'time_control_required' || state.reason === 'unsupported_time_control'));
+      roomRatingStatusEl.textContent = selectedRatedPending ? 'Gewertet' : 'Ungewertet';
+    }
+  }
 }
 
 function extractOnlinePlayers(msg){
@@ -6836,6 +6887,10 @@ function connectOnlineRoom(roomId, opts){
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'openOfferStatus')){
       onlineOpenOfferStatus = String(msg.openOfferStatus || 'none');
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'ratedRequested')){
+      onlineRatedRequested = msg.ratedRequested !== false;
       handled = true;
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'spectatorMode') && msg.spectatorMode){
@@ -7282,6 +7337,7 @@ async function createNewOnlineRoom(opts){
     onlinePublicWatchId = '';
     onlineDesiredPublicGameForNewRoom = !!publicGamePreference;
     onlineDesiredOpenOfferForNewRoom = opts.openOffer === true;
+    onlineRatedRequested = !!ratingPreference;
     onlinePublicGame = !!publicGamePreference;
     onlineOpenOffer = onlineDesiredOpenOfferForNewRoom;
     onlineOpenOfferStatus = onlineDesiredOpenOfferForNewRoom ? 'open' : 'none';
@@ -7359,6 +7415,38 @@ async function inviteToOnlineGame(event){
   } finally {
     updateOnlineActionButtons();
   }
+}
+function isRatingPreferenceLocked(){
+  return !!onlineRoomId;
+}
+function effectiveRatedPreference(){
+  return onlineRoomId ? !!onlineRatedRequested : !!ratingPreference;
+}
+function updateRatingPreferenceUi(){
+  const rated = effectiveRatedPreference();
+  const locked = isRatingPreferenceLocked();
+  ratingPreferenceButtons.forEach(btn => {
+    const wantsRated = btn.dataset.rated !== 'no';
+    btn.classList.toggle('active', rated === wantsRated);
+    btn.disabled = locked;
+    btn.setAttribute('aria-disabled', locked ? 'true' : 'false');
+  });
+  if(ratingSetupStatusEl){
+    ratingSetupStatusEl.textContent = rated ? 'Gewertete Partie' : 'Ungewertete Partie';
+  }
+  if(inviteRatingSummaryEl){
+    inviteRatingSummaryEl.hidden = !onlineRoomId;
+    inviteRatingSummaryEl.textContent = 'Wertung: ' + (rated ? 'Gewertet' : 'Ungewertet');
+  }
+}
+function setRatingPreference(rated){
+  if(isRatingPreferenceLocked()){
+    updateRatingPreferenceUi();
+    return;
+  }
+  ratingPreference = !!rated;
+  onlineRatedRequested = ratingPreference;
+  updateRatingPreferenceUi();
 }
 function updatePublicVisibilityUi(){
   const inRoom = !!onlineRoomId;
@@ -7449,10 +7537,13 @@ function setCurrentRoomPublicGame(enabled){
   }, 3500);
 }
 if(publicGameCheckbox) publicGameCheckbox.addEventListener('change', () => setPublicGamePreference(publicGameCheckbox.checked));
+if(ratingRatedBtn) ratingRatedBtn.addEventListener('click', () => setRatingPreference(true));
+if(ratingUnratedBtn) ratingUnratedBtn.addEventListener('click', () => setRatingPreference(false));
 if(roomPublicGameCheckbox) roomPublicGameCheckbox.addEventListener('change', () => setCurrentRoomPublicGame(roomPublicGameCheckbox.checked));
 
 inviteColorButtons.forEach(btn => btn.addEventListener('click', () => setInviteColorPreference(btn.dataset.inviteColor)));
 updateInviteColorUi();
+updateRatingPreferenceUi();
 updatePublicVisibilityUi();
 createOnlineBtn.addEventListener('click', inviteToOnlineGame);
 if(copyInviteBtn) copyInviteBtn.addEventListener('click', copyInviteLink);
