@@ -498,6 +498,30 @@ async function durableObjectBackupRoomNameMap(env) {
       // Tabellen aus älteren Installationsständen dürfen fehlen.
     }
   }
+  // Der Rating-Dienst verwendet absichtlich dieselbe Durable-Object-Klasse wie
+  // normale Spielräume, besitzt aber keinen gespeicherten roomId-Schlüssel und
+  // taucht deshalb nicht in den D1-Raumtabellen auf. Der feste Objektname wird
+  // nur dann in die portable Namenszuordnung aufgenommen, wenn seine ID direkt
+  // aus genau diesem Namen berechnet wurde.
+  const ratingServiceLogicalName = cleanRoomId(RATING_SERVICE_ROOM);
+  if (!ratingServiceLogicalName) {
+    throw new Error('Der feste Objektname des Rating-Dienstes ist ungültig.');
+  }
+  const ratingServiceDurableObjectId = String(env.GAME_ROOM.idFromName(ratingServiceLogicalName));
+  const ratingExisting = mapped.get(ratingServiceDurableObjectId);
+  if (ratingExisting && ratingExisting.logicalName !== ratingServiceLogicalName) {
+    throw new Error('Widersprüchliche Namenszuordnung für den Rating-Dienst.');
+  }
+  const ratingMapping = ratingExisting || {
+    durableObjectId:ratingServiceDurableObjectId,
+    logicalName:ratingServiceLogicalName,
+    sources:[]
+  };
+  if (!ratingMapping.sources.includes('internal-rating-service')) {
+    ratingMapping.sources.push('internal-rating-service');
+  }
+  mapped.set(ratingServiceDurableObjectId, ratingMapping);
+
   const objects = Array.from(mapped.values()).sort((a,b) => a.durableObjectId.localeCompare(b.durableObjectId));
   return {
     format:'hammerschach-game-room-name-map',
