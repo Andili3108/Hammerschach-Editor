@@ -1025,6 +1025,7 @@ function prepareInvitationEmail(payload) {
   const variantLabel = String(payload && payload.variantLabel || '').slice(0, 120);
   const timeLabel = String(payload && payload.timeLabel || '').slice(0, 120);
   const daily = !!(payload && payload.daily);
+  const rated = !(payload && payload.rated === false);
   if (!recipientEmail || !inviteUrl) {
     return { ok:false, status:400, code:'INVALID_INVITATION_MAIL', message:'Die Einladungsmail konnte nicht vorbereitet werden.' };
   }
@@ -1033,6 +1034,7 @@ function prepareInvitationEmail(payload) {
   const detailLines = [];
   if (variantLabel) detailLines.push(`Spielmodus: ${variantLabel}`);
   if (timeLabel) detailLines.push(`Bedenkzeit: ${timeLabel}`);
+  detailLines.push(`Wertung: ${rated ? 'Gewertet' : 'Ungewertet'}`);
   if (daily) detailLines.push('Hinweis: Daily Chess erfordert auf beiden Seiten einen registrierten und eingeloggten Account.');
   const detailText = detailLines.length ? `\n\n${detailLines.join('\n')}` : '';
   const textPart = `Hallo ${recipientName},\n\n${senderName} lädt dich zu einer Schachpartie auf Hammerschach ein.${detailText}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.\n\nViele Grüße\nHammerschach-Gamer`;
@@ -2284,9 +2286,11 @@ async function ensureDailyGamesTable(env) {
        ended INTEGER NOT NULL DEFAULT 0,
        ended_at TEXT,
        result TEXT,
-       end_reason TEXT
+       end_reason TEXT,
+       rated INTEGER NOT NULL DEFAULT 1
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
   await env.DB.prepare(
@@ -2313,7 +2317,7 @@ async function listDailyGames(env, sessionUser) {
             daily_games.time_label, daily_games.days_per_move, daily_games.variant, daily_games.started,
             daily_games.started_at, daily_games.updated_at, daily_games.turn,
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
-            daily_games.result, daily_games.end_reason,
+            daily_games.result, daily_games.end_reason, daily_games.rated,
             CASE WHEN opponent_presence.last_seen_at >= ? THEN 1 ELSE 0 END AS opponent_online
        FROM daily_games
        LEFT JOIN users white_account ON white_account.id = daily_games.white_user_id
@@ -2365,7 +2369,8 @@ async function listDailyGames(env, sessionUser) {
       ended: !!row.ended,
       endedAt: row.ended_at || null,
       result: row.result || '*',
-      endReason: row.end_reason || null
+      endReason: row.end_reason || null,
+      rated: Number(row.rated || 0) === 1
     };
   });
 }
@@ -2473,9 +2478,11 @@ async function ensureOpenGameOffersTable(env) {
        position_id INTEGER,
        created_at TEXT NOT NULL,
        updated_at TEXT NOT NULL,
-       offer_status TEXT NOT NULL DEFAULT 'open'
+       offer_status TEXT NOT NULL DEFAULT 'open',
+       rated_requested INTEGER NOT NULL DEFAULT 1
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE open_game_offers ADD COLUMN rated_requested INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_open_game_offers_status ON open_game_offers (offer_status, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_open_game_offers_creator ON open_game_offers (creator_user_id, offer_status)`).run();
   openGameOffersTableReady = true;
@@ -2496,6 +2503,7 @@ async function listOpenGameOffers(env, sessionUser = null) {
             open_game_offers.days_per_move,
             open_game_offers.variant,
             open_game_offers.position_id,
+            open_game_offers.rated_requested,
             open_game_offers.created_at,
             open_game_offers.updated_at
        FROM open_game_offers
@@ -2514,6 +2522,7 @@ async function listOpenGameOffers(env, sessionUser = null) {
     daysPerMove: Math.max(0, Number(row.days_per_move || 0)),
     variant: row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
     positionId: row.position_id === null || row.position_id === undefined ? null : Number(row.position_id),
+    rated: Number(row.rated_requested || 0) === 1,
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null,
     mine: !!(currentUserId && String(row.creator_user_id || '') === currentUserId)
@@ -4786,6 +4795,7 @@ async function handleAuthApi(request, env, url) {
       inviteUrl,
       variantLabel:invitationVariantLabel(access.gameSetup),
       timeLabel:invitationTimeLabel(access.timeControl),
+      rated:access.ratedRequested !== false,
       daily:access.timeControl && access.timeControl.mode === 'daily'
     });
     if (!mail.ok) return json({ ok:false, code:mail.code, message:mail.message }, { status:mail.status || 502 });
@@ -6247,14 +6257,16 @@ export class GameRoom {
   }
 
   async ratingMetaForStart(timeControl, gameSetup) {
+    const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
     const ratingType = ratingTypeFromGame(timeControl, gameSetup);
     const typeInfo = ratingTypeInfo(ratingType);
     const players = await this.getSecurePlayers();
     const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
     const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
-    let ratingRated = !!(typeInfo && whiteUserId && blackUserId && whiteUserId !== blackUserId);
+    let ratingRated = !!(ratedRequested && typeInfo && whiteUserId && blackUserId && whiteUserId !== blackUserId);
     let ratingReason = '';
-    if (!typeInfo) ratingReason = 'unsupported_time_control';
+    if (!ratedRequested) ratingReason = 'creator_unrated';
+    else if (!typeInfo) ratingReason = 'unsupported_time_control';
     else if (!whiteUserId || !blackUserId) ratingReason = 'members_required';
     else if (whiteUserId === blackUserId) ratingReason = 'same_account';
     return {
@@ -6262,7 +6274,8 @@ export class GameRoom {
       ratingType: typeInfo ? typeInfo.key : null,
       ratingLabel: typeInfo ? typeInfo.label : 'Ungewertet',
       ratingRated,
-      ratingReason: ratingRated ? '' : ratingReason
+      ratingReason: ratingRated ? '' : ratingReason,
+      ratedRequested
     };
   }
 
@@ -6318,6 +6331,9 @@ export class GameRoom {
   }
 
   async buildRatingState(game, timeControl, gameSetup) {
+    const ratedRequested = game && game.started && typeof game.ratedRequested === 'boolean'
+      ? game.ratedRequested
+      : (await this.state.storage.get('ratedRequested')) !== false;
     const storedResult = await this.state.storage.get('ratingResult');
     if (game && game.ended && storedResult) return storedResult;
 
@@ -6331,6 +6347,7 @@ export class GameRoom {
         type:null,
         label:'Ungewertet',
         reason:game && game.started ? (game.ratingReason || 'unsupported_time_control') : 'time_control_required',
+        requested:ratedRequested,
         players:{white:{member:false}, black:{member:false}}
       };
     }
@@ -6343,12 +6360,14 @@ export class GameRoom {
       ? false
       : (game && game.started && Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION
           ? !!game.ratingRated
-          : !!(whiteUserId && blackUserId && whiteUserId !== blackUserId));
+          : !!(ratedRequested && whiteUserId && blackUserId && whiteUserId !== blackUserId));
     const reason = fixedRated ? '' : (legacyStartedGame
       ? 'rating_not_enabled_for_game'
-      : (game && game.started && game.ratingReason
-          ? game.ratingReason
-          : (!whiteUserId || !blackUserId ? 'members_required' : whiteUserId === blackUserId ? 'same_account' : 'not_rated')));
+      : (!ratedRequested
+          ? 'creator_unrated'
+          : (game && game.started && game.ratingReason
+              ? game.ratingReason
+              : (!whiteUserId || !blackUserId ? 'members_required' : whiteUserId === blackUserId ? 'same_account' : 'not_rated'))));
     const cacheKey = [typeInfo.key, whiteUserId, blackUserId, fixedRated ? '1' : '0', game && game.ended ? 'ended' : 'open'].join('|');
     const now = Date.now();
     if (this.ratingStateCache && this.ratingStateCache.key === cacheKey && this.ratingStateCache.expiresAt > now) {
@@ -6364,6 +6383,7 @@ export class GameRoom {
       type:typeInfo.key,
       label:typeInfo.label,
       reason,
+      requested:ratedRequested,
       provisionalDeviation:RATING_PROVISIONAL_DEVIATION,
       players:{
         white:whiteUserId && ratings[whiteUserId] ? Object.assign({member:true}, ratings[whiteUserId]) : {member:!!whiteUserId},
@@ -6409,6 +6429,7 @@ export class GameRoom {
     const rawGameSetup = (await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null;
     const timeControl = cleanTimeControl(rawTimeControl);
     const gameSetup = rawGameSetup ? cleanGameSetup(rawGameSetup) : null;
+    const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
     return {
       ok:true,
       status:200,
@@ -6416,6 +6437,7 @@ export class GameRoom {
       creatorRole,
       timeControl,
       gameSetup,
+      ratedRequested,
       gameStarted:!!game.started
     };
   }
@@ -7204,6 +7226,10 @@ export class GameRoom {
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
       const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
       const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+      const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
+      const ratedForIndex = game.started && Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION
+        ? !!game.ratingRated
+        : ratedRequested;
       const now = Date.now();
       const deadlineAt = clock && clock.running && !clock.timeLost
         ? new Date(now + Math.max(0, Number(clock[clock.turn + 'Ms'] || 0))).toISOString()
@@ -7213,8 +7239,8 @@ export class GameRoom {
         `INSERT INTO daily_games (
            room_id, white_user_id, black_user_id, white_name, black_name,
            time_label, days_per_move, variant, started, started_at, updated_at,
-           turn, deadline_at, ended, ended_at, result, end_reason
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           turn, deadline_at, ended, ended_at, result, end_reason, rated
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
@@ -7231,13 +7257,14 @@ export class GameRoom {
            ended = excluded.ended,
            ended_at = excluded.ended_at,
            result = excluded.result,
-           end_reason = excluded.end_reason`
+           end_reason = excluded.end_reason,
+           rated = excluded.rated`
       ).bind(
         roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
         timeControl.label, timeControl.daysPerMove, setup.variant,
         game.started ? 1 : 0, game.startedAt || null, new Date(now).toISOString(),
         clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : null, deadlineAt,
-        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null
+        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null, ratedForIndex ? 1 : 0
       ).run();
     } catch (_) {
       // Ein D1-Fehler darf die eigentliche Partie nicht unterbrechen.
@@ -7371,13 +7398,14 @@ export class GameRoom {
       const creatorName = cleanDisplayName(accountNames[creatorUserId] || '') || cleanDisplayName(creatorPlayerId && profiles[creatorPlayerId] && (profiles[creatorPlayerId].displayName || profiles[creatorPlayerId].name)) || 'Mitglied';
       const nowIso = new Date().toISOString();
       const createdAt = String((await this.state.storage.get('openOfferCreatedAt')) || nowIso);
+      const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
       if (!(await this.state.storage.get('openOfferCreatedAt'))) await this.state.storage.put('openOfferCreatedAt', createdAt);
       await this.env.DB.prepare(
         `INSERT INTO open_game_offers (
            room_id, creator_user_id, creator_name, creator_role, opponent_role,
            mode, time_label, days_per_move, variant, position_id,
-           created_at, updated_at, offer_status
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
+           created_at, updated_at, offer_status, rated_requested
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open', ?)
          ON CONFLICT(room_id) DO UPDATE SET
            creator_user_id = excluded.creator_user_id,
            creator_name = excluded.creator_name,
@@ -7389,13 +7417,14 @@ export class GameRoom {
            variant = excluded.variant,
            position_id = excluded.position_id,
            updated_at = excluded.updated_at,
-           offer_status = 'open'`
+           offer_status = 'open',
+           rated_requested = excluded.rated_requested`
       ).bind(
         roomId, creatorUserId, creatorName, creatorRole, creatorRole === 'w' ? 'b' : 'w',
         timeControl.mode === 'daily' ? 'daily' : 'live', timeControl.label || '',
         timeControl.mode === 'daily' ? Math.max(1, Number(timeControl.daysPerMove || 1)) : null,
         setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
-        createdAt, nowIso
+        createdAt, nowIso, ratedRequested ? 1 : 0
       ).run();
     } catch (_) {
       // Die Vermittlung offener Partien darf den Spielraum nicht unterbrechen.
@@ -7566,6 +7595,7 @@ export class GameRoom {
     const publicGame = (await this.state.storage.get('publicGame')) === true;
     const openOffer = (await this.state.storage.get('openOffer')) === true;
     const openOfferStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : 'none'));
+    const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
     if (timed.game && timed.game.ended) await this.finalizeRatingIfNeeded(timed.game);
     const rating = await this.buildRatingState(timed.game || null, storedTimeControl, storedGameSetup);
 
@@ -7583,6 +7613,7 @@ export class GameRoom {
       publicGame,
       openOffer,
       openOfferStatus,
+      ratedRequested,
       spectatorMode: info.viewerMode === 'public',
       timeControl: safeTimeControlForClient(storedTimeControl),
       gameSetup,
@@ -7773,9 +7804,11 @@ export class GameRoom {
       if (!roomAlreadyCreatedByMember && authUser) {
         const publicGame = data.publicGame === true || data.public_game === true;
         const openOffer = data.openOffer === true || data.open_offer === true;
+        const ratedRequested = !(data.ratedRequested === false || data.rated_requested === false || data.rated === false || data.rated === 0 || data.rated === '0');
         await this.state.storage.put('publicGame', publicGame);
         await this.state.storage.put('openOffer', openOffer);
         await this.state.storage.put('openOfferStatus', openOffer ? 'open' : 'none');
+        await this.state.storage.put('ratedRequested', ratedRequested);
         if (!openOffer) {
           await this.state.storage.delete('openOfferAcceptedByUserId');
           await this.state.storage.delete('openOfferAcceptedAt');
@@ -8710,7 +8743,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
