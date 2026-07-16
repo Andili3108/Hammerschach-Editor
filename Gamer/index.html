@@ -61,7 +61,7 @@
   .dot.black{background:#111;}
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
-  .match-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-content:stretch;align-items:stretch;}
+  .match-actions{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;justify-content:stretch;align-items:stretch;}
   .match-actions button{width:100%;min-width:0;font-size:14px;padding:8px 7px;min-height:44px;line-height:1.10;white-space:normal;overflow-wrap:normal;border-radius:16px;}
   .match-actions .name-action-btn{min-width:0;}
   .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0;white-space:nowrap;}
@@ -95,7 +95,7 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
+  html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #membersOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-start-view .match-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
@@ -401,6 +401,16 @@
   .member-result-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
   .member-result-actions button{border-radius:12px;min-height:34px;padding:7px 9px;}
   .member-delete-btn{background:#843f46!important;color:#fff!important;}
+  .members-modal{width:720px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;}
+  .members-modal h3{margin:0 0 6px;font-size:22px;color:#222;}
+  .members-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.4;}
+  .members-search-box{margin-top:0;min-height:0;display:flex;flex-direction:column;}
+  .members-results{max-height:52vh;overflow:auto;padding-right:3px;}
+  .members-status{min-height:18px;font-size:13px;font-weight:800;color:#666;margin-top:7px;line-height:1.35;}
+  .members-status.error{color:#9A2D33;}
+  .members-status.success{color:#226b36;}
+  .members-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .members-actions button{border-radius:12px;min-height:38px;}
 
   .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
@@ -664,8 +674,8 @@
   html.dark-mode .promo-backdrop,
   html.dark-mode .identity-backdrop,
   html.dark-mode .info-backdrop{background:rgba(0,0,0,.66);}
-  html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.member-lobby-heading h2,.board-color-popup-title){color:#f3f4f6!important;}
-  html.dark-mode :is(.player-label,.player-clock-head,.time-status,.time-format-help,.time-lock-note,.daily-account-note,.invite-color-summary,.variantStatus,.freestyle-position-label,.freestyle-position-message,.chat-etiquette-note,.chat-empty,.chat-status,.global-chat-subtitle,.global-chat-status,.global-chat-note,.global-chat-members-title,.member-search-hint,.member-empty,.member-result-meta,.daily-game-meta,.daily-games-intro,.daily-games-status,.open-offer-meta,.open-offers-intro,.open-offers-status,.public-game-meta,.public-games-intro,.public-games-status,.auth-account-mail,.auth-rating-name,.auth-rating-meta,.auth-ratings-note,.auth-email-notifications-note,.auth-email-notifications-status,.account-edit-hint,.admin-overview-intro,.admin-overview-generated,.admin-stat-label,.admin-event-time,.admin-message-meta-row,.admin-message-file-note,.admin-message-attachment-meta,.moderation-note,.admin-report-meta,.admin-report-comment,.admin-report-chat,.privacy-highlight,.privacy-storage-list dd,.site-footnote,.site-stats,.next-daily-game-hint){color:#b8bdc6!important;}
+  html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.members-modal h3,.member-lobby-heading h2,.board-color-popup-title){color:#f3f4f6!important;}
+  html.dark-mode :is(.player-label,.player-clock-head,.time-status,.time-format-help,.time-lock-note,.daily-account-note,.invite-color-summary,.variantStatus,.freestyle-position-label,.freestyle-position-message,.chat-etiquette-note,.chat-empty,.chat-status,.global-chat-subtitle,.global-chat-status,.global-chat-note,.global-chat-members-title,.member-search-hint,.member-empty,.member-result-meta,.members-intro,.members-status,.daily-game-meta,.daily-games-intro,.daily-games-status,.open-offer-meta,.open-offers-intro,.open-offers-status,.public-game-meta,.public-games-intro,.public-games-status,.auth-account-mail,.auth-rating-name,.auth-rating-meta,.auth-ratings-note,.auth-email-notifications-note,.auth-email-notifications-status,.account-edit-hint,.admin-overview-intro,.admin-overview-generated,.admin-stat-label,.admin-event-time,.admin-message-meta-row,.admin-message-file-note,.admin-message-attachment-meta,.moderation-note,.admin-report-meta,.admin-report-comment,.admin-report-chat,.privacy-highlight,.privacy-storage-list dd,.site-footnote,.site-stats,.next-daily-game-hint){color:#b8bdc6!important;}
   html.dark-mode :is(.daily-game-status,.open-offer-kicker,.open-offer-status,.public-game-kicker,.public-game-status,.member-result-name,.player-rating-value,.auth-rating-value,.global-chat-message-name,.admin-stat-value,.admin-inline-stat strong){color:#e6a3ab!important;}
   html.dark-mode :is(.member-result-card,.daily-games-empty,.open-offers-empty,.public-games-empty,.auth-email-option,.auth-email-state-badge,.admin-message-audience,.admin-message-confirm,.player-rating-line,.privacy-storage-list dt){background:#252930;border-color:rgba(255,255,255,.09);}
   html.dark-mode :is(.brand-origin-line,.member-lobby-heading p,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
@@ -749,6 +759,7 @@
           <button id="openOffersOpenBtn" class="button-flat name-action-btn" type="button">Offene Partien</button>
           <button id="dailyGamesOpenBtn" class="button-flat name-action-btn" type="button">Meine Partien</button>
           <button id="publicGamesOpenBtn" class="button-flat name-action-btn" type="button">Laufende Partien</button>
+          <button id="membersOpenBtn" class="button-flat name-action-btn" type="button" hidden>Mitglieder</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">Registrierung / Login</button>
         </div>
       </div>
@@ -845,7 +856,8 @@
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
 
-          <h4>9. Einladen oder eine Partie offen anbieten</h4>
+          <h4>9. Mitglieder finden, einladen oder eine Partie offen anbieten</h4>
+          <p>Über <strong>„Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante, Wertung und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
@@ -1369,6 +1381,25 @@
         <div class="public-games-actions">
           <button id="publicGamesRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="publicGamesCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="membersBackdrop" class="identity-backdrop" hidden>
+      <div class="invite-modal members-modal" role="dialog" aria-modal="true" aria-labelledby="membersTitle">
+        <h3 id="membersTitle">Hammerschach-Mitglieder</h3>
+        <p class="members-intro">Geschützter Mitgliederbereich: Hier siehst du die registrierten Mitglieder und ihren ungefähren Online-Status. Beim Öffnen der Liste wird noch kein Spielraum erzeugt.</p>
+        <div class="member-search-box members-search-box">
+          <div class="member-search-head">Mitglied suchen</div>
+          <p id="membersSearchHint" class="member-search-hint">In der Mitglieder-Lobby kannst du ein Mitglied direkt zu deiner vorbereiteten Partie einladen.</p>
+          <label class="identity-label" for="membersSearchInput">Benutzername</label>
+          <input id="membersSearchInput" class="identity-input" type="search" autocomplete="off" placeholder="z. B. Andreas" />
+          <div id="membersStatus" class="members-status" aria-live="polite"></div>
+          <div id="membersResults" class="member-search-results members-results" aria-label="Mitgliederliste"></div>
+        </div>
+        <div class="members-actions">
+          <button id="membersRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
+          <button id="membersCloseBtn" type="button">Schließen</button>
         </div>
       </div>
     </div>
@@ -2931,6 +2962,7 @@ const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
+const membersOpenBtn = document.getElementById('membersOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const themeColorMeta = document.getElementById('themeColorMeta');
@@ -3145,6 +3177,16 @@ const roomPublicVisibilityBoxEl = document.getElementById('roomPublicVisibilityB
 const roomPublicGameCheckbox = document.getElementById('roomPublicGameCheckbox');
 const roomPublicVisibilityHintEl = document.getElementById('roomPublicVisibilityHint');
 const roomRatingStatusEl = document.getElementById('roomRatingStatus');
+
+const membersBackdrop = document.getElementById('membersBackdrop');
+const membersSearchInput = document.getElementById('membersSearchInput');
+const membersSearchHint = document.getElementById('membersSearchHint');
+const membersStatus = document.getElementById('membersStatus');
+const membersResults = document.getElementById('membersResults');
+const membersRefreshBtn = document.getElementById('membersRefreshBtn');
+const membersCloseBtn = document.getElementById('membersCloseBtn');
+let membersSearchTimer = null;
+let membersSearchRequestId = 0;
 
 const inviteBackdrop = document.getElementById('inviteBackdrop');
 const inviteLinkInput = document.getElementById('inviteLinkInput');
@@ -4613,6 +4655,12 @@ function updateAuthUi(){
     authOpenBtn.textContent = loggedIn ? 'Mein Profil' : 'Registrierung / Login';
     authOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — klicken für Accountverwaltung und Logout' : 'Registrierung oder Login öffnen';
   }
+  if(membersOpenBtn){
+    membersOpenBtn.hidden = !loggedIn;
+    membersOpenBtn.disabled = !loggedIn;
+    membersOpenBtn.title = loggedIn ? 'Registrierte Mitglieder und Online-Status anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
+  }
+  if(!loggedIn && membersBackdrop && !membersBackdrop.hidden) closeMembersDialog();
   if(dailyGamesOpenBtn){
     dailyGamesOpenBtn.disabled = false;
     dailyGamesOpenBtn.title = loggedIn ? 'Laufende Daily-Partien anzeigen.' : 'Für „Meine Partien“ bitte einloggen.';
@@ -4755,6 +4803,7 @@ async function logoutAuth(){
   }
 }
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
+if(membersOpenBtn) membersOpenBtn.addEventListener('click', openMembersDialog);
 if(visitorBoardLoginBtn) visitorBoardLoginBtn.addEventListener('click', () => openAuthDialog('login'));
 if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
 if(authLoginTab) authLoginTab.addEventListener('click', () => setAuthMode('login'));
@@ -5895,6 +5944,184 @@ async function copyInviteLink(){
   updateOnlineUi();
 }
 
+function setMembersStatus(message, kind){
+  if(!membersStatus) return;
+  membersStatus.textContent = message || '';
+  membersStatus.classList.toggle('error', kind === 'error');
+  membersStatus.classList.toggle('success', kind === 'success');
+}
+function closeMembersDialog(){
+  if(membersBackdrop) membersBackdrop.hidden = true;
+  if(membersSearchTimer){ clearTimeout(membersSearchTimer); membersSearchTimer = null; }
+}
+function standaloneInvitationAvailable(){
+  return isMemberLobbyView() && !onlineRoomId;
+}
+async function waitForInvitationRoomReady(timeoutMs){
+  const startedAt = Date.now();
+  const maximum = Math.max(1000, Number(timeoutMs || 7000));
+  while(Date.now() - startedAt < maximum){
+    if(onlineRoomCancelled) throw new Error('Der neu erstellte Spielraum wurde zurückgezogen.');
+    if(onlineRoomId && onlineConnected && onlineCreatedByMe && (onlineRoleCode === 'w' || onlineRoleCode === 'b')) return true;
+    await new Promise(resolve => setTimeout(resolve, 120));
+  }
+  throw new Error('Der Spielraum wurde erstellt, aber vom Server noch nicht vollständig bestätigt. Bitte die Einladung über das geöffnete Einladungsfenster erneut senden.');
+}
+function renderStandaloneMemberResults(users, options){
+  options = options || {};
+  if(!membersResults) return;
+  membersResults.innerHTML = '';
+  if(!users || users.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'member-empty';
+    empty.textContent = options.source === 'search' ? 'Kein passendes Mitglied gefunden.' : 'Keine registrierten Mitglieder gefunden.';
+    membersResults.appendChild(empty);
+    return;
+  }
+  const canAdminDelete = isCurrentUserAdmin();
+  const canInvite = standaloneInvitationAvailable();
+  users.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'member-result-card';
+
+    const info = document.createElement('div');
+    info.style.minWidth = '0';
+    const name = document.createElement('div');
+    name.className = 'member-result-name';
+    const nameText = document.createElement('span');
+    nameText.className = 'member-result-name-text';
+    nameText.textContent = user.username || 'Mitglied';
+    name.appendChild(nameText);
+    name.appendChild(createPresenceBadge(!!user.isOnline));
+    const meta = document.createElement('div');
+    meta.className = 'member-result-meta';
+    meta.textContent = canInvite
+      ? 'Registriertes Mitglied · direkt zur vorbereiteten Partie einladen'
+      : 'Registriertes Mitglied · für eine neue Einladung bitte zur Lobby zurückkehren';
+    info.appendChild(name);
+    info.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'member-result-actions';
+    if(onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
+      const inviteBtn = document.createElement('button');
+      inviteBtn.type = 'button';
+      inviteBtn.className = 'button-flat';
+      inviteBtn.textContent = 'Zur Partie einladen';
+      inviteBtn.disabled = !canInvite;
+      inviteBtn.title = canInvite
+        ? 'Spielraum mit den aktuellen Einstellungen erstellen und Einladung senden.'
+        : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
+      inviteBtn.addEventListener('click', ev => { ev.stopPropagation(); inviteMemberFromStandaloneList(user, inviteBtn); });
+      actions.appendChild(inviteBtn);
+    }
+    if(canAdminDelete && onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'member-delete-btn';
+      deleteBtn.textContent = 'User löschen';
+      deleteBtn.title = 'User dauerhaft aus der Account-Datenbank entfernen';
+      deleteBtn.addEventListener('click', ev => { ev.stopPropagation(); deleteMemberAsAdmin(user, deleteBtn, 'standalone'); });
+      actions.appendChild(deleteBtn);
+    }
+    card.appendChild(info);
+    card.appendChild(actions);
+    membersResults.appendChild(card);
+  });
+}
+async function loadStandaloneMemberList(options){
+  options = options || {};
+  if(!onlineAuthToken || !onlineAuthUser){ closeMembersDialog(); openAuthDialog('login'); return; }
+  if(membersRefreshBtn) membersRefreshBtn.disabled = true;
+  if(!options.silent) setMembersStatus('Mitgliederliste wird geladen…', '');
+  try{
+    const data = await authApi('/api/members/list?limit=50');
+    const users = data.users || [];
+    renderStandaloneMemberResults(users, {source:'list'});
+    setMembersStatus(users.length ? (users.length + ' Mitglied' + (users.length === 1 ? '' : 'er') + ' geladen.') : 'Keine weiteren Mitglieder gefunden.', users.length ? 'success' : '');
+  } catch(err){
+    renderStandaloneMemberResults([], {source:'list'});
+    setMembersStatus(err && err.message ? err.message : 'Mitgliederliste konnte nicht geladen werden.', 'error');
+  } finally {
+    if(membersRefreshBtn) membersRefreshBtn.disabled = false;
+  }
+}
+async function performStandaloneMemberSearch(query, requestId){
+  try{
+    const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
+    if(requestId !== membersSearchRequestId) return;
+    const users = data.users || [];
+    renderStandaloneMemberResults(users, {source:'search'});
+    setMembersStatus(users.length ? (users.length + ' Treffer gefunden.') : 'Keine Treffer.', users.length ? 'success' : '');
+  } catch(err){
+    if(requestId !== membersSearchRequestId) return;
+    renderStandaloneMemberResults([], {source:'search'});
+    setMembersStatus(err && err.message ? err.message : 'Mitgliedersuche fehlgeschlagen.', 'error');
+  }
+}
+function scheduleStandaloneMemberSearch(){
+  if(membersSearchTimer) clearTimeout(membersSearchTimer);
+  const query = membersSearchInput ? membersSearchInput.value.trim() : '';
+  membersSearchRequestId++;
+  if(query.length === 0){ loadStandaloneMemberList({silent:true}); return; }
+  if(query.length < 2){
+    if(membersResults) membersResults.innerHTML = '<div class="member-empty">Mindestens 2 Zeichen eingeben.</div>';
+    setMembersStatus('Mindestens 2 Zeichen eingeben.', '');
+    return;
+  }
+  setMembersStatus('Suche läuft…', '');
+  const requestId = membersSearchRequestId;
+  membersSearchTimer = setTimeout(() => performStandaloneMemberSearch(query, requestId), 260);
+}
+async function openMembersDialog(){
+  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
+  if(membersSearchInput) membersSearchInput.value = '';
+  if(membersSearchHint){
+    membersSearchHint.textContent = standaloneInvitationAvailable()
+      ? 'Wähle ein Mitglied aus. Der Spielraum wird erst beim Klick auf „Zur Partie einladen“ mit deinen aktuellen Einstellungen erstellt.'
+      : 'Du kannst die Mitglieder und ihren Online-Status ansehen. Für eine neue Einladung kehrst du anschließend zur Mitglieder-Lobby zurück.';
+  }
+  if(membersBackdrop) membersBackdrop.hidden = false;
+  await loadStandaloneMemberList();
+  setTimeout(() => { try{ if(membersSearchInput) membersSearchInput.focus(); } catch(_){} }, 0);
+}
+async function inviteMemberFromStandaloneList(member, button){
+  if(!standaloneInvitationAvailable()){
+    setMembersStatus('Bitte zuerst über „Zur Lobby“ in die Mitglieder-Lobby zurückkehren und dort die neue Partie vorbereiten.', 'error');
+    return;
+  }
+  if(!timeMode || !currentTimeControlPayload()){
+    setMembersStatus('Bitte zuerst eine Bedenkzeit für die Einladung auswählen.', 'error');
+    return;
+  }
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Raum wird erstellt…'; }
+  setMembersStatus('Spielraum wird mit den vorbereiteten Einstellungen erstellt…', '');
+  try{
+    const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
+    if(!created){ setMembersStatus('Der Spielraum konnte nicht erstellt werden.', 'error'); return; }
+    setMembersStatus('Spielraum wird vom Server bestätigt…', '');
+    await waitForInvitationRoomReady(7000);
+    closeMembersDialog();
+    updateInviteDialog();
+    if(inviteBackdrop) inviteBackdrop.hidden = false;
+    await sendEmailInvitationToMember(member, button);
+  } catch(err){
+    const message = err && err.message ? err.message : 'Die Einladung konnte nicht vorbereitet werden.';
+    if(onlineRoomId){
+      closeMembersDialog();
+      updateInviteDialog();
+      if(inviteBackdrop) inviteBackdrop.hidden = false;
+      setInviteCopyStatus(message, true);
+    } else {
+      setMembersStatus(message, 'error');
+    }
+  } finally {
+    if(button){ button.disabled = false; button.textContent = oldText || 'Zur Partie einladen'; }
+    updateOnlineActionButtons();
+  }
+}
+
 function closeInviteDialog(){
   if(inviteBackdrop) inviteBackdrop.hidden = true;
 }
@@ -6127,10 +6354,15 @@ async function loadMemberList(){
     if(memberListBtn) memberListBtn.disabled = false;
   }
 }
-async function deleteMemberAsAdmin(user, button){
-  if(!isCurrentUserAdmin()){ setInviteCopyStatus('Nur Andili kann User löschen.', true); return; }
-  if(!user || !user.id){ setInviteCopyStatus('Dieser User kann nicht gelöscht werden.', true); return; }
-  if(onlineAuthUser && user.id === onlineAuthUser.id){ setInviteCopyStatus('Der eigene Admin-Account kann nicht gelöscht werden.', true); return; }
+async function deleteMemberAsAdmin(user, button, source){
+  const standaloneSource = source === 'standalone' || (membersBackdrop && !membersBackdrop.hidden);
+  const showDeleteMessage = (message, isError) => {
+    if(standaloneSource) setMembersStatus(message, isError ? 'error' : 'success');
+    else setInviteCopyStatus(message, !!isError);
+  };
+  if(!isCurrentUserAdmin()){ showDeleteMessage('Nur Andili kann User löschen.', true); return; }
+  if(!user || !user.id){ showDeleteMessage('Dieser User kann nicht gelöscht werden.', true); return; }
+  if(onlineAuthUser && user.id === onlineAuthUser.id){ showDeleteMessage('Der eigene Admin-Account kann nicht gelöscht werden.', true); return; }
   const username = user.username || 'diesen User';
   const ok = window.confirm('User „' + username + '“ wirklich löschen?\n\nDer Account und aktive Login-Sitzungen werden aus der Datenbank entfernt.');
   if(!ok) return;
@@ -6138,11 +6370,12 @@ async function deleteMemberAsAdmin(user, button){
   if(button){ button.disabled = true; button.textContent = 'Lösche...'; }
   try{
     await authApi('/api/admin/users/' + encodeURIComponent(user.id), {method:'DELETE'});
-    setInviteCopyStatus('User „' + username + '“ wurde gelöscht.', false);
+    showDeleteMessage('User „' + username + '“ wurde gelöscht.', false);
     statusEl.textContent = 'User „' + username + '“ wurde gelöscht.';
-    await loadMemberList();
+    if(standaloneSource) await loadStandaloneMemberList({silent:true});
+    else await loadMemberList();
   } catch(err){
-    setInviteCopyStatus(err && err.message ? err.message : 'User konnte nicht gelöscht werden.', true);
+    showDeleteMessage(err && err.message ? err.message : 'User konnte nicht gelöscht werden.', true);
     if(button){ button.disabled = false; button.textContent = oldText || 'User löschen'; }
   }
 }
@@ -7553,7 +7786,15 @@ if(inviteCloseBtn) inviteCloseBtn.addEventListener('click', closeInviteDialog);
 if(inviteBackdrop) inviteBackdrop.addEventListener('click', ev => { if(ev.target === inviteBackdrop) closeInviteDialog(); });
 if(memberSearchInput) memberSearchInput.addEventListener('input', scheduleMemberSearch);
 if(memberListBtn) memberListBtn.addEventListener('click', loadMemberList);
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && inviteBackdrop && !inviteBackdrop.hidden) closeInviteDialog(); });
+if(membersSearchInput) membersSearchInput.addEventListener('input', scheduleStandaloneMemberSearch);
+if(membersRefreshBtn) membersRefreshBtn.addEventListener('click', () => loadStandaloneMemberList());
+if(membersCloseBtn) membersCloseBtn.addEventListener('click', closeMembersDialog);
+if(membersBackdrop) membersBackdrop.addEventListener('click', ev => { if(ev.target === membersBackdrop) closeMembersDialog(); });
+document.addEventListener('keydown', ev => {
+  if(ev.key !== 'Escape') return;
+  if(membersBackdrop && !membersBackdrop.hidden) closeMembersDialog();
+  else if(inviteBackdrop && !inviteBackdrop.hidden) closeInviteDialog();
+});
 startOnlineBtn.addEventListener('click', startOnlineGame);
 if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
 if(resignBtn) resignBtn.addEventListener('click', handleResignButtonClick);
