@@ -663,6 +663,7 @@ async function searchMembers(env, sessionUser, query) {
   const cleaned = cleanMemberSearchQuery(query);
   if (!env || !env.DB || !sessionUser || cleaned.length < 2) return [];
   await ensureUserPresenceTable(env);
+  await ensureUserPublicProfilesTable(env);
 
   const escaped = escapeSqlLike(cleaned);
   const contains = '%' + escaped + '%';
@@ -670,9 +671,12 @@ async function searchMembers(env, sessionUser, query) {
   const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
-            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
+            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
+            public_profile.avatar_updated_at
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
+       LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
       WHERE users.id <> ?
         AND (users.username_lc LIKE ? ESCAPE '\\' OR users.email_lc LIKE ? ESCAPE '\\')
       ORDER BY
@@ -690,7 +694,9 @@ async function searchMembers(env, sessionUser, query) {
     id: row.id,
     username: row.username,
     createdAt: row.created_at || null,
-    isOnline: Number(row.is_online || 0) === 1
+    isOnline: Number(row.is_online || 0) === 1,
+    hasAvatar: Number(row.has_avatar || 0) === 1,
+    avatarUpdatedAt: row.avatar_updated_at || null
   }));
 }
 
@@ -699,13 +705,17 @@ async function searchMembers(env, sessionUser, query) {
 async function listMembers(env, sessionUser, limit = 50) {
   if (!env || !env.DB || !sessionUser) return [];
   await ensureUserPresenceTable(env);
+  await ensureUserPublicProfilesTable(env);
   const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
   const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
-            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
+            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
+            public_profile.avatar_updated_at
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
+       LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
       WHERE users.id <> ?
       ORDER BY is_online DESC, users.username_lc ASC
       LIMIT ?`
@@ -715,7 +725,9 @@ async function listMembers(env, sessionUser, limit = 50) {
     id: row.id,
     username: row.username,
     createdAt: row.created_at || null,
-    isOnline: Number(row.is_online || 0) === 1
+    isOnline: Number(row.is_online || 0) === 1,
+    hasAvatar: Number(row.has_avatar || 0) === 1,
+    avatarUpdatedAt: row.avatar_updated_at || null
   }));
 }
 
@@ -725,6 +737,10 @@ const PUBLIC_PROFILE_CLUB_MAX = 80;
 const PUBLIC_PROFILE_ABOUT_MAX = 400;
 const PUBLIC_PROFILE_DWZ_MIN = 100;
 const PUBLIC_PROFILE_DWZ_MAX = 3500;
+const AVATAR_TARGET_SIZE = 256;
+const AVATAR_MAX_BYTES = 512 * 1024;
+const AVATAR_UPLOAD_MAX_CONTENT_LENGTH = 700 * 1024;
+const AVATAR_ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 let userPublicProfilesTableReady = false;
 
 async function ensureUserPublicProfilesTable(env) {
@@ -737,14 +753,25 @@ async function ensureUserPublicProfilesTable(env) {
        club_name TEXT NOT NULL DEFAULT '',
        dwz INTEGER,
        about TEXT NOT NULL DEFAULT '',
+       avatar_key TEXT NOT NULL DEFAULT '',
+       avatar_mime TEXT NOT NULL DEFAULT '',
+       avatar_updated_at TEXT,
        updated_at TEXT NOT NULL
      )`
   ).run();
   const columnsResult = await env.DB.prepare(`PRAGMA table_info(user_public_profiles)`).all();
   const columns = columnsResult && Array.isArray(columnsResult.results) ? columnsResult.results : [];
-  if (!columns.some(column => String(column && column.name || '').toLowerCase() === 'club_name')) {
+  const columnNames = new Set(columns.map(column => String(column && column.name || '').toLowerCase()));
+  const additions = [
+    ['club_name', `ALTER TABLE user_public_profiles ADD COLUMN club_name TEXT NOT NULL DEFAULT ''`],
+    ['avatar_key', `ALTER TABLE user_public_profiles ADD COLUMN avatar_key TEXT NOT NULL DEFAULT ''`],
+    ['avatar_mime', `ALTER TABLE user_public_profiles ADD COLUMN avatar_mime TEXT NOT NULL DEFAULT ''`],
+    ['avatar_updated_at', `ALTER TABLE user_public_profiles ADD COLUMN avatar_updated_at TEXT`]
+  ];
+  for (const [columnName, sql] of additions) {
+    if (columnNames.has(columnName)) continue;
     try {
-      await env.DB.prepare(`ALTER TABLE user_public_profiles ADD COLUMN club_name TEXT NOT NULL DEFAULT ''`).run();
+      await env.DB.prepare(sql).run();
     } catch (err) {
       const message = String(err && err.message || err || '').toLowerCase();
       if (!message.includes('duplicate column')) throw err;
@@ -810,13 +837,21 @@ function normalizePublicProfileInput(body) {
   return { ok:true, profile:{ realName, clubName, dwz, about } };
 }
 
+function publicAvatarFields(row) {
+  const avatarKey = String(row && row.avatar_key || '').trim();
+  return {
+    hasAvatar:!!avatarKey,
+    avatarUpdatedAt:avatarKey && row && row.avatar_updated_at ? row.avatar_updated_at : null
+  };
+}
+
 async function getUserPublicProfile(env, userId) {
   const id = cleanPublicProfileUserId(userId);
   if (!id || !(await ensureUserPublicProfilesTable(env))) {
-    return { realName:'', clubName:'', dwz:null, about:'', updatedAt:null };
+    return { realName:'', clubName:'', dwz:null, about:'', hasAvatar:false, avatarUpdatedAt:null, updatedAt:null };
   }
   const row = await env.DB.prepare(
-    `SELECT real_name, club_name, dwz, about, updated_at
+    `SELECT real_name, club_name, dwz, about, avatar_key, avatar_updated_at, updated_at
        FROM user_public_profiles
       WHERE user_id = ?
       LIMIT 1`
@@ -827,7 +862,24 @@ async function getUserPublicProfile(env, userId) {
     clubName:cleanPublicProfileClub(row && row.club_name),
     dwz:Number.isInteger(storedDwz) ? storedDwz : null,
     about:cleanPublicProfileAbout(row && row.about),
+    ...publicAvatarFields(row),
     updatedAt:row && row.updated_at ? row.updated_at : null
+  };
+}
+
+async function getUserAvatarRecord(env, userId) {
+  const id = cleanPublicProfileUserId(userId);
+  if (!id || !(await ensureUserPublicProfilesTable(env))) return { key:'', mime:'', updatedAt:null };
+  const row = await env.DB.prepare(
+    `SELECT avatar_key, avatar_mime, avatar_updated_at
+       FROM user_public_profiles
+      WHERE user_id = ?
+      LIMIT 1`
+  ).bind(id).first();
+  return {
+    key:String(row && row.avatar_key || '').trim(),
+    mime:String(row && row.avatar_mime || '').trim().toLowerCase(),
+    updatedAt:row && row.avatar_updated_at ? row.avatar_updated_at : null
   };
 }
 
@@ -837,9 +889,10 @@ async function saveUserPublicProfile(env, userId, input) {
   const normalized = normalizePublicProfileInput(input);
   if (!normalized.ok) return normalized;
   const profile = normalized.profile;
-  if (!profile.realName && !profile.clubName && profile.dwz === null && !profile.about) {
+  const avatar = await getUserAvatarRecord(env, id);
+  if (!profile.realName && !profile.clubName && profile.dwz === null && !profile.about && !avatar.key) {
     await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(id).run();
-    return { ok:true, profile:{ realName:'', clubName:'', dwz:null, about:'', updatedAt:null } };
+    return { ok:true, profile:{ realName:'', clubName:'', dwz:null, about:'', hasAvatar:false, avatarUpdatedAt:null, updatedAt:null } };
   }
   const updatedAt = new Date().toISOString();
   await env.DB.prepare(
@@ -852,7 +905,195 @@ async function saveUserPublicProfile(env, userId, input) {
        about = excluded.about,
        updated_at = excluded.updated_at`
   ).bind(id, profile.realName, profile.clubName, profile.dwz, profile.about, updatedAt).run();
-  return { ok:true, profile:{ ...profile, updatedAt } };
+  return { ok:true, profile:{ ...profile, hasAvatar:!!avatar.key, avatarUpdatedAt:avatar.updatedAt, updatedAt } };
+}
+
+function readUint24LE(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16);
+}
+
+function readUint32BE(bytes, offset) {
+  return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+}
+
+function bytesContainAscii(bytes, text) {
+  const target = Array.from(String(text || '')).map(char => char.charCodeAt(0));
+  if (!target.length || bytes.length < target.length) return false;
+  outer: for (let i = 0; i <= bytes.length - target.length; i++) {
+    for (let j = 0; j < target.length; j++) if (bytes[i + j] !== target[j]) continue outer;
+    return true;
+  }
+  return false;
+}
+
+function avatarImageInfo(arrayBuffer, declaredMime) {
+  const bytes = new Uint8Array(arrayBuffer || new ArrayBuffer(0));
+  const declared = String(declaredMime || '').trim().toLowerCase();
+  if (bytes.length < 24 || !AVATAR_ALLOWED_MIME.has(declared)) return null;
+
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 &&
+      bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a) {
+    return { mime:'image/png', ext:'png', width:readUint32BE(bytes, 16), height:readUint32BE(bytes, 20), animated:bytesContainAscii(bytes, 'acTL') };
+  }
+
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
+    let offset = 2;
+    while (offset + 8 < bytes.length) {
+      if (bytes[offset] !== 0xff) { offset++; continue; }
+      while (offset < bytes.length && bytes[offset] === 0xff) offset++;
+      const marker = bytes[offset++];
+      if (marker === 0xd8 || marker === 0x01) continue;
+      if (marker === 0xd9 || marker === 0xda || offset + 1 >= bytes.length) break;
+      const segmentLength = (bytes[offset] << 8) | bytes[offset + 1];
+      if (segmentLength < 2 || offset + segmentLength > bytes.length) break;
+      const isSof = (marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) ||
+                    (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf);
+      if (isSof && segmentLength >= 7) {
+        const height = (bytes[offset + 3] << 8) | bytes[offset + 4];
+        const width = (bytes[offset + 5] << 8) | bytes[offset + 6];
+        return { mime:'image/jpeg', ext:'jpg', width, height };
+      }
+      offset += segmentLength;
+    }
+    return null;
+  }
+
+  const ascii = (start, length) => String.fromCharCode(...bytes.slice(start, start + length));
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') {
+    const chunk = ascii(12, 4);
+    if (chunk === 'VP8X' && bytes.length >= 30) {
+      return { mime:'image/webp', ext:'webp', width:readUint24LE(bytes, 24) + 1, height:readUint24LE(bytes, 27) + 1, animated:!!(bytes[20] & 0x02) || bytesContainAscii(bytes, 'ANIM') || bytesContainAscii(bytes, 'ANMF') };
+    }
+    if (chunk === 'VP8L' && bytes.length >= 25 && bytes[20] === 0x2f) {
+      const b1 = bytes[21], b2 = bytes[22], b3 = bytes[23], b4 = bytes[24];
+      const width = 1 + (((b2 & 0x3f) << 8) | b1);
+      const height = 1 + (((b4 & 0x0f) << 10) | (b3 << 2) | ((b2 & 0xc0) >> 6));
+      return { mime:'image/webp', ext:'webp', width, height, animated:false };
+    }
+    if (chunk === 'VP8 ' && bytes.length >= 30 && bytes[23] === 0x9d && bytes[24] === 0x01 && bytes[25] === 0x2a) {
+      const width = ((bytes[27] << 8) | bytes[26]) & 0x3fff;
+      const height = ((bytes[29] << 8) | bytes[28]) & 0x3fff;
+      return { mime:'image/webp', ext:'webp', width, height, animated:false };
+    }
+  }
+  return null;
+}
+
+async function storeUserAvatar(env, userId, file) {
+  const id = cleanPublicProfileUserId(userId);
+  if (!id) return { ok:false, status:400, code:'INVALID_USER_ID', message:'Der Account konnte nicht zugeordnet werden.' };
+  if (!env || !env.AVATARS || typeof env.AVATARS.put !== 'function') {
+    return { ok:false, status:503, code:'AVATAR_STORAGE_NOT_CONFIGURED', message:'Der Avatar-Speicher ist noch nicht mit dem Worker verbunden.' };
+  }
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    return { ok:false, status:400, code:'AVATAR_FILE_MISSING', message:'Bitte ein Profilbild auswählen.' };
+  }
+  const declaredMime = String(file.type || '').trim().toLowerCase();
+  if (!AVATAR_ALLOWED_MIME.has(declaredMime)) {
+    return { ok:false, status:415, code:'AVATAR_TYPE_INVALID', message:'Erlaubt sind JPG-, PNG- und WebP-Bilder.' };
+  }
+  const size = Number(file.size || 0);
+  if (!Number.isFinite(size) || size < 32 || size > AVATAR_MAX_BYTES) {
+    return { ok:false, status:413, code:'AVATAR_TOO_LARGE', message:'Das fertig verarbeitete Profilbild darf höchstens 512 KB groß sein.' };
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  if (arrayBuffer.byteLength > AVATAR_MAX_BYTES) {
+    return { ok:false, status:413, code:'AVATAR_TOO_LARGE', message:'Das fertig verarbeitete Profilbild darf höchstens 512 KB groß sein.' };
+  }
+  const info = avatarImageInfo(arrayBuffer, declaredMime);
+  if (!info || info.mime !== declaredMime) {
+    return { ok:false, status:415, code:'AVATAR_CONTENT_INVALID', message:'Die Bilddatei ist beschädigt oder ihr Dateityp stimmt nicht.' };
+  }
+  if (info.animated) {
+    return { ok:false, status:415, code:'AVATAR_ANIMATION_NOT_ALLOWED', message:'Animierte Profilbilder sind nicht erlaubt.' };
+  }
+  if (info.width !== AVATAR_TARGET_SIZE || info.height !== AVATAR_TARGET_SIZE) {
+    return { ok:false, status:400, code:'AVATAR_DIMENSIONS_INVALID', message:`Das Profilbild muss auf ${AVATAR_TARGET_SIZE} × ${AVATAR_TARGET_SIZE} Pixel verarbeitet sein.` };
+  }
+
+  await ensureUserPublicProfilesTable(env);
+  const previous = await getUserAvatarRecord(env, id);
+  const updatedAt = new Date().toISOString();
+  const key = `avatars/${id}/avatar-${crypto.randomUUID()}.${info.ext}`;
+  try {
+    await env.AVATARS.put(key, arrayBuffer, {
+      httpMetadata:{ contentType:info.mime, cacheControl:'private, max-age=3600' },
+      customMetadata:{ userId:id, purpose:'profile-avatar' }
+    });
+    await env.DB.prepare(
+      `INSERT INTO user_public_profiles (user_id, avatar_key, avatar_mime, avatar_updated_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         avatar_key = excluded.avatar_key,
+         avatar_mime = excluded.avatar_mime,
+         avatar_updated_at = excluded.avatar_updated_at,
+         updated_at = excluded.updated_at`
+    ).bind(id, key, info.mime, updatedAt, updatedAt).run();
+  } catch (error) {
+    try { await env.AVATARS.delete(key); } catch (_) {}
+    throw error;
+  }
+  if (previous.key && previous.key !== key) {
+    try { await env.AVATARS.delete(previous.key); } catch (_) {}
+  }
+  return { ok:true, hasAvatar:true, avatarUpdatedAt:updatedAt };
+}
+
+async function deleteUserAvatar(env, userId, options = {}) {
+  const id = cleanPublicProfileUserId(userId);
+  if (!id) return { ok:false, status:400, code:'INVALID_USER_ID', message:'Der Account konnte nicht zugeordnet werden.' };
+  await ensureUserPublicProfilesTable(env);
+  const profileRow = await env.DB.prepare(
+    `SELECT real_name, club_name, dwz, about, avatar_key
+       FROM user_public_profiles
+      WHERE user_id = ?
+      LIMIT 1`
+  ).bind(id).first();
+  const key = String(profileRow && profileRow.avatar_key || '').trim();
+  if (key && env && env.AVATARS && typeof env.AVATARS.delete === 'function') {
+    try { await env.AVATARS.delete(key); } catch (error) {
+      if (!options.bestEffort) throw error;
+    }
+  } else if (key && !options.bestEffort) {
+    return { ok:false, status:503, code:'AVATAR_STORAGE_NOT_CONFIGURED', message:'Der Avatar-Speicher ist noch nicht mit dem Worker verbunden.' };
+  }
+  if (!profileRow) return { ok:true, hasAvatar:false, avatarUpdatedAt:null };
+  const hasTextProfile = !!(
+    cleanPublicProfileRealName(profileRow.real_name) ||
+    cleanPublicProfileClub(profileRow.club_name) ||
+    (profileRow.dwz !== null && profileRow.dwz !== undefined && String(profileRow.dwz).trim() !== '') ||
+    cleanPublicProfileAbout(profileRow.about)
+  );
+  if (hasTextProfile) {
+    const updatedAt = new Date().toISOString();
+    await env.DB.prepare(
+      `UPDATE user_public_profiles
+          SET avatar_key = '', avatar_mime = '', avatar_updated_at = NULL, updated_at = ?
+        WHERE user_id = ?`
+    ).bind(updatedAt, id).run();
+  } else {
+    await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(id).run();
+  }
+  return { ok:true, hasAvatar:false, avatarUpdatedAt:null };
+}
+
+async function avatarResponseForMember(request, env, userId) {
+  if (!env || !env.AVATARS || typeof env.AVATARS.get !== 'function') {
+    return json({ ok:false, code:'AVATAR_STORAGE_NOT_CONFIGURED', message:'Der Avatar-Speicher ist noch nicht mit dem Worker verbunden.' }, { status:503 });
+  }
+  const avatar = await getUserAvatarRecord(env, userId);
+  if (!avatar.key) return new Response(null, { status:404, headers:{'cache-control':'no-store'} });
+  const object = await env.AVATARS.get(avatar.key);
+  if (!object) return new Response(null, { status:404, headers:{'cache-control':'no-store'} });
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set('content-type', avatar.mime || headers.get('content-type') || 'application/octet-stream');
+  headers.set('cache-control', 'private, max-age=3600');
+  headers.set('x-content-type-options', 'nosniff');
+  headers.set('content-disposition', 'inline');
+  headers.set('access-control-allow-origin', '*');
+  if (object.httpEtag) headers.set('etag', object.httpEtag);
+  return new Response(object.body, { status:200, headers });
 }
 
 function publicMemberRatingsPayload(ratings) {
@@ -3367,6 +3608,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await deleteUserAvatar(env, target.id, {bestEffort:true}); } catch (_) {}
   try { if (await ensureUserPublicProfilesTable(env)) await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM email_notification_log WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
@@ -4222,6 +4464,32 @@ async function handleAuthApi(request, env, url) {
     return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Benutzername wurde geändert.' });
   }
 
+  if (url.pathname === '/api/account/avatar' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const declaredLength = Number(request.headers.get('content-length') || 0);
+    if (Number.isFinite(declaredLength) && declaredLength > AVATAR_UPLOAD_MAX_CONTENT_LENGTH) {
+      return json({ ok:false, code:'AVATAR_UPLOAD_TOO_LARGE', message:'Das Profilbild ist für den Upload zu groß.' }, { status:413 });
+    }
+    let form = null;
+    try { form = await request.formData(); } catch (_) {
+      return json({ ok:false, code:'AVATAR_FORM_INVALID', message:'Das Profilbild konnte nicht gelesen werden.' }, { status:400 });
+    }
+    const stored = await storeUserAvatar(env, session.user.id, form && form.get('avatar'));
+    if (!stored.ok) return json(stored, { status:stored.status || 400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    return json({ ok:true, user:await publicUserWithRatings(env, user || session.user), message:'Dein Profilbild wurde gespeichert.' });
+  }
+
+  if (url.pathname === '/api/account/avatar' && request.method === 'DELETE') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const removed = await deleteUserAvatar(env, session.user.id);
+    if (!removed.ok) return json(removed, { status:removed.status || 400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    return json({ ok:true, user:await publicUserWithRatings(env, user || session.user), message:'Dein Profilbild wurde entfernt.' });
+  }
+
   if (url.pathname === '/api/account/profile' && request.method === 'POST') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
@@ -5000,6 +5268,15 @@ async function handleAuthApi(request, env, url) {
       recipient:{ id:recipient.id, username:recipient.username },
       message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde versendet.'
     });
+  }
+
+  const memberAvatarMatch = url.pathname.match(/^\/api\/members\/([^/]+)\/avatar$/);
+  if (memberAvatarMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Profilbilder sind nur nach Login verfügbar.' }, { status:401 });
+    const targetId = cleanPublicProfileUserId(decodeURIComponent(memberAvatarMatch[1]));
+    if (!targetId) return new Response(null, { status:400, headers:{'cache-control':'no-store'} });
+    return await avatarResponseForMember(request, env, targetId);
   }
 
   const memberProfileMatch = url.pathname.match(/^\/api\/members\/([^/]+)\/profile$/);
