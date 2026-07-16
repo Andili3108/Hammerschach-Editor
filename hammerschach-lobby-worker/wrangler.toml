@@ -25,3 +25,7 @@ new_sqlite_classes = ["GlobalChat"]
 binding = "DB"
 database_name = "hammerschach-gamer-db"
 database_id = "e6155132-6ad6-4569-be28-122540d3748f"
+
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "hammerschach-gamer-avatars"
