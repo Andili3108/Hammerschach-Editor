@@ -404,7 +404,11 @@ async function durableObjectBackupDocument(state, className, logicalName = '') {
   } catch (_) {}
 
   const storedRoomId = stored.has('roomId') ? cleanRoomId(stored.get('roomId')) : '';
-  const resolvedLogicalName = className === 'GameRoom' ? storedRoomId : String(logicalName || '').trim();
+  const requestedLogicalName = className === 'GameRoom' ? cleanRoomId(logicalName) : String(logicalName || '').trim();
+  const resolvedLogicalName = className === 'GameRoom' ? (storedRoomId || requestedLogicalName) : requestedLogicalName;
+  const logicalNameSource = className === 'GameRoom'
+    ? (storedRoomId ? 'storage' : (requestedLogicalName ? 'verified-name-map' : 'unresolved'))
+    : (resolvedLogicalName ? 'fixed-name' : 'unresolved');
   return {
     format:DURABLE_BACKUP_FORMAT,
     formatVersion:DURABLE_BACKUP_FORMAT_VERSION,
@@ -413,6 +417,7 @@ async function durableObjectBackupDocument(state, className, logicalName = '') {
       className,
       durableObjectId:state.id ? String(state.id) : '',
       logicalName:resolvedLogicalName,
+      logicalNameSource,
       jurisdiction:state.id && state.id.jurisdiction ? String(state.id.jurisdiction) : null
     },
     storage:{
@@ -447,14 +452,60 @@ function cleanDurableObjectIdForBackup(value) {
   return id && id.length <= 256 && /^[A-Za-z0-9_-]+$/.test(id) ? id : '';
 }
 
-function forwardedBackupRequest(request) {
+function forwardedBackupRequest(request, logicalName = '') {
   const headers = new Headers();
   headers.set('authorization', request.headers.get('authorization') || '');
   headers.set('x-hammerschach-internal-backup', '1');
+  const cleanLogicalName = cleanRoomId(logicalName);
+  if (cleanLogicalName) headers.set('x-hammerschach-backup-logical-name', cleanLogicalName);
   return new Request('https://durable-object.internal' + DURABLE_BACKUP_INTERNAL_PATH, {
     method:'POST',
     headers
   });
+}
+
+async function durableObjectBackupRoomNameMap(env) {
+  if (!env || !env.DB || !env.GAME_ROOM) {
+    throw new Error('D1 oder GAME_ROOM ist für die Namenszuordnung nicht konfiguriert.');
+  }
+  const roomTables = [
+    'daily_games',
+    'daily_game_archives',
+    'public_games',
+    'open_game_offers',
+    'rated_games',
+    'account_game_rooms',
+    'invitation_email_log',
+    'email_notification_log',
+    'moderation_reports'
+  ];
+  const mapped = new Map();
+  for (const table of roomTables) {
+    try {
+      const result = await env.DB.prepare(
+        `SELECT DISTINCT room_id FROM ${table} WHERE room_id IS NOT NULL AND TRIM(room_id) <> ''`
+      ).all();
+      for (const row of (result && Array.isArray(result.results) ? result.results : [])) {
+        const roomId = cleanRoomId(row && row.room_id);
+        if (!roomId) continue;
+        const durableObjectId = String(env.GAME_ROOM.idFromName(roomId));
+        const existing = mapped.get(durableObjectId) || {durableObjectId, logicalName:roomId, sources:[]};
+        if (existing.logicalName !== roomId) throw new Error('Widersprüchliche Raumzuordnung für Durable-Object-ID ' + durableObjectId + '.');
+        if (!existing.sources.includes(table)) existing.sources.push(table);
+        mapped.set(durableObjectId, existing);
+      }
+    } catch (_) {
+      // Tabellen aus älteren Installationsständen dürfen fehlen.
+    }
+  }
+  const objects = Array.from(mapped.values()).sort((a,b) => a.durableObjectId.localeCompare(b.durableObjectId));
+  return {
+    format:'hammerschach-game-room-name-map',
+    formatVersion:1,
+    generatedAt:new Date().toISOString(),
+    roomCount:objects.length,
+    objects
+  };
 }
 
 function dbMissingResponse() {
@@ -6528,7 +6579,8 @@ export class GameRoom {
     const url = new URL(request.url);
 
     if (url.pathname === DURABLE_BACKUP_INTERNAL_PATH) {
-      return durableObjectBackupResponse(this.state, this.env, request, 'GameRoom');
+      const logicalName = cleanRoomId(request.headers.get('x-hammerschach-backup-logical-name') || '');
+      return durableObjectBackupResponse(this.state, this.env, request, 'GameRoom', logicalName);
     }
 
     if (request.method === 'POST' && url.pathname === '/rate-game') {
@@ -8454,9 +8506,13 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/internal/backup/global-chat' || url.pathname === '/internal/backup/game-room') {
+    if (url.pathname === '/internal/backup/global-chat' || url.pathname === '/internal/backup/game-room' || url.pathname === '/internal/backup/game-room-name-map') {
       if (request.method !== 'POST' || !backupRequestIsAuthorized(request, env)) return privateBackupNotFound();
       try {
+        if (url.pathname === '/internal/backup/game-room-name-map') {
+          const document = await durableObjectBackupRoomNameMap(env);
+          return privateJson(document, {status:200});
+        }
         if (url.pathname === '/internal/backup/global-chat') {
           if (!env.GLOBAL_CHAT) return privateJson({ok:false, code:'GLOBAL_CHAT_NOT_CONFIGURED', message:'Das Global-Chat-Durable-Object ist nicht konfiguriert.'}, {status:503});
           const stub = env.GLOBAL_CHAT.get(env.GLOBAL_CHAT.idFromName('members'));
@@ -8465,8 +8521,12 @@ export default {
         if (!env.GAME_ROOM) return privateJson({ok:false, code:'GAME_ROOM_NOT_CONFIGURED', message:'Das GameRoom-Durable-Object ist nicht konfiguriert.'}, {status:503});
         const objectId = cleanDurableObjectIdForBackup(url.searchParams.get('id'));
         if (!objectId) return privateJson({ok:false, code:'INVALID_DURABLE_OBJECT_ID', message:'Die Durable-Object-ID fehlt oder ist ungültig.'}, {status:400});
+        const logicalName = cleanRoomId(url.searchParams.get('room'));
+        if (logicalName && String(env.GAME_ROOM.idFromName(logicalName)) !== objectId) {
+          return privateJson({ok:false, code:'ROOM_ID_MISMATCH', message:'Raumkennung und Durable-Object-ID passen nicht zusammen.'}, {status:400});
+        }
         const stub = env.GAME_ROOM.get(env.GAME_ROOM.idFromString(objectId));
-        return await stub.fetch(forwardedBackupRequest(request));
+        return await stub.fetch(forwardedBackupRequest(request, logicalName));
       } catch (error) {
         console.error('Interner Durable-Object-Export fehlgeschlagen', error && error.message ? error.message : String(error || 'unknown'));
         return privateJson({ok:false, code:'DURABLE_BACKUP_ROUTE_FAILED', message:'Der interne Durable-Object-Export konnte nicht ausgeführt werden.'}, {status:500});
