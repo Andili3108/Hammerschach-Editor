@@ -19,6 +19,18 @@ function json(data, init = {}) {
   });
 }
 
+function privateJson(data, init = {}) {
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store, max-age=0',
+      'x-content-type-options': 'nosniff',
+      ...(init.headers || {})
+    }
+  });
+}
+
 function cleanRoomId(value) {
   const room = String(value || '').trim();
   return /^[A-Za-z0-9_-]{3,64}$/.test(room) ? room : '';
@@ -284,6 +296,165 @@ function bearerTokenFromRequest(request) {
   const header = request.headers.get('authorization') || '';
   const match = header.match(/^Bearer\s+(.+)$/i);
   return match ? match[1].trim() : '';
+}
+
+
+const DURABLE_BACKUP_FORMAT = 'hammerschach-durable-object-backup';
+const DURABLE_BACKUP_FORMAT_VERSION = 1;
+const DURABLE_BACKUP_INTERNAL_PATH = '/__backup/export';
+
+function backupRequestIsAuthorized(request, env) {
+  const configured = String((env && env.DO_BACKUP_TOKEN) || '').trim();
+  const provided = bearerTokenFromRequest(request);
+  return configured.length >= 32 && provided.length >= 32 && timingSafeStringEqual(provided, configured);
+}
+
+function privateBackupNotFound() {
+  return new Response(null, {
+    status:404,
+    headers:{
+      'cache-control':'no-store, max-age=0',
+      'x-content-type-options':'nosniff'
+    }
+  });
+}
+
+function encodeDurableBackupValue(value, ancestors = new WeakSet()) {
+  if (value === null) return null;
+  const type = typeof value;
+  if (type === 'string' || type === 'boolean') return value;
+  if (type === 'number') {
+    if (Number.isFinite(value) && !Object.is(value, -0)) return value;
+    return {
+      __hammerschachType:'number',
+      value:Number.isNaN(value) ? 'NaN' : (value === Infinity ? 'Infinity' : (value === -Infinity ? '-Infinity' : '-0'))
+    };
+  }
+  if (type === 'undefined') return {__hammerschachType:'undefined'};
+  if (type === 'bigint') return {__hammerschachType:'bigint', value:value.toString()};
+  if (type !== 'object') throw new TypeError('Nicht unterstützter Durable-Object-Wert: ' + type);
+  if (ancestors.has(value)) throw new TypeError('Zyklische Durable-Object-Werte können nicht exportiert werden.');
+  ancestors.add(value);
+  try {
+    if (value instanceof Date) {
+      return {__hammerschachType:'date', value:value.toISOString()};
+    }
+    if (value instanceof RegExp) {
+      return {__hammerschachType:'regexp', source:value.source, flags:value.flags};
+    }
+    if (value instanceof ArrayBuffer) {
+      return {__hammerschachType:'array-buffer', encoding:'base64url', value:bytesToBase64Url(new Uint8Array(value))};
+    }
+    if (ArrayBuffer.isView(value)) {
+      const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+      return {
+        __hammerschachType:'typed-array',
+        constructor:value.constructor && value.constructor.name ? value.constructor.name : 'Uint8Array',
+        encoding:'base64url',
+        value:bytesToBase64Url(bytes)
+      };
+    }
+    if (Array.isArray(value)) {
+      return {__hammerschachType:'array', value:value.map(item => encodeDurableBackupValue(item, ancestors))};
+    }
+    if (value instanceof Map) {
+      return {
+        __hammerschachType:'map',
+        value:Array.from(value.entries(), ([key, item]) => [
+          encodeDurableBackupValue(key, ancestors),
+          encodeDurableBackupValue(item, ancestors)
+        ])
+      };
+    }
+    if (value instanceof Set) {
+      return {__hammerschachType:'set', value:Array.from(value.values(), item => encodeDurableBackupValue(item, ancestors))};
+    }
+    return {
+      __hammerschachType:'object',
+      value:Object.entries(value).map(([key, item]) => [key, encodeDurableBackupValue(item, ancestors)])
+    };
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
+async function durableObjectBackupDocument(state, className, logicalName = '') {
+  if (state.storage && typeof state.storage.sync === 'function') await state.storage.sync();
+  const stored = await state.storage.list();
+  const entries = Array.from(stored.entries(), ([key, value]) => ({
+    key:String(key),
+    value:encodeDurableBackupValue(value)
+  }));
+
+  let alarmScheduledAt = null;
+  try {
+    const alarm = await state.storage.getAlarm();
+    if (alarm !== null && alarm !== undefined && Number.isFinite(Number(alarm))) alarmScheduledAt = Number(alarm);
+  } catch (_) {}
+
+  let pitrBookmark = null;
+  try {
+    if (typeof state.storage.getCurrentBookmark === 'function') pitrBookmark = await state.storage.getCurrentBookmark();
+  } catch (_) {}
+
+  let databaseSizeBytes = null;
+  try {
+    const size = state.storage.sql && state.storage.sql.databaseSize;
+    if (Number.isFinite(Number(size))) databaseSizeBytes = Number(size);
+  } catch (_) {}
+
+  const storedRoomId = stored.has('roomId') ? cleanRoomId(stored.get('roomId')) : '';
+  const resolvedLogicalName = className === 'GameRoom' ? storedRoomId : String(logicalName || '').trim();
+  return {
+    format:DURABLE_BACKUP_FORMAT,
+    formatVersion:DURABLE_BACKUP_FORMAT_VERSION,
+    exportedAt:new Date().toISOString(),
+    object:{
+      className,
+      durableObjectId:state.id ? String(state.id) : '',
+      logicalName:resolvedLogicalName,
+      jurisdiction:state.id && state.id.jurisdiction ? String(state.id.jurisdiction) : null
+    },
+    storage:{
+      encoding:'hammerschach-structured-clone-json-v1',
+      keyCount:entries.length,
+      entries
+    },
+    alarm:{scheduledAt:alarmScheduledAt},
+    pitr:{bookmark:pitrBookmark},
+    database:{sizeBytes:databaseSizeBytes}
+  };
+}
+
+async function durableObjectBackupResponse(state, env, request, className, logicalName = '') {
+  if (request.method !== 'POST' || !backupRequestIsAuthorized(request, env)) return privateBackupNotFound();
+  try {
+    const document = await durableObjectBackupDocument(state, className, logicalName);
+    return privateJson(document, {
+      status:200,
+      headers:{
+        'content-disposition':'attachment; filename="' + (className === 'GameRoom' ? ('game-room-' + (document.object.logicalName || document.object.durableObjectId || 'unknown')) : 'global-chat-members') + '.json"'
+      }
+    });
+  } catch (error) {
+    console.error('Durable-Object-Backup fehlgeschlagen', className, error && error.message ? error.message : String(error || 'unknown'));
+    return privateJson({ok:false, code:'DURABLE_BACKUP_FAILED', message:'Das Durable Object konnte nicht vollständig exportiert werden.'}, {status:500});
+  }
+}
+
+function cleanDurableObjectIdForBackup(value) {
+  const id = String(value || '').trim();
+  return id && id.length <= 256 && /^[A-Za-z0-9_-]+$/.test(id) ? id : '';
+}
+
+function forwardedBackupRequest(request) {
+  const headers = new Headers();
+  headers.set('authorization', request.headers.get('authorization') || '');
+  headers.set('x-hammerschach-internal-backup', '1');
+  return new Request('https://durable-object.internal' + DURABLE_BACKUP_INTERNAL_PATH, {
+    method:'POST',
+    headers
+  });
 }
 
 function dbMissingResponse() {
@@ -5699,6 +5870,9 @@ export class GlobalChat {
 
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname === DURABLE_BACKUP_INTERNAL_PATH) {
+      return durableObjectBackupResponse(this.state, this.env, request, 'GlobalChat', 'members');
+    }
     if (request.method === 'POST' && url.pathname === '/moderation-context') {
       const body = await readJsonBody(request);
       const messageId = cleanGlobalChatMessageId(body && body.messageId);
@@ -6352,6 +6526,10 @@ export class GameRoom {
 
   async fetch(request) {
     const url = new URL(request.url);
+
+    if (url.pathname === DURABLE_BACKUP_INTERNAL_PATH) {
+      return durableObjectBackupResponse(this.state, this.env, request, 'GameRoom');
+    }
 
     if (request.method === 'POST' && url.pathname === '/rate-game') {
       const body = await readJsonBody(request);
@@ -8275,6 +8453,25 @@ export class GameRoom {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname === '/internal/backup/global-chat' || url.pathname === '/internal/backup/game-room') {
+      if (request.method !== 'POST' || !backupRequestIsAuthorized(request, env)) return privateBackupNotFound();
+      try {
+        if (url.pathname === '/internal/backup/global-chat') {
+          if (!env.GLOBAL_CHAT) return privateJson({ok:false, code:'GLOBAL_CHAT_NOT_CONFIGURED', message:'Das Global-Chat-Durable-Object ist nicht konfiguriert.'}, {status:503});
+          const stub = env.GLOBAL_CHAT.get(env.GLOBAL_CHAT.idFromName('members'));
+          return await stub.fetch(forwardedBackupRequest(request));
+        }
+        if (!env.GAME_ROOM) return privateJson({ok:false, code:'GAME_ROOM_NOT_CONFIGURED', message:'Das GameRoom-Durable-Object ist nicht konfiguriert.'}, {status:503});
+        const objectId = cleanDurableObjectIdForBackup(url.searchParams.get('id'));
+        if (!objectId) return privateJson({ok:false, code:'INVALID_DURABLE_OBJECT_ID', message:'Die Durable-Object-ID fehlt oder ist ungültig.'}, {status:400});
+        const stub = env.GAME_ROOM.get(env.GAME_ROOM.idFromString(objectId));
+        return await stub.fetch(forwardedBackupRequest(request));
+      } catch (error) {
+        console.error('Interner Durable-Object-Export fehlgeschlagen', error && error.message ? error.message : String(error || 'unknown'));
+        return privateJson({ok:false, code:'DURABLE_BACKUP_ROUTE_FAILED', message:'Der interne Durable-Object-Export konnte nicht ausgeführt werden.'}, {status:500});
+      }
+    }
 
     if (request.method === 'OPTIONS') {
       return new Response(null, {
