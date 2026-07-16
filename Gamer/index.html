@@ -444,7 +444,7 @@
   .member-profile-identity{display:flex;align-items:center;gap:14px;min-width:0;}
   .member-profile-name-block{min-width:0;}
 
-  .account-profile-open-btn{grid-column:1 / -1;background:linear-gradient(180deg,#fff 0%,#eee8ea 100%)!important;color:#843f46!important;}
+  .account-profile-open-btn,.account-profile-preview-btn{background:linear-gradient(180deg,#fff 0%,#eee8ea 100%)!important;color:#843f46!important;}
   .profile-textarea{width:100%;min-height:120px;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;line-height:1.45;resize:vertical;outline:none;}
   .profile-textarea:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
   .profile-char-count{text-align:right;font-size:11px;font-weight:800;color:#777;margin-top:-4px;}
@@ -1000,7 +1000,7 @@
           <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
-          <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
+          <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Über <strong>„Mein Profil ansehen“</strong> öffnest du anschließend genau dieselbe Profilansicht, die auch andere Mitglieder sehen, und kannst Darstellung und Vollständigkeit selbst kontrollieren. Von dort führt <strong>„Profil bearbeiten“</strong> direkt zurück zur Bearbeitung. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
           <h4>21. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
@@ -1190,7 +1190,8 @@
             </div>
           </div>
           <div class="auth-account-actions" aria-label="Account verwalten">
-            <button id="accountProfileOpenBtn" class="button-flat account-profile-open-btn" type="button">👤 Mein Profil bearbeiten</button>
+            <button id="accountProfileOpenBtn" class="button-flat account-profile-open-btn" type="button">✏️ Mein Profil bearbeiten</button>
+            <button id="accountProfilePreviewBtn" class="button-flat account-profile-preview-btn" type="button">👁️ Mein Profil ansehen</button>
             <button id="accountUsernameOpenBtn" class="button-flat" type="button">Benutzername ändern</button>
             <button id="accountEmailOpenBtn" class="button-flat" type="button">Mailadresse ändern</button>
             <button id="accountPasswordOpenBtn" class="button-flat" type="button">Kennwort ändern</button>
@@ -1566,6 +1567,7 @@
         </div>
         <div id="memberProfileStatus" class="member-profile-status" aria-live="polite"></div>
         <div class="identity-actions">
+          <button id="memberProfileEditBtn" class="button-flat" type="button" hidden>✏️ Profil bearbeiten</button>
           <button id="memberProfileInviteBtn" class="button-flat" type="button" hidden>Zur Partie einladen</button>
           <button id="memberProfileCloseBtn" type="button">Schließen</button>
         </div>
@@ -3278,6 +3280,7 @@ const memberNewsEmailCheckbox = document.getElementById('memberNewsEmailCheckbox
 const emailNotificationsSaveBtn = document.getElementById('emailNotificationsSaveBtn');
 const emailNotificationsStatus = document.getElementById('emailNotificationsStatus');
 const accountProfileOpenBtn = document.getElementById('accountProfileOpenBtn');
+const accountProfilePreviewBtn = document.getElementById('accountProfilePreviewBtn');
 const accountUsernameOpenBtn = document.getElementById('accountUsernameOpenBtn');
 const accountEmailOpenBtn = document.getElementById('accountEmailOpenBtn');
 const accountPasswordOpenBtn = document.getElementById('accountPasswordOpenBtn');
@@ -3442,6 +3445,7 @@ const memberProfileAboutSection = document.getElementById('memberProfileAboutSec
 const memberProfileAboutText = document.getElementById('memberProfileAboutText');
 const memberProfileRatingsGrid = document.getElementById('memberProfileRatingsGrid');
 const memberProfileStatus = document.getElementById('memberProfileStatus');
+const memberProfileEditBtn = document.getElementById('memberProfileEditBtn');
 const memberProfileInviteBtn = document.getElementById('memberProfileInviteBtn');
 const memberProfileCloseBtn = document.getElementById('memberProfileCloseBtn');
 let memberProfileContext = '';
@@ -5234,6 +5238,10 @@ function updateAuthUi(){
     accountProfileOpenBtn.disabled = !loggedIn;
     accountProfileOpenBtn.title = 'Freiwilliges Profilbild, echten Namen, Schachverein, DWZ und „Über mich“ bearbeiten.';
   }
+  if(accountProfilePreviewBtn){
+    accountProfilePreviewBtn.disabled = !loggedIn;
+    accountProfilePreviewBtn.title = 'Das eigene Profil genau so anzeigen, wie es andere Mitglieder sehen.';
+  }
   if(accountUsernameOpenBtn){
     accountUsernameOpenBtn.disabled = !loggedIn || isAdmin;
     accountUsernameOpenBtn.title = isAdmin ? 'Der Benutzername des Administrator-Accounts ist geschützt.' : 'Eigenen Benutzernamen ändern.';
@@ -5351,6 +5359,11 @@ if(authRegisterTab) authRegisterTab.addEventListener('click', () => setAuthMode(
 if(authSubmitBtn) authSubmitBtn.addEventListener('click', submitAuthDialog);
 if(authLogoutBtn) authLogoutBtn.addEventListener('click', logoutAuth);
 if(accountProfileOpenBtn) accountProfileOpenBtn.addEventListener('click', () => openAccountEditDialog('profile'));
+if(accountProfilePreviewBtn) accountProfilePreviewBtn.addEventListener('click', () => {
+  if(!onlineAuthUser){ openAuthDialog('login'); return; }
+  closeAuthDialog();
+  openMemberProfile(onlineAuthUser, 'self');
+});
 if(accountUsernameOpenBtn) accountUsernameOpenBtn.addEventListener('click', () => openAccountEditDialog('username'));
 if(accountEmailOpenBtn) accountEmailOpenBtn.addEventListener('click', () => openAccountEditDialog('email'));
 if(accountPasswordOpenBtn) accountPasswordOpenBtn.addEventListener('click', () => openAccountEditDialog('password'));
@@ -6560,6 +6573,12 @@ function closeMemberProfileDialog(){
   setMemberProfileStatus('', '');
 }
 function updateMemberProfileInviteButton(){
+  const isOwnProfile = !!(memberProfileTarget && memberProfileTarget.id && onlineAuthUser && memberProfileTarget.id === onlineAuthUser.id);
+  if(memberProfileEditBtn){
+    memberProfileEditBtn.hidden = !isOwnProfile;
+    memberProfileEditBtn.disabled = !isOwnProfile;
+    memberProfileEditBtn.title = isOwnProfile ? 'Eigenes Mitgliederprofil bearbeiten.' : '';
+  }
   if(!memberProfileInviteBtn) return;
   const hasTarget = !!(memberProfileTarget && memberProfileTarget.id && onlineAuthUser && memberProfileTarget.id !== onlineAuthUser.id);
   memberProfileInviteBtn.hidden = !hasTarget;
@@ -6581,7 +6600,7 @@ async function openMemberProfile(user, context){
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   const id = String(user && user.id || '').trim();
   if(!id) return;
-  memberProfileContext = context === 'invite' ? 'invite' : 'standalone';
+  memberProfileContext = context === 'invite' ? 'invite' : (context === 'self' ? 'self' : 'standalone');
   memberProfileTarget = Object.assign({}, user || {});
   const requestId = ++memberProfileRequestId;
   if(memberProfileAvatar) applyAvatarToElement(memberProfileAvatar, user || {});
@@ -6645,6 +6664,10 @@ async function inviteFromMemberProfile(){
   else await inviteMemberFromStandaloneList(target, null);
 }
 if(memberProfileCloseBtn) memberProfileCloseBtn.addEventListener('click', closeMemberProfileDialog);
+if(memberProfileEditBtn) memberProfileEditBtn.addEventListener('click', () => {
+  closeMemberProfileDialog();
+  openAccountEditDialog('profile');
+});
 if(memberProfileInviteBtn) memberProfileInviteBtn.addEventListener('click', inviteFromMemberProfile);
 if(memberProfileBackdrop) memberProfileBackdrop.addEventListener('click', ev => { if(ev.target === memberProfileBackdrop) closeMemberProfileDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && memberProfileBackdrop && !memberProfileBackdrop.hidden) closeMemberProfileDialog(); });
