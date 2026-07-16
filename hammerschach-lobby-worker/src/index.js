@@ -720,6 +720,186 @@ async function listMembers(env, sessionUser, limit = 50) {
 }
 
 
+const PUBLIC_PROFILE_REAL_NAME_MAX = 60;
+const PUBLIC_PROFILE_CLUB_MAX = 80;
+const PUBLIC_PROFILE_ABOUT_MAX = 400;
+const PUBLIC_PROFILE_DWZ_MIN = 100;
+const PUBLIC_PROFILE_DWZ_MAX = 3500;
+let userPublicProfilesTableReady = false;
+
+async function ensureUserPublicProfilesTable(env) {
+  if (!env || !env.DB) return false;
+  if (userPublicProfilesTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS user_public_profiles (
+       user_id TEXT PRIMARY KEY,
+       real_name TEXT NOT NULL DEFAULT '',
+       club_name TEXT NOT NULL DEFAULT '',
+       dwz INTEGER,
+       about TEXT NOT NULL DEFAULT '',
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  const columnsResult = await env.DB.prepare(`PRAGMA table_info(user_public_profiles)`).all();
+  const columns = columnsResult && Array.isArray(columnsResult.results) ? columnsResult.results : [];
+  if (!columns.some(column => String(column && column.name || '').toLowerCase() === 'club_name')) {
+    try {
+      await env.DB.prepare(`ALTER TABLE user_public_profiles ADD COLUMN club_name TEXT NOT NULL DEFAULT ''`).run();
+    } catch (err) {
+      const message = String(err && err.message || err || '').toLowerCase();
+      if (!message.includes('duplicate column')) throw err;
+    }
+  }
+  userPublicProfilesTableReady = true;
+  return true;
+}
+
+function cleanPublicProfileUserId(value) {
+  const id = String(value || '').trim();
+  return (/^[A-Za-z0-9_-]{8,128}$/.test(id) || /^[0-9a-f-]{36}$/i.test(id)) ? id : '';
+}
+
+function cleanPublicProfileRealName(value) {
+  return String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function cleanPublicProfileClub(value) {
+  return String(value || '')
+    .replace(/[<>\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function cleanPublicProfileAbout(value) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[<>\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function normalizePublicProfileInput(body) {
+  const rawRealName = String(body && body.realName || '');
+  const rawClubName = String(body && body.clubName || '');
+  const rawAbout = String(body && body.about || '');
+  const realName = cleanPublicProfileRealName(rawRealName);
+  const clubName = cleanPublicProfileClub(rawClubName);
+  const about = cleanPublicProfileAbout(rawAbout);
+  if (realName.length > PUBLIC_PROFILE_REAL_NAME_MAX) {
+    return { ok:false, code:'PROFILE_REAL_NAME_TOO_LONG', message:`Der echte Name darf höchstens ${PUBLIC_PROFILE_REAL_NAME_MAX} Zeichen enthalten.` };
+  }
+  if (clubName.length > PUBLIC_PROFILE_CLUB_MAX) {
+    return { ok:false, code:'PROFILE_CLUB_TOO_LONG', message:`Der Vereinsname darf höchstens ${PUBLIC_PROFILE_CLUB_MAX} Zeichen enthalten.` };
+  }
+  if (about.length > PUBLIC_PROFILE_ABOUT_MAX) {
+    return { ok:false, code:'PROFILE_ABOUT_TOO_LONG', message:`Der Text „Über mich“ darf höchstens ${PUBLIC_PROFILE_ABOUT_MAX} Zeichen enthalten.` };
+  }
+  const rawDwz = body && body.dwz;
+  let dwz = null;
+  if (!(rawDwz === null || rawDwz === undefined || String(rawDwz).trim() === '')) {
+    const parsed = Number(rawDwz);
+    if (!Number.isInteger(parsed) || parsed < PUBLIC_PROFILE_DWZ_MIN || parsed > PUBLIC_PROFILE_DWZ_MAX) {
+      return { ok:false, code:'PROFILE_DWZ_INVALID', message:`Die DWZ muss eine ganze Zahl zwischen ${PUBLIC_PROFILE_DWZ_MIN} und ${PUBLIC_PROFILE_DWZ_MAX} sein.` };
+    }
+    dwz = parsed;
+  }
+  return { ok:true, profile:{ realName, clubName, dwz, about } };
+}
+
+async function getUserPublicProfile(env, userId) {
+  const id = cleanPublicProfileUserId(userId);
+  if (!id || !(await ensureUserPublicProfilesTable(env))) {
+    return { realName:'', clubName:'', dwz:null, about:'', updatedAt:null };
+  }
+  const row = await env.DB.prepare(
+    `SELECT real_name, club_name, dwz, about, updated_at
+       FROM user_public_profiles
+      WHERE user_id = ?
+      LIMIT 1`
+  ).bind(id).first();
+  const storedDwz = row && row.dwz !== null && row.dwz !== undefined && String(row.dwz).trim() !== '' ? Number(row.dwz) : null;
+  return {
+    realName:cleanPublicProfileRealName(row && row.real_name),
+    clubName:cleanPublicProfileClub(row && row.club_name),
+    dwz:Number.isInteger(storedDwz) ? storedDwz : null,
+    about:cleanPublicProfileAbout(row && row.about),
+    updatedAt:row && row.updated_at ? row.updated_at : null
+  };
+}
+
+async function saveUserPublicProfile(env, userId, input) {
+  const id = cleanPublicProfileUserId(userId);
+  if (!id || !(await ensureUserPublicProfilesTable(env))) throw new Error('Profil-Datenbank ist momentan nicht verfügbar.');
+  const normalized = normalizePublicProfileInput(input);
+  if (!normalized.ok) return normalized;
+  const profile = normalized.profile;
+  if (!profile.realName && !profile.clubName && profile.dwz === null && !profile.about) {
+    await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(id).run();
+    return { ok:true, profile:{ realName:'', clubName:'', dwz:null, about:'', updatedAt:null } };
+  }
+  const updatedAt = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO user_public_profiles (user_id, real_name, club_name, dwz, about, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       real_name = excluded.real_name,
+       club_name = excluded.club_name,
+       dwz = excluded.dwz,
+       about = excluded.about,
+       updated_at = excluded.updated_at`
+  ).bind(id, profile.realName, profile.clubName, profile.dwz, profile.about, updatedAt).run();
+  return { ok:true, profile:{ ...profile, updatedAt } };
+}
+
+function publicMemberRatingsPayload(ratings) {
+  const source = ratings && typeof ratings === 'object' ? ratings : {};
+  const out = {};
+  for (const item of RATING_TYPES) {
+    const rating = source[item.key] || normalizeRatingRow(null, item.key);
+    out[item.key] = {
+      key:item.key,
+      label:item.label,
+      rating:Math.round(Number(rating && rating.rating || RATING_START)),
+      games:Math.max(0, Math.floor(Number(rating && rating.games || 0))),
+      wins:Math.max(0, Math.floor(Number(rating && rating.wins || 0))),
+      draws:Math.max(0, Math.floor(Number(rating && rating.draws || 0))),
+      losses:Math.max(0, Math.floor(Number(rating && rating.losses || 0))),
+      provisional:!!(rating && rating.provisional),
+      display:String(rating && rating.display || ratingDisplayValue(RATING_START, RATING_START_DEVIATION))
+    };
+  }
+  return out;
+}
+
+async function loadMemberPublicProfile(env, targetUserId) {
+  const id = cleanPublicProfileUserId(targetUserId);
+  if (!id) return null;
+  await ensureUserPresenceTable(env);
+  const onlineSince = presenceOnlineSinceIso();
+  const row = await env.DB.prepare(
+    `SELECT users.id, users.username, users.created_at,
+            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
+       FROM users
+       LEFT JOIN user_presence presence ON presence.user_id = users.id
+      WHERE users.id = ?
+      LIMIT 1`
+  ).bind(onlineSince, id).first();
+  if (!row) return null;
+  return {
+    id:row.id,
+    username:row.username,
+    createdAt:row.created_at || null,
+    isOnline:Number(row.is_online || 0) === 1,
+    profile:await getUserPublicProfile(env, row.id),
+    ratings:publicMemberRatingsPayload(await getUserRatings(env, row.id))
+  };
+}
+
+
 
 const INVITATION_EMAIL_MIN_INTERVAL_MS = 20 * 1000;
 const INVITATION_EMAIL_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
@@ -2705,6 +2885,7 @@ async function publicUserWithRatings(env, row) {
   const user = publicUser(row, env);
   if (!user) return null;
   user.ratings = await getUserRatings(env, user.id);
+  user.profile = await getUserPublicProfile(env, user.id);
   user.emailNotifications = await getUserEmailPreferences(env, user.id);
   const emailSecurity = await getUserEmailSecurityState(env, row || user);
   user.emailVerified = emailSecurity.emailVerified;
@@ -3186,6 +3367,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { if (await ensureUserPublicProfilesTable(env)) await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM email_notification_log WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sender_user_id = ? OR recipient_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
@@ -3681,7 +3863,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','rated_games','user_ratings',
+    'users','sessions','daily_games','public_games','rated_games','user_ratings','user_public_profiles',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients'
   ];
@@ -4038,6 +4220,18 @@ async function handleAuthApi(request, env, url) {
     user.username = username;
     user.username_lc = usernameLc;
     return json({ ok: true, user: await publicUserWithRatings(env, user), message: 'Benutzername wurde geändert.' });
+  }
+
+  if (url.pathname === '/api/account/profile' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const body = await readJsonBody(request);
+    if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Profilangaben konnten nicht gelesen werden.' }, { status:400 });
+    const user = await loadPrivateUser(env, session.user.id);
+    if (!user) return json({ ok:false, code:'USER_NOT_FOUND', message:'Account wurde nicht gefunden.' }, { status:404 });
+    const saved = await saveUserPublicProfile(env, user.id, body);
+    if (!saved.ok) return json(saved, { status:400 });
+    return json({ ok:true, user:await publicUserWithRatings(env, user), message:'Dein freiwilliges Mitgliederprofil wurde gespeichert.' });
   }
 
   if (url.pathname === '/api/account/email' && request.method === 'POST') {
@@ -4806,6 +5000,17 @@ async function handleAuthApi(request, env, url) {
       recipient:{ id:recipient.id, username:recipient.username },
       message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde versendet.'
     });
+  }
+
+  const memberProfileMatch = url.pathname.match(/^\/api\/members\/([^/]+)\/profile$/);
+  if (memberProfileMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Mitgliederprofile sind nur nach Login verfügbar.' }, { status:401 });
+    const targetId = cleanPublicProfileUserId(decodeURIComponent(memberProfileMatch[1]));
+    if (!targetId) return json({ ok:false, code:'INVALID_USER_ID', message:'Ungültiges Mitgliederprofil.' }, { status:400 });
+    const member = await loadMemberPublicProfile(env, targetId);
+    if (!member) return json({ ok:false, code:'USER_NOT_FOUND', message:'Das Mitglied wurde nicht gefunden.' }, { status:404 });
+    return json({ ok:true, member });
   }
 
   if (url.pathname === '/api/members/search' && request.method === 'GET') {
@@ -8742,9 +8947,9 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
-      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
 };
