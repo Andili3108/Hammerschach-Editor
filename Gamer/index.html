@@ -7,10 +7,16 @@
 <link rel="icon" type="image/png" href="Gamer-Logo.png" />
 <link rel="shortcut icon" type="image/png" href="Gamer-Logo.png" />
 <link rel="apple-touch-icon" href="Gamer-Logo.png" />
-<meta name="theme-color" content="#843f46" />
+<meta id="themeColorMeta" name="theme-color" content="#843f46" />
 <script>
-  /* Anzeigemodus vor dem ersten Rendern markieren, damit iFrame-spezifische Elemente nicht kurz aufblitzen. */
+  /* Anzeigemodus und gespeichertes Farbschema vor dem ersten Rendern markieren,
+     damit iFrame- und Dark-Mode-Elemente nicht kurz falsch aufblitzen. */
   document.documentElement.classList.add(window.self !== window.top ? 'hammerschach-embedded' : 'hammerschach-standalone');
+  try{
+    if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
+      document.documentElement.classList.add('dark-mode');
+    }
+  } catch(_){ }
 </script>
 <!-- Design v5: Kompakter Header und Brettfarben-Popup über der Icon-Leiste -->
 <style>
@@ -590,11 +596,94 @@
   .admin-report-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
   .admin-report-actions button{min-height:32px;border-radius:10px;padding:6px 8px;font-size:11px;}
 
+  .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
+  .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
+  .next-daily-game-box{border-radius:16px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:11px 12px;display:flex;flex-direction:column;gap:7px;}
+  .next-daily-game-box[hidden]{display:none!important;}
+  .next-daily-game-btn{width:100%;min-height:44px;border-radius:13px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;white-space:normal;line-height:1.2;}
+  .next-daily-game-btn:disabled{background:linear-gradient(180deg,#ededee 0%,#d8d8da 100%)!important;color:#777!important;border-color:rgba(0,0,0,.10)!important;}
+  .next-daily-game-hint{min-height:16px;text-align:center;font-size:12px;font-weight:800;color:#666;line-height:1.3;}
+
+  html.dark-mode{color-scheme:dark;}
+  html.dark-mode,html.dark-mode body{background:#111317!important;color:#f2f3f5;}
+  html.dark-mode .app{background:#111317;}
+  html.dark-mode .box,
+  html.dark-mode .identity-modal,
+  html.dark-mode .info-modal,
+  html.dark-mode .invite-modal,
+  html.dark-mode .daily-games-modal,
+  html.dark-mode .open-offers-modal,
+  html.dark-mode .public-games-modal,
+  html.dark-mode .admin-overview-modal,
+  html.dark-mode .promo-modal{background:#1b1e23;border-color:rgba(255,255,255,.10);box-shadow:0 16px 38px rgba(0,0,0,.42);color:#f2f3f5;}
+  html.dark-mode .header{background:#1b1e23;}
+  html.dark-mode .logo-slot{background:linear-gradient(135deg,#2b2f36,#1e2126);color:#f2cbd0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 8px 18px rgba(0,0,0,.30);}
+  html.dark-mode .status{background:linear-gradient(135deg,#272b31,#211d20);border-color:rgba(226,151,160,.20);color:#f6f6f7;box-shadow:0 8px 20px rgba(0,0,0,.30);}
+  html.dark-mode button{background:linear-gradient(180deg,#3a3f47 0%,#292d33 100%);color:#f0b8be;border-color:rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.25),0 6px 14px rgba(0,0,0,.28);}
+  html.dark-mode button:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 18px rgba(0,0,0,.38);filter:brightness(1.08);}
+  html.dark-mode button:disabled{opacity:.52;box-shadow:none;}
+  html.dark-mode .button-flat,
+  html.dark-mode .side-toggle-btn,
+  html.dark-mode .time-kind-option,
+  html.dark-mode .invite-color-option,
+  html.dark-mode .variant-option,
+  html.dark-mode .daily-game-pgn-btn,
+  html.dark-mode .daily-game-history-delete-btn{background:linear-gradient(180deg,#393e46 0%,#292d33 100%)!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.25)!important;}
+  html.dark-mode .side-toggle-btn.active,
+  html.dark-mode .time-kind-option.active,
+  html.dark-mode .invite-color-option.active,
+  html.dark-mode .variant-option.active,
+  html.dark-mode .board-color-option.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important;}
+  html.dark-mode .brand-origin-button{background:linear-gradient(180deg,#383d44 0%,#282c32 100%);color:#efb5bc;border-color:rgba(255,255,255,.12);box-shadow:0 2px 7px rgba(0,0,0,.28);}
+  html.dark-mode .brand-origin-button:hover{background:#41464e;}
+  html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.freestyle-position-controls,.next-daily-game-box,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
+  html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
+  html.dark-mode .daily-game-card.my-turn,
+  html.dark-mode .open-offer-card.mine,
+  html.dark-mode .public-game-card.mine,
+  html.dark-mode .chat-message.mine,
+  html.dark-mode .global-chat-message.mine{background:#33282c;border-color:rgba(226,151,160,.24);}
+  html.dark-mode .global-chat-header{background:linear-gradient(135deg,#252930,#272126);border-color:rgba(255,255,255,.08);}
+  html.dark-mode .global-chat-members{border-color:rgba(255,255,255,.08);}
+  html.dark-mode :is(.identity-input,.chat-input,.global-chat-input,.moderation-select,.moderation-textarea,.moderation-input,.admin-message-select,.admin-message-textarea,.admin-message-file-input,.freestyle-position-input,.invite-link-input,.time-control-select){background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
+  html.dark-mode :is(.identity-input,.chat-input,.global-chat-input,.moderation-select,.moderation-textarea,.moderation-input,.admin-message-select,.admin-message-textarea,.freestyle-position-input,.invite-link-input,.time-control-select):focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
+  html.dark-mode select option{background:#171a1f;color:#f2f3f5;}
+  html.dark-mode .board-color-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48);}
+  html.dark-mode .board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
+  html.dark-mode .visitor-board-welcome{background:rgba(27,30,35,.91);border-color:rgba(226,151,160,.24);box-shadow:0 20px 48px rgba(0,0,0,.46);}
+  html.dark-mode .promo-backdrop,
+  html.dark-mode .identity-backdrop,
+  html.dark-mode .info-backdrop{background:rgba(0,0,0,.66);}
+  html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.member-lobby-heading h2,.board-color-popup-title){color:#f3f4f6!important;}
+  html.dark-mode :is(.player-label,.player-clock-head,.time-status,.time-format-help,.time-lock-note,.daily-account-note,.invite-color-summary,.variantStatus,.freestyle-position-label,.freestyle-position-message,.chat-etiquette-note,.chat-empty,.chat-status,.global-chat-subtitle,.global-chat-status,.global-chat-note,.global-chat-members-title,.member-search-hint,.member-empty,.member-result-meta,.daily-game-meta,.daily-games-intro,.daily-games-status,.open-offer-meta,.open-offers-intro,.open-offers-status,.public-game-meta,.public-games-intro,.public-games-status,.auth-account-mail,.auth-rating-name,.auth-rating-meta,.auth-ratings-note,.auth-email-notifications-note,.auth-email-notifications-status,.account-edit-hint,.admin-overview-intro,.admin-overview-generated,.admin-stat-label,.admin-event-time,.admin-message-meta-row,.admin-message-file-note,.admin-message-attachment-meta,.moderation-note,.admin-report-meta,.admin-report-comment,.admin-report-chat,.privacy-highlight,.privacy-storage-list dd,.site-footnote,.site-stats,.next-daily-game-hint){color:#b8bdc6!important;}
+  html.dark-mode :is(.daily-game-status,.open-offer-kicker,.open-offer-status,.public-game-kicker,.public-game-status,.member-result-name,.player-rating-value,.auth-rating-value,.global-chat-message-name,.admin-stat-value,.admin-inline-stat strong){color:#e6a3ab!important;}
+  html.dark-mode :is(.member-result-card,.daily-games-empty,.open-offers-empty,.public-games-empty,.auth-email-option,.auth-email-state-badge,.admin-message-audience,.admin-message-confirm,.player-rating-line,.privacy-storage-list dt){background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode :is(.brand-origin-line,.member-lobby-heading p,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
+  html.dark-mode :is(.online-value,.chat-message-text,.global-chat-message-text,.admin-message-preview-body,.admin-backup-text,.admin-event-main,.member-result-name,.daily-game-title,.open-offer-title,.public-game-title){color:#eef0f2!important;}
+  html.dark-mode .auth-email-state-badge.verified{background:rgba(62,154,88,.14);border-color:rgba(75,190,107,.25);color:#83d49a;}
+  html.dark-mode .auth-email-state-badge.pending{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#e6a3ab;}
+  html.dark-mode .player-rating-line.unrated{background:#2d3138;border-color:rgba(255,255,255,.08);color:#aeb3bc;}
+  html.dark-mode .player-rating-line.unrated .player-rating-value{color:#aeb3bc!important;}
+  html.dark-mode .admin-message-confirm{background:#302b22;color:#d8c49a!important;}
+  html.dark-mode .account-danger-note{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#efb1b8;}
+  html.dark-mode .presence-badge{background:#30343b;border-color:rgba(255,255,255,.10);color:#bec3cb;}
+  html.dark-mode .presence-badge.online,
+  html.dark-mode .global-chat-presence{background:rgba(62,154,88,.14);border-color:rgba(75,190,107,.25);color:#83d49a;}
+  html.dark-mode .next-daily-game-btn:disabled{background:linear-gradient(180deg,#343840 0%,#292d33 100%)!important;color:#aeb3bc!important;border-color:rgba(255,255,255,.08)!important;}
+  html.dark-mode .site-footnote a,
+  html.dark-mode .site-footnote-button{color:#d99aa2!important;border-bottom-color:rgba(217,154,162,.34)!important;}
+  html.dark-mode .privacy-external-link,
+  html.dark-mode .privacy-open-inline,
+  html.dark-mode .auth-inline-link{color:#e5a5ad!important;}
+  html.dark-mode ::selection{background:#9f4d56;color:#fff;}
+  html.dark-mode *{scrollbar-color:#555b65 #1b1e23;}
+
   @media (max-width:1080px){.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr 1fr}.member-lobby-settings-mount #timeSetupBox{grid-column:1 / -1}.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}}
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading{flex-direction:column}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
@@ -626,7 +715,10 @@
             <a class="brand-origin-button" href="https://www.andili.de" target="_blank" rel="noopener noreferrer" aria-label="Hammerschach-Website auf Andili.de öffnen">Zur Website</a>
           </div>
           <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
-          <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">Info</button>
+          <div class="header-utility-actions" aria-label="Darstellung und Hilfe">
+            <button id="themeToggleBtn" class="button-flat name-action-btn theme-toggle-btn" type="button" aria-pressed="false">🌙 Dunkel</button>
+            <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">Info</button>
+          </div>
         </div>
         <div class="actions match-actions" aria-label="Partieaktionen">
           <button id="newGameBtn" class="button-flat name-action-btn" type="button">Partie anbieten</button>
@@ -728,6 +820,7 @@
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
+          <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
 
           <h4>9. Einladen oder eine Partie offen anbieten</h4>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
@@ -767,6 +860,7 @@
 
           <h4>16. Brett und Darstellung</h4>
           <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
+          <p>Über <strong>„🌙 Dunkel“</strong> im Header aktivierst du den Dark Mode für den gesamten Gamer. Die Auswahl wird auf dem Gerät gespeichert und beim nächsten Aufruf automatisch wiederhergestellt. Mit <strong>„☀️ Hell“</strong> wechselst du zurück zur hellen Darstellung.</p>
 
           <h4>17. PGN-Datei</h4>
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
@@ -1450,6 +1544,11 @@
               <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
               <div class="player-clock-time" id="clockB">--:--</div>
             </div>
+            <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
+              <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
+              <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
+            </div>
+
             <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
               <div class="clock-title">Zuschauerfreigabe</div>
               <label class="public-visibility-label" for="roomPublicGameCheckbox">
@@ -2798,6 +2897,8 @@ const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeColorMeta = document.getElementById('themeColorMeta');
 const matchActionsEl = document.querySelector('.match-actions');
 const memberLobbyEl = document.getElementById('memberLobby');
 const memberLobbySetupMountEl = document.getElementById('memberLobbySetupMount');
@@ -2818,6 +2919,26 @@ const globalChatReportSubmitBtn = document.getElementById('globalChatReportSubmi
 const siteFootnoteEl = document.querySelector('.site-footnote');
 const siteFootnoteHome = siteFootnoteEl ? {parent:siteFootnoteEl.parentNode, nextSibling:siteFootnoteEl.nextSibling} : null;
 const infoOpenBtnHome = infoOpenBtn ? {parent:infoOpenBtn.parentNode, nextSibling:infoOpenBtn.nextSibling} : null;
+
+const COLOR_SCHEME_STORAGE_KEY = 'hammerschachGamerColorScheme';
+let darkModeEnabled = document.documentElement.classList.contains('dark-mode');
+function updateThemeToggleUi(){
+  if(!themeToggleBtn) return;
+  themeToggleBtn.textContent = darkModeEnabled ? '☀️ Hell' : '🌙 Dunkel';
+  themeToggleBtn.setAttribute('aria-pressed', darkModeEnabled ? 'true' : 'false');
+  themeToggleBtn.setAttribute('aria-label', darkModeEnabled ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren');
+  themeToggleBtn.title = darkModeEnabled ? 'Zum hellen Modus wechseln' : 'Dark Mode aktivieren';
+  if(themeColorMeta) themeColorMeta.setAttribute('content', darkModeEnabled ? '#111317' : '#843f46');
+}
+function setDarkMode(enabled){
+  darkModeEnabled = !!enabled;
+  document.documentElement.classList.toggle('dark-mode', darkModeEnabled);
+  try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, darkModeEnabled ? 'dark' : 'light'); } catch(_){ }
+  updateThemeToggleUi();
+  hammerschachScheduleHeightReport(true);
+}
+if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => setDarkMode(!darkModeEnabled));
+updateThemeToggleUi();
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
 const infoScroll = document.getElementById('infoScroll');
@@ -2964,6 +3085,9 @@ const dailyGamesListEl = document.getElementById('dailyGamesList');
 const dailyGamesStatusEl = document.getElementById('dailyGamesStatus');
 const dailyGamesRefreshBtn = document.getElementById('dailyGamesRefreshBtn');
 const dailyGamesCloseBtn = document.getElementById('dailyGamesCloseBtn');
+const nextDailyGameBoxEl = document.getElementById('nextDailyGameBox');
+const nextDailyGameBtn = document.getElementById('nextDailyGameBtn');
+const nextDailyGameHintEl = document.getElementById('nextDailyGameHint');
 const openOffersBackdrop = document.getElementById('openOffersBackdrop');
 const openOffersListEl = document.getElementById('openOffersList');
 const openOffersStatusEl = document.getElementById('openOffersStatus');
@@ -4853,6 +4977,99 @@ function renderDailyGames(games){
   appendDailyGamesSection('Laufende Partien und Einladungen', activeGames, 'Du hast derzeit keine laufende Daily-Partie oder offene Einladung.');
   appendDailyGamesSection('Beendete Partien', completedGames, 'Noch keine beendeten Daily-Partien im Verlauf.');
 }
+let nextDailyGameTarget = null;
+let nextDailyGameLoading = false;
+let nextDailyGameLastContext = '';
+let nextDailyGameLastLoadedAt = 0;
+function nextDailyGameEligible(){
+  return !!(
+    nextDailyGameBoxEl && nextDailyGameBtn && onlineRoomId && !onlineRoomCancelled &&
+    onlineAuthToken && onlineAuthUser && isDailyTimeControl() &&
+    (onlineRoleCode === 'w' || onlineRoleCode === 'b') && !onlineSpectatorOnly
+  );
+}
+function nextDailyDeadlineTimestamp(value){
+  const numeric = Number(value);
+  if(Number.isFinite(numeric) && numeric > 0) return numeric;
+  const parsed = Date.parse(String(value || ''));
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+}
+function hideNextDailyGameButton(){
+  nextDailyGameTarget = null;
+  nextDailyGameLastContext = '';
+  if(nextDailyGameBoxEl) nextDailyGameBoxEl.hidden = true;
+  if(nextDailyGameBtn){
+    nextDailyGameBtn.disabled = true;
+    nextDailyGameBtn.textContent = 'Keine weitere Partie am Zug';
+  }
+  if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = '';
+}
+async function refreshNextDailyGameButton(options){
+  options = options || {};
+  if(!nextDailyGameEligible()){
+    hideNextDailyGameButton();
+    return;
+  }
+  nextDailyGameBoxEl.hidden = false;
+  const userKey = String((onlineAuthUser && (onlineAuthUser.id || onlineAuthUser.userId || onlineAuthUser.username)) || 'user');
+  const context = [userKey, onlineRoomId, onlineGameStarted ? 'started' : 'waiting', onlineGameEnded ? 'ended' : 'active', masterHistory.length].join('|');
+  const recentlyLoaded = context === nextDailyGameLastContext && (Date.now() - nextDailyGameLastLoadedAt) < 30000;
+  if(nextDailyGameLoading || (!options.force && recentlyLoaded)) return;
+
+  nextDailyGameLoading = true;
+  nextDailyGameBtn.disabled = true;
+  nextDailyGameBtn.textContent = 'Weitere fällige Partie wird gesucht…';
+  if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = 'Deine Daily-Partien werden geprüft.';
+  try{
+    const data = await authApi('/api/daily-games');
+    const currentRoom = cleanRoomId(onlineRoomId);
+    const candidates = (Array.isArray(data.games) ? data.games : [])
+      .filter(game => !game.ended && !!game.started && !!game.isMyTurn && cleanRoomId(game.roomId) && cleanRoomId(game.roomId) !== currentRoom)
+      .sort((a,b) => {
+        const deadlineDiff = nextDailyDeadlineTimestamp(a.deadlineAt) - nextDailyDeadlineTimestamp(b.deadlineAt);
+        if(deadlineDiff) return deadlineDiff;
+        return String(a.roomId || '').localeCompare(String(b.roomId || ''));
+      });
+    nextDailyGameTarget = candidates[0] || null;
+    nextDailyGameLastContext = context;
+    nextDailyGameLastLoadedAt = Date.now();
+    if(nextDailyGameTarget){
+      const count = candidates.length;
+      nextDailyGameBtn.disabled = false;
+      nextDailyGameBtn.textContent = count > 1 ? ('➡ Nächste fällige Partie (' + count + ')') : '➡ Nächste fällige Partie';
+      const opponent = cleanDisplayName(nextDailyGameTarget.opponentName) || 'Gegner';
+      const deadline = nextDailyGameTarget.deadlineAt ? formatDailyGameDeadline(nextDailyGameTarget.deadlineAt) : '';
+      if(nextDailyGameHintEl){
+        nextDailyGameHintEl.textContent = 'gegen ' + opponent + (deadline ? ' · Zugfrist: ' + deadline : '');
+      }
+    } else {
+      nextDailyGameBtn.disabled = true;
+      nextDailyGameBtn.textContent = 'Keine weitere Partie am Zug';
+      if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = 'In deinen anderen Daily-Partien ist derzeit der Gegner am Zug.';
+    }
+  } catch(err){
+    nextDailyGameTarget = null;
+    nextDailyGameBtn.disabled = true;
+    nextDailyGameBtn.textContent = 'Daily-Partien nicht abrufbar';
+    if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = err && err.message ? err.message : 'Die Übersicht konnte nicht geladen werden.';
+  } finally {
+    nextDailyGameLoading = false;
+  }
+}
+function openNextDailyGame(){
+  if(!nextDailyGameTarget) return;
+  const url = dailyGameRoomUrl(nextDailyGameTarget);
+  if(!url){
+    if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = 'Der Partielink konnte nicht erzeugt werden.';
+    return;
+  }
+  window.location.assign(url);
+}
+if(nextDailyGameBtn) nextDailyGameBtn.addEventListener('click', openNextDailyGame);
+window.setInterval(() => {
+  if(nextDailyGameEligible()) refreshNextDailyGameButton({force:true});
+}, 60000);
+
 async function deleteDailyInvitation(game, button){
   const roomId = cleanRoomId(game && game.roomId);
   if(!roomId){
@@ -5517,6 +5734,7 @@ function updateOnlineUi(){
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
     refreshHeaderStatusFromState();
+    refreshNextDailyGameButton();
     return;
   }
 
@@ -5543,6 +5761,7 @@ function updateOnlineUi(){
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
     refreshHeaderStatusFromState();
+    refreshNextDailyGameButton();
     return;
   }
 
@@ -5616,6 +5835,7 @@ function updateOnlineUi(){
   updatePublicVisibilityUi();
   updateSidePanelLayout();
   refreshHeaderStatusFromState();
+  refreshNextDailyGameButton();
 }
 async function copyInviteLink(){
   if(!onlineRoomId) return;
