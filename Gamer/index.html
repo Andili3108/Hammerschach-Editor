@@ -423,6 +423,27 @@
   .members-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
   .members-actions button{border-radius:12px;min-height:38px;}
 
+  .member-result-main{display:flex;align-items:center;gap:10px;min-width:0;}
+  .member-result-info{min-width:0;}
+  .profile-avatar{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 auto;border-radius:999px;overflow:hidden;background:linear-gradient(135deg,rgba(132,63,70,.16),rgba(59,110,167,.15));border:2px solid rgba(132,63,70,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.72);color:#843f46;font-weight:900;text-transform:uppercase;user-select:none;}
+  .profile-avatar-small{width:46px;height:46px;font-size:19px;}
+  .profile-avatar-large{width:96px;height:96px;font-size:38px;border-width:3px;box-shadow:0 9px 22px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.72);}
+  .profile-avatar-editor{width:82px;height:82px;font-size:32px;border-width:3px;}
+  .profile-avatar-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+  .profile-avatar-image[hidden]{display:none!important;}
+  .profile-avatar-fallback{line-height:1;}
+  .account-avatar-box{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:11px 12px;margin-bottom:4px;}
+  .account-avatar-controls{min-width:0;display:flex;flex-direction:column;gap:7px;}
+  .account-avatar-title{font-size:15px;font-weight:900;color:#333;}
+  .account-avatar-file{width:100%;box-sizing:border-box;border-radius:11px;border:1px solid rgba(132,63,70,.18);background:#fff;padding:8px;font-size:13px;font-weight:800;color:#444;}
+  .account-avatar-file::file-selector-button{margin-right:9px;border:1px solid rgba(0,0,0,.12);border-radius:9px;background:linear-gradient(180deg,#fff 0%,#ececef 100%);color:#843f46;padding:7px 10px;font-family:inherit;font-weight:900;cursor:pointer;}
+  .account-avatar-meta{min-height:17px;font-size:12px;font-weight:800;color:#666;line-height:1.3;overflow-wrap:anywhere;}
+  .account-avatar-actions{display:flex;gap:7px;flex-wrap:wrap;}
+  .account-avatar-remove{min-height:34px!important;border-radius:10px!important;padding:6px 9px!important;font-size:12px!important;}
+  .account-avatar-note{grid-column:1 / -1;font-size:11px;font-weight:800;color:#777;line-height:1.35;}
+  .member-profile-identity{display:flex;align-items:center;gap:14px;min-width:0;}
+  .member-profile-name-block{min-width:0;}
+
   .account-profile-open-btn{grid-column:1 / -1;background:linear-gradient(180deg,#fff 0%,#eee8ea 100%)!important;color:#843f46!important;}
   .profile-textarea{width:100%;min-height:120px;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;line-height:1.45;resize:vertical;outline:none;}
   .profile-textarea:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
@@ -748,6 +769,13 @@
   html.dark-mode .info-scroll .privacy-open-inline{color:#e5a5ad!important;}
   html.dark-mode .info-scroll code,
   html.dark-mode .privacy-scroll code{background:#15181d;border:1px solid rgba(255,255,255,.10);border-radius:5px;padding:1px 4px;}
+  html.dark-mode .account-avatar-box{background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode .account-avatar-title{color:#eef0f2;}
+  html.dark-mode .account-avatar-file{background:#171a1f;color:#e7e8eb;border-color:rgba(255,255,255,.14);}
+  html.dark-mode .account-avatar-file::file-selector-button{background:linear-gradient(180deg,#393e46 0%,#292d33 100%);color:#efb5bc;border-color:rgba(255,255,255,.12);}
+  html.dark-mode .account-avatar-meta,
+  html.dark-mode .account-avatar-note{color:#b8bdc6;}
+  html.dark-mode .profile-avatar{background:linear-gradient(135deg,rgba(159,77,86,.34),rgba(59,110,167,.25));border-color:rgba(226,151,160,.26);color:#f1b6bd;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);}
   html.dark-mode .profile-textarea{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
   html.dark-mode .profile-textarea:focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
   html.dark-mode .member-profile-username,
@@ -772,7 +800,7 @@
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
-  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}}
+  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
 </style>
 </head>
 <body>
@@ -917,7 +945,7 @@
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
 
           <h4>9. Mitglieder finden, einladen oder eine Partie offen anbieten</h4>
-          <p>Über <strong>„👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Über <strong>„Profil“</strong> öffnest du das Mitgliederprofil mit Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
+          <p>Über <strong>„👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Über <strong>„Profil“</strong> öffnest du das Mitgliederprofil mit Profilbild beziehungsweise Buchstaben-Avatar, Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante, Wertung und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
@@ -972,7 +1000,7 @@
           <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
-          <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
+          <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
           <h4>21. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
@@ -1014,7 +1042,8 @@
 
           <h4>3. Registrierung, Account und Login</h4>
           <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen und aktive Anmeldesitzungen verwaltet.</p>
-          <p>Optional können Mitglieder einen echten Namen, ihren Schachverein, eine DWZ und einen kurzen Profiltext hinterlegen. Diese Angaben sind freiwillig und werden ausschließlich anderen eingeloggten Mitgliedern angezeigt. Der Vereinsname ist ebenfalls eine Selbstauskunft; die DWZ wird ausdrücklich als ungeprüfte Selbstauskunft gekennzeichnet.</p>
+          <p>Optional können Mitglieder ein Profilbild, einen echten Namen, ihren Schachverein, eine DWZ und einen kurzen Profiltext hinterlegen. Diese Angaben sind freiwillig und werden ausschließlich anderen eingeloggten Mitgliedern angezeigt. Der Vereinsname ist ebenfalls eine Selbstauskunft; die DWZ wird ausdrücklich als ungeprüfte Selbstauskunft gekennzeichnet.</p>
+          <p>Bei einem Profilbild wird die ausgewählte Originaldatei zunächst lokal im Browser mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Nur diese verkleinerte JPG-, PNG- oder WebP-Datei wird an den Worker übertragen und in einem privaten Cloudflare-R2-Bucket gespeichert. Der Zugriff erfolgt kontrolliert über eine angemeldete Sitzung; der Bucket selbst bleibt nicht öffentlich.</p>
           <p>Ein Login-Token wird nach erfolgreicher Anmeldung im Browser gespeichert. Serverseitige Sitzungen sind regulär auf 30 Tage begrenzt. Bei einer Kennwortänderung werden andere bestehende Sitzungen beendet.</p>
           <p>Bestätigungslinks für neue Accounts und Mailadressänderungen sind 24 Stunden gültig; Links zum Zurücksetzen des Kennworts 30 Minuten. Abgelaufene beziehungsweise verwendete Aktionstoken werden regelmäßig bereinigt.</p>
 
@@ -1051,14 +1080,14 @@
           <p>Die Bereinigung wird beim laufenden Betrieb ausgelöst. Falls eine betreffende Funktion längere Zeit nicht verwendet wird, kann die tatsächliche Entfernung technisch später erfolgen.</p>
 
           <h4>9. Technischer Betrieb und externe Inhalte</h4>
-          <p>Der Gamer wird mit Cloudflare-Technik betrieben. Dabei kommen insbesondere Worker, eine D1-Datenbank und Durable Objects für dauerhaft erreichbare Spielräume zum Einsatz. Bei der Nutzung werden die technisch notwendigen Verbindungsdaten durch die beteiligten Server verarbeitet.</p>
+          <p>Der Gamer wird mit Cloudflare-Technik betrieben. Dabei kommen insbesondere Worker, eine D1-Datenbank, Durable Objects für dauerhaft erreichbare Spielräume und ein privater R2-Bucket für freiwillige Profilbilder zum Einsatz. Bei der Nutzung werden die technisch notwendigen Verbindungsdaten durch die beteiligten Server verarbeitet.</p>
           <p>Die Schachfiguren werden derzeit als Bilddateien von Wikimedia Commons geladen. Beim Abruf wird eine direkte Verbindung zu Wikimedia-Servern hergestellt, bei der technisch unter anderem die IP-Adresse und Browserinformationen übertragen werden können. Das Gamer-Logo in HTML-Mails kann als externes Bild eingebunden sein; manche Mailprogramme laden solche Bilder erst nach Zustimmung.</p>
 
           <h4>10. Rechtsgrundlagen und Zwecke</h4>
           <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
 
           <h4>11. Accountlöschung und weitere Löschung</h4>
-          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
+          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben einschließlich des in R2 gespeicherten Profilbilds, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
           <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Partie-Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Eigene Nachrichten im Mitglieder-Chat werden bei der Accountlöschung vollständig entfernt. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
 
           <h4>12. Deine Rechte und Kontakt</h4>
@@ -1209,7 +1238,22 @@
         <p id="accountEditIntro">Änderungen werden erst nach Eingabe deines aktuellen Kennworts gespeichert.</p>
 
         <div id="accountProfileForm" class="account-edit-form" hidden>
-          <div class="account-edit-hint">Alle Angaben sind freiwillig und ausschließlich für andere eingeloggte Hammerschach-Mitglieder sichtbar.</div>
+          <div class="account-edit-hint">Alle Angaben einschließlich des Profilbilds sind freiwillig und ausschließlich für andere eingeloggte Hammerschach-Mitglieder sichtbar.</div>
+          <div class="account-avatar-box">
+            <div id="accountProfileAvatar" class="profile-avatar profile-avatar-editor" aria-label="Aktuelles Profilbild">
+              <span class="profile-avatar-fallback">?</span>
+              <img class="profile-avatar-image" alt="" hidden />
+            </div>
+            <div class="account-avatar-controls">
+              <div class="account-avatar-title">Profilbild / Avatar</div>
+              <input id="accountProfileAvatarInput" class="account-avatar-file" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+              <div id="accountProfileAvatarMeta" class="account-avatar-meta">Kein neues Bild ausgewählt.</div>
+              <div class="account-avatar-actions">
+                <button id="accountProfileAvatarRemoveBtn" class="button-flat account-avatar-remove" type="button">Profilbild entfernen</button>
+              </div>
+            </div>
+            <div class="account-avatar-note">JPG, PNG oder WebP. Das Bild wird im Browser automatisch mittig zugeschnitten, auf 256 × 256 Pixel verkleinert und erst beim Speichern hochgeladen. Eine zusätzliche Bildvorschau wird nicht erzeugt.</div>
+          </div>
           <label class="identity-label" for="accountProfileRealNameInput">Echter Name (freiwillig)</label>
           <input id="accountProfileRealNameInput" class="identity-input" type="text" maxlength="60" autocomplete="name" placeholder="z. B. Andreas Lipske" />
           <label class="identity-label" for="accountProfileClubInput">Schachverein (freiwillig)</label>
@@ -1484,9 +1528,15 @@
     <div id="memberProfileBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal member-profile-modal" role="dialog" aria-modal="true" aria-labelledby="memberProfileUsername">
         <div class="member-profile-head">
-          <div>
-            <div id="memberProfileUsername" class="member-profile-username">Mitgliederprofil</div>
-            <div id="memberProfileRealName" class="member-profile-real-name" hidden></div>
+          <div class="member-profile-identity">
+            <div id="memberProfileAvatar" class="profile-avatar profile-avatar-large" aria-label="Profilbild">
+              <span class="profile-avatar-fallback">?</span>
+              <img class="profile-avatar-image" alt="" hidden />
+            </div>
+            <div class="member-profile-name-block">
+              <div id="memberProfileUsername" class="member-profile-username">Mitgliederprofil</div>
+              <div id="memberProfileRealName" class="member-profile-real-name" hidden></div>
+            </div>
           </div>
           <div id="memberProfilePresence" class="member-profile-presence"></div>
         </div>
@@ -3276,6 +3326,10 @@ const accountEditBackdrop = document.getElementById('accountEditBackdrop');
 const accountEditTitle = document.getElementById('accountEditTitle');
 const accountEditIntro = document.getElementById('accountEditIntro');
 const accountProfileForm = document.getElementById('accountProfileForm');
+const accountProfileAvatar = document.getElementById('accountProfileAvatar');
+const accountProfileAvatarInput = document.getElementById('accountProfileAvatarInput');
+const accountProfileAvatarMeta = document.getElementById('accountProfileAvatarMeta');
+const accountProfileAvatarRemoveBtn = document.getElementById('accountProfileAvatarRemoveBtn');
 const accountProfileRealNameInput = document.getElementById('accountProfileRealNameInput');
 const accountProfileClubInput = document.getElementById('accountProfileClubInput');
 const accountProfileDwzInput = document.getElementById('accountProfileDwzInput');
@@ -3374,6 +3428,7 @@ let membersSearchTimer = null;
 let membersSearchRequestId = 0;
 
 const memberProfileBackdrop = document.getElementById('memberProfileBackdrop');
+const memberProfileAvatar = document.getElementById('memberProfileAvatar');
 const memberProfileUsername = document.getElementById('memberProfileUsername');
 const memberProfileRealName = document.getElementById('memberProfileRealName');
 const memberProfilePresence = document.getElementById('memberProfilePresence');
@@ -3674,8 +3729,11 @@ function loadAuthState(){
   if(onlineAuthToken && onlineAuthUser) startPresenceHeartbeat();
 }
 function saveAuthState(token, user){
+  const previousUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
   onlineAuthToken = token || '';
   onlineAuthUser = user || null;
+  const nextUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
+  if(previousUserId && previousUserId !== nextUserId) clearAvatarObjectUrlCache();
   try{
     if(onlineAuthToken && onlineAuthUser){
       localStorage.setItem(ONLINE_AUTH_TOKEN_STORAGE_KEY, onlineAuthToken);
@@ -3714,6 +3772,196 @@ async function authApi(path, options){
     err.data = data;
     throw err;
   }
+  return data;
+}
+
+const AVATAR_CLIENT_TARGET_SIZE = 256;
+const AVATAR_CLIENT_MAX_SOURCE_BYTES = 8 * 1024 * 1024;
+const AVATAR_CLIENT_MAX_UPLOAD_BYTES = 512 * 1024;
+const avatarObjectUrlCache = new Map();
+const avatarObjectUrlPromises = new Map();
+
+function avatarInfoForUser(user){
+  const profile = user && user.profile && typeof user.profile === 'object' ? user.profile : {};
+  return {
+    id:String(user && user.id || '').trim(),
+    username:String(user && user.username || 'Mitglied').trim() || 'Mitglied',
+    hasAvatar:!!(user && user.hasAvatar !== undefined ? user.hasAvatar : profile.hasAvatar),
+    updatedAt:String((user && user.avatarUpdatedAt) || profile.avatarUpdatedAt || '')
+  };
+}
+function avatarCacheKeyForUser(user){
+  const info = avatarInfoForUser(user);
+  return info.id ? info.id + '|' + (info.updatedAt || 'avatar') : '';
+}
+function avatarInitial(username){
+  const value = String(username || '').trim();
+  return value ? value.charAt(0).toLocaleUpperCase('de-DE') : '?';
+}
+function avatarChildren(element){
+  if(!element) return {image:null, fallback:null};
+  return {
+    image:element.querySelector('.profile-avatar-image'),
+    fallback:element.querySelector('.profile-avatar-fallback')
+  };
+}
+function resetAvatarElement(element, username){
+  const parts = avatarChildren(element);
+  if(parts.fallback){ parts.fallback.textContent = avatarInitial(username); parts.fallback.hidden = false; }
+  if(parts.image){ parts.image.hidden = true; parts.image.removeAttribute('src'); parts.image.alt = ''; }
+  if(element) element.dataset.avatarRequestKey = '';
+}
+function invalidateAvatarCacheForUser(userId){
+  const prefix = String(userId || '').trim() + '|';
+  if(!prefix || prefix === '|') return;
+  for(const [key, url] of avatarObjectUrlCache.entries()){
+    if(!key.startsWith(prefix)) continue;
+    try{ URL.revokeObjectURL(url); }catch(_){}
+    avatarObjectUrlCache.delete(key);
+  }
+  for(const key of Array.from(avatarObjectUrlPromises.keys())){
+    if(key.startsWith(prefix)) avatarObjectUrlPromises.delete(key);
+  }
+}
+function clearAvatarObjectUrlCache(){
+  for(const url of avatarObjectUrlCache.values()){
+    try{ URL.revokeObjectURL(url); }catch(_){}
+  }
+  avatarObjectUrlCache.clear();
+  avatarObjectUrlPromises.clear();
+}
+async function memberAvatarObjectUrl(user){
+  const info = avatarInfoForUser(user);
+  const key = avatarCacheKeyForUser(user);
+  if(!info.id || !info.hasAvatar || !key || !onlineAuthToken) return '';
+  if(avatarObjectUrlCache.has(key)) return avatarObjectUrlCache.get(key);
+  if(avatarObjectUrlPromises.has(key)) return avatarObjectUrlPromises.get(key);
+  const promise = (async()=>{
+    const response = await fetch(onlineApiBaseUrl() + '/api/members/' + encodeURIComponent(info.id) + '/avatar', {
+      method:'GET',
+      headers:{authorization:'Bearer ' + onlineAuthToken},
+      cache:'default'
+    });
+    if(!response.ok) return '';
+    const blob = await response.blob();
+    if(!blob || !/^image\/(jpeg|png|webp)$/i.test(String(blob.type || ''))) return '';
+    const objectUrl = URL.createObjectURL(blob);
+    avatarObjectUrlCache.set(key, objectUrl);
+    return objectUrl;
+  })().catch(()=> '').finally(()=> avatarObjectUrlPromises.delete(key));
+  avatarObjectUrlPromises.set(key, promise);
+  return promise;
+}
+function applyAvatarToElement(element, user){
+  if(!element) return;
+  const info = avatarInfoForUser(user);
+  resetAvatarElement(element, info.username);
+  element.setAttribute('aria-label', info.hasAvatar ? ('Profilbild von ' + info.username) : ('Buchstaben-Avatar von ' + info.username));
+  if(!info.hasAvatar || !info.id) return;
+  const requestKey = avatarCacheKeyForUser(user);
+  element.dataset.avatarRequestKey = requestKey;
+  memberAvatarObjectUrl(user).then(objectUrl=>{
+    if(!objectUrl || element.dataset.avatarRequestKey !== requestKey) return;
+    const parts = avatarChildren(element);
+    if(parts.image){ parts.image.src = objectUrl; parts.image.alt = 'Profilbild von ' + info.username; parts.image.hidden = false; }
+    if(parts.fallback) parts.fallback.hidden = true;
+  }).catch(()=>{});
+}
+function createMemberAvatarElement(user, sizeClass){
+  const avatar = document.createElement('div');
+  avatar.className = 'profile-avatar ' + (sizeClass || 'profile-avatar-small');
+  const fallback = document.createElement('span');
+  fallback.className = 'profile-avatar-fallback';
+  const image = document.createElement('img');
+  image.className = 'profile-avatar-image';
+  image.alt = '';
+  image.hidden = true;
+  avatar.appendChild(fallback);
+  avatar.appendChild(image);
+  applyAvatarToElement(avatar, user || {});
+  return avatar;
+}
+function formatAvatarFileSize(bytes){
+  const value = Number(bytes || 0);
+  if(!Number.isFinite(value) || value <= 0) return '0 KB';
+  if(value < 1024 * 1024) return Math.max(1, Math.round(value / 1024)) + ' KB';
+  return (value / (1024 * 1024)).toFixed(1).replace('.', ',') + ' MB';
+}
+function canvasToBlob(canvas, type, quality){
+  return new Promise((resolve, reject)=>{
+    try{
+      canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error('Das Profilbild konnte nicht verarbeitet werden.')), type, quality);
+    }catch(err){ reject(err); }
+  });
+}
+async function loadAvatarImageSource(file){
+  if('createImageBitmap' in window){
+    try{
+      const bitmap = await createImageBitmap(file, {imageOrientation:'from-image'});
+      return {source:bitmap, width:bitmap.width, height:bitmap.height, cleanup:()=>{ try{ bitmap.close(); }catch(_){} }};
+    }catch(_){ }
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try{
+    const image = await new Promise((resolve, reject)=>{
+      const img = new Image();
+      img.onload = ()=>resolve(img);
+      img.onerror = ()=>reject(new Error('Die ausgewählte Bilddatei konnte nicht geöffnet werden.'));
+      img.src = objectUrl;
+    });
+    return {source:image, width:image.naturalWidth, height:image.naturalHeight, cleanup:()=>URL.revokeObjectURL(objectUrl)};
+  }catch(err){
+    URL.revokeObjectURL(objectUrl);
+    throw err;
+  }
+}
+async function prepareAvatarBlob(file){
+  if(!file) throw new Error('Bitte ein Profilbild auswählen.');
+  if(!/^image\/(jpeg|png|webp)$/i.test(String(file.type || ''))) throw new Error('Erlaubt sind JPG-, PNG- und WebP-Bilder.');
+  if(Number(file.size || 0) > AVATAR_CLIENT_MAX_SOURCE_BYTES) throw new Error('Die ausgewählte Originaldatei darf höchstens 8 MB groß sein.');
+  const loaded = await loadAvatarImageSource(file);
+  try{
+    const width = Number(loaded.width || 0), height = Number(loaded.height || 0);
+    if(!width || !height) throw new Error('Das Bild besitzt keine gültigen Abmessungen.');
+    const side = Math.min(width, height);
+    const sourceX = Math.max(0, (width - side) / 2);
+    const sourceY = Math.max(0, (height - side) / 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = AVATAR_CLIENT_TARGET_SIZE;
+    canvas.height = AVATAR_CLIENT_TARGET_SIZE;
+    const context = canvas.getContext('2d', {alpha:true});
+    if(!context) throw new Error('Die Bildverarbeitung wird von diesem Browser nicht unterstützt.');
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(loaded.source, sourceX, sourceY, side, side, 0, 0, AVATAR_CLIENT_TARGET_SIZE, AVATAR_CLIENT_TARGET_SIZE);
+    let blob = await canvasToBlob(canvas, 'image/webp', 0.84).catch(()=>null);
+    if(!blob || !/^image\/(webp|png|jpeg)$/i.test(String(blob.type || '')) || blob.size > AVATAR_CLIENT_MAX_UPLOAD_BYTES){
+      const jpegCanvas = document.createElement('canvas');
+      jpegCanvas.width = AVATAR_CLIENT_TARGET_SIZE;
+      jpegCanvas.height = AVATAR_CLIENT_TARGET_SIZE;
+      const jpegContext = jpegCanvas.getContext('2d', {alpha:false});
+      if(!jpegContext) throw new Error('Die Bildverarbeitung wird von diesem Browser nicht unterstützt.');
+      jpegContext.fillStyle = '#ffffff';
+      jpegContext.fillRect(0, 0, AVATAR_CLIENT_TARGET_SIZE, AVATAR_CLIENT_TARGET_SIZE);
+      jpegContext.drawImage(canvas, 0, 0);
+      blob = await canvasToBlob(jpegCanvas, 'image/jpeg', 0.86);
+    }
+    if(!blob || blob.size > AVATAR_CLIENT_MAX_UPLOAD_BYTES) throw new Error('Das verkleinerte Profilbild ist noch zu groß. Bitte ein anderes Bild wählen.');
+    return blob;
+  } finally {
+    try{ loaded.cleanup(); }catch(_){}
+  }
+}
+async function uploadAccountAvatar(blob){
+  const form = new FormData();
+  const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/jpeg' ? 'jpg' : 'webp';
+  form.append('avatar', blob, 'avatar.' + extension);
+  const headers = {};
+  if(onlineAuthToken) headers.authorization = 'Bearer ' + onlineAuthToken;
+  const response = await fetch(onlineApiBaseUrl() + '/api/account/avatar', {method:'POST', headers, body:form});
+  let data = null;
+  try{ data = await response.json(); }catch(_){ data = {ok:false, message:'Antwort konnte nicht gelesen werden.'}; }
+  if(!response.ok || !data.ok){ const err = new Error(data.message || 'Profilbild konnte nicht gespeichert werden.'); err.data = data; throw err; }
   return data;
 }
 
@@ -4483,6 +4731,44 @@ function setAccountEditStatus(message, kind){
 function updateAccountProfileAboutCount(){
   if(accountProfileAboutCount) accountProfileAboutCount.textContent = String(accountProfileAboutInput ? accountProfileAboutInput.value.length : 0) + ' / 400';
 }
+function renderAccountProfileAvatar(){
+  if(!accountProfileAvatar) return;
+  applyAvatarToElement(accountProfileAvatar, onlineAuthUser || {});
+  const profile = onlineAuthUser && onlineAuthUser.profile && typeof onlineAuthUser.profile === 'object' ? onlineAuthUser.profile : {};
+  const hasAvatar = !!profile.hasAvatar;
+  if(accountProfileAvatarRemoveBtn){
+    accountProfileAvatarRemoveBtn.disabled = !hasAvatar;
+    accountProfileAvatarRemoveBtn.title = hasAvatar ? 'Gespeichertes Profilbild endgültig entfernen.' : 'Es ist kein Profilbild gespeichert.';
+  }
+}
+function resetAccountProfileAvatarSelection(){
+  if(accountProfileAvatarInput) accountProfileAvatarInput.value = '';
+  if(accountProfileAvatarMeta) accountProfileAvatarMeta.textContent = 'Kein neues Bild ausgewählt.';
+}
+function updateAccountProfileAvatarSelection(){
+  const file = accountProfileAvatarInput && accountProfileAvatarInput.files ? accountProfileAvatarInput.files[0] : null;
+  if(!file){ resetAccountProfileAvatarSelection(); return; }
+  if(accountProfileAvatarMeta) accountProfileAvatarMeta.textContent = file.name + ' · ' + formatAvatarFileSize(file.size) + ' · wird beim Speichern automatisch verarbeitet';
+}
+async function removeAccountProfileAvatar(){
+  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
+  const profile = onlineAuthUser.profile && typeof onlineAuthUser.profile === 'object' ? onlineAuthUser.profile : {};
+  if(!profile.hasAvatar) return;
+  if(!window.confirm('Profilbild wirklich entfernen?')) return;
+  if(accountProfileAvatarRemoveBtn) accountProfileAvatarRemoveBtn.disabled = true;
+  setAccountEditStatus('Profilbild wird entfernt…', '');
+  try{
+    const data = await authApi('/api/account/avatar', {method:'DELETE', body:JSON.stringify({})});
+    invalidateAvatarCacheForUser(onlineAuthUser.id);
+    saveAuthState(onlineAuthToken, data.user);
+    resetAccountProfileAvatarSelection();
+    renderAccountProfileAvatar();
+    setAccountEditStatus(data.message || 'Profilbild wurde entfernt.', 'success');
+  }catch(err){
+    setAccountEditStatus(err && err.message ? err.message : 'Profilbild konnte nicht entfernt werden.', 'error');
+    renderAccountProfileAvatar();
+  }
+}
 function clearAccountEditInputs(){
   [accountUsernamePasswordInput, accountEmailPasswordInput, accountCurrentPasswordInput, accountNewPasswordInput, accountNewPasswordRepeatInput, accountDeletePasswordInput, accountDeleteConfirmationInput].forEach(input => { if(input) input.value = ''; });
 }
@@ -4507,6 +4793,8 @@ function openAccountEditDialog(mode){
   if(accountDeleteForm) accountDeleteForm.hidden = accountEditMode !== 'delete';
   clearAccountEditInputs();
   const publicProfile = onlineAuthUser && onlineAuthUser.profile && typeof onlineAuthUser.profile === 'object' ? onlineAuthUser.profile : {};
+  resetAccountProfileAvatarSelection();
+  renderAccountProfileAvatar();
   if(accountProfileRealNameInput) accountProfileRealNameInput.value = String(publicProfile.realName || '');
   if(accountProfileClubInput) accountProfileClubInput.value = String(publicProfile.clubName || '');
   const storedProfileDwz = publicProfile.dwz !== null && publicProfile.dwz !== undefined && String(publicProfile.dwz).trim() !== '' ? Number(publicProfile.dwz) : null;
@@ -4520,7 +4808,7 @@ function openAccountEditDialog(mode){
     accountEditSubmitBtn.classList.toggle('account-edit-submit-danger', accountEditMode === 'delete');
   }
   const config = {
-    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Andere eingeloggte Mitglieder können diese Angaben in deinem Profil sehen.', submit:'Profil speichern', focus:accountProfileRealNameInput},
+    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Profilbild, echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Andere eingeloggte Mitglieder können diese Angaben in deinem Profil sehen.', submit:'Profil speichern', focus:accountProfileRealNameInput},
     username:{title:'Benutzernamen ändern', intro:'Der neue Benutzername muss eindeutig sein. Deine interne Benutzer-ID und deine Partien bleiben unverändert.', submit:'Benutzername speichern', focus:accountUsernameInput},
     email:{title:'Mailadresse ändern', intro:'Die neue Mailadresse darf noch keinem anderen Account zugeordnet sein. Sie wird erst nach Klick auf den zugesandten Bestätigungslink übernommen.', submit:'Mailadresse speichern', focus:accountEmailInput},
     password:{title:'Kennwort ändern', intro:'Nach der Änderung werden alle anderen Anmeldungen dieses Accounts beendet.', submit:'Kennwort speichern', focus:accountCurrentPasswordInput},
@@ -4558,8 +4846,25 @@ async function submitAccountEdit(){
         const dwz = Number(dwzText);
         if(!Number.isInteger(dwz) || dwz < 100 || dwz > 3500) throw new Error('Die DWZ muss eine ganze Zahl zwischen 100 und 3500 sein.');
       }
+      const selectedAvatarFile = accountProfileAvatarInput && accountProfileAvatarInput.files ? accountProfileAvatarInput.files[0] : null;
       data = await authApi('/api/account/profile', {method:'POST', body:JSON.stringify({realName, clubName, dwz:dwzText || null, about})});
       saveAuthState(onlineAuthToken, data.user);
+      if(selectedAvatarFile){
+        setAccountEditStatus('Profilangaben sind gespeichert. Profilbild wird jetzt zugeschnitten und hochgeladen…', '');
+        try{
+          const avatarBlob = await prepareAvatarBlob(selectedAvatarFile);
+          const avatarData = await uploadAccountAvatar(avatarBlob);
+          invalidateAvatarCacheForUser(onlineAuthUser.id);
+          saveAuthState(onlineAuthToken, avatarData.user);
+          resetAccountProfileAvatarSelection();
+          renderAccountProfileAvatar();
+          data = avatarData;
+          data.message = 'Profil und Profilbild wurden gespeichert.';
+        }catch(avatarError){
+          renderAccountProfileAvatar();
+          throw new Error('Die Profilangaben wurden gespeichert, das Profilbild jedoch nicht: ' + (avatarError && avatarError.message ? avatarError.message : 'Upload fehlgeschlagen.'));
+        }
+      }
     } else if(accountEditMode === 'username'){
       const username = String(accountUsernameInput ? accountUsernameInput.value : '').trim();
       const currentPassword = String(accountUsernamePasswordInput ? accountUsernamePasswordInput.value : '');
@@ -4927,7 +5232,7 @@ function updateAuthUi(){
   renderEmailNotificationSettings();
   if(accountProfileOpenBtn){
     accountProfileOpenBtn.disabled = !loggedIn;
-    accountProfileOpenBtn.title = 'Freiwilligen echten Namen, Schachverein, DWZ und „Über mich“ bearbeiten.';
+    accountProfileOpenBtn.title = 'Freiwilliges Profilbild, echten Namen, Schachverein, DWZ und „Über mich“ bearbeiten.';
   }
   if(accountUsernameOpenBtn){
     accountUsernameOpenBtn.disabled = !loggedIn || isAdmin;
@@ -5051,6 +5356,8 @@ if(accountEmailOpenBtn) accountEmailOpenBtn.addEventListener('click', () => open
 if(accountPasswordOpenBtn) accountPasswordOpenBtn.addEventListener('click', () => openAccountEditDialog('password'));
 if(accountDeleteOpenBtn) accountDeleteOpenBtn.addEventListener('click', () => openAccountEditDialog('delete'));
 if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.addEventListener('click', saveEmailNotificationSettings);
+if(accountProfileAvatarInput) accountProfileAvatarInput.addEventListener('change', updateAccountProfileAvatarSelection);
+if(accountProfileAvatarRemoveBtn) accountProfileAvatarRemoveBtn.addEventListener('click', removeAccountProfileAvatar);
 if(accountProfileAboutInput) accountProfileAboutInput.addEventListener('input', updateAccountProfileAboutCount);
 [dailyTurnEmailCheckbox, dailyResultEmailCheckbox].forEach(input => {
   if(input) input.addEventListener('change', () => setEmailNotificationsStatus('Änderung noch nicht gespeichert.', ''));
@@ -6277,6 +6584,7 @@ async function openMemberProfile(user, context){
   memberProfileContext = context === 'invite' ? 'invite' : 'standalone';
   memberProfileTarget = Object.assign({}, user || {});
   const requestId = ++memberProfileRequestId;
+  if(memberProfileAvatar) applyAvatarToElement(memberProfileAvatar, user || {});
   if(memberProfileUsername) memberProfileUsername.textContent = user && user.username ? user.username : 'Mitgliederprofil';
   if(memberProfileRealName){ memberProfileRealName.textContent = ''; memberProfileRealName.hidden = true; }
   if(memberProfilePresence){ memberProfilePresence.innerHTML = ''; memberProfilePresence.appendChild(createPresenceBadge(!!(user && user.isOnline))); }
@@ -6296,6 +6604,7 @@ async function openMemberProfile(user, context){
     if(!member) throw new Error('Mitgliederprofil konnte nicht geladen werden.');
     memberProfileTarget = Object.assign({}, memberProfileTarget || {}, member);
     const profile = member.profile && typeof member.profile === 'object' ? member.profile : {};
+    if(memberProfileAvatar) applyAvatarToElement(memberProfileAvatar, member);
     if(memberProfileUsername) memberProfileUsername.textContent = member.username || 'Mitglied';
     if(memberProfileRealName){
       const realName = String(profile.realName || '').trim();
@@ -6357,8 +6666,11 @@ function renderStandaloneMemberResults(users, options){
     const card = document.createElement('div');
     card.className = 'member-result-card';
 
+    const main = document.createElement('div');
+    main.className = 'member-result-main';
+    const avatar = createMemberAvatarElement(user, 'profile-avatar-small');
     const info = document.createElement('div');
-    info.style.minWidth = '0';
+    info.className = 'member-result-info';
     const name = document.createElement('div');
     name.className = 'member-result-name';
     const nameText = document.createElement('span');
@@ -6404,7 +6716,9 @@ function renderStandaloneMemberResults(users, options){
       deleteBtn.addEventListener('click', ev => { ev.stopPropagation(); deleteMemberAsAdmin(user, deleteBtn, 'standalone'); });
       actions.appendChild(deleteBtn);
     }
-    card.appendChild(info);
+    main.appendChild(avatar);
+    main.appendChild(info);
+    card.appendChild(main);
     card.appendChild(actions);
     membersResults.appendChild(card);
   });
@@ -6674,8 +6988,11 @@ function renderMemberSearchResults(users, options){
     const card = document.createElement('div');
     card.className = 'member-result-card';
 
+    const main = document.createElement('div');
+    main.className = 'member-result-main';
+    const avatar = createMemberAvatarElement(user, 'profile-avatar-small');
     const info = document.createElement('div');
-    info.style.minWidth = '0';
+    info.className = 'member-result-info';
     const name = document.createElement('div');
     name.className = 'member-result-name';
     const nameText = document.createElement('span');
@@ -6720,7 +7037,9 @@ function renderMemberSearchResults(users, options){
       actions.appendChild(deleteBtn);
     }
 
-    card.appendChild(info);
+    main.appendChild(avatar);
+    main.appendChild(info);
+    card.appendChild(main);
     card.appendChild(actions);
     memberSearchResults.appendChild(card);
   });
