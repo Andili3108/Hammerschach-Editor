@@ -423,6 +423,30 @@
   .members-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
   .members-actions button{border-radius:12px;min-height:38px;}
 
+  .account-profile-open-btn{grid-column:1 / -1;background:linear-gradient(180deg,#fff 0%,#eee8ea 100%)!important;color:#843f46!important;}
+  .profile-textarea{width:100%;min-height:120px;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-family:Arial,sans-serif;font-size:14px;font-weight:700;line-height:1.45;resize:vertical;outline:none;}
+  .profile-textarea:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
+  .profile-char-count{text-align:right;font-size:11px;font-weight:800;color:#777;margin-top:-4px;}
+  .member-profile-modal{width:700px;max-width:100%;max-height:90vh;overflow:auto;}
+  .member-profile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
+  .member-profile-username{font-size:27px;font-weight:900;color:#222;line-height:1.08;overflow-wrap:anywhere;}
+  .member-profile-real-name{font-size:16px;font-weight:900;color:#843f46;margin-top:4px;line-height:1.25;}
+  .member-profile-real-name[hidden]{display:none!important;}
+  .member-profile-presence{flex:0 0 auto;}
+  .member-profile-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+  .member-profile-meta-card{border-radius:12px;background:#f7f7f9;border:1px solid rgba(0,0,0,.08);padding:9px 10px;min-width:0;}
+  .member-profile-club-card{grid-column:1 / -1;}
+  .member-profile-meta-label{font-size:11px;font-weight:900;color:#777;line-height:1.2;text-transform:uppercase;letter-spacing:.03em;}
+  .member-profile-meta-value{font-size:16px;font-weight:900;color:#333;line-height:1.25;margin-top:3px;overflow-wrap:anywhere;}
+  .member-profile-dwz-note{font-size:10px;font-weight:800;color:#777;margin-top:2px;}
+  .member-profile-about{border-radius:14px;background:rgba(132,63,70,.05);border:1px solid rgba(132,63,70,.12);padding:11px 12px;margin-bottom:12px;}
+  .member-profile-about[hidden]{display:none!important;}
+  .member-profile-section-title{font-size:15px;font-weight:900;color:#222;margin-bottom:6px;}
+  .member-profile-about-text{font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#333;line-height:1.48;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .member-profile-status{min-height:18px;font-size:13px;font-weight:800;color:#666;line-height:1.3;margin-top:9px;}
+  .member-profile-status.error{color:#9A2D33;}
+  .member-profile-status.success{color:#226b36;}
+
   .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
   .online-label{font-size:12px;font-weight:900;color:#666;margin-bottom:2px;}
@@ -724,6 +748,19 @@
   html.dark-mode .info-scroll .privacy-open-inline{color:#e5a5ad!important;}
   html.dark-mode .info-scroll code,
   html.dark-mode .privacy-scroll code{background:#15181d;border:1px solid rgba(255,255,255,.10);border-radius:5px;padding:1px 4px;}
+  html.dark-mode .profile-textarea{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
+  html.dark-mode .profile-textarea:focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
+  html.dark-mode .member-profile-username,
+  html.dark-mode .member-profile-section-title{color:#f3f4f6;}
+  html.dark-mode .member-profile-real-name{color:#e6a3ab;}
+  html.dark-mode .member-profile-meta-card,
+  html.dark-mode .member-profile-about{background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode .member-profile-meta-label,
+  html.dark-mode .member-profile-dwz-note,
+  html.dark-mode .profile-char-count,
+  html.dark-mode .member-profile-status{color:#b8bdc6;}
+  html.dark-mode .member-profile-meta-value,
+  html.dark-mode .member-profile-about-text{color:#eef0f2;}
   html.dark-mode ::selection{background:#9f4d56;color:#fff;}
   html.dark-mode *{scrollbar-color:#555b65 #1b1e23;}
 
@@ -735,7 +772,7 @@
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
-  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}}
+  @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}}
 </style>
 </head>
 <body>
@@ -880,7 +917,7 @@
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
 
           <h4>9. Mitglieder finden, einladen oder eine Partie offen anbieten</h4>
-          <p>Über <strong>„👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
+          <p>Über <strong>„👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Über <strong>„Profil“</strong> öffnest du das Mitgliederprofil mit Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante, Wertung und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
@@ -934,7 +971,8 @@
           <h4>20. Ratings für Mitglieder</h4>
           <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
-          <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
+          <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
+          <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
           <h4>21. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
@@ -976,6 +1014,7 @@
 
           <h4>3. Registrierung, Account und Login</h4>
           <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen und aktive Anmeldesitzungen verwaltet.</p>
+          <p>Optional können Mitglieder einen echten Namen, ihren Schachverein, eine DWZ und einen kurzen Profiltext hinterlegen. Diese Angaben sind freiwillig und werden ausschließlich anderen eingeloggten Mitgliedern angezeigt. Der Vereinsname ist ebenfalls eine Selbstauskunft; die DWZ wird ausdrücklich als ungeprüfte Selbstauskunft gekennzeichnet.</p>
           <p>Ein Login-Token wird nach erfolgreicher Anmeldung im Browser gespeichert. Serverseitige Sitzungen sind regulär auf 30 Tage begrenzt. Bei einer Kennwortänderung werden andere bestehende Sitzungen beendet.</p>
           <p>Bestätigungslinks für neue Accounts und Mailadressänderungen sind 24 Stunden gültig; Links zum Zurücksetzen des Kennworts 30 Minuten. Abgelaufene beziehungsweise verwendete Aktionstoken werden regelmäßig bereinigt.</p>
 
@@ -1019,7 +1058,7 @@
           <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
 
           <h4>11. Accountlöschung und weitere Löschung</h4>
-          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
+          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
           <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Partie-Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Eigene Nachrichten im Mitglieder-Chat werden bei der Accountlöschung vollständig entfernt. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
 
           <h4>12. Deine Rechte und Kontakt</h4>
@@ -1027,7 +1066,7 @@
           <p>Kontakt, verantwortliche Stelle, allgemeine Datenschutzhinweise und Angaben zur zuständigen Aufsichtsbehörde findest du unter <a class="privacy-external-link" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz auf Andili.de</a>.</p>
 
           <h4>13. Stand und Änderungen</h4>
-          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>15. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
+          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>16. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
         </div>
         <div class="info-actions">
           <a class="brand-origin-button" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a>
@@ -1122,6 +1161,7 @@
             </div>
           </div>
           <div class="auth-account-actions" aria-label="Account verwalten">
+            <button id="accountProfileOpenBtn" class="button-flat account-profile-open-btn" type="button">👤 Mein Profil bearbeiten</button>
             <button id="accountUsernameOpenBtn" class="button-flat" type="button">Benutzername ändern</button>
             <button id="accountEmailOpenBtn" class="button-flat" type="button">Mailadresse ändern</button>
             <button id="accountPasswordOpenBtn" class="button-flat" type="button">Kennwort ändern</button>
@@ -1167,6 +1207,20 @@
       <div class="identity-modal account-edit-modal" role="dialog" aria-modal="true" aria-labelledby="accountEditTitle">
         <h3 id="accountEditTitle">Account bearbeiten</h3>
         <p id="accountEditIntro">Änderungen werden erst nach Eingabe deines aktuellen Kennworts gespeichert.</p>
+
+        <div id="accountProfileForm" class="account-edit-form" hidden>
+          <div class="account-edit-hint">Alle Angaben sind freiwillig und ausschließlich für andere eingeloggte Hammerschach-Mitglieder sichtbar.</div>
+          <label class="identity-label" for="accountProfileRealNameInput">Echter Name (freiwillig)</label>
+          <input id="accountProfileRealNameInput" class="identity-input" type="text" maxlength="60" autocomplete="name" placeholder="z. B. Andreas Lipske" />
+          <label class="identity-label" for="accountProfileClubInput">Schachverein (freiwillig)</label>
+          <input id="accountProfileClubInput" class="identity-input" type="text" maxlength="80" autocomplete="organization" placeholder="z. B. SC Musterstadt" />
+          <label class="identity-label" for="accountProfileDwzInput">DWZ (freiwillige Selbstauskunft)</label>
+          <input id="accountProfileDwzInput" class="identity-input" type="number" min="100" max="3500" step="1" inputmode="numeric" placeholder="z. B. 1847" />
+          <div class="account-edit-hint">Die DWZ wird als ungeprüfte Selbstauskunft gekennzeichnet.</div>
+          <label class="identity-label" for="accountProfileAboutInput">Über mich (freiwillig)</label>
+          <textarea id="accountProfileAboutInput" class="profile-textarea" maxlength="400" placeholder="Erzähle etwas über dich, deinen Verein, deinen Spielstil oder deine Schacherfahrung …"></textarea>
+          <div id="accountProfileAboutCount" class="profile-char-count">0 / 400</div>
+        </div>
 
         <div id="accountUsernameForm" class="account-edit-form" hidden>
           <label class="identity-label" for="accountUsernameInput">Neuer Benutzername</label>
@@ -1411,7 +1465,7 @@
     <div id="membersBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal members-modal" role="dialog" aria-modal="true" aria-labelledby="membersTitle">
         <h3 id="membersTitle">Hammerschach-Mitglieder</h3>
-        <p class="members-intro">Geschützter Mitgliederbereich: Hier siehst du die registrierten Mitglieder und ihren ungefähren Online-Status. Beim Öffnen der Liste wird noch kein Spielraum erzeugt.</p>
+        <p class="members-intro">Geschützter Mitgliederbereich: Hier siehst du die registrierten Mitglieder, ihre Profile, Ratings und den ungefähren Online-Status. Beim Öffnen der Liste wird noch kein Spielraum erzeugt.</p>
         <div class="member-search-box members-search-box">
           <div class="member-search-head">Mitglied suchen</div>
           <p id="membersSearchHint" class="member-search-hint">In der Mitglieder-Lobby kannst du ein Mitglied direkt zu deiner vorbereiteten Partie einladen.</p>
@@ -1423,6 +1477,47 @@
         <div class="members-actions">
           <button id="membersRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="membersCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="memberProfileBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal member-profile-modal" role="dialog" aria-modal="true" aria-labelledby="memberProfileUsername">
+        <div class="member-profile-head">
+          <div>
+            <div id="memberProfileUsername" class="member-profile-username">Mitgliederprofil</div>
+            <div id="memberProfileRealName" class="member-profile-real-name" hidden></div>
+          </div>
+          <div id="memberProfilePresence" class="member-profile-presence"></div>
+        </div>
+        <div class="member-profile-meta-grid">
+          <div id="memberProfileSinceCard" class="member-profile-meta-card">
+            <div class="member-profile-meta-label">Mitglied seit</div>
+            <div id="memberProfileSince" class="member-profile-meta-value">—</div>
+          </div>
+          <div id="memberProfileDwzCard" class="member-profile-meta-card" hidden>
+            <div class="member-profile-meta-label">DWZ</div>
+            <div id="memberProfileDwz" class="member-profile-meta-value">—</div>
+            <div class="member-profile-dwz-note">Freiwillige, ungeprüfte Selbstauskunft</div>
+          </div>
+          <div id="memberProfileClubCard" class="member-profile-meta-card member-profile-club-card" hidden>
+            <div class="member-profile-meta-label">Schachverein</div>
+            <div id="memberProfileClub" class="member-profile-meta-value">—</div>
+          </div>
+        </div>
+        <div id="memberProfileAboutSection" class="member-profile-about" hidden>
+          <div class="member-profile-section-title">Über mich</div>
+          <div id="memberProfileAboutText" class="member-profile-about-text"></div>
+        </div>
+        <div class="auth-ratings">
+          <div class="auth-ratings-title">Hammerschach-Ratings</div>
+          <div id="memberProfileRatingsGrid" class="auth-ratings-grid" aria-live="polite"></div>
+          <div class="auth-ratings-note">Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating.</div>
+        </div>
+        <div id="memberProfileStatus" class="member-profile-status" aria-live="polite"></div>
+        <div class="identity-actions">
+          <button id="memberProfileInviteBtn" class="button-flat" type="button" hidden>Zur Partie einladen</button>
+          <button id="memberProfileCloseBtn" type="button">Schließen</button>
         </div>
       </div>
     </div>
@@ -3132,6 +3227,7 @@ const dailyResultEmailCheckbox = document.getElementById('dailyResultEmailCheckb
 const memberNewsEmailCheckbox = document.getElementById('memberNewsEmailCheckbox');
 const emailNotificationsSaveBtn = document.getElementById('emailNotificationsSaveBtn');
 const emailNotificationsStatus = document.getElementById('emailNotificationsStatus');
+const accountProfileOpenBtn = document.getElementById('accountProfileOpenBtn');
 const accountUsernameOpenBtn = document.getElementById('accountUsernameOpenBtn');
 const accountEmailOpenBtn = document.getElementById('accountEmailOpenBtn');
 const accountPasswordOpenBtn = document.getElementById('accountPasswordOpenBtn');
@@ -3179,6 +3275,12 @@ const adminMessageSendBtn = document.getElementById('adminMessageSendBtn');
 const accountEditBackdrop = document.getElementById('accountEditBackdrop');
 const accountEditTitle = document.getElementById('accountEditTitle');
 const accountEditIntro = document.getElementById('accountEditIntro');
+const accountProfileForm = document.getElementById('accountProfileForm');
+const accountProfileRealNameInput = document.getElementById('accountProfileRealNameInput');
+const accountProfileClubInput = document.getElementById('accountProfileClubInput');
+const accountProfileDwzInput = document.getElementById('accountProfileDwzInput');
+const accountProfileAboutInput = document.getElementById('accountProfileAboutInput');
+const accountProfileAboutCount = document.getElementById('accountProfileAboutCount');
 const accountUsernameForm = document.getElementById('accountUsernameForm');
 const accountEmailForm = document.getElementById('accountEmailForm');
 const accountPasswordForm = document.getElementById('accountPasswordForm');
@@ -3270,6 +3372,26 @@ const membersRefreshBtn = document.getElementById('membersRefreshBtn');
 const membersCloseBtn = document.getElementById('membersCloseBtn');
 let membersSearchTimer = null;
 let membersSearchRequestId = 0;
+
+const memberProfileBackdrop = document.getElementById('memberProfileBackdrop');
+const memberProfileUsername = document.getElementById('memberProfileUsername');
+const memberProfileRealName = document.getElementById('memberProfileRealName');
+const memberProfilePresence = document.getElementById('memberProfilePresence');
+const memberProfileSince = document.getElementById('memberProfileSince');
+const memberProfileSinceCard = document.getElementById('memberProfileSinceCard');
+const memberProfileDwzCard = document.getElementById('memberProfileDwzCard');
+const memberProfileDwz = document.getElementById('memberProfileDwz');
+const memberProfileClubCard = document.getElementById('memberProfileClubCard');
+const memberProfileClub = document.getElementById('memberProfileClub');
+const memberProfileAboutSection = document.getElementById('memberProfileAboutSection');
+const memberProfileAboutText = document.getElementById('memberProfileAboutText');
+const memberProfileRatingsGrid = document.getElementById('memberProfileRatingsGrid');
+const memberProfileStatus = document.getElementById('memberProfileStatus');
+const memberProfileInviteBtn = document.getElementById('memberProfileInviteBtn');
+const memberProfileCloseBtn = document.getElementById('memberProfileCloseBtn');
+let memberProfileContext = '';
+let memberProfileTarget = null;
+let memberProfileRequestId = 0;
 
 const inviteBackdrop = document.getElementById('inviteBackdrop');
 const inviteLinkInput = document.getElementById('inviteLinkInput');
@@ -4358,6 +4480,9 @@ function setAccountEditStatus(message, kind){
   accountEditStatus.classList.toggle('error', kind === 'error');
   accountEditStatus.classList.toggle('success', kind === 'success');
 }
+function updateAccountProfileAboutCount(){
+  if(accountProfileAboutCount) accountProfileAboutCount.textContent = String(accountProfileAboutInput ? accountProfileAboutInput.value.length : 0) + ' / 400';
+}
 function clearAccountEditInputs(){
   [accountUsernamePasswordInput, accountEmailPasswordInput, accountCurrentPasswordInput, accountNewPasswordInput, accountNewPasswordRepeatInput, accountDeletePasswordInput, accountDeleteConfirmationInput].forEach(input => { if(input) input.value = ''; });
 }
@@ -4372,14 +4497,22 @@ function openAccountEditDialog(mode){
     if(authError) authError.textContent = 'Der Administrator-Account kann nicht selbst gelöscht werden.';
     return;
   }
-  accountEditMode = ['username','email','password','delete'].includes(mode) ? mode : '';
+  accountEditMode = ['profile','username','email','password','delete'].includes(mode) ? mode : '';
   if(!accountEditMode) return;
   if(authBackdrop) authBackdrop.hidden = true;
+  if(accountProfileForm) accountProfileForm.hidden = accountEditMode !== 'profile';
   if(accountUsernameForm) accountUsernameForm.hidden = accountEditMode !== 'username';
   if(accountEmailForm) accountEmailForm.hidden = accountEditMode !== 'email';
   if(accountPasswordForm) accountPasswordForm.hidden = accountEditMode !== 'password';
   if(accountDeleteForm) accountDeleteForm.hidden = accountEditMode !== 'delete';
   clearAccountEditInputs();
+  const publicProfile = onlineAuthUser && onlineAuthUser.profile && typeof onlineAuthUser.profile === 'object' ? onlineAuthUser.profile : {};
+  if(accountProfileRealNameInput) accountProfileRealNameInput.value = String(publicProfile.realName || '');
+  if(accountProfileClubInput) accountProfileClubInput.value = String(publicProfile.clubName || '');
+  const storedProfileDwz = publicProfile.dwz !== null && publicProfile.dwz !== undefined && String(publicProfile.dwz).trim() !== '' ? Number(publicProfile.dwz) : null;
+  if(accountProfileDwzInput) accountProfileDwzInput.value = Number.isInteger(storedProfileDwz) ? String(storedProfileDwz) : '';
+  if(accountProfileAboutInput) accountProfileAboutInput.value = String(publicProfile.about || '');
+  updateAccountProfileAboutCount();
   if(accountUsernameInput) accountUsernameInput.value = onlineAuthUser.username || '';
   if(accountEmailInput) accountEmailInput.value = onlineAuthUser.email || '';
   if(accountEditSubmitBtn){
@@ -4387,6 +4520,7 @@ function openAccountEditDialog(mode){
     accountEditSubmitBtn.classList.toggle('account-edit-submit-danger', accountEditMode === 'delete');
   }
   const config = {
+    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Andere eingeloggte Mitglieder können diese Angaben in deinem Profil sehen.', submit:'Profil speichern', focus:accountProfileRealNameInput},
     username:{title:'Benutzernamen ändern', intro:'Der neue Benutzername muss eindeutig sein. Deine interne Benutzer-ID und deine Partien bleiben unverändert.', submit:'Benutzername speichern', focus:accountUsernameInput},
     email:{title:'Mailadresse ändern', intro:'Die neue Mailadresse darf noch keinem anderen Account zugeordnet sein. Sie wird erst nach Klick auf den zugesandten Bestätigungslink übernommen.', submit:'Mailadresse speichern', focus:accountEmailInput},
     password:{title:'Kennwort ändern', intro:'Nach der Änderung werden alle anderen Anmeldungen dieses Accounts beendet.', submit:'Kennwort speichern', focus:accountCurrentPasswordInput},
@@ -4412,7 +4546,21 @@ async function submitAccountEdit(){
   setAccountEditStatus('Änderung wird geprüft…', '');
   try{
     let data = null;
-    if(accountEditMode === 'username'){
+    if(accountEditMode === 'profile'){
+      const realName = String(accountProfileRealNameInput ? accountProfileRealNameInput.value : '').trim();
+      const clubName = String(accountProfileClubInput ? accountProfileClubInput.value : '').trim();
+      const dwzText = String(accountProfileDwzInput ? accountProfileDwzInput.value : '').trim();
+      const about = String(accountProfileAboutInput ? accountProfileAboutInput.value : '').trim();
+      if(realName.length > 60) throw new Error('Der echte Name darf höchstens 60 Zeichen enthalten.');
+      if(clubName.length > 80) throw new Error('Der Vereinsname darf höchstens 80 Zeichen enthalten.');
+      if(about.length > 400) throw new Error('Der Text „Über mich“ darf höchstens 400 Zeichen enthalten.');
+      if(dwzText){
+        const dwz = Number(dwzText);
+        if(!Number.isInteger(dwz) || dwz < 100 || dwz > 3500) throw new Error('Die DWZ muss eine ganze Zahl zwischen 100 und 3500 sein.');
+      }
+      data = await authApi('/api/account/profile', {method:'POST', body:JSON.stringify({realName, clubName, dwz:dwzText || null, about})});
+      saveAuthState(onlineAuthToken, data.user);
+    } else if(accountEditMode === 'username'){
       const username = String(accountUsernameInput ? accountUsernameInput.value : '').trim();
       const currentPassword = String(accountUsernamePasswordInput ? accountUsernamePasswordInput.value : '');
       if(!/^[A-Za-z0-9_-]{3,24}$/.test(username)) throw new Error('Benutzername: 3 bis 24 Zeichen, erlaubt sind Buchstaben, Zahlen, _ und -.');
@@ -4777,6 +4925,10 @@ function updateAuthUi(){
   if(resendPendingEmailBtn) resendPendingEmailBtn.hidden = !pendingEmail;
   renderAccountRatings();
   renderEmailNotificationSettings();
+  if(accountProfileOpenBtn){
+    accountProfileOpenBtn.disabled = !loggedIn;
+    accountProfileOpenBtn.title = 'Freiwilligen echten Namen, Schachverein, DWZ und „Über mich“ bearbeiten.';
+  }
   if(accountUsernameOpenBtn){
     accountUsernameOpenBtn.disabled = !loggedIn || isAdmin;
     accountUsernameOpenBtn.title = isAdmin ? 'Der Benutzername des Administrator-Accounts ist geschützt.' : 'Eigenen Benutzernamen ändern.';
@@ -4893,11 +5045,13 @@ if(authLoginTab) authLoginTab.addEventListener('click', () => setAuthMode('login
 if(authRegisterTab) authRegisterTab.addEventListener('click', () => setAuthMode('register'));
 if(authSubmitBtn) authSubmitBtn.addEventListener('click', submitAuthDialog);
 if(authLogoutBtn) authLogoutBtn.addEventListener('click', logoutAuth);
+if(accountProfileOpenBtn) accountProfileOpenBtn.addEventListener('click', () => openAccountEditDialog('profile'));
 if(accountUsernameOpenBtn) accountUsernameOpenBtn.addEventListener('click', () => openAccountEditDialog('username'));
 if(accountEmailOpenBtn) accountEmailOpenBtn.addEventListener('click', () => openAccountEditDialog('email'));
 if(accountPasswordOpenBtn) accountPasswordOpenBtn.addEventListener('click', () => openAccountEditDialog('password'));
 if(accountDeleteOpenBtn) accountDeleteOpenBtn.addEventListener('click', () => openAccountEditDialog('delete'));
 if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.addEventListener('click', saveEmailNotificationSettings);
+if(accountProfileAboutInput) accountProfileAboutInput.addEventListener('input', updateAccountProfileAboutCount);
 [dailyTurnEmailCheckbox, dailyResultEmailCheckbox].forEach(input => {
   if(input) input.addEventListener('change', () => setEmailNotificationsStatus('Änderung noch nicht gespeichert.', ''));
 });
@@ -6050,6 +6204,142 @@ async function waitForInvitationRoomReady(timeoutMs){
   }
   throw new Error('Der Spielraum wurde erstellt, aber vom Server noch nicht vollständig bestätigt. Bitte die Einladung über das geöffnete Einladungsfenster erneut senden.');
 }
+function formatMemberProfileSince(value){
+  if(!value) return '—';
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return '—';
+  try{
+    return date.toLocaleDateString('de-DE', {month:'long', year:'numeric'});
+  } catch(_){ return '—'; }
+}
+function setMemberProfileStatus(message, kind){
+  if(!memberProfileStatus) return;
+  memberProfileStatus.textContent = message || '';
+  memberProfileStatus.classList.toggle('error', kind === 'error');
+  memberProfileStatus.classList.toggle('success', kind === 'success');
+}
+function renderMemberProfileRatings(ratings){
+  if(!memberProfileRatingsGrid) return;
+  memberProfileRatingsGrid.innerHTML = '';
+  const source = ratings && typeof ratings === 'object' ? ratings : {};
+  const frag = document.createDocumentFragment();
+  RATING_TYPE_ORDER.forEach(info => {
+    const rating = normalizeClientRating(source[info.key], info.key, info.label);
+    const card = document.createElement('div');
+    card.className = 'auth-rating-card';
+    const name = document.createElement('div');
+    name.className = 'auth-rating-name';
+    name.textContent = info.label;
+    const value = document.createElement('div');
+    value.className = 'auth-rating-value';
+    value.textContent = rating.display;
+    const meta = document.createElement('div');
+    meta.className = 'auth-rating-meta';
+    meta.textContent = rating.games === 0
+      ? 'Noch keine gewertete Partie'
+      : rating.games + ' Partie' + (rating.games === 1 ? '' : 'n') + ' · ' + rating.wins + ' S · ' + rating.draws + ' R · ' + rating.losses + ' N';
+    card.appendChild(name);
+    card.appendChild(value);
+    card.appendChild(meta);
+    frag.appendChild(card);
+  });
+  memberProfileRatingsGrid.appendChild(frag);
+}
+function closeMemberProfileDialog(){
+  if(memberProfileBackdrop) memberProfileBackdrop.hidden = true;
+  memberProfileContext = '';
+  memberProfileTarget = null;
+  memberProfileRequestId++;
+  setMemberProfileStatus('', '');
+}
+function updateMemberProfileInviteButton(){
+  if(!memberProfileInviteBtn) return;
+  const hasTarget = !!(memberProfileTarget && memberProfileTarget.id && onlineAuthUser && memberProfileTarget.id !== onlineAuthUser.id);
+  memberProfileInviteBtn.hidden = !hasTarget;
+  if(!hasTarget) return;
+  if(memberProfileContext === 'invite'){
+    memberProfileInviteBtn.textContent = '✉️ Einladung senden';
+    memberProfileInviteBtn.disabled = !onlineRoomId;
+    memberProfileInviteBtn.title = onlineRoomId ? 'Partieeinladung automatisch per E-Mail senden.' : 'Es ist kein Spielraum vorbereitet.';
+  } else {
+    const canInvite = standaloneInvitationAvailable();
+    memberProfileInviteBtn.textContent = '✉️ Zur Partie einladen';
+    memberProfileInviteBtn.disabled = !canInvite;
+    memberProfileInviteBtn.title = canInvite
+      ? 'Spielraum mit den aktuell vorbereiteten Einstellungen erstellen und Einladung senden.'
+      : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
+  }
+}
+async function openMemberProfile(user, context){
+  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
+  const id = String(user && user.id || '').trim();
+  if(!id) return;
+  memberProfileContext = context === 'invite' ? 'invite' : 'standalone';
+  memberProfileTarget = Object.assign({}, user || {});
+  const requestId = ++memberProfileRequestId;
+  if(memberProfileUsername) memberProfileUsername.textContent = user && user.username ? user.username : 'Mitgliederprofil';
+  if(memberProfileRealName){ memberProfileRealName.textContent = ''; memberProfileRealName.hidden = true; }
+  if(memberProfilePresence){ memberProfilePresence.innerHTML = ''; memberProfilePresence.appendChild(createPresenceBadge(!!(user && user.isOnline))); }
+  if(memberProfileSince) memberProfileSince.textContent = formatMemberProfileSince(user && user.createdAt);
+  if(memberProfileSinceCard) memberProfileSinceCard.style.gridColumn = '1 / -1';
+  if(memberProfileDwzCard) memberProfileDwzCard.hidden = true;
+  if(memberProfileClubCard) memberProfileClubCard.hidden = true;
+  if(memberProfileAboutSection) memberProfileAboutSection.hidden = true;
+  if(memberProfileRatingsGrid) memberProfileRatingsGrid.innerHTML = '<div class="member-empty">Ratings werden geladen…</div>';
+  setMemberProfileStatus('Mitgliederprofil wird geladen…', '');
+  updateMemberProfileInviteButton();
+  if(memberProfileBackdrop) memberProfileBackdrop.hidden = false;
+  try{
+    const data = await authApi('/api/members/' + encodeURIComponent(id) + '/profile');
+    if(requestId !== memberProfileRequestId) return;
+    const member = data && data.member ? data.member : null;
+    if(!member) throw new Error('Mitgliederprofil konnte nicht geladen werden.');
+    memberProfileTarget = Object.assign({}, memberProfileTarget || {}, member);
+    const profile = member.profile && typeof member.profile === 'object' ? member.profile : {};
+    if(memberProfileUsername) memberProfileUsername.textContent = member.username || 'Mitglied';
+    if(memberProfileRealName){
+      const realName = String(profile.realName || '').trim();
+      memberProfileRealName.textContent = realName;
+      memberProfileRealName.hidden = !realName;
+    }
+    if(memberProfilePresence){
+      memberProfilePresence.innerHTML = '';
+      memberProfilePresence.appendChild(createPresenceBadge(!!member.isOnline));
+    }
+    if(memberProfileSince) memberProfileSince.textContent = formatMemberProfileSince(member.createdAt);
+    const dwz = Number(profile.dwz);
+    const hasDwz = Number.isInteger(dwz) && dwz >= 100 && dwz <= 3500;
+    if(memberProfileDwzCard) memberProfileDwzCard.hidden = !hasDwz;
+    if(memberProfileSinceCard) memberProfileSinceCard.style.gridColumn = hasDwz ? '' : '1 / -1';
+    if(memberProfileDwz) memberProfileDwz.textContent = hasDwz ? String(dwz) : '—';
+    const clubName = String(profile.clubName || '').trim();
+    if(memberProfileClubCard) memberProfileClubCard.hidden = !clubName;
+    if(memberProfileClub) memberProfileClub.textContent = clubName || '—';
+    const about = String(profile.about || '').trim();
+    if(memberProfileAboutSection) memberProfileAboutSection.hidden = !about;
+    if(memberProfileAboutText) memberProfileAboutText.textContent = about;
+    renderMemberProfileRatings(member.ratings || {});
+    updateMemberProfileInviteButton();
+    setMemberProfileStatus('', '');
+  } catch(err){
+    if(requestId !== memberProfileRequestId) return;
+    if(memberProfileRatingsGrid) memberProfileRatingsGrid.innerHTML = '<div class="member-empty">Ratings konnten nicht geladen werden.</div>';
+    setMemberProfileStatus(err && err.message ? err.message : 'Mitgliederprofil konnte nicht geladen werden.', 'error');
+  }
+}
+async function inviteFromMemberProfile(){
+  const target = memberProfileTarget;
+  const context = memberProfileContext;
+  if(!target) return;
+  closeMemberProfileDialog();
+  if(context === 'invite') await sendEmailInvitationToMember(target, null);
+  else await inviteMemberFromStandaloneList(target, null);
+}
+if(memberProfileCloseBtn) memberProfileCloseBtn.addEventListener('click', closeMemberProfileDialog);
+if(memberProfileInviteBtn) memberProfileInviteBtn.addEventListener('click', inviteFromMemberProfile);
+if(memberProfileBackdrop) memberProfileBackdrop.addEventListener('click', ev => { if(ev.target === memberProfileBackdrop) closeMemberProfileDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && memberProfileBackdrop && !memberProfileBackdrop.hidden) closeMemberProfileDialog(); });
+
 function renderStandaloneMemberResults(users, options){
   options = options || {};
   if(!membersResults) return;
@@ -6079,13 +6369,20 @@ function renderStandaloneMemberResults(users, options){
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
     meta.textContent = canInvite
-      ? 'Registriertes Mitglied · direkt zur vorbereiteten Partie einladen'
-      : 'Registriertes Mitglied · für eine neue Einladung bitte zur Lobby zurückkehren';
+      ? 'Profil ansehen oder direkt zur vorbereiteten Partie einladen'
+      : 'Profil ansehen · für eine neue Einladung bitte zur Lobby zurückkehren';
     info.appendChild(name);
     info.appendChild(meta);
 
     const actions = document.createElement('div');
     actions.className = 'member-result-actions';
+    const profileBtn = document.createElement('button');
+    profileBtn.type = 'button';
+    profileBtn.className = 'button-flat';
+    profileBtn.textContent = '👤 Profil';
+    profileBtn.title = 'Mitgliederprofil und Ratings anzeigen';
+    profileBtn.addEventListener('click', ev => { ev.stopPropagation(); openMemberProfile(user, 'standalone'); });
+    actions.appendChild(profileBtn);
     if(onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
       const inviteBtn = document.createElement('button');
       inviteBtn.type = 'button';
@@ -6389,13 +6686,21 @@ function renderMemberSearchResults(users, options){
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
     meta.textContent = canAdminDelete
-      ? 'Registriertes Mitglied · Admin: Einladung oder User löschen'
-      : 'Registriertes Mitglied · Online-Status zeigt aktuelle Gamer-Aktivität';
+      ? 'Profil ansehen · Admin: Einladung oder User löschen'
+      : 'Profil, Ratings und aktueller Gamer-Online-Status';
     info.appendChild(name);
     info.appendChild(meta);
 
     const actions = document.createElement('div');
     actions.className = 'member-result-actions';
+
+    const profileBtn = document.createElement('button');
+    profileBtn.type = 'button';
+    profileBtn.className = 'button-flat';
+    profileBtn.textContent = '👤 Profil';
+    profileBtn.title = 'Mitgliederprofil und Ratings anzeigen';
+    profileBtn.addEventListener('click', ev => { ev.stopPropagation(); openMemberProfile(user, 'invite'); });
+    actions.appendChild(profileBtn);
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -6429,7 +6734,7 @@ async function loadMemberList(){
     const data = await authApi('/api/members/list?limit=50');
     renderMemberSearchResults(data.users || [], {source:'list'});
     const count = (data.users || []).length;
-    if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Mitglied anklicken, um die Einladung automatisch zu senden.') : 'Keine weiteren Mitglieder gefunden.';
+    if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Profil ansehen oder Einladung senden.') : 'Keine weiteren Mitglieder gefunden.';
   } catch(err){
     renderMemberSearchResults([], {source:'list'});
     if(memberSearchStatus) memberSearchStatus.textContent = err && err.message ? err.message : 'Mitgliederliste konnte nicht geladen werden.';
