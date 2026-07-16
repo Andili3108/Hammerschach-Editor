@@ -378,7 +378,69 @@ function encodeDurableBackupValue(value, ancestors = new WeakSet()) {
   }
 }
 
-async function durableObjectBackupDocument(state, className, logicalName = '') {
+function collectVerifiedRoomNameCandidates(value, candidates, seen, budget) {
+  if (!budget || budget.remaining <= 0) return;
+  budget.remaining -= 1;
+
+  if (typeof value === 'string') {
+    const candidate = cleanRoomId(value);
+    if (candidate) candidates.add(candidate);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  if (seen.has(value)) return;
+  seen.add(value);
+  try {
+    if (Array.isArray(value)) {
+      for (const item of value) collectVerifiedRoomNameCandidates(item, candidates, seen, budget);
+      return;
+    }
+    if (value instanceof Map) {
+      for (const [key, item] of value.entries()) {
+        collectVerifiedRoomNameCandidates(key, candidates, seen, budget);
+        collectVerifiedRoomNameCandidates(item, candidates, seen, budget);
+      }
+      return;
+    }
+    if (value instanceof Set) {
+      for (const item of value.values()) collectVerifiedRoomNameCandidates(item, candidates, seen, budget);
+      return;
+    }
+    if (value instanceof Date || value instanceof RegExp || value instanceof ArrayBuffer || ArrayBuffer.isView(value)) return;
+    for (const [key, item] of Object.entries(value)) {
+      collectVerifiedRoomNameCandidates(key, candidates, seen, budget);
+      collectVerifiedRoomNameCandidates(item, candidates, seen, budget);
+    }
+  } finally {
+    seen.delete(value);
+  }
+}
+
+function verifiedGameRoomNameFromStoredValues(stored, env, state) {
+  if (!stored || !env || !env.GAME_ROOM || !state || !state.id) return '';
+  const expectedId = String(state.id);
+  const candidates = new Set();
+  const seen = new WeakSet();
+  const budget = {remaining:20000};
+
+  for (const [key, value] of stored.entries()) {
+    collectVerifiedRoomNameCandidates(key, candidates, seen, budget);
+    collectVerifiedRoomNameCandidates(value, candidates, seen, budget);
+    if (budget.remaining <= 0) break;
+  }
+
+  const verified = [];
+  for (const candidate of candidates) {
+    try {
+      if (String(env.GAME_ROOM.idFromName(candidate)) === expectedId) verified.push(candidate);
+    } catch (_) {}
+  }
+  const unique = Array.from(new Set(verified));
+  if (unique.length > 1) throw new Error('Mehrere verifizierte logische Namen wurden in einem GAME_ROOM gefunden.');
+  return unique[0] || '';
+}
+
+async function durableObjectBackupDocument(state, env, className, logicalName = '') {
   if (state.storage && typeof state.storage.sync === 'function') await state.storage.sync();
   const stored = await state.storage.list();
   const entries = Array.from(stored.entries(), ([key, value]) => ({
@@ -405,9 +467,18 @@ async function durableObjectBackupDocument(state, className, logicalName = '') {
 
   const storedRoomId = stored.has('roomId') ? cleanRoomId(stored.get('roomId')) : '';
   const requestedLogicalName = className === 'GameRoom' ? cleanRoomId(logicalName) : String(logicalName || '').trim();
-  const resolvedLogicalName = className === 'GameRoom' ? (storedRoomId || requestedLogicalName) : requestedLogicalName;
+  const derivedLogicalName = className === 'GameRoom' && !storedRoomId && !requestedLogicalName
+    ? verifiedGameRoomNameFromStoredValues(stored, env, state)
+    : '';
+  const resolvedLogicalName = className === 'GameRoom'
+    ? (storedRoomId || requestedLogicalName || derivedLogicalName)
+    : requestedLogicalName;
   const logicalNameSource = className === 'GameRoom'
-    ? (storedRoomId ? 'storage' : (requestedLogicalName ? 'verified-name-map' : 'unresolved'))
+    ? (storedRoomId
+        ? 'storage'
+        : (requestedLogicalName
+            ? 'verified-name-map'
+            : (derivedLogicalName ? 'verified-stored-value' : 'unresolved')))
     : (resolvedLogicalName ? 'fixed-name' : 'unresolved');
   return {
     format:DURABLE_BACKUP_FORMAT,
@@ -434,7 +505,7 @@ async function durableObjectBackupDocument(state, className, logicalName = '') {
 async function durableObjectBackupResponse(state, env, request, className, logicalName = '') {
   if (request.method !== 'POST' || !backupRequestIsAuthorized(request, env)) return privateBackupNotFound();
   try {
-    const document = await durableObjectBackupDocument(state, className, logicalName);
+    const document = await durableObjectBackupDocument(state, env, className, logicalName);
     return privateJson(document, {
       status:200,
       headers:{
