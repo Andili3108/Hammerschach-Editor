@@ -81,6 +81,10 @@
   .board-action-btn{width:auto!important;min-width:0!important;min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
   .board-daily-cancel-btn{width:40px!important;min-width:40px!important;padding:0!important;font-size:20px!important;}
   .board-daily-confirm-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .variation-launcher{width:100%;display:flex;justify-content:center;}
+  .variation-launcher[hidden]{display:none!important;}
+  .variation-open-btn{width:min(360px,100%);min-height:46px;border-radius:15px;background:linear-gradient(135deg,#9a4a53 0%,#74343b 100%)!important;color:#fff!important;border:1px solid rgba(91,31,38,.58)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 9px 20px rgba(74,31,36,.22)!important;font-size:15px;letter-spacing:.01em;}
+  .variation-open-btn:hover:not(:disabled){box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 13px 24px rgba(74,31,36,.29)!important;}
   .icon-btn .icon-label{display:inline-block;line-height:1;}
   .board-tools .board-color-wrap{position:relative;width:auto;display:flex;justify-content:center;}
   button{background:linear-gradient(180deg,#f3f3f3 0%,#dadada 100%);color:#9A2D33;border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:900;cursor:pointer;transition:transform .08s ease, box-shadow .12s ease, filter .12s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(0,0,0,.05), 0 6px 14px rgba(0,0,0,.12);}
@@ -258,6 +262,27 @@
   .promo-btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;}
   .promo-piece{font-size:30px;width:34px;text-align:center;}
   .small-note{font-size:13px;color:#666;font-weight:700;line-height:1.3;}
+
+  .variation-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.58);z-index:2900;padding:18px;box-sizing:border-box;}
+  .variation-backdrop[hidden]{display:none!important;}
+  .variation-modal{width:min(970px,100%);max-height:94vh;overflow:auto;box-sizing:border-box;background:#fff;border:1px solid rgba(132,63,70,.22);border-radius:22px;box-shadow:0 24px 60px rgba(0,0,0,.34);padding:18px;}
+  .variation-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;}
+  .variation-title{margin:0;color:#222;font-size:24px;line-height:1.12;}
+  .variation-intro{margin:5px 0 0;color:#666;font-size:13px;font-weight:800;line-height:1.35;}
+  .variation-close-icon{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border-radius:999px;font-size:22px;line-height:1;}
+  .variation-layout{display:grid;grid-template-columns:minmax(320px,1fr) 285px;gap:18px;align-items:start;}
+  .variation-board-wrap{width:100%;max-width:610px;aspect-ratio:1/1;justify-self:center;}
+  .variation-board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.18);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;}
+  .variation-panel{display:flex;flex-direction:column;gap:11px;min-width:0;}
+  .variation-safety{border-radius:13px;background:rgba(34,107,54,.08);border:1px solid rgba(34,107,54,.20);padding:9px 10px;color:#226b36;font-size:12px;font-weight:900;line-height:1.35;}
+  .variation-status{border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:10px 11px;color:#333;font-size:14px;font-weight:900;line-height:1.35;}
+  .variation-moves-title{font-size:14px;font-weight:900;color:#333;}
+  .variation-moves{min-height:96px;max-height:240px;overflow:auto;display:flex;align-content:flex-start;flex-wrap:wrap;gap:6px;border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:9px;box-sizing:border-box;}
+  .variation-moves-empty{color:#777;font-size:13px;font-weight:800;}
+  .variation-move{display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid rgba(132,63,70,.17);padding:5px 8px;color:#333;font-size:12px;font-weight:900;line-height:1;}
+  .variation-controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .variation-controls button{min-height:39px;border-radius:12px;padding:7px 8px;font-size:12px;white-space:normal;}
+  .variation-flip-btn,.variation-reset-btn,.variation-close-btn{grid-column:1 / -1;}
 
   .identity-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:3200;padding:18px;box-sizing:border-box;}
   .identity-backdrop[hidden]{display:none!important;}
@@ -683,6 +708,7 @@
   html.dark-mode .box,
   html.dark-mode .identity-modal,
   html.dark-mode .info-modal,
+  html.dark-mode .variation-modal,
   html.dark-mode .invite-modal,
   html.dark-mode .daily-games-modal,
   html.dark-mode .open-offers-modal,
@@ -732,8 +758,17 @@
   html.dark-mode .board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
   html.dark-mode .visitor-board-welcome{background:rgba(27,30,35,.91);border-color:rgba(226,151,160,.24);box-shadow:0 20px 48px rgba(0,0,0,.46);}
   html.dark-mode .promo-backdrop,
+  html.dark-mode .variation-backdrop,
   html.dark-mode .identity-backdrop,
   html.dark-mode .info-backdrop{background:rgba(0,0,0,.66);}
+  html.dark-mode .variation-title,
+  html.dark-mode .variation-moves-title{color:#f3f4f6;}
+  html.dark-mode .variation-intro{color:#b8bdc6;}
+  html.dark-mode .variation-status,
+  html.dark-mode .variation-moves{background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode .variation-move{background:#1b1e23;border-color:rgba(226,151,160,.20);color:#eef0f2;}
+  html.dark-mode .variation-moves-empty{color:#b8bdc6;}
+  html.dark-mode .variation-safety{background:rgba(62,154,88,.14);border-color:rgba(75,190,107,.25);color:#83d49a;}
   html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.members-modal h3,.member-lobby-heading h2,.board-color-popup-title){color:#f3f4f6!important;}
   html.dark-mode :is(.player-label,.player-clock-head,.time-status,.time-format-help,.time-lock-note,.daily-account-note,.invite-color-summary,.variantStatus,.freestyle-position-label,.freestyle-position-message,.chat-etiquette-note,.chat-empty,.chat-status,.global-chat-subtitle,.global-chat-status,.global-chat-note,.global-chat-members-title,.member-search-hint,.member-empty,.member-result-meta,.members-intro,.members-status,.daily-game-meta,.daily-games-intro,.daily-games-status,.open-offer-meta,.open-offers-intro,.open-offers-status,.public-game-meta,.public-games-intro,.public-games-status,.auth-account-mail,.auth-rating-name,.auth-rating-meta,.auth-ratings-note,.auth-email-notifications-note,.auth-email-notifications-status,.account-edit-hint,.admin-overview-intro,.admin-overview-generated,.admin-stat-label,.admin-event-time,.admin-message-meta-row,.admin-message-file-note,.admin-message-attachment-meta,.moderation-note,.admin-report-meta,.admin-report-comment,.admin-report-chat,.privacy-highlight,.privacy-storage-list dd,.site-footnote,.site-stats,.next-daily-game-hint){color:#b8bdc6!important;}
   html.dark-mode :is(.daily-game-status,.open-offer-kicker,.open-offer-status,.public-game-kicker,.public-game-status,.member-result-name,.player-rating-value,.auth-rating-value,.global-chat-message-name,.admin-stat-value,.admin-inline-stat strong){color:#e6a3ab!important;}
@@ -797,6 +832,7 @@
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.variation-backdrop{padding:9px}.variation-modal{max-height:97vh;padding:13px;border-radius:17px}.variation-head{margin-bottom:11px}.variation-title{font-size:21px}.variation-layout{grid-template-columns:1fr;gap:13px}.variation-board-wrap{max-width:560px}.variation-moves{min-height:72px;max-height:130px}.variation-panel{gap:8px}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
@@ -1645,10 +1681,43 @@
             <button id="dailyMoveConfirmBtn" class="board-action-btn board-daily-confirm-btn" type="button">✓ Zug bestätigen</button>
           </div>
         </div>
+        <div id="variationLauncher" class="variation-launcher" hidden>
+          <button id="variationOpenBtn" class="variation-open-btn" type="button">♟ Variantenbrett öffnen</button>
+        </div>
         <footer class="site-footnote" aria-label="Projekt-Hinweis">
           <div><a href="https://www.andili.de" target="_blank" rel="noopener noreferrer">Hammerschach-Gamer – ein Produkt von Hammerschach</a> · Andreas Lipske &amp; ChatGPT 5.5 (Juli 2026) · <button id="footerPrivacyOpenBtn" class="site-footnote-button" type="button">Gamer-Datenschutz</button> · <a href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a></div>
           <div id="siteStats" class="site-stats" aria-live="polite" hidden>Gamer-Aufrufe: — · Gespielte Online-Partien: —</div>
         </footer>
+      </div>
+
+      <div id="variationBackdrop" class="variation-backdrop" hidden>
+        <section class="variation-modal" role="dialog" aria-modal="true" aria-labelledby="variationTitle">
+          <div class="variation-head">
+            <div>
+              <h2 id="variationTitle" class="variation-title">Variantenbrett</h2>
+              <p class="variation-intro">Probiere beide Seiten ab der aktuellen Daily-Stellung aus. Beim Schließen bleibt die echte Partie unverändert.</p>
+            </div>
+            <button id="variationCloseIconBtn" class="button-flat variation-close-icon" type="button" aria-label="Variantenbrett schließen" title="Schließen">×</button>
+          </div>
+          <div class="variation-layout">
+            <div class="variation-board-wrap">
+              <div id="variationBoard" class="variation-board" aria-label="Variantenbrett"></div>
+            </div>
+            <aside class="variation-panel">
+              <div class="variation-safety">🔒 Reine Simulation: Es wird kein Zug übertragen oder bestätigt.</div>
+              <div id="variationStatus" class="variation-status" aria-live="polite">—</div>
+              <div class="variation-moves-title">Ausprobierte Züge</div>
+              <div id="variationMoveList" class="variation-moves" aria-label="Ausprobierte Variantenzüge"></div>
+              <div class="variation-controls">
+                <button id="variationUndoBtn" class="button-flat" type="button">← Zurück</button>
+                <button id="variationRedoBtn" class="button-flat" type="button">Vor →</button>
+                <button id="variationFlipBtn" class="button-flat variation-flip-btn" type="button">↻ Brett drehen</button>
+                <button id="variationResetBtn" class="button-flat variation-reset-btn" type="button">Ausgangsstellung der Variante</button>
+                <button id="variationCloseBtn" class="variation-close-btn" type="button">Variantenbrett schließen</button>
+              </div>
+            </aside>
+          </div>
+        </section>
       </div>
 
       <aside class="moves-right">
@@ -2523,6 +2592,12 @@ let orientationWhite = true;
 let lastMove = null;
 let gameEnded = false;
 let timeLost = false;
+let variationStartGame = null;
+let variationGame = null;
+let variationHistory = [];
+let variationRedo = [];
+let variationSelected = null;
+let variationOrientationWhite = true;
 
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
@@ -2555,6 +2630,18 @@ const playersPanelEl = document.getElementById('playersPanel');
 const dailyMoveConfirmationEl = document.getElementById('dailyMoveConfirmation');
 const dailyMoveCancelBtn = document.getElementById('dailyMoveCancelBtn');
 const dailyMoveConfirmBtn = document.getElementById('dailyMoveConfirmBtn');
+const variationLauncherEl = document.getElementById('variationLauncher');
+const variationOpenBtn = document.getElementById('variationOpenBtn');
+const variationBackdrop = document.getElementById('variationBackdrop');
+const variationBoardEl = document.getElementById('variationBoard');
+const variationStatusEl = document.getElementById('variationStatus');
+const variationMoveListEl = document.getElementById('variationMoveList');
+const variationUndoBtn = document.getElementById('variationUndoBtn');
+const variationRedoBtn = document.getElementById('variationRedoBtn');
+const variationFlipBtn = document.getElementById('variationFlipBtn');
+const variationResetBtn = document.getElementById('variationResetBtn');
+const variationCloseBtn = document.getElementById('variationCloseBtn');
+const variationCloseIconBtn = document.getElementById('variationCloseIconBtn');
 const movesPanelEl = document.getElementById('movesPanel');
 const chatPanelEl = document.getElementById('chatPanel');
 const showPlayersPanelBtn = document.getElementById('showPlayersPanelBtn');
@@ -8660,6 +8747,7 @@ function renderBoard(){
   updateClockDisplay(g);
   updateGameActionButtons();
   updateDailyMoveConfirmationUi();
+  updateVariationLauncherUi();
 }
 function getSquareEl(x,y){ return boardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]'); }
 function markSquare(x,y,cls){ const el = getSquareEl(x,y); if(el) el.classList.add(cls); }
@@ -8840,6 +8928,243 @@ function handleChosenHumanMove(found, promotion){
 }
 if(dailyMoveCancelBtn) dailyMoveCancelBtn.addEventListener('click', cancelPendingDailyMove);
 if(dailyMoveConfirmBtn) dailyMoveConfirmBtn.addEventListener('click', confirmPendingDailyMove);
+
+function variationBoardAvailable(){
+  return !!(
+    isDailyTimeControl() && onlineRoomId && onlineGameStarted &&
+    !onlineGameEnded && !gameEnded && !timeLost &&
+    (onlineRoleCode === 'w' || onlineRoleCode === 'b')
+  );
+}
+function updateVariationLauncherUi(){
+  if(!variationLauncherEl || !variationOpenBtn) return;
+  const available = variationBoardAvailable();
+  variationLauncherEl.hidden = !available;
+  variationOpenBtn.disabled = !available || !!pendingDailyMove;
+  variationOpenBtn.title = pendingDailyMove
+    ? 'Bitte den vorgemerkten Daily-Zug zuerst bestätigen oder zurücknehmen.'
+    : 'Aktuelle Daily-Stellung gefahrlos ausprobieren';
+}
+function openVariationBoard(){
+  if(!variationBoardAvailable() || pendingDailyMove || !variationBackdrop) return;
+  variationStartGame = buildGameFromHistory(masterHistory.length).clone();
+  variationGame = variationStartGame.clone();
+  variationHistory = [];
+  variationRedo = [];
+  variationSelected = null;
+  variationOrientationWhite = orientationWhite;
+  variationBackdrop.hidden = false;
+  document.body.style.overflow = 'hidden';
+  renderVariationBoard();
+  if(variationCloseIconBtn) variationCloseIconBtn.focus();
+}
+function closeVariationBoard(){
+  if(!variationBackdrop || variationBackdrop.hidden) return;
+  variationBackdrop.hidden = true;
+  document.body.style.overflow = '';
+  variationStartGame = null;
+  variationGame = null;
+  variationHistory = [];
+  variationRedo = [];
+  variationSelected = null;
+  if(variationOpenBtn && !variationOpenBtn.disabled) variationOpenBtn.focus();
+}
+function rebuildVariationGame(){
+  if(!variationStartGame) return;
+  variationGame = variationStartGame.clone();
+  for(const entry of variationHistory){
+    const found = findMatchingLegalMove(variationGame.legalMoves(), entry);
+    if(!found) break;
+    variationGame.makeMove({
+      from:found.from.slice(),
+      to:found.to.slice(),
+      meta:clone(found.meta || {}),
+      promotion:entry.promotion || null
+    }, true);
+  }
+}
+function variationGameOverText(go){
+  if(!go) return '';
+  if(go.type === 'checkmate') return 'Matt in der Variante — ' + (go.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt.';
+  if(go.type === 'stalemate') return 'Patt in der Variante.';
+  if(go.type === 'insufficient_material') return 'Remis in der Variante — unzureichendes Material.';
+  if(go.type === 'fifty_move_rule') return 'Remis in der Variante — 50-Züge-Regel.';
+  if(go.type === 'threefold_repetition') return 'Remis in der Variante — dreifache Wiederholung.';
+  return 'Die Variante ist beendet.';
+}
+function updateVariationStatus(){
+  if(!variationStatusEl || !variationGame) return;
+  const go = variationGame.gameOver();
+  if(go){
+    variationStatusEl.textContent = variationGameOverText(go);
+    return;
+  }
+  const side = variationGame.turn === 'w' ? 'Weiß' : 'Schwarz';
+  variationStatusEl.textContent = side + ' am Zug' + (variationGame.inCheck(variationGame.turn) ? ' — Schach!' : '.');
+}
+function renderVariationMoveList(){
+  if(!variationMoveListEl) return;
+  variationMoveListEl.innerHTML = '';
+  if(variationHistory.length === 0){
+    const empty = document.createElement('span');
+    empty.className = 'variation-moves-empty';
+    empty.textContent = 'Noch keine Züge ausprobiert.';
+    variationMoveListEl.appendChild(empty);
+    return;
+  }
+  for(const entry of variationHistory){
+    const chip = document.createElement('span');
+    chip.className = 'variation-move';
+    chip.textContent = entry.moveNumber + (entry.side === 'w' ? '. ' : '… ') + entry.san;
+    variationMoveListEl.appendChild(chip);
+  }
+  variationMoveListEl.scrollTop = variationMoveListEl.scrollHeight;
+}
+function getVariationSquareEl(x,y){
+  if(!variationBoardEl) return null;
+  return variationBoardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]');
+}
+function renderVariationBoard(){
+  if(!variationBoardEl || !variationGame) return;
+  variationBoardEl.innerHTML = '';
+  const legalFromSelection = variationSelected
+    ? variationGame.legalMoves().filter(move => move.from[0] === variationSelected[0] && move.from[1] === variationSelected[1])
+    : [];
+  const last = variationHistory.length ? variationHistory[variationHistory.length - 1] : null;
+  for(let row=0; row<8; row++){
+    for(let col=0; col<8; col++){
+      const x = variationOrientationWhite ? col : 7-col;
+      const y = variationOrientationWhite ? row : 7-row;
+      const sq = document.createElement('div');
+      sq.className = 'square ' + (((x+y)%2===0) ? 'light' : 'dark');
+      sq.dataset.x = x;
+      sq.dataset.y = y;
+      if(variationSelected && variationSelected[0] === x && variationSelected[1] === y) sq.classList.add('selected');
+      if(legalFromSelection.some(move => move.to[0] === x && move.to[1] === y)) sq.classList.add('legal');
+      if(last && ((last.from[0] === x && last.from[1] === y) || (last.to[0] === x && last.to[1] === y))) sq.classList.add('last-move');
+      const piece = variationGame.at(x,y);
+      if(piece !== '.'){
+        const img = document.createElement('img');
+        img.className = 'piece-img';
+        img.src = pieceImg[piece];
+        img.alt = pieceChar[piece] || '';
+        sq.appendChild(img);
+      }
+      if(row === 7){
+        const fileLabel = document.createElement('span');
+        fileLabel.className = 'coord-file';
+        fileLabel.textContent = files[x];
+        sq.appendChild(fileLabel);
+      }
+      if(col === 0){
+        const rankLabel = document.createElement('span');
+        rankLabel.className = 'coord-rank';
+        rankLabel.textContent = 8 - y;
+        sq.appendChild(rankLabel);
+      }
+      sq.addEventListener('click', () => onVariationSquareClick(x,y));
+      variationBoardEl.appendChild(sq);
+    }
+  }
+  updateVariationStatus();
+  renderVariationMoveList();
+  if(variationUndoBtn) variationUndoBtn.disabled = variationHistory.length === 0;
+  if(variationRedoBtn) variationRedoBtn.disabled = variationRedo.length === 0;
+}
+function commitVariationMove(found, promotion, preserveRedo){
+  if(!variationGame) return;
+  const before = variationGame.clone();
+  const entry = {
+    from:found.from.slice(),
+    to:found.to.slice(),
+    meta:clone(found.meta || {}),
+    promotion:promotion || null,
+    side:before.turn,
+    moveNumber:before.fullmove,
+    san:''
+  };
+  const applied = variationGame.makeMove(entry, false);
+  entry.piece = applied.piece;
+  entry.taken = applied.taken;
+  entry.san = moveToSan(before, entry, variationGame);
+  variationHistory.push(entry);
+  if(!preserveRedo) variationRedo = [];
+  variationSelected = null;
+  renderVariationBoard();
+}
+function onVariationSquareClick(x,y){
+  if(!variationGame || variationGame.gameOver()) return;
+  const piece = variationGame.at(x,y);
+  if(!variationSelected){
+    if(piece === '.' || pieceColor(piece) !== variationGame.turn) return;
+    variationSelected = [x,y];
+    renderVariationBoard();
+    return;
+  }
+  if(variationSelected[0] === x && variationSelected[1] === y){
+    variationSelected = null;
+    renderVariationBoard();
+    return;
+  }
+  const found = findMatchingLegalMove(variationGame.legalMoves(), {from:variationSelected, to:[x,y]});
+  if(piece !== '.' && pieceColor(piece) === variationGame.turn && !found){
+    variationSelected = [x,y];
+    renderVariationBoard();
+    return;
+  }
+  if(!found){
+    variationSelected = null;
+    renderVariationBoard();
+    return;
+  }
+  const movingPiece = variationGame.at(found.from[0], found.from[1]);
+  const needsPromotion = movingPiece.toLowerCase() === 'p' && (found.to[1] === 0 || found.to[1] === 7);
+  if(needsPromotion){
+    showPromotionOverlay(variationGame.turn).then(choice => {
+      if(choice && variationGame) commitVariationMove(found, choice, false);
+      else { variationSelected = null; renderVariationBoard(); }
+    });
+  } else {
+    commitVariationMove(found, null, false);
+  }
+}
+function undoVariationMove(){
+  if(!variationHistory.length) return;
+  variationRedo.push(variationHistory.pop());
+  variationSelected = null;
+  rebuildVariationGame();
+  renderVariationBoard();
+}
+function redoVariationMove(){
+  if(!variationRedo.length || !variationGame) return;
+  const entry = variationRedo.pop();
+  const found = findMatchingLegalMove(variationGame.legalMoves(), entry);
+  if(!found){
+    variationRedo = [];
+    renderVariationBoard();
+    return;
+  }
+  commitVariationMove(found, entry.promotion || null, true);
+}
+function resetVariationBoard(){
+  if(!variationStartGame) return;
+  variationHistory = [];
+  variationRedo = [];
+  variationSelected = null;
+  variationGame = variationStartGame.clone();
+  renderVariationBoard();
+}
+if(variationOpenBtn) variationOpenBtn.addEventListener('click', openVariationBoard);
+if(variationCloseBtn) variationCloseBtn.addEventListener('click', closeVariationBoard);
+if(variationCloseIconBtn) variationCloseIconBtn.addEventListener('click', closeVariationBoard);
+if(variationUndoBtn) variationUndoBtn.addEventListener('click', undoVariationMove);
+if(variationRedoBtn) variationRedoBtn.addEventListener('click', redoVariationMove);
+if(variationFlipBtn) variationFlipBtn.addEventListener('click', () => { variationOrientationWhite = !variationOrientationWhite; renderVariationBoard(); });
+if(variationResetBtn) variationResetBtn.addEventListener('click', resetVariationBoard);
+if(variationBackdrop) variationBackdrop.addEventListener('click', event => { if(event.target === variationBackdrop) closeVariationBoard(); });
+document.addEventListener('keydown', event => {
+  if(event.key === 'Escape' && variationBackdrop && !variationBackdrop.hidden && !document.getElementById('promotionBackdrop')) closeVariationBoard();
+});
 
 function onSquareClick(x,y){
   if(gameEnded) return;
