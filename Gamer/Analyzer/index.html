@@ -729,6 +729,10 @@
     const boardColorCurrent = document.getElementById('boardColorCurrent');
     const boardColorOptions = document.querySelectorAll('.board-color-option');
     const BOARD_COLOR_STORAGE_KEY = 'hammerschachAnalyzerBoardColor';
+    const ANALYZER_SESSION_STORAGE_KEY = 'hammerschachAnalyzerSessionV1';
+    const ANALYZER_SESSION_VERSION = 1;
+    let analyzerSessionPersistenceReady = false;
+    let analyzerSessionSaveTimer = null;
     const boardColorPresets = [
       {id:'basis', name:'Basis', light:'#f0d9b5', dark:'#843f46'},
       {id:'braun', name:'Klassisch Braun', light:'#f3ddb7', dark:'#b4875e'},
@@ -819,7 +823,7 @@
       writeInputValue('hdrBlackElo', h.BlackElo);
       writeInputValue('hdrPlyCount', h.PlyCount || '0');
     }
-    function persistCurrentGame(){
+    function syncCurrentGameFromUI(){
       ensureAtLeastOneGame();
       if(!allGames[currentGameIndex]) allGames[currentGameIndex] = createEmptyGame();
       const headers = Object.assign({}, allGames[currentGameIndex].headers || {}, defaultHeaders(), getHeadersFromUI());
@@ -829,6 +833,126 @@
       allGames[currentGameIndex].orientationWhite = orientationWhite;
       allGames[currentGameIndex].setup = normalizeGameSetup(currentGameSetup);
       writeInputValue('hdrPlyCount', headers.PlyCount);
+    }
+    function persistCurrentGame(){
+      syncCurrentGameFromUI();
+      scheduleAnalyzerSessionSave();
+    }
+    function sessionNumber(value, fallback, min, max){
+      const parsed = Math.floor(Number(value));
+      if(!Number.isFinite(parsed)) return fallback;
+      return Math.max(min, Math.min(max, parsed));
+    }
+    function normalizeSessionHistory(rawHistory, setup){
+      if(!Array.isArray(rawHistory)) return [];
+      const game = new Game(setup);
+      const history = [];
+      for(const raw of rawHistory){
+        if(!raw || !Array.isArray(raw.from) || !Array.isArray(raw.to)) break;
+        const from = [Number(raw.from[0]), Number(raw.from[1])];
+        const to = [Number(raw.to[0]), Number(raw.to[1])];
+        if(!from.concat(to).every(n => Number.isInteger(n) && n >= 0 && n < 8)) break;
+        const legal = game.legalMoves().find(mv => mv.from[0] === from[0] && mv.from[1] === from[1] && mv.to[0] === to[0] && mv.to[1] === to[1]);
+        if(!legal) break;
+        const promotion = /^[QRBN]$/i.test(String(raw.promotion || '')) ? String(raw.promotion).toUpperCase() : null;
+        const move = {
+          from:[legal.from[0], legal.from[1]],
+          to:[legal.to[0], legal.to[1]],
+          meta:Object.assign({}, legal.meta || {}),
+          promotion
+        };
+        game.makeMove(move);
+        history.push(move);
+      }
+      return history;
+    }
+    function normalizeSessionGame(raw){
+      if(!raw || typeof raw !== 'object') return null;
+      const headers = Object.assign({}, defaultHeaders());
+      if(raw.headers && typeof raw.headers === 'object'){
+        Object.keys(raw.headers).forEach(key => {
+          const value = raw.headers[key];
+          if(typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') headers[key] = String(value);
+        });
+      }
+      const setup = normalizeGameSetup(raw.setup || setupFromPgnHeaders(headers));
+      const history = normalizeSessionHistory(raw.history, setup);
+      headers.PlyCount = String(history.length);
+      return {
+        headers,
+        history,
+        orientationWhite:typeof raw.orientationWhite === 'boolean' ? raw.orientationWhite : true,
+        setup
+      };
+    }
+    function activeAnalyzerPanelId(){
+      const active = analyzerPanelConfig.find(item => item.panel && !item.panel.hidden);
+      return active && active.panel ? active.panel.id : 'engineBox';
+    }
+    function currentEngineSettings(){
+      return {
+        autoAnalyse:!!(chkAutoAnalyse && chkAutoAnalyse.checked),
+        mode:engineModeEl && engineModeEl.value === 'movetime' ? 'movetime' : 'depth',
+        depth:sessionNumber(engineDepthEl && engineDepthEl.value, 18, 1, 99),
+        moveTime:sessionNumber(engineMoveTimeEl && engineMoveTimeEl.value, 1200, 50, 600000),
+        multiPV:sessionNumber(engineMultiPVEl && engineMultiPVEl.value, 1, 1, 4)
+      };
+    }
+    function scheduleAnalyzerSessionSave(){
+      if(!analyzerSessionPersistenceReady) return;
+      if(analyzerSessionSaveTimer) clearTimeout(analyzerSessionSaveTimer);
+      analyzerSessionSaveTimer = setTimeout(saveAnalyzerSessionNow, 120);
+    }
+    function saveAnalyzerSessionNow(){
+      if(!analyzerSessionPersistenceReady) return false;
+      if(analyzerSessionSaveTimer){ clearTimeout(analyzerSessionSaveTimer); analyzerSessionSaveTimer = null; }
+      syncCurrentGameFromUI();
+      const session = {
+        version:ANALYZER_SESSION_VERSION,
+        savedAt:Date.now(),
+        allGames:clone(allGames),
+        currentGameIndex,
+        viewIndex,
+        orientationWhite,
+        activePanel:activeAnalyzerPanelId(),
+        engine:currentEngineSettings()
+      };
+      try {
+        localStorage.setItem(ANALYZER_SESSION_STORAGE_KEY, JSON.stringify(session));
+        return true;
+      } catch(err){
+        console.warn('Analyzer-Sitzung konnte nicht gespeichert werden:', err);
+        return false;
+      }
+    }
+    function restoreAnalyzerSession(){
+      let raw = null;
+      try { raw = localStorage.getItem(ANALYZER_SESSION_STORAGE_KEY); } catch(_){ return null; }
+      if(!raw) return null;
+      try {
+        const session = JSON.parse(raw);
+        if(!session || session.version !== ANALYZER_SESSION_VERSION || !Array.isArray(session.allGames)) return null;
+        const restoredGames = session.allGames.map(normalizeSessionGame).filter(Boolean);
+        if(!restoredGames.length) return null;
+        allGames = restoredGames;
+        currentGameIndex = sessionNumber(session.currentGameIndex, 0, 0, allGames.length - 1);
+        const activeGame = allGames[currentGameIndex];
+        const maxViewIndex = activeGame && Array.isArray(activeGame.history) ? activeGame.history.length : 0;
+        const engine = session.engine && typeof session.engine === 'object' ? session.engine : {};
+        if(chkAutoAnalyse) chkAutoAnalyse.checked = typeof engine.autoAnalyse === 'boolean' ? engine.autoAnalyse : true;
+        if(engineModeEl) engineModeEl.value = engine.mode === 'movetime' ? 'movetime' : 'depth';
+        if(engineDepthEl) engineDepthEl.value = String(sessionNumber(engine.depth, 18, 1, 99));
+        if(engineMoveTimeEl) engineMoveTimeEl.value = String(sessionNumber(engine.moveTime, 1200, 50, 600000));
+        if(engineMultiPVEl) engineMultiPVEl.value = String(sessionNumber(engine.multiPV, 1, 1, 4));
+        const allowedPanels = ['moveBox','engineBox','gamePanel'];
+        return {
+          viewIndex:sessionNumber(session.viewIndex, maxViewIndex, 0, maxViewIndex),
+          activePanel:allowedPanels.includes(session.activePanel) ? session.activePanel : 'engineBox'
+        };
+      } catch(err){
+        console.warn('Gespeicherte Analyzer-Sitzung ist ungültig und wird ignoriert:', err);
+        return null;
+      }
     }
     function buildGameFromHistory(n){
       const g = new Game(currentGameSetup);
@@ -957,6 +1081,7 @@
       removePromotionOverlay();
       if(typeof renderEngineInfo === 'function') renderEngineInfo();
       if(typeof requestEngineAnalysis === 'function') requestEngineAnalysis(false);
+      scheduleAnalyzerSessionSave();
     }
     function clearMoveTargets(){ document.querySelectorAll('.legal-target').forEach(sq => sq.classList.remove('legal-target')); }
     function highlightSelection(x,y){
@@ -1169,7 +1294,7 @@
       return true;
     }
 
-    function loadGameByIndex(index, doPersist=true){
+    function loadGameByIndex(index, doPersist=true, restoredViewIndex=null){
       ensureAtLeastOneGame();
       if(doPersist) persistCurrentGame();
       if(index < 0 || index >= allGames.length) return;
@@ -1178,7 +1303,10 @@
       currentGameSetup = normalizeGameSetup(gameObj.setup || setupFromPgnHeaders(gameObj.headers));
       writeHeadersToUI(gameObj.headers || defaultHeaders());
       masterHistory = clone(gameObj.history || []);
-      viewIndex = masterHistory.length;
+      const hasRestoredViewIndex = restoredViewIndex !== null && typeof restoredViewIndex !== 'undefined' && Number.isFinite(Number(restoredViewIndex));
+      viewIndex = hasRestoredViewIndex
+        ? Math.max(0, Math.min(masterHistory.length, Math.floor(Number(restoredViewIndex))))
+        : masterHistory.length;
       orientationWhite = (typeof gameObj.orientationWhite === 'boolean') ? gameObj.orientationWhite : true;
       selected = null;
       clearMoveTargets();
@@ -1477,6 +1605,7 @@
         item.button.setAttribute('aria-selected', active ? 'true' : 'false');
         item.button.tabIndex = active ? 0 : -1;
       });
+      scheduleAnalyzerSessionSave();
       reportAnalyzerHeight();
     }
     analyzerPanelConfig.forEach((item,index) => {
@@ -1513,6 +1642,13 @@
       persistCurrentGame();
       allGames.push(createEmptyGame());
       loadGameByIndex(allGames.length - 1, false);
+    });
+
+    ['hdrEvent','hdrSite','hdrDate','hdrRound','hdrWhite','hdrBlack','hdrResult','hdrECO','hdrWhiteElo','hdrBlackElo'].forEach(id => {
+      const input = document.getElementById(id);
+      if(!input) return;
+      input.addEventListener('input', () => { syncCurrentGameFromUI(); scheduleAnalyzerSessionSave(); });
+      input.addEventListener('change', () => { syncCurrentGameFromUI(); scheduleAnalyzerSessionSave(); });
     });
 
     btnOpenPGN.addEventListener('click', async () => {
@@ -1837,14 +1973,16 @@
       updateEngineControlVisibility();
       btnAnalyse.addEventListener('click', () => requestEngineAnalysis(true));
       btnStopAnalyse.addEventListener('click', () => stopEngineAnalysis(true));
-      engineModeEl.addEventListener('change', () => { updateEngineModeVisibility(); requestEngineAnalysis(true); });
-      [engineDepthEl, engineMoveTimeEl, engineMultiPVEl].forEach(el => el.addEventListener('change', () => requestEngineAnalysis(true)));
+      engineModeEl.addEventListener('change', () => { updateEngineModeVisibility(); scheduleAnalyzerSessionSave(); requestEngineAnalysis(true); });
+      [engineDepthEl, engineMoveTimeEl, engineMultiPVEl].forEach(el => el.addEventListener('change', () => { scheduleAnalyzerSessionSave(); requestEngineAnalysis(true); }));
       chkAutoAnalyse.addEventListener('change', () => {
         updateEngineControlVisibility();
+        scheduleAnalyzerSessionSave();
         if(chkAutoAnalyse.checked) requestEngineAnalysis(true);
         else stopEngineAnalysis(true);
       });
-      window.addEventListener('beforeunload', () => { try { if(engineState.worker) engineState.worker.terminate(); } catch(e){} });
+      window.addEventListener('beforeunload', () => { saveAnalyzerSessionNow(); try { if(engineState.worker) engineState.worker.terminate(); } catch(e){} });
+      window.addEventListener('pagehide', saveAnalyzerSessionNow);
     }
 
     const parentRequests=new Map(); let parentRequestSeq=0;
@@ -1870,8 +2008,12 @@
     function reportAnalyzerHeight(){parentMessage({type:'hammerschach-analyzer-height',height:Math.ceil(document.documentElement.scrollHeight)});}
     if(window.ResizeObserver)new ResizeObserver(reportAnalyzerHeight).observe(document.body);window.addEventListener('load',reportAnalyzerHeight);parentMessage({type:'hammerschach-analyzer-ready'});
 
+    const restoredAnalyzerSession = restoreAnalyzerSession();
     setupEngineControls();
-    loadGameByIndex(0, false);
+    loadGameByIndex(currentGameIndex, false, restoredAnalyzerSession ? restoredAnalyzerSession.viewIndex : null);
+    if(restoredAnalyzerSession) showAnalyzerPanel(restoredAnalyzerSession.activePanel);
+    analyzerSessionPersistenceReady = true;
+    saveAnalyzerSessionNow();
     initEngine();
   </script>
 
