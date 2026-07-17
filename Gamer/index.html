@@ -17,8 +17,14 @@
       document.documentElement.classList.add('dark-mode');
     }
   } catch(_){ }
+  try{
+    const initialParams = new URLSearchParams(window.location.search || '');
+    if(String(initialParams.get('room') || '').trim() || String(initialParams.get('watch') || '').trim()){
+      document.documentElement.classList.add('hammerschach-room-view');
+    }
+  } catch(_){ }
 </script>
-<!-- Design v6: Thematisch gebündelte Header-Navigation mit Partien-Menü -->
+<!-- Design v7: Header-Navigation mit Neue-Partie-/Partien-Menüs und Lobby-Analyzer -->
 <style>
   :root{
     --board-max:760px;
@@ -70,6 +76,7 @@
   .header-menu.open .header-menu-chevron{transform:rotate(180deg);}
   .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(132,63,70,.22),0 8px 18px rgba(0,0,0,.14)!important;}
   .header-menu-popup{position:absolute;z-index:2600;top:calc(100% + 9px);left:50%;transform:translateX(-50%);width:238px;box-sizing:border-box;padding:8px;border:1px solid rgba(132,63,70,.20);border-radius:15px;background:rgba(255,255,255,.99);box-shadow:0 18px 42px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:6px;}
+  .new-game-menu .header-menu-popup{left:0;transform:none;}
   .header-menu-popup[hidden]{display:none!important;}
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
@@ -109,7 +116,8 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.visitor-start-view #newGameBtn,html.visitor-start-view #createOnlineBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #membersOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
+  html.hammerschach-room-view #analyzerToolBtn{display:none!important;}
+  html.visitor-start-view #newGameMenu,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #membersOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-start-view .match-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
@@ -873,14 +881,20 @@
           </div>
           <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
           <div class="header-utility-actions" aria-label="Darstellung und Hilfe">
-            <button id="analyzerToolBtn" class="button-flat name-action-btn analyzer-tool-btn" type="button" aria-pressed="false">🧠 Analyzer</button>
             <button id="themeToggleBtn" class="button-flat name-action-btn theme-toggle-btn" type="button" aria-pressed="false">🌙 Dunkel</button>
             <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">ℹ️ Info</button>
           </div>
         </div>
         <div class="actions match-actions" aria-label="Hauptnavigation">
-          <button id="newGameBtn" class="button-flat name-action-btn" type="button">♟️ Partie anbieten</button>
-          <button id="createOnlineBtn" type="button">✉️ Zur Partie einladen</button>
+          <div id="newGameMenu" class="header-menu new-game-menu">
+            <button id="newGameMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="newGameMenuPopup">
+              <span>♟️ Neue Partie</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="newGameMenuPopup" class="header-menu-popup" role="menu" aria-label="Neue Partie" hidden>
+              <button id="newGameBtn" class="header-menu-item" type="button" role="menuitem">♟️ Partie anbieten</button>
+              <button id="createOnlineBtn" class="header-menu-item" type="button" role="menuitem">✉️ Zur Partie einladen</button>
+            </div>
+          </div>
           <div id="gamesMenu" class="header-menu">
             <button id="gamesMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gamesMenuPopup">
               <span>📂 Partien</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
@@ -893,6 +907,7 @@
           </div>
           <button id="membersOpenBtn" class="button-flat name-action-btn" type="button" hidden>👥 Mitglieder</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
+          <button id="analyzerToolBtn" class="button-flat name-action-btn analyzer-tool-btn" type="button" aria-pressed="false">🧠 Analyzer</button>
         </div>
       </div>
     </header>
@@ -3232,6 +3247,9 @@ const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');
 const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
+const newGameMenuEl = document.getElementById('newGameMenu');
+const newGameMenuBtn = document.getElementById('newGameMenuBtn');
+const newGameMenuPopup = document.getElementById('newGameMenuPopup');
 const gamesMenuEl = document.getElementById('gamesMenu');
 const gamesMenuBtn = document.getElementById('gamesMenuBtn');
 const gamesMenuPopup = document.getElementById('gamesMenuPopup');
@@ -3263,44 +3281,70 @@ const siteFootnoteEl = document.querySelector('.site-footnote');
 const siteFootnoteHome = siteFootnoteEl ? {parent:siteFootnoteEl.parentNode, nextSibling:siteFootnoteEl.nextSibling} : null;
 const infoOpenBtnHome = infoOpenBtn ? {parent:infoOpenBtn.parentNode, nextSibling:infoOpenBtn.nextSibling} : null;
 
-function setGamesMenuOpen(open, focusFirst){
-  if(!gamesMenuEl || !gamesMenuBtn || !gamesMenuPopup) return;
-  const shouldOpen = !!open;
-  gamesMenuEl.classList.toggle('open', shouldOpen);
-  gamesMenuPopup.hidden = !shouldOpen;
-  gamesMenuBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-  gamesMenuBtn.title = shouldOpen ? 'Partien-Menü schließen' : 'Partien-Menü öffnen';
-  if(shouldOpen && focusFirst){
-    const firstItem = Array.from(gamesMenuPopup.querySelectorAll('[role="menuitem"]')).find(item => !item.hidden && !item.disabled);
-    if(firstItem) firstItem.focus();
+function updateSiteFootnotePlacement(){
+  if(!siteFootnoteEl||!siteFootnoteHome)return;
+  if(analyzerToolActive&&analyzerToolView){
+    if(siteFootnoteEl.parentNode!==analyzerToolView)analyzerToolView.appendChild(siteFootnoteEl);
+    return;
   }
-  hammerschachScheduleHeightReport(false);
+  if(isMemberLobbyView()&&memberLobbyEl){
+    if(siteFootnoteEl.parentNode!==memberLobbyEl)memberLobbyEl.appendChild(siteFootnoteEl);
+    return;
+  }
+  if(siteFootnoteEl.parentNode!==siteFootnoteHome.parent){
+    if(siteFootnoteHome.nextSibling&&siteFootnoteHome.nextSibling.parentNode===siteFootnoteHome.parent)siteFootnoteHome.parent.insertBefore(siteFootnoteEl,siteFootnoteHome.nextSibling);else siteFootnoteHome.parent.appendChild(siteFootnoteEl);
+  }
 }
-function closeGamesMenu(){ setGamesMenuOpen(false, false); }
-if(gamesMenuBtn){
-  gamesMenuBtn.title = 'Partien-Menü öffnen';
-  gamesMenuBtn.addEventListener('click', event => {
+
+const headerMenuControllers = [];
+function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
+  if(!menuEl || !menuBtn || !menuPopup) return null;
+  const label = String(title || 'Menü');
+  const controller = {
+    menuEl,
+    menuBtn,
+    menuPopup,
+    setOpen(open, focusFirst){
+      const shouldOpen = !!open;
+      if(shouldOpen){
+        headerMenuControllers.forEach(other => {
+          if(other !== controller) other.setOpen(false, false);
+        });
+      }
+      menuEl.classList.toggle('open', shouldOpen);
+      menuPopup.hidden = !shouldOpen;
+      menuBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      menuBtn.title = shouldOpen ? label + ' schließen' : label + ' öffnen';
+      if(shouldOpen && focusFirst){
+        const firstItem = Array.from(menuPopup.querySelectorAll('[role="menuitem"]')).find(item => !item.hidden && !item.disabled);
+        if(firstItem) firstItem.focus();
+      }
+      hammerschachScheduleHeightReport(false);
+    },
+    close(){ this.setOpen(false, false); }
+  };
+  headerMenuControllers.push(controller);
+  menuBtn.title = label + ' öffnen';
+  menuBtn.addEventListener('click', event => {
     event.stopPropagation();
-    setGamesMenuOpen(gamesMenuPopup ? gamesMenuPopup.hidden : true, false);
+    controller.setOpen(menuPopup.hidden, false);
   });
-  gamesMenuBtn.addEventListener('keydown', event => {
+  menuBtn.addEventListener('keydown', event => {
     if(event.key === 'ArrowDown'){
       event.preventDefault();
-      setGamesMenuOpen(true, true);
+      controller.setOpen(true, true);
     }
   });
-}
-if(gamesMenuPopup){
-  gamesMenuPopup.addEventListener('click', event => {
-    if(event.target.closest('[role="menuitem"]')) closeGamesMenu();
+  menuPopup.addEventListener('click', event => {
+    if(event.target.closest('[role="menuitem"]')) controller.close();
   });
-  gamesMenuPopup.addEventListener('keydown', event => {
-    const items = Array.from(gamesMenuPopup.querySelectorAll('[role="menuitem"]')).filter(item => !item.hidden && !item.disabled);
+  menuPopup.addEventListener('keydown', event => {
+    const items = Array.from(menuPopup.querySelectorAll('[role="menuitem"]')).filter(item => !item.hidden && !item.disabled);
     const index = items.indexOf(document.activeElement);
     if(event.key === 'Escape'){
       event.preventDefault();
-      closeGamesMenu();
-      if(gamesMenuBtn) gamesMenuBtn.focus();
+      controller.close();
+      menuBtn.focus();
     } else if(event.key === 'ArrowDown' && items.length){
       event.preventDefault();
       items[(index + 1 + items.length) % items.length].focus();
@@ -3309,15 +3353,25 @@ if(gamesMenuPopup){
       items[(index - 1 + items.length) % items.length].focus();
     }
   });
+  return controller;
 }
+const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
+const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
+function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
+function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }
 document.addEventListener('click', event => {
-  if(gamesMenuEl && !gamesMenuEl.contains(event.target)) closeGamesMenu();
+  headerMenuControllers.forEach(controller => {
+    if(!controller.menuEl.contains(event.target)) controller.close();
+  });
 });
 document.addEventListener('keydown', event => {
-  if(event.key === 'Escape' && gamesMenuEl && gamesMenuEl.classList.contains('open')){
-    closeGamesMenu();
-    if(gamesMenuBtn) gamesMenuBtn.focus();
-  }
+  if(event.key !== 'Escape') return;
+  headerMenuControllers.forEach(controller => {
+    if(controller.menuEl.classList.contains('open')){
+      controller.close();
+      controller.menuBtn.focus();
+    }
+  });
 });
 
 const COLOR_SCHEME_STORAGE_KEY = 'hammerschachGamerColorScheme';
@@ -3886,6 +3940,17 @@ async function authApi(path, options){
 
 let analyzerToolActive = false;
 let analyzerToolFrameStarted = false;
+let analyzerToolLastToggleAt = 0;
+const ANALYZER_TOOL_TOGGLE_DEBOUNCE_MS = 450;
+function analyzerToolIsAvailable(){
+  return !onlineRoomId && !hasOnlineTargetInAddress();
+}
+function updateAnalyzerToolAvailability(){
+  const available = analyzerToolIsAvailable();
+  document.documentElement.classList.toggle('hammerschach-room-view', !available);
+  if(!available && analyzerToolActive) setAnalyzerToolActive(false);
+  if(analyzerToolBtn) analyzerToolBtn.hidden = !available;
+}
 function analyzerToolTargetOrigin(){
   return window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
 }
@@ -3902,10 +3967,16 @@ function postAnalyzerToolContext(){
   });
 }
 function setAnalyzerToolActive(active){
-  analyzerToolActive = !!active;
+  analyzerToolActive = !!active && analyzerToolIsAvailable();
   document.documentElement.classList.toggle('analyzer-tool-active', analyzerToolActive);
   if(analyzerToolView) analyzerToolView.hidden = !analyzerToolActive;
+  if(analyzerToolActive){
+    closeNewGameMenu();
+    closeGamesMenu();
+  }
+  updateSiteFootnotePlacement();
   if(analyzerToolBtn){
+    analyzerToolBtn.hidden = !analyzerToolIsAvailable();
     analyzerToolBtn.classList.toggle('active', analyzerToolActive);
     analyzerToolBtn.setAttribute('aria-pressed', analyzerToolActive ? 'true' : 'false');
     analyzerToolBtn.title = analyzerToolActive ? 'Analyzer ausblenden und Gamer anzeigen' : 'Hammerschach-Analyzer öffnen';
@@ -3916,14 +3987,24 @@ function setAnalyzerToolActive(active){
   }
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
   if(analyzerToolActive) postAnalyzerToolContext();
+  if(statusEl){
+    if(analyzerToolActive) statusEl.textContent = 'Hammerschach - Analyzer';
+    else refreshHeaderStatusFromState();
+  }
   hammerschachScheduleHeightReport(true);
 }
-if(analyzerToolBtn) analyzerToolBtn.addEventListener('click', () => setAnalyzerToolActive(!analyzerToolActive));
+function toggleAnalyzerToolDebounced(){
+  const now = Date.now();
+  if(now - analyzerToolLastToggleAt < ANALYZER_TOOL_TOGGLE_DEBOUNCE_MS) return;
+  analyzerToolLastToggleAt = now;
+  setAnalyzerToolActive(!analyzerToolActive);
+}
+if(analyzerToolBtn) analyzerToolBtn.addEventListener('click', toggleAnalyzerToolDebounced);
 if(analyzerToolFrame) analyzerToolFrame.addEventListener('load', () => {
   postAnalyzerToolContext();
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
 });
-[newGameBtn, createOnlineBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
+[newGameBtn, createOnlineBtn, newGameMenuBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
   if(button) button.addEventListener('click', () => setAnalyzerToolActive(false), {capture:true});
 });
 window.addEventListener('message', async event => {
@@ -4390,14 +4471,9 @@ function updateMemberLobbyUi(){
       if(preRoomSetupPanelHome.nextSibling&&preRoomSetupPanelHome.nextSibling.parentNode===preRoomSetupPanelHome.parent)preRoomSetupPanelHome.parent.insertBefore(preRoomSetupPanelEl,preRoomSetupPanelHome.nextSibling);else preRoomSetupPanelHome.parent.appendChild(preRoomSetupPanelEl);
     }
   }
-  if(siteFootnoteEl&&siteFootnoteHome){
-    if(active&&memberLobbyEl&&siteFootnoteEl.parentNode!==memberLobbyEl)memberLobbyEl.appendChild(siteFootnoteEl);
-    else if(!active&&siteFootnoteEl.parentNode!==siteFootnoteHome.parent){
-      if(siteFootnoteHome.nextSibling&&siteFootnoteHome.nextSibling.parentNode===siteFootnoteHome.parent)siteFootnoteHome.parent.insertBefore(siteFootnoteEl,siteFootnoteHome.nextSibling);else siteFootnoteHome.parent.appendChild(siteFootnoteEl);
-    }
-  }
+  updateSiteFootnotePlacement();
   if(active){
-    if(statusEl)statusEl.textContent='Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
+    if(statusEl)statusEl.textContent=analyzerToolActive?'Hammerschach - Analyzer':'Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
     connectGlobalChat();
   }else closeGlobalChat(true);
   hammerschachScheduleHeightReport(false);
@@ -5372,20 +5448,23 @@ function updateVisitorLandingUi(){
   const active = isAnonymousVisitorStartView();
   document.documentElement.classList.toggle('visitor-start-view', active);
   if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
+  updateAnalyzerToolAvailability();
 
   /* In der anonymen Startansicht steht „Info“ kompakt neben den beiden
      Besucheraktionen. Nach Login oder beim Öffnen eines Spielraums kehrt
      dieselbe Schaltfläche wieder an ihren normalen Platz neben dem Status zurück. */
   if(infoOpenBtn && matchActionsEl && infoOpenBtnHome){
     if(active){
-      if(infoOpenBtn.parentNode !== matchActionsEl) matchActionsEl.appendChild(infoOpenBtn);
+      if(infoOpenBtn.parentNode !== matchActionsEl || (analyzerToolBtn && infoOpenBtn.nextSibling !== analyzerToolBtn)){
+        matchActionsEl.insertBefore(infoOpenBtn, analyzerToolBtn && analyzerToolBtn.parentNode === matchActionsEl ? analyzerToolBtn : null);
+      }
     } else if(infoOpenBtn.parentNode !== infoOpenBtnHome.parent){
       infoOpenBtnHome.parent.insertBefore(infoOpenBtn, infoOpenBtnHome.nextSibling);
     }
   }
 
   if(active && statusEl){
-    statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    statusEl.textContent = analyzerToolActive ? 'Hammerschach - Analyzer' : 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
   }
   updateMemberLobbyUi();
   hammerschachScheduleHeightReport(false);
@@ -6457,6 +6536,10 @@ function setOnlineValueClass(el, state){
 }
 function refreshHeaderStatusFromState(){
   if(!statusEl || !boardEl) return;
+  if(analyzerToolActive){
+    statusEl.textContent = 'Hammerschach - Analyzer';
+    return;
+  }
   if(isMemberLobbyView()){
     statusEl.textContent = 'Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
     return;
@@ -7904,6 +7987,7 @@ function connectOnlineRoom(roomId, opts){
   const previousRoomId = onlineRoomId;
   if(previousRoomId !== roomId) resetChatMessages();
   onlineRoomId = roomId;
+  updateAnalyzerToolAvailability();
   onlineRoleCode = 'local';
   onlineConnected = false;
   onlineConnectionState = 'connecting';
@@ -8894,6 +8978,10 @@ function reapplySelectionHighlight(g){
   highlightSelection(selected[0], selected[1], g);
 }
 function updateStatus(g){
+  if(analyzerToolActive){
+    statusEl.textContent = 'Hammerschach - Analyzer';
+    return;
+  }
   const go = gameOverForHistory(viewIndex, g);
   gameEnded = !!go;
   if(go){
