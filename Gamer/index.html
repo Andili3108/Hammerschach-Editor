@@ -24,7 +24,7 @@
     }
   } catch(_){ }
 </script>
-<!-- Design v7: Header-Navigation mit Neue-Partie-/Partien-Menüs und Lobby-Analyzer -->
+<!-- Design v8: Header-Navigation mit Neue-Partie-, Partien- und Tools-Menüs -->
 <style>
   :root{
     --board-max:760px;
@@ -78,6 +78,7 @@
   .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(132,63,70,.22),0 8px 18px rgba(0,0,0,.14)!important;}
   .header-menu-popup{position:absolute;z-index:2600;top:calc(100% + 9px);left:50%;transform:translateX(-50%);width:238px;box-sizing:border-box;padding:8px;border:1px solid rgba(132,63,70,.20);border-radius:15px;background:rgba(255,255,255,.99);box-shadow:0 18px 42px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:6px;}
   .new-game-menu .header-menu-popup{left:0;transform:none;}
+  .tools-menu .header-menu-popup{left:auto;right:0;transform:none;}
   .header-menu-popup[hidden]{display:none!important;}
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
@@ -117,7 +118,7 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.hammerschach-room-view #analyzerToolBtn{display:none!important;}
+  html.hammerschach-room-view #toolsMenu{display:none!important;}
   html.visitor-start-view #newGameMenu,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #membersOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
@@ -705,7 +706,6 @@
 
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
   .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
-  .analyzer-tool-btn{min-width:126px!important;box-sizing:border-box;padding-inline:13px!important;}
   .analyzer-tool-view{width:100%;min-width:0;}
   .analyzer-tool-view[hidden]{display:none!important;}
   .analyzer-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
@@ -846,7 +846,7 @@
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading{flex-direction:column}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-btn{min-width:118px!important}.analyzer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.variation-backdrop{padding:9px}.variation-modal{max-height:97vh;padding:13px;border-radius:17px}.variation-head{margin-bottom:11px}.variation-title{font-size:21px}.variation-layout{grid-template-columns:1fr;gap:13px}.variation-board-wrap{max-width:560px}.variation-moves{min-height:72px;max-height:130px}.variation-panel{gap:8px}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
@@ -907,7 +907,14 @@
           </div>
           <button id="membersOpenBtn" class="button-flat name-action-btn" type="button" hidden>👥 Mitglieder</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
-          <button id="analyzerToolBtn" class="button-flat name-action-btn analyzer-tool-btn" type="button" aria-expanded="false" aria-controls="analyzerToolView">🧠 Analyzer</button>
+          <div id="toolsMenu" class="header-menu tools-menu">
+            <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
+              <span>🛠️ Tools</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="toolsMenuPopup" class="header-menu-popup" role="menu" aria-label="Tools" hidden>
+              <button id="analyzerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="analyzerToolView">🧠 Analyzer</button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -1054,12 +1061,13 @@
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
           <h4>18. Der integrierte Analyzer</h4>
-          <p>Über <strong>„🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Ein weiterer Klick auf die Analyzer-Schaltfläche schließt den Analyzer und zeigt wieder den vorherigen Gamer-Bereich.</p>
-          <p>Der Analyzer ist in der Lobby und auf der Startseite verfügbar. <strong>In einem laufenden oder als Zuschauer geöffneten Spielraum wird die Schaltfläche nicht angezeigt.</strong> Über die Gamer-Verbindung können ausschließlich beendete Partien direkt in den Analyzer geladen werden. Damit bleibt die integrierte Analyse klar von einer laufenden Live- oder Daily-Partie getrennt.</p>
+          <p>Über <strong>„🛠️ Tools“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
+          <p>Das Tools-Menü mit dem Analyzer ist in der Lobby und auf der Startseite verfügbar. <strong>In einem laufenden oder als Zuschauer geöffneten Spielraum wird das Tools-Menü nicht angezeigt.</strong> Über die Gamer-Verbindung können ausschließlich beendete Partien direkt in den Analyzer geladen werden. Damit bleibt die integrierte Analyse klar von einer laufenden Live- oder Daily-Partie getrennt.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, eine Brettfarbe wählen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Die Brettfarbe wird auf dem Gerät gespeichert. Der Dark Mode wird automatisch vom Gamer übernommen.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
-            <li><strong>Zugliste:</strong> Die Züge werden platzsparend in mehreren Spalten angezeigt. Ein Klick auf einen Zug springt zur zugehörigen Stellung. Mit <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> gehst du zum Anfang, einen Halbzug zurück, einen Halbzug vor oder ans Ende. Die Anzeige rechts neben „Zugliste“ zeigt die aktuell betrachtete Stellung und die Gesamtzahl der Halbzüge. Über <strong>„PGN“</strong> wird die gesamte aktuell im Analyzer befindliche Partiensammlung exportiert.</li>
+            <li><strong>Zugnavigation:</strong> Mit <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> gehst du zum Anfang, einen Halbzug zurück, einen Halbzug vor oder ans Ende. Diese vier Schaltflächen befinden sich sowohl in der Zugliste als auch ganz links unter dem Brett. Dadurch kannst du bei geöffneter Engine durch die Partie blättern und jede Stellung unmittelbar analysieren lassen.</li>
+            <li><strong>Zugliste:</strong> Die Züge werden platzsparend in mehreren Spalten angezeigt. Ein Klick auf einen Zug springt zur zugehörigen Stellung. Die Anzeige rechts neben „Zugliste“ zeigt die aktuell betrachtete Stellung und die Gesamtzahl der Halbzüge. Über <strong>„PGN“</strong> wird die gesamte aktuell im Analyzer befindliche Partiensammlung exportiert.</li>
             <li><strong>Engine:</strong> Die Stockfish-Analyse startet standardmäßig automatisch für die auf dem Brett angezeigte Stellung. Du kannst zwischen einer festen Suchtiefe und einer festen Analysezeit wählen und über <strong>MultiPV</strong> bis zu vier Varianten anzeigen lassen. Angezeigt werden Bewertung aus Sicht der am Zug befindlichen Seite, WDL-Werte, erreichte Tiefe, Knoten pro Sekunde, Bestzug und berechnete Hauptvarianten. Der Bestzug wird zusätzlich auf dem Brett markiert. Wird die Auto-Analyse ausgeschaltet, startest du sie über <strong>„Analysieren“</strong> manuell; eine laufende Suche kann über <strong>„Stop“</strong> beendet werden.</li>
             <li><strong>Partie verwalten:</strong> Unter <strong>„Partie“</strong> kannst du eine PGN-Datei öffnen, PGN-Text einfügen, die Partieliste aufrufen, eine weitere leere Partie hinzufügen oder beendete Gamer-Partien laden. Zusätzlich lassen sich Event, Ort, Datum, Runde, Spielernamen, Ergebnis, ECO und Elo-Angaben bearbeiten. <strong>PlyCount</strong> zeigt automatisch die Zahl der Halbzüge und ist nicht manuell veränderbar.</li>
             <li><strong>PGN öffnen oder einfügen:</strong> Beim Öffnen einer PGN-Datei beziehungsweise beim Importieren von PGN-Text wird die bisherige Analyzer-Sammlung nach einer Sicherheitsabfrage ersetzt. Eine Datei oder ein Text darf mehrere Partien enthalten. Klassische Partien und Freestyle-Partien mit den erforderlichen Startstellungsangaben werden unterstützt.</li>
@@ -1069,7 +1077,7 @@
           </ul>
 
           <h4>19. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby fasst das Dropdown <strong>„♟️ Neue Partie“</strong> die beiden Möglichkeiten <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> zusammen. Sobald du dich in einem Spielraum befindest, verschwindet dieses Dropdown; an seiner Stelle erscheint <strong>„↩️ Zur Lobby“</strong> und führt zurück zur Partievorbereitung und zum Mitglieder-Chat. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer dabei im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
+          <p>In der Lobby fasst das Dropdown <strong>„♟️ Neue Partie“</strong> die beiden Möglichkeiten <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> zusammen. Sobald du dich in einem Spielraum befindest, verschwindet dieses Dropdown; an seiner Stelle erscheint <strong>„↩️ Zur Lobby“</strong> und führt zurück zur Partievorbereitung und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer steht an dieser Stelle <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Analyzer direkt und stellt die Lobby ohne Neuladen wieder her. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer beim Verlassen eines Spielraums im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
 
           <h4>20. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -3269,6 +3277,9 @@ const roomLobbyBtn = document.getElementById('roomLobbyBtn');
 const gamesMenuEl = document.getElementById('gamesMenu');
 const gamesMenuBtn = document.getElementById('gamesMenuBtn');
 const gamesMenuPopup = document.getElementById('gamesMenuPopup');
+const toolsMenuEl = document.getElementById('toolsMenu');
+const toolsMenuBtn = document.getElementById('toolsMenuBtn');
+const toolsMenuPopup = document.getElementById('toolsMenuPopup');
 const membersOpenBtn = document.getElementById('membersOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -3373,8 +3384,10 @@ function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
 }
 const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
+const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Tools-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }
+function closeToolsMenu(){ if(toolsMenuController) toolsMenuController.close(); }
 document.addEventListener('click', event => {
   headerMenuControllers.forEach(controller => {
     if(!controller.menuEl.contains(event.target)) controller.close();
@@ -3956,8 +3969,8 @@ async function authApi(path, options){
 
 let analyzerToolActive = false;
 let analyzerToolFrameStarted = false;
-let analyzerToolLastToggleAt = 0;
-const ANALYZER_TOOL_TOGGLE_DEBOUNCE_MS = 450;
+let analyzerToolLastOpenAt = 0;
+const ANALYZER_TOOL_OPEN_DEBOUNCE_MS = 450;
 function analyzerToolIsAvailable(){
   return !onlineRoomId && !hasOnlineTargetInAddress();
 }
@@ -3965,7 +3978,10 @@ function updateAnalyzerToolAvailability(){
   const available = analyzerToolIsAvailable();
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
   if(!available && analyzerToolActive) setAnalyzerToolActive(false);
-  if(analyzerToolBtn) analyzerToolBtn.hidden = !available;
+  if(toolsMenuEl){
+    toolsMenuEl.hidden = !available;
+    if(!available) closeToolsMenu();
+  }
 }
 function analyzerToolTargetOrigin(){
   return window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
@@ -3989,12 +4005,12 @@ function setAnalyzerToolActive(active){
   if(analyzerToolActive){
     closeNewGameMenu();
     closeGamesMenu();
+    closeToolsMenu();
   }
   updateSiteFootnotePlacement();
   if(analyzerToolBtn){
     analyzerToolBtn.hidden = !analyzerToolIsAvailable();
-    analyzerToolBtn.setAttribute('aria-expanded', analyzerToolActive ? 'true' : 'false');
-    analyzerToolBtn.title = analyzerToolActive ? 'Analyzer ausblenden und Gamer anzeigen' : 'Hammerschach-Analyzer öffnen';
+    analyzerToolBtn.title = 'Hammerschach-Analyzer öffnen';
   }
   if(analyzerToolActive && analyzerToolFrame && !analyzerToolFrameStarted){
     analyzerToolFrameStarted = true;
@@ -4006,20 +4022,24 @@ function setAnalyzerToolActive(active){
     if(analyzerToolActive) statusEl.textContent = 'Hammerschach - Analyzer';
     else refreshHeaderStatusFromState();
   }
+  updateOnlineActionButtons();
+  if(analyzerToolActive && roomLobbyBtn){
+    try{ roomLobbyBtn.focus({preventScroll:true}); } catch(_){ roomLobbyBtn.focus(); }
+  }
   hammerschachScheduleHeightReport(true);
 }
-function toggleAnalyzerToolDebounced(){
+function openAnalyzerToolDebounced(){
   const now = Date.now();
-  if(now - analyzerToolLastToggleAt < ANALYZER_TOOL_TOGGLE_DEBOUNCE_MS) return;
-  analyzerToolLastToggleAt = now;
-  setAnalyzerToolActive(!analyzerToolActive);
+  if(now - analyzerToolLastOpenAt < ANALYZER_TOOL_OPEN_DEBOUNCE_MS) return;
+  analyzerToolLastOpenAt = now;
+  setAnalyzerToolActive(true);
 }
-if(analyzerToolBtn) analyzerToolBtn.addEventListener('click', toggleAnalyzerToolDebounced);
+if(analyzerToolBtn) analyzerToolBtn.addEventListener('click', openAnalyzerToolDebounced);
 if(analyzerToolFrame) analyzerToolFrame.addEventListener('load', () => {
   postAnalyzerToolContext();
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
 });
-[newGameBtn, createOnlineBtn, roomLobbyBtn, newGameMenuBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
+[newGameBtn, createOnlineBtn, newGameMenuBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
   if(button) button.addEventListener('click', () => setAnalyzerToolActive(false), {capture:true});
 });
 window.addEventListener('message', async event => {
@@ -5470,8 +5490,9 @@ function updateVisitorLandingUi(){
      dieselbe Schaltfläche wieder an ihren normalen Platz neben dem Status zurück. */
   if(infoOpenBtn && matchActionsEl && infoOpenBtnHome){
     if(active){
-      if(infoOpenBtn.parentNode !== matchActionsEl || (analyzerToolBtn && infoOpenBtn.nextSibling !== analyzerToolBtn)){
-        matchActionsEl.insertBefore(infoOpenBtn, analyzerToolBtn && analyzerToolBtn.parentNode === matchActionsEl ? analyzerToolBtn : null);
+      const visitorInfoAnchor = toolsMenuEl && toolsMenuEl.parentNode === matchActionsEl ? toolsMenuEl : null;
+      if(infoOpenBtn.parentNode !== matchActionsEl || infoOpenBtn.nextSibling !== visitorInfoAnchor){
+        matchActionsEl.insertBefore(infoOpenBtn, visitorInfoAnchor);
       }
     } else if(infoOpenBtn.parentNode !== infoOpenBtnHome.parent){
       infoOpenBtnHome.parent.insertBefore(infoOpenBtn, infoOpenBtnHome.nextSibling);
@@ -6555,6 +6576,10 @@ function refreshHeaderStatusFromState(){
     statusEl.textContent = 'Hammerschach - Analyzer';
     return;
   }
+  if(isAnonymousVisitorStartView()){
+    statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    return;
+  }
   if(isMemberLobbyView()){
     statusEl.textContent = 'Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
     return;
@@ -6566,13 +6591,16 @@ function updateOnlineActionButtons(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   const inRoom = !!onlineRoomId;
+  const showLobbyButton = inRoom || analyzerToolActive;
   if(newGameMenuEl){
-    newGameMenuEl.hidden = inRoom;
-    if(inRoom) closeNewGameMenu();
+    newGameMenuEl.hidden = showLobbyButton;
+    if(showLobbyButton) closeNewGameMenu();
   }
   if(roomLobbyBtn){
-    roomLobbyBtn.hidden = !inRoom;
-    roomLobbyBtn.title = HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.';
+    roomLobbyBtn.hidden = !showLobbyButton;
+    roomLobbyBtn.title = analyzerToolActive
+      ? 'Analyzer schließen und zur Lobby zurückkehren.'
+      : (HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.');
   }
   if(createOnlineBtn){
     createOnlineBtn.hidden = inRoom;
@@ -9738,7 +9766,14 @@ if(newGameBtn) newGameBtn.addEventListener('click', event => {
   if(onlineRoomId) openNewGameView();
   else offerPreparedGame(event);
 });
-if(roomLobbyBtn) roomLobbyBtn.addEventListener('click', openNewGameView);
+if(roomLobbyBtn) roomLobbyBtn.addEventListener('click', event => {
+  if(analyzerToolActive){
+    event.preventDefault();
+    setAnalyzerToolActive(false);
+    return;
+  }
+  openNewGameView();
+});
 document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
