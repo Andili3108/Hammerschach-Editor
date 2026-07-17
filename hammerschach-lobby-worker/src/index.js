@@ -2797,6 +2797,114 @@ async function listDailyGames(env, sessionUser) {
 }
 
 
+let completedGamesTableReady = false;
+async function ensureCompletedGamesTable(env) {
+  if (!env || !env.DB) return false;
+  if (completedGamesTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS completed_games (
+       room_id TEXT PRIMARY KEY,
+       white_user_id TEXT,
+       black_user_id TEXT,
+       white_name TEXT NOT NULL,
+       black_name TEXT NOT NULL,
+       mode TEXT NOT NULL,
+       time_label TEXT,
+       days_per_move INTEGER,
+       variant TEXT NOT NULL,
+       position_id INTEGER,
+       back_rank TEXT,
+       started_at TEXT,
+       ended_at TEXT NOT NULL,
+       result TEXT NOT NULL,
+       end_reason TEXT,
+       rated INTEGER NOT NULL DEFAULT 0,
+       pgn TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_white ON completed_games (white_user_id, ended_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_black ON completed_games (black_user_id, ended_at)`).run();
+  completedGamesTableReady = true;
+  return true;
+}
+
+function analyzerGameForUser(row, sessionUser, source = 'archive') {
+  const role = String(row.white_user_id || '') === String(sessionUser.id) ? 'w' : 'b';
+  return {
+    roomId: row.room_id,
+    role,
+    whiteName: row.white_name || 'Weiß',
+    blackName: row.black_name || 'Schwarz',
+    opponentName: role === 'w' ? (row.black_name || 'Schwarz') : (row.white_name || 'Weiß'),
+    mode: row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel: row.time_label || (row.mode === 'daily' ? 'Daily Chess' : 'Live'),
+    daysPerMove: row.days_per_move ? Math.max(1, Number(row.days_per_move)) : null,
+    variant: row.variant || GAME_VARIANT_STANDARD,
+    positionId: Number.isFinite(Number(row.position_id)) ? Number(row.position_id) : null,
+    startedAt: row.started_at || null,
+    endedAt: row.ended_at || null,
+    result: row.result || '*',
+    endReason: row.end_reason || null,
+    rated: Number(row.rated || 0) === 1,
+    ended: true,
+    source
+  };
+}
+
+async function listAnalyzerGames(env, sessionUser) {
+  if (!sessionUser) return [];
+  await ensureDailyGamesTable(env);
+  const byRoom = new Map();
+  if (await ensureCompletedGamesTable(env)) {
+    const result = await env.DB.prepare(
+      `SELECT completed_games.*
+         FROM completed_games
+        WHERE (completed_games.white_user_id = ? OR completed_games.black_user_id = ?)
+          AND NOT EXISTS (
+            SELECT 1
+              FROM daily_game_archives archived
+             WHERE archived.room_id = completed_games.room_id
+               AND archived.user_id = ?
+          )
+        ORDER BY completed_games.ended_at DESC
+        LIMIT 200`
+    ).bind(sessionUser.id, sessionUser.id, sessionUser.id).all();
+    for (const row of (result && result.results ? result.results : [])) {
+      byRoom.set(String(row.room_id), analyzerGameForUser(row, sessionUser, 'archive'));
+    }
+  }
+
+  // Bereits vor dieser Erweiterung beendete Daily-Partien bleiben verfügbar.
+  const dailyGames = await listDailyGames(env, sessionUser);
+  for (const game of dailyGames) {
+    if (!game || !game.ended || byRoom.has(String(game.roomId))) continue;
+    byRoom.set(String(game.roomId), {
+      roomId:game.roomId,
+      role:game.role,
+      whiteName:game.role === 'w' ? (sessionUser.username || 'Weiß') : (game.opponentName || 'Weiß'),
+      blackName:game.role === 'b' ? (sessionUser.username || 'Schwarz') : (game.opponentName || 'Schwarz'),
+      opponentName:game.opponentName || 'Gegner',
+      mode:'daily',
+      timeLabel:game.timeLabel || 'Daily Chess',
+      daysPerMove:game.daysPerMove || null,
+      variant:game.variant || GAME_VARIANT_STANDARD,
+      positionId:null,
+      startedAt:game.startedAt || null,
+      endedAt:game.endedAt || null,
+      result:game.result || '*',
+      endReason:game.endReason || null,
+      rated:game.rated !== false,
+      ended:true,
+      source:'daily'
+    });
+  }
+  return Array.from(byRoom.values())
+    .sort((a, b) => String(b.endedAt || '').localeCompare(String(a.endedAt || '')))
+    .slice(0, 200);
+}
+
+
 let publicGamesTableReady = false;
 async function ensurePublicGamesTable(env) {
   if (!env || !env.DB) return false;
@@ -4710,6 +4818,50 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  if (url.pathname === '/api/analyzer/games' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Beendete Gamer-Partien sind nur nach Login verfügbar.'}, {status:401});
+    try {
+      const games = await listAnalyzerGames(env, session.user);
+      return json({ok:true, games, serverNow:Date.now()});
+    } catch (_) {
+      return json({ok:false, code:'ANALYZER_GAMES_UNAVAILABLE', message:'Beendete Partien konnten nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  const analyzerPgnMatch = url.pathname.match(/^\/api\/analyzer\/games\/([^/]+)\/pgn$/);
+  if (analyzerPgnMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    const roomId = cleanRoomId(decodeURIComponent(analyzerPgnMatch[1]));
+    if (!roomId) return json({ok:false, code:'INVALID_ROOM', message:'Ungültiger Spielraum.'}, {status:400});
+    try {
+      if (!(await ensureCompletedGamesTable(env))) throw new Error('D1 unavailable');
+      const game = await env.DB.prepare(
+        `SELECT room_id, white_name, black_name, ended_at, pgn
+           FROM completed_games
+          WHERE room_id = ?
+            AND (white_user_id = ? OR black_user_id = ?)
+          LIMIT 1`
+      ).bind(roomId, session.user.id, session.user.id).first();
+      if (!game || !game.pgn) return json({ok:false, code:'GAME_NOT_FOUND', message:'Diese beendete Partie ist nicht im Analyse-Archiv vorhanden.'}, {status:404});
+      const datePart = pgnDateFromIso(game.ended_at || null).replace(/\./g, '-');
+      const filename = safePgnFilePart('Hammerschach-' + datePart + '-' + (game.white_name || 'Weiss') + '-vs-' + (game.black_name || 'Schwarz')) + '.pgn';
+      return new Response(String(game.pgn), {
+        status:200,
+        headers:{
+          'content-type':'application/x-chess-pgn; charset=utf-8',
+          'content-disposition':'attachment; filename="' + filename + '"',
+          'cache-control':'private, no-store',
+          'access-control-allow-origin':'*',
+          'access-control-expose-headers':'content-disposition'
+        }
+      });
+    } catch (_) {
+      return json({ok:false, code:'PGN_UNAVAILABLE', message:'Die beendete Partie konnte nicht für den Analyzer geladen werden.'}, {status:500});
+    }
+  }
+
   if (url.pathname === '/api/daily-games' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Daily-Partien sind nur nach Login verfügbar.' }, { status: 401 });
@@ -6348,6 +6500,41 @@ function buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, bla
   return header + '\n\n' + pgnMoveTextFromStoredMoves(moves, result) + '\n';
 }
 
+function pgnTimeControlFromServerTimeControl(timeControl) {
+  const normalized = cleanTimeControl(timeControl || null);
+  if (!normalized || normalized.mode === 'daily') return '-';
+  return Math.max(0, Math.floor(Number(normalized.baseSeconds || 0))) + '+' + Math.max(0, Math.floor(Number(normalized.incrementSeconds || 0)));
+}
+
+function buildCompletedPgnDocument({ game, timeControl, setup, moves, whiteName, blackName }) {
+  const normalizedTime = cleanTimeControl(timeControl || null);
+  const normalizedSetup = cleanGameSetup(setup || (game && game.gameSetup) || null);
+  const result = game && game.result ? String(game.result) : '*';
+  const tags = [
+    ['Event', 'Hammerschach-Gamer'],
+    ['Site', 'Andili.de'],
+    ['Date', pgnDateFromIso((game && (game.endedAt || game.startedAt)) || null)],
+    ['Round', '-'],
+    ['White', cleanDisplayName(whiteName) || 'Weiß'],
+    ['Black', cleanDisplayName(blackName) || 'Schwarz'],
+    ['Result', result],
+    ['TimeControl', pgnTimeControlFromServerTimeControl(normalizedTime)]
+  ];
+  if (normalizedTime && normalizedTime.mode === 'daily') {
+    tags.push(['HammerschachMode', 'Daily']);
+    tags.push(['HammerschachDaysPerMove', String(Math.max(1, Number(normalizedTime.daysPerMove || 1)))]);
+  }
+  if (normalizedSetup.variant === GAME_VARIANT_FREESTYLE) {
+    tags.push(['Variant', 'Chess960']);
+    tags.push(['SetUp', '1']);
+    tags.push(['FEN', initialFenForServerSetup(normalizedSetup)]);
+    tags.push(['HammerschachPosition', String(normalizedSetup.positionId)]);
+    tags.push(['HammerschachBackRank', normalizedSetup.backRank]);
+  }
+  const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
+  return header + '\n\n' + pgnMoveTextFromStoredMoves(moves, result) + '\n';
+}
+
 function safePgnFilePart(value) {
   return String(value || '')
     .replace(/[^A-Za-z0-9_-]+/g, '-')
@@ -7913,10 +8100,76 @@ export class GameRoom {
     }
   }
 
+  async syncCompletedGameIndex() {
+    try {
+      if (!(await ensureCompletedGamesTable(this.env))) return;
+      const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+      if (!roomId) return;
+      const game = (await this.state.storage.get('game')) || {started:false, ended:false, result:'*'};
+      if (!game.started || !game.ended) return;
+
+      const players = await this.getSecurePlayers();
+      const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+      const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+      if (!whiteUserId && !blackUserId) return;
+
+      const profiles = (await this.state.storage.get('playerProfiles')) || {};
+      const whitePlayerId = playerIdFromSlot(players.white);
+      const blackPlayerId = playerIdFromSlot(players.black);
+      const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
+      const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
+      const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+      const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+      const moves = (await this.state.storage.get('moves')) || [];
+      const pgn = buildCompletedPgnDocument({game, timeControl, setup, moves, whiteName, blackName});
+      const mode = timeControl && timeControl.mode === 'daily' ? 'daily' : 'live';
+      const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
+      const updatedAt = new Date().toISOString();
+
+      await this.env.DB.prepare(
+        `INSERT INTO completed_games (
+           room_id, white_user_id, black_user_id, white_name, black_name,
+           mode, time_label, days_per_move, variant, position_id, back_rank,
+           started_at, ended_at, result, end_reason, rated, pgn, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(room_id) DO UPDATE SET
+           white_user_id = excluded.white_user_id,
+           black_user_id = excluded.black_user_id,
+           white_name = excluded.white_name,
+           black_name = excluded.black_name,
+           mode = excluded.mode,
+           time_label = excluded.time_label,
+           days_per_move = excluded.days_per_move,
+           variant = excluded.variant,
+           position_id = excluded.position_id,
+           back_rank = excluded.back_rank,
+           started_at = excluded.started_at,
+           ended_at = excluded.ended_at,
+           result = excluded.result,
+           end_reason = excluded.end_reason,
+           rated = excluded.rated,
+           pgn = excluded.pgn,
+           updated_at = excluded.updated_at`
+      ).bind(
+        roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
+        mode, timeControl && timeControl.label ? timeControl.label : (mode === 'daily' ? 'Daily Chess' : 'Live'),
+        mode === 'daily' ? Math.max(1, Number(timeControl && timeControl.daysPerMove || 1)) : null,
+        setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
+        setup.variant === GAME_VARIANT_FREESTYLE ? setup.backRank : null,
+        game.startedAt || null, game.endedAt || updatedAt, game.result || '*', game.endReason || null,
+        rated ? 1 : 0, pgn, updatedAt
+      ).run();
+    } catch (_) {
+      // Das Analyse-Archiv darf den laufenden Spielraum niemals beeinträchtigen.
+    }
+  }
+
   async syncGameIndexes() {
     await this.syncDailyGameIndex();
     await this.syncPublicGameIndex();
     await this.syncOpenOfferIndex();
+    await this.syncCompletedGameIndex();
   }
 
   async scheduleClockAlarm(clock, now = Date.now()) {
