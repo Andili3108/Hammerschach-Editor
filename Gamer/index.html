@@ -71,6 +71,7 @@
   .match-actions>button,.match-actions>.header-menu>.header-menu-button{width:100%;min-width:0;font-size:14px;padding:8px 7px;min-height:44px;line-height:1.10;white-space:normal;overflow-wrap:normal;border-radius:16px;}
   .match-actions .name-action-btn{min-width:0;}
   .header-menu{position:relative;min-width:0;display:flex;}
+  .header-menu[hidden]{display:none!important;}
   .header-menu-button{display:flex!important;align-items:center;justify-content:center;gap:6px;}
   .header-menu-chevron{display:inline-block;font-size:12px;line-height:1;transition:transform .16s ease;}
   .header-menu.open .header-menu-chevron{transform:rotate(180deg);}
@@ -895,6 +896,7 @@
               <button id="createOnlineBtn" class="header-menu-item" type="button" role="menuitem">✉️ Zur Partie einladen</button>
             </div>
           </div>
+          <button id="roomLobbyBtn" class="button-flat name-action-btn" type="button" hidden>↩️ Zur Lobby</button>
           <div id="gamesMenu" class="header-menu">
             <button id="gamesMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gamesMenuPopup">
               <span>📂 Partien</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
@@ -3250,6 +3252,7 @@ const publicGamesOpenBtn = document.getElementById('publicGamesOpenBtn');
 const newGameMenuEl = document.getElementById('newGameMenu');
 const newGameMenuBtn = document.getElementById('newGameMenuBtn');
 const newGameMenuPopup = document.getElementById('newGameMenuPopup');
+const roomLobbyBtn = document.getElementById('roomLobbyBtn');
 const gamesMenuEl = document.getElementById('gamesMenu');
 const gamesMenuBtn = document.getElementById('gamesMenuBtn');
 const gamesMenuPopup = document.getElementById('gamesMenuPopup');
@@ -4004,7 +4007,7 @@ if(analyzerToolFrame) analyzerToolFrame.addEventListener('load', () => {
   postAnalyzerToolContext();
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
 });
-[newGameBtn, createOnlineBtn, newGameMenuBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
+[newGameBtn, createOnlineBtn, roomLobbyBtn, newGameMenuBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
   if(button) button.addEventListener('click', () => setAnalyzerToolActive(false), {capture:true});
 });
 window.addEventListener('message', async event => {
@@ -6550,8 +6553,16 @@ function updateOnlineActionButtons(){
   const live = isOnlineGameLiveForUi();
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
+  const inRoom = !!onlineRoomId;
+  if(newGameMenuEl){
+    newGameMenuEl.hidden = inRoom;
+    if(inRoom) closeNewGameMenu();
+  }
+  if(roomLobbyBtn){
+    roomLobbyBtn.hidden = !inRoom;
+    roomLobbyBtn.title = HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.';
+  }
   if(createOnlineBtn){
-    const inRoom = !!onlineRoomId;
     createOnlineBtn.hidden = inRoom;
     createOnlineBtn.disabled = inRoom || live || offerOpen;
     createOnlineBtn.title = inRoom
@@ -6565,13 +6576,10 @@ function updateOnlineActionButtons(){
                   : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.'))));
   }
   if(newGameBtn){
-    const inRoom = !!onlineRoomId;
-    newGameBtn.disabled = false;
+    newGameBtn.disabled = inRoom;
     newGameBtn.hidden = false;
-    newGameBtn.textContent = inRoom ? '↩️ Zur Lobby' : '♟️ Partie anbieten';
-    newGameBtn.title = inRoom
-      ? (HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.')
-      : (loggedIn ? 'Die gewählten Einstellungen als offene Partie veröffentlichen.' : 'Zum Anbieten einer Partie bitte einloggen.');
+    newGameBtn.textContent = '♟️ Partie anbieten';
+    newGameBtn.title = loggedIn ? 'Die gewählten Einstellungen als offene Partie veröffentlichen.' : 'Zum Anbieten einer Partie bitte einloggen.';
   }
 }
 function updateGameActionButtons(){
@@ -9718,6 +9726,7 @@ if(newGameBtn) newGameBtn.addEventListener('click', event => {
   if(onlineRoomId) openNewGameView();
   else offerPreparedGame(event);
 });
+if(roomLobbyBtn) roomLobbyBtn.addEventListener('click', openNewGameView);
 document.getElementById('flipBoardBtn').addEventListener('click', () => { orientationWhite = !orientationWhite; selected = null; renderBoard(); });
 
 /* Brettfarben */
