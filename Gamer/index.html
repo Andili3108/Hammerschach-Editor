@@ -696,6 +696,13 @@
 
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
   .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
+  .analyzer-tool-btn{min-width:126px!important;box-sizing:border-box;padding-inline:13px!important;}
+  .analyzer-tool-btn.active{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px rgba(68,27,32,.24)!important;}
+  .analyzer-tool-view{width:100%;min-width:0;}
+  .analyzer-tool-view[hidden]{display:none!important;}
+  .analyzer-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
+  html.analyzer-tool-active .member-lobby,
+  html.analyzer-tool-active .top-layout{display:none!important;}
   .next-daily-game-box{border-radius:16px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:11px 12px;display:flex;flex-direction:column;gap:7px;}
   .next-daily-game-box[hidden]{display:none!important;}
   .next-daily-game-btn{width:100%;min-height:44px;border-radius:13px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;white-space:normal;line-height:1.2;}
@@ -785,6 +792,7 @@
   html.dark-mode .presence-badge.online,
   html.dark-mode .global-chat-presence{background:rgba(62,154,88,.14);border-color:rgba(75,190,107,.25);color:#83d49a;}
   html.dark-mode .next-daily-game-btn:disabled{background:linear-gradient(180deg,#343840 0%,#292d33 100%)!important;color:#aeb3bc!important;border-color:rgba(255,255,255,.08)!important;}
+  html.dark-mode .analyzer-tool-btn.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.14)!important;}
   html.dark-mode .site-footnote a,
   html.dark-mode .site-footnote-button{color:#d99aa2!important;border-bottom-color:rgba(217,154,162,.34)!important;}
   html.dark-mode .privacy-external-link,
@@ -831,7 +839,7 @@
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading{flex-direction:column}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-btn{min-width:118px!important}.analyzer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.variation-backdrop{padding:9px}.variation-modal{max-height:97vh;padding:13px;border-radius:17px}.variation-head{margin-bottom:11px}.variation-title{font-size:21px}.variation-layout{grid-template-columns:1fr;gap:13px}.variation-board-wrap{max-width:560px}.variation-moves{min-height:72px;max-height:130px}.variation-panel{gap:8px}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
@@ -865,6 +873,7 @@
           </div>
           <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
           <div class="header-utility-actions" aria-label="Darstellung und Hilfe">
+            <button id="analyzerToolBtn" class="button-flat name-action-btn analyzer-tool-btn" type="button" aria-pressed="false">🧠 Analyzer</button>
             <button id="themeToggleBtn" class="button-flat name-action-btn theme-toggle-btn" type="button" aria-pressed="false">🌙 Dunkel</button>
             <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">ℹ️ Info</button>
           </div>
@@ -887,6 +896,10 @@
         </div>
       </div>
     </header>
+
+    <section id="analyzerToolView" class="analyzer-tool-view" hidden aria-label="Hammerschach-Analyzer">
+      <iframe id="analyzerToolFrame" class="analyzer-tool-frame" title="Hammerschach-Analyzer" data-src="./Analyzer/" loading="lazy"></iframe>
+    </section>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
       <div class="box member-lobby-section">
@@ -3225,6 +3238,9 @@ const gamesMenuPopup = document.getElementById('gamesMenuPopup');
 const membersOpenBtn = document.getElementById('membersOpenBtn');
 const infoOpenBtn = document.getElementById('infoOpenBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
+const analyzerToolBtn = document.getElementById('analyzerToolBtn');
+const analyzerToolView = document.getElementById('analyzerToolView');
+const analyzerToolFrame = document.getElementById('analyzerToolFrame');
 const themeColorMeta = document.getElementById('themeColorMeta');
 const matchActionsEl = document.querySelector('.match-actions');
 const memberLobbyEl = document.getElementById('memberLobby');
@@ -3319,6 +3335,7 @@ function setDarkMode(enabled){
   document.documentElement.classList.toggle('dark-mode', darkModeEnabled);
   try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, darkModeEnabled ? 'dark' : 'light'); } catch(_){ }
   updateThemeToggleUi();
+  postAnalyzerToolContext();
   hammerschachScheduleHeightReport(true);
 }
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => setDarkMode(!darkModeEnabled));
@@ -3851,6 +3868,7 @@ function saveAuthState(token, user){
     try{ updateTimeControlsLock(); updateTimePickerUi(); } catch(_){}
   }, 0);
   if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
+  postAnalyzerToolContext();
 }
 async function authApi(path, options){
   const headers = {'content-type':'application/json'};
@@ -3865,6 +3883,105 @@ async function authApi(path, options){
   }
   return data;
 }
+
+let analyzerToolActive = false;
+let analyzerToolFrameStarted = false;
+function analyzerToolTargetOrigin(){
+  return window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+}
+function postAnalyzerToolMessage(message){
+  if(!analyzerToolFrameStarted || !analyzerToolFrame || !analyzerToolFrame.contentWindow) return;
+  try{ analyzerToolFrame.contentWindow.postMessage(message, analyzerToolTargetOrigin()); } catch(_){ }
+}
+function postAnalyzerToolContext(){
+  postAnalyzerToolMessage({
+    type:'hammerschach-analyzer-context',
+    darkMode:!!darkModeEnabled,
+    loggedIn:!!(onlineAuthToken && onlineAuthUser),
+    username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
+  });
+}
+function setAnalyzerToolActive(active){
+  analyzerToolActive = !!active;
+  document.documentElement.classList.toggle('analyzer-tool-active', analyzerToolActive);
+  if(analyzerToolView) analyzerToolView.hidden = !analyzerToolActive;
+  if(analyzerToolBtn){
+    analyzerToolBtn.classList.toggle('active', analyzerToolActive);
+    analyzerToolBtn.setAttribute('aria-pressed', analyzerToolActive ? 'true' : 'false');
+    analyzerToolBtn.title = analyzerToolActive ? 'Analyzer ausblenden und Gamer anzeigen' : 'Hammerschach-Analyzer öffnen';
+  }
+  if(analyzerToolActive && analyzerToolFrame && !analyzerToolFrameStarted){
+    analyzerToolFrameStarted = true;
+    analyzerToolFrame.src = analyzerToolFrame.dataset.src || './Analyzer/';
+  }
+  postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
+  if(analyzerToolActive) postAnalyzerToolContext();
+  hammerschachScheduleHeightReport(true);
+}
+if(analyzerToolBtn) analyzerToolBtn.addEventListener('click', () => setAnalyzerToolActive(!analyzerToolActive));
+if(analyzerToolFrame) analyzerToolFrame.addEventListener('load', () => {
+  postAnalyzerToolContext();
+  postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
+});
+[newGameBtn, createOnlineBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
+  if(button) button.addEventListener('click', () => setAnalyzerToolActive(false), {capture:true});
+});
+window.addEventListener('message', async event => {
+  if(!analyzerToolFrame || event.source !== analyzerToolFrame.contentWindow) return;
+  if(analyzerToolTargetOrigin() !== '*' && event.origin !== analyzerToolTargetOrigin()) return;
+  const message = event.data && typeof event.data === 'object' ? event.data : {};
+  if(message.type === 'hammerschach-analyzer-ready'){
+    postAnalyzerToolContext();
+    postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
+    return;
+  }
+  if(message.type === 'hammerschach-analyzer-height'){
+    const requested = Math.ceil(Number(message.height || 0));
+    if(Number.isFinite(requested) && requested > 0){
+      analyzerToolFrame.style.height = Math.max(720, Math.min(3200, requested + 4)) + 'px';
+      hammerschachScheduleHeightReport(true);
+    }
+    return;
+  }
+  if(message.type === 'hammerschach-analyzer-request-games'){
+    const requestId = String(message.requestId || '');
+    if(!onlineAuthToken || !onlineAuthUser){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result', requestId, ok:false, message:'Bitte zuerst im Gamer einloggen.', games:[]});
+      return;
+    }
+    try{
+      const data = await authApi('/api/analyzer/games');
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result', requestId, ok:true, games:Array.isArray(data.games) ? data.games : []});
+    } catch(err){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result', requestId, ok:false, message:err && err.message ? err.message : 'Beendete Partien konnten nicht geladen werden.', games:[]});
+    }
+    return;
+  }
+  if(message.type === 'hammerschach-analyzer-request-pgn'){
+    const requestId = String(message.requestId || '');
+    const roomId = cleanRoomId(message.roomId);
+    const source = message.source === 'daily' ? 'daily' : 'archive';
+    if(!onlineAuthToken || !onlineAuthUser || !roomId){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result', requestId, ok:false, message:'Die beendete Partie konnte nicht geladen werden.'});
+      return;
+    }
+    const path = source === 'daily'
+      ? '/api/daily-games/' + encodeURIComponent(roomId) + '/pgn'
+      : '/api/analyzer/games/' + encodeURIComponent(roomId) + '/pgn';
+    try{
+      const response = await fetch(onlineApiBaseUrl() + path, {method:'GET', headers:{authorization:'Bearer ' + onlineAuthToken}});
+      if(!response.ok){
+        let detail = null;
+        try{ detail = await response.json(); } catch(_){ detail = null; }
+        throw new Error(detail && detail.message ? detail.message : 'PGN konnte nicht geladen werden.');
+      }
+      const pgn = await response.text();
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result', requestId, ok:true, pgn, roomId});
+    } catch(err){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result', requestId, ok:false, message:err && err.message ? err.message : 'PGN konnte nicht geladen werden.'});
+    }
+  }
+});
 
 const AVATAR_CLIENT_TARGET_SIZE = 256;
 const AVATAR_CLIENT_MAX_SOURCE_BYTES = 8 * 1024 * 1024;
@@ -8744,6 +8861,7 @@ function renderBoard(){
   if(pendingDailyMove) statusEl.textContent = 'Zugvorschau — rechts „Zug bestätigen“ oder „Zug zurücknehmen“ wählen.';
   renderMoveList();
   updateNavControls();
+  updatePgnExportUi();
   updateClockDisplay(g);
   updateGameActionButtons();
   updateDailyMoveConfirmationUi();
@@ -9322,6 +9440,17 @@ function updateNavControls(){
   navEndBtn.disabled = locked || total === 0 || viewIndex === total;
   movesInfoEl.textContent = total === 0 ? '0/0' : viewIndex + '/' + total;
 }
+function canExportCurrentGamePgn(){
+  return masterHistory.length > 0 && !!(onlineGameEnded || gameEnded || timeLost);
+}
+function updatePgnExportUi(){
+  const button = document.getElementById('copyPgnBtn');
+  if(!button) return;
+  const available = canExportCurrentGamePgn();
+  button.hidden = !available;
+  button.disabled = !available;
+  button.title = available ? 'Beendete Partie als PGN-Datei herunterladen' : 'PGN steht erst nach Partieende bereit';
+}
 navStartBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = 0; selected = null; renderBoard(); });
 navBackBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.max(0, viewIndex - 1); selected = null; renderBoard(); });
 navForwardBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.min(masterHistory.length, viewIndex + 1); selected = null; renderBoard(); });
@@ -9431,6 +9560,10 @@ function buildPgnFileName(){
   return safePgnFilePart('Hammerschach-' + datePart + '-' + variantPart + '-' + whitePart + '-vs-' + blackPart) + '.pgn';
 }
 function downloadPgnFile(){
+  if(!canExportCurrentGamePgn()){
+    updatePgnExportUi();
+    return;
+  }
   const pgn = buildPgn();
   if(!pgn){
     statusEl.textContent = 'Noch keine PGN-Daten vorhanden.';
