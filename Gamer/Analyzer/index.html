@@ -76,36 +76,6 @@
     }
 
     .top-header-box{padding:12px 14px}
-    .top-header-layout{
-      display:grid;
-      grid-template-columns:136px minmax(0,1fr);
-      gap:14px;
-      align-items:start;
-    }
-    .header-logo-slot{
-      width:136px;
-      min-height:136px;
-      border-radius:14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:rgba(0,0,0,0.05);
-      color:#666;
-      font-size:13px;
-      font-weight:700;
-      text-align:center;
-      padding:4px;
-      overflow:hidden;
-    }
-    .header-logo-slot img{
-      width:100%;
-      height:100%;
-      max-width:128px;
-      max-height:128px;
-      object-fit:contain;
-      display:block;
-    }
-    .header-logo-slot.logo-missing{padding:10px}
 
     .header-grid{
       display:grid;
@@ -242,6 +212,7 @@
       justify-content:center;
       gap:4px;
     }
+    html:not(.dark-mode) button{color:#000!important}
     button:hover{filter:brightness(1.03)}
     button:active{transform:translateY(1px)}
     .mgmt button{height:44px;font-size:14px}
@@ -431,9 +402,6 @@
     @media (max-width:980px){
       .page{flex-direction:column;align-items:center}
       .sidebar{width:100%;min-width:0;max-width:var(--board-size)}
-      .top-header-layout{grid-template-columns:96px minmax(0,1fr);gap:12px}
-      .header-logo-slot{width:96px;min-height:96px}
-      .header-logo-slot img{max-width:92px;max-height:92px}
       .header-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
       .mv-table{grid-template-columns:56px 1fr 1fr}
     }
@@ -442,9 +410,6 @@
       .header-board-color-wrap{justify-content:stretch}
     }
     @media (max-width:620px){
-      .top-header-layout{grid-template-columns:1fr}
-      .header-logo-slot{width:100%;min-height:84px}
-      .header-logo-slot img{max-width:150px;max-height:76px}
       .header-grid{grid-template-columns:1fr}
     }
     @media (max-width:520px){
@@ -466,11 +431,7 @@
 
   <div class="analyzer-shell">
     <div class="box top-header-box" id="headerBox">
-      <div class="top-header-layout">
-        <div class="header-logo-slot" id="headerLogoSlot" aria-label="Logo">
-          <img src="../Gamer-Logo.png" alt="Hammerschach Logo" onerror="this.style.display='none'; this.parentNode.classList.add('logo-missing'); this.parentNode.textContent='Hammerschach Analyzer';" />
-        </div>
-        <div class="header-grid">
+      <div class="header-grid">
           <div class="header-item"><label for="hdrEvent">Event</label><input id="hdrEvent" type="text" value="?" /></div>
           <div class="header-item"><label for="hdrSite">Site</label><input id="hdrSite" type="text" value="?" /></div>
           <div class="header-item"><label for="hdrDate">Date</label><input id="hdrDate" type="text" value="????.??.??" /></div>
@@ -509,7 +470,6 @@
               <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
             </div>
           </div>
-        </div>
       </div>
     </div>
 
