@@ -3263,6 +3263,21 @@ const siteFootnoteEl = document.querySelector('.site-footnote');
 const siteFootnoteHome = siteFootnoteEl ? {parent:siteFootnoteEl.parentNode, nextSibling:siteFootnoteEl.nextSibling} : null;
 const infoOpenBtnHome = infoOpenBtn ? {parent:infoOpenBtn.parentNode, nextSibling:infoOpenBtn.nextSibling} : null;
 
+function updateSiteFootnotePlacement(){
+  if(!siteFootnoteEl||!siteFootnoteHome)return;
+  if(analyzerToolActive&&analyzerToolView){
+    if(siteFootnoteEl.parentNode!==analyzerToolView)analyzerToolView.appendChild(siteFootnoteEl);
+    return;
+  }
+  if(isMemberLobbyView()&&memberLobbyEl){
+    if(siteFootnoteEl.parentNode!==memberLobbyEl)memberLobbyEl.appendChild(siteFootnoteEl);
+    return;
+  }
+  if(siteFootnoteEl.parentNode!==siteFootnoteHome.parent){
+    if(siteFootnoteHome.nextSibling&&siteFootnoteHome.nextSibling.parentNode===siteFootnoteHome.parent)siteFootnoteHome.parent.insertBefore(siteFootnoteEl,siteFootnoteHome.nextSibling);else siteFootnoteHome.parent.appendChild(siteFootnoteEl);
+  }
+}
+
 function setGamesMenuOpen(open, focusFirst){
   if(!gamesMenuEl || !gamesMenuBtn || !gamesMenuPopup) return;
   const shouldOpen = !!open;
@@ -3905,6 +3920,7 @@ function setAnalyzerToolActive(active){
   analyzerToolActive = !!active;
   document.documentElement.classList.toggle('analyzer-tool-active', analyzerToolActive);
   if(analyzerToolView) analyzerToolView.hidden = !analyzerToolActive;
+  updateSiteFootnotePlacement();
   if(analyzerToolBtn){
     analyzerToolBtn.classList.toggle('active', analyzerToolActive);
     analyzerToolBtn.setAttribute('aria-pressed', analyzerToolActive ? 'true' : 'false');
@@ -4390,12 +4406,7 @@ function updateMemberLobbyUi(){
       if(preRoomSetupPanelHome.nextSibling&&preRoomSetupPanelHome.nextSibling.parentNode===preRoomSetupPanelHome.parent)preRoomSetupPanelHome.parent.insertBefore(preRoomSetupPanelEl,preRoomSetupPanelHome.nextSibling);else preRoomSetupPanelHome.parent.appendChild(preRoomSetupPanelEl);
     }
   }
-  if(siteFootnoteEl&&siteFootnoteHome){
-    if(active&&memberLobbyEl&&siteFootnoteEl.parentNode!==memberLobbyEl)memberLobbyEl.appendChild(siteFootnoteEl);
-    else if(!active&&siteFootnoteEl.parentNode!==siteFootnoteHome.parent){
-      if(siteFootnoteHome.nextSibling&&siteFootnoteHome.nextSibling.parentNode===siteFootnoteHome.parent)siteFootnoteHome.parent.insertBefore(siteFootnoteEl,siteFootnoteHome.nextSibling);else siteFootnoteHome.parent.appendChild(siteFootnoteEl);
-    }
-  }
+  updateSiteFootnotePlacement();
   if(active){
     if(statusEl)statusEl.textContent='Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
     connectGlobalChat();
