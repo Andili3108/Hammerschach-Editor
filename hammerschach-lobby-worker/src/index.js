@@ -2905,6 +2905,142 @@ async function listAnalyzerGames(env, sessionUser) {
 }
 
 
+const TRAINER_RATING_START = 1500;
+const TRAINER_RATING_K = 24;
+let trainerProgressTablesReady = false;
+
+function cleanTrainerAttemptId(value) {
+  const id = String(value || '').trim();
+  return /^[A-Za-z0-9_-]{8,100}$/.test(id) ? id : '';
+}
+
+function cleanTrainerPuzzleId(value) {
+  const id = String(value || '').trim();
+  return /^[A-Za-z0-9_-]{1,64}$/.test(id) ? id : '';
+}
+
+function trainerProgressPayload(row) {
+  return {
+    rating:Math.round(Number(row && row.rating || TRAINER_RATING_START)),
+    attempts:Math.max(0, Math.floor(Number(row && row.attempts || 0))),
+    solved:Math.max(0, Math.floor(Number(row && row.solved || 0))),
+    failed:Math.max(0, Math.floor(Number(row && row.failed || 0))),
+    updatedAt:row && row.updated_at ? row.updated_at : null
+  };
+}
+
+async function ensureTrainerProgressTables(env) {
+  if (!env || !env.DB) return false;
+  if (trainerProgressTablesReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS trainer_progress (
+       user_id TEXT PRIMARY KEY,
+       rating INTEGER NOT NULL DEFAULT 1500,
+       attempts INTEGER NOT NULL DEFAULT 0,
+       solved INTEGER NOT NULL DEFAULT 0,
+       failed INTEGER NOT NULL DEFAULT 0,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS trainer_attempts (
+       attempt_id TEXT PRIMARY KEY,
+       user_id TEXT NOT NULL,
+       puzzle_id TEXT NOT NULL,
+       puzzle_rating INTEGER NOT NULL,
+       result TEXT NOT NULL,
+       rating_before INTEGER NOT NULL,
+       rating_after INTEGER NOT NULL,
+       rating_change INTEGER NOT NULL,
+       created_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_trainer_attempts_user_time ON trainer_attempts (user_id, created_at)`).run();
+  trainerProgressTablesReady = true;
+  return true;
+}
+
+async function getTrainerProgress(env, userId) {
+  if (!userId || !(await ensureTrainerProgressTables(env))) return trainerProgressPayload(null);
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO trainer_progress
+       (user_id, rating, attempts, solved, failed, created_at, updated_at)
+     VALUES (?, ?, 0, 0, 0, ?, ?)`
+  ).bind(String(userId), TRAINER_RATING_START, nowIso, nowIso).run();
+  const row = await env.DB.prepare(`SELECT * FROM trainer_progress WHERE user_id = ? LIMIT 1`).bind(String(userId)).first();
+  return trainerProgressPayload(row);
+}
+
+function calculateTrainerRatingChange(playerRating, puzzleRating, result) {
+  const current = Math.max(100, Math.min(4000, Math.round(Number(playerRating || TRAINER_RATING_START))));
+  const puzzle = Math.max(800, Math.min(2400, Math.round(Number(puzzleRating || 1200))));
+  const expected = 1 / (1 + Math.pow(10, (puzzle - current) / 400));
+  const actual = result === 'success' ? 1 : 0;
+  let change = Math.round(TRAINER_RATING_K * (actual - expected));
+  if (change === 0) change = actual ? 1 : -1;
+  const next = Math.max(100, Math.min(4000, current + change));
+  return { current, next, change:next - current, puzzle };
+}
+
+async function saveTrainerAttempt(env, userId, input) {
+  if (!userId || !(await ensureTrainerProgressTables(env))) {
+    return {ok:false, status:503, code:'TRAINER_DB_UNAVAILABLE', message:'Das Taktik-Rating ist momentan nicht verfügbar.'};
+  }
+  const attemptId = cleanTrainerAttemptId(input && input.attemptId);
+  const puzzleId = cleanTrainerPuzzleId(input && input.puzzleId);
+  const result = input && input.result === 'success' ? 'success' : (input && input.result === 'fail' ? 'fail' : '');
+  const puzzleRating = Math.max(800, Math.min(2400, Math.round(Number(input && input.puzzleRating || 1200))));
+  if (!attemptId || !puzzleId || !result) {
+    return {ok:false, status:400, code:'INVALID_TRAINER_ATTEMPT', message:'Das Taktik-Ergebnis ist unvollständig.'};
+  }
+
+  const existing = await env.DB.prepare(`SELECT * FROM trainer_attempts WHERE attempt_id = ? LIMIT 1`).bind(attemptId).first();
+  if (existing) {
+    if (String(existing.user_id || '') !== String(userId)) {
+      return {ok:false, status:409, code:'TRAINER_ATTEMPT_CONFLICT', message:'Dieser Trainingsversuch gehört zu einem anderen Account.'};
+    }
+    return {
+      ok:true,
+      alreadySaved:true,
+      ratingChange:Number(existing.rating_change || 0),
+      progress:await getTrainerProgress(env, userId)
+    };
+  }
+
+  const progress = await getTrainerProgress(env, userId);
+  const rating = calculateTrainerRatingChange(progress.rating, puzzleRating, result);
+  const nowIso = new Date().toISOString();
+  try {
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO trainer_attempts
+           (attempt_id, user_id, puzzle_id, puzzle_rating, result,
+            rating_before, rating_after, rating_change, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(attemptId, String(userId), puzzleId, rating.puzzle, result, rating.current, rating.next, rating.change, nowIso),
+      env.DB.prepare(
+        `UPDATE trainer_progress
+            SET rating = ?, attempts = attempts + 1,
+                solved = solved + ?, failed = failed + ?, updated_at = ?
+          WHERE user_id = ?`
+      ).bind(rating.next, result === 'success' ? 1 : 0, result === 'fail' ? 1 : 0, nowIso, String(userId))
+    ]);
+  } catch (error) {
+    const duplicate = await env.DB.prepare(`SELECT * FROM trainer_attempts WHERE attempt_id = ? AND user_id = ? LIMIT 1`).bind(attemptId, String(userId)).first();
+    if (!duplicate) throw error;
+    return {
+      ok:true,
+      alreadySaved:true,
+      ratingChange:Number(duplicate.rating_change || 0),
+      progress:await getTrainerProgress(env, userId)
+    };
+  }
+  return {ok:true, ratingChange:rating.change, progress:await getTrainerProgress(env, userId)};
+}
+
+
 let publicGamesTableReady = false;
 async function ensurePublicGamesTable(env) {
   if (!env || !env.DB) return false;
@@ -3716,6 +3852,8 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM trainer_attempts WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM trainer_progress WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await deleteUserAvatar(env, target.id, {bestEffort:true}); } catch (_) {}
   try { if (await ensureUserPublicProfilesTable(env)) await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
@@ -4213,7 +4351,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','rated_games','user_ratings','user_public_profiles',
+    'users','sessions','daily_games','public_games','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients'
   ];
@@ -4548,6 +4686,30 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
     const me = await publicUserWithRatings(env, session.user); me.moderation = await moderationStateForUser(env, session.user.id); return json({ ok: true, user: me });
+  }
+
+  if (url.pathname === '/api/trainer/progress' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst im Gamer einloggen.'}, {status:401});
+    try {
+      return json({ok:true, progress:await getTrainerProgress(env, session.user.id)});
+    } catch (_) {
+      return json({ok:false, code:'TRAINER_PROGRESS_UNAVAILABLE', message:'Das Taktik-Rating konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/trainer/progress' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst im Gamer einloggen.'}, {status:401});
+    const body = await readJsonBody(request);
+    if (!body) return json({ok:false, code:'BAD_JSON', message:'Das Taktik-Ergebnis konnte nicht gelesen werden.'}, {status:400});
+    try {
+      const saved = await saveTrainerAttempt(env, session.user.id, body);
+      if (!saved.ok) return json(saved, {status:saved.status || 400});
+      return json(saved);
+    } catch (_) {
+      return json({ok:false, code:'TRAINER_SAVE_FAILED', message:'Das Taktik-Ergebnis konnte nicht gespeichert werden.'}, {status:500});
+    }
   }
 
   if (url.pathname === '/api/account/username' && request.method === 'POST') {
