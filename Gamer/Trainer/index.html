@@ -4,24 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hammerschach-Trainer im Gamer</title>
+<script>
+  try{
+    if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
+      document.documentElement.classList.add('dark-mode');
+    }
+  }catch(_){ }
+</script>
 <style>
   :root{
-    /* Brettgröße jetzt dynamisch: Desktop max. 600px, Mobile bis 95vw */
-    --board-size: min(660px, 95vw);
-    --sidebar-width: 300px;
+    --board-max:760px;
+    --board-size:min(var(--board-max),calc(100vw - var(--sidebar-width) - var(--page-gap)));
+    --sidebar-width:324px;
     --page-gap: 16px;
-    --andili-rot:#9A2D33;
-    --andili-blau:#9A2D33;
-    --bg:#f6f7fb;
+    --andili-rot:#843f46;
     --light-square:#f0d9b5;
     --dark-square:#843f46;
   }
 
  html,body{
   margin:0;
-  height:100%;
-  font-family:Times New Roman,Tahoma,Arial,sans-serif;
-  background:transparent;   /* hier transparent setzen */
+ height:100%;
+  font-family:"Times New Roman",serif;
+  background:transparent;
   color:#111;
   overflow-x:hidden;
   overflow-y:auto;
@@ -29,27 +34,25 @@
 
 
   .trainer-shell{
-    max-width:1000px;
-    margin:0 auto 4px auto;
+    width:min(calc(var(--board-max) + var(--page-gap) + var(--sidebar-width)),100vw);
+    max-width:1100px;
+    margin:0 auto 8px;
     padding:0;
     box-sizing:border-box;
   }
 
   .trainer-toprow{
     width:100%;
-    display:grid;
-    grid-template-columns:minmax(0,var(--board-size)) minmax(280px,var(--sidebar-width));
-    gap:var(--page-gap);
-    align-items:start;
-    margin:0 0 4px 0;
+    margin:0 0 14px;
   }
 
   .trainer-topactions{
-    min-width:0;
     display:flex;
-    justify-content:flex-end;
-    align-items:flex-start;
-    padding-top:12px;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-width:0;
+    position:relative;
   }
 
   .guide-btn{
@@ -57,22 +60,15 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    min-width:100px;
-    height:25px;
-  }
-
-  .trainer-topactions{
-    gap:8px;
-    flex-wrap:nowrap;
-    position:relative;
+    box-sizing:border-box;
   }
 
   .top-action-btn{
-    width:136px;
-    height:41px;
-    min-width:136px;
+    width:auto;
+    height:40px;
+    min-width:112px;
     box-sizing:border-box;
-    padding:7px 14px;
+    padding:7px 12px;
     white-space:nowrap;
   }
 
@@ -83,13 +79,16 @@
 
   .board-color-popup{
     position:absolute;
-    top:calc(100% + 8px);
-    right:0;
-    width:210px;
-    background:linear-gradient(135deg,#ffffff,#f7f7f7);
-    border:1px solid rgba(0,0,0,0.14);
+    top:auto;
+    bottom:calc(100% + 12px);
+    left:50%;
+    right:auto;
+    transform:translateX(-50%);
+    width:238px;
+    background:rgba(255,255,255,.99);
+    border:1px solid rgba(132,63,70,.22);
     border-radius:14px;
-    box-shadow:0 14px 30px rgba(0,0,0,0.22);
+    box-shadow:0 18px 42px rgba(0,0,0,.20);
     padding:10px;
     z-index:2100;
     box-sizing:border-box;
@@ -100,8 +99,8 @@
   }
 
   .board-color-popup-title{
-    font-weight:700;
-    font-size:16px;
+    font-weight:900;
+    font-size:15px;
     color:#222;
     margin:0 0 8px 0;
   }
@@ -126,13 +125,16 @@
     font-size:14px;
     line-height:1.1;
     text-align:left;
-    box-shadow:0 1px 4px rgba(0,0,0,0.12);
+    background:#f4f4f5!important;
+    color:#222!important;
+    border:1px solid rgba(0,0,0,.09)!important;
+    box-shadow:none!important;
   }
 
   .board-color-option.active{
-    background:#9A2D33;
-    color:#fff;
-    border-color:#9A2D33;
+    background:var(--andili-rot)!important;
+    color:#fff!important;
+    border-color:rgba(132,63,70,.45)!important;
   }
 
   .board-color-swatch{
@@ -162,26 +164,19 @@
     grid-template-columns:minmax(0,var(--board-size)) minmax(280px,var(--sidebar-width));
     gap:var(--page-gap);
     align-items:flex-start;
-    justify-content:flex-start;
+    justify-content:center;
   }
-  @media(max-width:1000px){
+  @media(max-width:980px){
+    :root{--board-size:min(var(--board-max),calc(100vw - 24px));}
     .trainer-shell{
+      width:calc(100vw - 24px);
       display:flex;
       flex-direction:column;
       align-items:center;
     }
     .trainer-toprow{
       width:100%;
-      max-width:660px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:8px;
-    }
-    .trainer-topactions{
-      width:100%;
-      justify-content:center;
-      padding-top:0;
+      max-width:var(--board-size);
     }
     .page{
       display:flex;
@@ -199,40 +194,40 @@
     gap:12px;
     position:relative;
   }
-  @media(max-width:900px){
+  @media(max-width:980px){
     .board-column{
-      width:100%;
-      max-width:660px;
-      padding:0 4px;
+      width:var(--board-size);
+      max-width:100%;
+      padding:0;
     }
-    .trainer-topbox{padding:10px 12px;}
   }
   @media(max-width:600px){
     .trainer-topbox{padding:9px 10px;}
     .trainer-header{
       flex-wrap:wrap;
+      align-items:flex-start;
     }
+    .trainer-account,.rating-mode{width:100%}
+    .rating-mode{justify-content:flex-start}
+    .rating-mode-hint{text-align:left}
   }
 
-  /* Kopfbereich über dem Brett */
   .trainer-topbox{
     width:100%;
-    background:linear-gradient(135deg,#ffffff,#f7f7f7);
-    padding:6px 8px;
-    border-radius:14px;
-    border:1px solid rgba(0,0,0,0.10);
-    box-shadow:
-      0 2px 4px rgba(255,255,255,0.7) inset,
-      0 12px 30px rgba(0,0,0,0.15);
+    background:rgba(255,255,255,.98);
+    padding:12px 14px;
+    border-radius:18px;
+    border:1px solid rgba(132,63,70,.16);
+    box-shadow:0 14px 32px rgba(0,0,0,.12);
     display:flex;
-    align-items:start;
+    align-items:stretch;
     box-sizing:border-box;
   }
   .trainer-topinfo{
     display:flex;
     flex-direction:column;
-    justify-content:space-between;
-    gap:8px;
+    justify-content:center;
+    gap:10px;
     min-width:0;
     width:100%;
     align-self:stretch;
@@ -246,29 +241,31 @@
     align-items:center;
     gap:10px;
     font-size:clamp(16px,2.1vw,18px);
-    font-weight:700;
+    font-weight:900;
     color:#333;
     margin-bottom:0;
   }
   #ratingDisplay{
-    font-size:clamp(17px,2.1vw,19px);
-    font-weight:700;
+    font-size:clamp(16px,2.1vw,19px);
+    font-weight:900;
     color:var(--andili-rot);
   }
   .trainer-account{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
-  .trainer-user{font-size:15px;font-weight:700;color:#333;overflow-wrap:anywhere}
+  .trainer-user{font-size:15px;font-weight:900;color:#333;overflow-wrap:anywhere}
   .rating-mode{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
-  .rating-mode button{min-height:34px;padding:6px 10px;font-size:14px;border-radius:10px}
-  .rating-mode button.active{background:var(--andili-rot);color:#fff;border-color:var(--andili-rot)}
+  .rating-mode button{min-height:38px;padding:7px 11px;font-size:14px;border-radius:12px}
+  .rating-mode button.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important}
   .rating-mode button:disabled{opacity:.5;cursor:default}
-  .rating-mode-hint{width:100%;text-align:right;font-size:11px;font-weight:600;color:#666}
+  .rating-mode-hint{width:100%;text-align:right;font-size:11px;font-weight:800;color:#666}
 
   #board{
     width:100%;
     max-width:var(--board-size);
     aspect-ratio:1/1;
-    border:3px solid #333;
-    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    box-sizing:border-box;
+    border:4px solid var(--andili-rot);
+    border-radius:10px;
+    box-shadow:0 14px 36px rgba(0,0,0,.16);
     display:grid;
     grid-template-columns:repeat(8,1fr);
     grid-template-rows:repeat(8,1fr);
@@ -313,8 +310,12 @@
 
   .board-illegal-flash{
     position:absolute;
-    inset:0;
-    border-radius:6px;
+    top:0;
+    left:0;
+    width:100%;
+    height:var(--board-size);
+    box-sizing:border-box;
+    border-radius:10px;
     pointer-events:none;
     box-shadow:0 0 0 0 rgba(132,63,70,0.0);
     transition:box-shadow 320ms ease;
@@ -329,76 +330,88 @@
     width:100%;
     display:flex;
     flex-wrap:wrap;
-    gap:10px;
+    gap:6px;
+    align-items:center;
     justify-content:center;
   }
 
-  /* Sticky-Controls auf kleineren Displays */
-  @media(max-width:900px){
-    .controls{
-      position:sticky;
-      top:8px;
-      z-index:50;
-      padding:6px 6px;
-      background:linear-gradient(135deg,#ffffffee,#f7f7f7ee);
-      border-radius:999px;
-      box-shadow:0 8px 18px rgba(0,0,0,0.18);
-      backdrop-filter:blur(4px);
-    }
-  }
   @media(max-width:600px){
-    .controls button{
-      flex:1 1 calc(50% - 6px);
-      min-width:100px;
+    .controls{
+      gap:5px;
+    }
+    .controls .board-action-btn{
+      flex:1 1 145px;
     }
   }
 
   button,
   .guide-btn{
-    background:#e6e6e6;
-    color:#9A2D33;
-    border-radius:10px;
-    border:1px solid #cfcfcf;
-    padding:7px 14px;
-    font-weight:600;
+    background:linear-gradient(180deg,#f3f3f3 0%,#dadada 100%);
+    color:#333;
+    border-radius:16px;
+    border:1px solid rgba(0,0,0,.14);
+    padding:8px 12px;
+    font-weight:900;
     cursor:pointer;
-    box-shadow:0 2px 5px rgba(0,0,0,0.18);
-    transition:filter .12s ease,box-shadow .12s ease,transform .08s ease;
-    font-family:Times New Roman,Tahoma,Arial,sans-serif;
-    font-size:20px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(0,0,0,.04),0 6px 14px rgba(0,0,0,.10);
+    transition:transform .08s ease,box-shadow .12s ease,filter .12s ease;
+    font-family:inherit;
+    font-size:14px;
   }
-  button:hover,
-  .guide-btn:hover{filter:brightness(1.03);}
-  button:active,
-  .guide-btn:active{transform:translateY(1px);}
-  button.ghost{
-    background:#e6e6e6;
-    color:#9A2D33;
+  button:hover:not(:disabled),
+  .guide-btn:hover{
+    transform:translateY(-1px);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 18px rgba(0,0,0,.16);
+    filter:brightness(1.02);
   }
-  .controls button{
-    min-width:140px;
-    height:42px;
+  button:active:not(:disabled),
+  .guide-btn:active{
+    transform:translateY(1px);
+    box-shadow:inset 0 2px 5px rgba(0,0,0,.10),0 3px 8px rgba(0,0,0,.10);
   }
+  button:disabled{opacity:.55;cursor:default;box-shadow:none}
+  button:focus-visible,
+  .guide-btn:focus-visible,
+  select:focus-visible,
+  input:focus-visible{outline:3px solid rgba(132,63,70,.22);outline-offset:2px}
+  .button-flat{
+    background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;
+    color:#333!important;
+    border-color:rgba(0,0,0,.14)!important;
+  }
+  .board-action-btn{min-width:138px;min-height:40px;white-space:nowrap}
+  .icon-btn{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px!important;
+    padding:0!important;
+    font-size:21px!important;
+    line-height:1;
+  }
+  .icon-label{display:inline-block;line-height:1}
 
   .status{
     width:100%;
     max-width:100%;
-    min-height:56px;
+    min-height:44px;
     box-sizing:border-box;
     display:flex;
     align-items:center;
     justify-content:center;
-    background:linear-gradient(135deg,#ffffff,#f7f7f7);
-    padding:6px 16px;
-    border-radius:14px;
-    border:1px solid rgba(0,0,0,0.10);
-    box-shadow:
-      0 2px 4px rgba(255,255,255,0.7) inset,
-      0 12px 30px rgba(0,0,0,0.15);
+    background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(246,238,240,.98));
+    padding:8px 16px;
+    border-radius:999px;
+    border:1px solid rgba(132,63,70,.18);
+    box-shadow:0 8px 20px rgba(0,0,0,.10);
     text-align:center;
-    font-weight:600;
-    line-height:1.15;
-    font-size:clamp(18px, 1.8vw, 20px);
+    font-weight:900;
+    line-height:1.2;
+    font-size:clamp(16px,1.8vw,18px);
   }
 
   .sidebar{
@@ -410,28 +423,27 @@
     gap:10px;
     align-self:flex-start;
   }
-  @media(max-width:1000px){
+  @media(max-width:980px){
     .sidebar{
-      width:100%;
+      width:var(--board-size);
+      max-width:100%;
       height:auto;
       min-height:0;
     }
   }
   .box{
-    background:linear-gradient(135deg,#ffffff,#f7f7f7);
-    padding:10px 12px;
-    border-radius:14px;
-    border:1px solid rgba(0,0,0,0.10);
-    box-shadow:
-      0 2px 4px rgba(255,255,255,0.7) inset,
-      0 12px 30px rgba(0,0,0,0.15);
+    background:rgba(255,255,255,.98);
+    padding:12px 14px;
+    border-radius:18px;
+    border:1px solid rgba(132,63,70,.16);
+    box-shadow:0 14px 32px rgba(0,0,0,.12);
     box-sizing:border-box;
   }
   .box-title{
-    font-weight:700;
-    margin-bottom:6px;
+    font-weight:900;
+    margin-bottom:8px;
     color:#222;
-    font-size:clamp(15px,2vw,17px);
+    font-size:clamp(16px,2vw,18px);
   }
   .filter-box{
     display:flex;
@@ -443,7 +455,7 @@
     flex:0 0 auto;
   }
   .box-subtitle{
-    font-size:15px;
+    font-size:14px;
     color:#555;
     margin-bottom:4px;
   }
@@ -458,18 +470,18 @@
     margin-top:4px;
   }
   .badge{
-    padding:3px 8px;
+    padding:4px 8px;
     border-radius:999px;
     font-size:11px;
     border:1px solid rgba(0,0,0,0.12);
-    background:#fff;
+    background:#f7f7f9;
     color:#333;
     white-space:nowrap;
   }
   .badge.highlight{
-    background:rgba(154,45,51,0.10);
-    border-color:rgba(154,45,51,0.55);
-    color:#9A2D33;
+    background:rgba(132,63,70,.10);
+    border-color:rgba(132,63,70,.40);
+    color:var(--andili-rot);
 }
 
   .filter-row{
@@ -480,7 +492,7 @@
     font-size:14px;
   }
   .filter-label{
-    font-weight:600;
+    font-weight:900;
   }
   .slider-row{
     display:flex;
@@ -490,6 +502,7 @@
   input[type="range"]{
     flex:1;
   }
+  input[type="checkbox"]{accent-color:var(--andili-rot)}
   input[type="range"]:disabled{
     opacity:0.4;
     pointer-events:none;
@@ -497,16 +510,19 @@
   .pill-preview{
     padding:2px 8px;
     border-radius:999px;
-    background:#eee;
+    background:#f1f1f3;
+    border:1px solid rgba(0,0,0,.07);
     font-size:11px;
     white-space:nowrap;
   }
   select{
     width:100%;
-    padding:4px 6px;
-    border-radius:8px;
-    border:1px solid #ccc;
-    font-family:Times New Roman,Tahoma,Arial,sans-serif;
+    padding:7px 8px;
+    border-radius:12px;
+    border:1px solid rgba(132,63,70,.20);
+    background:#f7f7f9;
+    color:#222;
+    font-family:inherit;
     font-size:14px;
   }
   #themesSelect{
@@ -521,6 +537,7 @@
   .small-info{
     font-size:11px;
     color:#666;
+    font-weight:800;
   }
   .moves-pre{
     font-family:Times New Roman,ui-monospace,Menlo,Monaco,"Roboto Mono",monospace;
@@ -542,15 +559,9 @@
   .solution-toggle{
     min-width:auto;
     height:auto;
-    padding:6px 12px;
+    padding:7px 11px;
     font-size:14px;
-  }
-
-  .footer-note{
-    text-align:center;
-    margin-top:8px;
-    font-size:15px;
-    color:#555;
+    border-radius:12px;
   }
 
   .square.selected::after{
@@ -562,27 +573,26 @@
     pointer-events:none;
   }
 
-/* ANDILI – SLIDER IN ROT */
 input[type="range"] {
   -webkit-appearance: none;
   width: 100%;
   height: 6px;
   border-radius: 4px;
-  background: #e8cfd1;
+  background: #e4cfd1;
   outline: none;
   cursor: pointer;
 }
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 4px;
-  background: #e8cfd1;
+  background: #e4cfd1;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 18px;
   width: 18px;
   margin-top: -6px;
-  background: #9A2D33;
+  background: var(--andili-rot);
   border-radius: 50%;
   border: 2px solid white;
   box-shadow: 0 2px 5px rgba(0,0,0,0.25);
@@ -590,24 +600,23 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-track {
   height: 6px;
   border-radius: 4px;
-  background: #e8cfd1;
+  background: #e4cfd1;
 }
 input[type="range"]::-moz-range-progress {
   height: 6px;
   border-radius: 4px;
-  background: #9A2D33;
+  background: var(--andili-rot);
 }
 input[type="range"]::-moz-range-thumb {
   height: 18px;
   width: 18px;
-  background: #9A2D33;
+  background: var(--andili-rot);
   border-radius: 50%;
   border: 2px solid white;
   box-shadow: 0 2px 5px rgba(0,0,0,0.25);
 }
 
 
-/* === Lichess-artige Brettbeschriftung === */
 .coord-file{
   position:absolute;
   right:4px;
@@ -633,11 +642,12 @@ input[type="range"]::-moz-range-thumb {
   user-select:none;
 }
 
-html.dark-mode{color-scheme:dark}
-html.dark-mode,html.dark-mode body{color:#f2f3f5}
+html.dark-mode{color-scheme:dark;background:transparent}
+html.dark-mode,html.dark-mode body{background:transparent;color:#f2f3f5}
 html.dark-mode .trainer-topbox,
 html.dark-mode .status,
-html.dark-mode .box{background:linear-gradient(135deg,#1b1e23,#20242a);border-color:rgba(255,255,255,.10);box-shadow:0 12px 30px rgba(0,0,0,.38);color:#f2f3f5}
+html.dark-mode .box{background:#1b1e23;border-color:rgba(255,255,255,.10);box-shadow:0 16px 38px rgba(0,0,0,.42);color:#f2f3f5}
+html.dark-mode .status{background:linear-gradient(135deg,#272b31,#211d20);border-color:rgba(226,151,160,.20);box-shadow:0 8px 20px rgba(0,0,0,.30)}
 html.dark-mode .trainer-header,
 html.dark-mode .trainer-user,
 html.dark-mode .box-title,
@@ -646,22 +656,34 @@ html.dark-mode #ratingDisplay{color:#e6a3ab}
 html.dark-mode .rating-mode-hint,
 html.dark-mode .small-info,
 html.dark-mode .box-subtitle,
-html.dark-mode .board-color-current{color:#b8bdc6}
+html.dark-mode .board-color-current,
+html.dark-mode .meta-line{color:#b8bdc6}
 html.dark-mode button,
-html.dark-mode .guide-btn{background:#30343b;color:#f0b8be;border-color:rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.28)}
-html.dark-mode button.ghost{background:#30343b;color:#f0b8be}
+html.dark-mode .guide-btn,
+html.dark-mode .button-flat{background:linear-gradient(180deg,#393e46 0%,#292d33 100%)!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.25)!important}
+html.dark-mode button:hover:not(:disabled),
+html.dark-mode .guide-btn:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 18px rgba(0,0,0,.38)!important;filter:brightness(1.08)}
 html.dark-mode .rating-mode button.active,
-html.dark-mode .board-color-option.active{background:#9f4d56;color:#fff;border-color:rgba(255,255,255,.14)}
-html.dark-mode .board-color-popup{background:linear-gradient(135deg,#1b1e23,#20242a);border-color:rgba(255,255,255,.12);box-shadow:0 14px 30px rgba(0,0,0,.48)}
+html.dark-mode .board-color-option.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.14)!important}
+html.dark-mode .board-color-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48)}
 html.dark-mode .board-color-popup-title{color:#f2f3f5}
-html.dark-mode .board-color-option{background:#2b2f36;color:#eef0f2;border-color:rgba(255,255,255,.08)}
+html.dark-mode .board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important}
 html.dark-mode select{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14)}
 html.dark-mode select option{background:#171a1f;color:#f2f3f5}
-html.dark-mode .pill-preview{background:#2b2f36;color:#e7e8eb}
+html.dark-mode .pill-preview{background:#2b2f36;border-color:rgba(255,255,255,.08);color:#e7e8eb}
 html.dark-mode .badge{background:#252930;border-color:rgba(255,255,255,.10);color:#eef0f2}
 html.dark-mode .badge.highlight{background:rgba(159,77,86,.25);border-color:rgba(226,151,160,.35);color:#efb1b8}
-html.dark-mode .controls{background:linear-gradient(135deg,rgba(27,30,35,.94),rgba(32,36,42,.94))}
+html.dark-mode input[type="range"],
+html.dark-mode input[type="range"]::-webkit-slider-runnable-track,
+html.dark-mode input[type="range"]::-moz-range-track{background:#52363a}
+html.dark-mode input[type="checkbox"]{accent-color:#9f4d56}
 html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
+
+@media(max-width:460px){
+  .icon-btn{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:19px!important}
+  .top-action-btn{height:36px;min-width:104px;padding:6px 9px}
+  .board-color-popup{width:min(238px,calc(100vw - 48px))}
+}
 
 </style>
 </head>
@@ -686,34 +708,6 @@ html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
         <div id="status" class="status">Lade Aufgaben…</div>
       </div>
     </div>
-    <div class="trainer-topactions">
-      <div class="board-color-wrap" id="boardColorWrap">
-        <button id="btnBoardColor" type="button" class="guide-btn top-action-btn" aria-haspopup="true" aria-expanded="false">Brettfarbe</button>
-        <div id="boardColorPopup" class="board-color-popup" hidden>
-          <div class="board-color-popup-title">Brettfarbe wählen</div>
-          <div class="board-color-options">
-            <button type="button" class="board-color-option" data-board-color="basis">
-              <span>Basis</span>
-              <span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span>
-            </button>
-            <button type="button" class="board-color-option" data-board-color="braun">
-              <span>Klassisch Braun</span>
-              <span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span>
-            </button>
-            <button type="button" class="board-color-option" data-board-color="grau">
-              <span>Grau / Neutral</span>
-              <span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span>
-            </button>
-            <button type="button" class="board-color-option" data-board-color="gruen">
-              <span>Grün / Turnier</span>
-              <span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span>
-            </button>
-          </div>
-          <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
-        </div>
-      </div>
-      <a class="guide-btn top-action-btn" href="https://files.homepagemodules.de/b782117/f5t125p68n22_bJOtPTsW.pdf" target="_blank" rel="noopener noreferrer">Anleitung</a>
-    </div>
   </div>
 
   <div class="page">
@@ -722,11 +716,26 @@ html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
     <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
 
     <div class="controls">
-      <button id="btnNewPuzzle">Nächste Aufgabe</button>
-      <button id="btnRetry" class="ghost">Wiederholen</button>
-      <button id="btnFlip" class="ghost">Flip</button>
+      <button id="btnNewPuzzle" class="button-flat board-action-btn" type="button">🧩 Nächste Aufgabe</button>
+      <button id="btnRetry" class="button-flat board-action-btn" type="button">↩ Wiederholen</button>
+      <button id="btnFlip" class="button-flat icon-btn" type="button" title="Brett drehen" aria-label="Brett drehen"><span class="icon-label">↻</span></button>
+      <div class="trainer-topactions">
+        <div class="board-color-wrap" id="boardColorWrap">
+          <button id="btnBoardColor" type="button" class="button-flat icon-btn" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe"><span class="icon-label">🎨</span></button>
+          <div id="boardColorPopup" class="board-color-popup" hidden>
+            <div class="board-color-popup-title">Brettfarbe wählen</div>
+            <div class="board-color-options">
+              <button type="button" class="board-color-option" data-board-color="basis"><span>Basis</span><span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="braun"><span>Klassisch Braun</span><span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="grau"><span>Grau / Neutral</span><span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="gruen"><span>Grün / Turnier</span><span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span></button>
+            </div>
+            <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
+          </div>
+        </div>
+        <a class="button-flat guide-btn top-action-btn" href="https://files.homepagemodules.de/b782117/f5t125p68n22_bJOtPTsW.pdf" target="_blank" rel="noopener noreferrer">📖 Anleitung</a>
+      </div>
     </div>
-    <!-- Fußnote entfernt -->
   </div>
 
   <aside class="sidebar">
@@ -797,7 +806,7 @@ html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
       <div id="puzzleMeta" class="meta-line">Noch keine Aufgabe geladen.</div>
       <div class="badge-row" id="puzzleBadges"></div>
       <div class="solution-head">
-        <button id="btnShowSolution" class="solution-toggle">Lösung</button>
+        <button id="btnShowSolution" class="button-flat solution-toggle" type="button">Lösung</button>
         <div class="box-subtitle">Lösung (SAN-Notation)</div>
       </div>
       <div id="puzzleSolution" class="moves-pre">–</div>
