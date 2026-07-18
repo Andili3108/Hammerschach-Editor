@@ -1037,7 +1037,7 @@
           <p>Über <strong>„📂 Partien“ → „📋 Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
-          <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
+          <p>Bei einer gezielten Einladung an ein registriertes Mitglied zeigt die offene Daily-Einladung den eingeladenen Benutzernamen an. Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
@@ -6208,8 +6208,9 @@ function createDailyGameCard(game){
   title.className = 'daily-game-title';
   const titleText = document.createElement('span');
   titleText.className = 'daily-game-title-text';
+  const invitedName = cleanDisplayName(game.invitedName) || '';
   titleText.textContent = game.pendingInvitation
-    ? 'Offene Daily-Einladung'
+    ? (invitedName ? ('Einladung an ' + invitedName) : 'Offene Daily-Einladung')
     : 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
   title.appendChild(titleText);
   if(!game.ended && game.opponentJoined) title.appendChild(createPresenceBadge(!!game.opponentOnline));
@@ -6219,7 +6220,7 @@ function createDailyGameCard(game){
     const outcome = dailyOutcomeForUser(game);
     status.textContent = outcome.label + ' · ' + dailyResultLabel(game.result);
     if(outcome.className) status.classList.add(outcome.className);
-  } else if(game.pendingInvitation) status.textContent = 'Wartet auf Annahme durch den Gegner';
+  } else if(game.pendingInvitation) status.textContent = invitedName ? ('Wartet auf Annahme durch ' + invitedName) : 'Wartet auf Annahme durch den Gegner';
   else if(!game.started) status.textContent = 'Annahme wird verarbeitet';
   else if(game.isMyTurn) status.textContent = 'Du bist am Zug' + (game.deadlineAt ? ' · noch ' + formatDailyListRemaining(game.deadlineAt) : '');
   else status.textContent = 'Gegner ist am Zug';
