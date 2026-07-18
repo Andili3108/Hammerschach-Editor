@@ -706,11 +706,13 @@
 
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
   .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
-  .analyzer-tool-view{width:100%;min-width:0;}
-  .analyzer-tool-view[hidden]{display:none!important;}
-  .analyzer-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
+  .analyzer-tool-view,.trainer-tool-view{width:100%;min-width:0;}
+  .analyzer-tool-view[hidden],.trainer-tool-view[hidden]{display:none!important;}
+  .analyzer-tool-frame,.trainer-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
   html.analyzer-tool-active .member-lobby,
-  html.analyzer-tool-active .top-layout{display:none!important;}
+  html.analyzer-tool-active .top-layout,
+  html.trainer-tool-active .member-lobby,
+  html.trainer-tool-active .top-layout{display:none!important;}
   .next-daily-game-box{border-radius:16px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:11px 12px;display:flex;flex-direction:column;gap:7px;}
   .next-daily-game-box[hidden]{display:none!important;}
   .next-daily-game-btn{width:100%;min-height:44px;border-radius:13px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;white-space:normal;line-height:1.2;}
@@ -846,7 +848,7 @@
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading{flex-direction:column}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.variation-backdrop{padding:9px}.variation-modal{max-height:97vh;padding:13px;border-radius:17px}.variation-head{margin-bottom:11px}.variation-title{font-size:21px}.variation-layout{grid-template-columns:1fr;gap:13px}.variation-board-wrap{max-width:560px}.variation-moves{min-height:72px;max-height:130px}.variation-panel{gap:8px}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
@@ -913,6 +915,7 @@
             </button>
             <div id="toolsMenuPopup" class="header-menu-popup" role="menu" aria-label="Tools" hidden>
               <button id="analyzerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="analyzerToolView">🧠 Analyzer</button>
+              <button id="trainerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="trainerToolView">🎯 Trainer</button>
             </div>
           </div>
         </div>
@@ -921,6 +924,10 @@
 
     <section id="analyzerToolView" class="analyzer-tool-view" hidden aria-label="Hammerschach-Analyzer">
       <iframe id="analyzerToolFrame" class="analyzer-tool-frame" title="Hammerschach-Analyzer" data-src="./Analyzer/" loading="lazy"></iframe>
+    </section>
+
+    <section id="trainerToolView" class="trainer-tool-view" hidden aria-label="Hammerschach-Trainer">
+      <iframe id="trainerToolFrame" class="trainer-tool-frame" title="Hammerschach-Trainer" data-src="./Trainer/" loading="lazy"></iframe>
     </section>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
@@ -1076,32 +1083,43 @@
             <li><strong>Tastaturbedienung:</strong> Außerhalb eines Eingabefeldes führen <strong>Pos1</strong> und <strong>Ende</strong> zum Anfang beziehungsweise Ende der Partie. Mit den Pfeiltasten links und rechts gehst du einen Halbzug zurück oder vor. <strong>U</strong> nimmt den letzten Zug zurück, <strong>F</strong> dreht das Brett.</li>
           </ul>
 
-          <h4>19. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby fasst das Dropdown <strong>„♟️ Neue Partie“</strong> die beiden Möglichkeiten <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> zusammen. Sobald du dich in einem Spielraum befindest, verschwindet dieses Dropdown; an seiner Stelle erscheint <strong>„↩️ Zur Lobby“</strong> und führt zurück zur Partievorbereitung und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer steht an dieser Stelle <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Analyzer direkt und stellt die Lobby ohne Neuladen wieder her. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer beim Verlassen eines Spielraums im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
+          <h4>19. Der integrierte Trainer</h4>
+          <p>Über <strong>„🛠️ Tools“ → „🎯 Trainer“</strong> öffnest du das Taktiktraining direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Wie der Analyzer steht der Trainer auf der Startseite und in der Lobby zur Verfügung, nicht jedoch in einem laufenden oder als Zuschauer geöffneten Spielraum.</p>
+          <ul>
+            <li><strong>Gamer-Anmeldung:</strong> Der Trainer übernimmt automatisch den aktuell angemeldeten Gamer-Account. Eine zweite Registrierung oder ein gesonderter Trainer-Login ist nicht erforderlich. Ohne Gamer-Anmeldung kann weiterhin trainiert werden, jedoch ausschließlich ohne Rating.</li>
+            <li><strong>Mit oder ohne Rating:</strong> Angemeldete Mitglieder wählen im Trainer zwischen <strong>„Mit Rating“</strong> und <strong>„Ohne Rating“</strong>. Im Modus ohne Rating werden keine Ergebnisse im Account gespeichert.</li>
+            <li><strong>Faire Wertung:</strong> Bei aktiviertem Rating zählt ausschließlich der erste Lösungsversuch einer neuen Aufgabe. Nach einem Fehlversuch, einer Wiederholung oder dem Einblenden der Lösung wird für diese Aufgabe keine weitere Ratingänderung gespeichert.</li>
+            <li><strong>Taktik-Rating:</strong> Das eigenständige Taktik-Rating startet bei 1500 und berücksichtigt das Rating der jeweiligen Aufgabe. Es bleibt von den sechs Partie-Ratings des Gamers getrennt.</li>
+            <li><strong>Aufgaben und Filter:</strong> Ratingbereich, Themen, maximale Zahl der Halbzüge und Popularität lassen sich filtern. Angemeldete Mitglieder können die Schwierigkeit automatisch an ihr Taktik-Rating anpassen lassen.</li>
+            <li><strong>Sitzung und Darstellung:</strong> Aktuelle Aufgabe, Stellung, Filter, Brettausrichtung, Ratingmodus und Lösungsstatus werden lokal wiederhergestellt. Der Dark Mode und die verfügbare Höhe werden automatisch vom Gamer übernommen.</li>
+          </ul>
 
-          <h4>20. Verbindung und Wiederaufnahme</h4>
+          <h4>20. Neue Partie und Rückkehr zur Lobby</h4>
+          <p>In der Lobby fasst das Dropdown <strong>„♟️ Neue Partie“</strong> die beiden Möglichkeiten <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> zusammen. Sobald du dich in einem Spielraum befindest, verschwindet dieses Dropdown; an seiner Stelle erscheint <strong>„↩️ Zur Lobby“</strong> und führt zurück zur Partievorbereitung und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer oder Trainer steht an dieser Stelle <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche das Werkzeug direkt und stellt die Lobby ohne Neuladen wieder her. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer beim Verlassen eines Spielraums im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
+
+          <h4>21. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
           <p>Bei Daily Chess solltest du dich zuerst mit dem verwendeten Account anmelden und die Partie anschließend über <strong>„Meine Partien“</strong> öffnen. Dadurch kann dein gesicherter Spielerplatz wieder übernommen werden.</p>
 
-          <h4>21. Ratings für Mitglieder</h4>
+          <h4>22. Ratings für Mitglieder</h4>
           <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
           <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Über <strong>„Mein Profil ansehen“</strong> öffnest du anschließend genau dieselbe Profilansicht, die auch andere Mitglieder sehen, und kannst Darstellung und Vollständigkeit selbst kontrollieren. Von dort führt <strong>„Profil bearbeiten“</strong> direkt zurück zur Bearbeitung. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
-          <h4>22. Admin-Funktion und Systemübersicht</h4>
+          <h4>23. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
           <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
 
-          <h4>23. Mitglieder-Informationen und Maildarstellung</h4>
+          <h4>24. Mitglieder-Informationen und Maildarstellung</h4>
           <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden.</p>
           <p>Die Nachrichten werden einzeln und mit persönlicher Anrede versendet; Mailadressen anderer Mitglieder sind nicht sichtbar. Optional kann eine PDF-, JPG-, PNG- oder WebP-Datei bis 3 MB beigefügt werden. Ausgewählte Bilder lassen sich zusätzlich direkt im Mailinhalt anzeigen. Sämtliche HTML-Mails des Hammerschach-Gamers enthalten oben das Gamer-Logo als einheitlichen Mailkopf. Manche Mailprogramme laden externe Bilder erst nach Zustimmung des Empfängers; der vollständige Text bleibt trotzdem lesbar.</p>
 
-          <h4>24. Fair Play und Spielkultur</h4>
+          <h4>25. Fair Play und Spielkultur</h4>
           <p>Behandle deinen Gegner so, wie du selbst behandelt werden möchtest. Beleidigungen, Drohungen, diskriminierende Inhalte, Werbung und absichtliche Störungen haben im Hammerschach-Gamer keinen Platz.</p>
           <p>Gewertete Partien sollen ohne fremde Hilfe oder den Einsatz von Schachprogrammen gespielt werden. Verwende außerdem keine irreführenden oder anstößigen Benutzernamen und verzögere Partien nicht absichtlich durch unnötige Wartezeiten oder mutwillige Verbindungsabbrüche.</p>
           <p>Bei schweren oder wiederholten Verstößen kann der Administrator geeignete Maßnahmen ergreifen, insbesondere Hinweise aussprechen sowie Accounts einschränken oder löschen.</p>
-          <h4>25. Melden, Stummschalten und Moderation</h4>
+          <h4>26. Melden, Stummschalten und Moderation</h4>
           <p>Spieler können den Chat ihres Gegners für die aktuelle Partie auf dem eigenen Gerät stummschalten. Eingeloggte Mitglieder können einen Gegner außerdem vertraulich melden. Dabei werden Partieangaben und ein begrenzter Ausschnitt des Partie-Chats an den Administrator übermittelt. Eine Meldung führt niemals automatisch zu einer Sanktion.</p>
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
         </div>
@@ -1121,11 +1139,11 @@
 
           <h4>1. Verantwortlicher und Geltungsbereich</h4>
           <p>Verantwortlich für den Hammerschach-Gamer ist der im <a class="privacy-external-link" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum und allgemeinen Datenschutz auf Andili.de</a> genannte Betreiber. Dort findest du auch die Kontaktmöglichkeiten und die allgemeinen Hinweise zu deinen Datenschutzrechten.</p>
-          <p>Diese ergänzenden Hinweise beziehen sich auf die Registrierung, den Login, die Online-Schachfunktionen, den Partie-Chat, Ratings, E-Mail-Benachrichtigungen und die technische Absicherung des Gamers.</p>
+          <p>Diese ergänzenden Hinweise beziehen sich auf die Registrierung, den Login, die Online-Schachfunktionen, den Partie-Chat, das Taktiktraining, Ratings, E-Mail-Benachrichtigungen und die technische Absicherung des Gamers.</p>
 
           <h4>2. Nutzung ohne Account</h4>
           <p>Live-Partien können über einen Einladungslink auch als Gast gespielt werden. Dabei werden ein Gastname, eine zufällig erzeugte Spielerkennung, der belegte Spielerplatz sowie die für die Partie erforderlichen Verbindungs- und Spieldaten verarbeitet. Gäste können keine eigenen Einladungen erstellen und Daily Chess nicht als Spieler verwenden.</p>
-          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe und Spielmodus. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen und die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
+          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbare Analyzer- und Trainer-Sitzung. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Werkzeug-Sitzungen und die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
 
           <h4>3. Registrierung, Account und Login</h4>
           <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen und aktive Anmeldesitzungen verwaltet.</p>
@@ -1134,9 +1152,10 @@
           <p>Ein Login-Token wird nach erfolgreicher Anmeldung im Browser gespeichert. Serverseitige Sitzungen sind regulär auf 30 Tage begrenzt. Bei einer Kennwortänderung werden andere bestehende Sitzungen beendet.</p>
           <p>Bestätigungslinks für neue Accounts und Mailadressänderungen sind 24 Stunden gültig; Links zum Zurücksetzen des Kennworts 30 Minuten. Abgelaufene beziehungsweise verwendete Aktionstoken werden regelmäßig bereinigt.</p>
 
-          <h4>4. Partien, Zuglisten und Ratings</h4>
+          <h4>4. Partien, Taktiktraining und Ratings</h4>
           <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen und die jeweilige Zugfrist gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt werden kann.</p>
           <p>Gewertete Partien zwischen registrierten Mitgliedern verändern die getrennten Ratings. Dazu werden Ratingwerte, Unsicherheitswerte, Partiezahlen und Ergebnisse gespeichert. Besucherzähler und die Zahl gespielter Partien werden nur als allgemeine Summen geführt und nicht einem persönlichen Nutzerprofil zugeordnet.</p>
+          <p>Beim Taktiktraining werden nur im ausdrücklich ausgewählten Modus <strong>„Mit Rating“</strong> die Account-Zuordnung, Aufgabenkennung, Aufgabenrating, Erfolg oder Fehlversuch, Ratingänderung und Zeitpunkt gespeichert. Wiederholungen, Aufgaben nach Lösungsanzeige und der Modus <strong>„Ohne Rating“</strong> erzeugen keinen gewerteten Taktikversuch.</p>
 
           <h4>5. Partie-Chat und Mitglieder-Chat</h4>
           <p>Der private Partie-Chat steht ausschließlich Weiß und Schwarz zur Verfügung. Gespeichert werden Absendername, Spielerrolle, Nachricht, Nachrichtenkennung und Zeitpunkt. Pro Spielraum bleiben höchstens die letzten 80 Nachrichten gespeichert. Zuschauer können den Chat weder lesen noch verwenden.</p>
@@ -1174,7 +1193,7 @@
           <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
 
           <h4>11. Accountlöschung und weitere Löschung</h4>
-          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben einschließlich des in R2 gespeicherten Profilbilds, Sitzungen, Anwesenheitsstatus, persönliche Ratings, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
+          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben einschließlich des in R2 gespeicherten Profilbilds, Sitzungen, Anwesenheitsstatus, persönliche Partie- und Taktik-Ratings, gespeicherte Taktikversuche, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen.</p>
           <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Partie-Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Eigene Nachrichten im Mitglieder-Chat werden bei der Accountlöschung vollständig entfernt. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
 
           <h4>12. Deine Rechte und Kontakt</h4>
@@ -3286,6 +3305,9 @@ const themeToggleBtn = document.getElementById('themeToggleBtn');
 const analyzerToolBtn = document.getElementById('analyzerToolBtn');
 const analyzerToolView = document.getElementById('analyzerToolView');
 const analyzerToolFrame = document.getElementById('analyzerToolFrame');
+const trainerToolBtn = document.getElementById('trainerToolBtn');
+const trainerToolView = document.getElementById('trainerToolView');
+const trainerToolFrame = document.getElementById('trainerToolFrame');
 const themeColorMeta = document.getElementById('themeColorMeta');
 const matchActionsEl = document.querySelector('.match-actions');
 const memberLobbyEl = document.getElementById('memberLobby');
@@ -3312,6 +3334,10 @@ function updateSiteFootnotePlacement(){
   if(!siteFootnoteEl||!siteFootnoteHome)return;
   if(analyzerToolActive&&analyzerToolView){
     if(siteFootnoteEl.parentNode!==analyzerToolView)analyzerToolView.appendChild(siteFootnoteEl);
+    return;
+  }
+  if(trainerToolActive&&trainerToolView){
+    if(siteFootnoteEl.parentNode!==trainerToolView)trainerToolView.appendChild(siteFootnoteEl);
     return;
   }
   if(isMemberLobbyView()&&memberLobbyEl){
@@ -3419,6 +3445,7 @@ function setDarkMode(enabled){
   try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, darkModeEnabled ? 'dark' : 'light'); } catch(_){ }
   updateThemeToggleUi();
   postAnalyzerToolContext();
+  postTrainerToolContext();
   hammerschachScheduleHeightReport(true);
 }
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => setDarkMode(!darkModeEnabled));
@@ -3952,6 +3979,7 @@ function saveAuthState(token, user){
   }, 0);
   if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
   postAnalyzerToolContext();
+  postTrainerToolContext();
 }
 async function authApi(path, options){
   const headers = {'content-type':'application/json'};
@@ -3968,27 +3996,44 @@ async function authApi(path, options){
 }
 
 let analyzerToolActive = false;
+let trainerToolActive = false;
 let analyzerToolFrameStarted = false;
+let trainerToolFrameStarted = false;
 let analyzerToolLastOpenAt = 0;
-const ANALYZER_TOOL_OPEN_DEBOUNCE_MS = 450;
-function analyzerToolIsAvailable(){
+let trainerToolLastOpenAt = 0;
+const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
+function embeddedToolsAvailable(){
   return !onlineRoomId && !hasOnlineTargetInAddress();
 }
+function embeddedToolActive(){
+  return analyzerToolActive || trainerToolActive;
+}
+function embeddedToolStatusText(){
+  if(trainerToolActive) return 'Hammerschach - Trainer';
+  if(analyzerToolActive) return 'Hammerschach - Analyzer';
+  return '';
+}
 function updateAnalyzerToolAvailability(){
-  const available = analyzerToolIsAvailable();
+  const available = embeddedToolsAvailable();
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
-  if(!available && analyzerToolActive) setAnalyzerToolActive(false);
+  if(!available && embeddedToolActive()) setEmbeddedToolActive('');
+  if(analyzerToolBtn){analyzerToolBtn.hidden=!available;analyzerToolBtn.title='Hammerschach-Analyzer öffnen';}
+  if(trainerToolBtn){trainerToolBtn.hidden=!available;trainerToolBtn.title='Hammerschach-Trainer öffnen';}
   if(toolsMenuEl){
     toolsMenuEl.hidden = !available;
     if(!available) closeToolsMenu();
   }
 }
-function analyzerToolTargetOrigin(){
+function embeddedToolTargetOrigin(){
   return window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
 }
 function postAnalyzerToolMessage(message){
   if(!analyzerToolFrameStarted || !analyzerToolFrame || !analyzerToolFrame.contentWindow) return;
-  try{ analyzerToolFrame.contentWindow.postMessage(message, analyzerToolTargetOrigin()); } catch(_){ }
+  try{ analyzerToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
+}
+function postTrainerToolMessage(message){
+  if(!trainerToolFrameStarted || !trainerToolFrame || !trainerToolFrame.contentWindow) return;
+  try{ trainerToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
 }
 function postAnalyzerToolContext(){
   postAnalyzerToolMessage({
@@ -3998,103 +4043,182 @@ function postAnalyzerToolContext(){
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
   });
 }
-function setAnalyzerToolActive(active){
-  analyzerToolActive = !!active && analyzerToolIsAvailable();
-  document.documentElement.classList.toggle('analyzer-tool-active', analyzerToolActive);
-  if(analyzerToolView) analyzerToolView.hidden = !analyzerToolActive;
-  if(analyzerToolActive){
+function postTrainerToolContext(){
+  postTrainerToolMessage({
+    type:'hammerschach-trainer-context',
+    darkMode:!!darkModeEnabled,
+    loggedIn:!!(onlineAuthToken && onlineAuthUser),
+    userId:onlineAuthUser ? String(onlineAuthUser.id || '') : '',
+    username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
+  });
+}
+function setEmbeddedToolActive(toolName){
+  const requested=embeddedToolsAvailable()?(toolName==='trainer'?'trainer':(toolName==='analyzer'?'analyzer':'')):'';
+  analyzerToolActive=requested==='analyzer';
+  trainerToolActive=requested==='trainer';
+  document.documentElement.classList.toggle('analyzer-tool-active',analyzerToolActive);
+  document.documentElement.classList.toggle('trainer-tool-active',trainerToolActive);
+  if(analyzerToolView)analyzerToolView.hidden=!analyzerToolActive;
+  if(trainerToolView)trainerToolView.hidden=!trainerToolActive;
+  if(embeddedToolActive()){
     closeNewGameMenu();
     closeGamesMenu();
     closeToolsMenu();
   }
   updateSiteFootnotePlacement();
-  if(analyzerToolBtn){
-    analyzerToolBtn.hidden = !analyzerToolIsAvailable();
-    analyzerToolBtn.title = 'Hammerschach-Analyzer öffnen';
+  if(analyzerToolActive&&analyzerToolFrame&&!analyzerToolFrameStarted){
+    analyzerToolFrameStarted=true;
+    analyzerToolFrame.src=analyzerToolFrame.dataset.src||'./Analyzer/';
   }
-  if(analyzerToolActive && analyzerToolFrame && !analyzerToolFrameStarted){
-    analyzerToolFrameStarted = true;
-    analyzerToolFrame.src = analyzerToolFrame.dataset.src || './Analyzer/';
+  if(trainerToolActive&&trainerToolFrame&&!trainerToolFrameStarted){
+    trainerToolFrameStarted=true;
+    trainerToolFrame.src=trainerToolFrame.dataset.src||'./Trainer/';
   }
-  postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
-  if(analyzerToolActive) postAnalyzerToolContext();
+  postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility',visible:analyzerToolActive});
+  postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
+  if(analyzerToolActive)postAnalyzerToolContext();
+  if(trainerToolActive)postTrainerToolContext();
   if(statusEl){
-    if(analyzerToolActive) statusEl.textContent = 'Hammerschach - Analyzer';
-    else refreshHeaderStatusFromState();
+    const toolStatus=embeddedToolStatusText();
+    if(toolStatus)statusEl.textContent=toolStatus;else refreshHeaderStatusFromState();
   }
   updateOnlineActionButtons();
-  if(analyzerToolActive && roomLobbyBtn){
-    try{ roomLobbyBtn.focus({preventScroll:true}); } catch(_){ roomLobbyBtn.focus(); }
+  if(embeddedToolActive()&&roomLobbyBtn){
+    try{roomLobbyBtn.focus({preventScroll:true});}catch(_){roomLobbyBtn.focus();}
   }
   hammerschachScheduleHeightReport(true);
 }
+function setAnalyzerToolActive(active){setEmbeddedToolActive(active?'analyzer':'');}
+function setTrainerToolActive(active){setEmbeddedToolActive(active?'trainer':'');}
+function closeEmbeddedTools(){setEmbeddedToolActive('');}
 function openAnalyzerToolDebounced(){
-  const now = Date.now();
-  if(now - analyzerToolLastOpenAt < ANALYZER_TOOL_OPEN_DEBOUNCE_MS) return;
-  analyzerToolLastOpenAt = now;
+  const now=Date.now();
+  if(now-analyzerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
+  analyzerToolLastOpenAt=now;
   setAnalyzerToolActive(true);
 }
-if(analyzerToolBtn) analyzerToolBtn.addEventListener('click', openAnalyzerToolDebounced);
-if(analyzerToolFrame) analyzerToolFrame.addEventListener('load', () => {
+function openTrainerToolDebounced(){
+  const now=Date.now();
+  if(now-trainerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
+  trainerToolLastOpenAt=now;
+  setTrainerToolActive(true);
+}
+if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebounced);
+if(trainerToolBtn)trainerToolBtn.addEventListener('click',openTrainerToolDebounced);
+if(analyzerToolFrame)analyzerToolFrame.addEventListener('load',()=>{
   postAnalyzerToolContext();
-  postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
+  postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility',visible:analyzerToolActive});
 });
-[newGameBtn, createOnlineBtn, newGameMenuBtn, gamesMenuBtn, membersOpenBtn].forEach(button => {
-  if(button) button.addEventListener('click', () => setAnalyzerToolActive(false), {capture:true});
+if(trainerToolFrame)trainerToolFrame.addEventListener('load',()=>{
+  postTrainerToolContext();
+  postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
 });
-window.addEventListener('message', async event => {
-  if(!analyzerToolFrame || event.source !== analyzerToolFrame.contentWindow) return;
-  if(analyzerToolTargetOrigin() !== '*' && event.origin !== analyzerToolTargetOrigin()) return;
-  const message = event.data && typeof event.data === 'object' ? event.data : {};
-  if(message.type === 'hammerschach-analyzer-ready'){
-    postAnalyzerToolContext();
-    postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility', visible:analyzerToolActive});
+[newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,membersOpenBtn].forEach(button=>{
+  if(button)button.addEventListener('click',closeEmbeddedTools,{capture:true});
+});
+window.addEventListener('message',async event=>{
+  const fromAnalyzer=!!(analyzerToolFrame&&event.source===analyzerToolFrame.contentWindow);
+  const fromTrainer=!!(trainerToolFrame&&event.source===trainerToolFrame.contentWindow);
+  if(!fromAnalyzer&&!fromTrainer)return;
+  if(embeddedToolTargetOrigin()!=='*'&&event.origin!==embeddedToolTargetOrigin())return;
+  const message=event.data&&typeof event.data==='object'?event.data:{};
+  if(fromTrainer){
+    if(message.type==='hammerschach-trainer-ready'){
+      postTrainerToolContext();
+      postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
+      return;
+    }
+    if(message.type==='hammerschach-trainer-height'){
+      const requested=Math.ceil(Number(message.height||0));
+      if(Number.isFinite(requested)&&requested>0){
+        trainerToolFrame.style.height=Math.max(720,Math.min(3200,requested+4))+'px';
+        hammerschachScheduleHeightReport(true);
+      }
+      return;
+    }
+    if(message.type==='hammerschach-trainer-request-progress'){
+      const requestId=String(message.requestId||'');
+      if(!onlineAuthToken||!onlineAuthUser){
+        postTrainerToolMessage({type:'hammerschach-trainer-progress-result',requestId,ok:false,message:'Bitte zuerst im Gamer einloggen.'});
+        return;
+      }
+      try{
+        const data=await authApi('/api/trainer/progress');
+        postTrainerToolMessage({type:'hammerschach-trainer-progress-result',requestId,ok:true,progress:data.progress||null});
+      }catch(err){
+        postTrainerToolMessage({type:'hammerschach-trainer-progress-result',requestId,ok:false,message:err&&err.message?err.message:'Taktik-Rating konnte nicht geladen werden.'});
+      }
+      return;
+    }
+    if(message.type==='hammerschach-trainer-save-result'){
+      const requestId=String(message.requestId||'');
+      if(!onlineAuthToken||!onlineAuthUser){
+        postTrainerToolMessage({type:'hammerschach-trainer-save-result',requestId,ok:false,message:'Bitte zuerst im Gamer einloggen.'});
+        return;
+      }
+      try{
+        const data=await authApi('/api/trainer/progress',{
+          method:'POST',
+          body:JSON.stringify({
+            attemptId:String(message.attemptId||''),puzzleId:String(message.puzzleId||''),
+            puzzleRating:Number(message.puzzleRating||1200),result:message.result==='success'?'success':'fail'
+          })
+        });
+        postTrainerToolMessage({type:'hammerschach-trainer-save-result',requestId,ok:true,progress:data.progress||null,ratingChange:data.ratingChange||0});
+      }catch(err){
+        postTrainerToolMessage({type:'hammerschach-trainer-save-result',requestId,ok:false,message:err&&err.message?err.message:'Taktik-Ergebnis konnte nicht gespeichert werden.'});
+      }
+      return;
+    }
     return;
   }
-  if(message.type === 'hammerschach-analyzer-height'){
-    const requested = Math.ceil(Number(message.height || 0));
-    if(Number.isFinite(requested) && requested > 0){
-      analyzerToolFrame.style.height = Math.max(720, Math.min(3200, requested + 4)) + 'px';
+  if(message.type==='hammerschach-analyzer-ready'){
+    postAnalyzerToolContext();
+    postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility',visible:analyzerToolActive});
+    return;
+  }
+  if(message.type==='hammerschach-analyzer-height'){
+    const requested=Math.ceil(Number(message.height||0));
+    if(Number.isFinite(requested)&&requested>0){
+      analyzerToolFrame.style.height=Math.max(720,Math.min(3200,requested+4))+'px';
       hammerschachScheduleHeightReport(true);
     }
     return;
   }
-  if(message.type === 'hammerschach-analyzer-request-games'){
-    const requestId = String(message.requestId || '');
-    if(!onlineAuthToken || !onlineAuthUser){
-      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result', requestId, ok:false, message:'Bitte zuerst im Gamer einloggen.', games:[]});
+  if(message.type==='hammerschach-analyzer-request-games'){
+    const requestId=String(message.requestId||'');
+    if(!onlineAuthToken||!onlineAuthUser){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result',requestId,ok:false,message:'Bitte zuerst im Gamer einloggen.',games:[]});
       return;
     }
     try{
-      const data = await authApi('/api/analyzer/games');
-      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result', requestId, ok:true, games:Array.isArray(data.games) ? data.games : []});
-    } catch(err){
-      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result', requestId, ok:false, message:err && err.message ? err.message : 'Beendete Partien konnten nicht geladen werden.', games:[]});
+      const data=await authApi('/api/analyzer/games');
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result',requestId,ok:true,games:Array.isArray(data.games)?data.games:[]});
+    }catch(err){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-games-result',requestId,ok:false,message:err&&err.message?err.message:'Beendete Partien konnten nicht geladen werden.',games:[]});
     }
     return;
   }
-  if(message.type === 'hammerschach-analyzer-request-pgn'){
-    const requestId = String(message.requestId || '');
-    const roomId = cleanRoomId(message.roomId);
-    const source = message.source === 'daily' ? 'daily' : 'archive';
-    if(!onlineAuthToken || !onlineAuthUser || !roomId){
-      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result', requestId, ok:false, message:'Die beendete Partie konnte nicht geladen werden.'});
+  if(message.type==='hammerschach-analyzer-request-pgn'){
+    const requestId=String(message.requestId||'');
+    const roomId=cleanRoomId(message.roomId);
+    const source=message.source==='daily'?'daily':'archive';
+    if(!onlineAuthToken||!onlineAuthUser||!roomId){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result',requestId,ok:false,message:'Die beendete Partie konnte nicht geladen werden.'});
       return;
     }
-    const path = source === 'daily'
-      ? '/api/daily-games/' + encodeURIComponent(roomId) + '/pgn'
-      : '/api/analyzer/games/' + encodeURIComponent(roomId) + '/pgn';
+    const path=source==='daily'?'/api/daily-games/'+encodeURIComponent(roomId)+'/pgn':'/api/analyzer/games/'+encodeURIComponent(roomId)+'/pgn';
     try{
-      const response = await fetch(onlineApiBaseUrl() + path, {method:'GET', headers:{authorization:'Bearer ' + onlineAuthToken}});
+      const response=await fetch(onlineApiBaseUrl()+path,{method:'GET',headers:{authorization:'Bearer '+onlineAuthToken}});
       if(!response.ok){
-        let detail = null;
-        try{ detail = await response.json(); } catch(_){ detail = null; }
-        throw new Error(detail && detail.message ? detail.message : 'PGN konnte nicht geladen werden.');
+        let detail=null;
+        try{detail=await response.json();}catch(_){detail=null;}
+        throw new Error(detail&&detail.message?detail.message:'PGN konnte nicht geladen werden.');
       }
-      const pgn = await response.text();
-      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result', requestId, ok:true, pgn, roomId});
-    } catch(err){
-      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result', requestId, ok:false, message:err && err.message ? err.message : 'PGN konnte nicht geladen werden.'});
+      const pgn=await response.text();
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result',requestId,ok:true,pgn,roomId});
+    }catch(err){
+      postAnalyzerToolMessage({type:'hammerschach-analyzer-pgn-result',requestId,ok:false,message:err&&err.message?err.message:'PGN konnte nicht geladen werden.'});
     }
   }
 });
@@ -4508,7 +4632,7 @@ function updateMemberLobbyUi(){
   }
   updateSiteFootnotePlacement();
   if(active){
-    if(statusEl)statusEl.textContent=analyzerToolActive?'Hammerschach - Analyzer':'Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
+    if(statusEl)statusEl.textContent=embeddedToolStatusText()||'Partie vorbereiten, Gegner finden oder im Mitglieder-Chat austauschen.';
     connectGlobalChat();
   }else closeGlobalChat(true);
   hammerschachScheduleHeightReport(false);
@@ -4595,7 +4719,7 @@ const ADMIN_MAIL_TYPE_LABELS = {
 };
 const ADMIN_TABLE_LABELS = {
   users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',
-  rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', auth_security_events:'Sicherheitsereignisse',
+  rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', trainer_progress:'Taktik-Ratings', trainer_attempts:'Taktik-Versuche', auth_security_events:'Sicherheitsereignisse',
   auth_rate_limit_log:'Rate-Limit-Einträge', account_action_tokens:'Aktionslinks', mail_delivery_log:'Mailprotokoll',
   email_notification_log:'Daily-Mailprotokoll', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger'
 };
@@ -5500,7 +5624,7 @@ function updateVisitorLandingUi(){
   }
 
   if(active && statusEl){
-    statusEl.textContent = analyzerToolActive ? 'Hammerschach - Analyzer' : 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    statusEl.textContent = embeddedToolStatusText() || 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
   }
   updateMemberLobbyUi();
   hammerschachScheduleHeightReport(false);
@@ -6572,8 +6696,8 @@ function setOnlineValueClass(el, state){
 }
 function refreshHeaderStatusFromState(){
   if(!statusEl || !boardEl) return;
-  if(analyzerToolActive){
-    statusEl.textContent = 'Hammerschach - Analyzer';
+  if(embeddedToolActive()){
+    statusEl.textContent = embeddedToolStatusText();
     return;
   }
   if(isAnonymousVisitorStartView()){
@@ -6591,15 +6715,15 @@ function updateOnlineActionButtons(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   const inRoom = !!onlineRoomId;
-  const showLobbyButton = inRoom || analyzerToolActive;
+  const showLobbyButton = inRoom || embeddedToolActive();
   if(newGameMenuEl){
     newGameMenuEl.hidden = showLobbyButton;
     if(showLobbyButton) closeNewGameMenu();
   }
   if(roomLobbyBtn){
     roomLobbyBtn.hidden = !showLobbyButton;
-    roomLobbyBtn.title = analyzerToolActive
-      ? 'Analyzer schließen und zur Lobby zurückkehren.'
+    roomLobbyBtn.title = embeddedToolActive()
+      ? ((trainerToolActive ? 'Trainer' : 'Analyzer') + ' schließen und zur Lobby zurückkehren.')
       : (HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.');
   }
   if(createOnlineBtn){
@@ -9026,8 +9150,8 @@ function reapplySelectionHighlight(g){
   highlightSelection(selected[0], selected[1], g);
 }
 function updateStatus(g){
-  if(analyzerToolActive){
-    statusEl.textContent = 'Hammerschach - Analyzer';
+  if(embeddedToolActive()){
+    statusEl.textContent = embeddedToolStatusText();
     return;
   }
   const go = gameOverForHistory(viewIndex, g);
@@ -9767,9 +9891,9 @@ if(newGameBtn) newGameBtn.addEventListener('click', event => {
   else offerPreparedGame(event);
 });
 if(roomLobbyBtn) roomLobbyBtn.addEventListener('click', event => {
-  if(analyzerToolActive){
+  if(embeddedToolActive()){
     event.preventDefault();
-    setAnalyzerToolActive(false);
+    closeEmbeddedTools();
     return;
   }
   openNewGameView();
