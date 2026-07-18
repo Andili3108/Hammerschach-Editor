@@ -388,6 +388,24 @@
   .admin-overview-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
   .admin-overview-actions button{border-radius:12px;min-height:38px;}
   .admin-member-message-open-btn{margin-right:auto;background:linear-gradient(180deg,#fff7e7 0%,#f0dfb8 100%)!important;color:#6b4a10!important;border-color:rgba(107,74,16,.26)!important;}
+  .admin-member-delete-open-btn,.admin-delete-btn,.admin-delete-confirm-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .admin-delete-members-modal{width:760px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+  .admin-delete-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:10px;}
+  .admin-delete-search{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-size:15px;font-weight:800;outline:none;}
+  .admin-delete-search:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
+  .admin-delete-list{min-height:120px;max-height:54vh;overflow:auto;display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-right:4px;}
+  .admin-delete-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:10px 11px;}
+  .admin-delete-card-main{min-width:0;display:flex;flex-direction:column;gap:3px;}
+  .admin-delete-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:16px;font-weight:900;color:#222;overflow-wrap:anywhere;}
+  .admin-delete-meta{font-size:12px;font-weight:800;color:#666;line-height:1.3;}
+  .admin-delete-btn{min-width:150px;min-height:38px;border-radius:12px;padding:7px 10px;}
+  .admin-delete-status{min-height:18px;margin-top:9px;font-size:13px;font-weight:900;color:#666;line-height:1.35;}
+  .admin-delete-status.error{color:#9A2D33;}
+  .admin-delete-status.success{color:#226b36;}
+  .admin-delete-confirm-modal{width:500px;max-width:100%;}
+  .admin-delete-target{border-radius:13px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:10px 11px;margin:9px 0;font-size:15px;font-weight:900;color:#843f46;line-height:1.35;overflow-wrap:anywhere;}
+  .admin-delete-password{margin-top:4px;}
+  .admin-delete-confirm-btn:disabled{opacity:.55;}
   .admin-message-modal{width:700px;max-width:100%;max-height:90vh;overflow:auto;}
   .admin-message-form{display:flex;flex-direction:column;gap:9px;}
   .admin-message-select,.admin-message-textarea{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font-size:15px;font-weight:800;outline:none;}
@@ -446,7 +464,6 @@
   .member-list-actions button{border-radius:12px;min-height:36px;}
   .member-result-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
   .member-result-actions button{border-radius:12px;min-height:34px;padding:7px 9px;}
-  .member-delete-btn{background:#843f46!important;color:#fff!important;}
   .members-modal{width:720px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;}
   .members-modal h3{margin:0 0 6px;font-size:22px;color:#222;}
   .members-intro{margin:0 0 12px;font-size:14px;font-weight:700;color:#555;line-height:1.4;}
@@ -758,7 +775,7 @@
   html.dark-mode .header-menu-item{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
   html.dark-mode .header-menu-item:hover:not(:disabled){background:#353a42!important;box-shadow:none!important;}
   html.dark-mode .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(226,151,160,.22),0 8px 18px rgba(0,0,0,.34)!important;}
-  html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.freestyle-position-controls,.next-daily-game-box,.room-rating-status,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.admin-delete-card,.admin-delete-target,.freestyle-position-controls,.next-daily-game-box,.room-rating-status,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
   html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
   html.dark-mode .daily-game-card.my-turn,
@@ -768,8 +785,8 @@
   html.dark-mode .global-chat-message.mine{background:#33282c;border-color:rgba(226,151,160,.24);}
   html.dark-mode .global-chat-header{background:linear-gradient(135deg,#252930,#272126);border-color:rgba(255,255,255,.08);}
   html.dark-mode .global-chat-members{border-color:rgba(255,255,255,.08);}
-  html.dark-mode :is(.identity-input,.chat-input,.global-chat-input,.moderation-select,.moderation-textarea,.moderation-input,.admin-message-select,.admin-message-textarea,.admin-message-file-input,.freestyle-position-input,.invite-link-input,.time-control-select){background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
-  html.dark-mode :is(.identity-input,.chat-input,.global-chat-input,.moderation-select,.moderation-textarea,.moderation-input,.admin-message-select,.admin-message-textarea,.freestyle-position-input,.invite-link-input,.time-control-select):focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
+  html.dark-mode :is(.identity-input,.chat-input,.global-chat-input,.moderation-select,.moderation-textarea,.moderation-input,.admin-message-select,.admin-message-textarea,.admin-message-file-input,.admin-delete-search,.freestyle-position-input,.invite-link-input,.time-control-select){background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
+  html.dark-mode :is(.identity-input,.chat-input,.global-chat-input,.moderation-select,.moderation-textarea,.moderation-input,.admin-message-select,.admin-message-textarea,.admin-delete-search,.freestyle-position-input,.invite-link-input,.time-control-select):focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
   html.dark-mode select option{background:#171a1f;color:#f2f3f5;}
   html.dark-mode .board-color-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48);}
   html.dark-mode .board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
@@ -792,6 +809,8 @@
   html.dark-mode :is(.member-result-card,.daily-games-empty,.open-offers-empty,.public-games-empty,.auth-email-option,.auth-email-state-badge,.admin-message-audience,.admin-message-confirm,.player-rating-line,.privacy-storage-list dt){background:#252930;border-color:rgba(255,255,255,.09);}
   html.dark-mode :is(.brand-origin-line,.member-lobby-heading p,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
   html.dark-mode :is(.online-value,.chat-message-text,.global-chat-message-text,.admin-message-preview-body,.admin-backup-text,.admin-event-main,.member-result-name,.daily-game-title,.open-offer-title,.public-game-title){color:#eef0f2!important;}
+  html.dark-mode .admin-delete-name{color:#eef0f2!important;}
+  html.dark-mode .admin-delete-meta{color:#b8bdc6!important;}
   html.dark-mode .auth-email-state-badge.verified{background:rgba(62,154,88,.14);border-color:rgba(75,190,107,.25);color:#83d49a;}
   html.dark-mode .auth-email-state-badge.pending{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#e6a3ab;}
   html.dark-mode .player-rating-line.unrated{background:#2d3138;border-color:rgba(255,255,255,.08);color:#aeb3bc;}
@@ -851,6 +870,7 @@
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.variation-backdrop{padding:9px}.variation-modal{max-height:97vh;padding:13px;border-radius:17px}.variation-head{margin-bottom:11px}.variation-title{font-size:21px}.variation-layout{grid-template-columns:1fr;gap:13px}.variation-board-wrap{max-width:560px}.variation-moves{min-height:72px;max-height:130px}.variation-panel{gap:8px}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
+  @media (max-width:620px){.admin-delete-search-row,.admin-delete-card{grid-template-columns:1fr}.admin-delete-search-row button,.admin-delete-btn{width:100%}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
@@ -909,7 +929,7 @@
           </div>
           <button id="membersOpenBtn" class="button-flat name-action-btn" type="button" hidden>👥 Mitglieder</button>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
-          <div id="toolsMenu" class="header-menu tools-menu">
+          <div id="toolsMenu" class="header-menu tools-menu" hidden>
             <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
               <span>🛠️ Tools</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
             </button>
@@ -959,7 +979,7 @@
               <button id="globalChatSendBtn" class="global-chat-send" type="button" disabled>Senden</button>
             </div>
             <div id="globalChatStatus" class="global-chat-status" aria-live="polite">Verbindung wird vorbereitet…</div>
-            <div class="global-chat-note">Die letzten 200 Nachrichten werden höchstens 30 Tage gespeichert. Nachrichten können stummgeschaltet oder gemeldet werden.</div>
+            <div class="global-chat-note">Neueste Nachrichten stehen oben. Die letzten 200 Nachrichten werden höchstens 30 Tage gespeichert. Nachrichten können stummgeschaltet oder gemeldet werden.</div>
           </div>
           <aside class="global-chat-members" aria-label="Mitglieder online">
             <div class="global-chat-members-title">Gerade online</div>
@@ -1045,11 +1065,11 @@
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Bei einer gewerteten Partie erscheint zusätzlich das maßgebliche Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
-            <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
+            <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz; die neuesten stehen oben. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
           </ul>
 
           <h4>13. Mitglieder-Chat</h4>
-          <p>Der Global-Chat ist ausschließlich in der eingeloggten Mitglieder-Lobby sichtbar. Gäste und Zuschauer können ihn weder lesen noch verwenden. Angezeigt werden die aktuell verbundenen Mitglieder und die letzten Chatnachrichten.</p>
+          <p>Der Global-Chat ist ausschließlich in der eingeloggten Mitglieder-Lobby sichtbar. Gäste und Zuschauer können ihn weder lesen noch verwenden. Angezeigt werden die aktuell verbundenen Mitglieder und die letzten Chatnachrichten; die neuesten stehen oben.</p>
           <p>Nachrichten sind auf 300 Zeichen begrenzt. Zwischen zwei eigenen Nachrichten besteht eine kurze Wartezeit. Einzelne Mitglieder können auf dem eigenen Gerät stummgeschaltet und auffällige Nachrichten vertraulich gemeldet werden. Der Administrator kann Nachrichten löschen sowie Chat- oder Accountsperren aussprechen.</p>
           <p>Im Global-Chat bleiben höchstens die letzten 200 Nachrichten und höchstens Nachrichten der vergangenen 30 Tage gespeichert. Beim Öffnen eines Spielraums wird der Global-Chat ausgeblendet; dort steht weiterhin ausschließlich der private Partie-Chat zur Verfügung.</p>
 
@@ -1069,7 +1089,7 @@
 
           <h4>18. Der integrierte Analyzer</h4>
           <p>Über <strong>„🛠️ Tools“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
-          <p>Das Tools-Menü mit dem Analyzer ist in der Lobby und auf der Startseite verfügbar. <strong>In einem laufenden oder als Zuschauer geöffneten Spielraum wird das Tools-Menü nicht angezeigt.</strong> Über die Gamer-Verbindung können ausschließlich beendete Partien direkt in den Analyzer geladen werden. Damit bleibt die integrierte Analyse klar von einer laufenden Live- oder Daily-Partie getrennt.</p>
+          <p>Das Tools-Menü mit dem Analyzer ist ausschließlich für eingeloggte Mitglieder und außerhalb eines Spielraums verfügbar. <strong>Für ausgeloggte Besucher sowie in einem laufenden oder als Zuschauer geöffneten Spielraum wird das Tools-Menü nicht angezeigt.</strong> Über die Gamer-Verbindung können ausschließlich beendete Partien direkt in den Analyzer geladen werden. Damit bleibt die integrierte Analyse klar von einer laufenden Live- oder Daily-Partie getrennt.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, eine Brettfarbe wählen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Die Brettfarbe wird auf dem Gerät gespeichert. Der Dark Mode wird automatisch vom Gamer übernommen.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
@@ -1084,7 +1104,7 @@
           </ul>
 
           <h4>19. Der integrierte Trainer</h4>
-          <p>Über <strong>„🛠️ Tools“ → „🎯 Trainer“</strong> öffnest du das Taktiktraining direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Wie der Analyzer steht der Trainer auf der Startseite und in der Lobby zur Verfügung, nicht jedoch in einem laufenden oder als Zuschauer geöffneten Spielraum.</p>
+          <p>Über <strong>„🛠️ Tools“ → „🎯 Trainer“</strong> öffnest du als eingeloggtes Mitglied das Taktiktraining direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Wie der Analyzer ist der Trainer für ausgeloggte Besucher sowie in einem laufenden oder als Zuschauer geöffneten Spielraum ausgeblendet.</p>
           <ul>
             <li><strong>Gamer-Anmeldung:</strong> Der Trainer übernimmt automatisch den aktuell angemeldeten Gamer-Account. Eine zweite Registrierung oder ein gesonderter Trainer-Login ist nicht erforderlich. Ohne Gamer-Anmeldung kann weiterhin trainiert werden, jedoch ausschließlich ohne Rating.</li>
             <li><strong>Mit oder ohne Rating:</strong> Angemeldete Mitglieder wählen im Trainer zwischen <strong>„Mit Rating“</strong> und <strong>„Ohne Rating“</strong>. Im Modus ohne Rating werden keine Ergebnisse im Account gespeichert.</li>
@@ -1108,7 +1128,7 @@
           <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Über <strong>„Mein Profil ansehen“</strong> öffnest du anschließend genau dieselbe Profilansicht, die auch andere Mitglieder sehen, und kannst Darstellung und Vollständigkeit selbst kontrollieren. Von dort führt <strong>„Profil bearbeiten“</strong> direkt zurück zur Bearbeitung. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
           <h4>23. Admin-Funktion und Systemübersicht</h4>
-          <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Zusätzlich erscheint in der Accountverwaltung die <strong>„Admin-Systemübersicht“</strong>. Sie zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
+          <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Die Löschfunktion befindet sich bewusst nicht in den normalen Mitgliederlisten, sondern im separaten Bereich <strong>„Mitglieder löschen“</strong> am unteren Ende der <strong>„Admin-Systemübersicht“</strong>. Vor jeder endgültigen Löschung wird das aktuelle Admin-Kennwort serverseitig geprüft. Die Systemübersicht zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
           <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
 
           <h4>24. Mitglieder-Informationen und Maildarstellung</h4>
@@ -1458,8 +1478,43 @@
         <div id="adminOverviewStatus" class="admin-overview-status" aria-live="polite"></div>
         <div class="admin-overview-actions">
           <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
+          <button id="adminMemberDeleteOpenBtn" class="admin-member-delete-open-btn" type="button">Mitglieder löschen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminDeleteMembersBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal admin-delete-members-modal" role="dialog" aria-modal="true" aria-labelledby="adminDeleteMembersTitle">
+        <h3 id="adminDeleteMembersTitle">Mitglieder löschen</h3>
+        <p>Dieser separate Verwaltungsbereich ist ausschließlich für die endgültige Löschung eines Mitgliedskontos vorgesehen.</p>
+        <div class="account-danger-note">Eine Löschung ist endgültig. Laufende Live- und Daily-Partien des Mitglieds müssen vorher beendet sein. Nach der Auswahl wird zur Sicherheit dein aktuelles Admin-Kennwort abgefragt.</div>
+        <div class="admin-delete-search-row">
+          <input id="adminDeleteSearchInput" class="admin-delete-search" type="search" maxlength="80" autocomplete="off" placeholder="Mitglied suchen…" aria-label="Mitglied in der Löschverwaltung suchen" />
+          <button id="adminDeleteRefreshBtn" class="button-flat" type="button">Liste aktualisieren</button>
+        </div>
+        <div id="adminDeleteMembersList" class="admin-delete-list" aria-live="polite">
+          <div class="admin-list-empty">Mitgliederliste wird geladen…</div>
+        </div>
+        <div id="adminDeleteMembersStatus" class="admin-delete-status" aria-live="polite"></div>
+        <div class="identity-actions">
+          <button id="adminDeleteMembersCloseBtn" class="button-flat" type="button">Zur Systemübersicht</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminDeleteConfirmBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal admin-delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="adminDeleteConfirmTitle">
+        <h3 id="adminDeleteConfirmTitle">Mitglied endgültig löschen</h3>
+        <p>Prüfe das ausgewählte Mitglied sorgfältig. Dieser Vorgang kann nicht rückgängig gemacht werden.</p>
+        <div id="adminDeleteTarget" class="admin-delete-target"></div>
+        <label class="identity-label" for="adminDeletePasswordInput">Dein aktuelles Admin-Kennwort</label>
+        <input id="adminDeletePasswordInput" class="identity-input admin-delete-password" type="password" autocomplete="current-password" minlength="8" maxlength="128" />
+        <div id="adminDeleteConfirmStatus" class="admin-delete-status" aria-live="polite"></div>
+        <div class="identity-actions">
+          <button id="adminDeleteConfirmCancelBtn" class="button-flat" type="button">Abbrechen</button>
+          <button id="adminDeleteConfirmBtn" class="admin-delete-confirm-btn" type="button" disabled>Endgültig löschen</button>
         </div>
       </div>
     </div>
@@ -1954,7 +2009,7 @@
 
           <div id="chatPanel" class="side-content chat-panel" hidden>
             <div class="chat-title"><span>Partie-Chat</span><span id="chatCount">0</span></div>
-            <div class="chat-etiquette-note">Bitte bleibe freundlich und respektvoll.</div>
+            <div class="chat-etiquette-note">Neueste Nachrichten stehen oben. Bitte bleibe freundlich und respektvoll.</div>
             <div id="chatMessages" class="chat-messages" aria-live="polite" aria-label="Chatnachrichten">
               <div class="chat-empty">Noch keine Chatnachrichten.</div>
             </div>
@@ -2885,7 +2940,7 @@ function renderChatMessages(){
     return;
   }
   const frag = document.createDocumentFragment();
-  chatMessages.forEach(chat => {
+  chatMessages.slice().reverse().forEach(chat => {
     if(opponentChatMuted && !chat.mine) return;
     const item = document.createElement('div');
     item.className = 'chat-message' + (chat.mine ? ' mine' : '');
@@ -2905,7 +2960,7 @@ function renderChatMessages(){
     frag.appendChild(item);
   });
   chatMessagesEl.appendChild(frag);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  chatMessagesEl.scrollTop = 0;
 }
 function updateChatControls(){
   try{ opponentChatMuted=!!(onlineRoomId && localStorage.getItem('hammerschachMute:'+onlineRoomId)==='yes'); }catch(_){}
@@ -3518,6 +3573,19 @@ const adminOverviewStatus = document.getElementById('adminOverviewStatus');
 const adminOverviewRefreshBtn = document.getElementById('adminOverviewRefreshBtn');
 const adminOverviewCloseBtn = document.getElementById('adminOverviewCloseBtn');
 const adminMemberMessageOpenBtn = document.getElementById('adminMemberMessageOpenBtn');
+const adminMemberDeleteOpenBtn = document.getElementById('adminMemberDeleteOpenBtn');
+const adminDeleteMembersBackdrop = document.getElementById('adminDeleteMembersBackdrop');
+const adminDeleteSearchInput = document.getElementById('adminDeleteSearchInput');
+const adminDeleteRefreshBtn = document.getElementById('adminDeleteRefreshBtn');
+const adminDeleteMembersList = document.getElementById('adminDeleteMembersList');
+const adminDeleteMembersStatus = document.getElementById('adminDeleteMembersStatus');
+const adminDeleteMembersCloseBtn = document.getElementById('adminDeleteMembersCloseBtn');
+const adminDeleteConfirmBackdrop = document.getElementById('adminDeleteConfirmBackdrop');
+const adminDeleteTarget = document.getElementById('adminDeleteTarget');
+const adminDeletePasswordInput = document.getElementById('adminDeletePasswordInput');
+const adminDeleteConfirmStatus = document.getElementById('adminDeleteConfirmStatus');
+const adminDeleteConfirmCancelBtn = document.getElementById('adminDeleteConfirmCancelBtn');
+const adminDeleteConfirmBtn = document.getElementById('adminDeleteConfirmBtn');
 const adminMessageBackdrop = document.getElementById('adminMessageBackdrop');
 const adminMessageKindSelect = document.getElementById('adminMessageKindSelect');
 const adminMessageAudience = document.getElementById('adminMessageAudience');
@@ -4003,7 +4071,7 @@ let analyzerToolLastOpenAt = 0;
 let trainerToolLastOpenAt = 0;
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
 function embeddedToolsAvailable(){
-  return !onlineRoomId && !hasOnlineTargetInAddress();
+  return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
 }
 function embeddedToolActive(){
   return analyzerToolActive || trainerToolActive;
@@ -4538,7 +4606,7 @@ function renderGlobalChatMessages(){
     const empty=document.createElement('div');empty.className='global-chat-empty';empty.textContent='Noch keine Nachrichten. Begrüße die Hammerschach-Mitglieder!';globalChatMessagesEl.appendChild(empty);return;
   }
   const frag=document.createDocumentFragment();
-  globalChatMessages.forEach(message=>{
+  globalChatMessages.slice().reverse().forEach(message=>{
     const muted=!!(!message.mine&&message.senderKey&&globalChatMutedKeys.has(message.senderKey));
     const item=document.createElement('div');item.className='global-chat-message'+(message.mine?' mine':'');
     const head=document.createElement('div');head.className='global-chat-message-head';
@@ -4559,7 +4627,7 @@ function renderGlobalChatMessages(){
     frag.appendChild(item);
   });
   globalChatMessagesEl.appendChild(frag);
-  globalChatMessagesEl.scrollTop=globalChatMessagesEl.scrollHeight;
+  globalChatMessagesEl.scrollTop=0;
 }
 function updateGlobalChatControls(){
   const usable=!!(isMemberLobbyView()&&globalChatConnected&&!globalChatChatBlocked);
@@ -4915,6 +4983,182 @@ if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.addEventListener('click', re
 if(adminBackupMarkBtn) adminBackupMarkBtn.addEventListener('click', markAdminBackupNow);
 if(adminOverviewCloseBtn) adminOverviewCloseBtn.addEventListener('click', () => closeAdminOverview(true));
 if(adminOverviewBackdrop) adminOverviewBackdrop.addEventListener('click', ev => { if(ev.target === adminOverviewBackdrop) closeAdminOverview(true); });
+
+let adminDeleteMembers = [];
+let adminDeleteMembersLoading = false;
+let adminDeleteTargetUser = null;
+let adminDeleteBusy = false;
+function setAdminDeleteMembersStatus(message, kind){
+  if(!adminDeleteMembersStatus) return;
+  adminDeleteMembersStatus.textContent = message || '';
+  adminDeleteMembersStatus.classList.toggle('error', kind === 'error');
+  adminDeleteMembersStatus.classList.toggle('success', kind === 'success');
+}
+function setAdminDeleteConfirmStatus(message, kind){
+  if(!adminDeleteConfirmStatus) return;
+  adminDeleteConfirmStatus.textContent = message || '';
+  adminDeleteConfirmStatus.classList.toggle('error', kind === 'error');
+  adminDeleteConfirmStatus.classList.toggle('success', kind === 'success');
+}
+function updateAdminDeleteConfirmButton(){
+  const password = String(adminDeletePasswordInput && adminDeletePasswordInput.value || '');
+  if(adminDeleteConfirmBtn) adminDeleteConfirmBtn.disabled = adminDeleteBusy || !adminDeleteTargetUser || password.length < 8;
+  if(adminDeleteConfirmCancelBtn) adminDeleteConfirmCancelBtn.disabled = adminDeleteBusy;
+}
+function renderAdminDeleteMembers(){
+  if(!adminDeleteMembersList) return;
+  adminDeleteMembersList.innerHTML = '';
+  if(adminDeleteMembersLoading){
+    adminDeleteMembersList.innerHTML = '<div class="admin-list-empty">Mitgliederliste wird geladen…</div>';
+    return;
+  }
+  const query = String(adminDeleteSearchInput && adminDeleteSearchInput.value || '').trim().toLocaleLowerCase('de-DE');
+  const users = adminDeleteMembers
+    .filter(user => !query || String(user && user.username || '').toLocaleLowerCase('de-DE').includes(query))
+    .slice()
+    .sort((a, b) => String(a && a.username || '').localeCompare(String(b && b.username || ''), 'de-DE', {sensitivity:'base'}));
+  if(!users.length){
+    const empty = document.createElement('div');
+    empty.className = 'admin-list-empty';
+    empty.textContent = query ? 'Kein passendes Mitglied gefunden.' : 'Keine löschbaren Mitglieder gefunden.';
+    adminDeleteMembersList.appendChild(empty);
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  users.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'admin-delete-card';
+    const main = document.createElement('div');
+    main.className = 'admin-delete-card-main';
+    const name = document.createElement('div');
+    name.className = 'admin-delete-name';
+    const nameText = document.createElement('span');
+    nameText.textContent = user.username || 'Mitglied';
+    name.appendChild(nameText);
+    name.appendChild(createPresenceBadge(!!user.isOnline));
+    const meta = document.createElement('div');
+    meta.className = 'admin-delete-meta';
+    meta.textContent = 'Mitglied seit ' + formatMemberProfileSince(user.createdAt);
+    main.append(name, meta);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'admin-delete-btn';
+    deleteBtn.textContent = 'Mitglied löschen';
+    deleteBtn.title = 'Löschung von ' + (user.username || 'diesem Mitglied') + ' mit Admin-Kennwort vorbereiten';
+    deleteBtn.disabled = adminDeleteBusy;
+    deleteBtn.addEventListener('click', () => openAdminDeleteConfirmation(user));
+    card.append(main, deleteBtn);
+    frag.appendChild(card);
+  });
+  adminDeleteMembersList.appendChild(frag);
+}
+async function loadAdminDeleteMembers(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  adminDeleteMembersLoading = true;
+  if(adminDeleteRefreshBtn) adminDeleteRefreshBtn.disabled = true;
+  setAdminDeleteMembersStatus('Mitgliederliste wird sicher geladen…', '');
+  renderAdminDeleteMembers();
+  try{
+    const data = await authApi('/api/admin/users');
+    adminDeleteMembers = Array.isArray(data.users) ? data.users : [];
+    setAdminDeleteMembersStatus(adminDeleteMembers.length + ' löschbare' + (adminDeleteMembers.length === 1 ? 's Mitglied' : ' Mitglieder') + ' geladen.', adminDeleteMembers.length ? 'success' : '');
+  } catch(err){
+    adminDeleteMembers = [];
+    setAdminDeleteMembersStatus(err && err.message ? err.message : 'Die geschützte Mitgliederliste konnte nicht geladen werden.', 'error');
+  } finally {
+    adminDeleteMembersLoading = false;
+    if(adminDeleteRefreshBtn) adminDeleteRefreshBtn.disabled = false;
+    renderAdminDeleteMembers();
+  }
+}
+function openAdminDeleteMembers(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  if(adminDeleteMembersBackdrop) adminDeleteMembersBackdrop.hidden = false;
+  if(adminDeleteSearchInput) adminDeleteSearchInput.value = '';
+  setAdminDeleteMembersStatus('', '');
+  loadAdminDeleteMembers();
+  setTimeout(() => { try{ if(adminDeleteSearchInput) adminDeleteSearchInput.focus(); } catch(_){} }, 0);
+}
+function closeAdminDeleteConfirmation(){
+  if(adminDeleteBusy) return;
+  if(adminDeleteConfirmBackdrop) adminDeleteConfirmBackdrop.hidden = true;
+  if(adminDeletePasswordInput) adminDeletePasswordInput.value = '';
+  if(adminDeleteTarget) adminDeleteTarget.textContent = '';
+  adminDeleteTargetUser = null;
+  setAdminDeleteConfirmStatus('', '');
+  updateAdminDeleteConfirmButton();
+}
+function closeAdminDeleteMembers(reopenOverview){
+  if(adminDeleteBusy) return;
+  closeAdminDeleteConfirmation();
+  if(adminDeleteMembersBackdrop) adminDeleteMembersBackdrop.hidden = true;
+  adminDeleteMembers = [];
+  setAdminDeleteMembersStatus('', '');
+  if(reopenOverview && onlineAuthToken && onlineAuthUser && onlineAuthUser.isAdmin === true){
+    if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = false;
+    refreshAdminOverview();
+  }
+}
+function openAdminDeleteConfirmation(user){
+  if(adminDeleteBusy || !user || !user.id || !isCurrentUserAdmin()) return;
+  adminDeleteTargetUser = user;
+  if(adminDeleteTarget) adminDeleteTarget.textContent = 'Ausgewählt: „' + (user.username || 'Mitglied') + '“';
+  if(adminDeletePasswordInput) adminDeletePasswordInput.value = '';
+  setAdminDeleteConfirmStatus('Erst nach erfolgreicher Kennwortprüfung wird die Löschung ausgeführt.', '');
+  if(adminDeleteConfirmBackdrop) adminDeleteConfirmBackdrop.hidden = false;
+  updateAdminDeleteConfirmButton();
+  setTimeout(() => { try{ if(adminDeletePasswordInput) adminDeletePasswordInput.focus(); } catch(_){} }, 0);
+}
+async function deleteAdminMemberNow(){
+  if(adminDeleteBusy || !adminDeleteTargetUser || !adminDeleteTargetUser.id || !isCurrentUserAdmin()) return;
+  const password = String(adminDeletePasswordInput && adminDeletePasswordInput.value || '');
+  if(password.length < 8){
+    setAdminDeleteConfirmStatus('Bitte gib dein vollständiges aktuelles Admin-Kennwort ein.', 'error');
+    return;
+  }
+  const target = adminDeleteTargetUser;
+  const username = target.username || 'Mitglied';
+  adminDeleteBusy = true;
+  updateAdminDeleteConfirmButton();
+  renderAdminDeleteMembers();
+  setAdminDeleteConfirmStatus('Admin-Kennwort wird geprüft und die Löschung vorbereitet…', '');
+  try{
+    const data = await authApi('/api/admin/users/' + encodeURIComponent(target.id), {
+      method:'DELETE',
+      body:JSON.stringify({currentPassword:password})
+    });
+    adminDeleteMembers = adminDeleteMembers.filter(user => user && user.id !== target.id);
+    adminDeleteBusy = false;
+    closeAdminDeleteConfirmation();
+    renderAdminDeleteMembers();
+    const message = data && data.message ? data.message : ('Mitglied „' + username + '“ wurde gelöscht.');
+    setAdminDeleteMembersStatus(message, 'success');
+    if(statusEl) statusEl.textContent = message;
+  } catch(err){
+    if(adminDeletePasswordInput) adminDeletePasswordInput.value = '';
+    setAdminDeleteConfirmStatus(err && err.message ? err.message : 'Das Mitglied konnte nicht gelöscht werden.', 'error');
+    setTimeout(() => { try{ if(adminDeletePasswordInput) adminDeletePasswordInput.focus(); } catch(_){} }, 0);
+  } finally {
+    adminDeleteBusy = false;
+    updateAdminDeleteConfirmButton();
+    renderAdminDeleteMembers();
+  }
+}
+if(adminMemberDeleteOpenBtn) adminMemberDeleteOpenBtn.addEventListener('click', openAdminDeleteMembers);
+if(adminDeleteRefreshBtn) adminDeleteRefreshBtn.addEventListener('click', loadAdminDeleteMembers);
+if(adminDeleteSearchInput) adminDeleteSearchInput.addEventListener('input', renderAdminDeleteMembers);
+if(adminDeleteMembersCloseBtn) adminDeleteMembersCloseBtn.addEventListener('click', () => closeAdminDeleteMembers(true));
+if(adminDeleteConfirmCancelBtn) adminDeleteConfirmCancelBtn.addEventListener('click', closeAdminDeleteConfirmation);
+if(adminDeletePasswordInput) adminDeletePasswordInput.addEventListener('input', updateAdminDeleteConfirmButton);
+if(adminDeleteConfirmBtn) adminDeleteConfirmBtn.addEventListener('click', deleteAdminMemberNow);
+if(adminDeleteMembersBackdrop) adminDeleteMembersBackdrop.addEventListener('click', event => { if(event.target === adminDeleteMembersBackdrop) closeAdminDeleteMembers(true); });
+if(adminDeleteConfirmBackdrop) adminDeleteConfirmBackdrop.addEventListener('click', event => { if(event.target === adminDeleteConfirmBackdrop) closeAdminDeleteConfirmation(); });
+document.addEventListener('keydown', event => {
+  if(event.key !== 'Escape') return;
+  if(adminDeleteConfirmBackdrop && !adminDeleteConfirmBackdrop.hidden) closeAdminDeleteConfirmation();
+  else if(adminDeleteMembersBackdrop && !adminDeleteMembersBackdrop.hidden) closeAdminDeleteMembers(true);
+});
 
 const ADMIN_MESSAGE_ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
 const ADMIN_MESSAGE_ATTACHMENT_TYPES = {
@@ -5701,6 +5945,14 @@ function updateAuthUi(){
   }
   if(!isAdmin && adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
   if(!isAdmin && adminMessageBackdrop) adminMessageBackdrop.hidden = true;
+  if(!isAdmin && adminDeleteMembersBackdrop) adminDeleteMembersBackdrop.hidden = true;
+  if(!isAdmin && adminDeleteConfirmBackdrop) adminDeleteConfirmBackdrop.hidden = true;
+  if(!isAdmin){
+    adminDeleteMembers = [];
+    adminDeleteTargetUser = null;
+    adminDeleteBusy = false;
+    if(adminDeletePasswordInput) adminDeletePasswordInput.value = '';
+  }
   if(authAccountProtectionNote){
     authAccountProtectionNote.hidden = !isAdmin;
     authAccountProtectionNote.textContent = isAdmin ? 'Admin-Schutz: Benutzername und Selbstlöschung sind für diesen Account gesperrt. Mailadresse und Kennwort können geändert werden.' : '';
@@ -7142,7 +7394,6 @@ function renderStandaloneMemberResults(users, options){
     membersResults.appendChild(empty);
     return;
   }
-  const canAdminDelete = isCurrentUserAdmin();
   const canInvite = standaloneInvitationAvailable();
   users.forEach(user => {
     const card = document.createElement('div');
@@ -7188,15 +7439,6 @@ function renderStandaloneMemberResults(users, options){
         : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
       inviteBtn.addEventListener('click', ev => { ev.stopPropagation(); inviteMemberFromStandaloneList(user, inviteBtn); });
       actions.appendChild(inviteBtn);
-    }
-    if(canAdminDelete && onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'member-delete-btn';
-      deleteBtn.textContent = 'User löschen';
-      deleteBtn.title = 'User dauerhaft aus der Account-Datenbank entfernen';
-      deleteBtn.addEventListener('click', ev => { ev.stopPropagation(); deleteMemberAsAdmin(user, deleteBtn, 'standalone'); });
-      actions.appendChild(deleteBtn);
     }
     main.appendChild(avatar);
     main.appendChild(info);
@@ -7318,12 +7560,12 @@ function updateInviteDialog(){
   if(memberSearchInput) memberSearchInput.disabled = !loggedIn;
   if(memberListBtn){
     memberListBtn.disabled = !loggedIn;
-    memberListBtn.textContent = isCurrentUserAdmin() ? 'Mitgliederliste / Admin öffnen' : 'Mitgliederliste öffnen';
+    memberListBtn.textContent = 'Mitgliederliste öffnen';
     memberListBtn.title = loggedIn ? 'Registrierte Mitglieder anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
   }
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? (isCurrentUserAdmin() ? 'Suche oder öffne die Mitgliederliste. Als Andili kannst du Einladungen automatisch senden und User zusätzlich löschen.' : 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.')
+      ? 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.'
       : 'Mitgliedersuche und Mitgliederliste sind nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -7465,7 +7707,6 @@ function renderMemberSearchResults(users, options){
     memberSearchResults.appendChild(empty);
     return;
   }
-  const canAdminDelete = isCurrentUserAdmin();
   users.forEach(user => {
     const card = document.createElement('div');
     card.className = 'member-result-card';
@@ -7484,9 +7725,7 @@ function renderMemberSearchResults(users, options){
     name.appendChild(createPresenceBadge(!!user.isOnline));
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = canAdminDelete
-      ? 'Profil ansehen · Admin: Einladung oder User löschen'
-      : 'Profil, Ratings und aktueller Gamer-Online-Status';
+    meta.textContent = 'Profil, Ratings und aktueller Gamer-Online-Status';
     info.appendChild(name);
     info.appendChild(meta);
 
@@ -7508,16 +7747,6 @@ function renderMemberSearchResults(users, options){
     btn.title = 'Partieeinladung automatisch an ' + (user.username || 'dieses Mitglied') + ' senden';
     btn.addEventListener('click', ev => { ev.stopPropagation(); sendEmailInvitationToMember(user, btn); });
     actions.appendChild(btn);
-
-    if(canAdminDelete && onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'member-delete-btn';
-      deleteBtn.textContent = 'User löschen';
-      deleteBtn.title = 'User dauerhaft aus der Account-Datenbank entfernen';
-      deleteBtn.addEventListener('click', ev => { ev.stopPropagation(); deleteMemberAsAdmin(user, deleteBtn); });
-      actions.appendChild(deleteBtn);
-    }
 
     main.appendChild(avatar);
     main.appendChild(info);
@@ -7541,31 +7770,6 @@ async function loadMemberList(){
     if(memberSearchStatus) memberSearchStatus.textContent = err && err.message ? err.message : 'Mitgliederliste konnte nicht geladen werden.';
   } finally {
     if(memberListBtn) memberListBtn.disabled = false;
-  }
-}
-async function deleteMemberAsAdmin(user, button, source){
-  const standaloneSource = source === 'standalone' || (membersBackdrop && !membersBackdrop.hidden);
-  const showDeleteMessage = (message, isError) => {
-    if(standaloneSource) setMembersStatus(message, isError ? 'error' : 'success');
-    else setInviteCopyStatus(message, !!isError);
-  };
-  if(!isCurrentUserAdmin()){ showDeleteMessage('Nur Andili kann User löschen.', true); return; }
-  if(!user || !user.id){ showDeleteMessage('Dieser User kann nicht gelöscht werden.', true); return; }
-  if(onlineAuthUser && user.id === onlineAuthUser.id){ showDeleteMessage('Der eigene Admin-Account kann nicht gelöscht werden.', true); return; }
-  const username = user.username || 'diesen User';
-  const ok = window.confirm('User „' + username + '“ wirklich löschen?\n\nDer Account und aktive Login-Sitzungen werden aus der Datenbank entfernt.');
-  if(!ok) return;
-  const oldText = button ? button.textContent : '';
-  if(button){ button.disabled = true; button.textContent = 'Lösche...'; }
-  try{
-    await authApi('/api/admin/users/' + encodeURIComponent(user.id), {method:'DELETE'});
-    showDeleteMessage('User „' + username + '“ wurde gelöscht.', false);
-    statusEl.textContent = 'User „' + username + '“ wurde gelöscht.';
-    if(standaloneSource) await loadStandaloneMemberList({silent:true});
-    else await loadMemberList();
-  } catch(err){
-    showDeleteMessage(err && err.message ? err.message : 'User konnte nicht gelöscht werden.', true);
-    if(button){ button.disabled = false; button.textContent = oldText || 'User löschen'; }
   }
 }
 async function performMemberSearch(query, requestId){
