@@ -84,6 +84,7 @@
     .board-color-option.active{background:var(--andili-rot)!important;color:#fff!important}
     .board-color-swatch{flex:0 0 auto;display:inline-grid;grid-template-columns:1fr 1fr;width:38px;height:22px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.22)}
     .board-color-swatch span{display:block}
+    .piece-set-preview{flex:0 0 auto;width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.18))}
     .board-color-current{margin-top:8px;font-size:13px;color:#555}
     .status{width:100%;box-sizing:border-box;text-align:center;font-weight:900;font-size:18px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(246,238,240,.98));border:1px solid rgba(132,63,70,.18);box-shadow:0 8px 20px rgba(0,0,0,.10);color:#111}
 
@@ -268,6 +269,19 @@
               <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
             </div>
           </div>
+          <div class="board-color-wrap" id="pieceSetWrap">
+            <button id="btnPieceSet" type="button" class="button-flat icon-btn" aria-haspopup="true" aria-expanded="false" title="Figurensatz" aria-label="Figurensatz"><span class="icon-label">♞</span></button>
+            <div id="pieceSetPopup" class="board-color-popup" hidden>
+              <div class="board-color-popup-title">Figurensatz wählen</div>
+              <div class="board-color-options">
+                <button type="button" class="board-color-option piece-set-option" data-piece-set="cburnett"><span>Cburnett · Standard</span><img class="piece-set-preview" src="../assets/pieces/Chess_nlt45.svg" alt=""></button>
+                <button type="button" class="board-color-option piece-set-option" data-piece-set="rhosgfx"><span>RhosGFX · Modern</span><img class="piece-set-preview" src="../assets/pieces/rhosgfx/wN.svg" alt=""></button>
+                <button type="button" class="board-color-option piece-set-option" data-piece-set="chessnut"><span>Chessnut · Klassisch</span><img class="piece-set-preview" src="../assets/pieces/chessnut/wN.svg" alt=""></button>
+                <button type="button" class="board-color-option piece-set-option" data-piece-set="fantasy"><span>Fantasy · Elegant</span><img class="piece-set-preview" src="../assets/pieces/fantasy/wN.svg" alt=""></button>
+              </div>
+              <div class="board-color-current">Aktuell: <span id="pieceSetCurrent">Cburnett · Standard</span></div>
+            </div>
+          </div>
           <button id="btnUndo" class="button-flat board-action-btn" type="button" title="Letzten Zug zurücknehmen">↩ Rückgängig</button>
           <button id="btnSave" class="board-action-btn" type="button" title="Aktuelle Partie speichern">Speichern</button>
         </div>
@@ -429,20 +443,19 @@
   <script>
     function clone(o){ return JSON.parse(JSON.stringify(o)); }
     const glyph = {P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔',p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚'};
-    const pieceImg = {
-      P:'../assets/pieces/Chess_plt45.svg',
-      R:'../assets/pieces/Chess_rlt45.svg',
-      N:'../assets/pieces/Chess_nlt45.svg',
-      B:'../assets/pieces/Chess_blt45.svg',
-      Q:'../assets/pieces/Chess_qlt45.svg',
-      K:'../assets/pieces/Chess_klt45.svg',
-      p:'../assets/pieces/Chess_pdt45.svg',
-      r:'../assets/pieces/Chess_rdt45.svg',
-      n:'../assets/pieces/Chess_ndt45.svg',
-      b:'../assets/pieces/Chess_bdt45.svg',
-      q:'../assets/pieces/Chess_qdt45.svg',
-      k:'../assets/pieces/Chess_kdt45.svg'
-    };
+    const PIECE_SET_STORAGE_KEY = 'hammerschachPieceSet';
+    const pieceSetPresets = [
+      {id:'cburnett', name:'Cburnett · Standard', paths:{P:'../assets/pieces/Chess_plt45.svg',R:'../assets/pieces/Chess_rlt45.svg',N:'../assets/pieces/Chess_nlt45.svg',B:'../assets/pieces/Chess_blt45.svg',Q:'../assets/pieces/Chess_qlt45.svg',K:'../assets/pieces/Chess_klt45.svg',p:'../assets/pieces/Chess_pdt45.svg',r:'../assets/pieces/Chess_rdt45.svg',n:'../assets/pieces/Chess_ndt45.svg',b:'../assets/pieces/Chess_bdt45.svg',q:'../assets/pieces/Chess_qdt45.svg',k:'../assets/pieces/Chess_kdt45.svg'}},
+      {id:'rhosgfx', name:'RhosGFX · Modern', paths:{P:'../assets/pieces/rhosgfx/wP.svg',R:'../assets/pieces/rhosgfx/wR.svg',N:'../assets/pieces/rhosgfx/wN.svg',B:'../assets/pieces/rhosgfx/wB.svg',Q:'../assets/pieces/rhosgfx/wQ.svg',K:'../assets/pieces/rhosgfx/wK.svg',p:'../assets/pieces/rhosgfx/bP.svg',r:'../assets/pieces/rhosgfx/bR.svg',n:'../assets/pieces/rhosgfx/bN.svg',b:'../assets/pieces/rhosgfx/bB.svg',q:'../assets/pieces/rhosgfx/bQ.svg',k:'../assets/pieces/rhosgfx/bK.svg'}},
+      {id:'chessnut', name:'Chessnut · Klassisch', paths:{P:'../assets/pieces/chessnut/wP.svg',R:'../assets/pieces/chessnut/wR.svg',N:'../assets/pieces/chessnut/wN.svg',B:'../assets/pieces/chessnut/wB.svg',Q:'../assets/pieces/chessnut/wQ.svg',K:'../assets/pieces/chessnut/wK.svg',p:'../assets/pieces/chessnut/bP.svg',r:'../assets/pieces/chessnut/bR.svg',n:'../assets/pieces/chessnut/bN.svg',b:'../assets/pieces/chessnut/bB.svg',q:'../assets/pieces/chessnut/bQ.svg',k:'../assets/pieces/chessnut/bK.svg'}},
+      {id:'fantasy', name:'Fantasy · Elegant', paths:{P:'../assets/pieces/fantasy/wP.svg',R:'../assets/pieces/fantasy/wR.svg',N:'../assets/pieces/fantasy/wN.svg',B:'../assets/pieces/fantasy/wB.svg',Q:'../assets/pieces/fantasy/wQ.svg',K:'../assets/pieces/fantasy/wK.svg',p:'../assets/pieces/fantasy/bP.svg',r:'../assets/pieces/fantasy/bR.svg',n:'../assets/pieces/fantasy/bN.svg',b:'../assets/pieces/fantasy/bB.svg',q:'../assets/pieces/fantasy/bQ.svg',k:'../assets/pieces/fantasy/bK.svg'}}
+    ];
+    let activePieceSetId = 'cburnett';
+    try{
+      const savedPieceSet = localStorage.getItem(PIECE_SET_STORAGE_KEY);
+      if(pieceSetPresets.some(p => p.id === savedPieceSet)) activePieceSetId = savedPieceSet;
+    }catch(_){}
+    const pieceImg = {...(pieceSetPresets.find(p => p.id === activePieceSetId) || pieceSetPresets[0]).paths};
     function pieceColor(ch){ if(!ch || ch === '.') return null; return (ch === ch.toUpperCase()) ? 'w' : 'b'; }
     function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 
@@ -744,8 +757,14 @@
     const btnBoardColor = document.getElementById('btnBoardColor');
     const boardColorPopup = document.getElementById('boardColorPopup');
     const boardColorCurrent = document.getElementById('boardColorCurrent');
-    const boardColorOptions = document.querySelectorAll('.board-color-option');
-    const BOARD_COLOR_STORAGE_KEY = 'hammerschachAnalyzerBoardColor';
+    const boardColorOptions = document.querySelectorAll('.board-color-option[data-board-color]');
+    const pieceSetWrap = document.getElementById('pieceSetWrap');
+    const btnPieceSet = document.getElementById('btnPieceSet');
+    const pieceSetPopup = document.getElementById('pieceSetPopup');
+    const pieceSetCurrent = document.getElementById('pieceSetCurrent');
+    const pieceSetOptions = document.querySelectorAll('.piece-set-option[data-piece-set]');
+    const BOARD_COLOR_STORAGE_KEY = 'hammerschachBoardColor';
+    const LEGACY_BOARD_COLOR_STORAGE_KEY = 'hammerschachAnalyzerBoardColor';
     const ANALYZER_SESSION_STORAGE_KEY = 'hammerschachAnalyzerSessionV1';
     const ANALYZER_SESSION_VERSION = 1;
     let analyzerSessionPersistenceReady = false;
@@ -763,10 +782,22 @@
     }
     function openBoardColorPopup(){
       if(!boardColorPopup || !btnBoardColor) return;
+      closePieceSetPopup();
       boardColorPopup.hidden = false;
       btnBoardColor.setAttribute('aria-expanded','true');
     }
-    function applyBoardColorPreset(id, closeAfterSelection){
+    function closePieceSetPopup(){
+      if(!pieceSetPopup || !btnPieceSet) return;
+      pieceSetPopup.hidden = true;
+      btnPieceSet.setAttribute('aria-expanded','false');
+    }
+    function openPieceSetPopup(){
+      if(!pieceSetPopup || !btnPieceSet) return;
+      closeBoardColorPopup();
+      pieceSetPopup.hidden = false;
+      btnPieceSet.setAttribute('aria-expanded','true');
+    }
+    function applyBoardColorPreset(id, closeAfterSelection, persist = true){
       const preset = boardColorPresets.find(p => p.id === id) || boardColorPresets[0];
       document.documentElement.style.setProperty('--light-square', preset.light);
       document.documentElement.style.setProperty('--dark-square', preset.dark);
@@ -774,8 +805,18 @@
       boardColorOptions.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.boardColor === preset.id);
       });
-      try { localStorage.setItem(BOARD_COLOR_STORAGE_KEY, preset.id); } catch(_){}
+      if(persist) try { localStorage.setItem(BOARD_COLOR_STORAGE_KEY, preset.id); } catch(_){}
       if(closeAfterSelection) closeBoardColorPopup();
+    }
+    function applyPieceSetPreset(id, closeAfterSelection = false, persist = true, rerender = true){
+      const preset = pieceSetPresets.find(p => p.id === id) || pieceSetPresets[0];
+      activePieceSetId = preset.id;
+      Object.assign(pieceImg, preset.paths);
+      if(pieceSetCurrent) pieceSetCurrent.textContent = preset.name;
+      pieceSetOptions.forEach(btn => btn.classList.toggle('active', btn.dataset.pieceSet === preset.id));
+      if(persist) try { localStorage.setItem(PIECE_SET_STORAGE_KEY, preset.id); } catch(_){}
+      if(rerender) renderBoardFromView();
+      if(closeAfterSelection) closePieceSetPopup();
     }
     if(btnBoardColor){
       btnBoardColor.addEventListener('click', ev => {
@@ -784,21 +825,44 @@
         else closeBoardColorPopup();
       });
     }
+    if(btnPieceSet){
+      btnPieceSet.addEventListener('click', ev => {
+        ev.stopPropagation();
+        if(pieceSetPopup && pieceSetPopup.hidden) openPieceSetPopup();
+        else closePieceSetPopup();
+      });
+    }
     boardColorOptions.forEach(btn => {
       btn.addEventListener('click', ev => {
         ev.stopPropagation();
         applyBoardColorPreset(btn.dataset.boardColor, true);
       });
     });
+    pieceSetOptions.forEach(btn => {
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        applyPieceSetPreset(btn.dataset.pieceSet, true);
+      });
+    });
     document.addEventListener('click', ev => {
       if(boardColorWrap && !boardColorWrap.contains(ev.target)) closeBoardColorPopup();
+      if(pieceSetWrap && !pieceSetWrap.contains(ev.target)) closePieceSetPopup();
     });
     document.addEventListener('keydown', ev => {
-      if(ev.key === 'Escape') closeBoardColorPopup();
+      if(ev.key === 'Escape'){ closeBoardColorPopup(); closePieceSetPopup(); }
     });
     let savedBoardColorPreset = 'basis';
-    try { savedBoardColorPreset = localStorage.getItem(BOARD_COLOR_STORAGE_KEY) || 'basis'; } catch(_){}
-    applyBoardColorPreset(savedBoardColorPreset, false);
+    try {
+      savedBoardColorPreset = localStorage.getItem(BOARD_COLOR_STORAGE_KEY) || localStorage.getItem(LEGACY_BOARD_COLOR_STORAGE_KEY) || 'basis';
+      localStorage.setItem(BOARD_COLOR_STORAGE_KEY, savedBoardColorPreset);
+      localStorage.removeItem(LEGACY_BOARD_COLOR_STORAGE_KEY);
+    } catch(_){}
+    applyBoardColorPreset(savedBoardColorPreset, false, false);
+    applyPieceSetPreset(activePieceSetId, false, false, false);
+    window.addEventListener('storage', ev => {
+      if(ev.key === BOARD_COLOR_STORAGE_KEY && ev.newValue) applyBoardColorPreset(ev.newValue, false, false);
+      if(ev.key === PIECE_SET_STORAGE_KEY && ev.newValue) applyPieceSetPreset(ev.newValue, false, false, true);
+    });
 
     function createEmptyGame(){
       return { headers: defaultHeaders(), history: [], orientationWhite: true, setup:normalizeGameSetup() };
