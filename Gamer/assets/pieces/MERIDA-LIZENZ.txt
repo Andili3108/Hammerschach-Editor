@@ -1,0 +1,12 @@
+Figurensatz: Merida
+Urheber: Armando Hernandez Marroquin
+Lizenz: GNU General Public License, Version 2 oder jede spätere Version (GPLv2+)
+
+Quelle der unveränderten SVG-Dateien:
+https://github.com/lichess-org/lila/tree/master/public/piece/merida
+
+Offizielle Lizenzzuordnung im Lichess-Projekt:
+https://github.com/lichess-org/lila/blob/master/COPYING.md
+
+Der vollständige Text der GNU GPL Version 2 liegt diesem Paket als
+LICENSE-GPL-2.0.txt bei.
