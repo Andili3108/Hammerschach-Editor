@@ -4,6 +4,18 @@
   <meta charset="UTF-8" />
   <title>Hammerschach Analyzer</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_plt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_rlt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_nlt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_blt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_qlt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_klt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_pdt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_rdt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_ndt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_bdt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_qdt45.svg" />
+  <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_kdt45.svg" />
   <style>
     :root{
       --board-max:760px;
@@ -36,11 +48,14 @@
 
     .board-column{width:var(--board-size);display:flex;flex-direction:column;gap:12px;flex:0 0 var(--board-size);position:relative}
     .board-wrapper{position:relative;width:var(--board-size);max-width:100%;aspect-ratio:1/1}
-    #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;background:#eee}
+    #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;background:#eee;touch-action:none}
     .square{display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
     .light{background:var(--light-square)}
     .dark{background:var(--dark-square)}
-    .piece-img{width:80%;height:80%;object-fit:contain;pointer-events:none;display:block;position:relative;z-index:2}
+    .piece-img{width:80%;height:80%;object-fit:contain;pointer-events:none;display:block;position:relative;z-index:2;user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
+    .piece-img.piece-drag-source{opacity:.14}
+    .piece-drag-ghost{position:fixed!important;left:0;top:0;z-index:10000!important;pointer-events:none!important;margin:0!important;opacity:.98;transform-origin:center center;filter:drop-shadow(0 10px 8px rgba(0,0,0,.28));will-change:transform}
+    #board.piece-drag-active{cursor:grabbing}
     .coord-file,.coord-rank{position:absolute;font-size:12px;line-height:1;color:#111;opacity:.88;pointer-events:none;user-select:none;z-index:3}
     .coord-file{right:4px;bottom:2px}
     .coord-rank{left:4px;top:2px}
@@ -415,18 +430,18 @@
     function clone(o){ return JSON.parse(JSON.stringify(o)); }
     const glyph = {P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔',p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚'};
     const pieceImg = {
-      P:'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
-      R:'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
-      N:'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
-      B:'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
-      Q:'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
-      K:'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
-      p:'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
-      r:'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
-      n:'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
-      b:'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
-      q:'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
-      k:'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
+      P:'../assets/pieces/Chess_plt45.svg',
+      R:'../assets/pieces/Chess_rlt45.svg',
+      N:'../assets/pieces/Chess_nlt45.svg',
+      B:'../assets/pieces/Chess_blt45.svg',
+      Q:'../assets/pieces/Chess_qlt45.svg',
+      K:'../assets/pieces/Chess_klt45.svg',
+      p:'../assets/pieces/Chess_pdt45.svg',
+      r:'../assets/pieces/Chess_rdt45.svg',
+      n:'../assets/pieces/Chess_ndt45.svg',
+      b:'../assets/pieces/Chess_bdt45.svg',
+      q:'../assets/pieces/Chess_qdt45.svg',
+      k:'../assets/pieces/Chess_kdt45.svg'
     };
     function pieceColor(ch){ if(!ch || ch === '.') return null; return (ch === ch.toUpperCase()) ? 'w' : 'b'; }
     function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
@@ -717,6 +732,8 @@
     let viewIndex = 0;
     let orientationWhite = true;
     let selected = null;
+    let activePieceDrag = null;
+    let suppressPieceDragClickUntil = 0;
 
     const boardEl = document.getElementById('board');
     const statusEl = document.getElementById('status');
@@ -1040,6 +1057,7 @@
       return {from:engineState.bestmoveMove.from, to:engineState.bestmoveMove.to};
     }
     function renderBoardFromView(){
+      cancelActivePieceDrag(boardEl);
       const g = buildGameFromHistory(viewIndex);
       const currentFen = gameToFEN(g);
       const engineHighlight = getEngineHighlightSquares(currentFen);
@@ -1076,6 +1094,11 @@
           boardEl.appendChild(el);
         }
       }
+      if(selected){
+        const selectedPiece = g.at(selected[0],selected[1]);
+        if(selectedPiece !== '.' && pieceColor(selectedPiece) === g.turn) selectAnalyzerSquare(g,selected[0],selected[1]);
+        else selected = null;
+      }
       updateStatusFromGame(g);
       renderMoveList();
       removePromotionOverlay();
@@ -1101,6 +1124,18 @@
       setTimeout(() => { statusEl.textContent = previous; }, 900);
       if(navigator.vibrate) navigator.vibrate(80);
     }
+    function selectAnalyzerSquare(g,x,y){
+      selected = [x,y];
+      highlightSelection(x,y);
+      clearMoveTargets();
+      g.legalMoves().forEach(mv => {
+        if(mv.from[0] === x && mv.from[1] === y){
+          const selector = '.square[data-x="' + mv.to[0] + '"][data-y="' + mv.to[1] + '"]';
+          const sq = boardEl.querySelector(selector);
+          if(sq) sq.classList.add('legal-target');
+        }
+      });
+    }
     async function onSquareClick(x,y){
       if(viewIndex !== masterHistory.length) return;
       const g = buildGameFromHistory(masterHistory.length);
@@ -1109,18 +1144,14 @@
         if(piece === '.') return;
         const color = (piece === piece.toUpperCase()) ? 'w' : 'b';
         if(color !== g.turn) return;
-        selected = [x,y];
-        highlightSelection(x,y);
-        clearMoveTargets();
-        const legal = g.legalMoves();
-        legal.forEach(mv => {
-          if(mv.from[0] === x && mv.from[1] === y){
-            const selector = '.square[data-x="' + mv.to[0] + '"][data-y="' + mv.to[1] + '"]';
-            const sq = document.querySelector(selector);
-            if(sq) sq.classList.add('legal-target');
-          }
-        });
+        selectAnalyzerSquare(g,x,y);
       } else {
+        if(selected[0] === x && selected[1] === y){
+          selected = null;
+          clearMoveTargets();
+          renderBoardFromView();
+          return;
+        }
         const legal = g.legalMoves();
         let found = null;
         for(const lm of legal){
@@ -1141,6 +1172,8 @@
           clearMoveTargets();
           persistCurrentGame();
           renderBoardFromView();
+        } else if(piece !== '.' && pieceColor(piece) === g.turn){
+          selectAnalyzerSquare(g,x,y);
         } else {
           showIllegalMoveFeedback('Illegaler Zug — König bleibt im Schach oder Zug nicht erlaubt');
           selected = null;
@@ -1148,6 +1181,152 @@
           renderBoardFromView();
         }
       }
+    }
+
+    function pieceDragCanStart(x,y){
+      if(viewIndex !== masterHistory.length) return false;
+      const g = buildGameFromHistory(masterHistory.length);
+      if(g.gameOver()) return false;
+      const piece = g.at(x,y);
+      return piece !== '.' && pieceColor(piece) === g.turn;
+    }
+
+    function positionPieceDragGhost(state,clientX,clientY){
+      if(!state || !state.ghost) return;
+      const left = clientX - state.ghostWidth / 2;
+      const top = clientY - state.ghostHeight / 2;
+      state.ghost.style.transform = 'translate3d(' + left + 'px,' + top + 'px,0) scale(1.08)';
+    }
+
+    function activatePieceDrag(state,event){
+      if(!state || state.dragging) return;
+      state.dragging = true;
+      const imageRect = state.sourceImg.getBoundingClientRect();
+      state.ghostWidth = imageRect.width;
+      state.ghostHeight = imageRect.height;
+      const ghost = state.sourceImg.cloneNode(false);
+      ghost.classList.remove('piece-drag-source');
+      ghost.classList.add('piece-drag-ghost');
+      ghost.removeAttribute('id');
+      ghost.alt = '';
+      ghost.setAttribute('aria-hidden','true');
+      ghost.style.width = state.ghostWidth + 'px';
+      ghost.style.height = state.ghostHeight + 'px';
+      state.ghost = ghost;
+      document.body.appendChild(ghost);
+      state.sourceImg.classList.add('piece-drag-source');
+      state.container.classList.add('piece-drag-active');
+      positionPieceDragGhost(state,event.clientX,event.clientY);
+      try{ state.container.setPointerCapture(state.pointerId); } catch(_){}
+
+      const g = buildGameFromHistory(masterHistory.length);
+      selectAnalyzerSquare(g,state.from[0],state.from[1]);
+    }
+
+    function cleanUpPieceDrag(state){
+      if(!state) return;
+      if(state.ghost && state.ghost.isConnected) state.ghost.remove();
+      if(state.sourceImg) state.sourceImg.classList.remove('piece-drag-source');
+      if(state.container) state.container.classList.remove('piece-drag-active');
+      try{
+        if(state.container && state.container.hasPointerCapture && state.container.hasPointerCapture(state.pointerId)){
+          state.container.releasePointerCapture(state.pointerId);
+        }
+      } catch(_){}
+    }
+
+    function cancelActivePieceDrag(container){
+      if(!activePieceDrag || (container && activePieceDrag.container !== container)) return;
+      const wasDragging = activePieceDrag.dragging;
+      cleanUpPieceDrag(activePieceDrag);
+      activePieceDrag = null;
+      if(wasDragging) suppressPieceDragClickUntil = Date.now() + 500;
+    }
+
+    function pieceDragSquareAtPoint(container,clientX,clientY){
+      if(!container) return null;
+      const squares = container.querySelectorAll('.square');
+      for(const square of squares){
+        const rect = square.getBoundingClientRect();
+        if(clientX >= rect.left && clientX < rect.right && clientY >= rect.top && clientY < rect.bottom){
+          return [Number(square.dataset.x),Number(square.dataset.y)];
+        }
+      }
+      return null;
+    }
+
+    function beginPiecePointer(event){
+      if(activePieceDrag || event.isPrimary === false) return;
+      if(event.pointerType === 'mouse' && event.button !== 0) return;
+      const target = event.target instanceof Element ? event.target : null;
+      const square = target ? target.closest('.square') : null;
+      if(!square || !boardEl.contains(square)) return;
+      const x = Number(square.dataset.x);
+      const y = Number(square.dataset.y);
+      const sourceImg = square.querySelector('.piece-img');
+      if(!Number.isInteger(x) || !Number.isInteger(y) || !sourceImg || !pieceDragCanStart(x,y)) return;
+      activePieceDrag = {
+        container:boardEl,
+        pointerId:event.pointerId,
+        pointerType:event.pointerType || 'mouse',
+        startX:event.clientX,
+        startY:event.clientY,
+        from:[x,y],
+        sourceImg,
+        ghost:null,
+        ghostWidth:0,
+        ghostHeight:0,
+        dragging:false
+      };
+    }
+
+    function movePiecePointer(event){
+      const state = activePieceDrag;
+      if(!state || event.pointerId !== state.pointerId) return;
+      if(!state.dragging){
+        const distance = Math.hypot(event.clientX - state.startX,event.clientY - state.startY);
+        const threshold = state.pointerType === 'touch' ? 9 : 5;
+        if(distance < threshold) return;
+        activatePieceDrag(state,event);
+      }
+      if(state.dragging){
+        event.preventDefault();
+        positionPieceDragGhost(state,event.clientX,event.clientY);
+      }
+    }
+
+    function endPiecePointer(event,shouldDrop){
+      const state = activePieceDrag;
+      if(!state || event.pointerId !== state.pointerId) return;
+      const wasDragging = state.dragging;
+      const target = wasDragging && shouldDrop
+        ? pieceDragSquareAtPoint(state.container,event.clientX,event.clientY)
+        : null;
+      cleanUpPieceDrag(state);
+      activePieceDrag = null;
+      if(!wasDragging) return;
+
+      suppressPieceDragClickUntil = Date.now() + 500;
+      event.preventDefault();
+      if(!target) return;
+      selected = state.from.slice();
+      onSquareClick(target[0],target[1]);
+    }
+
+    function suppressClickAfterPieceDrag(event){
+      if(Date.now() >= suppressPieceDragClickUntil) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+
+    if(window.PointerEvent){
+      boardEl.addEventListener('pointerdown',beginPiecePointer);
+      boardEl.addEventListener('click',suppressClickAfterPieceDrag,true);
+      boardEl.addEventListener('dragstart',event => event.preventDefault());
+      document.addEventListener('pointermove',movePiecePointer,{passive:false});
+      document.addEventListener('pointerup',event => endPiecePointer(event,true),{passive:false});
+      document.addEventListener('pointercancel',event => endPiecePointer(event,false),{passive:false});
+      window.addEventListener('blur',() => cancelActivePieceDrag());
     }
 
     const pgnResultTokens = ['1-0','0-1','1/2-1/2','*'];
