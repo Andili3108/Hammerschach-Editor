@@ -2713,40 +2713,9 @@ async function ensureDailyGamesTable(env) {
        rated INTEGER NOT NULL DEFAULT 1
      )`
   ).run();
-  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invited_user_id TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invited_name TEXT`).run(); } catch (_) {}
-  try {
-    await ensureInvitationEmailLogTable(env);
-    await env.DB.prepare(
-      `UPDATE daily_games
-          SET invited_user_id = (
-            SELECT invitation_email_log.recipient_user_id
-              FROM invitation_email_log
-             WHERE invitation_email_log.room_id = daily_games.room_id
-               AND invitation_email_log.sender_user_id = COALESCE(daily_games.white_user_id, daily_games.black_user_id)
-             ORDER BY invitation_email_log.sent_at DESC
-             LIMIT 1
-          )
-        WHERE daily_games.started = 0
-          AND daily_games.ended = 0
-          AND COALESCE(daily_games.invited_user_id, '') = ''
-          AND EXISTS (
-            SELECT 1
-              FROM invitation_email_log
-             WHERE invitation_email_log.room_id = daily_games.room_id
-               AND invitation_email_log.sender_user_id = COALESCE(daily_games.white_user_id, daily_games.black_user_id)
-          )`
-    ).run();
-    await env.DB.prepare(
-      `UPDATE daily_games
-          SET invited_name = (
-            SELECT users.username FROM users WHERE users.id = daily_games.invited_user_id LIMIT 1
-          )
-        WHERE COALESCE(daily_games.invited_user_id, '') <> ''
-          AND COALESCE(daily_games.invited_name, '') = ''`
-    ).run();
-  } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
   await env.DB.prepare(
@@ -2764,14 +2733,26 @@ async function ensureDailyGamesTable(env) {
 
 async function listDailyGames(env, sessionUser) {
   if (!(await ensureDailyGamesTable(env)) || !sessionUser) return [];
+  await ensureInvitationEmailLogTable(env);
   await ensureUserPresenceTable(env);
   const onlineSince = presenceOnlineSinceIso();
   const result = await env.DB.prepare(
     `SELECT daily_games.room_id, daily_games.white_user_id, daily_games.black_user_id,
             COALESCE(white_account.username, daily_games.white_name) AS white_name,
             COALESCE(black_account.username, daily_games.black_name) AS black_name,
-            daily_games.invited_user_id,
-            COALESCE(invited_account.username, daily_games.invited_name) AS invited_name,
+            COALESCE(
+              invited_account.username,
+              daily_games.invited_name,
+              (
+                SELECT logged_recipient.username
+                  FROM invitation_email_log invitation_log
+                  JOIN users logged_recipient ON logged_recipient.id = invitation_log.recipient_user_id
+                 WHERE invitation_log.room_id = daily_games.room_id
+                   AND invitation_log.sender_user_id = ?
+                 ORDER BY invitation_log.sent_at DESC
+                 LIMIT 1
+              )
+            ) AS invited_name,
             daily_games.time_label, daily_games.days_per_move, daily_games.variant, daily_games.started,
             daily_games.started_at, daily_games.updated_at, daily_games.turn,
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
@@ -2802,17 +2783,19 @@ async function listDailyGames(env, sessionUser) {
         CASE WHEN daily_games.ended = 0 THEN COALESCE(daily_games.deadline_at, daily_games.updated_at) END ASC,
         CASE WHEN daily_games.ended = 1 THEN COALESCE(daily_games.ended_at, daily_games.updated_at) END DESC
       LIMIT 200`
-  ).bind(onlineSince, sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id).all();
+  ).bind(sessionUser.id, onlineSince, sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id, sessionUser.id).all();
 
   return (result && result.results ? result.results : []).map(row => {
     const role = String(row.white_user_id || '') === String(sessionUser.id) ? 'w' : 'b';
     const turn = row.turn === 'b' ? 'b' : row.turn === 'w' ? 'w' : '';
     const opponentJoined = role === 'w' ? !!row.black_user_id : !!row.white_user_id;
+    const joinedOpponentName = role === 'w' ? row.black_name : row.white_name;
+    const invitedOpponentName = cleanDisplayName(row.invited_name || '');
     return {
       roomId: row.room_id,
       role,
-      opponentName: role === 'w' ? (row.black_name || 'noch offen') : (row.white_name || 'noch offen'),
-      invitedName: cleanDisplayName(row.invited_name || ''),
+      opponentName: joinedOpponentName || invitedOpponentName || 'noch offen',
+      invitedOpponentName,
       opponentJoined,
       opponentOnline: opponentJoined && !row.ended && Number(row.opponent_online || 0) === 1,
       pendingInvitation: !row.started && !row.ended && !opponentJoined,
@@ -3757,15 +3740,6 @@ async function collectAccountRoomIds(env, userId) {
       }
     } catch (_) {}
   }
-  try {
-    if (await ensureDailyGamesTable(env)) {
-      const result = await env.DB.prepare(`SELECT room_id FROM daily_games WHERE invited_user_id = ?`).bind(uid).all();
-      for (const row of (result && result.results) || []) {
-        const roomId = cleanRoomId(row.room_id);
-        if (roomId) ids.add(roomId);
-      }
-    }
-  } catch (_) {}
   return Array.from(ids);
 }
 
@@ -3875,8 +3849,11 @@ async function deleteUserAccount(env, target, options = {}) {
               invited_name = CASE WHEN invited_user_id = ? THEN ? ELSE invited_name END
         WHERE white_user_id = ? OR black_user_id = ? OR invited_user_id = ?`
     ).bind(
-      target.id, target.id, target.id, deletedLabel, target.id, deletedLabel,
-      target.id, target.id, deletedLabel,
+      target.id, target.id,
+      target.id, deletedLabel,
+      target.id, deletedLabel,
+      target.id,
+      target.id, deletedLabel,
       target.id, target.id, target.id
     ).run();
   } catch (_) {}
@@ -5578,11 +5555,10 @@ async function handleAuthApi(request, env, url) {
     if (!env.GAME_ROOM) return json({ ok:false, code:'ROOM_SERVICE_UNAVAILABLE', message:'Der Spielraum-Dienst ist momentan nicht verfügbar.' }, { status:503 });
 
     let access = null;
-    let roomStub = null;
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
-      roomStub = env.GAME_ROOM.get(id);
-      const accessResponse = await roomStub.fetch(new Request('https://game-room.internal/invitation-email-context?room=' + encodeURIComponent(roomId), {
+      const stub = env.GAME_ROOM.get(id);
+      const accessResponse = await stub.fetch(new Request('https://game-room.internal/invitation-email-context?room=' + encodeURIComponent(roomId), {
         method:'POST',
         headers:{ 'x-hammerschach-user-id':String(session.user.id || '') }
       }));
@@ -5633,33 +5609,29 @@ async function handleAuthApi(request, env, url) {
 
     try { await recordInvitationEmail(env, String(session.user.id), recipientUserId, roomId, mail.messageId); } catch (_) {}
     if (access.timeControl && access.timeControl.mode === 'daily') {
-      const invitedName = cleanDisplayName(recipient.username) || 'Mitglied';
-      let storedInRoom = false;
       try {
-        const targetResponse = await roomStub.fetch(new Request('https://game-room.internal/record-targeted-invitation?room=' + encodeURIComponent(roomId), {
-          method:'POST',
-          headers:{
-            'content-type':'application/json',
-            'x-hammerschach-user-id':String(session.user.id || '')
-          },
-          body:JSON.stringify({ recipientUserId, recipientName:invitedName })
-        }));
-        let targetResult = null;
-        try { targetResult = await targetResponse.json(); } catch (_) { targetResult = null; }
-        storedInRoom = !!(targetResponse.ok && targetResult && targetResult.ok);
-      } catch (_) {}
-      if (!storedInRoom) {
-        try {
-          await ensureDailyGamesTable(env);
+        if (await ensureDailyGamesTable(env)) {
           await env.DB.prepare(
             `UPDATE daily_games
                 SET invited_user_id = ?, invited_name = ?
               WHERE room_id = ?
                 AND started = 0
                 AND ended = 0
-                AND (white_user_id = ? OR black_user_id = ?)`
-          ).bind(recipientUserId, invitedName, roomId, String(session.user.id), String(session.user.id)).run();
-        } catch (_) {}
+                AND (
+                  (white_user_id = ? AND black_user_id IS NULL)
+                  OR
+                  (black_user_id = ? AND white_user_id IS NULL)
+                )`
+          ).bind(
+            recipientUserId,
+            cleanDisplayName(recipient.username) || 'Mitglied',
+            roomId,
+            String(session.user.id),
+            String(session.user.id)
+          ).run();
+        }
+      } catch (_) {
+        // Der erfolgreiche Mailversand darf durch einen reinen Anzeigefehler nicht widerrufen werden.
       }
     }
     return json({
@@ -7378,27 +7350,6 @@ export class GameRoom {
     };
   }
 
-  async recordTargetedInvitation(requestingUserId, payload) {
-    const context = await this.invitationEmailContext(requestingUserId);
-    if (!context.ok) return context;
-    if (!context.timeControl || context.timeControl.mode !== 'daily') {
-      return { ok:true, status:200, roomId:context.roomId, stored:false };
-    }
-    const invitedUserId = cleanInvitationRecipientUserId(payload && payload.recipientUserId);
-    const invitedName = cleanDisplayName(payload && payload.recipientName);
-    if (!invitedUserId || !invitedName) {
-      return { ok:false, status:400, code:'INVALID_RECIPIENT', message:'Das eingeladene Mitglied konnte nicht gespeichert werden.' };
-    }
-    const targetedInvitation = {
-      userId:invitedUserId,
-      username:invitedName,
-      recordedAt:new Date().toISOString()
-    };
-    await this.state.storage.put('targetedInvitation', targetedInvitation);
-    await this.syncDailyGameIndex();
-    return { ok:true, status:200, roomId:context.roomId, stored:true, invitedUserId, invitedName };
-  }
-
   async cancelDailyInvitation(requestingUserId) {
     const userId = String(requestingUserId || '').trim();
     if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
@@ -7687,12 +7638,6 @@ export class GameRoom {
       }, { status:result.status || (result.ok ? 200 : 400) });
     }
 
-    if (request.method === 'POST' && url.pathname === '/record-targeted-invitation') {
-      const body = await readJsonBody(request);
-      const result = await this.recordTargetedInvitation(request.headers.get('x-hammerschach-user-id') || '', body || {});
-      return json(result, { status:result.status || (result.ok ? 200 : 400) });
-    }
-
     if (request.method === 'POST' && url.pathname === '/moderation-context') {
       const body=await readJsonBody(request); const reporterUserId=String(body&&body.reporterUserId||''); const reportedRole=body&&body.reportedRole==='b'?'b':'w';
       const players=await this.getSecurePlayers(); const reporterIsPlayer=[players.white,players.black].some(slot=>slot&&slot.userId&&String(slot.userId)===reporterUserId);
@@ -7895,17 +7840,6 @@ export class GameRoom {
       chatChanged = true;
       return Object.assign({}, chat, { senderUserId:'', userId:null, senderPlayerId:'', playerId:'', senderName:deletedLabel, name:deletedLabel, displayName:deletedLabel, deletedAccount:true });
     }) : [];
-    const targetedInvitation = (await this.state.storage.get('targetedInvitation')) || null;
-    let targetedInvitationChanged = false;
-    if (targetedInvitation && String(targetedInvitation.userId || '') === uid) {
-      await this.state.storage.put('targetedInvitation', Object.assign({}, targetedInvitation, {
-        userId:String(anonymizedId || ('deleted_' + crypto.randomUUID())),
-        username:deletedLabel,
-        deletedAccount:true,
-        updatedAt:new Date().toISOString()
-      }));
-      targetedInvitationChanged = true;
-    }
     if (changed) {
       await this.state.storage.put('players', players);
       await this.state.storage.put('playerProfiles', profiles);
@@ -7922,7 +7856,7 @@ export class GameRoom {
       safeSend(socket, { type:'account_deleted', message:'Der zugehörige Account wurde gelöscht.', serverNow:Date.now() });
       try { socket.close(4003, 'Account gelöscht'); } catch (_) {}
     }
-    return { ok:true, status:200, anonymized:changed || chatChanged || targetedInvitationChanged };
+    return { ok:true, status:200, anonymized:changed || chatChanged };
   }
 
   async seatTokenMatches(slot, rawToken) {
@@ -8198,13 +8132,6 @@ export class GameRoom {
       const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || (whiteUserId ? 'Weiß' : 'noch offen');
       const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || (blackUserId ? 'Schwarz' : 'noch offen');
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
-      const targetedInvitation = (await this.state.storage.get('targetedInvitation')) || null;
-      const invitationStillOpen = !game.started && !game.ended && !(whiteUserId && blackUserId);
-      const invitedUserId = invitationStillOpen ? cleanInvitationRecipientUserId(targetedInvitation && targetedInvitation.userId) : '';
-      const invitedName = invitedUserId ? cleanDisplayName(targetedInvitation && targetedInvitation.username) : '';
-      if (!invitationStillOpen && targetedInvitation) {
-        try { await this.state.storage.delete('targetedInvitation'); } catch (_) {}
-      }
       const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
       const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
       const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
@@ -8218,17 +8145,15 @@ export class GameRoom {
 
       await this.env.DB.prepare(
         `INSERT INTO daily_games (
-           room_id, white_user_id, black_user_id, white_name, black_name, invited_user_id, invited_name,
+           room_id, white_user_id, black_user_id, white_name, black_name,
            time_label, days_per_move, variant, started, started_at, updated_at,
            turn, deadline_at, ended, ended_at, result, end_reason, rated
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
            white_name = excluded.white_name,
            black_name = excluded.black_name,
-           invited_user_id = excluded.invited_user_id,
-           invited_name = excluded.invited_name,
            time_label = excluded.time_label,
            days_per_move = excluded.days_per_move,
            variant = excluded.variant,
@@ -8243,7 +8168,7 @@ export class GameRoom {
            end_reason = excluded.end_reason,
            rated = excluded.rated`
       ).bind(
-        roomId, whiteUserId || null, blackUserId || null, whiteName, blackName, invitedUserId || null, invitedName || null,
+        roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
         timeControl.label, timeControl.daysPerMove, setup.variant,
         game.started ? 1 : 0, game.startedAt || null, new Date(now).toISOString(),
         clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : null, deadlineAt,
@@ -9792,7 +9717,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'targeted_daily_invitation_labels', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
