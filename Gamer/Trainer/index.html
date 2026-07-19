@@ -4,6 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hammerschach-Trainer im Gamer</title>
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_plt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_rlt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_nlt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_blt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_qlt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_klt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_pdt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_rdt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_ndt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_bdt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_qdt45.svg">
+<link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_kdt45.svg">
 <script>
   try{
     if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
@@ -273,6 +285,7 @@
     position:relative;
     overflow:hidden;
     background:transparent;
+    touch-action:none;
   }
   .square{
     display:flex;
@@ -290,7 +303,26 @@
     height:88%;
     display:block;
     pointer-events:none;
+    position:relative;
+    z-index:2;
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-user-drag:none;
   }
+  .piece-img.piece-drag-source{opacity:.14;}
+  .piece-drag-ghost{
+    position:fixed!important;
+    left:0;
+    top:0;
+    z-index:10000!important;
+    pointer-events:none!important;
+    margin:0!important;
+    opacity:.98;
+    transform-origin:center center;
+    filter:drop-shadow(0 10px 8px rgba(0,0,0,.28));
+    will-change:transform;
+  }
+  #board.piece-drag-active{cursor:grabbing;}
 
   .move-flyer{
     position:absolute;
@@ -821,18 +853,18 @@ const files = ['a','b','c','d','e','f','g','h'];
 function coordToAlg(x,y){return files[x]+(8-y);}
 function clone(o){return JSON.parse(JSON.stringify(o));}
 const pieceImg={
-  P:"https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
-  R:"https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
-  N:"https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
-  B:"https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
-  Q:"https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
-  K:"https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
-  p:"https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg",
-  r:"https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg",
-  n:"https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg",
-  b:"https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg",
-  q:"https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg",
-  k:"https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg"
+  P:"../assets/pieces/Chess_plt45.svg",
+  R:"../assets/pieces/Chess_rlt45.svg",
+  N:"../assets/pieces/Chess_nlt45.svg",
+  B:"../assets/pieces/Chess_blt45.svg",
+  Q:"../assets/pieces/Chess_qlt45.svg",
+  K:"../assets/pieces/Chess_klt45.svg",
+  p:"../assets/pieces/Chess_pdt45.svg",
+  r:"../assets/pieces/Chess_rdt45.svg",
+  n:"../assets/pieces/Chess_ndt45.svg",
+  b:"../assets/pieces/Chess_bdt45.svg",
+  q:"../assets/pieces/Chess_qdt45.svg",
+  k:"../assets/pieces/Chess_kdt45.svg"
 };
 function pieceColor(ch){if(!ch||ch==='.')return null;return ch===ch.toUpperCase()?'w':'b';}
 
@@ -1200,6 +1232,8 @@ let game=new Game();
 let orientationWhite=true;
 let selected=null;
 let isAnimatingOpponent=false;
+let activePieceDrag=null;
+let suppressPieceDragClickUntil=0;
 const OPPONENT_MOVE_ANIMATION_MS=320;
 const OPPONENT_MOVE_PAUSE_MS=120;
 
@@ -1377,6 +1411,7 @@ const fallbackPuzzles=[{
 }];
 
 function renderBoard(){
+  cancelActivePieceDrag(boardEl);
   boardEl.innerHTML="";
   for(let rank=0;rank<8;rank++){
     for(let file=0;file<8;file++){
@@ -1988,10 +2023,20 @@ function onSquareClick(x,y){
     renderBoard();
     return;
   }
+  if(selected[0]===x&&selected[1]===y){
+    selected=null;
+    renderBoard();
+    return;
+  }
   const legal=game.legalMoves();
   let found=null;
   for(const lm of legal){
     if(lm.from[0]===selected[0]&&lm.from[1]===selected[1]&&lm.to[0]===x&&lm.to[1]===y){found=lm;break;}
+  }
+  if(!found&&p!=='.'&&pieceColor(p)===game.turn){
+    selected=[x,y];
+    renderBoard();
+    return;
   }
   if(!found){
     flashIllegalMove();
@@ -2056,6 +2101,153 @@ function onSquareClick(x,y){
     }
     renderBoard();
   })();
+}
+
+function pieceDragCanStart(x,y){
+  if(!currentPuzzle||isAnimatingOpponent)return false;
+  const piece=game.at(x,y);
+  return piece!=='.'&&pieceColor(piece)===game.turn;
+}
+
+function highlightTrainerDragSelection(x,y){
+  boardEl.querySelectorAll('.square.selected').forEach(square=>square.classList.remove('selected'));
+  highlightSelection(x,y);
+}
+
+function positionPieceDragGhost(state,clientX,clientY){
+  if(!state||!state.ghost)return;
+  const left=clientX-state.ghostWidth/2;
+  const top=clientY-state.ghostHeight/2;
+  state.ghost.style.transform='translate3d('+left+'px,'+top+'px,0) scale(1.08)';
+}
+
+function activatePieceDrag(state,event){
+  if(!state||state.dragging)return;
+  state.dragging=true;
+  const imageRect=state.sourceImg.getBoundingClientRect();
+  state.ghostWidth=imageRect.width;
+  state.ghostHeight=imageRect.height;
+  const ghost=state.sourceImg.cloneNode(false);
+  ghost.classList.remove('piece-drag-source');
+  ghost.classList.add('piece-drag-ghost');
+  ghost.removeAttribute('id');
+  ghost.alt='';
+  ghost.setAttribute('aria-hidden','true');
+  ghost.style.width=state.ghostWidth+'px';
+  ghost.style.height=state.ghostHeight+'px';
+  state.ghost=ghost;
+  document.body.appendChild(ghost);
+  state.sourceImg.classList.add('piece-drag-source');
+  state.container.classList.add('piece-drag-active');
+  positionPieceDragGhost(state,event.clientX,event.clientY);
+  try{state.container.setPointerCapture(state.pointerId);}catch(_){}
+
+  selected=state.from.slice();
+  highlightTrainerDragSelection(state.from[0],state.from[1]);
+}
+
+function cleanUpPieceDrag(state){
+  if(!state)return;
+  if(state.ghost&&state.ghost.isConnected)state.ghost.remove();
+  if(state.sourceImg)state.sourceImg.classList.remove('piece-drag-source');
+  if(state.container)state.container.classList.remove('piece-drag-active');
+  try{
+    if(state.container&&state.container.hasPointerCapture&&state.container.hasPointerCapture(state.pointerId)){
+      state.container.releasePointerCapture(state.pointerId);
+    }
+  }catch(_){}
+}
+
+function cancelActivePieceDrag(container){
+  if(!activePieceDrag||(container&&activePieceDrag.container!==container))return;
+  const wasDragging=activePieceDrag.dragging;
+  cleanUpPieceDrag(activePieceDrag);
+  activePieceDrag=null;
+  if(wasDragging)suppressPieceDragClickUntil=Date.now()+500;
+}
+
+function pieceDragSquareAtPoint(container,clientX,clientY){
+  if(!container)return null;
+  const squares=container.querySelectorAll('.square');
+  for(const square of squares){
+    const rect=square.getBoundingClientRect();
+    if(clientX>=rect.left&&clientX<rect.right&&clientY>=rect.top&&clientY<rect.bottom){
+      return [Number(square.dataset.x),Number(square.dataset.y)];
+    }
+  }
+  return null;
+}
+
+function beginPiecePointer(event){
+  if(activePieceDrag||event.isPrimary===false)return;
+  if(event.pointerType==='mouse'&&event.button!==0)return;
+  const target=event.target instanceof Element?event.target:null;
+  const square=target?target.closest('.square'):null;
+  if(!square||!boardEl.contains(square))return;
+  const x=Number(square.dataset.x);
+  const y=Number(square.dataset.y);
+  const sourceImg=square.querySelector('.piece-img');
+  if(!Number.isInteger(x)||!Number.isInteger(y)||!sourceImg||!pieceDragCanStart(x,y))return;
+  activePieceDrag={
+    container:boardEl,
+    pointerId:event.pointerId,
+    pointerType:event.pointerType||'mouse',
+    startX:event.clientX,
+    startY:event.clientY,
+    from:[x,y],
+    sourceImg,
+    ghost:null,
+    ghostWidth:0,
+    ghostHeight:0,
+    dragging:false
+  };
+}
+
+function movePiecePointer(event){
+  const state=activePieceDrag;
+  if(!state||event.pointerId!==state.pointerId)return;
+  if(!state.dragging){
+    const distance=Math.hypot(event.clientX-state.startX,event.clientY-state.startY);
+    const threshold=state.pointerType==='touch'?9:5;
+    if(distance<threshold)return;
+    activatePieceDrag(state,event);
+  }
+  if(state.dragging){
+    event.preventDefault();
+    positionPieceDragGhost(state,event.clientX,event.clientY);
+  }
+}
+
+function endPiecePointer(event,shouldDrop){
+  const state=activePieceDrag;
+  if(!state||event.pointerId!==state.pointerId)return;
+  const wasDragging=state.dragging;
+  const target=wasDragging&&shouldDrop?pieceDragSquareAtPoint(state.container,event.clientX,event.clientY):null;
+  cleanUpPieceDrag(state);
+  activePieceDrag=null;
+  if(!wasDragging)return;
+
+  suppressPieceDragClickUntil=Date.now()+500;
+  event.preventDefault();
+  if(!target)return;
+  selected=state.from.slice();
+  onSquareClick(target[0],target[1]);
+}
+
+function suppressClickAfterPieceDrag(event){
+  if(Date.now()>=suppressPieceDragClickUntil)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+
+if(window.PointerEvent){
+  boardEl.addEventListener('pointerdown',beginPiecePointer);
+  boardEl.addEventListener('click',suppressClickAfterPieceDrag,true);
+  boardEl.addEventListener('dragstart',event=>event.preventDefault());
+  document.addEventListener('pointermove',movePiecePointer,{passive:false});
+  document.addEventListener('pointerup',event=>endPiecePointer(event,true),{passive:false});
+  document.addEventListener('pointercancel',event=>endPiecePointer(event,false),{passive:false});
+  window.addEventListener('blur',()=>cancelActivePieceDrag());
 }
 
 function reportTrainerHeight(){
