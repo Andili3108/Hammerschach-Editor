@@ -116,7 +116,7 @@
   .top-layout{display:flex;align-items:flex-start;justify-content:center;gap:var(--gap);flex-wrap:nowrap;width:100%;}
   .board-column{width:var(--board-size);display:flex;flex-direction:column;gap:12px;flex:0 0 var(--board-size);}
   .board-wrapper{position:relative;width:var(--board-size);max-width:100%;aspect-ratio:1/1;}
-  #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;transition:opacity .22s ease,filter .22s ease;touch-action:none;}
+  #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--dark-square);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;transition:opacity .22s ease,filter .22s ease;touch-action:none;}
   #board[hidden],#variationBoard[hidden],#mainSidePanel[hidden],#variationSidePanel[hidden]{display:none!important;}
   .visitor-board-overlay{position:absolute;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:clamp(18px,5vw,54px);box-sizing:border-box;border-radius:10px;}
   .visitor-board-overlay[hidden]{display:none!important;}
@@ -290,7 +290,7 @@
   .promo-piece{font-size:30px;width:34px;text-align:center;}
   .small-note{font-size:13px;color:#666;font-weight:700;line-height:1.3;}
 
-  .variation-board{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;touch-action:none;}
+  .variation-board{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;border:4px solid var(--dark-square);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;touch-action:none;}
   .variation-panel{display:flex;flex-direction:column;gap:11px;min-width:0;}
   .variation-status{border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:10px 11px;color:#333;font-size:14px;font-weight:900;line-height:1.35;}
   .variation-moves-title{font-size:14px;font-weight:900;color:#333;}
