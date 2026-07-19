@@ -283,7 +283,7 @@
     max-width:var(--board-size);
     aspect-ratio:1/1;
     box-sizing:border-box;
-    border:4px solid var(--andili-rot);
+    border:4px solid var(--dark-square);
     border-radius:10px;
     box-shadow:0 14px 36px rgba(0,0,0,.16);
     display:grid;
@@ -604,6 +604,79 @@
     border-radius:12px;
   }
 
+  body.guide-open{overflow:hidden}
+  .guide-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:5000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    box-sizing:border-box;
+    background:rgba(15,12,13,.60);
+    backdrop-filter:blur(2px);
+  }
+  .guide-backdrop[hidden]{display:none!important}
+  .guide-modal{
+    width:min(760px,100%);
+    max-height:calc(100vh - 36px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:#fff;
+    color:#222;
+    border:1px solid rgba(132,63,70,.24);
+    border-radius:18px;
+    box-shadow:0 24px 70px rgba(0,0,0,.34);
+  }
+  .guide-modal-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    padding:20px 20px 16px;
+    background:linear-gradient(135deg,#fff 0%,#f4e9ea 100%);
+    border-bottom:1px solid rgba(132,63,70,.16);
+  }
+  .guide-modal-head h2{margin:0;color:#262022;font-size:clamp(22px,3vw,28px);line-height:1.1}
+  .guide-modal-head p{margin:7px 0 0;color:#61575a;font-size:14px;line-height:1.4}
+  .guide-close-icon{
+    flex:0 0 auto;
+    width:38px;
+    min-width:38px;
+    height:38px;
+    min-height:38px;
+    padding:0;
+    border-radius:50%;
+    font-size:26px;
+    line-height:1;
+  }
+  .guide-scroll{overflow:auto;padding:18px 20px 20px}
+  .guide-section+.guide-section{margin-top:16px;padding-top:16px;border-top:1px solid rgba(132,63,70,.14)}
+  .guide-section h3{margin:0 0 8px;color:#332b2d;font-size:17px}
+  .guide-section p{margin:0;color:#4f484a;font-size:14px;line-height:1.5}
+  .guide-section ul,.guide-section ol{margin:8px 0 0;padding-left:22px;color:#4f484a;font-size:14px;line-height:1.5}
+  .guide-section li+li{margin-top:5px}
+  .guide-note{
+    margin-top:10px;
+    padding:11px 12px;
+    border-left:4px solid var(--andili-rot);
+    border-radius:8px;
+    background:#f7eef0;
+    color:#493c3f;
+    font-size:14px;
+    line-height:1.45;
+  }
+  .guide-modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    padding:12px 20px;
+    border-top:1px solid rgba(132,63,70,.16);
+    background:#faf8f8;
+  }
+  .guide-modal-actions button{min-width:110px}
+
   .square.selected::after{
     content:"";
     position:absolute;
@@ -718,11 +791,27 @@ html.dark-mode input[type="range"]::-webkit-slider-runnable-track,
 html.dark-mode input[type="range"]::-moz-range-track{background:#52363a}
 html.dark-mode input[type="checkbox"]{accent-color:#9f4d56}
 html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
+html.dark-mode .guide-modal{background:#1b1e23;color:#f2f3f5;border-color:rgba(255,255,255,.12);box-shadow:0 24px 70px rgba(0,0,0,.58)}
+html.dark-mode .guide-modal-head{background:linear-gradient(135deg,#272b31,#211d20);border-color:rgba(255,255,255,.10)}
+html.dark-mode .guide-modal-head h2,
+html.dark-mode .guide-section h3{color:#f2f3f5}
+html.dark-mode .guide-modal-head p,
+html.dark-mode .guide-section p,
+html.dark-mode .guide-section ul,
+html.dark-mode .guide-section ol{color:#c3c6cc}
+html.dark-mode .guide-section+.guide-section{border-color:rgba(255,255,255,.10)}
+html.dark-mode .guide-note{background:#252930;color:#e1e3e7;border-color:#b56a73}
+html.dark-mode .guide-modal-actions{background:#202329;border-color:rgba(255,255,255,.10)}
 
 @media(max-width:460px){
   .icon-btn{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:19px!important}
   .top-action-btn{height:36px;min-width:104px;padding:6px 9px}
   .board-color-popup{width:min(238px,calc(100vw - 48px))}
+  .guide-backdrop{padding:10px}
+  .guide-modal{max-height:calc(100vh - 20px)}
+  .guide-modal-head{padding:16px 14px 13px}
+  .guide-scroll{padding:15px 14px 18px}
+  .guide-modal-actions{padding:10px 14px}
 }
 
 </style>
@@ -786,7 +875,7 @@ html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
             <div class="board-color-current">Aktuell: <span id="pieceSetCurrent">Cburnett · Standard</span></div>
           </div>
         </div>
-        <a class="button-flat guide-btn top-action-btn" href="https://files.homepagemodules.de/b782117/f5t125p68n22_bJOtPTsW.pdf" target="_blank" rel="noopener noreferrer">📖 Anleitung</a>
+        <button id="btnGuide" class="button-flat guide-btn top-action-btn" type="button" aria-haspopup="dialog" aria-controls="guideDialog" aria-expanded="false">📖 Anleitung</button>
       </div>
     </div>
   </div>
@@ -866,6 +955,83 @@ html.dark-mode *{scrollbar-color:#555b65 #1b1e23}
     </div>
   </aside>
 </div>
+</div>
+
+<div id="guideBackdrop" class="guide-backdrop" hidden>
+  <section id="guideDialog" class="guide-modal" role="dialog" aria-modal="true" aria-labelledby="guideTitle" tabindex="-1">
+    <div class="guide-modal-head">
+      <div>
+        <h2 id="guideTitle">Anleitung – Hammerschach-Trainer</h2>
+        <p>Finde in jeder Stellung die beste taktische Fortsetzung. Diese Anleitung bleibt direkt im Trainer und kann gescrollt werden.</p>
+      </div>
+      <button id="btnGuideCloseIcon" class="button-flat guide-close-icon" type="button" aria-label="Anleitung schließen">×</button>
+    </div>
+
+    <div class="guide-scroll">
+      <section class="guide-section">
+        <h3>1. Aufgabe starten</h3>
+        <ol>
+          <li><strong>Nächste Aufgabe</strong> wählt eine passende Aufgabe unter den aktiven Filtern aus.</li>
+          <li>Der Zug vor Beginn der eigentlichen Lösung wird automatisch ausgeführt.</li>
+          <li>Das Brett dreht sich zur Seite, die nun am Zug ist. Ab diesem Moment bist du dran.</li>
+        </ol>
+      </section>
+
+      <section class="guide-section">
+        <h3>2. Züge eingeben</h3>
+        <ul>
+          <li>Ziehe eine Figur mit der Maus beziehungsweise dem Finger oder klicke zuerst das Start- und dann das Zielfeld an.</li>
+          <li>Nach einem richtigen Zug spielt der Trainer die gegnerische Antwort automatisch. Anschließend setzt du die Lösung fort.</li>
+          <li>Ein falscher Zug wird rot gemeldet und nicht ausgeführt. Die Aufgabe bleibt zum Weiterüben geöffnet.</li>
+          <li>Eine vollständig gelöste Aufgabe wird grün bestätigt.</li>
+        </ul>
+      </section>
+
+      <section class="guide-section">
+        <h3>3. Training mit oder ohne Rating</h3>
+        <p>Angemeldete Spieler können zwischen <strong>Mit Rating</strong> und <strong>Ohne Rating</strong> wählen. Gäste trainieren automatisch ohne Wertung. Die Ratingänderung richtet sich auch nach der Schwierigkeit der Aufgabe.</p>
+        <div class="guide-note"><strong>Für die Wertung zählt nur der erste Versuch.</strong> Der erste falsche Lösungszug wertet die Aufgabe als nicht gelöst. Nach <strong>Wiederholen</strong> oder dem Anzeigen der Lösung ist die aktuelle Aufgabe nicht mehr ratingfähig.</div>
+      </section>
+
+      <section class="guide-section">
+        <h3>4. Filter nutzen</h3>
+        <ul>
+          <li><strong>Schwierigkeit automatisch bestimmen</strong> passt den Rating-Bereich an dein Taktik-Rating an und steht angemeldeten Spielern zur Verfügung.</li>
+          <li>Alternativ legst du Mindest- und Höchstrating selbst fest.</li>
+          <li>Bei den Themen ist eine Mehrfachauswahl mit Strg beziehungsweise Cmd möglich. Ohne Auswahl sind alle Themen erlaubt.</li>
+          <li><strong>Maximale Züge</strong> begrenzt die Länge der Lösung in Halbzügen; die Popularität bestimmt die Mindestbewertung der Aufgaben.</li>
+        </ul>
+      </section>
+
+      <section class="guide-section">
+        <h3>5. Aufgabe, Lösung und Wiederholung</h3>
+        <ul>
+          <li>Rechts findest du Aufgabennummer, Rating, Themen und weitere Merkmale der aktuellen Stellung.</li>
+          <li><strong>Lösung</strong> blendet die vollständige Zugfolge in SAN-Notation ein. Schon das erste Einblenden nimmt die Aufgabe aus der Wertung – auch wenn du die Lösung danach wieder ausblendest.</li>
+          <li><strong>Wiederholen</strong> setzt dieselbe Aufgabe zurück und ist zum Lernen gedacht, nicht für einen zweiten Ratingversuch.</li>
+        </ul>
+      </section>
+
+      <section class="guide-section">
+        <h3>6. Brett und Darstellung</h3>
+        <ul>
+          <li>Mit ↻ drehst du das Brett jederzeit um.</li>
+          <li>Über 🎨 wählst du die Brettfarbe. Der Brettrahmen übernimmt automatisch die Farbe der dunklen Felder.</li>
+          <li>Über ♞ wählst du zwischen Cburnett, Merida, Chessnut und Fantasy.</li>
+          <li>Brettfarbe und Figurensatz werden auch im Gamer und Analyzer verwendet.</li>
+        </ul>
+      </section>
+
+      <section class="guide-section">
+        <h3>7. Fortschritt behalten</h3>
+        <p>Die laufende Trainingssitzung und deine Einstellungen werden im Browser gesichert und nach einem Neuladen wiederhergestellt. Das Taktik-Rating angemeldeter Spieler wird über das Benutzerkonto geführt.</p>
+      </section>
+    </div>
+
+    <div class="guide-modal-actions">
+      <button id="btnGuideClose" class="button-flat" type="button">Schließen</button>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -1164,6 +1330,11 @@ const btnPieceSet=document.getElementById('btnPieceSet');
 const pieceSetPopup=document.getElementById('pieceSetPopup');
 const pieceSetCurrent=document.getElementById('pieceSetCurrent');
 const pieceSetOptions=document.querySelectorAll('.piece-set-option[data-piece-set]');
+const btnGuide=document.getElementById('btnGuide');
+const guideBackdrop=document.getElementById('guideBackdrop');
+const guideDialog=document.getElementById('guideDialog');
+const btnGuideCloseIcon=document.getElementById('btnGuideCloseIcon');
+const btnGuideClose=document.getElementById('btnGuideClose');
 const BOARD_COLOR_STORAGE_KEY='hammerschachBoardColor';
 const LEGACY_BOARD_COLOR_STORAGE_KEY='hammerschachTrainerBoardColor';
 const boardColorPresets=[
@@ -1193,6 +1364,25 @@ function openPieceSetPopup(){
   closeBoardColorPopup();
   pieceSetPopup.hidden=false;
   btnPieceSet.setAttribute('aria-expanded','true');
+}
+let guideReturnFocus=null;
+function openGuideDialog(){
+  if(!guideBackdrop||!btnGuide)return;
+  closeBoardColorPopup();
+  closePieceSetPopup();
+  guideReturnFocus=document.activeElement;
+  guideBackdrop.hidden=false;
+  btnGuide.setAttribute('aria-expanded','true');
+  document.body.classList.add('guide-open');
+  requestAnimationFrame(()=>btnGuideCloseIcon?.focus());
+}
+function closeGuideDialog(){
+  if(!guideBackdrop||guideBackdrop.hidden)return;
+  guideBackdrop.hidden=true;
+  btnGuide?.setAttribute('aria-expanded','false');
+  document.body.classList.remove('guide-open');
+  if(guideReturnFocus&&typeof guideReturnFocus.focus==='function')guideReturnFocus.focus();
+  guideReturnFocus=null;
 }
 function applyBoardColorPreset(id,closeAfterSelection=false,persist=true){
   const preset=boardColorPresets.find(p=>p.id===id)||boardColorPresets[0];
@@ -1230,6 +1420,21 @@ if(btnPieceSet){
     else closePieceSetPopup();
   });
 }
+btnGuide?.addEventListener('click',openGuideDialog);
+btnGuideCloseIcon?.addEventListener('click',closeGuideDialog);
+btnGuideClose?.addEventListener('click',closeGuideDialog);
+guideBackdrop?.addEventListener('click',ev=>{
+  if(ev.target===guideBackdrop)closeGuideDialog();
+});
+guideDialog?.addEventListener('keydown',ev=>{
+  if(ev.key!=='Tab')return;
+  const focusable=[...guideDialog.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled&&!el.hidden);
+  if(!focusable.length)return;
+  const first=focusable[0];
+  const last=focusable[focusable.length-1];
+  if(ev.shiftKey&&document.activeElement===first){ev.preventDefault();last.focus();}
+  else if(!ev.shiftKey&&document.activeElement===last){ev.preventDefault();first.focus();}
+});
 boardColorOptions.forEach(btn=>{
   btn.addEventListener('click',ev=>{
     ev.stopPropagation();
@@ -1247,7 +1452,11 @@ document.addEventListener('click',ev=>{
   if(pieceSetWrap&&!pieceSetWrap.contains(ev.target))closePieceSetPopup();
 });
 document.addEventListener('keydown',ev=>{
-  if(ev.key==='Escape'){closeBoardColorPopup();closePieceSetPopup();}
+  if(ev.key==='Escape'){
+    if(guideBackdrop&&!guideBackdrop.hidden){ev.preventDefault();closeGuideDialog();return;}
+    closeBoardColorPopup();
+    closePieceSetPopup();
+  }
 });
 let savedBoardColorPreset='basis';
 try{
