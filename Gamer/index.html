@@ -6209,8 +6209,9 @@ function createDailyGameCard(game){
   title.className = 'daily-game-title';
   const titleText = document.createElement('span');
   titleText.className = 'daily-game-title-text';
+  const pendingOpponentName = cleanDisplayName(game.invitedOpponentName || game.opponentName || '');
   titleText.textContent = game.pendingInvitation
-    ? 'Offene Daily-Einladung'
+    ? (pendingOpponentName && pendingOpponentName !== 'noch offen' ? 'Einladung an ' + pendingOpponentName : 'Offene Daily-Einladung')
     : 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
   title.appendChild(titleText);
   if(!game.ended && game.opponentJoined) title.appendChild(createPresenceBadge(!!game.opponentOnline));
@@ -6220,7 +6221,9 @@ function createDailyGameCard(game){
     const outcome = dailyOutcomeForUser(game);
     status.textContent = outcome.label + ' · ' + dailyResultLabel(game.result);
     if(outcome.className) status.classList.add(outcome.className);
-  } else if(game.pendingInvitation) status.textContent = 'Wartet auf Annahme durch den Gegner';
+  } else if(game.pendingInvitation) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
+    ? pendingOpponentName + ' hat die Einladung noch nicht angenommen'
+    : 'Wartet auf Annahme durch den Gegner';
   else if(!game.started) status.textContent = 'Annahme wird verarbeitet';
   else if(game.isMyTurn) status.textContent = 'Du bist am Zug' + (game.deadlineAt ? ' · noch ' + formatDailyListRemaining(game.deadlineAt) : '');
   else status.textContent = 'Gegner ist am Zug';
