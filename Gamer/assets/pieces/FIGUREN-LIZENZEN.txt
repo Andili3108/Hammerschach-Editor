@@ -1,0 +1,36 @@
+HAMMERSCHACH – FIGURENSÄTZE UND LIZENZEN
+Stand: 19. Juli 2026
+
+Die Figurensätze werden lokal geladen. Es erfolgt kein Abruf von Lichess oder
+anderen externen Bildservern während der Nutzung.
+
+1. Cburnett
+   Autor: Colin M. L. Burnett
+   Lizenz: GNU General Public License, Version 2 oder später (GPLv2+)
+   Quelle/Lizenzangabe: https://github.com/lichess-org/lila/blob/master/COPYING.md
+   Hinweis: Dies ist der bereits vorhandene Standard-Figurensatz in
+   assets/pieces/Chess_*.svg. Er wird durch dieses Ergänzungspaket nicht ersetzt.
+
+2. RhosGFX
+   Autor: RhosGFX
+   Lizenz: Creative Commons Zero 1.0 (CC0 1.0, gemeinfrei gewidmet)
+   Quelle: https://github.com/lichess-org/lila/tree/master/public/piece/rhosgfx
+   Lizenz: https://creativecommons.org/publicdomain/zero/1.0/
+   Kurzangabe zusätzlich in: rhosgfx/LICENSE.txt
+
+3. Chessnut
+   Autor: Alexis Luengas
+   Lizenz: Apache License 2.0
+   Quelle: https://github.com/lichess-org/lila/tree/master/public/piece/chessnut
+   Originalprojekt: https://github.com/LexLuengas/chessnut-pieces
+   Vollständiger Lizenztext: chessnut/LICENSE.txt
+
+4. Fantasy
+   Autor: Maurizio Monge
+   Lizenz: MIT License
+   Quelle: https://github.com/lichess-org/lila/tree/master/public/piece/fantasy
+   Originalprojekt: https://github.com/maurimo/chess-art
+   Vollständiger Lizenztext: fantasy/LICENSE.txt
+
+Die Zuordnung von Autoren und Lizenzen folgt der offiziellen Lichess-Datei
+COPYING.md: https://github.com/lichess-org/lila/blob/master/COPYING.md
