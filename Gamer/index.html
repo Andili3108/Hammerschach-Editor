@@ -7,6 +7,18 @@
 <link rel="icon" type="image/png" href="Gamer-Logo.png" />
 <link rel="shortcut icon" type="image/png" href="Gamer-Logo.png" />
 <link rel="apple-touch-icon" href="Gamer-Logo.png" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_plt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_rlt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_nlt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_blt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_qlt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_klt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_pdt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_rdt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_ndt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_bdt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_qdt45.svg" />
+<link rel="preload" as="image" type="image/svg+xml" href="assets/pieces/Chess_kdt45.svg" />
 <meta id="themeColorMeta" name="theme-color" content="#843f46" />
 <script>
   /* Anzeigemodus und gespeichertes Farbschema vor dem ersten Rendern markieren,
@@ -104,7 +116,7 @@
   .top-layout{display:flex;align-items:flex-start;justify-content:center;gap:var(--gap);flex-wrap:nowrap;width:100%;}
   .board-column{width:var(--board-size);display:flex;flex-direction:column;gap:12px;flex:0 0 var(--board-size);}
   .board-wrapper{position:relative;width:var(--board-size);max-width:100%;aspect-ratio:1/1;}
-  #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;transition:opacity .22s ease,filter .22s ease;}
+  #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;transition:opacity .22s ease,filter .22s ease;touch-action:none;}
   .visitor-board-overlay{position:absolute;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:clamp(18px,5vw,54px);box-sizing:border-box;border-radius:10px;}
   .visitor-board-overlay[hidden]{display:none!important;}
   .visitor-board-welcome{width:min(430px,88%);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:clamp(18px,4vw,30px);border:1px solid rgba(132,63,70,.22);border-radius:24px;background:rgba(255,255,255,.86);box-shadow:0 20px 48px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.94);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
@@ -128,7 +140,10 @@
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
   .dark{background:var(--dark-square);}
-  .piece-img{width:80%;height:80%;display:block;pointer-events:none;position:relative;z-index:2;}
+  .piece-img{width:80%;height:80%;display:block;pointer-events:none;position:relative;z-index:2;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;}
+  .piece-img.piece-drag-source{opacity:.14;}
+  .piece-drag-ghost{position:fixed!important;left:0;top:0;z-index:10000!important;pointer-events:none!important;margin:0!important;opacity:.98;transform-origin:center center;filter:drop-shadow(0 10px 8px rgba(0,0,0,.28));will-change:transform;}
+  #board.piece-drag-active,.variation-board.piece-drag-active{cursor:grabbing;}
   .square.selected{box-shadow:inset 0 0 0 3px rgba(255,255,255,.95);}
   .square.legal{box-shadow:inset 0 0 0 3px rgba(255,255,255,.42);}
   .square.legal::before{content:"";position:absolute;left:50%;top:50%;width:32%;height:32%;transform:translate(-50%,-50%);border-radius:999px;background:rgba(255,255,255,.34);z-index:1;}
@@ -282,7 +297,7 @@
   .variation-close-icon{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border-radius:999px;font-size:22px;line-height:1;}
   .variation-layout{display:grid;grid-template-columns:minmax(320px,1fr) 285px;gap:18px;align-items:start;}
   .variation-board-wrap{width:100%;max-width:610px;aspect-ratio:1/1;justify-self:center;}
-  .variation-board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.18);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;}
+  .variation-board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--andili-rot);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.18);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;touch-action:none;}
   .variation-panel{display:flex;flex-direction:column;gap:11px;min-width:0;}
   .variation-safety{border-radius:13px;background:rgba(34,107,54,.08);border:1px solid rgba(34,107,54,.20);padding:9px 10px;color:#226b36;font-size:12px;font-weight:900;line-height:1.35;}
   .variation-status{border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:10px 11px;color:#333;font-size:14px;font-weight:900;line-height:1.35;}
@@ -1003,6 +1018,7 @@
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
           <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby. Das große Schachbrett wird dort durch den horizontalen Bereich <strong>„Partie vorbereiten“</strong> und den festen <strong>Hammerschach-Mitglieder-Chat</strong> ersetzt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
+          <p>Auf dem Spielbrett kannst du eine Figur entweder wie bisher antippen und anschließend das Zielfeld wählen oder sie direkt mit Maus beziehungsweise Finger dorthin ziehen. Beim Ziehen dient das gesamte Feld der Figur als großzügige Grifffläche. Ein ungültiger Ablageversuch verändert die Stellung nicht; die Figur bleibt ausgewählt und die erlaubten Zielfelder werden weiterhin angezeigt.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
           <p>In der Partievorbereitung legst du vor dem Erstellen des Spielraums Farbe, Spielmodus, Bedenkzeit und Wertung fest. Diese Einstellungen werden sowohl in eine gezielte Einladung als auch in ein öffentliches Partieangebot übernommen. Die Auswahl <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong> wird mit dem Erstellen des Raums festgeschrieben und kann danach nicht mehr geändert werden.</p>
@@ -1037,7 +1053,7 @@
           <p>Über <strong>„📂 Partien“ → „📋 Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
-          <p>Bei einer gezielten Einladung an ein registriertes Mitglied zeigt die offene Daily-Einladung den eingeladenen Benutzernamen an. Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
+          <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
@@ -1207,7 +1223,7 @@
 
           <h4>9. Technischer Betrieb und externe Inhalte</h4>
           <p>Der Gamer wird mit Cloudflare-Technik betrieben. Dabei kommen insbesondere Worker, eine D1-Datenbank, Durable Objects für dauerhaft erreichbare Spielräume und ein privater R2-Bucket für freiwillige Profilbilder zum Einsatz. Bei der Nutzung werden die technisch notwendigen Verbindungsdaten durch die beteiligten Server verarbeitet.</p>
-          <p>Die Schachfiguren werden derzeit als Bilddateien von Wikimedia Commons geladen. Beim Abruf wird eine direkte Verbindung zu Wikimedia-Servern hergestellt, bei der technisch unter anderem die IP-Adresse und Browserinformationen übertragen werden können. Das Gamer-Logo in HTML-Mails kann als externes Bild eingebunden sein; manche Mailprogramme laden solche Bilder erst nach Zustimmung.</p>
+          <p>Die Schachfiguren werden als lokale Bilddateien des Gamers geladen; hierfür wird keine Verbindung zu einem externen Bildserver hergestellt. Das Gamer-Logo in HTML-Mails kann als externes Bild eingebunden sein; manche Mailprogramme laden solche Bilder erst nach Zustimmung.</p>
 
           <h4>10. Rechtsgrundlagen und Zwecke</h4>
           <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
@@ -1221,7 +1237,7 @@
           <p>Kontakt, verantwortliche Stelle, allgemeine Datenschutzhinweise und Angaben zur zuständigen Aufsichtsbehörde findest du unter <a class="privacy-external-link" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz auf Andili.de</a>.</p>
 
           <h4>13. Stand und Änderungen</h4>
-          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>16. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
+          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>18. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
         </div>
         <div class="info-actions">
           <a class="brand-origin-button" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a>
@@ -2135,18 +2151,18 @@ hammerschachInitIframeHeightReporting();
 
 const files = ['a','b','c','d','e','f','g','h'];
 const pieceImg = {
-  P:'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg',
-  R:'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
-  N:'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
-  B:'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg',
-  Q:'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg',
-  K:'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
-  p:'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg',
-  r:'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
-  n:'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
-  b:'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg',
-  q:'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg',
-  k:'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
+  P:'assets/pieces/Chess_plt45.svg',
+  R:'assets/pieces/Chess_rlt45.svg',
+  N:'assets/pieces/Chess_nlt45.svg',
+  B:'assets/pieces/Chess_blt45.svg',
+  Q:'assets/pieces/Chess_qlt45.svg',
+  K:'assets/pieces/Chess_klt45.svg',
+  p:'assets/pieces/Chess_pdt45.svg',
+  r:'assets/pieces/Chess_rdt45.svg',
+  n:'assets/pieces/Chess_ndt45.svg',
+  b:'assets/pieces/Chess_bdt45.svg',
+  q:'assets/pieces/Chess_qdt45.svg',
+  k:'assets/pieces/Chess_kdt45.svg'
 };
 const pieceChar = {P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔',p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚'};
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
@@ -2723,6 +2739,8 @@ let variationHistory = [];
 let variationRedo = [];
 let variationSelected = null;
 let variationOrientationWhite = true;
+let activePieceDrag = null;
+let suppressPieceDragClickUntil = 0;
 
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
@@ -6208,9 +6226,8 @@ function createDailyGameCard(game){
   title.className = 'daily-game-title';
   const titleText = document.createElement('span');
   titleText.className = 'daily-game-title-text';
-  const invitedName = cleanDisplayName(game.invitedName) || '';
   titleText.textContent = game.pendingInvitation
-    ? (invitedName ? ('Einladung an ' + invitedName) : 'Offene Daily-Einladung')
+    ? 'Offene Daily-Einladung'
     : 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
   title.appendChild(titleText);
   if(!game.ended && game.opponentJoined) title.appendChild(createPresenceBadge(!!game.opponentOnline));
@@ -6220,7 +6237,7 @@ function createDailyGameCard(game){
     const outcome = dailyOutcomeForUser(game);
     status.textContent = outcome.label + ' · ' + dailyResultLabel(game.result);
     if(outcome.className) status.classList.add(outcome.className);
-  } else if(game.pendingInvitation) status.textContent = invitedName ? ('Wartet auf Annahme durch ' + invitedName) : 'Wartet auf Annahme durch den Gegner';
+  } else if(game.pendingInvitation) status.textContent = 'Wartet auf Annahme durch den Gegner';
   else if(!game.started) status.textContent = 'Annahme wird verarbeitet';
   else if(game.isMyTurn) status.textContent = 'Du bist am Zug' + (game.deadlineAt ? ' · noch ' + formatDailyListRemaining(game.deadlineAt) : '');
   else status.textContent = 'Gegner ist am Zug';
@@ -9270,6 +9287,7 @@ function drawReasonText(type){
   return 'Remis — Unentschieden';
 }
 function renderBoard(){
+  cancelActivePieceDrag(boardEl);
   if(isMoveNavigationLocked() && viewIndex !== masterHistory.length) viewIndex = masterHistory.length;
   const g = buildGameFromHistory(viewIndex);
   let displayGame = g;
@@ -9608,6 +9626,7 @@ function getVariationSquareEl(x,y){
   return variationBoardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]');
 }
 function renderVariationBoard(){
+  cancelActivePieceDrag(variationBoardEl);
   if(!variationBoardEl || !variationGame) return;
   variationBoardEl.innerHTML = '';
   const legalFromSelection = variationSelected
@@ -9796,6 +9815,188 @@ function onSquareClick(x,y){
     handleChosenHumanMove(found, null);
   }
 }
+
+function pieceDragCanStart(mode,x,y){
+  if(mode === 'variation'){
+    if(!variationGame || variationGame.gameOver()) return false;
+    const piece = variationGame.at(x,y);
+    return piece !== '.' && pieceColor(piece) === variationGame.turn;
+  }
+  if(gameEnded || pendingDailyMove || viewIndex !== masterHistory.length) return false;
+  const g = buildGameFromHistory(masterHistory.length);
+  if(onlineInteractionBlockReason(g)) return false;
+  const piece = g.at(x,y);
+  return piece !== '.' && pieceColor(piece) === g.turn;
+}
+
+function highlightVariationDragSelection(x,y){
+  if(!variationBoardEl || !variationGame) return;
+  variationBoardEl.querySelectorAll('.square.selected,.square.legal').forEach(square => square.classList.remove('selected','legal'));
+  const source = getVariationSquareEl(x,y);
+  if(source) source.classList.add('selected');
+  variationGame.legalMoves()
+    .filter(move => move.from[0] === x && move.from[1] === y)
+    .forEach(move => {
+      const target = getVariationSquareEl(move.to[0],move.to[1]);
+      if(target) target.classList.add('legal');
+    });
+}
+
+function positionPieceDragGhost(state,clientX,clientY){
+  if(!state || !state.ghost) return;
+  const left = clientX - state.ghostWidth / 2;
+  const top = clientY - state.ghostHeight / 2;
+  state.ghost.style.transform = 'translate3d(' + left + 'px,' + top + 'px,0) scale(1.08)';
+}
+
+function activatePieceDrag(state,event){
+  if(!state || state.dragging) return;
+  state.dragging = true;
+  const imageRect = state.sourceImg.getBoundingClientRect();
+  state.ghostWidth = imageRect.width;
+  state.ghostHeight = imageRect.height;
+  const ghost = state.sourceImg.cloneNode(false);
+  ghost.classList.remove('piece-drag-source');
+  ghost.classList.add('piece-drag-ghost');
+  ghost.removeAttribute('id');
+  ghost.alt = '';
+  ghost.setAttribute('aria-hidden','true');
+  ghost.style.width = state.ghostWidth + 'px';
+  ghost.style.height = state.ghostHeight + 'px';
+  state.ghost = ghost;
+  document.body.appendChild(ghost);
+  state.sourceImg.classList.add('piece-drag-source');
+  state.container.classList.add('piece-drag-active');
+  positionPieceDragGhost(state,event.clientX,event.clientY);
+  try{ state.container.setPointerCapture(state.pointerId); } catch(_){ }
+
+  if(state.mode === 'variation'){
+    variationSelected = state.from.slice();
+    highlightVariationDragSelection(state.from[0],state.from[1]);
+  } else {
+    const g = buildGameFromHistory(masterHistory.length);
+    selected = state.from.slice();
+    playMoveSound({pickup:true});
+    highlightSelection(state.from[0],state.from[1],g);
+  }
+}
+
+function cleanUpPieceDrag(state){
+  if(!state) return;
+  if(state.ghost && state.ghost.isConnected) state.ghost.remove();
+  if(state.sourceImg) state.sourceImg.classList.remove('piece-drag-source');
+  if(state.container) state.container.classList.remove('piece-drag-active');
+  try{
+    if(state.container && state.container.hasPointerCapture && state.container.hasPointerCapture(state.pointerId)){
+      state.container.releasePointerCapture(state.pointerId);
+    }
+  } catch(_){ }
+}
+
+function cancelActivePieceDrag(container){
+  if(!activePieceDrag || (container && activePieceDrag.container !== container)) return;
+  const wasDragging = activePieceDrag.dragging;
+  cleanUpPieceDrag(activePieceDrag);
+  activePieceDrag = null;
+  if(wasDragging) suppressPieceDragClickUntil = Date.now() + 500;
+}
+
+function pieceDragSquareAtPoint(container,clientX,clientY){
+  if(!container) return null;
+  const squares = container.querySelectorAll('.square');
+  for(const square of squares){
+    const rect = square.getBoundingClientRect();
+    if(clientX >= rect.left && clientX < rect.right && clientY >= rect.top && clientY < rect.bottom){
+      return [Number(square.dataset.x),Number(square.dataset.y)];
+    }
+  }
+  return null;
+}
+
+function beginPiecePointer(event,container,mode){
+  if(!container || activePieceDrag || event.isPrimary === false) return;
+  if(event.pointerType === 'mouse' && event.button !== 0) return;
+  const target = event.target instanceof Element ? event.target : null;
+  const square = target ? target.closest('.square') : null;
+  if(!square || !container.contains(square)) return;
+  const x = Number(square.dataset.x);
+  const y = Number(square.dataset.y);
+  const sourceImg = square.querySelector('.piece-img');
+  if(!Number.isInteger(x) || !Number.isInteger(y) || !sourceImg || !pieceDragCanStart(mode,x,y)) return;
+  activePieceDrag = {
+    container,
+    mode,
+    pointerId:event.pointerId,
+    pointerType:event.pointerType || 'mouse',
+    startX:event.clientX,
+    startY:event.clientY,
+    from:[x,y],
+    sourceImg,
+    ghost:null,
+    ghostWidth:0,
+    ghostHeight:0,
+    dragging:false
+  };
+}
+
+function movePiecePointer(event){
+  const state = activePieceDrag;
+  if(!state || event.pointerId !== state.pointerId) return;
+  if(!state.dragging){
+    const distance = Math.hypot(event.clientX - state.startX,event.clientY - state.startY);
+    const threshold = state.pointerType === 'touch' ? 9 : 5;
+    if(distance < threshold) return;
+    activatePieceDrag(state,event);
+  }
+  if(state.dragging){
+    event.preventDefault();
+    positionPieceDragGhost(state,event.clientX,event.clientY);
+  }
+}
+
+function endPiecePointer(event,shouldDrop){
+  const state = activePieceDrag;
+  if(!state || event.pointerId !== state.pointerId) return;
+  const wasDragging = state.dragging;
+  const target = wasDragging && shouldDrop
+    ? pieceDragSquareAtPoint(state.container,event.clientX,event.clientY)
+    : null;
+  cleanUpPieceDrag(state);
+  activePieceDrag = null;
+  if(!wasDragging) return;
+
+  suppressPieceDragClickUntil = Date.now() + 500;
+  event.preventDefault();
+  if(!target) return;
+
+  if(state.mode === 'variation'){
+    variationSelected = state.from.slice();
+    onVariationSquareClick(target[0],target[1]);
+  } else {
+    selected = state.from.slice();
+    onSquareClick(target[0],target[1]);
+  }
+}
+
+function suppressClickAfterPieceDrag(event){
+  if(Date.now() >= suppressPieceDragClickUntil) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+
+function installPieceDragInput(container,mode){
+  if(!container || !window.PointerEvent) return;
+  container.addEventListener('pointerdown',event => beginPiecePointer(event,container,mode));
+  container.addEventListener('click',suppressClickAfterPieceDrag,true);
+  container.addEventListener('dragstart',event => event.preventDefault());
+}
+
+installPieceDragInput(boardEl,'main');
+installPieceDragInput(variationBoardEl,'variation');
+document.addEventListener('pointermove',movePiecePointer,{passive:false});
+document.addEventListener('pointerup',event => endPiecePointer(event,true),{passive:false});
+document.addEventListener('pointercancel',event => endPiecePointer(event,false),{passive:false});
+window.addEventListener('blur',() => cancelActivePieceDrag());
 
 function syncMoveToOnline(mv, movedSide){
   if(applyingRemoteMove) return;
