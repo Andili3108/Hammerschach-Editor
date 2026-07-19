@@ -275,7 +275,7 @@
               <div class="board-color-popup-title">Figurensatz wählen</div>
               <div class="board-color-options">
                 <button type="button" class="board-color-option piece-set-option" data-piece-set="cburnett"><span>Cburnett · Standard</span><img class="piece-set-preview" src="../assets/pieces/Chess_nlt45.svg" alt=""></button>
-                <button type="button" class="board-color-option piece-set-option" data-piece-set="rhosgfx"><span>RhosGFX · Modern</span><img class="piece-set-preview" src="../assets/pieces/rhosgfx/wN.svg" alt=""></button>
+                <button type="button" class="board-color-option piece-set-option" data-piece-set="merida"><span>Merida · Klassiker</span><img class="piece-set-preview" src="../assets/pieces/merida/wN.svg" alt=""></button>
                 <button type="button" class="board-color-option piece-set-option" data-piece-set="chessnut"><span>Chessnut · Klassisch</span><img class="piece-set-preview" src="../assets/pieces/chessnut/wN.svg" alt=""></button>
                 <button type="button" class="board-color-option piece-set-option" data-piece-set="fantasy"><span>Fantasy · Elegant</span><img class="piece-set-preview" src="../assets/pieces/fantasy/wN.svg" alt=""></button>
               </div>
@@ -446,14 +446,17 @@
     const PIECE_SET_STORAGE_KEY = 'hammerschachPieceSet';
     const pieceSetPresets = [
       {id:'cburnett', name:'Cburnett · Standard', paths:{P:'../assets/pieces/Chess_plt45.svg',R:'../assets/pieces/Chess_rlt45.svg',N:'../assets/pieces/Chess_nlt45.svg',B:'../assets/pieces/Chess_blt45.svg',Q:'../assets/pieces/Chess_qlt45.svg',K:'../assets/pieces/Chess_klt45.svg',p:'../assets/pieces/Chess_pdt45.svg',r:'../assets/pieces/Chess_rdt45.svg',n:'../assets/pieces/Chess_ndt45.svg',b:'../assets/pieces/Chess_bdt45.svg',q:'../assets/pieces/Chess_qdt45.svg',k:'../assets/pieces/Chess_kdt45.svg'}},
-      {id:'rhosgfx', name:'RhosGFX · Modern', paths:{P:'../assets/pieces/rhosgfx/wP.svg',R:'../assets/pieces/rhosgfx/wR.svg',N:'../assets/pieces/rhosgfx/wN.svg',B:'../assets/pieces/rhosgfx/wB.svg',Q:'../assets/pieces/rhosgfx/wQ.svg',K:'../assets/pieces/rhosgfx/wK.svg',p:'../assets/pieces/rhosgfx/bP.svg',r:'../assets/pieces/rhosgfx/bR.svg',n:'../assets/pieces/rhosgfx/bN.svg',b:'../assets/pieces/rhosgfx/bB.svg',q:'../assets/pieces/rhosgfx/bQ.svg',k:'../assets/pieces/rhosgfx/bK.svg'}},
+      {id:'merida', name:'Merida · Klassiker', paths:{P:'../assets/pieces/merida/wP.svg',R:'../assets/pieces/merida/wR.svg',N:'../assets/pieces/merida/wN.svg',B:'../assets/pieces/merida/wB.svg',Q:'../assets/pieces/merida/wQ.svg',K:'../assets/pieces/merida/wK.svg',p:'../assets/pieces/merida/bP.svg',r:'../assets/pieces/merida/bR.svg',n:'../assets/pieces/merida/bN.svg',b:'../assets/pieces/merida/bB.svg',q:'../assets/pieces/merida/bQ.svg',k:'../assets/pieces/merida/bK.svg'}},
       {id:'chessnut', name:'Chessnut · Klassisch', paths:{P:'../assets/pieces/chessnut/wP.svg',R:'../assets/pieces/chessnut/wR.svg',N:'../assets/pieces/chessnut/wN.svg',B:'../assets/pieces/chessnut/wB.svg',Q:'../assets/pieces/chessnut/wQ.svg',K:'../assets/pieces/chessnut/wK.svg',p:'../assets/pieces/chessnut/bP.svg',r:'../assets/pieces/chessnut/bR.svg',n:'../assets/pieces/chessnut/bN.svg',b:'../assets/pieces/chessnut/bB.svg',q:'../assets/pieces/chessnut/bQ.svg',k:'../assets/pieces/chessnut/bK.svg'}},
       {id:'fantasy', name:'Fantasy · Elegant', paths:{P:'../assets/pieces/fantasy/wP.svg',R:'../assets/pieces/fantasy/wR.svg',N:'../assets/pieces/fantasy/wN.svg',B:'../assets/pieces/fantasy/wB.svg',Q:'../assets/pieces/fantasy/wQ.svg',K:'../assets/pieces/fantasy/wK.svg',p:'../assets/pieces/fantasy/bP.svg',r:'../assets/pieces/fantasy/bR.svg',n:'../assets/pieces/fantasy/bN.svg',b:'../assets/pieces/fantasy/bB.svg',q:'../assets/pieces/fantasy/bQ.svg',k:'../assets/pieces/fantasy/bK.svg'}}
     ];
     let activePieceSetId = 'cburnett';
     try{
       const savedPieceSet = localStorage.getItem(PIECE_SET_STORAGE_KEY);
-      if(pieceSetPresets.some(p => p.id === savedPieceSet)) activePieceSetId = savedPieceSet;
+      if(savedPieceSet === 'rhosgfx'){
+        activePieceSetId = 'merida';
+        localStorage.setItem(PIECE_SET_STORAGE_KEY, 'merida');
+      } else if(pieceSetPresets.some(p => p.id === savedPieceSet)) activePieceSetId = savedPieceSet;
     }catch(_){}
     const pieceImg = {...(pieceSetPresets.find(p => p.id === activePieceSetId) || pieceSetPresets[0]).paths};
     function pieceColor(ch){ if(!ch || ch === '.') return null; return (ch === ch.toUpperCase()) ? 'w' : 'b'; }
@@ -809,7 +812,8 @@
       if(closeAfterSelection) closeBoardColorPopup();
     }
     function applyPieceSetPreset(id, closeAfterSelection = false, persist = true, rerender = true){
-      const preset = pieceSetPresets.find(p => p.id === id) || pieceSetPresets[0];
+      const normalizedId = id === 'rhosgfx' ? 'merida' : id;
+      const preset = pieceSetPresets.find(p => p.id === normalizedId) || pieceSetPresets[0];
       activePieceSetId = preset.id;
       Object.assign(pieceImg, preset.paths);
       if(pieceSetCurrent) pieceSetCurrent.textContent = preset.name;
