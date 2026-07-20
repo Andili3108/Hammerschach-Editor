@@ -3985,7 +3985,8 @@ const ADMIN_MEMBER_MESSAGE_DUPLICATE_WINDOW_MS = 15 * 60 * 1000;
 let adminMemberMessageTablesReady = false;
 
 function normalizeAdminMemberMessageKind(value) {
-  return String(value || '').toLowerCase() === 'system' ? 'system' : 'news';
+  const kind = String(value || '').toLowerCase();
+  return kind === 'system' ? 'system' : kind === 'personal' ? 'personal' : 'news';
 }
 
 function cleanAdminMemberMessageSubject(value) {
@@ -4046,9 +4047,11 @@ async function ensureAdminMemberMessageTables(env) {
   return true;
 }
 
-async function loadAdminMemberMessageRecipients(env, kind) {
+async function loadAdminMemberMessageRecipients(env, kind, targetUserId = '') {
   const messageKind = normalizeAdminMemberMessageKind(kind);
+  const personalTargetId = messageKind === 'personal' ? cleanPublicProfileUserId(targetUserId) : '';
   if (!env || !env.DB) throw new Error('Account-Datenbank ist nicht verfügbar.');
+  if (messageKind === 'personal' && !personalTargetId) return [];
 
   /* D1-Schemaänderungen bewusst nacheinander ausführen. Zwei parallele
      CREATE-/ALTER-Vorgänge können bei älteren Datenbankständen kollidieren und
@@ -4101,13 +4104,14 @@ async function loadAdminMemberMessageRecipients(env, kind) {
     const userId = String(row.id || '');
     const email = normalizeEmail(row.email);
     if (!userId || !email) continue;
+    if (messageKind === 'personal' && userId !== personalTargetId) continue;
 
     const status = emailStatusByUser.get(userId);
     const statusEmail = normalizeEmail(status && status.email);
     const verified = !status || (statusEmail === email && Number(status.verified) === 1);
     if (!verified) continue;
 
-    const adminCopy = isAdminUser(row, env);
+    const adminCopy = messageKind !== 'personal' && isAdminUser(row, env);
     /* Andili erhält jede tatsächlich versendete Mitglieder-Information als
        Kontrollkopie. Bei Neuigkeiten gilt für alle anderen Mitglieder weiterhin
        ausschließlich die freiwillige Einwilligung aus der Accountverwaltung. */
@@ -4121,6 +4125,14 @@ async function loadAdminMemberMessageRecipients(env, kind) {
     });
   }
   return recipients;
+}
+
+async function listAdminMemberMessageTargets(env) {
+  const recipients = await loadAdminMemberMessageRecipients(env, 'system');
+  return recipients
+    .filter(recipient => recipient && recipient.id && !recipient.adminCopy)
+    .map(recipient => ({ id:recipient.id, username:recipient.username }))
+    .sort((a, b) => String(a.username || '').localeCompare(String(b.username || ''), 'de-DE', {sensitivity:'base'}));
 }
 
 function prepareAdminMemberMessageEmail(env, payload) {
@@ -4137,8 +4149,10 @@ function prepareAdminMemberMessageEmail(env, payload) {
   if (!recipientEmail || subject.length < 3 || messageText.length < 3) {
     return { ok:false, status:400, code:'INVALID_MEMBER_MESSAGE', message:'Betreff und Nachricht sind nicht vollständig.' };
   }
-  const typeLabel = kind === 'system' ? 'Wichtige Systeminformation' : 'Hammerschach-Neuigkeiten';
-  const preferenceText = kind === 'news'
+  const typeLabel = kind === 'personal' ? 'Persönliche Admin-Nachricht' : kind === 'system' ? 'Wichtige Systeminformation' : 'Hammerschach-Neuigkeiten';
+  const preferenceText = kind === 'personal'
+    ? 'Diese persönliche administrative Nachricht wurde ausschließlich an deinen Hammerschach-Account gesendet. Deine Einstellung für Neuigkeiten hat darauf keinen Einfluss.'
+    : kind === 'news'
     ? (adminCopy
       ? 'Du erhältst diese Nachricht als Administrator-Kontrollkopie des versendeten Mitgliedertextes.'
       : 'Du erhältst diese Nachricht, weil du Hammerschach-Neuigkeiten in deiner Accountverwaltung aktiviert hast. Dort kannst du diese Einstellung jederzeit wieder abschalten.')
@@ -4172,7 +4186,7 @@ Hammerschach-Gamer`;
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;letter-spacing:.04em;text-transform:uppercase;color:#777;margin-bottom:7px;">${escapeEmailHtml(typeLabel)}</div><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(subject)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p>${adminMemberMessageHtmlParagraphs(messageText)}${attachmentHtml}${buttonHtml}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;line-height:1.45;">${escapeEmailHtml(preferenceText)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
   return {
     ok:true,
-    mailType:kind === 'system' ? 'member_system' : 'member_news',
+    mailType:kind === 'personal' ? 'member_personal' : kind === 'system' ? 'member_system' : 'member_news',
     recipientEmail,
     recipientName,
     subject,
@@ -4182,13 +4196,15 @@ Hammerschach-Gamer`;
   };
 }
 
-async function adminMemberMessageAudience(env, kind) {
+async function adminMemberMessageAudience(env, kind, targetUserId = '') {
   const messageKind = normalizeAdminMemberMessageKind(kind);
-  const recipients = await loadAdminMemberMessageRecipients(env, messageKind);
+  const recipients = await loadAdminMemberMessageRecipients(env, messageKind, targetUserId);
   return {
     kind:messageKind,
     count:recipients.length,
-    description:messageKind === 'system'
+    description:messageKind === 'personal'
+      ? (recipients.length ? `Persönliche Nachricht ausschließlich an „${recipients[0].username}“` : 'Bitte ein Mitglied mit bestätigter Mailadresse auswählen')
+      : messageKind === 'system'
       ? 'Bestätigte Mailadressen aller aktiven Mitglieder – einschließlich Andili'
       : 'Mitglieder mit bestätigter Mailadresse und Einwilligung – Andili erhält zusätzlich eine Kontrollkopie'
   };
@@ -4196,6 +4212,7 @@ async function adminMemberMessageAudience(env, kind) {
 
 async function sendAdminMemberMessage(env, adminUser, payload) {
   const kind = normalizeAdminMemberMessageKind(payload && payload.kind);
+  const targetUserId = kind === 'personal' ? cleanPublicProfileUserId(payload && payload.targetUserId) : '';
   const subject = cleanAdminMemberMessageSubject(payload && payload.subject);
   const message = cleanAdminMemberMessageText(payload && payload.message);
   const attachmentResult = normalizeMailAttachment(payload && payload.attachment);
@@ -4204,16 +4221,19 @@ async function sendAdminMemberMessage(env, adminUser, payload) {
   if (subject.length < 3 || message.length < 3) {
     return { ok:false, status:400, code:'INVALID_MEMBER_MESSAGE', message:'Bitte Betreff und Nachricht vollständig eingeben.' };
   }
-  const recipients = await loadAdminMemberMessageRecipients(env, kind);
+  if (kind === 'personal' && !targetUserId) {
+    return { ok:false, status:400, code:'PERSONAL_RECIPIENT_REQUIRED', message:'Bitte ein einzelnes Mitglied auswählen.' };
+  }
+  const recipients = await loadAdminMemberMessageRecipients(env, kind, targetUserId);
   if (!recipients.length) {
-    return { ok:false, status:400, code:'NO_RECIPIENTS', message:'Für diese Nachrichtenart gibt es derzeit keine berechtigten Empfänger.' };
+    return { ok:false, status:400, code:'NO_RECIPIENTS', message:kind === 'personal' ? 'Das ausgewählte Mitglied besitzt keine erreichbare bestätigte Mailadresse.' : 'Für diese Nachrichtenart gibt es derzeit keine berechtigten Empfänger.' };
   }
   if (recipients.length > ADMIN_MEMBER_MESSAGE_MAX_RECIPIENTS) {
     return { ok:false, status:400, code:'TOO_MANY_RECIPIENTS', message:`Der Direktversand ist auf ${ADMIN_MEMBER_MESSAGE_MAX_RECIPIENTS} Empfänger begrenzt. Für größere Verteiler muss eine Queue eingerichtet werden.` };
   }
   await ensureAdminMemberMessageTables(env);
   const attachmentDigest = attachment ? await sha256Hex(attachment.base64) : '';
-  const contentHash = await sha256Hex(`${kind}\n${subject}\n${message}\n${attachment ? attachment.name : ''}\n${attachment ? attachment.type : ''}\n${attachment && attachment.inline ? 'inline' : 'attachment'}\n${attachmentDigest}`);
+  const contentHash = await sha256Hex(`${kind}\n${targetUserId}\n${subject}\n${message}\n${attachment ? attachment.name : ''}\n${attachment ? attachment.type : ''}\n${attachment && attachment.inline ? 'inline' : 'attachment'}\n${attachmentDigest}`);
   const duplicateSince = new Date(Date.now() - ADMIN_MEMBER_MESSAGE_DUPLICATE_WINDOW_MS).toISOString();
   const duplicate = await env.DB.prepare(
     `SELECT id, status FROM admin_member_messages WHERE content_hash = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1`
@@ -4283,7 +4303,9 @@ async function sendAdminMemberMessage(env, adminUser, payload) {
     failures,
     message:failed
       ? `${sent} Nachricht${sent === 1 ? '' : 'en'} versendet, ${failed} fehlgeschlagen.`
-      : `${sent} Mitglieder-Nachricht${sent === 1 ? '' : 'en'} erfolgreich versendet.`
+      : kind === 'personal'
+        ? `Persönliche Admin-Nachricht an „${recipients[0].username}“ erfolgreich versendet.`
+        : `${sent} Mitglieder-Nachricht${sent === 1 ? '' : 'en'} erfolgreich versendet.`
   };
 }
 
@@ -5757,10 +5779,21 @@ async function handleAuthApi(request, env, url) {
     const admin = await requireAdminSession(request, env);
     if (!admin.ok) return admin.response;
     try {
-      return json({ ok:true, audience:await adminMemberMessageAudience(env, url.searchParams.get('kind')) });
+      return json({ ok:true, audience:await adminMemberMessageAudience(env, url.searchParams.get('kind'), url.searchParams.get('targetUserId')) });
     } catch (error) {
       console.error('Admin member-message audience failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ ok:false, code:'MEMBER_MESSAGE_AUDIENCE_FAILED', message:'Die Empfängerzahl konnte nicht ermittelt werden.' }, { status:500 });
+    }
+  }
+
+  if (url.pathname === '/api/admin/member-message/recipients' && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      return json({ ok:true, users:await listAdminMemberMessageTargets(env) });
+    } catch (error) {
+      console.error('Admin personal-message recipient list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ ok:false, code:'PERSONAL_RECIPIENTS_FAILED', message:'Die auswählbaren Mitglieder konnten nicht geladen werden.' }, { status:500 });
     }
   }
 
@@ -9783,8 +9816,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
