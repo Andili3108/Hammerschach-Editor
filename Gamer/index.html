@@ -593,11 +593,13 @@
   .daily-games-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;font-weight:900;color:#333;padding:2px 2px 0;}
   .daily-games-section-count{min-width:25px;height:25px;box-sizing:border-box;padding:3px 8px;border-radius:999px;background:rgba(132,63,70,.10);color:#843f46;font-size:12px;text-align:center;}
   .daily-game-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:11px 12px;}
-  .daily-game-card.my-turn{background:rgba(132,63,70,.07);border-color:rgba(132,63,70,.22);box-shadow:inset 0 0 0 1px rgba(132,63,70,.08);}
+  .daily-game-card.my-turn{background:linear-gradient(135deg,rgba(47,122,69,.105),rgba(47,122,69,.045));border-color:rgba(47,122,69,.34);box-shadow:inset 4px 0 0 rgba(47,122,69,.70),inset 0 0 0 1px rgba(47,122,69,.05),0 4px 12px rgba(34,107,54,.07);}
   .daily-game-card.completed{background:#fbfbfc;border-color:rgba(0,0,0,.08);}
   .daily-game-title{font-size:17px;font-weight:900;color:#222;line-height:1.2;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
   .daily-game-title-text{min-width:0;}
   .daily-game-status{font-size:13px;font-weight:900;color:#843f46;margin-top:3px;}
+  .daily-game-card.my-turn .daily-game-status{display:inline-flex;align-items:center;width:fit-content;max-width:100%;box-sizing:border-box;gap:6px;margin-top:5px;padding:4px 9px;border-radius:999px;background:rgba(47,122,69,.11);border:1px solid rgba(47,122,69,.22);color:#226b36;line-height:1.25;}
+  .daily-game-card.my-turn .daily-game-status::before{content:"";width:8px;height:8px;flex:0 0 8px;border-radius:999px;background:#2f7a45;box-shadow:0 0 0 3px rgba(47,122,69,.12);}
   .daily-game-card.completed .daily-game-status{color:#444;}
   .daily-game-status.result-win{color:#226b36!important;}
   .daily-game-status.result-loss{color:#9A2D33!important;}
@@ -804,7 +806,9 @@
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.admin-delete-card,.admin-delete-target,.freestyle-position-controls,.next-daily-game-box,.room-rating-status,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
   html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
-  html.dark-mode .daily-game-card.my-turn,
+  html.dark-mode .daily-game-card.my-turn{background:linear-gradient(135deg,rgba(62,154,88,.20),rgba(62,154,88,.08));border-color:rgba(92,190,119,.34);box-shadow:inset 4px 0 0 rgba(92,190,119,.74),inset 0 0 0 1px rgba(92,190,119,.05),0 5px 15px rgba(0,0,0,.18);}
+  html.dark-mode .daily-game-card.my-turn .daily-game-status{background:rgba(62,154,88,.16);border-color:rgba(92,190,119,.30);color:#9bdfad!important;}
+  html.dark-mode .daily-game-card.my-turn .daily-game-status::before{background:#69c982;box-shadow:0 0 0 3px rgba(105,201,130,.15);}
   html.dark-mode .open-offer-card.mine,
   html.dark-mode .public-game-card.mine,
   html.dark-mode .chat-message.mine,
@@ -1073,7 +1077,7 @@
           <h4>8. Meine Daily-Partien</h4>
           <p>Die drei Übersichten sind im Header platzsparend unter <strong>„📂 Partien“</strong> gebündelt: <strong>„🔎 Offene Partien“</strong>, <strong>„📋 Meine Partien“</strong> und <strong>„👁️ Laufende Partien“</strong>.</p>
           <p>Über <strong>„📂 Partien“ → „📋 Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
-          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, werden hervorgehoben. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
+          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
@@ -6299,7 +6303,9 @@ async function removeDailyGameFromHistory(game, button){
 }
 function createDailyGameCard(game){
   const card = document.createElement('div');
-  card.className = 'daily-game-card' + (game.isMyTurn ? ' my-turn' : '') + (game.ended ? ' completed' : '');
+  const isActiveMyTurn = !!(game.isMyTurn && !game.ended);
+  card.className = 'daily-game-card' + (isActiveMyTurn ? ' my-turn' : '') + (game.ended ? ' completed' : '');
+  if(isActiveMyTurn) card.setAttribute('aria-label', 'Du bist am Zug');
   const content = document.createElement('div');
   const title = document.createElement('div');
   title.className = 'daily-game-title';
