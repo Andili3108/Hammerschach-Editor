@@ -36,7 +36,7 @@
     }
   } catch(_){ }
 </script>
-<!-- Design v9: Lobby-Header mit Turnierzugang und gebündeltem Spieler-Menü -->
+<!-- Design v10: Admin-Testbereich für die neue Turnierzentrale -->
 <style>
   :root{
     --board-max:760px;
@@ -543,6 +543,59 @@
   .member-profile-status.error{color:#9A2D33;}
   .member-profile-status.success{color:#226b36;}
 
+  .tournament-backdrop{z-index:3330;}
+  .tournament-create-backdrop{z-index:3360;}
+  .tournament-modal{width:920px;max-width:100%;max-height:92vh;overflow:hidden;padding:0;display:flex;flex-direction:column;}
+  .tournament-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px 14px;border-bottom:1px solid rgba(132,63,70,.13);background:linear-gradient(135deg,rgba(255,255,255,.99),rgba(246,238,240,.96));}
+  .tournament-modal-title{font-size:26px;font-weight:900;color:#222;line-height:1.08;}
+  .tournament-modal-subtitle{margin-top:4px;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
+  .tournament-test-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:6px 10px;background:rgba(180,83,9,.10);border:1px solid rgba(180,83,9,.25);color:#8a4308;font-size:12px;font-weight:900;white-space:nowrap;}
+  .tournament-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:10px 12px;border-bottom:1px solid rgba(132,63,70,.12);background:#f7f7f9;}
+  .tournament-tab{min-width:0!important;min-height:40px!important;padding:7px 6px!important;border-radius:11px!important;background:#fff!important;color:#444!important;border:1px solid rgba(0,0,0,.10)!important;box-shadow:none!important;font-size:13px!important;line-height:1.12!important;white-space:normal!important;}
+  .tournament-tab.active{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.48)!important;}
+  .tournament-content{min-height:310px;overflow:auto;padding:17px 20px 4px;}
+  .tournament-tab-panel[hidden]{display:none!important;}
+  .tournament-panel-title{margin:0 0 10px;font-size:21px;font-weight:900;color:#222;line-height:1.15;}
+  .tournament-overview-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.75fr);gap:12px;}
+  .tournament-card{border-radius:15px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:13px 14px;min-width:0;}
+  .tournament-card-kicker{font-size:11px;font-weight:900;color:#843f46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+  .tournament-card-title{font-size:21px;font-weight:900;color:#222;line-height:1.15;overflow-wrap:anywhere;}
+  .tournament-card-text{margin-top:7px;font-size:14px;font-weight:700;color:#555;line-height:1.42;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .tournament-local-note{margin-top:11px;border-radius:12px;background:rgba(180,83,9,.08);border:1px solid rgba(180,83,9,.18);padding:9px 10px;color:#7a3c08;font-size:12px;font-weight:800;line-height:1.35;}
+  .tournament-facts{display:grid;grid-template-columns:1fr;gap:8px;}
+  .tournament-fact{border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;}
+  .tournament-fact-label{font-size:11px;font-weight:900;color:#777;text-transform:uppercase;letter-spacing:.03em;}
+  .tournament-fact-value{margin-top:3px;font-size:16px;font-weight:900;color:#333;line-height:1.2;}
+  .tournament-description{border-radius:15px;background:rgba(132,63,70,.05);border:1px solid rgba(132,63,70,.13);padding:13px 14px;font-size:15px;font-weight:700;color:#333;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+  .tournament-empty{border-radius:15px;background:#f7f7f9;border:1px dashed rgba(132,63,70,.24);padding:28px 18px;text-align:center;color:#666;font-size:14px;font-weight:800;line-height:1.4;}
+  .tournament-table-wrap{overflow:auto;border:1px solid rgba(0,0,0,.09);border-radius:14px;}
+  .tournament-table{width:100%;min-width:650px;border-collapse:collapse;background:#fff;font-size:13px;}
+  .tournament-table th,.tournament-table td{padding:9px 8px;border-bottom:1px solid rgba(0,0,0,.08);text-align:center;white-space:nowrap;}
+  .tournament-table th{background:#f2edef;color:#843f46;font-weight:900;}
+  .tournament-table th:nth-child(2),.tournament-table td:nth-child(2){text-align:left;}
+  .tournament-table-empty{color:#777;font-weight:800;text-align:center!important;padding:24px 10px!important;}
+  .tournament-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch;}
+  .tournament-podium-card{border-radius:15px;border:1px solid rgba(0,0,0,.09);padding:16px 12px;text-align:center;background:#f7f7f9;}
+  .tournament-podium-medal{font-size:31px;line-height:1;}
+  .tournament-podium-place{margin-top:6px;font-size:14px;font-weight:900;color:#843f46;}
+  .tournament-podium-name{margin-top:7px;font-size:18px;font-weight:900;color:#333;}
+  .tournament-modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:13px 20px 17px;}
+  .tournament-modal-actions button{border-radius:12px;min-height:39px;}
+  .tournament-create-btn{margin-right:auto;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .tournament-create-modal{width:690px;max-width:100%;max-height:92vh;overflow:auto;}
+  .tournament-create-modal h3{margin:0 0 6px;font-size:23px;color:#222;}
+  .tournament-create-intro{margin:0 0 13px!important;}
+  .tournament-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .tournament-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .tournament-field-wide{grid-column:1 / -1;}
+  .tournament-field label{font-size:13px;font-weight:900;color:#444;}
+  .tournament-input,.tournament-select,.tournament-textarea{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:9px 11px;font-family:inherit;font-size:15px;font-weight:800;outline:none;}
+  .tournament-input:focus,.tournament-select:focus,.tournament-textarea:focus{background:#fff;box-shadow:0 0 0 3px rgba(132,63,70,.14);}
+  .tournament-textarea{min-height:105px;resize:vertical;line-height:1.4;}
+  .tournament-create-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;}
+  .tournament-create-status.error{color:#9A2D33;}
+  .tournament-create-status.success{color:#226b36;}
+
   .online-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:9px 10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:stretch;}
   .online-item{border-radius:11px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:7px 8px;min-width:0;}
   .online-label{font-size:12px;font-weight:900;color:#666;margin-bottom:2px;}
@@ -900,6 +953,42 @@
   html.dark-mode .member-profile-status{color:#b8bdc6;}
   html.dark-mode .member-profile-meta-value,
   html.dark-mode .member-profile-about-text{color:#eef0f2;}
+  html.dark-mode .tournament-modal-head{background:linear-gradient(135deg,#252930,#272126);border-color:rgba(255,255,255,.08);}
+  html.dark-mode .tournament-modal-title,
+  html.dark-mode .tournament-panel-title,
+  html.dark-mode .tournament-card-title,
+  html.dark-mode .tournament-create-modal h3{color:#f3f4f6;}
+  html.dark-mode .tournament-modal-subtitle,
+  html.dark-mode .tournament-card-text,
+  html.dark-mode .tournament-empty,
+  html.dark-mode .tournament-create-status{color:#b8bdc6;}
+  html.dark-mode .tournament-test-badge,
+  html.dark-mode .tournament-local-note{background:rgba(224,137,54,.13);border-color:rgba(224,137,54,.26);color:#efb06f;}
+  html.dark-mode .tournament-tabs{background:#1c1f24;border-color:rgba(255,255,255,.08);}
+  html.dark-mode .tournament-tab{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
+  html.dark-mode .tournament-tab.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important;}
+  html.dark-mode .tournament-card,
+  html.dark-mode .tournament-fact,
+  html.dark-mode .tournament-empty,
+  html.dark-mode .tournament-podium-card{background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode .tournament-card-kicker,
+  html.dark-mode .tournament-podium-place{color:#e6a3ab;}
+  html.dark-mode .tournament-fact-label{color:#b8bdc6;}
+  html.dark-mode .tournament-fact-value,
+  html.dark-mode .tournament-podium-name{color:#eef0f2;}
+  html.dark-mode .tournament-description{background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode .tournament-table-wrap{border-color:rgba(255,255,255,.09);}
+  html.dark-mode .tournament-table{background:#252930;color:#eef0f2;}
+  html.dark-mode .tournament-table th{background:#30262a;color:#e6a3ab;}
+  html.dark-mode .tournament-table th,
+  html.dark-mode .tournament-table td{border-color:rgba(255,255,255,.08);}
+  html.dark-mode .tournament-input,
+  html.dark-mode .tournament-select,
+  html.dark-mode .tournament-textarea{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
+  html.dark-mode .tournament-input:focus,
+  html.dark-mode .tournament-select:focus,
+  html.dark-mode .tournament-textarea:focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
+  html.dark-mode .tournament-field label{color:#d8dbe0;}
   html.dark-mode ::selection{background:#9f4d56;color:#fff;}
   html.dark-mode *{scrollbar-color:#555b65 #1b1e23;}
 
@@ -914,6 +1003,7 @@
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
+  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-overview-grid,.tournament-form-grid,.tournament-podium{grid-template-columns:1fr}.tournament-field-wide{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}}
 </style>
 </head>
 <body>
@@ -1102,7 +1192,7 @@
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
 
           <h4>9. Mitglieder finden, einladen oder eine Partie offen anbieten</h4>
-          <p>Über <strong>„👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Über <strong>„Profil“</strong> öffnest du das Mitgliederprofil mit Profilbild beziehungsweise Buchstaben-Avatar, Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
+          <p>Über <strong>„👥 Spieler“ → „👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Im selben Dropdown führt <strong>„👤 Mein Profil“</strong> zur eigenen Accountverwaltung. Über <strong>„Profil“</strong> in der Mitgliederliste öffnest du das Mitgliederprofil mit Profilbild beziehungsweise Buchstaben-Avatar, Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
           <p>Über <strong>„Zur Partie einladen“</strong> erstellen registrierte und eingeloggte Mitglieder einen Spielraum und öffnen das Einladungsfenster. Gäste können keine eigene Partieeinladung erzeugen, dürfen aber bei einer Live-Partie über den Link eines Mitglieds beitreten. Im Einladungsfenster kannst du den Link oder den vollständigen Einladungstext kopieren, ein registriertes Mitglied suchen oder die Mitgliederliste öffnen. Online-Mitglieder werden mit einem grünen Hinweis markiert und in der Liste zuerst angezeigt.</p>
           <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante, Wertung und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen. Der Einladungslink und der vollständige Einladungstext können weiterhin kopiert werden.</p>
@@ -1202,6 +1292,8 @@
           <h4>26. Melden, Stummschalten und Moderation</h4>
           <p>Spieler können den Chat ihres Gegners für die aktuelle Partie auf dem eigenen Gerät stummschalten. Eingeloggte Mitglieder können einen Gegner außerdem vertraulich melden. Dabei werden Partieangaben und ein begrenzter Ausschnitt des Partie-Chats an den Administrator übermittelt. Eine Meldung führt niemals automatisch zu einer Sanktion.</p>
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
+          <h4>27. Turnier-Testbereich</h4>
+          <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> ist bereits als fester Bestandteil des Lobby-Headers sichtbar. Während der Entwicklungsphase öffnet sie den Turnierbereich ausschließlich für den Administrator. Die Turnierzentrale enthält Übersicht, Beschreibung, Teilnehmer, Paarungen, Tabelle und Siegerliste. Über <strong>„Turnier erstellen“</strong> kann momentan nur eine lokale Vorschau vorbereitet werden. Dieser Testentwurf bleibt auf dem verwendeten Gerät, ist für Mitglieder unsichtbar und erzeugt weder Anmeldungen noch Turnierpartien oder Datenbankeinträge.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -1819,6 +1911,133 @@
           <button id="memberProfileInviteBtn" class="button-flat" type="button" hidden>Zur Partie einladen</button>
           <button id="memberProfileCloseBtn" type="button">Schließen</button>
         </div>
+      </div>
+    </div>
+
+    <div id="tournamentBackdrop" class="identity-backdrop tournament-backdrop" hidden>
+      <div class="identity-modal tournament-modal" role="dialog" aria-modal="true" aria-labelledby="tournamentTitle">
+        <div class="tournament-modal-head">
+          <div>
+            <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
+            <div class="tournament-modal-subtitle">Turnierzentrale für Daily-Rundenturniere mit Hin- und Rückspiel</div>
+          </div>
+          <div class="tournament-test-badge">🔒 Admin-Testbereich</div>
+        </div>
+
+        <div class="tournament-tabs" role="tablist" aria-label="Turnierbereiche">
+          <button class="tournament-tab active" type="button" role="tab" aria-selected="true" aria-controls="tournamentPanelOverview" data-tournament-tab="overview">Übersicht</button>
+          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelDescription" data-tournament-tab="description">Beschreibung</button>
+          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelParticipants" data-tournament-tab="participants">Teilnehmer</button>
+          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelPairings" data-tournament-tab="pairings">Paarungen</button>
+          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelStandings" data-tournament-tab="standings">Tabelle</button>
+          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelWinners" data-tournament-tab="winners">Siegerliste</button>
+        </div>
+
+        <div class="tournament-content">
+          <section id="tournamentPanelOverview" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="overview">
+            <h3 class="tournament-panel-title">Turnierübersicht</h3>
+            <div class="tournament-overview-grid">
+              <div class="tournament-card">
+                <div id="tournamentOverviewKicker" class="tournament-card-kicker">Noch nicht veröffentlicht</div>
+                <div id="tournamentOverviewName" class="tournament-card-title">Noch kein Turnier angelegt</div>
+                <div id="tournamentOverviewText" class="tournament-card-text">Erstelle zunächst einen lokalen Testentwurf. Dabei werden noch keine Teilnehmer eingeladen und keine Turnierpartien erzeugt.</div>
+                <div id="tournamentLocalNote" class="tournament-local-note">Diese erste Ausbaustufe dient ausschließlich der Gestaltung und Vorbereitung. Der Entwurf bleibt auf diesem Gerät und ist für andere Mitglieder unsichtbar.</div>
+              </div>
+              <div class="tournament-card tournament-facts" aria-label="Turnierdaten">
+                <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div class="tournament-fact-value">Doppelrunde</div></div>
+                <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">4–8</div></div>
+                <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
+                <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
+              </div>
+            </div>
+          </section>
+
+          <section id="tournamentPanelDescription" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="description" hidden>
+            <h3 class="tournament-panel-title">Turnierbeschreibung</h3>
+            <div id="tournamentDescriptionText" class="tournament-description">Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.</div>
+          </section>
+
+          <section id="tournamentPanelParticipants" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="participants" hidden>
+            <h3 class="tournament-panel-title">Teilnehmer</h3>
+            <div class="tournament-empty">Noch keine Teilnehmer angemeldet.<br />Die Anmeldung wird in einer späteren Ausbaustufe mit den Gamer-Accounts verbunden.</div>
+          </section>
+
+          <section id="tournamentPanelPairings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="pairings" hidden>
+            <h3 class="tournament-panel-title">Paarungen</h3>
+            <div class="tournament-empty">Paarungen und Runden werden erzeugt, sobald ein veröffentlichtes Turnier gestartet wird.</div>
+          </section>
+
+          <section id="tournamentPanelStandings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="standings" hidden>
+            <h3 class="tournament-panel-title">Turniertabelle</h3>
+            <div class="tournament-table-wrap">
+              <table class="tournament-table">
+                <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th></tr></thead>
+                <tbody><tr><td class="tournament-table-empty" colspan="7">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="tournamentPanelWinners" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="winners" hidden>
+            <h3 class="tournament-panel-title">Siegerliste · Top 3</h3>
+            <div class="tournament-podium">
+              <div class="tournament-podium-card"><div class="tournament-podium-medal">🥇</div><div class="tournament-podium-place">1. Platz</div><div class="tournament-podium-name">—</div></div>
+              <div class="tournament-podium-card"><div class="tournament-podium-medal">🥈</div><div class="tournament-podium-place">2. Platz</div><div class="tournament-podium-name">—</div></div>
+              <div class="tournament-podium-card"><div class="tournament-podium-medal">🥉</div><div class="tournament-podium-place">3. Platz</div><div class="tournament-podium-name">—</div></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="tournament-modal-actions">
+          <button id="tournamentCreateOpenBtn" class="tournament-create-btn" type="button">➕ Turnier erstellen</button>
+          <button id="tournamentCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tournamentCreateBackdrop" class="identity-backdrop tournament-create-backdrop" hidden>
+      <div class="identity-modal tournament-create-modal" role="dialog" aria-modal="true" aria-labelledby="tournamentCreateTitle">
+        <h3 id="tournamentCreateTitle">Turnier erstellen</h3>
+        <p class="tournament-create-intro">Erstelle zunächst eine lokale Vorschau. Es werden weder Mitglieder informiert noch Partien oder Datenbankeinträge erzeugt.</p>
+        <form id="tournamentCreateForm">
+          <div class="tournament-form-grid">
+            <div class="tournament-field tournament-field-wide">
+              <label for="tournamentNameInput">Turniername</label>
+              <input id="tournamentNameInput" class="tournament-input" type="text" maxlength="80" required placeholder="z. B. Hammerschach Sommer-Cup" />
+            </div>
+            <div class="tournament-field">
+              <label for="tournamentPlayersSelect">Teilnehmerzahl</label>
+              <select id="tournamentPlayersSelect" class="tournament-select">
+                <option value="4">4 Teilnehmer</option>
+                <option value="6" selected>6 Teilnehmer</option>
+                <option value="8">8 Teilnehmer</option>
+              </select>
+            </div>
+            <div class="tournament-field">
+              <label for="tournamentClockSelect">Daily-Bedenkzeit</label>
+              <select id="tournamentClockSelect" class="tournament-select">
+                <option value="24" selected>24 Stunden pro Zug</option>
+                <option value="48">48 Stunden pro Zug</option>
+                <option value="72">72 Stunden pro Zug</option>
+              </select>
+            </div>
+            <div class="tournament-field tournament-field-wide">
+              <label for="tournamentRatingSelect">Wertung</label>
+              <select id="tournamentRatingSelect" class="tournament-select">
+                <option value="rated" selected>Gewertete Partien</option>
+                <option value="unrated">Ohne Rating</option>
+              </select>
+            </div>
+            <div class="tournament-field tournament-field-wide">
+              <label for="tournamentDescriptionInput">Beschreibung</label>
+              <textarea id="tournamentDescriptionInput" class="tournament-textarea" maxlength="1200" placeholder="Teilnahmebedingungen, Ablauf und weitere Hinweise"></textarea>
+            </div>
+          </div>
+          <div id="tournamentCreateStatus" class="tournament-create-status" aria-live="polite"></div>
+          <div class="identity-actions">
+            <button id="tournamentCreateCancelBtn" class="button-flat" type="button">Abbrechen</button>
+            <button id="tournamentCreatePreviewBtn" type="submit">Vorschau übernehmen</button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -3380,6 +3599,7 @@ const ONLINE_PLAYER_NAME_STORAGE_KEY = 'hammerschachGamerOnlineDisplayName';
 const ONLINE_PLAYER_NAME_CONFIRMED_KEY = 'hammerschachGamerOnlineDisplayNameConfirmed';
 const ONLINE_AUTH_TOKEN_STORAGE_KEY = 'hammerschachGamerAuthToken';
 const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
+const TOURNAMENT_DRAFT_STORAGE_KEY = 'hammerschachTournamentLocalDraftV1';
 const ONLINE_INVITE_COLOR_STORAGE_KEY = 'hammerschachGamerInviteColorPreference';
 const ONLINE_SEAT_STORAGE_PREFIX = 'hammerschachGamerSeat:';
 const ONLINE_LAST_ROOM_STORAGE_KEY = 'hammerschachGamerLastActiveRoom';
@@ -3445,6 +3665,27 @@ const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
 const profileOpenBtn = document.getElementById('profileOpenBtn');
 const tournamentsOpenBtn = document.getElementById('tournamentsOpenBtn');
+const tournamentBackdrop = document.getElementById('tournamentBackdrop');
+const tournamentCloseBtn = document.getElementById('tournamentCloseBtn');
+const tournamentCreateOpenBtn = document.getElementById('tournamentCreateOpenBtn');
+const tournamentTabButtons = Array.from(document.querySelectorAll('[data-tournament-tab]'));
+const tournamentTabPanels = Array.from(document.querySelectorAll('[data-tournament-panel]'));
+const tournamentOverviewKicker = document.getElementById('tournamentOverviewKicker');
+const tournamentOverviewName = document.getElementById('tournamentOverviewName');
+const tournamentOverviewText = document.getElementById('tournamentOverviewText');
+const tournamentFactPlayers = document.getElementById('tournamentFactPlayers');
+const tournamentFactClock = document.getElementById('tournamentFactClock');
+const tournamentFactRating = document.getElementById('tournamentFactRating');
+const tournamentDescriptionText = document.getElementById('tournamentDescriptionText');
+const tournamentCreateBackdrop = document.getElementById('tournamentCreateBackdrop');
+const tournamentCreateForm = document.getElementById('tournamentCreateForm');
+const tournamentNameInput = document.getElementById('tournamentNameInput');
+const tournamentPlayersSelect = document.getElementById('tournamentPlayersSelect');
+const tournamentClockSelect = document.getElementById('tournamentClockSelect');
+const tournamentRatingSelect = document.getElementById('tournamentRatingSelect');
+const tournamentDescriptionInput = document.getElementById('tournamentDescriptionInput');
+const tournamentCreateStatus = document.getElementById('tournamentCreateStatus');
+const tournamentCreateCancelBtn = document.getElementById('tournamentCreateCancelBtn');
 const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
 const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
@@ -4316,7 +4557,7 @@ if(trainerToolFrame)trainerToolFrame.addEventListener('load',()=>{
   postTrainerToolContext();
   postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
 });
-[newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,tournamentsOpenBtn,membersOpenBtn,profileOpenBtn].forEach(button=>{
+[newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,membersOpenBtn,profileOpenBtn].forEach(button=>{
   if(button)button.addEventListener('click',closeEmbeddedTools,{capture:true});
 });
 window.addEventListener('message',async event=>{
@@ -6111,6 +6352,10 @@ function updateAuthUi(){
     tournamentsOpenBtn.tabIndex = isAdmin ? 0 : -1;
     tournamentsOpenBtn.title = isAdmin ? 'Turnierbereich öffnen.' : '';
   }
+  if(!isAdmin){
+    if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = true;
+    if(tournamentBackdrop) tournamentBackdrop.hidden = true;
+  }
   if(membersOpenBtn){
     membersOpenBtn.hidden = !loggedIn;
     membersOpenBtn.disabled = !loggedIn;
@@ -6274,13 +6519,159 @@ async function logoutAuth(){
     connectOnlineRoom(roomToReopen, {reconnect:true});
   }
 }
+
+function hasTournamentAdminAccess(){
+  return !!(onlineAuthToken && onlineAuthUser && onlineAuthUser.isAdmin === true);
+}
+function defaultTournamentDescription(){
+  return 'Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.';
+}
+function loadLocalTournamentDraft(){
+  try{
+    const raw = localStorage.getItem(TOURNAMENT_DRAFT_STORAGE_KEY);
+    if(!raw) return null;
+    const draft = JSON.parse(raw);
+    if(!draft || typeof draft !== 'object' || !String(draft.name || '').trim()) return null;
+    const players = [4,6,8].includes(Number(draft.players)) ? Number(draft.players) : 6;
+    const hours = [24,48,72].includes(Number(draft.hours)) ? Number(draft.hours) : 24;
+    return {
+      name:String(draft.name || '').trim().slice(0,80),
+      description:String(draft.description || '').trim().slice(0,1200),
+      players,
+      hours,
+      rated:draft.rated !== false
+    };
+  } catch(_){ return null; }
+}
+function setTournamentTab(tabName, focusTab){
+  const requested = String(tabName || 'overview');
+  const valid = tournamentTabButtons.some(button => button.dataset.tournamentTab === requested) ? requested : 'overview';
+  tournamentTabButtons.forEach(button => {
+    const active = button.dataset.tournamentTab === valid;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+    button.tabIndex = active ? 0 : -1;
+    if(active && focusTab) button.focus();
+  });
+  tournamentTabPanels.forEach(panel => { panel.hidden = panel.dataset.tournamentPanel !== valid; });
+}
+function renderTournamentDraft(){
+  const draft = loadLocalTournamentDraft();
+  if(tournamentOverviewKicker) tournamentOverviewKicker.textContent = draft ? 'Lokaler Testentwurf · nicht veröffentlicht' : 'Noch nicht veröffentlicht';
+  if(tournamentOverviewName) tournamentOverviewName.textContent = draft ? draft.name : 'Noch kein Turnier angelegt';
+  if(tournamentOverviewText){
+    tournamentOverviewText.textContent = draft
+      ? ('Geplant ist ein Daily-Doppelrundenturnier für ' + draft.players + ' Teilnehmer. Pro Begegnung werden zwei Partien mit Farbwechsel parallel gespielt.')
+      : 'Erstelle zunächst einen lokalen Testentwurf. Dabei werden noch keine Teilnehmer eingeladen und keine Turnierpartien erzeugt.';
+  }
+  if(tournamentFactPlayers) tournamentFactPlayers.textContent = draft ? String(draft.players) : '4–8';
+  if(tournamentFactClock) tournamentFactClock.textContent = (draft ? draft.hours : 24) + ' Stunden/Zug';
+  if(tournamentFactRating) tournamentFactRating.textContent = !draft || draft.rated ? 'Gewertet' : 'Ohne Rating';
+  if(tournamentDescriptionText) tournamentDescriptionText.textContent = draft && draft.description ? draft.description : defaultTournamentDescription();
+  if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.textContent = draft ? '✏️ Entwurf bearbeiten' : '➕ Turnier erstellen';
+}
+function setTournamentCreateStatus(message, kind){
+  if(!tournamentCreateStatus) return;
+  tournamentCreateStatus.textContent = message || '';
+  tournamentCreateStatus.classList.toggle('error', kind === 'error');
+  tournamentCreateStatus.classList.toggle('success', kind === 'success');
+}
+function closeTournamentCreateDialog(){
+  if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = true;
+  setTournamentCreateStatus('', '');
+}
+function closeTournamentDialog(){
+  closeTournamentCreateDialog();
+  if(tournamentBackdrop) tournamentBackdrop.hidden = true;
+  try{ refreshHeaderStatusFromState(); } catch(_){ }
+  hammerschachScheduleHeightReport(false);
+}
+function openTournamentDialog(){
+  if(!hasTournamentAdminAccess()) return;
+  closeEmbeddedTools();
+  closePlayerMenu();
+  renderTournamentDraft();
+  setTournamentTab('overview', false);
+  if(tournamentBackdrop) tournamentBackdrop.hidden = false;
+  if(statusEl) statusEl.textContent = 'Hammerschach – Turniere';
+  setTimeout(() => {
+    const activeTab = tournamentTabButtons.find(button => button.classList.contains('active'));
+    if(activeTab) activeTab.focus();
+  }, 0);
+  hammerschachScheduleHeightReport(false);
+}
+function openTournamentCreateDialog(){
+  if(!hasTournamentAdminAccess()) return;
+  const draft = loadLocalTournamentDraft();
+  if(tournamentNameInput) tournamentNameInput.value = draft ? draft.name : '';
+  if(tournamentPlayersSelect) tournamentPlayersSelect.value = String(draft ? draft.players : 6);
+  if(tournamentClockSelect) tournamentClockSelect.value = String(draft ? draft.hours : 24);
+  if(tournamentRatingSelect) tournamentRatingSelect.value = draft && !draft.rated ? 'unrated' : 'rated';
+  if(tournamentDescriptionInput) tournamentDescriptionInput.value = draft ? draft.description : '';
+  setTournamentCreateStatus('', '');
+  if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = false;
+  setTimeout(() => { if(tournamentNameInput) tournamentNameInput.focus(); }, 0);
+}
+function saveLocalTournamentPreview(event){
+  if(event) event.preventDefault();
+  if(!hasTournamentAdminAccess()) return;
+  const name = String(tournamentNameInput ? tournamentNameInput.value : '').trim();
+  if(!name){
+    setTournamentCreateStatus('Bitte einen Turniernamen eingeben.', 'error');
+    if(tournamentNameInput) tournamentNameInput.focus();
+    return;
+  }
+  const players = Number(tournamentPlayersSelect ? tournamentPlayersSelect.value : 6);
+  const hours = Number(tournamentClockSelect ? tournamentClockSelect.value : 24);
+  const draft = {
+    name:name.slice(0,80),
+    description:String(tournamentDescriptionInput ? tournamentDescriptionInput.value : '').trim().slice(0,1200),
+    players:[4,6,8].includes(players) ? players : 6,
+    hours:[24,48,72].includes(hours) ? hours : 24,
+    rated:!tournamentRatingSelect || tournamentRatingSelect.value !== 'unrated'
+  };
+  try{
+    localStorage.setItem(TOURNAMENT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch(_){
+    setTournamentCreateStatus('Der lokale Testentwurf konnte in diesem Browser nicht gespeichert werden.', 'error');
+    return;
+  }
+  renderTournamentDraft();
+  setTournamentTab('overview', false);
+  closeTournamentCreateDialog();
+  if(statusEl) statusEl.textContent = 'Lokaler Turnierentwurf wurde übernommen.';
+}
+
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
 if(profileOpenBtn) profileOpenBtn.addEventListener('click', () => openAuthDialog('login'));
 if(membersOpenBtn) membersOpenBtn.addEventListener('click', openMembersDialog);
-if(tournamentsOpenBtn) tournamentsOpenBtn.addEventListener('click', () => {
-  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
-  closePlayerMenu();
-  if(statusEl) statusEl.textContent = 'Hammerschach – Turniere';
+if(tournamentsOpenBtn) tournamentsOpenBtn.addEventListener('click', openTournamentDialog);
+if(tournamentCloseBtn) tournamentCloseBtn.addEventListener('click', closeTournamentDialog);
+if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.addEventListener('click', openTournamentCreateDialog);
+if(tournamentCreateCancelBtn) tournamentCreateCancelBtn.addEventListener('click', closeTournamentCreateDialog);
+if(tournamentCreateForm) tournamentCreateForm.addEventListener('submit', saveLocalTournamentPreview);
+tournamentTabButtons.forEach(button => {
+  button.addEventListener('click', () => setTournamentTab(button.dataset.tournamentTab, false));
+  button.addEventListener('keydown', event => {
+    if(event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    const index = tournamentTabButtons.indexOf(button);
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const next = tournamentTabButtons[(index + direction + tournamentTabButtons.length) % tournamentTabButtons.length];
+    if(next) setTournamentTab(next.dataset.tournamentTab, true);
+  });
+});
+if(tournamentBackdrop) tournamentBackdrop.addEventListener('click', event => { if(event.target === tournamentBackdrop) closeTournamentDialog(); });
+if(tournamentCreateBackdrop) tournamentCreateBackdrop.addEventListener('click', event => { if(event.target === tournamentCreateBackdrop) closeTournamentCreateDialog(); });
+document.addEventListener('keydown', event => {
+  if(event.key !== 'Escape') return;
+  if(tournamentCreateBackdrop && !tournamentCreateBackdrop.hidden){
+    event.preventDefault();
+    closeTournamentCreateDialog();
+  } else if(tournamentBackdrop && !tournamentBackdrop.hidden){
+    event.preventDefault();
+    closeTournamentDialog();
+  }
 });
 if(visitorBoardLoginBtn) visitorBoardLoginBtn.addEventListener('click', () => openAuthDialog('login'));
 if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
