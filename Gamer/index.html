@@ -36,7 +36,7 @@
     }
   } catch(_){ }
 </script>
-<!-- Design v8: Header-Navigation mit Neue-Partie-, Partien- und Tools-Menüs -->
+<!-- Design v9: Lobby-Header mit Turnierzugang und gebündeltem Spieler-Menü -->
 <style>
   :root{
     --board-max:760px;
@@ -92,6 +92,8 @@
   .header-menu-popup{position:absolute;z-index:2600;top:calc(100% + 9px);left:50%;transform:translateX(-50%);width:238px;box-sizing:border-box;padding:8px;border:1px solid rgba(132,63,70,.20);border-radius:15px;background:rgba(255,255,255,.99);box-shadow:0 18px 42px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:6px;}
   .new-game-menu .header-menu-popup{left:0;transform:none;}
   .tools-menu .header-menu-popup,.info-menu .header-menu-popup{left:auto;right:0;transform:none;}
+  .tournaments-open-btn[aria-disabled="true"]{cursor:default;}
+  .tournaments-open-btn[aria-disabled="true"]:hover{transform:none!important;filter:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(0,0,0,.04), 0 6px 14px rgba(0,0,0,.10)!important;}
   .header-menu-popup[hidden]{display:none!important;}
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
@@ -136,8 +138,8 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.hammerschach-room-view #toolsMenu{display:none!important;}
-  html.visitor-start-view #newGameMenu,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #membersOpenBtn,html.visitor-start-view #authOpenBtn{display:none!important;}
+  html.hammerschach-room-view #toolsMenu,html.hammerschach-room-view #tournamentsOpenBtn{display:none!important;}
+  html.visitor-start-view #newGameMenu,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-start-view .match-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
@@ -792,6 +794,7 @@
   html.dark-mode .rating-option,
   html.dark-mode .daily-game-pgn-btn,
   html.dark-mode .daily-game-history-delete-btn{background:linear-gradient(180deg,#393e46 0%,#292d33 100%)!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.25)!important;}
+  html.dark-mode .tournaments-open-btn[aria-disabled="true"]:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.25)!important;}
   html.dark-mode .side-toggle-btn.active,
   html.dark-mode .time-kind-option.active,
   html.dark-mode .invite-color-option.active,
@@ -972,7 +975,16 @@
               <button id="publicGamesOpenBtn" class="header-menu-item" type="button" role="menuitem">👁️ Laufende Partien</button>
             </div>
           </div>
-          <button id="membersOpenBtn" class="button-flat name-action-btn" type="button" hidden>👥 Mitglieder</button>
+          <button id="tournamentsOpenBtn" class="button-flat name-action-btn tournaments-open-btn" type="button" aria-disabled="true">🏆 Turniere</button>
+          <div id="playerMenu" class="header-menu player-menu" hidden>
+            <button id="playerMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="playerMenuPopup">
+              <span>👥 Spieler</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="playerMenuPopup" class="header-menu-popup" role="menu" aria-label="Spieler" hidden>
+              <button id="membersOpenBtn" class="header-menu-item" type="button" role="menuitem">👥 Mitglieder</button>
+              <button id="profileOpenBtn" class="header-menu-item" type="button" role="menuitem">👤 Mein Profil</button>
+            </div>
+          </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
           <div id="toolsMenu" class="header-menu tools-menu" hidden>
             <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
@@ -3431,6 +3443,8 @@ const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
 const editPlayerNameBtn = document.getElementById('editPlayerNameBtn');
 const authOpenBtn = document.getElementById('authOpenBtn');
+const profileOpenBtn = document.getElementById('profileOpenBtn');
+const tournamentsOpenBtn = document.getElementById('tournamentsOpenBtn');
 const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
 const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
@@ -3443,6 +3457,9 @@ const roomLobbyBtn = document.getElementById('roomLobbyBtn');
 const gamesMenuEl = document.getElementById('gamesMenu');
 const gamesMenuBtn = document.getElementById('gamesMenuBtn');
 const gamesMenuPopup = document.getElementById('gamesMenuPopup');
+const playerMenuEl = document.getElementById('playerMenu');
+const playerMenuBtn = document.getElementById('playerMenuBtn');
+const playerMenuPopup = document.getElementById('playerMenuPopup');
 const toolsMenuEl = document.getElementById('toolsMenu');
 const toolsMenuBtn = document.getElementById('toolsMenuBtn');
 const toolsMenuPopup = document.getElementById('toolsMenuPopup');
@@ -3561,10 +3578,12 @@ function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
 }
 const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
+const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Spieler-Menü');
 const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Tools-Menü');
 const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }
+function closePlayerMenu(){ if(playerMenuController) playerMenuController.close(); }
 function closeToolsMenu(){ if(toolsMenuController) toolsMenuController.close(); }
 function closeInfoMenu(){ if(infoMenuController) infoMenuController.close(); }
 document.addEventListener('click', event => {
@@ -4297,7 +4316,7 @@ if(trainerToolFrame)trainerToolFrame.addEventListener('load',()=>{
   postTrainerToolContext();
   postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
 });
-[newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,membersOpenBtn].forEach(button=>{
+[newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,tournamentsOpenBtn,membersOpenBtn,profileOpenBtn].forEach(button=>{
   if(button)button.addEventListener('click',closeEmbeddedTools,{capture:true});
 });
 window.addEventListener('message',async event=>{
@@ -6075,8 +6094,22 @@ function updateAuthUi(){
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);
   const accountName = loggedIn ? (onlineAuthUser.username || 'aktiv') : '';
   if(authOpenBtn){
-    authOpenBtn.textContent = loggedIn ? '👤 Mein Profil' : '👤 Registrierung / Login';
-    authOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — klicken für Accountverwaltung und Logout' : 'Registrierung oder Login öffnen';
+    authOpenBtn.hidden = loggedIn;
+    authOpenBtn.textContent = '👤 Registrierung / Login';
+    authOpenBtn.title = 'Registrierung oder Login öffnen';
+  }
+  if(playerMenuEl){
+    playerMenuEl.hidden = !loggedIn;
+    if(!loggedIn) closePlayerMenu();
+  }
+  if(profileOpenBtn){
+    profileOpenBtn.disabled = !loggedIn;
+    profileOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — Accountverwaltung und Logout öffnen.' : '';
+  }
+  if(tournamentsOpenBtn){
+    tournamentsOpenBtn.setAttribute('aria-disabled', isAdmin ? 'false' : 'true');
+    tournamentsOpenBtn.tabIndex = isAdmin ? 0 : -1;
+    tournamentsOpenBtn.title = isAdmin ? 'Turnierbereich öffnen.' : '';
   }
   if(membersOpenBtn){
     membersOpenBtn.hidden = !loggedIn;
@@ -6242,7 +6275,13 @@ async function logoutAuth(){
   }
 }
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
+if(profileOpenBtn) profileOpenBtn.addEventListener('click', () => openAuthDialog('login'));
 if(membersOpenBtn) membersOpenBtn.addEventListener('click', openMembersDialog);
+if(tournamentsOpenBtn) tournamentsOpenBtn.addEventListener('click', () => {
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
+  closePlayerMenu();
+  if(statusEl) statusEl.textContent = 'Hammerschach – Turniere';
+});
 if(visitorBoardLoginBtn) visitorBoardLoginBtn.addEventListener('click', () => openAuthDialog('login'));
 if(authCancelBtn) authCancelBtn.addEventListener('click', closeAuthDialog);
 if(authLoginTab) authLoginTab.addEventListener('click', () => setAuthMode('login'));
