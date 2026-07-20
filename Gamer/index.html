@@ -43,6 +43,7 @@
     --board-size: min(var(--board-max), calc(100vw - var(--right-col) - var(--gap)));
     --andili-rot:#843f46;
     --andili-blau:#3b6ea7;
+    --variation-orange:#b45309;
     --light-square:#f0d9b5;
     --dark-square:#843f46;
     --bg:#f6f7fb;
@@ -96,6 +97,8 @@
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
   .header-menu-item:focus-visible{outline:3px solid rgba(132,63,70,.18);outline-offset:1px;}
   .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0;white-space:nowrap;}
+  .gamer-board-nav{display:flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;}
+  .gamer-board-nav-btn{width:36px;height:40px;min-width:36px;min-height:40px;padding:0!important;border-radius:12px!important;font-size:20px!important;line-height:1!important;}
   .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:21px;line-height:1;padding:0;}
   .board-game-actions,.board-daily-actions{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;}
   .board-game-actions[hidden],.board-daily-actions[hidden]{display:none!important;}
@@ -105,7 +108,7 @@
   .variation-launcher{width:auto;display:flex;justify-content:center;flex:0 0 auto;}
   .variation-launcher[hidden]{display:none!important;}
   .variation-open-btn{min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
-  .variation-open-btn.active,.variation-open-btn[aria-pressed="true"]{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;box-shadow:inset 0 2px 5px rgba(0,0,0,.10),0 3px 8px rgba(0,0,0,.10)!important;transform:translateY(1px);}
+  .variation-open-btn.active,.variation-open-btn[aria-pressed="true"]{background:var(--variation-orange)!important;color:#fff!important;border-color:rgba(180,83,9,.65)!important;box-shadow:inset 0 2px 5px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.12)!important;transform:translateY(1px);}
   .icon-btn .icon-label{display:inline-block;line-height:1;}
   .board-tools .board-color-wrap{position:relative;width:auto;display:flex;justify-content:center;}
   button{background:linear-gradient(180deg,#f3f3f3 0%,#dadada 100%);color:#9A2D33;border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:900;cursor:pointer;transition:transform .08s ease, box-shadow .12s ease, filter .12s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(0,0,0,.05), 0 6px 14px rgba(0,0,0,.12);}
@@ -254,7 +257,9 @@
   .move-nav-group{display:contents;}
   .nav-btn{width:100%;min-width:0;min-height:34px;font-size:18px;padding:4px 0;border-radius:12px;}
   .copy-pgn-btn{width:100%;min-width:0;min-height:34px;padding:4px 4px!important;border-radius:12px;font-size:12px;line-height:1.05;white-space:normal;}
-  .resign-btn{background:#843f46!important;color:#fff!important;}
+  .resign-confirm-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.58)!important;}
+  .resign-modal{width:450px;}
+  .resign-warning{border-radius:12px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.14);padding:9px 11px;color:#555;font-size:13px;font-weight:800;line-height:1.35;}
   .chat-panel{display:flex;flex-direction:column;gap:10px;overflow:hidden;}
   .chat-title{font-size:18px;font-weight:900;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .chat-etiquette-note{font-size:12px;font-weight:800;color:#666;line-height:1.3;text-align:center;border-radius:10px;background:rgba(132,63,70,.05);border:1px solid rgba(132,63,70,.10);padding:6px 8px;}
@@ -290,16 +295,20 @@
   .promo-piece{font-size:30px;width:34px;text-align:center;}
   .small-note{font-size:13px;color:#666;font-weight:700;line-height:1.3;}
 
-  .variation-board{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;border:4px solid var(--dark-square);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;touch-action:none;}
+  .variation-board{position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;border:4px solid var(--dark-square);border-radius:10px;box-shadow:inset 0 0 0 3px var(--variation-orange),0 14px 36px rgba(0,0,0,.16),0 0 0 2px rgba(180,83,9,.22);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;touch-action:none;}
+  .variation-board-badge{position:absolute;left:50%;top:0;z-index:14;transform:translate(-50%,-50%);pointer-events:none;border:2px solid rgba(255,255,255,.92);border-radius:999px;background:var(--variation-orange);color:#fff;padding:4px 12px;box-shadow:0 5px 13px rgba(0,0,0,.22);font-size:11px;font-weight:900;line-height:1;letter-spacing:.08em;white-space:nowrap;}
+  .variation-board-badge[hidden]{display:none!important;}
   .variation-panel{display:flex;flex-direction:column;gap:11px;min-width:0;}
   .variation-status{border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:10px 11px;color:#333;font-size:14px;font-weight:900;line-height:1.35;}
-  .variation-moves-title{font-size:14px;font-weight:900;color:#333;}
-  .variation-moves{min-height:120px;max-height:none;flex:1;overflow:auto;display:flex;align-content:flex-start;flex-wrap:wrap;gap:6px;border-radius:13px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:9px;box-sizing:border-box;}
-  .variation-moves-empty{color:#777;font-size:13px;font-weight:800;}
-  .variation-move{display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid rgba(132,63,70,.17);padding:5px 8px;color:#333;font-size:12px;font-weight:900;line-height:1;}
-  .variation-controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-  .variation-controls button{min-height:39px;border-radius:12px;padding:7px 8px;font-size:12px;white-space:normal;}
-  .variation-flip-btn,.variation-reset-btn{grid-column:1 / -1;}
+  .variation-moves-title{font-size:18px;font-weight:900;color:#333;margin:0;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .variation-moves{min-height:120px;max-height:none;flex:1;overflow-y:auto;display:grid;grid-template-columns:34px 1fr 1fr 34px 1fr 1fr;gap:5px 4px;align-content:start;padding-right:6px;box-sizing:border-box;font-size:15px;line-height:1.42;}
+  .variation-moves-empty{grid-column:1 / -1;color:#777;font-size:13px;font-weight:800;padding:6px 2px;}
+  .variation-move-cell{border-radius:6px;padding:1px 3px;min-width:0;}
+  .variation-move-cell.move-number{color:var(--andili-rot);font-weight:900;text-align:right;}
+  .variation-move-cell.move-entry{cursor:pointer;overflow-wrap:anywhere;}
+  .variation-move-cell.move-entry:hover{background:rgba(132,63,70,.08);}
+  .variation-move-cell.current{background:rgba(180,83,9,.16);font-weight:900;outline:1px solid rgba(180,83,9,.32);}
+  .variation-move-cell.future{opacity:.58;}
 
   .identity-backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:3200;padding:18px;box-sizing:border-box;}
   .identity-backdrop[hidden]{display:none!important;}
@@ -774,8 +783,9 @@
   html.dark-mode .invite-color-option.active,
   html.dark-mode .variant-option.active,
   html.dark-mode .rating-option.active,
-  html.dark-mode .variation-open-btn.active,
   html.dark-mode .board-color-option.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important;}
+  html.dark-mode .variation-open-btn.active,
+  html.dark-mode .variation-open-btn[aria-pressed="true"]{background:var(--variation-orange)!important;color:#fff!important;border-color:rgba(255,255,255,.14)!important;}
   html.dark-mode .brand-origin-button{background:linear-gradient(180deg,#383d44 0%,#282c32 100%);color:#efb5bc;border-color:rgba(255,255,255,.12);box-shadow:0 2px 7px rgba(0,0,0,.28);}
   html.dark-mode .brand-origin-button:hover{background:#41464e;}
   html.dark-mode .header-menu-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48);}
@@ -802,10 +812,12 @@
   html.dark-mode .identity-backdrop,
   html.dark-mode .info-backdrop{background:rgba(0,0,0,.66);}
   html.dark-mode .variation-moves-title{color:#f3f4f6;}
-  html.dark-mode .variation-status,
-  html.dark-mode .variation-moves{background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
-  html.dark-mode .variation-move{background:#1b1e23;border-color:rgba(226,151,160,.20);color:#eef0f2;}
+  html.dark-mode .variation-status{background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode .variation-moves{color:#eef0f2;}
+  html.dark-mode .variation-move-cell.move-entry:hover{background:rgba(255,255,255,.08);}
+  html.dark-mode .variation-move-cell.current{background:rgba(180,83,9,.28);outline-color:rgba(238,153,61,.42);}
   html.dark-mode .variation-moves-empty{color:#b8bdc6;}
+  html.dark-mode .resign-warning{background:#252930;border-color:rgba(255,255,255,.09);color:#b8bdc6;}
   html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.members-modal h3,.member-lobby-heading h2,.board-color-popup-title){color:#f3f4f6!important;}
   html.dark-mode :is(.player-label,.player-clock-head,.time-status,.time-format-help,.time-lock-note,.daily-account-note,.invite-color-summary,.variantStatus,.freestyle-position-label,.freestyle-position-message,.chat-etiquette-note,.chat-empty,.chat-status,.global-chat-subtitle,.global-chat-status,.global-chat-note,.global-chat-members-title,.member-search-hint,.member-empty,.member-result-meta,.members-intro,.members-status,.daily-game-meta,.daily-games-intro,.daily-games-status,.open-offer-meta,.open-offers-intro,.open-offers-status,.public-game-meta,.public-games-intro,.public-games-status,.auth-account-mail,.auth-rating-name,.auth-rating-meta,.auth-ratings-note,.auth-email-notifications-note,.auth-email-notifications-status,.account-edit-hint,.admin-overview-intro,.admin-overview-generated,.admin-stat-label,.admin-event-time,.admin-message-meta-row,.admin-message-file-note,.admin-message-attachment-meta,.moderation-note,.admin-report-meta,.admin-report-comment,.admin-report-chat,.privacy-highlight,.privacy-storage-list dd,.site-footnote,.site-stats,.next-daily-game-hint){color:#b8bdc6!important;}
   html.dark-mode :is(.daily-game-status,.open-offer-kicker,.open-offer-status,.public-game-kicker,.public-game-status,.member-result-name,.player-rating-value,.auth-rating-value,.global-chat-message-name,.admin-stat-value,.admin-inline-stat strong){color:#e6a3ab!important;}
@@ -870,8 +882,8 @@
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading{flex-direction:column}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
-  @media (max-width:760px){.variation-panel{gap:8px}.variation-moves{min-height:100px;max-height:220px;flex:0 1 auto}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px;flex-wrap:wrap}.gamer-board-nav{flex:0 0 100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.variation-panel{gap:8px}.variation-moves{min-height:100px;max-height:220px;flex:0 1 auto;font-size:14px;grid-template-columns:38px 1fr 1fr}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:620px){.admin-delete-search-row,.admin-delete-card{grid-template-columns:1fr}.admin-delete-search-row button,.admin-delete-btn{width:100%}}
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
@@ -1061,7 +1073,7 @@
 
           <h4>11. Spielen</h4>
           <p>Figuren werden durch Anklicken oder direktes Ziehen mit Maus beziehungsweise Finger bewegt. Illegale Züge werden blockiert, und mögliche Zielfelder werden auf dem Brett markiert. Die Brettausrichtung passt sich automatisch an deine Farbe an.</p>
-          <p>In einer laufenden Daily-Partie öffnet <strong>„♟ Variante“</strong> einen sicheren Variantenmodus direkt anstelle des Partiebretts. Die Schaltfläche rastet sichtbar ein, das Statusfeld zeigt <strong>„Variantenbrett“</strong> und die rechte Spalte enthält die ausprobierten Züge sowie die Variantensteuerung. Ein erneuter Klick kehrt zur unveränderten echten Partie zurück. Variantenzüge werden niemals übertragen oder als Daily-Zug vorgemerkt.</p>
+          <p>In einer laufenden Daily-Partie öffnet <strong>„♟ Variante“</strong> einen sicheren Variantenmodus direkt anstelle des Partiebretts. Die Schaltfläche rastet orange ein; ein orangefarbener Innenrahmen und die Plakette <strong>„VARIANTENBRETT“</strong> kennzeichnen das Testbrett zusätzlich. Das Statusfeld zeigt <strong>„Variantenbrett“</strong>, rechts erscheint die vertraute <strong>„Zugliste – Variante“</strong>. Die vier Navigationstasten unter dem Brett steuern jetzt Variantenanfang, zurück, vor und Variantenende; auch <strong>„Brett drehen“</strong> wirkt auf das sichtbare Variantenbrett. Ein erneuter Klick auf <strong>„♟ Variante“</strong> kehrt zur unveränderten echten Partie zurück. Variantenzüge werden niemals übertragen oder als Daily-Zug vorgemerkt.</p>
           <p><strong>So rochierst du im Freestyle:</strong> Klicke zuerst deinen König und danach den Turm an, mit dem du rochieren möchtest. Klicke also nicht auf das spätere Zielfeld des Königs. Der Turm auf der Königsseite löst die kurze Rochade aus, der Turm auf der Damenseite die lange Rochade. Ist die Rochade nach den Regeln erlaubt, werden beide Figuren automatisch auf ihre Zielfelder gesetzt: kurze Rochade mit König auf der g-Linie und Turm auf der f-Linie, lange Rochade mit König auf der c-Linie und Turm auf der d-Linie.</p>
 
           <h4>12. Spieler- und Zeitanzeige</h4>
@@ -1079,13 +1091,13 @@
           <p>Im Global-Chat bleiben höchstens die letzten 200 Nachrichten und höchstens Nachrichten der vergangenen 30 Tage gespeichert. Beim Öffnen eines Spielraums wird der Global-Chat ausgeblendet; dort steht weiterhin ausschließlich der private Partie-Chat zur Verfügung.</p>
 
           <h4>14. Partieaktionen</h4>
-          <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. Bei einer Daily-Zugvorschau erscheinen dort zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
+          <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. <strong>„Aufgeben“</strong> ist bewusst neutral dargestellt; erst die endgültige Bestätigung im Sicherheitsfenster ist rot. <strong>„Weiterspielen“</strong> bricht den Vorgang ab. Bei einer Daily-Zugvorschau erscheinen zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
 
           <h4>15. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
 
           <h4>16. Brett und Darstellung</h4>
-          <p>Unter dem Brett kannst du das Brett drehen, die Brettfarbe ändern und den Ton ein- oder ausschalten.</p>
+          <p>Unter dem Brett führen dich <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> zum Anfang, einen Halbzug zurück, einen Halbzug vor oder zur letzten Stellung. Daneben kannst du das gerade sichtbare Brett drehen, die Brettfarbe und den Figurensatz ändern sowie den Ton ein- oder ausschalten. Beim geöffneten Variantenbrett arbeiten Navigation und Drehschaltfläche automatisch mit der Variante.</p>
           <p>Über <strong>„🌙 Dunkel“</strong> im Header aktivierst du den Dark Mode für den gesamten Gamer. Die Auswahl wird auf dem Gerät gespeichert und beim nächsten Aufruf automatisch wiederhergestellt. Mit <strong>„☀️ Hell“</strong> wechselst du zurück zur hellen Darstellung.</p>
 
           <h4>17. PGN-Datei</h4>
@@ -1773,11 +1785,24 @@
       </div>
     </div>
 
+    <div id="resignBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal resign-modal" role="dialog" aria-modal="true" aria-labelledby="resignTitle" aria-describedby="resignPrompt resignWarning">
+        <h3 id="resignTitle">Partie aufgeben?</h3>
+        <p id="resignPrompt">Möchtest du die laufende Partie wirklich aufgeben?</p>
+        <div id="resignWarning" class="resign-warning">Dieser Schritt beendet die Partie endgültig und kann nicht rückgängig gemacht werden.</div>
+        <div class="identity-actions">
+          <button id="resignCancelBtn" class="button-flat" type="button">Weiterspielen</button>
+          <button id="resignConfirmBtn" class="resign-confirm-btn" type="button">Partie wirklich aufgeben</button>
+        </div>
+      </div>
+    </div>
+
     <div class="top-layout">
       <div class="board-column">
         <div class="board-wrapper">
           <div id="board" aria-label="Schachbrett"></div>
           <div id="variationBoard" class="variation-board" aria-label="Variantenbrett" hidden></div>
+          <div id="variationBoardBadge" class="variation-board-badge" aria-hidden="true" hidden>VARIANTENBRETT</div>
           <div id="visitorBoardOverlay" class="visitor-board-overlay" hidden aria-label="Willkommen im Hammerschach-Gamer">
             <div class="visitor-board-welcome">
               <img class="visitor-board-logo" src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" />
@@ -1788,6 +1813,12 @@
           <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
         </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
+          <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
+            <button id="boardNavStart" class="button-flat gamer-board-nav-btn" type="button" title="Anfang der Partie" aria-label="Anfang der Partie">&laquo;</button>
+            <button id="boardNavBack" class="button-flat gamer-board-nav-btn" type="button" title="Einen Halbzug zurück" aria-label="Einen Halbzug zurück">&lsaquo;</button>
+            <button id="boardNavForward" class="button-flat gamer-board-nav-btn" type="button" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">&rsaquo;</button>
+            <button id="boardNavEnd" class="button-flat gamer-board-nav-btn" type="button" title="Letzte Stellung" aria-label="Letzte Stellung">&raquo;</button>
+          </div>
           <button id="flipBoardBtn" class="button-flat icon-btn" type="button" title="Brett drehen" aria-label="Brett drehen"><span class="icon-label">↻</span></button>
           <div class="board-color-wrap" id="boardColorWrap">
             <button id="btnBoardColor" type="button" class="button-flat icon-btn" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe"><span class="icon-label">🎨</span></button>
@@ -1821,7 +1852,7 @@
           </div>
           <div id="gameActions" class="board-game-actions" aria-label="Partieaktionen" hidden>
             <button id="offerDrawBtn" class="button-flat board-action-btn" type="button">½ Remis</button>
-            <button id="resignBtn" class="board-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
+            <button id="resignBtn" class="button-flat board-action-btn resign-btn" type="button">🏳️ Aufgeben</button>
           </div>
           <div id="dailyMoveConfirmation" class="board-daily-actions" hidden aria-live="polite">
             <button id="dailyMoveCancelBtn" class="button-flat board-action-btn board-daily-cancel-btn" type="button" title="Zug zurücknehmen" aria-label="Zug zurücknehmen">↩</button>
@@ -2016,14 +2047,8 @@
         </div>
         <div id="variationSidePanel" class="side-panel box variation-panel" hidden>
           <div id="variationStatus" class="variation-status" aria-live="polite">—</div>
-          <div class="variation-moves-title">Ausprobierte Züge</div>
-          <div id="variationMoveList" class="variation-moves" aria-label="Ausprobierte Variantenzüge"></div>
-          <div class="variation-controls">
-            <button id="variationUndoBtn" class="button-flat" type="button">← Zurück</button>
-            <button id="variationRedoBtn" class="button-flat" type="button">Vor →</button>
-            <button id="variationFlipBtn" class="button-flat variation-flip-btn" type="button">↻ Brett drehen</button>
-            <button id="variationResetBtn" class="button-flat variation-reset-btn" type="button">Ausgangsstellung der Variante</button>
-          </div>
+          <div class="variation-moves-title"><span>Zugliste – Variante</span><span id="variationMovesInfo">0/0</span></div>
+          <div id="variationMoveList" class="variation-moves" aria-label="Zugliste der ausprobierten Variante"></div>
         </div>
       </aside>
     </div>
@@ -2732,6 +2757,7 @@ let suppressPieceDragClickUntil = 0;
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
 const illegalFlashEl = document.getElementById('illegalFlash');
+const flipBoardBtn = document.getElementById('flipBoardBtn');
 const moveListEl = document.getElementById('moveList');
 const preRoomSetupPanelEl = document.getElementById('preRoomSetupPanel');
 const sideToggleRowEl = document.getElementById('sideToggleRow');
@@ -2740,6 +2766,10 @@ const navStartBtn = document.getElementById('navStart');
 const navBackBtn = document.getElementById('navBack');
 const navForwardBtn = document.getElementById('navForward');
 const navEndBtn = document.getElementById('navEnd');
+const boardNavStartBtn = document.getElementById('boardNavStart');
+const boardNavBackBtn = document.getElementById('boardNavBack');
+const boardNavForwardBtn = document.getElementById('boardNavForward');
+const boardNavEndBtn = document.getElementById('boardNavEnd');
 const timeSetupBoxEl = document.getElementById('timeSetupBox');
 const variantSetupBoxEl = document.getElementById('variantSetupBox');
 const variantStandardBtn = document.getElementById('variantStandardBtn');
@@ -2763,14 +2793,12 @@ const dailyMoveConfirmBtn = document.getElementById('dailyMoveConfirmBtn');
 const variationLauncherEl = document.getElementById('variationLauncher');
 const variationOpenBtn = document.getElementById('variationOpenBtn');
 const variationBoardEl = document.getElementById('variationBoard');
+const variationBoardBadgeEl = document.getElementById('variationBoardBadge');
 const mainSidePanelEl = document.getElementById('mainSidePanel');
 const variationSidePanelEl = document.getElementById('variationSidePanel');
 const variationStatusEl = document.getElementById('variationStatus');
 const variationMoveListEl = document.getElementById('variationMoveList');
-const variationUndoBtn = document.getElementById('variationUndoBtn');
-const variationRedoBtn = document.getElementById('variationRedoBtn');
-const variationFlipBtn = document.getElementById('variationFlipBtn');
-const variationResetBtn = document.getElementById('variationResetBtn');
+const variationMovesInfoEl = document.getElementById('variationMovesInfo');
 const movesPanelEl = document.getElementById('movesPanel');
 const chatPanelEl = document.getElementById('chatPanel');
 const showPlayersPanelBtn = document.getElementById('showPlayersPanelBtn');
@@ -3664,6 +3692,10 @@ const newGameBtn = document.getElementById('newGameBtn');
 const gameActionsEl = document.getElementById('gameActions');
 const offerDrawBtn = document.getElementById('offerDrawBtn');
 const resignBtn = document.getElementById('resignBtn');
+const resignBackdropEl = document.getElementById('resignBackdrop');
+const resignPromptEl = document.getElementById('resignPrompt');
+const resignCancelBtn = document.getElementById('resignCancelBtn');
+const resignConfirmBtn = document.getElementById('resignConfirmBtn');
 const onlineStatusEl = document.getElementById('onlineStatus');
 const onlineRoleEl = document.getElementById('onlineRole');
 const onlineRoomEl = document.getElementById('onlineRoom');
@@ -7012,6 +7044,7 @@ function updateOnlineActionButtons(){
 function updateGameActionButtons(){
   const live = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
   if(gameActionsEl) gameActionsEl.hidden = !live;
+  if(!live && resignBackdropEl && !resignBackdropEl.hidden) closeResignDialog({restoreFocus:false});
   if(!offerDrawBtn || !resignBtn) return;
   offerDrawBtn.disabled = !live;
   resignBtn.disabled = !live;
@@ -8922,15 +8955,39 @@ function handleDrawButtonClick(){
     setTimeout(requestOnlineState, 500);
   }
 }
-function handleResignButtonClick(){
+function closeResignDialog(options){
+  options = options || {};
+  if(!resignBackdropEl) return;
+  resignBackdropEl.hidden = true;
+  if(options.restoreFocus !== false && resignBtn && !resignBtn.disabled && !resignBtn.hidden){
+    try{ resignBtn.focus({preventScroll:true}); } catch(_){ resignBtn.focus(); }
+  }
+}
+function openResignDialog(){
   if(!isPlayerAllowedForGameAction()){ updateGameActionButtons(); return; }
   const side = onlineRoleCode === 'w' ? 'Weiß' : 'Schwarz';
-  if(!window.confirm(side + ' wirklich aufgeben?')) return;
+  if(resignPromptEl) resignPromptEl.textContent = 'Du spielst mit ' + side + '. Möchtest du die laufende Partie wirklich aufgeben?';
+  if(!resignBackdropEl) return;
+  resignBackdropEl.hidden = false;
+  setTimeout(() => {
+    if(resignCancelBtn && !resignBackdropEl.hidden) resignCancelBtn.focus();
+  }, 0);
+}
+function confirmResignation(){
+  if(!isPlayerAllowedForGameAction()){
+    closeResignDialog({restoreFocus:false});
+    updateGameActionButtons();
+    return;
+  }
+  closeResignDialog({restoreFocus:false});
   if(sendOnlineMessage({type:'resign'})){
     onlineLastMessage = 'Aufgabe wird gesendet...';
     updateOnlineUi();
     setTimeout(requestOnlineState, 500);
   }
+}
+function handleResignButtonClick(){
+  openResignDialog();
 }
 function onlineInteractionBlockReason(gameState){
   if(!onlineRoomId) return 'Bitte zuerst eine Online-Partie erstellen oder einem Einladungslink folgen.';
@@ -9213,6 +9270,17 @@ document.addEventListener('keydown', ev => {
 startOnlineBtn.addEventListener('click', startOnlineGame);
 if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
 if(resignBtn) resignBtn.addEventListener('click', handleResignButtonClick);
+if(resignCancelBtn) resignCancelBtn.addEventListener('click', () => closeResignDialog());
+if(resignConfirmBtn) resignConfirmBtn.addEventListener('click', confirmResignation);
+if(resignBackdropEl) resignBackdropEl.addEventListener('click', event => {
+  if(event.target === resignBackdropEl) closeResignDialog();
+});
+document.addEventListener('keydown', event => {
+  if(event.key === 'Escape' && resignBackdropEl && !resignBackdropEl.hidden){
+    event.preventDefault();
+    closeResignDialog();
+  }
+});
 
 function castleSideCode(value){
   if(!value) return '';
@@ -9562,13 +9630,20 @@ function updateVariationLauncherUi(){
 function syncVariationModeUi(){
   if(boardEl) boardEl.hidden = variationModeActive;
   if(variationBoardEl) variationBoardEl.hidden = !variationModeActive;
+  if(variationBoardBadgeEl) variationBoardBadgeEl.hidden = !variationModeActive;
   if(mainSidePanelEl) mainSidePanelEl.hidden = variationModeActive;
   if(variationSidePanelEl) variationSidePanelEl.hidden = !variationModeActive;
   document.documentElement.classList.toggle('variation-mode-active',variationModeActive);
+  if(flipBoardBtn){
+    const flipTitle = variationModeActive ? 'Variantenbrett drehen' : 'Brett drehen';
+    flipBoardBtn.title = flipTitle;
+    flipBoardBtn.setAttribute('aria-label',flipTitle);
+  }
   if(variationOpenBtn){
     variationOpenBtn.classList.toggle('active',variationModeActive);
     variationOpenBtn.setAttribute('aria-pressed',variationModeActive ? 'true' : 'false');
   }
+  updateBoardNavControls();
 }
 function openVariationBoard(){
   if(variationModeActive){
@@ -9639,23 +9714,81 @@ function updateVariationStatus(){
   const side = variationGame.turn === 'w' ? 'Weiß' : 'Schwarz';
   variationStatusEl.textContent = side + ' am Zug' + (variationGame.inCheck(variationGame.turn) ? ' — Schach!' : '.');
 }
+function completeVariationLine(){
+  return variationHistory.concat(variationRedo.slice().reverse());
+}
+function setVariationViewIndex(targetIndex){
+  if(!variationStartGame) return;
+  const line = completeVariationLine();
+  const target = Math.max(0,Math.min(line.length,Math.floor(Number(targetIndex) || 0)));
+  variationHistory = line.slice(0,target);
+  variationRedo = line.slice(target).reverse();
+  variationSelected = null;
+  rebuildVariationGame();
+  renderVariationBoard();
+}
 function renderVariationMoveList(){
   if(!variationMoveListEl) return;
   variationMoveListEl.innerHTML = '';
-  if(variationHistory.length === 0){
-    const empty = document.createElement('span');
+  const line = completeVariationLine();
+  const currentIndex = variationHistory.length;
+  if(variationMovesInfoEl) variationMovesInfoEl.textContent = line.length === 0 ? '0/0' : currentIndex + '/' + line.length;
+  if(line.length === 0){
+    const empty = document.createElement('div');
     empty.className = 'variation-moves-empty';
-    empty.textContent = 'Noch keine Züge ausprobiert.';
+    empty.textContent = 'Noch keine Variantenzüge.';
     variationMoveListEl.appendChild(empty);
     return;
   }
-  for(const entry of variationHistory){
-    const chip = document.createElement('span');
-    chip.className = 'variation-move';
-    chip.textContent = entry.moveNumber + (entry.side === 'w' ? '. ' : '… ') + entry.san;
-    variationMoveListEl.appendChild(chip);
+
+  const fullMoves = [];
+  for(let index=0;index<line.length;index++){
+    const entry = line[index];
+    let group = fullMoves[fullMoves.length - 1];
+    if(!group || group.moveNumber !== entry.moveNumber){
+      group = {moveNumber:entry.moveNumber,white:null,black:null};
+      fullMoves.push(group);
+    }
+    group[entry.side === 'w' ? 'white' : 'black'] = {entry,index};
   }
-  variationMoveListEl.scrollTop = variationMoveListEl.scrollHeight;
+
+  function appendCell(text,className,secondPair){
+    const cell = document.createElement('div');
+    cell.className = className;
+    if(secondPair) cell.classList.add('hide-mobile-pair');
+    cell.textContent = text || '';
+    variationMoveListEl.appendChild(cell);
+    return cell;
+  }
+  function appendMoveCell(item,secondPair){
+    const cell = appendCell(item ? item.entry.san : '','variation-move-cell move-entry',secondPair);
+    if(!item){
+      cell.style.cursor = 'default';
+      return;
+    }
+    const positionIndex = item.index + 1;
+    if(positionIndex === currentIndex) cell.classList.add('current');
+    if(positionIndex > currentIndex) cell.classList.add('future');
+    cell.title = 'Zu dieser Variantenstellung springen';
+    cell.addEventListener('click', () => setVariationViewIndex(positionIndex));
+  }
+  function appendMoveGroup(group,secondPair){
+    appendCell(group ? group.moveNumber + '.' : '','variation-move-cell move-number',secondPair);
+    appendMoveCell(group ? group.white : null,secondPair);
+    appendMoveCell(group ? group.black : null,secondPair);
+  }
+
+  for(let index=0;index<fullMoves.length;index+=2){
+    appendMoveGroup(fullMoves[index],false);
+    appendMoveGroup(fullMoves[index + 1] || null,true);
+  }
+  const currentCell = variationMoveListEl.querySelector('.variation-move-cell.current');
+  if(currentCell){
+    const targetTop = currentCell.offsetTop - Math.max(0,(variationMoveListEl.clientHeight - currentCell.offsetHeight) / 2);
+    variationMoveListEl.scrollTop = Math.max(0,targetTop);
+  } else {
+    variationMoveListEl.scrollTop = 0;
+  }
 }
 function getVariationSquareEl(x,y){
   if(!variationBoardEl) return null;
@@ -9706,10 +9839,9 @@ function renderVariationBoard(){
   }
   updateVariationStatus();
   renderVariationMoveList();
-  if(variationUndoBtn) variationUndoBtn.disabled = variationHistory.length === 0;
-  if(variationRedoBtn) variationRedoBtn.disabled = variationRedo.length === 0;
+  updateBoardNavControls();
 }
-function commitVariationMove(found, promotion, preserveRedo){
+function commitVariationMove(found, promotion){
   if(!variationGame) return;
   const before = variationGame.clone();
   const entry = {
@@ -9726,7 +9858,7 @@ function commitVariationMove(found, promotion, preserveRedo){
   entry.taken = applied.taken;
   entry.san = moveToSan(before, entry, variationGame);
   variationHistory.push(entry);
-  if(!preserveRedo) variationRedo = [];
+  variationRedo = [];
   variationSelected = null;
   renderVariationBoard();
 }
@@ -9759,44 +9891,14 @@ function onVariationSquareClick(x,y){
   const needsPromotion = movingPiece.toLowerCase() === 'p' && (found.to[1] === 0 || found.to[1] === 7);
   if(needsPromotion){
     showPromotionOverlay(variationGame.turn).then(choice => {
-      if(choice && variationGame) commitVariationMove(found, choice, false);
+      if(choice && variationGame) commitVariationMove(found, choice);
       else { variationSelected = null; renderVariationBoard(); }
     });
   } else {
-    commitVariationMove(found, null, false);
+    commitVariationMove(found, null);
   }
-}
-function undoVariationMove(){
-  if(!variationHistory.length) return;
-  variationRedo.push(variationHistory.pop());
-  variationSelected = null;
-  rebuildVariationGame();
-  renderVariationBoard();
-}
-function redoVariationMove(){
-  if(!variationRedo.length || !variationGame) return;
-  const entry = variationRedo.pop();
-  const found = findMatchingLegalMove(variationGame.legalMoves(), entry);
-  if(!found){
-    variationRedo = [];
-    renderVariationBoard();
-    return;
-  }
-  commitVariationMove(found, entry.promotion || null, true);
-}
-function resetVariationBoard(){
-  if(!variationStartGame) return;
-  variationHistory = [];
-  variationRedo = [];
-  variationSelected = null;
-  variationGame = variationStartGame.clone();
-  renderVariationBoard();
 }
 if(variationOpenBtn) variationOpenBtn.addEventListener('click', openVariationBoard);
-if(variationUndoBtn) variationUndoBtn.addEventListener('click', undoVariationMove);
-if(variationRedoBtn) variationRedoBtn.addEventListener('click', redoVariationMove);
-if(variationFlipBtn) variationFlipBtn.addEventListener('click', () => { variationOrientationWhite = !variationOrientationWhite; renderVariationBoard(); });
-if(variationResetBtn) variationResetBtn.addEventListener('click', resetVariationBoard);
 document.addEventListener('keydown', event => {
   if(event.key === 'Escape' && variationModeActive && !document.getElementById('promotionBackdrop')) closeVariationBoard();
 });
@@ -10130,6 +10232,28 @@ function renderMoveList(){
     moveListEl.appendChild(div);
   });
 }
+function updateBoardNavControls(){
+  if(!boardNavStartBtn || !boardNavBackBtn || !boardNavForwardBtn || !boardNavEndBtn) return;
+  let current = viewIndex;
+  let total = masterHistory.length;
+  let locked = isMoveNavigationLocked();
+  let labels = ['Anfang der Partie','Einen Halbzug zurück','Einen Halbzug vor','Letzte Stellung'];
+  if(variationModeActive){
+    current = variationHistory.length;
+    total = completeVariationLine().length;
+    locked = false;
+    labels = ['Ausgangsstellung der Variante','Einen Variantenzug zurück','Einen Variantenzug vor','Letzte Variantenstellung'];
+  }
+  const buttons = [boardNavStartBtn,boardNavBackBtn,boardNavForwardBtn,boardNavEndBtn];
+  buttons.forEach((button,index) => {
+    button.title = labels[index];
+    button.setAttribute('aria-label',labels[index]);
+  });
+  boardNavStartBtn.disabled = locked || total === 0 || current === 0;
+  boardNavBackBtn.disabled = locked || total === 0 || current === 0;
+  boardNavForwardBtn.disabled = locked || total === 0 || current === total;
+  boardNavEndBtn.disabled = locked || total === 0 || current === total;
+}
 function updateNavControls(){
   const total = masterHistory.length;
   const locked = isMoveNavigationLocked();
@@ -10138,6 +10262,7 @@ function updateNavControls(){
   navForwardBtn.disabled = locked || total === 0 || viewIndex === total;
   navEndBtn.disabled = locked || total === 0 || viewIndex === total;
   movesInfoEl.textContent = total === 0 ? '0/0' : viewIndex + '/' + total;
+  updateBoardNavControls();
 }
 function canExportCurrentGamePgn(){
   return masterHistory.length > 0 && !!(onlineGameEnded || gameEnded || timeLost);
@@ -10154,6 +10279,34 @@ navStartBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) retur
 navBackBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.max(0, viewIndex - 1); selected = null; renderBoard(); });
 navForwardBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = Math.min(masterHistory.length, viewIndex + 1); selected = null; renderBoard(); });
 navEndBtn.addEventListener('click', () => { if(isMoveNavigationLocked()) return; viewIndex = masterHistory.length; selected = null; renderBoard(); });
+if(boardNavStartBtn) boardNavStartBtn.addEventListener('click', () => {
+  if(variationModeActive){ setVariationViewIndex(0); return; }
+  if(isMoveNavigationLocked()) return;
+  viewIndex = 0;
+  selected = null;
+  renderBoard();
+});
+if(boardNavBackBtn) boardNavBackBtn.addEventListener('click', () => {
+  if(variationModeActive){ setVariationViewIndex(variationHistory.length - 1); return; }
+  if(isMoveNavigationLocked()) return;
+  viewIndex = Math.max(0,viewIndex - 1);
+  selected = null;
+  renderBoard();
+});
+if(boardNavForwardBtn) boardNavForwardBtn.addEventListener('click', () => {
+  if(variationModeActive){ setVariationViewIndex(variationHistory.length + 1); return; }
+  if(isMoveNavigationLocked()) return;
+  viewIndex = Math.min(masterHistory.length,viewIndex + 1);
+  selected = null;
+  renderBoard();
+});
+if(boardNavEndBtn) boardNavEndBtn.addEventListener('click', () => {
+  if(variationModeActive){ setVariationViewIndex(completeVariationLine().length); return; }
+  if(isMoveNavigationLocked()) return;
+  viewIndex = masterHistory.length;
+  selected = null;
+  renderBoard();
+});
 
 function pgnEscapeTagValue(value){
   return String(value || '')
@@ -10337,7 +10490,7 @@ if(roomLobbyBtn) roomLobbyBtn.addEventListener('click', event => {
   }
   openNewGameView();
 });
-document.getElementById('flipBoardBtn').addEventListener('click', () => {
+if(flipBoardBtn) flipBoardBtn.addEventListener('click', () => {
   if(variationModeActive){
     variationOrientationWhite = !variationOrientationWhite;
     variationSelected = null;
