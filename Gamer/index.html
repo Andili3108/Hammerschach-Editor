@@ -430,6 +430,9 @@
   .admin-message-select:focus,.admin-message-textarea:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
   .admin-message-textarea{min-height:190px;resize:vertical;font-family:Arial,sans-serif;line-height:1.45;}
   .admin-message-audience{border-radius:12px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.14);padding:9px 10px;font-size:13px;font-weight:900;color:#555;line-height:1.4;}
+  .admin-message-recipient-box{display:flex;flex-direction:column;gap:7px;border-radius:13px;background:rgba(47,122,69,.06);border:1px solid rgba(47,122,69,.18);padding:10px 11px;}
+  .admin-message-recipient-box[hidden]{display:none!important;}
+  .admin-message-recipient-hint{font-size:12px;font-weight:800;color:#59635c;line-height:1.35;}
   .admin-message-preview{border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.10);padding:13px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.75);}
   .admin-message-preview-title{font-size:18px;font-weight:900;color:#843f46;margin-bottom:8px;overflow-wrap:anywhere;}
   .admin-message-preview-body{font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#333;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
@@ -839,6 +842,8 @@
   html.dark-mode :is(.player-label,.player-clock-head,.time-status,.time-format-help,.time-lock-note,.daily-account-note,.invite-color-summary,.variantStatus,.freestyle-position-label,.freestyle-position-message,.chat-etiquette-note,.chat-empty,.chat-status,.global-chat-subtitle,.global-chat-status,.global-chat-note,.global-chat-members-title,.member-search-hint,.member-empty,.member-result-meta,.members-intro,.members-status,.daily-game-meta,.daily-games-intro,.daily-games-status,.open-offer-meta,.open-offers-intro,.open-offers-status,.public-game-meta,.public-games-intro,.public-games-status,.auth-account-mail,.auth-rating-name,.auth-rating-meta,.auth-ratings-note,.auth-email-notifications-note,.auth-email-notifications-status,.account-edit-hint,.admin-overview-intro,.admin-overview-generated,.admin-stat-label,.admin-event-time,.admin-message-meta-row,.admin-message-file-note,.admin-message-attachment-meta,.moderation-note,.admin-report-meta,.admin-report-comment,.admin-report-chat,.privacy-highlight,.privacy-storage-list dd,.site-footnote,.site-stats,.next-daily-game-hint){color:#b8bdc6!important;}
   html.dark-mode :is(.daily-game-status,.open-offer-kicker,.open-offer-status,.public-game-kicker,.public-game-status,.member-result-name,.player-rating-value,.auth-rating-value,.global-chat-message-name,.admin-stat-value,.admin-inline-stat strong){color:#e6a3ab!important;}
   html.dark-mode :is(.member-result-card,.daily-games-empty,.open-offers-empty,.public-games-empty,.auth-email-option,.auth-email-state-badge,.admin-message-audience,.admin-message-confirm,.player-rating-line,.privacy-storage-list dt){background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode .admin-message-recipient-box{background:rgba(62,154,88,.12);border-color:rgba(92,190,119,.24);}
+  html.dark-mode .admin-message-recipient-hint{color:#b8c9bd;}
   html.dark-mode :is(.brand-origin-line,.member-lobby-heading p,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
   html.dark-mode :is(.online-value,.chat-message-text,.global-chat-message-text,.admin-message-preview-body,.admin-backup-text,.admin-event-main,.member-result-name,.daily-game-title,.open-offer-title,.public-game-title){color:#eef0f2!important;}
   html.dark-mode .admin-delete-name{color:#eef0f2!important;}
@@ -1175,7 +1180,7 @@
           <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
 
           <h4>24. Mitglieder-Informationen und Maildarstellung</h4>
-          <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden.</p>
+          <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden. Über <strong>„Persönliche Admin-Nachricht an ein Mitglied“</strong> kann außerdem genau ein Benutzername ausgewählt und ausschließlich dieser Account angeschrieben werden. Diese persönliche administrative Nachricht ist unabhängig von der freiwilligen Neuigkeiten-Einstellung.</p>
           <p>Die Nachrichten werden einzeln und mit persönlicher Anrede versendet; Mailadressen anderer Mitglieder sind nicht sichtbar. Optional kann eine PDF-, JPG-, PNG- oder WebP-Datei bis 3 MB beigefügt werden. Ausgewählte Bilder lassen sich zusätzlich direkt im Mailinhalt anzeigen. Sämtliche HTML-Mails des Hammerschach-Gamers enthalten oben das Gamer-Logo als einheitlichen Mailkopf. Manche Mailprogramme laden externe Bilder erst nach Zustimmung des Empfängers; der vollständige Text bleibt trotzdem lesbar.</p>
 
           <h4>25. Fair Play und Spielkultur</h4>
@@ -1252,7 +1257,7 @@
 
           <h4>7. E-Mail-Versand</h4>
           <p>Die Mailadresse wird für notwendige Accountnachrichten verwendet, zum Beispiel Mailbestätigung, Kennwort-Wiederherstellung und Hinweise zu einer angeforderten Mailadressänderung. Bei der Einladung eines registrierten Mitglieds wird die hinterlegte Mailadresse serverseitig verwendet und nicht an den Browser des Einladenden übertragen.</p>
-          <p>Benachrichtigungen zu Daily-Zügen und Partieergebnissen können in der Accountverwaltung ein- oder ausgeschaltet werden. Nimmt ein Gegner ein selbst veröffentlichtes offenes Daily-Angebot an, erhält der Anbieter unabhängig davon einmalig eine notwendige Annahmebestätigung mit Partielink; spielt er Weiß, enthält dieselbe Mail zugleich den Hinweis „Du bist am Zug“. Neuigkeiten und Funktionsupdates sind freiwillig, standardmäßig ausgeschaltet und können jederzeit wieder deaktiviert werden.</p>
+          <p>Benachrichtigungen zu Daily-Zügen und Partieergebnissen können in der Accountverwaltung ein- oder ausgeschaltet werden. Nimmt ein Gegner ein selbst veröffentlichtes offenes Daily-Angebot an, erhält der Anbieter unabhängig davon einmalig eine notwendige Annahmebestätigung mit Partielink; spielt er Weiß, enthält dieselbe Mail zugleich den Hinweis „Du bist am Zug“. Neuigkeiten und Funktionsupdates sind freiwillig, standardmäßig ausgeschaltet und können jederzeit wieder deaktiviert werden. Eine gezielt an einen einzelnen Account gerichtete persönliche Admin-Nachricht dient der unmittelbaren administrativen Kommunikation und wird deshalb unabhängig von der Neuigkeiten-Einstellung versendet; die Mailadresse bleibt dabei vor dem Browser verborgen.</p>
           <p>Der Versand erfolgt über die im Worker konfigurierte Versandlösung. Der Worker unterstützt einen SMTP-Versand und alternativ Mailjet. Versandprotokolle enthalten Mailart, Versandweg, Erfolg oder Fehler und Zeitpunkt, jedoch nicht den vollständigen Mailinhalt. Optionale Anhänge an Administrator-Nachrichten werden für den Versand verarbeitet.</p>
 
           <h4>8. Sicherheit und Protokolle</h4>
@@ -1590,7 +1595,15 @@
           <select id="adminMessageKindSelect" class="admin-message-select">
             <option value="news">Neuigkeiten und Funktionsupdates</option>
             <option value="system">Wichtige Systeminformation</option>
+            <option value="personal">Persönliche Admin-Nachricht an ein Mitglied</option>
           </select>
+          <div id="adminMessageRecipientBox" class="admin-message-recipient-box" hidden>
+            <label class="identity-label" for="adminMessageRecipientSelect">Einzelnes Mitglied auswählen</label>
+            <select id="adminMessageRecipientSelect" class="admin-message-select" disabled>
+              <option value="">Mitglied auswählen…</option>
+            </select>
+            <div class="admin-message-recipient-hint">Angezeigt werden ausschließlich Benutzernamen erreichbarer Mitglieder mit bestätigter Mailadresse. Die Mailadresse selbst bleibt im Worker verborgen.</div>
+          </div>
           <div id="adminMessageAudience" class="admin-message-audience" aria-live="polite">Empfängerzahl wird ermittelt…</div>
 
           <label class="identity-label" for="adminMessageSubjectInput">Betreff</label>
@@ -1626,7 +1639,7 @@
 
           <label class="admin-message-confirm" for="adminMessageConfirmCheckbox">
             <input id="adminMessageConfirmCheckbox" type="checkbox" />
-            <span>Ich habe Nachrichtenart, Empfängergruppe, Betreff, Text und gegebenenfalls den Anhang geprüft.</span>
+            <span>Ich habe Nachrichtenart, Empfänger, Betreff, Text und gegebenenfalls den Anhang geprüft.</span>
           </label>
           <div id="adminMessageStatus" class="admin-message-status" aria-live="polite"></div>
         </div>
@@ -3677,6 +3690,8 @@ const adminDeleteConfirmCancelBtn = document.getElementById('adminDeleteConfirmC
 const adminDeleteConfirmBtn = document.getElementById('adminDeleteConfirmBtn');
 const adminMessageBackdrop = document.getElementById('adminMessageBackdrop');
 const adminMessageKindSelect = document.getElementById('adminMessageKindSelect');
+const adminMessageRecipientBox = document.getElementById('adminMessageRecipientBox');
+const adminMessageRecipientSelect = document.getElementById('adminMessageRecipientSelect');
 const adminMessageAudience = document.getElementById('adminMessageAudience');
 const adminMessageSubjectInput = document.getElementById('adminMessageSubjectInput');
 const adminMessageTextInput = document.getElementById('adminMessageTextInput');
@@ -4884,7 +4899,7 @@ const ADMIN_DETAIL_LABELS = {
 const ADMIN_MAIL_TYPE_LABELS = {
   invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset',
   email_change_verification:'Neue Mailadresse', email_change_notice:'Hinweis zur Mailänderung',
-  daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', member_news:'Mitglieder-Neuigkeiten', member_system:'Mitglieder-Systeminfo', member_news_test:'Test: Neuigkeiten', member_system_test:'Test: Systeminfo', transactional:'Systemmail'
+  daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', member_news:'Mitglieder-Neuigkeiten', member_system:'Mitglieder-Systeminfo', member_personal:'Persönliche Admin-Nachricht', member_news_test:'Test: Neuigkeiten', member_system_test:'Test: Systeminfo', member_personal_test:'Test: persönliche Admin-Nachricht', transactional:'Systemmail'
 };
 const ADMIN_TABLE_LABELS = {
   users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',
@@ -5271,6 +5286,60 @@ const ADMIN_MESSAGE_ATTACHMENT_TYPES = {
 let adminMessageAudienceCount = 0;
 let adminMessageBusy = false;
 let selectedAdminMessageAttachment = null;
+let adminMessageRecipientsLoaded = false;
+let adminMessageRecipientsLoading = false;
+function isPersonalAdminMessage(){
+  return !!(adminMessageKindSelect && adminMessageKindSelect.value === 'personal');
+}
+function selectedAdminMessageRecipientName(){
+  if(!adminMessageRecipientSelect || !adminMessageRecipientSelect.value) return '';
+  const option = adminMessageRecipientSelect.options[adminMessageRecipientSelect.selectedIndex];
+  return option ? String(option.textContent || '').trim() : '';
+}
+function updateAdminMessageRecipientUi(){
+  const personal = isPersonalAdminMessage();
+  if(adminMessageRecipientBox) adminMessageRecipientBox.hidden = !personal;
+  if(adminMessageRecipientSelect) adminMessageRecipientSelect.disabled = adminMessageBusy || adminMessageRecipientsLoading || !personal;
+  if(personal && !adminMessageRecipientsLoaded && !adminMessageRecipientsLoading) loadAdminMessageRecipients();
+}
+async function loadAdminMessageRecipients(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true || adminMessageRecipientsLoading) return;
+  adminMessageRecipientsLoading = true;
+  const previousValue = adminMessageRecipientSelect ? adminMessageRecipientSelect.value : '';
+  if(adminMessageRecipientSelect){
+    adminMessageRecipientSelect.disabled = true;
+    adminMessageRecipientSelect.innerHTML = '<option value="">Mitglieder werden geladen…</option>';
+  }
+  try{
+    const data = await authApi('/api/admin/member-message/recipients');
+    const users = Array.isArray(data.users) ? data.users : [];
+    if(adminMessageRecipientSelect){
+      adminMessageRecipientSelect.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = users.length ? 'Mitglied auswählen…' : 'Kein erreichbares Mitglied vorhanden';
+      adminMessageRecipientSelect.appendChild(placeholder);
+      users.forEach(user => {
+        if(!user || !user.id || !user.username) return;
+        const option = document.createElement('option');
+        option.value = String(user.id);
+        option.textContent = cleanDisplayName(user.username) || 'Mitglied';
+        adminMessageRecipientSelect.appendChild(option);
+      });
+      if(previousValue && users.some(user => String(user && user.id || '') === previousValue)) adminMessageRecipientSelect.value = previousValue;
+    }
+    adminMessageRecipientsLoaded = true;
+  } catch(err){
+    adminMessageRecipientsLoaded = false;
+    if(adminMessageRecipientSelect) adminMessageRecipientSelect.innerHTML = '<option value="">Mitglieder konnten nicht geladen werden</option>';
+    setAdminMessageStatus(err && err.message ? err.message : 'Die auswählbaren Mitglieder konnten nicht geladen werden.', 'error');
+  } finally {
+    adminMessageRecipientsLoading = false;
+    if(adminMessageRecipientBox) adminMessageRecipientBox.hidden = !isPersonalAdminMessage();
+    if(adminMessageRecipientSelect) adminMessageRecipientSelect.disabled = adminMessageBusy || !isPersonalAdminMessage();
+    refreshAdminMessageAudience();
+  }
+}
 function adminMessageFileExtension(name){
   const match = String(name || '').toLowerCase().match(/\.([a-z0-9]{1,8})$/);
   return match ? match[1] : '';
@@ -5379,9 +5448,11 @@ function updateAdminMessagePreview(){
   updateAdminMessageSendState();
 }
 function updateAdminMessageSendState(){
+  const personalRecipientReady = !isPersonalAdminMessage() || !!(adminMessageRecipientSelect && adminMessageRecipientSelect.value);
   const ready = !!(
     !adminMessageBusy &&
     adminMessageAudienceCount > 0 &&
+    personalRecipientReady &&
     adminMessageConfirmCheckbox && adminMessageConfirmCheckbox.checked &&
     adminMessageSubjectInput && adminMessageSubjectInput.value.trim().length >= 3 &&
     adminMessageTextInput && adminMessageTextInput.value.trim().length >= 3
@@ -5389,6 +5460,7 @@ function updateAdminMessageSendState(){
   if(adminMessageSendBtn) adminMessageSendBtn.disabled = !ready;
   if(adminMessageTestBtn) adminMessageTestBtn.disabled = adminMessageBusy;
   if(adminMessageKindSelect) adminMessageKindSelect.disabled = adminMessageBusy;
+  if(adminMessageRecipientSelect) adminMessageRecipientSelect.disabled = adminMessageBusy || adminMessageRecipientsLoading || !isPersonalAdminMessage();
   if(adminMessageSubjectInput) adminMessageSubjectInput.disabled = adminMessageBusy;
   if(adminMessageTextInput) adminMessageTextInput.disabled = adminMessageBusy;
   if(adminMessageAttachmentInput) adminMessageAttachmentInput.disabled = adminMessageBusy;
@@ -5402,7 +5474,15 @@ async function refreshAdminMessageAudience(){
   if(adminMessageAudience) adminMessageAudience.textContent = 'Empfängerzahl wird ermittelt…';
   try{
     const kind = adminMessageKindSelect ? adminMessageKindSelect.value : 'news';
-    const data = await authApi('/api/admin/member-message/audience?kind=' + encodeURIComponent(kind));
+    const targetUserId = kind === 'personal' && adminMessageRecipientSelect ? adminMessageRecipientSelect.value : '';
+    if(kind === 'personal' && !targetUserId){
+      if(adminMessageAudience) adminMessageAudience.textContent = 'Bitte genau ein Mitglied auswählen. Die Nachricht wird ausschließlich an diesen Account gesendet.';
+      updateAdminMessageSendState();
+      return;
+    }
+    const data = await authApi('/api/admin/member-message/audience?kind=' + encodeURIComponent(kind) + (targetUserId ? '&targetUserId=' + encodeURIComponent(targetUserId) : ''));
+    if(kind !== (adminMessageKindSelect ? adminMessageKindSelect.value : 'news')) return;
+    if(kind === 'personal' && targetUserId !== (adminMessageRecipientSelect ? adminMessageRecipientSelect.value : '')) return;
     const audience = data.audience || {};
     adminMessageAudienceCount = Number(audience.count || 0);
     if(adminMessageAudience){
@@ -5420,6 +5500,7 @@ function openAdminMessageDialog(){
   if(adminMessageBackdrop) adminMessageBackdrop.hidden = false;
   if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
   setAdminMessageStatus('', '');
+  updateAdminMessageRecipientUi();
   updateAdminMessagePreview();
   refreshAdminMessageAudience();
   setTimeout(() => { try{ if(adminMessageSubjectInput) adminMessageSubjectInput.focus(); } catch(_){} }, 0);
@@ -5443,6 +5524,7 @@ function adminMessagePayload(confirmed){
   } : null;
   return {
     kind:adminMessageKindSelect ? adminMessageKindSelect.value : 'news',
+    targetUserId:isPersonalAdminMessage() && adminMessageRecipientSelect ? adminMessageRecipientSelect.value : '',
     subject:String(adminMessageSubjectInput && adminMessageSubjectInput.value || '').trim(),
     message:String(adminMessageTextInput && adminMessageTextInput.value || '').trim(),
     attachment,
@@ -5469,13 +5551,16 @@ async function sendAdminMessageTest(){
 async function sendAdminMessageNow(){
   if(adminMessageBusy || !adminMessageSendBtn || adminMessageSendBtn.disabled) return;
   const payload = adminMessagePayload(true);
-  const kindLabel = payload.kind === 'system' ? 'wichtige Systeminformation' : 'Neuigkeiten';
+  const kindLabel = payload.kind === 'personal' ? 'persönliche Admin-Nachricht' : payload.kind === 'system' ? 'wichtige Systeminformation' : 'Neuigkeiten';
   const attachmentNote = payload.attachment ? (' Der Anhang „' + payload.attachment.name + '“ wird mit jeder Nachricht versendet.') : '';
-  const question = 'Die ' + kindLabel + ' wird jetzt einzeln an ' + adminMessageAudienceCount.toLocaleString('de-DE') + ' Mitglieder versendet.' + attachmentNote + ' Wirklich fortfahren?';
+  const recipientName = selectedAdminMessageRecipientName();
+  const question = payload.kind === 'personal'
+    ? 'Die persönliche Admin-Nachricht wird ausschließlich an „' + recipientName + '“ gesendet.' + attachmentNote + ' Wirklich fortfahren?'
+    : 'Die ' + kindLabel + ' wird jetzt einzeln an ' + adminMessageAudienceCount.toLocaleString('de-DE') + ' Mitglieder versendet.' + attachmentNote + ' Wirklich fortfahren?';
   if(!window.confirm(question)) return;
   adminMessageBusy = true;
   updateAdminMessageSendState();
-  setAdminMessageStatus('Mitglieder-Nachricht wird versendet. Bitte dieses Fenster geöffnet lassen…', '');
+  setAdminMessageStatus(payload.kind === 'personal' ? ('Persönliche Nachricht an „' + recipientName + '“ wird versendet…') : 'Mitglieder-Nachricht wird versendet. Bitte dieses Fenster geöffnet lassen…', '');
   try{
     const data = await authApi('/api/admin/member-message/send', {method:'POST', body:JSON.stringify(payload)});
     setAdminMessageStatus(data.message || 'Mitglieder-Nachricht wurde verarbeitet.', Number(data.failedCount || 0) > 0 ? 'error' : 'success');
@@ -5493,7 +5578,17 @@ async function sendAdminMessageNow(){
   }
 }
 if(adminMemberMessageOpenBtn) adminMemberMessageOpenBtn.addEventListener('click', openAdminMessageDialog);
-if(adminMessageKindSelect) adminMessageKindSelect.addEventListener('change', () => { if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false; refreshAdminMessageAudience(); updateAdminMessageSendState(); });
+if(adminMessageKindSelect) adminMessageKindSelect.addEventListener('change', () => {
+  if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+  updateAdminMessageRecipientUi();
+  refreshAdminMessageAudience();
+  updateAdminMessageSendState();
+});
+if(adminMessageRecipientSelect) adminMessageRecipientSelect.addEventListener('change', () => {
+  if(adminMessageConfirmCheckbox) adminMessageConfirmCheckbox.checked = false;
+  refreshAdminMessageAudience();
+  updateAdminMessageSendState();
+});
 if(adminMessageSubjectInput) adminMessageSubjectInput.addEventListener('input', updateAdminMessagePreview);
 if(adminMessageTextInput) adminMessageTextInput.addEventListener('input', updateAdminMessagePreview);
 if(adminMessageAttachmentInput) adminMessageAttachmentInput.addEventListener('change', handleAdminMessageAttachmentSelection);
