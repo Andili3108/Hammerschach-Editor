@@ -91,7 +91,7 @@
   .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(132,63,70,.22),0 8px 18px rgba(0,0,0,.14)!important;}
   .header-menu-popup{position:absolute;z-index:2600;top:calc(100% + 9px);left:50%;transform:translateX(-50%);width:238px;box-sizing:border-box;padding:8px;border:1px solid rgba(132,63,70,.20);border-radius:15px;background:rgba(255,255,255,.99);box-shadow:0 18px 42px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:6px;}
   .new-game-menu .header-menu-popup{left:0;transform:none;}
-  .tools-menu .header-menu-popup{left:auto;right:0;transform:none;}
+  .tools-menu .header-menu-popup,.info-menu .header-menu-popup{left:auto;right:0;transform:none;}
   .header-menu-popup[hidden]{display:none!important;}
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
@@ -126,6 +126,8 @@
   .visitor-board-welcome{width:min(430px,88%);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:clamp(18px,4vw,30px);border:1px solid rgba(132,63,70,.22);border-radius:24px;background:rgba(255,255,255,.86);box-shadow:0 20px 48px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.94);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);}
   .visitor-board-logo{display:block;width:min(270px,78%);max-height:190px;object-fit:contain;filter:drop-shadow(0 8px 13px rgba(0,0,0,.13));}
   .visitor-board-title{font-size:clamp(21px,3.2vw,30px);font-weight:900;color:#222;line-height:1.08;}
+  .visitor-board-slogan{margin-top:2px;font-size:clamp(17px,2.4vw,22px);font-weight:900;color:#843f46;line-height:1.16;}
+  .visitor-board-values{max-width:340px;font-size:clamp(13px,1.7vw,15px);font-weight:800;color:#555;line-height:1.35;}
   .visitor-board-login-btn{min-width:210px;min-height:44px;border-radius:14px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;font-size:15px;}
   html.visitor-start-view .moves-right{display:none!important;}
   html.visitor-start-view .header{grid-template-columns:minmax(0,1fr);}
@@ -558,6 +560,13 @@
   .info-scroll li{margin:3px 0;}
   .info-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
   .info-actions button{border-radius:12px;min-height:38px;}
+  .leitbild-backdrop{z-index:3450;}
+  .leitbild-modal{width:700px;}
+  .leitbild-kicker{margin:2px 0 14px;padding:10px 12px;border-radius:13px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.15);color:#843f46;font-size:17px;font-weight:900;text-align:center;line-height:1.3;}
+  .leitbild-scroll{font-size:16px;line-height:1.48;}
+  .leitbild-scroll p{margin:0 0 12px;}
+  .leitbild-status{min-height:18px;margin-top:4px;color:#555;font-size:13px;font-weight:800;text-align:right;}
+  .leitbild-accept-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
 
   .privacy-backdrop{z-index:3500;}
   .privacy-modal{width:800px;}
@@ -808,6 +817,10 @@
   html.dark-mode .board-color-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48);}
   html.dark-mode .board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
   html.dark-mode .visitor-board-welcome{background:rgba(27,30,35,.91);border-color:rgba(226,151,160,.24);box-shadow:0 20px 48px rgba(0,0,0,.46);}
+  html.dark-mode .visitor-board-slogan{color:#efb5bc;}
+  html.dark-mode .visitor-board-values{color:#c3c8d0;}
+  html.dark-mode .leitbild-kicker{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#efb5bc;}
+  html.dark-mode .leitbild-status{color:#b8bdc6;}
   html.dark-mode .promo-backdrop,
   html.dark-mode .identity-backdrop,
   html.dark-mode .info-backdrop{background:rgba(0,0,0,.66);}
@@ -918,7 +931,15 @@
           <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
           <div class="header-utility-actions" aria-label="Darstellung und Hilfe">
             <button id="themeToggleBtn" class="button-flat name-action-btn theme-toggle-btn" type="button" aria-pressed="false">🌙 Dunkel</button>
-            <button id="infoOpenBtn" class="button-flat name-action-btn info-open-btn" type="button">ℹ️ Info</button>
+            <div id="infoMenu" class="header-menu info-menu">
+              <button id="infoMenuBtn" class="button-flat name-action-btn info-open-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="infoMenuPopup">
+                <span>ℹ️ Info</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+              </button>
+              <div id="infoMenuPopup" class="header-menu-popup" role="menu" aria-label="Informationen" hidden>
+                <button id="infoGuideOpenBtn" class="header-menu-item" type="button" role="menuitem">📖 Anleitung</button>
+                <button id="leitbildOpenBtn" class="header-menu-item" type="button" role="menuitem">🤝 Unser Leitbild</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="actions match-actions" aria-label="Hauptnavigation">
@@ -1006,12 +1027,13 @@
 
     <div id="infoBackdrop" class="info-backdrop" hidden>
       <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-        <h3 id="infoTitle">Hammerschach-Gamer – Bedienungsanleitung</h3>
+        <h3 id="infoTitle">Anleitung zum Hammerschach-Gamer</h3>
         <p class="info-modal-intro">Alle wichtigen Gamer-Funktionen einschließlich des integrierten Analyzers verständlich erklärt. Die Anleitung kann gescrollt werden.</p>
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p>Auf der anonymen Startseite wird die Vorbereitungsspalte ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Nach dem Login erscheinen Farbe, Spielmodus, Bedenkzeit und Zuschauerfreigabe. Öffnest du dagegen einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
+          <p>Das öffentliche Dropdown <strong>„ℹ️ Info“</strong> enthält die <strong>„📖 Anleitung“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Beide Texte sind bereits vor dem Login für Gäste lesbar. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
@@ -1166,6 +1188,25 @@
       </div>
     </div>
 
+    <div id="leitbildBackdrop" class="info-backdrop leitbild-backdrop" hidden>
+      <div class="info-modal leitbild-modal" role="dialog" aria-modal="true" aria-labelledby="leitbildTitle" aria-describedby="leitbildKicker">
+        <h3 id="leitbildTitle">Willkommen in der Hammerschach-Gemeinschaft</h3>
+        <div id="leitbildKicker" class="leitbild-kicker">Schach von Mensch zu Mensch.</div>
+        <div id="leitbildScroll" class="info-scroll leitbild-scroll" tabindex="0">
+          <p>Der Hammerschach-Gamer ist bewusst keine anonyme Massenplattform. Hinter jedem Benutzernamen steht ein Mensch. Wir möchten miteinander Schach spielen, uns ein wenig kennenlernen und eine Gemeinschaft schaffen, in der Vertrauen mehr zählt als Größe.</p>
+          <p><strong>Wir stehen für ehrliches Schach.</strong> Engines, fremde Hilfe, Mehrfachkonten und andere Manipulationen haben hier keinen Platz. Eine fair verlorene Partie ist wertvoller als ein unehrlich errungener Sieg.</p>
+          <p><strong>Wir stehen für Menschlichkeit, Demokratie und Meinungsfreiheit.</strong> Unterschiedliche Ansichten und Überzeugungen sind ausdrücklich willkommen. Niemand muss die Meinung des anderen teilen – aber jeder soll seinem Gegenüber mit Anstand, Respekt und Fairness begegnen. Beleidigungen, Drohungen und Ausgrenzung widersprechen unserem Gemeinschaftsgedanken.</p>
+          <p>Schach soll Menschen verbinden – unabhängig von Herkunft, Alter, Spielstärke oder persönlicher Überzeugung. Wir spielen gegeneinander, aber miteinander.</p>
+          <p>Wenn du diese Werte teilst, bist du im Hammerschach-Gamer herzlich willkommen.</p>
+          <p><strong>Schön, dass du dabei bist!</strong></p>
+        </div>
+        <div id="leitbildStatus" class="leitbild-status" aria-live="polite"></div>
+        <div class="info-actions">
+          <button id="leitbildCloseBtn" class="leitbild-accept-btn" type="button">Gemeinsam fair spielen</button>
+        </div>
+      </div>
+    </div>
+
 
     <div id="privacyBackdrop" class="info-backdrop privacy-backdrop" hidden>
       <div class="info-modal privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" aria-describedby="privacyIntro">
@@ -1183,7 +1224,7 @@
           <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbare Analyzer- und Trainer-Sitzung. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Werkzeug-Sitzungen und die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
 
           <h4>3. Registrierung, Account und Login</h4>
-          <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen und aktive Anmeldesitzungen verwaltet.</p>
+          <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen, aktive Anmeldesitzungen und der Zeitpunkt der einmaligen Leitbild-Bestätigung verwaltet.</p>
           <p>Optional können Mitglieder ein Profilbild, einen echten Namen, ihren Schachverein, eine DWZ und einen kurzen Profiltext hinterlegen. Diese Angaben sind freiwillig und werden ausschließlich anderen eingeloggten Mitgliedern angezeigt. Der Vereinsname ist ebenfalls eine Selbstauskunft; die DWZ wird ausdrücklich als ungeprüfte Selbstauskunft gekennzeichnet.</p>
           <p>Bei einem Profilbild wird die ausgewählte Originaldatei zunächst lokal im Browser mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Nur diese verkleinerte JPG-, PNG- oder WebP-Datei wird an den Worker übertragen und in einem privaten Cloudflare-R2-Bucket gespeichert. Der Zugriff erfolgt kontrolliert über eine angemeldete Sitzung; der Bucket selbst bleibt nicht öffentlich.</p>
           <p>Ein Login-Token wird nach erfolgreicher Anmeldung im Browser gespeichert. Serverseitige Sitzungen sind regulär auf 30 Tage begrenzt. Bei einer Kennwortänderung werden andere bestehende Sitzungen beendet.</p>
@@ -1238,7 +1279,7 @@
           <p>Kontakt, verantwortliche Stelle, allgemeine Datenschutzhinweise und Angaben zur zuständigen Aufsichtsbehörde findest du unter <a class="privacy-external-link" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz auf Andili.de</a>.</p>
 
           <h4>13. Stand und Änderungen</h4>
-          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>18. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
+          <p>Stand dieser ergänzenden Datenschutzhinweise: <strong>20. Juli 2026</strong>. Bei wesentlichen Änderungen der Gamer-Funktionen oder der eingesetzten Dienste werden diese Hinweise angepasst.</p>
         </div>
         <div class="info-actions">
           <a class="brand-origin-button" href="https://www.andili.de/page-impressum.html" target="_blank" rel="noopener noreferrer">Impressum &amp; Datenschutz</a>
@@ -1807,6 +1848,8 @@
             <div class="visitor-board-welcome">
               <img class="visitor-board-logo" src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" />
               <div class="visitor-board-title">Willkommen im Hammerschach-Gamer</div>
+              <div class="visitor-board-slogan">Schach von Mensch zu Mensch.</div>
+              <div class="visitor-board-values">Ehrlich spielen. Frei denken. Gemeinschaft leben.</div>
               <button id="visitorBoardLoginBtn" class="visitor-board-login-btn" type="button">Registrierung / Login</button>
             </div>
           </div>
@@ -3387,7 +3430,11 @@ const toolsMenuEl = document.getElementById('toolsMenu');
 const toolsMenuBtn = document.getElementById('toolsMenuBtn');
 const toolsMenuPopup = document.getElementById('toolsMenuPopup');
 const membersOpenBtn = document.getElementById('membersOpenBtn');
-const infoOpenBtn = document.getElementById('infoOpenBtn');
+const infoMenuEl = document.getElementById('infoMenu');
+const infoMenuBtn = document.getElementById('infoMenuBtn');
+const infoMenuPopup = document.getElementById('infoMenuPopup');
+const infoGuideOpenBtn = document.getElementById('infoGuideOpenBtn');
+const leitbildOpenBtn = document.getElementById('leitbildOpenBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const analyzerToolBtn = document.getElementById('analyzerToolBtn');
 const analyzerToolView = document.getElementById('analyzerToolView');
@@ -3415,7 +3462,7 @@ const globalChatReportCloseBtn = document.getElementById('globalChatReportCloseB
 const globalChatReportSubmitBtn = document.getElementById('globalChatReportSubmitBtn');
 const siteFootnoteEl = document.querySelector('.site-footnote');
 const siteFootnoteHome = siteFootnoteEl ? {parent:siteFootnoteEl.parentNode, nextSibling:siteFootnoteEl.nextSibling} : null;
-const infoOpenBtnHome = infoOpenBtn ? {parent:infoOpenBtn.parentNode, nextSibling:infoOpenBtn.nextSibling} : null;
+const infoMenuHome = infoMenuEl ? {parent:infoMenuEl.parentNode, nextSibling:infoMenuEl.nextSibling} : null;
 
 function updateSiteFootnotePlacement(){
   if(!siteFootnoteEl||!siteFootnoteHome)return;
@@ -3498,9 +3545,11 @@ function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
 const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
 const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Tools-Menü');
+const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }
 function closeToolsMenu(){ if(toolsMenuController) toolsMenuController.close(); }
+function closeInfoMenu(){ if(infoMenuController) infoMenuController.close(); }
 document.addEventListener('click', event => {
   headerMenuControllers.forEach(controller => {
     if(!controller.menuEl.contains(event.target)) controller.close();
@@ -3540,6 +3589,10 @@ updateThemeToggleUi();
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
 const infoScroll = document.getElementById('infoScroll');
+const leitbildBackdrop = document.getElementById('leitbildBackdrop');
+const leitbildScroll = document.getElementById('leitbildScroll');
+const leitbildCloseBtn = document.getElementById('leitbildCloseBtn');
+const leitbildStatus = document.getElementById('leitbildStatus');
 const privacyBackdrop = document.getElementById('privacyBackdrop');
 const privacyCloseBtn = document.getElementById('privacyCloseBtn');
 const privacyScroll = document.getElementById('privacyScroll');
@@ -3807,6 +3860,9 @@ function getOnlinePlayerId(){
 let onlinePlayerId = getOnlinePlayerId();
 let onlineAuthToken = '';
 let onlineAuthUser = null;
+let leitbildAutomaticOpen = false;
+let leitbildOpenedForUserId = '';
+let leitbildAcknowledgeBusy = false;
 let authMode = 'login';
 const PRESENCE_HEARTBEAT_MS = 60000;
 const PRESENCE_MIN_SEND_INTERVAL_MS = 25000;
@@ -4055,6 +4111,10 @@ function saveAuthState(token, user){
   onlineAuthToken = token || '';
   onlineAuthUser = user || null;
   const nextUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
+  if(previousUserId !== nextUserId){
+    leitbildOpenedForUserId = '';
+    leitbildAutomaticOpen = false;
+  }
   if(previousUserId && previousUserId !== nextUserId) clearAvatarObjectUrlCache();
   try{
     if(onlineAuthToken && onlineAuthUser){
@@ -4084,6 +4144,7 @@ function saveAuthState(token, user){
   if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
   postAnalyzerToolContext();
   postTrainerToolContext();
+  setTimeout(maybeOpenLeitbildAfterLogin, 80);
 }
 async function authApi(path, options){
   const headers = {'content-type':'application/json'};
@@ -4825,7 +4886,7 @@ const ADMIN_TABLE_LABELS = {
   users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',
   rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', trainer_progress:'Taktik-Ratings', trainer_attempts:'Taktik-Versuche', auth_security_events:'Sicherheitsereignisse',
   auth_rate_limit_log:'Rate-Limit-Einträge', account_action_tokens:'Aktionslinks', mail_delivery_log:'Mailprotokoll',
-  email_notification_log:'Daily-Mailprotokoll', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger'
+  email_notification_log:'Daily-Mailprotokoll', user_onboarding:'Leitbild-Bestätigungen', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger'
 };
 function renderAdminSecurityEvents(events){
   if(!adminSecurityEvents) return;
@@ -5889,17 +5950,17 @@ function updateVisitorLandingUi(){
   if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
   updateAnalyzerToolAvailability();
 
-  /* In der anonymen Startansicht steht „Info“ kompakt neben den beiden
-     Besucheraktionen. Nach Login oder beim Öffnen eines Spielraums kehrt
-     dieselbe Schaltfläche wieder an ihren normalen Platz neben dem Status zurück. */
-  if(infoOpenBtn && matchActionsEl && infoOpenBtnHome){
+  /* In der anonymen Startansicht bleibt das öffentliche Info-Menü gut erreichbar.
+     Nach Login oder beim Öffnen eines Spielraums kehrt es an seinen normalen
+     Platz neben dem Status zurück. */
+  if(infoMenuEl && matchActionsEl && infoMenuHome){
     if(active){
       const visitorInfoAnchor = toolsMenuEl && toolsMenuEl.parentNode === matchActionsEl ? toolsMenuEl : null;
-      if(infoOpenBtn.parentNode !== matchActionsEl || infoOpenBtn.nextSibling !== visitorInfoAnchor){
-        matchActionsEl.insertBefore(infoOpenBtn, visitorInfoAnchor);
+      if(infoMenuEl.parentNode !== matchActionsEl || infoMenuEl.nextSibling !== visitorInfoAnchor){
+        matchActionsEl.insertBefore(infoMenuEl, visitorInfoAnchor);
       }
-    } else if(infoOpenBtn.parentNode !== infoOpenBtnHome.parent){
-      infoOpenBtnHome.parent.insertBefore(infoOpenBtn, infoOpenBtnHome.nextSibling);
+    } else if(infoMenuEl.parentNode !== infoMenuHome.parent){
+      infoMenuHome.parent.insertBefore(infoMenuEl, infoMenuHome.nextSibling);
     }
   }
 
@@ -6797,10 +6858,59 @@ function openInfoDialog(){
 function closeInfoDialog(){
   if(infoBackdrop) infoBackdrop.hidden = true;
 }
-if(infoOpenBtn) infoOpenBtn.addEventListener('click', openInfoDialog);
+if(infoGuideOpenBtn) infoGuideOpenBtn.addEventListener('click', openInfoDialog);
 if(infoCloseBtn) infoCloseBtn.addEventListener('click', closeInfoDialog);
 if(infoBackdrop) infoBackdrop.addEventListener('click', ev => { if(ev.target === infoBackdrop) closeInfoDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && infoBackdrop && !infoBackdrop.hidden) closeInfoDialog(); });
+
+function openLeitbildDialog(options){
+  if(!leitbildBackdrop) return;
+  leitbildAutomaticOpen = !!(options && options.automatic);
+  if(leitbildStatus) leitbildStatus.textContent = leitbildAutomaticOpen ? 'Dieses Leitbild erscheint für jedes Mitglied einmalig.' : '';
+  if(leitbildCloseBtn){
+    leitbildCloseBtn.disabled = false;
+    leitbildCloseBtn.textContent = 'Gemeinsam fair spielen';
+  }
+  leitbildBackdrop.hidden = false;
+  setTimeout(() => {
+    try{
+      if(leitbildScroll){ leitbildScroll.scrollTop = 0; leitbildScroll.focus(); }
+    } catch(_){}
+  }, 0);
+}
+function closeLeitbildDialog(){
+  if(leitbildBackdrop) leitbildBackdrop.hidden = true;
+  leitbildAutomaticOpen = false;
+}
+function maybeOpenLeitbildAfterLogin(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.leitbildAcknowledged !== false) return;
+  const userId = String(onlineAuthUser.id || '');
+  if(!userId || leitbildOpenedForUserId === userId) return;
+  leitbildOpenedForUserId = userId;
+  openLeitbildDialog({automatic:true});
+}
+async function acknowledgeOrCloseLeitbild(){
+  if(leitbildAcknowledgeBusy) return;
+  const needsAcknowledgement = !!(onlineAuthToken && onlineAuthUser && onlineAuthUser.leitbildAcknowledged === false);
+  if(!needsAcknowledgement){ closeLeitbildDialog(); return; }
+  leitbildAcknowledgeBusy = true;
+  if(leitbildCloseBtn){ leitbildCloseBtn.disabled = true; leitbildCloseBtn.textContent = 'Wird gespeichert…'; }
+  if(leitbildStatus) leitbildStatus.textContent = 'Deine Bestätigung wird deinem Account zugeordnet…';
+  try{
+    const data = await authApi('/api/account/leitbild', {method:'POST', body:JSON.stringify({})});
+    saveAuthState(onlineAuthToken, data.user);
+    closeLeitbildDialog();
+  } catch(err){
+    if(leitbildStatus) leitbildStatus.textContent = err && err.message ? err.message : 'Die Bestätigung konnte nicht gespeichert werden.';
+  } finally {
+    leitbildAcknowledgeBusy = false;
+    if(leitbildCloseBtn){ leitbildCloseBtn.disabled = false; leitbildCloseBtn.textContent = 'Gemeinsam fair spielen'; }
+  }
+}
+if(leitbildOpenBtn) leitbildOpenBtn.addEventListener('click', () => openLeitbildDialog({automatic:false}));
+if(leitbildCloseBtn) leitbildCloseBtn.addEventListener('click', acknowledgeOrCloseLeitbild);
+if(leitbildBackdrop) leitbildBackdrop.addEventListener('click', ev => { if(ev.target === leitbildBackdrop) closeLeitbildDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && leitbildBackdrop && !leitbildBackdrop.hidden) closeLeitbildDialog(); });
 
 let privacyPreviousFocus = null;
 function openPrivacyDialog(){
