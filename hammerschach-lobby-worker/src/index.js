@@ -2817,7 +2817,10 @@ async function listDailyGames(env, sessionUser) {
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
             daily_games.result, daily_games.end_reason, daily_games.rated,
             tournament_game.tournament_id, tournament_game.round_number, tournament_game.pairing_number, tournament_game.game_number,
-            tournament.name AS tournament_name, tournament_round.position_id AS tournament_position_id,
+            tournament_game.group_name AS tournament_group_name, tournament_game.pairing_label AS tournament_pairing_label,
+            tournament.name AS tournament_name, tournament.mode AS tournament_mode,
+            tournament_round.position_id AS tournament_position_id, tournament_round.stage AS tournament_round_stage,
+            tournament_round.label AS tournament_round_label,
             CASE WHEN opponent_presence.last_seen_at >= ? THEN 1 ELSE 0 END AS opponent_online
        FROM daily_games
        LEFT JOIN users white_account ON white_account.id = daily_games.white_user_id
@@ -2882,8 +2885,14 @@ async function listDailyGames(env, sessionUser) {
       rated: Number(row.rated || 0) === 1,
       tournamentId:row.tournament_id || '',
       tournamentName:cleanTournamentName(row.tournament_name || ''),
+      tournamentMode:row.tournament_id ? normalizeTournamentMode(row.tournament_mode) : '',
+      tournamentModeLabel:row.tournament_id ? tournamentModeLabel(row.tournament_mode) : '',
       tournamentRound:row.tournament_id ? Number(row.round_number || 0) : null,
+      tournamentRoundStage:row.tournament_id ? String(row.tournament_round_stage || '') : '',
+      tournamentRoundLabel:row.tournament_id ? String(row.tournament_round_label || '') : '',
       tournamentPairing:row.tournament_id ? Number(row.pairing_number || 0) : null,
+      tournamentPairingLabel:row.tournament_id ? String(row.tournament_pairing_label || '') : '',
+      tournamentGroupName:row.tournament_id ? String(row.tournament_group_name || '') : '',
       tournamentGameNumber:row.tournament_id ? Number(row.game_number || 0) : null,
       tournamentPositionId:row.tournament_position_id === null || row.tournament_position_id === undefined ? null : Number(row.tournament_position_id),
       isTournamentGame:!!row.tournament_id
@@ -2892,7 +2901,12 @@ async function listDailyGames(env, sessionUser) {
 }
 
 
-const TOURNAMENT_ALLOWED_PLAYERS = Object.freeze([4, 6, 8]);
+const TOURNAMENT_PLAYERS_BY_MODE = Object.freeze({
+  single_round_robin:Object.freeze([4, 6, 8]),
+  double_round_robin:Object.freeze([4, 6, 8]),
+  swiss:Object.freeze([8, 12, 16, 24, 32]),
+  groups_knockout:Object.freeze([8, 16, 32])
+});
 const TOURNAMENT_ALLOWED_HOURS = Object.freeze([24, 48, 72]);
 let tournamentTablesReady = false;
 
@@ -2908,6 +2922,7 @@ async function ensureTournamentTables(env) {
        hours_per_move INTEGER NOT NULL,
        rated INTEGER NOT NULL DEFAULT 1,
        variant TEXT NOT NULL DEFAULT 'standard',
+       mode TEXT NOT NULL DEFAULT 'double_round_robin',
        status TEXT NOT NULL DEFAULT 'draft',
        created_by_user_id TEXT NOT NULL,
        current_round INTEGER NOT NULL DEFAULT 0,
@@ -2923,16 +2938,19 @@ async function ensureTournamentTables(env) {
   ).run();
   try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN publication_mail_sent_at TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN full_notification_sent_at TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN mode TEXT NOT NULL DEFAULT 'double_round_robin'`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_participants (
        tournament_id TEXT NOT NULL,
        user_id TEXT NOT NULL,
        status TEXT NOT NULL,
+       group_name TEXT,
        joined_at TEXT NOT NULL,
        updated_at TEXT NOT NULL,
        PRIMARY KEY (tournament_id, user_id)
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN group_name TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_rounds (
        tournament_id TEXT NOT NULL,
@@ -2940,11 +2958,15 @@ async function ensureTournamentTables(env) {
        position_id INTEGER,
        back_rank TEXT,
        status TEXT NOT NULL,
+       stage TEXT NOT NULL DEFAULT 'round',
+       label TEXT,
        started_at TEXT,
        ended_at TEXT,
        PRIMARY KEY (tournament_id, round_number)
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE tournament_rounds ADD COLUMN stage TEXT NOT NULL DEFAULT 'round'`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournament_rounds ADD COLUMN label TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_games (
        id TEXT PRIMARY KEY,
@@ -2956,12 +2978,16 @@ async function ensureTournamentTables(env) {
        white_user_id TEXT NOT NULL,
        black_user_id TEXT NOT NULL,
        status TEXT NOT NULL,
+       group_name TEXT,
+       pairing_label TEXT,
        result TEXT NOT NULL DEFAULT '*',
        end_reason TEXT,
        created_at TEXT NOT NULL,
        ended_at TEXT
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE tournament_games ADD COLUMN group_name TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournament_games ADD COLUMN pairing_label TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_views (
        tournament_id TEXT NOT NULL,
@@ -2994,6 +3020,36 @@ function normalizeTournamentVariant(value) {
   return String(value || '').toLowerCase() === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
 }
 
+const TOURNAMENT_MODE_SINGLE = 'single_round_robin';
+const TOURNAMENT_MODE_DOUBLE = 'double_round_robin';
+const TOURNAMENT_MODE_SWISS = 'swiss';
+const TOURNAMENT_MODE_GROUPS = 'groups_knockout';
+
+function normalizeTournamentMode(value) {
+  const mode = String(value || '').toLowerCase();
+  return [TOURNAMENT_MODE_SINGLE, TOURNAMENT_MODE_DOUBLE, TOURNAMENT_MODE_SWISS, TOURNAMENT_MODE_GROUPS].includes(mode)
+    ? mode
+    : TOURNAMENT_MODE_DOUBLE;
+}
+
+function tournamentModeLabel(value) {
+  const mode = normalizeTournamentMode(value);
+  if (mode === TOURNAMENT_MODE_SINGLE) return 'Einfaches Rundenturnier';
+  if (mode === TOURNAMENT_MODE_SWISS) return 'Schweizer System';
+  if (mode === TOURNAMENT_MODE_GROUPS) return 'Gruppenphase + K.-o.';
+  return 'Doppelrundenturnier';
+}
+
+function tournamentAllowedPlayers(value) {
+  return TOURNAMENT_PLAYERS_BY_MODE[normalizeTournamentMode(value)] || TOURNAMENT_PLAYERS_BY_MODE.double_round_robin;
+}
+
+function normalizeTournamentPlayers(modeValue, playerValue) {
+  const allowed = tournamentAllowedPlayers(modeValue);
+  const players = Number(playerValue);
+  return allowed.includes(players) ? players : allowed[0];
+}
+
 function normalizeTournamentStatus(value) {
   const status = String(value || '').toLowerCase();
   return ['draft', 'open', 'full', 'running', 'ended', 'cancelled'].includes(status) ? status : 'draft';
@@ -3010,7 +3066,9 @@ function tournamentStandings(participants, games) {
     rows.set(String(participant.userId), {
       userId:String(participant.userId),
       username:cleanDisplayName(participant.username) || 'Mitglied',
-      played:0, wins:0, draws:0, losses:0, points:0
+      groupName:String(participant.groupName || ''),
+      played:0, wins:0, draws:0, losses:0, points:0, buchholz:0,
+      opponentIds:[]
     });
   }
   for (const game of games || []) {
@@ -3020,6 +3078,8 @@ function tournamentStandings(participants, games) {
     if (!white || !black) continue;
     white.played += 1;
     black.played += 1;
+    white.opponentIds.push(black.userId);
+    black.opponentIds.push(white.userId);
     if (game.result === '1-0') {
       white.wins += 1; white.points += 1; black.losses += 1;
     } else if (game.result === '0-1') {
@@ -3028,12 +3088,29 @@ function tournamentStandings(participants, games) {
       white.draws += 1; black.draws += 1; white.points += 0.5; black.points += 0.5;
     }
   }
-  return Array.from(rows.values()).sort((a, b) => b.points - a.points || b.wins - a.wins || a.username.localeCompare(b.username, 'de-DE', {sensitivity:'base'})).map((row, index) => Object.assign({rank:index + 1}, row));
+  for (const row of rows.values()) {
+    row.buchholz = row.opponentIds.reduce((sum, opponentId) => sum + Number(rows.get(opponentId) && rows.get(opponentId).points || 0), 0);
+    delete row.opponentIds;
+  }
+  const directScore = (userId, opponentId) => (games || []).reduce((score, game) => {
+    if (!game || game.status !== 'ended') return score;
+    const whiteId = String(game.whiteUserId);
+    const blackId = String(game.blackUserId);
+    if (![whiteId, blackId].includes(String(userId)) || ![whiteId, blackId].includes(String(opponentId))) return score;
+    if (game.result === '1/2-1/2') return score + 0.5;
+    if ((game.result === '1-0' && whiteId === String(userId)) || (game.result === '0-1' && blackId === String(userId))) return score + 1;
+    return score;
+  }, 0);
+  return Array.from(rows.values()).sort((a, b) => b.points - a.points
+    || b.buchholz - a.buchholz
+    || directScore(b.userId, a.userId) - directScore(a.userId, b.userId)
+    || b.wins - a.wins
+    || a.username.localeCompare(b.username, 'de-DE', {sensitivity:'base'})).map((row, index) => Object.assign({rank:index + 1}, row));
 }
 
 async function tournamentParticipantsFor(env, tournamentId) {
   const result = await env.DB.prepare(
-    `SELECT participant.user_id, participant.status, participant.joined_at, participant.updated_at,
+    `SELECT participant.user_id, participant.status, participant.group_name, participant.joined_at, participant.updated_at,
             COALESCE(account.username, 'Gelöschter Benutzer') AS username
        FROM tournament_participants participant
        LEFT JOIN users account ON account.id = participant.user_id
@@ -3048,6 +3125,7 @@ async function tournamentParticipantsFor(env, tournamentId) {
       userId:String(row.user_id || ''),
       username:cleanDisplayName(row.username) || 'Mitglied',
       status:String(row.status || ''),
+      groupName:String(row.group_name || ''),
       joinedAt:row.joined_at || null,
       updatedAt:row.updated_at || null,
       waitlistPosition:row.status === 'waiting' ? waitingPosition : null
@@ -3075,7 +3153,7 @@ async function rebalanceTournamentParticipants(env, tournamentId, maxPlayers) {
 
 async function tournamentRoundsFor(env, tournamentId) {
   const result = await env.DB.prepare(
-    `SELECT round_number, position_id, back_rank, status, started_at, ended_at
+    `SELECT round_number, position_id, back_rank, status, stage, label, started_at, ended_at
        FROM tournament_rounds WHERE tournament_id = ? ORDER BY round_number ASC`
   ).bind(tournamentId).all();
   return (result && result.results ? result.results : []).map(row => ({
@@ -3083,6 +3161,8 @@ async function tournamentRoundsFor(env, tournamentId) {
     positionId:row.position_id === null || row.position_id === undefined ? null : Number(row.position_id),
     backRank:row.back_rank || '',
     status:String(row.status || ''),
+    stage:String(row.stage || 'round'),
+    label:String(row.label || ''),
     startedAt:row.started_at || null,
     endedAt:row.ended_at || null
   }));
@@ -3091,7 +3171,7 @@ async function tournamentRoundsFor(env, tournamentId) {
 async function tournamentGamesFor(env, tournamentId) {
   const result = await env.DB.prepare(
     `SELECT game.id, game.round_number, game.pairing_number, game.game_number, game.room_id,
-            game.white_user_id, game.black_user_id, game.status, game.result, game.end_reason,
+            game.white_user_id, game.black_user_id, game.status, game.group_name, game.pairing_label, game.result, game.end_reason,
             game.created_at, game.ended_at,
             COALESCE(white_account.username, 'Gelöschter Benutzer') AS white_name,
             COALESCE(black_account.username, 'Gelöschter Benutzer') AS black_name
@@ -3112,6 +3192,8 @@ async function tournamentGamesFor(env, tournamentId) {
     whiteName:cleanDisplayName(row.white_name) || 'Weiß',
     blackName:cleanDisplayName(row.black_name) || 'Schwarz',
     status:String(row.status || ''),
+    groupName:String(row.group_name || ''),
+    pairingLabel:String(row.pairing_label || ''),
     result:String(row.result || '*'),
     endReason:row.end_reason || null,
     createdAt:row.created_at || null,
@@ -3128,6 +3210,8 @@ async function tournamentDto(env, row, sessionUser) {
   const confirmedCount = participants.filter(item => item.status === 'confirmed').length;
   const waitingCount = participants.filter(item => item.status === 'waiting').length;
   const status = normalizeTournamentStatus(row.status);
+  const mode = normalizeTournamentMode(row.mode);
+  const standings = tournamentStandings(participants, games);
   const userState = own ? (status === 'running' ? 'playing' : status === 'ended' ? 'finished' : own.status) : '';
   return {
     id,
@@ -3137,6 +3221,8 @@ async function tournamentDto(env, row, sessionUser) {
     hours:Number(row.hours_per_move || 24),
     rated:Number(row.rated || 0) === 1,
     variant:normalizeTournamentVariant(row.variant),
+    mode,
+    modeLabel:tournamentModeLabel(mode),
     status,
     currentRound:Number(row.current_round || 0),
     totalRounds:Number(row.total_rounds || 0),
@@ -3151,7 +3237,9 @@ async function tournamentDto(env, row, sessionUser) {
     participants,
     rounds,
     games,
-    standings:tournamentStandings(participants, games),
+    standings,
+    groupStandings:mode === TOURNAMENT_MODE_GROUPS ? tournamentGroupStandings(participants, games) : [],
+    winners:tournamentWinners(row, participants, games),
     userState,
     waitlistPosition:own && own.status === 'waiting' ? own.waitlistPosition : null,
     unread:!!(row.published_at && (!row.viewed_at || Date.parse(row.viewed_at) < Date.parse(row.published_at)))
@@ -3182,12 +3270,234 @@ async function loadTournamentRow(env, tournamentId) {
 
 function tournamentRoundArrangement(participants, roundNumber) {
   const players = (participants || []).slice();
+  if (players.length % 2 === 1) players.push(null);
   for (let round = 1; round < roundNumber; round += 1) {
     players.splice(1, 0, players.pop());
   }
   const pairs = [];
-  for (let index = 0; index < players.length / 2; index += 1) pairs.push([players[index], players[players.length - 1 - index]]);
+  for (let index = 0; index < players.length / 2; index += 1) {
+    const first = players[index];
+    const second = players[players.length - 1 - index];
+    if (first && second) pairs.push([first, second]);
+  }
   return pairs;
+}
+
+function tournamentTotalRounds(modeValue, playerCount) {
+  const mode = normalizeTournamentMode(modeValue);
+  const players = Number(playerCount || 0);
+  if (mode === TOURNAMENT_MODE_SWISS) return players <= 8 ? 3 : players <= 16 ? 4 : 5;
+  if (mode === TOURNAMENT_MODE_GROUPS) return 3 + Math.max(1, Math.round(Math.log2(Math.max(2, players / 2))));
+  return Math.max(1, players - 1);
+}
+
+function tournamentColorBalance(userId, games) {
+  let balance = 0;
+  for (const game of games || []) {
+    if (String(game.whiteUserId) === String(userId)) balance += 1;
+    if (String(game.blackUserId) === String(userId)) balance -= 1;
+  }
+  return balance;
+}
+
+function orientTournamentPair(first, second, games, roundNumber, pairingNumber) {
+  const firstBalance = tournamentColorBalance(first.userId, games);
+  const secondBalance = tournamentColorBalance(second.userId, games);
+  const firstWhiteCost = Math.abs(firstBalance + 1) + Math.abs(secondBalance - 1);
+  const secondWhiteCost = Math.abs(firstBalance - 1) + Math.abs(secondBalance + 1);
+  if (firstWhiteCost < secondWhiteCost) return [first, second];
+  if (secondWhiteCost < firstWhiteCost) return [second, first];
+  return (Number(roundNumber || 0) + Number(pairingNumber || 0)) % 2 === 0 ? [first, second] : [second, first];
+}
+
+function swissPairingPlan(participants, games) {
+  const standings = tournamentStandings(participants, games);
+  const standingsById = new Map(standings.map(row => [String(row.userId), row]));
+  const joinedOrder = new Map((participants || []).map((item, index) => [String(item.userId), index]));
+  const ranked = (participants || []).slice().sort((a, b) => {
+    const left = standingsById.get(String(a.userId)) || {};
+    const right = standingsById.get(String(b.userId)) || {};
+    return Number(right.points || 0) - Number(left.points || 0)
+      || Number(right.buchholz || 0) - Number(left.buchholz || 0)
+      || Number(right.wins || 0) - Number(left.wins || 0)
+      || Number(joinedOrder.get(String(a.userId)) || 0) - Number(joinedOrder.get(String(b.userId)) || 0);
+  });
+  const played = new Set((games || []).map(game => [String(game.whiteUserId), String(game.blackUserId)].sort().join('|')));
+  const score = user => Number(standingsById.get(String(user.userId)) && standingsById.get(String(user.userId)).points || 0);
+  let visited = 0;
+  const search = (remaining, allowRepeat) => {
+    if (!remaining.length) return [];
+    visited += 1;
+    if (visited > 75000) return null;
+    const first = remaining[0];
+    const candidates = remaining.slice(1).map((opponent, offset) => {
+      const repeat = played.has([String(first.userId), String(opponent.userId)].sort().join('|'));
+      const colorPenalty = Math.abs(tournamentColorBalance(first.userId, games) + tournamentColorBalance(opponent.userId, games));
+      return {opponent, index:offset + 1, repeat, penalty:(repeat ? 1000000 : 0) + Math.abs(score(first) - score(opponent)) * 1000 + colorPenalty * 10 + offset};
+    }).filter(item => allowRepeat || !item.repeat).sort((a, b) => a.penalty - b.penalty || Number(a.repeat) - Number(b.repeat));
+    for (const candidate of candidates) {
+      const index = candidate.index;
+      const rest = remaining.slice(1, index).concat(remaining.slice(index + 1));
+      const tail = search(rest, allowRepeat);
+      if (tail) return [[first, candidate.opponent], ...tail];
+    }
+    return null;
+  };
+  let result = search(ranked, false);
+  if (!result) {
+    visited = 0;
+    result = search(ranked, true);
+  }
+  return result || [];
+}
+
+function tournamentGroupStandings(participants, games) {
+  const groups = Array.from(new Set((participants || []).map(item => String(item.groupName || '')).filter(Boolean))).sort();
+  return groups.map(groupName => ({
+    groupName,
+    standings:tournamentStandings(
+      (participants || []).filter(item => item.groupName === groupName),
+      (games || []).filter(game => game.groupName === groupName)
+    )
+  }));
+}
+
+function tournamentQualifierSeedOrder(participants, games) {
+  const groups = tournamentGroupStandings(participants, games);
+  if (groups.length <= 1) return groups.length ? groups[0].standings : [];
+  return groups.flatMap(group => group.standings.slice(0, 2)).sort((a, b) => a.rank - b.rank || b.points - a.points || b.buchholz - a.buchholz || b.wins - a.wins || a.username.localeCompare(b.username, 'de-DE'));
+}
+
+function tournamentKnockoutLabel(pairCount) {
+  if (pairCount >= 8) return 'Achtelfinale';
+  if (pairCount >= 4) return 'Viertelfinale';
+  if (pairCount >= 2) return 'Halbfinale';
+  return 'Finale';
+}
+
+function tournamentWinners(tournamentRow, participants, games) {
+  if (normalizeTournamentStatus(tournamentRow && tournamentRow.status) !== 'ended') return [];
+  if (normalizeTournamentMode(tournamentRow && tournamentRow.mode) !== TOURNAMENT_MODE_GROUPS) {
+    return tournamentStandings(participants, games).slice(0, 3);
+  }
+  const finalRound = tournamentTotalRounds(TOURNAMENT_MODE_GROUPS, participants.length);
+  const finalGames = (games || []).filter(game => Number(game.roundNumber) === finalRound);
+  const seedOrder = tournamentQualifierSeedOrder(participants, games);
+  const finalOutcome = tournamentMatchOutcome(finalGames.filter(game => Number(game.pairingNumber) === 1), seedOrder);
+  const thirdOutcome = tournamentMatchOutcome(finalGames.filter(game => Number(game.pairingNumber) === 2), seedOrder);
+  const participantById = new Map((participants || []).map(item => [String(item.userId), item]));
+  const ids = finalOutcome ? [finalOutcome.winnerId, finalOutcome.loserId, thirdOutcome && thirdOutcome.winnerId] : [];
+  return ids.filter(Boolean).map((userId, index) => {
+    const participant = participantById.get(String(userId)) || {};
+    return {rank:index + 1, userId:String(userId), username:cleanDisplayName(participant.username) || 'Mitglied'};
+  });
+}
+
+function tournamentMatchOutcome(matchGames, seedOrder) {
+  const games = (matchGames || []).filter(game => game && game.status === 'ended');
+  if (!games.length) return null;
+  const firstId = String(games[0].whiteUserId);
+  const secondId = String(games[0].blackUserId);
+  const scores = new Map([[firstId, 0], [secondId, 0]]);
+  for (const game of games) {
+    if (game.result === '1-0') scores.set(String(game.whiteUserId), Number(scores.get(String(game.whiteUserId)) || 0) + 1);
+    else if (game.result === '0-1') scores.set(String(game.blackUserId), Number(scores.get(String(game.blackUserId)) || 0) + 1);
+    else if (game.result === '1/2-1/2') {
+      scores.set(String(game.whiteUserId), Number(scores.get(String(game.whiteUserId)) || 0) + 0.5);
+      scores.set(String(game.blackUserId), Number(scores.get(String(game.blackUserId)) || 0) + 0.5);
+    }
+  }
+  let winnerId = Number(scores.get(firstId)) > Number(scores.get(secondId)) ? firstId : Number(scores.get(secondId)) > Number(scores.get(firstId)) ? secondId : '';
+  if (!winnerId) {
+    const seedIndex = new Map((seedOrder || []).map((item, index) => [String(item.userId), index]));
+    winnerId = Number(seedIndex.get(firstId) ?? 999) <= Number(seedIndex.get(secondId) ?? 999) ? firstId : secondId;
+  }
+  return {winnerId, loserId:winnerId === firstId ? secondId : firstId};
+}
+
+function tournamentRoundPlan(tournamentRow, roundNumber, participants, games) {
+  const mode = normalizeTournamentMode(tournamentRow && tournamentRow.mode);
+  const makePair = (pair, index, extra = {}) => ({first:pair[0], second:pair[1], pairingLabel:extra.pairingLabel || ('Paarung ' + (index + 1)), groupName:extra.groupName || ''});
+  if (mode === TOURNAMENT_MODE_SINGLE || mode === TOURNAMENT_MODE_DOUBLE) {
+    return {
+      stage:'round',
+      label:(mode === TOURNAMENT_MODE_DOUBLE ? 'Doppelrunde ' : 'Runde ') + roundNumber,
+      gamesPerPair:mode === TOURNAMENT_MODE_DOUBLE ? 2 : 1,
+      pairs:tournamentRoundArrangement(participants, roundNumber).map((pair, index) => makePair(pair, index))
+    };
+  }
+  if (mode === TOURNAMENT_MODE_SWISS) {
+    return {
+      stage:'swiss',
+      label:'Schweizer Runde ' + roundNumber,
+      gamesPerPair:1,
+      pairs:swissPairingPlan(participants, games).map((pair, index) => makePair(pair, index))
+    };
+  }
+
+  if (roundNumber <= 3) {
+    const groupNames = Array.from(new Set(participants.map(item => item.groupName).filter(Boolean))).sort();
+    const pairs = [];
+    for (const groupName of groupNames) {
+      const groupParticipants = participants.filter(item => item.groupName === groupName);
+      tournamentRoundArrangement(groupParticipants, roundNumber).forEach(pair => pairs.push(makePair(pair, pairs.length, {groupName, pairingLabel:'Gruppe ' + groupName})));
+    }
+    return {stage:'group', label:'Gruppenrunde ' + roundNumber, gamesPerPair:1, pairs};
+  }
+
+  const participantById = new Map(participants.map(item => [String(item.userId), item]));
+  const groupStandings = tournamentGroupStandings(participants, games);
+  const seedOrder = tournamentQualifierSeedOrder(participants, games);
+  const totalRounds = tournamentTotalRounds(mode, participants.length);
+  if (roundNumber === 4) {
+    const knockoutPairs = groupStandings.map((group, index) => {
+      const nextGroup = groupStandings[(index + 1) % groupStandings.length];
+      return [group.standings[0], nextGroup && nextGroup.standings[1]];
+    });
+    const label = tournamentKnockoutLabel(knockoutPairs.length);
+    return {
+      stage:label === 'Halbfinale' ? 'semifinal' : label === 'Viertelfinale' ? 'quarterfinal' : 'round_of_16', label, gamesPerPair:2,
+      pairs:knockoutPairs.filter(pair => pair[0] && pair[1]).map((pair, index) => makePair([participantById.get(String(pair[0].userId)), participantById.get(String(pair[1].userId))], index, {pairingLabel:label + ' ' + (index + 1)}))
+    };
+  }
+
+  const previousGames = games.filter(game => Number(game.roundNumber) === roundNumber - 1);
+  const pairingNumbers = Array.from(new Set(previousGames.map(game => Number(game.pairingNumber)))).sort((a, b) => a - b);
+  const outcomes = pairingNumbers.map(pairingNumber => tournamentMatchOutcome(previousGames.filter(game => Number(game.pairingNumber) === pairingNumber), seedOrder));
+  if (!outcomes.length || outcomes.some(outcome => !outcome)) throw new Error('Die Ergebnisse der vorherigen K.-o.-Runde sind noch nicht vollständig.');
+  if (roundNumber < totalRounds) {
+    const nextPairs = [];
+    for (let index = 0; index < outcomes.length; index += 2) {
+      if (outcomes[index] && outcomes[index + 1]) nextPairs.push([participantById.get(outcomes[index].winnerId), participantById.get(outcomes[index + 1].winnerId)]);
+    }
+    const label = tournamentKnockoutLabel(nextPairs.length);
+    return {
+      stage:label === 'semifinal' || label === 'Halbfinale' ? 'semifinal' : 'quarterfinal', label, gamesPerPair:2,
+      pairs:nextPairs.map((pair, index) => makePair(pair, index, {pairingLabel:label + ' ' + (index + 1)}))
+    };
+  }
+  if (outcomes.length !== 2) throw new Error('Die Halbfinalergebnisse sind für die Finalrunde noch nicht vollständig.');
+  return {
+    stage:'final', label:'Finale und Spiel um Platz 3', gamesPerPair:2,
+    pairs:[
+      makePair([participantById.get(outcomes[0].winnerId), participantById.get(outcomes[1].winnerId)], 0, {pairingLabel:'Finale'}),
+      makePair([participantById.get(outcomes[0].loserId), participantById.get(outcomes[1].loserId)], 1, {pairingLabel:'Spiel um Platz 3'})
+    ]
+  };
+}
+
+async function assignTournamentGroups(env, tournamentId, participants) {
+  const shuffled = (participants || []).slice();
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const data = new Uint32Array(1);
+    crypto.getRandomValues(data);
+    const other = data[0] % (index + 1);
+    [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+  }
+  for (let index = 0; index < shuffled.length; index += 1) {
+    const groupName = String.fromCharCode(65 + Math.floor(index / 4));
+    await env.DB.prepare(`UPDATE tournament_participants SET group_name = ?, updated_at = ? WHERE tournament_id = ? AND user_id = ?`).bind(groupName, new Date().toISOString(), tournamentId, shuffled[index].userId).run();
+  }
 }
 
 function randomTournamentPositionId(usedIds) {
@@ -3228,12 +3538,16 @@ async function initializeTournamentGameRoom(env, payload) {
 async function startTournamentRound(env, tournamentRow, roundNumber) {
   const tournamentId = String(tournamentRow && tournamentRow.id || '');
   const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
-  if (!TOURNAMENT_ALLOWED_PLAYERS.includes(participants.length)) throw new Error('Die Teilnehmerzahl ist für den Turnierstart nicht vollständig.');
+  if (!tournamentAllowedPlayers(tournamentRow && tournamentRow.mode).includes(participants.length)) throw new Error('Die Teilnehmerzahl ist für diese Turnierform nicht zulässig.');
+  const allGames = await tournamentGamesFor(env, tournamentId);
+  const historicalGames = allGames.filter(game => Number(game.roundNumber) < Number(roundNumber));
+  const plan = tournamentRoundPlan(tournamentRow, roundNumber, participants, historicalGames);
+  if (!plan || !Array.isArray(plan.pairs) || !plan.pairs.length) throw new Error('Für diese Runde konnten keine gültigen Paarungen erzeugt werden.');
   const variant = normalizeTournamentVariant(tournamentRow.variant);
   let positionId = null;
   let backRank = '';
   const existingRound = await env.DB.prepare(
-    `SELECT position_id, back_rank FROM tournament_rounds WHERE tournament_id = ? AND round_number = ? LIMIT 1`
+    `SELECT position_id, back_rank, stage, label FROM tournament_rounds WHERE tournament_id = ? AND round_number = ? LIMIT 1`
   ).bind(tournamentId, roundNumber).first();
   if (variant === GAME_VARIANT_FREESTYLE && existingRound) {
     positionId = Number(existingRound.position_id);
@@ -3245,18 +3559,21 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
   }
   const now = new Date().toISOString();
   await env.DB.prepare(
-    `INSERT INTO tournament_rounds (tournament_id, round_number, position_id, back_rank, status, started_at, ended_at)
-     VALUES (?, ?, ?, ?, 'running', ?, NULL)
+    `INSERT INTO tournament_rounds (tournament_id, round_number, position_id, back_rank, status, stage, label, started_at, ended_at)
+     VALUES (?, ?, ?, ?, 'running', ?, ?, ?, NULL)
      ON CONFLICT(tournament_id, round_number) DO NOTHING`
-  ).bind(tournamentId, roundNumber, positionId, backRank || null, now).run();
+  ).bind(tournamentId, roundNumber, positionId, backRank || null, plan.stage, plan.label, now).run();
 
   const setup = cleanGameSetup(variant === GAME_VARIANT_FREESTYLE ? {variant, positionId, backRank} : {variant:GAME_VARIANT_STANDARD});
-  const pairs = tournamentRoundArrangement(participants, roundNumber);
-  for (let pairingIndex = 0; pairingIndex < pairs.length; pairingIndex += 1) {
-    const pair = pairs[pairingIndex];
-    for (let gameIndex = 0; gameIndex < 2; gameIndex += 1) {
-      const white = gameIndex === 0 ? pair[0] : pair[1];
-      const black = gameIndex === 0 ? pair[1] : pair[0];
+  for (let pairingIndex = 0; pairingIndex < plan.pairs.length; pairingIndex += 1) {
+    const pair = plan.pairs[pairingIndex];
+    if (!pair || !pair.first || !pair.second) throw new Error('Eine Turnierpaarung ist unvollständig.');
+    const oriented = plan.gamesPerPair === 1
+      ? orientTournamentPair(pair.first, pair.second, historicalGames, roundNumber, pairingIndex + 1)
+      : [pair.first, pair.second];
+    for (let gameIndex = 0; gameIndex < Number(plan.gamesPerPair || 1); gameIndex += 1) {
+      const white = gameIndex === 0 ? oriented[0] : oriented[1];
+      const black = gameIndex === 0 ? oriented[1] : oriented[0];
       const existingGame = await env.DB.prepare(
         `SELECT id, room_id, status FROM tournament_games
           WHERE tournament_id = ? AND round_number = ? AND pairing_number = ? AND game_number = ? LIMIT 1`
@@ -3267,17 +3584,23 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
       if (!existingGame) {
         await env.DB.prepare(
           `INSERT INTO tournament_games
-             (id, tournament_id, round_number, pairing_number, game_number, room_id, white_user_id, black_user_id, status, result, end_reason, created_at, ended_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'creating', '*', NULL, ?, NULL)`
-        ).bind(gameId, tournamentId, roundNumber, pairingIndex + 1, gameIndex + 1, roomId, white.userId, black.userId, now).run();
+             (id, tournament_id, round_number, pairing_number, game_number, room_id, white_user_id, black_user_id, status, group_name, pairing_label, result, end_reason, created_at, ended_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'creating', ?, ?, '*', NULL, ?, NULL)`
+        ).bind(gameId, tournamentId, roundNumber, pairingIndex + 1, gameIndex + 1, roomId, white.userId, black.userId, pair.groupName || null, pair.pairingLabel || null, now).run();
       }
       await initializeTournamentGameRoom(env, {
         roomId,
         tournamentGameId:gameId,
         tournamentId,
         tournamentName:cleanTournamentName(tournamentRow.name),
+        tournamentMode:normalizeTournamentMode(tournamentRow.mode),
+        tournamentModeLabel:tournamentModeLabel(tournamentRow.mode),
         roundNumber,
-        totalRounds:Number(tournamentRow.total_rounds || participants.length - 1),
+        roundLabel:plan.label,
+        stage:plan.stage,
+        groupName:pair.groupName || '',
+        pairingLabel:pair.pairingLabel || '',
+        totalRounds:Number(tournamentRow.total_rounds || tournamentTotalRounds(tournamentRow.mode, participants.length)),
         pairingNumber:pairingIndex + 1,
         gameNumber:gameIndex + 1,
         white:{userId:white.userId, username:white.username},
@@ -3290,7 +3613,7 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
       await env.DB.prepare(`UPDATE tournament_games SET status = 'running' WHERE id = ?`).bind(gameId).run();
     }
   }
-  return {roundNumber, positionId, backRank};
+  return {roundNumber, positionId, backRank, stage:plan.stage, label:plan.label};
 }
 
 async function advanceTournamentRoundIfReady(env, tournamentId, roundNumber) {
@@ -3324,10 +3647,7 @@ async function advanceTournamentRoundIfReady(env, tournamentId, roundNumber) {
     try {
       await startTournamentRound(env, updated, nextRound);
     } catch (error) {
-      await env.DB.prepare(
-        `UPDATE tournaments SET current_round = ?, updated_at = ?
-          WHERE id = ? AND status = 'running' AND current_round = ?`
-      ).bind(roundNumber, new Date().toISOString(), tournamentId, nextRound).run();
+      console.error('Tournament round preparation interrupted', error && error.message ? error.message : String(error || 'unknown'));
       throw error;
     }
   }
@@ -3366,10 +3686,11 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
   const name = cleanDisplayName(recipient.username) || 'Schachfreund';
   const title = cleanTournamentName(tournament.name);
   const variant = normalizeTournamentVariant(tournament.variant) === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch';
+  const mode = tournamentModeLabel(tournament.mode);
   const subject = `Neues Hammerschach-Turnier: ${title}`;
-  const textPart = `Hallo ${name},\n\nfür das Turnier „${title}“ ist die Anmeldung geöffnet.\n\n${tournament.max_players} Teilnehmer · ${tournament.hours_per_move} Stunden pro Zug · ${variant} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${name},\n\nfür das Turnier „${title}“ ist die Anmeldung geöffnet.\n\n${mode} · ${tournament.max_players} Teilnehmer · ${tournament.hours_per_move} Stunden pro Zug · ${variant} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier ansehen</a></p>` : '';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses Daily-Doppelrundenturnier ist die Anmeldung geöffnet.</p><p><strong>${Number(tournament.max_players)} Teilnehmer · ${Number(tournament.hours_per_move)} Stunden pro Zug · ${escapeEmailHtml(variant)} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses Daily-Turnier ist die Anmeldung geöffnet.</p><p><strong>${escapeEmailHtml(mode)} · ${Number(tournament.max_players)} Teilnehmer · ${Number(tournament.hours_per_move)} Stunden pro Zug · ${escapeEmailHtml(variant)} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_published', recipientEmail:recipient.email, recipientName:name, subject, textPart, htmlPart, attachments:[]};
 }
 
@@ -5658,7 +5979,8 @@ async function handleAuthApi(request, env, url) {
     if (!body) return json({ok:false, code:'BAD_JSON', message:'Der Turnierentwurf konnte nicht gelesen werden.'}, {status:400});
     const name = cleanTournamentName(body.name);
     const description = cleanTournamentDescription(body.description);
-    const players = TOURNAMENT_ALLOWED_PLAYERS.includes(Number(body.players)) ? Number(body.players) : 6;
+    const mode = normalizeTournamentMode(body.mode);
+    const players = normalizeTournamentPlayers(mode, body.players);
     const hours = TOURNAMENT_ALLOWED_HOURS.includes(Number(body.hours)) ? Number(body.hours) : 24;
     const variant = normalizeTournamentVariant(body.variant);
     if (name.length < 3) return json({ok:false, code:'INVALID_TOURNAMENT_NAME', message:'Bitte einen Turniernamen mit mindestens drei Zeichen eingeben.'}, {status:400});
@@ -5674,16 +5996,16 @@ async function handleAuthApi(request, env, url) {
       if (existing) {
         await env.DB.prepare(
           `UPDATE tournaments
-              SET name = ?, description = ?, max_players = ?, hours_per_move = ?, rated = ?, variant = ?, updated_at = ?
+              SET name = ?, description = ?, max_players = ?, hours_per_move = ?, rated = ?, variant = ?, mode = ?, updated_at = ?
             WHERE id = ? AND status = 'draft'`
-        ).bind(name, description, players, hours, body.rated === false ? 0 : 1, variant, now, id).run();
+        ).bind(name, description, players, hours, body.rated === false ? 0 : 1, variant, mode, now, id).run();
       } else {
         await env.DB.prepare(
           `INSERT INTO tournaments
-             (id, name, description, max_players, hours_per_move, rated, variant, status, created_by_user_id,
+             (id, name, description, max_players, hours_per_move, rated, variant, mode, status, created_by_user_id,
               current_round, total_rounds, created_at, updated_at, published_at, started_at, ended_at, publication_mail_sent_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?, 0, 0, ?, ?, NULL, NULL, NULL, NULL)`
-        ).bind(id, name, description, players, hours, body.rated === false ? 0 : 1, variant, admin.session.user.id, now, now).run();
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, 0, 0, ?, ?, NULL, NULL, NULL, NULL)`
+        ).bind(id, name, description, players, hours, body.rated === false ? 0 : 1, variant, mode, admin.session.user.id, now, now).run();
       }
       const row = await loadTournamentRow(env, id);
       return json({ok:true, tournament:await tournamentDto(env, row, admin.session.user), message:existing ? 'Turnierentwurf wurde aktualisiert.' : 'Turnierentwurf wurde gespeichert.'});
@@ -5806,21 +6128,28 @@ async function handleAuthApi(request, env, url) {
         if (Number(pending && pending.count || 0) < 1) return json({ok:false, code:'TOURNAMENT_ALREADY_RUNNING', message:'Das Turnier läuft bereits vollständig.'}, {status:409});
         await startTournamentRound(env, tournament, Number(tournament.current_round || 1));
         const recovered = await loadTournamentRow(env, tournamentId);
-        return json({ok:true, tournament:await tournamentDto(env, recovered, admin.session.user), message:'Die noch fehlenden Partien der laufenden Doppelrunde wurden vorbereitet.'});
+        return json({ok:true, tournament:await tournamentDto(env, recovered, admin.session.user), message:'Die noch fehlenden Partien der laufenden Turnierrunde wurden vorbereitet.'});
       }
       if (!['open', 'full'].includes(tournament.status)) return json({ok:false, code:'TOURNAMENT_NOT_STARTABLE', message:'Dieses Turnier kann in seinem aktuellen Status nicht gestartet werden.'}, {status:409});
       const count = await env.DB.prepare(`SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed'`).bind(tournamentId).first();
       if (Number(count && count.count || 0) !== Number(tournament.max_players || 0)) return json({ok:false, code:'TOURNAMENT_NOT_FULL', message:`Für den Start werden genau ${Number(tournament.max_players || 0)} bestätigte Teilnehmer benötigt.`}, {status:409});
+      const mode = normalizeTournamentMode(tournament.mode);
+      if (!tournamentAllowedPlayers(mode).includes(Number(tournament.max_players || 0))) return json({ok:false, code:'INVALID_TOURNAMENT_SIZE', message:'Die Teilnehmerzahl passt nicht zur gewählten Turnierform.'}, {status:409});
+      if (mode === TOURNAMENT_MODE_GROUPS) {
+        const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
+        await assignTournamentGroups(env, tournamentId, participants);
+      }
+      const totalRounds = tournamentTotalRounds(mode, Number(tournament.max_players || 0));
       const now = new Date().toISOString();
       const changed = await env.DB.prepare(
         `UPDATE tournaments SET status = 'running', current_round = 1, total_rounds = ?, started_at = ?, updated_at = ?
           WHERE id = ? AND status IN ('open','full')`
-      ).bind(Number(tournament.max_players || 0) - 1, now, now, tournamentId).run();
+      ).bind(totalRounds, now, now, tournamentId).run();
       if (d1Changes(changed) < 1) return json({ok:false, code:'TOURNAMENT_START_CONFLICT', message:'Das Turnier wurde bereits anderweitig gestartet.'}, {status:409});
       const running = await loadTournamentRow(env, tournamentId);
       await startTournamentRound(env, running, 1);
       const finalRow = await loadTournamentRow(env, tournamentId);
-      return json({ok:true, tournament:await tournamentDto(env, finalRow, admin.session.user), message:'Das Turnier wurde gestartet. Die Partien der ersten Doppelrunde sind eröffnet.'});
+      return json({ok:true, tournament:await tournamentDto(env, finalRow, admin.session.user), message:'Das Turnier wurde gestartet. Die Partien der ersten Turnierrunde sind eröffnet.'});
     } catch (error) {
       console.error('Tournament start failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'TOURNAMENT_START_FAILED', message:error && error.message ? error.message : 'Das Turnier konnte nicht gestartet werden.'}, {status:500});
@@ -7629,8 +7958,13 @@ function buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, bla
   ];
   if (tournamentMeta && tournamentMeta.tournamentId) {
     tags.push(['HammerschachTournamentId', String(tournamentMeta.tournamentId)]);
-    tags.push(['HammerschachDoubleRound', String(tournamentMeta.roundNumber || '')]);
+    tags.push(['HammerschachTournamentMode', String(tournamentMeta.tournamentMode || '')]);
+    tags.push(['HammerschachTournamentRound', String(tournamentMeta.roundNumber || '')]);
+    tags.push(['HammerschachRoundLabel', String(tournamentMeta.roundLabel || '')]);
+    tags.push(['HammerschachTournamentStage', String(tournamentMeta.stage || '')]);
+    if (tournamentMeta.groupName) tags.push(['HammerschachGroup', String(tournamentMeta.groupName)]);
     tags.push(['HammerschachPairing', String(tournamentMeta.pairingNumber || '')]);
+    if (tournamentMeta.pairingLabel) tags.push(['HammerschachPairingLabel', String(tournamentMeta.pairingLabel)]);
     tags.push(['HammerschachPairingGame', String(tournamentMeta.gameNumber || '')]);
   }
   if (normalizedSetup.variant === GAME_VARIANT_FREESTYLE) {
@@ -7666,8 +8000,13 @@ function buildCompletedPgnDocument({ game, timeControl, setup, moves, whiteName,
   ];
   if (tournamentMeta && tournamentMeta.tournamentId) {
     tags.push(['HammerschachTournamentId', String(tournamentMeta.tournamentId)]);
-    tags.push(['HammerschachDoubleRound', String(tournamentMeta.roundNumber || '')]);
+    tags.push(['HammerschachTournamentMode', String(tournamentMeta.tournamentMode || '')]);
+    tags.push(['HammerschachTournamentRound', String(tournamentMeta.roundNumber || '')]);
+    tags.push(['HammerschachRoundLabel', String(tournamentMeta.roundLabel || '')]);
+    tags.push(['HammerschachTournamentStage', String(tournamentMeta.stage || '')]);
+    if (tournamentMeta.groupName) tags.push(['HammerschachGroup', String(tournamentMeta.groupName)]);
     tags.push(['HammerschachPairing', String(tournamentMeta.pairingNumber || '')]);
+    if (tournamentMeta.pairingLabel) tags.push(['HammerschachPairingLabel', String(tournamentMeta.pairingLabel)]);
     tags.push(['HammerschachPairingGame', String(tournamentMeta.gameNumber || '')]);
   }
   if (normalizedTime && normalizedTime.mode === 'daily') {
@@ -8570,7 +8909,13 @@ export class GameRoom {
         tournamentId,
         tournamentGameId,
         tournamentName:cleanTournamentName(body.tournamentName),
+        tournamentMode:normalizeTournamentMode(body.tournamentMode),
+        tournamentModeLabel:tournamentModeLabel(body.tournamentMode),
         roundNumber:Math.max(1, Number(body.roundNumber || 1)),
+        roundLabel:String(body.roundLabel || '').slice(0, 80),
+        stage:String(body.stage || '').slice(0, 40),
+        groupName:String(body.groupName || '').slice(0, 8),
+        pairingLabel:String(body.pairingLabel || '').slice(0, 80),
         totalRounds:Math.max(1, Number(body.totalRounds || 1)),
         pairingNumber:Math.max(1, Number(body.pairingNumber || 1)),
         gameNumber:Number(body.gameNumber) === 2 ? 2 : 1
