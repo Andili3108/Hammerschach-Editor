@@ -624,6 +624,9 @@
   .tournament-table th{background:#f2edef;color:#843f46;font-weight:900;}
   .tournament-table th:nth-child(2),.tournament-table td:nth-child(2){text-align:left;}
   .tournament-table-empty{color:#777;font-weight:800;text-align:center!important;padding:24px 10px!important;}
+  .tournament-group-tables{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px;}
+  .tournament-group-card{min-width:0;}
+  .tournament-group-title{margin:0 0 6px;font-size:14px;font-weight:900;color:#843f46;}
   .tournament-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:stretch;}
   .tournament-podium-card{border-radius:15px;border:1px solid rgba(0,0,0,.09);padding:16px 12px;text-align:center;background:#f7f7f9;}
   .tournament-podium-medal{font-size:31px;line-height:1;}
@@ -1061,6 +1064,7 @@
   html.dark-mode .tournament-table-wrap{border-color:rgba(255,255,255,.09);}
   html.dark-mode .tournament-table{background:#252930;color:#eef0f2;}
   html.dark-mode .tournament-table th{background:#30262a;color:#e6a3ab;}
+  html.dark-mode .tournament-group-title{color:#e6a3ab;}
   html.dark-mode .tournament-table th,
   html.dark-mode .tournament-table td{border-color:rgba(255,255,255,.08);}
   html.dark-mode .tournament-input,
@@ -1084,7 +1088,7 @@
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
-  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium{grid-template-columns:1fr}.tournament-field-wide{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}}
+  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium,.tournament-group-tables{grid-template-columns:1fr}.tournament-field-wide{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}}
 </style>
 </head>
 <body>
@@ -1380,7 +1384,7 @@
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
           <h4>27. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
-          <p>Andili startet ein vollständig belegtes Turnier manuell. In jeder Doppelrunde spielt jede Begegnung zwei parallele Partien mit vertauschten Farben. Die nächste Runde öffnet automatisch erst nach Abschluss sämtlicher Partien der laufenden Runde. Bei Freestyle erhält jede Doppelrunde serverseitig eine neue zufällige Chess960-Stellung, die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und können zusätzlich über <strong>„Meine Turnierpartien“</strong> gefiltert werden.</p>
+          <p>Andili startet ein vollständig belegtes Turnier manuell. Zur Auswahl stehen einfaches Rundenturnier, Doppelrundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde. Die nächste Runde öffnet automatisch erst nach Abschluss sämtlicher Partien der laufenden Runde. Bei Freestyle erhält jede Runde serverseitig eine neue zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und können zusätzlich über <strong>„Meine Turnierpartien“</strong> gefiltert werden.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -2010,7 +2014,7 @@
         <div class="tournament-modal-head">
           <div>
             <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
-            <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily-Rundenturniere</div>
+            <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily-Turniere</div>
           </div>
           <div id="tournamentTestBadge" class="tournament-test-badge">🏆 Mitgliederbereich</div>
         </div>
@@ -2067,7 +2071,7 @@
                 </div>
                 <div class="tournament-card tournament-facts" aria-label="Turnierdaten">
                   <div class="tournament-fact"><div class="tournament-fact-label">Status</div><div id="tournamentFactStatus" class="tournament-fact-value">Entwurf</div></div>
-                  <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div class="tournament-fact-value">Doppelrunde</div></div>
+                  <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div id="tournamentFactMode" class="tournament-fact-value">Doppelrundenturnier</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">6</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Variante</div><div id="tournamentFactVariant" class="tournament-fact-value">Klassisch</div></div>
@@ -2078,7 +2082,7 @@
 
             <section id="tournamentPanelDescription" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="description" hidden>
               <h3 class="tournament-panel-title">Turnierbeschreibung</h3>
-              <div id="tournamentDescriptionText" class="tournament-description">Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.</div>
+              <div id="tournamentDescriptionText" class="tournament-description">Daily-Turnier mit automatischer Runden- und Paarungsverwaltung.</div>
             </section>
 
             <section id="tournamentPanelParticipants" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="participants" hidden>
@@ -2093,10 +2097,11 @@
 
             <section id="tournamentPanelStandings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="standings" hidden>
               <h3 class="tournament-panel-title">Turniertabelle</h3>
+              <div id="tournamentGroupStandings" class="tournament-group-tables" hidden></div>
               <div class="tournament-table-wrap">
                 <table class="tournament-table">
-                  <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th></tr></thead>
-                  <tbody id="tournamentStandingsBody"><tr><td class="tournament-table-empty" colspan="7">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
+                  <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th><th>BH</th></tr></thead>
+                  <tbody id="tournamentStandingsBody"><tr><td class="tournament-table-empty" colspan="8">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
                 </table>
               </div>
             </section>
@@ -2132,6 +2137,15 @@
             <div class="tournament-field tournament-field-wide">
               <label for="tournamentNameInput">Turniername</label>
               <input id="tournamentNameInput" class="tournament-input" type="text" maxlength="80" required placeholder="z. B. Hammerschach Sommer-Cup" />
+            </div>
+            <div class="tournament-field">
+              <label for="tournamentModeSelect">Turnierform</label>
+              <select id="tournamentModeSelect" class="tournament-select">
+                <option value="single_round_robin">Einfaches Rundenturnier</option>
+                <option value="double_round_robin" selected>Doppelrundenturnier</option>
+                <option value="swiss">Schweizer System</option>
+                <option value="groups_knockout">Gruppenphase + K.-o.</option>
+              </select>
             </div>
             <div class="tournament-field">
               <label for="tournamentPlayersSelect">Teilnehmerzahl</label>
@@ -3834,6 +3848,7 @@ const tournamentOverviewName = document.getElementById('tournamentOverviewName')
 const tournamentOverviewText = document.getElementById('tournamentOverviewText');
 const tournamentLocalNote = document.getElementById('tournamentLocalNote');
 const tournamentFactStatus = document.getElementById('tournamentFactStatus');
+const tournamentFactMode = document.getElementById('tournamentFactMode');
 const tournamentFactPlayers = document.getElementById('tournamentFactPlayers');
 const tournamentFactClock = document.getElementById('tournamentFactClock');
 const tournamentFactVariant = document.getElementById('tournamentFactVariant');
@@ -3842,6 +3857,7 @@ const tournamentDescriptionText = document.getElementById('tournamentDescription
 const tournamentParticipantsList = document.getElementById('tournamentParticipantsList');
 const tournamentPairingsList = document.getElementById('tournamentPairingsList');
 const tournamentStandingsBody = document.getElementById('tournamentStandingsBody');
+const tournamentGroupStandings = document.getElementById('tournamentGroupStandings');
 const tournamentWinner1 = document.getElementById('tournamentWinner1');
 const tournamentWinner2 = document.getElementById('tournamentWinner2');
 const tournamentWinner3 = document.getElementById('tournamentWinner3');
@@ -3854,6 +3870,7 @@ const tournamentCreateForm = document.getElementById('tournamentCreateForm');
 const tournamentCreateTitle = document.getElementById('tournamentCreateTitle');
 const tournamentCreateIntro = document.getElementById('tournamentCreateIntro');
 const tournamentNameInput = document.getElementById('tournamentNameInput');
+const tournamentModeSelect = document.getElementById('tournamentModeSelect');
 const tournamentPlayersSelect = document.getElementById('tournamentPlayersSelect');
 const tournamentClockSelect = document.getElementById('tournamentClockSelect');
 const tournamentVariantSelect = document.getElementById('tournamentVariantSelect');
@@ -6731,8 +6748,31 @@ async function logoutAuth(){
 function hasTournamentAdminAccess(){
   return !!(onlineAuthToken && onlineAuthUser && onlineAuthUser.isAdmin === true);
 }
-function defaultTournamentDescription(){
-  return 'Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.';
+const TOURNAMENT_MODE_CONFIG = Object.freeze({
+  single_round_robin:{label:'Einfaches Rundenturnier',players:[4,6,8],description:'Jeder Teilnehmer spielt genau eine Partie gegen jeden Gegner.'},
+  double_round_robin:{label:'Doppelrundenturnier',players:[4,6,8],description:'Jede Begegnung besteht aus zwei parallelen Partien mit vertauschten Farben.'},
+  swiss:{label:'Schweizer System',players:[8,12,16,24,32],description:'Spieler mit ähnlicher Punktzahl werden pro Runde neu gepaart; Wiederholungspaarungen werden vermieden.'},
+  groups_knockout:{label:'Gruppenphase + K.-o.',players:[8,16,32],description:'Vierergruppen ermitteln jeweils zwei Qualifikanten. Danach folgen K.-o.-Duelle bis zum Finale und Spiel um Platz 3.'}
+});
+function normalizeTournamentMode(value){
+  return Object.prototype.hasOwnProperty.call(TOURNAMENT_MODE_CONFIG, value) ? value : 'double_round_robin';
+}
+function defaultTournamentDescription(modeValue){
+  return 'Daily-' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(modeValue)].label + ': ' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(modeValue)].description;
+}
+function updateTournamentPlayerOptions(preferredValue){
+  if(!tournamentPlayersSelect) return;
+  const mode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
+  const allowed = TOURNAMENT_MODE_CONFIG[mode].players;
+  const preferred = Number(preferredValue == null ? tournamentPlayersSelect.value : preferredValue);
+  tournamentPlayersSelect.innerHTML = '';
+  allowed.forEach((players,index) => {
+    const option = document.createElement('option');
+    option.value = String(players);
+    option.textContent = players + ' Teilnehmer';
+    option.selected = allowed.includes(preferred) ? players === preferred : index === 0;
+    tournamentPlayersSelect.appendChild(option);
+  });
 }
 const TOURNAMENT_STATUS_CONFIG = Object.freeze({
   draft:{label:'Entwurf',className:'status-draft'},
@@ -6763,7 +6803,9 @@ function normalizeLocalTournament(value, index){
   if(!value || typeof value !== 'object') return null;
   const name = String(value.name || '').trim().slice(0,80);
   if(!name) return null;
-  const players = [4,6,8].includes(Number(value.players)) ? Number(value.players) : 6;
+  const mode = normalizeTournamentMode(value.mode);
+  const allowedPlayers = TOURNAMENT_MODE_CONFIG[mode].players;
+  const players = allowedPlayers.includes(Number(value.players)) ? Number(value.players) : allowedPlayers[0];
   const hours = [24,48,72].includes(Number(value.hours)) ? Number(value.hours) : 24;
   const status = Object.prototype.hasOwnProperty.call(TOURNAMENT_STATUS_CONFIG, value.status) ? value.status : 'draft';
   const createdAt = String(value.createdAt || value.created_at || new Date().toISOString());
@@ -6778,6 +6820,8 @@ function normalizeLocalTournament(value, index){
     hours,
     rated:value.rated !== false,
     variant:value.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    mode,
+    modeLabel:String(value.modeLabel || TOURNAMENT_MODE_CONFIG[mode].label),
     status,
     participants,
     confirmedCount:Math.max(0,Number(value.confirmedCount || participants.filter(item => item && item.status === 'confirmed').length)),
@@ -6787,6 +6831,8 @@ function normalizeLocalTournament(value, index){
     rounds:Array.isArray(value.rounds) ? value.rounds : [],
     games:Array.isArray(value.games) ? value.games : [],
     standings:Array.isArray(value.standings) ? value.standings : [],
+    groupStandings:Array.isArray(value.groupStandings) ? value.groupStandings : [],
+    winners:Array.isArray(value.winners) ? value.winners : [],
     waitlistPosition:value.waitlistPosition == null ? null : Number(value.waitlistPosition),
     unread:value.unread === true,
     userState,
@@ -6855,7 +6901,7 @@ function createTournamentListCard(tournament){
 
   const description = document.createElement('div');
   description.className = 'tournament-list-card-description';
-  description.textContent = tournament.description || defaultTournamentDescription();
+  description.textContent = tournament.description || defaultTournamentDescription(tournament.mode);
 
   const meta = document.createElement('div');
   meta.className = 'tournament-list-meta';
@@ -6864,7 +6910,7 @@ function createTournamentListCard(tournament){
   appendTournamentMeta(meta, '⏱ ' + tournament.hours + ' Std./Zug');
   appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
   appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');
-  appendTournamentMeta(meta, '↔ Doppelrunde');
+  appendTournamentMeta(meta, '🏁 ' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(tournament.mode)].label);
 
   const foot = document.createElement('div');
   foot.className = 'tournament-list-card-foot';
@@ -6966,7 +7012,8 @@ function renderTournamentParticipants(tournament){
     name.textContent = (participant.status === 'waiting' ? '⏳ ' : '✅ ') + (participant.username || 'Mitglied');
     const state = document.createElement('span');
     state.className = 'tournament-participant-state';
-    state.textContent = participant.status === 'waiting' ? ('Warteliste · Platz ' + (participant.waitlistPosition || index + 1)) : 'Teilnahme bestätigt';
+    const group = participant.groupName ? (' · Gruppe ' + participant.groupName) : '';
+    state.textContent = participant.status === 'waiting' ? ('Warteliste · Platz ' + (participant.waitlistPosition || index + 1)) : ('Teilnahme bestätigt' + group);
     row.appendChild(name);
     row.appendChild(state);
     tournamentParticipantsList.appendChild(row);
@@ -6980,7 +7027,7 @@ function renderTournamentPairings(tournament){
   if(!rounds.length){
     const empty = document.createElement('div');
     empty.className = 'tournament-empty';
-    empty.textContent = 'Paarungen werden beim manuellen Turnierstart erzeugt. Die nächste Doppelrunde öffnet erst, wenn alle Partien der laufenden Runde beendet sind.';
+    empty.textContent = 'Paarungen werden beim manuellen Turnierstart erzeugt. Die nächste Turnierrunde öffnet erst, wenn alle Partien der laufenden Runde beendet sind.';
     tournamentPairingsList.appendChild(empty);
     return;
   }
@@ -6990,7 +7037,10 @@ function renderTournamentPairings(tournament){
     const title = document.createElement('div');
     title.className = 'tournament-round-title';
     const state = round.status === 'ended' ? 'beendet' : 'läuft';
-    title.innerHTML = '<span>Doppelrunde ' + Number(round.roundNumber || 0) + '</span><span>' + (tournament.variant === GAME_VARIANT_FREESTYLE ? ('Position ' + Number(round.positionId)) + ' · ' : '') + state + '</span>';
+    const roundLabel = String(round.label || ('Runde ' + Number(round.roundNumber || 0)));
+    title.innerHTML = '<span></span><span></span>';
+    title.children[0].textContent = roundLabel;
+    title.children[1].textContent = (tournament.variant === GAME_VARIANT_FREESTYLE ? ('Position ' + Number(round.positionId) + ' · ') : '') + state;
     block.appendChild(title);
     const roundGames = games.filter(game => Number(game.roundNumber) === Number(round.roundNumber));
     const pairingNumbers = Array.from(new Set(roundGames.map(game => Number(game.pairingNumber)))).sort((a,b) => a-b);
@@ -7001,13 +7051,14 @@ function renderTournamentPairings(tournament){
       const row = document.createElement('div');
       row.className = 'tournament-pairing-row';
       const names = document.createElement('span');
-      names.textContent = 'Paarung ' + pairingNumber + ': ' + first.whiteName + ' ↔ ' + first.blackName;
+      names.textContent = (first.pairingLabel || ('Paarung ' + pairingNumber)) + ': ' + first.whiteName + ' ↔ ' + first.blackName;
       const links = document.createElement('span');
       links.className = 'tournament-pairing-links';
       pairGames.forEach(game => {
         const link = document.createElement('a');
         link.href = dailyGameRoomUrl({roomId:game.roomId}) || '#';
-        link.textContent = (game.gameNumber === 2 ? 'Partie 2' : 'Partie 1') + (game.status === 'ended' ? ' · ' + game.result : '');
+        const gameLabel = pairGames.length > 1 ? ('Partie ' + game.gameNumber) : 'Partie öffnen';
+        link.textContent = gameLabel + (game.status === 'ended' ? ' · ' + game.result : '');
         links.appendChild(link);
       });
       row.appendChild(names);
@@ -7021,45 +7072,85 @@ function renderTournamentStandings(tournament){
   if(!tournamentStandingsBody) return;
   tournamentStandingsBody.innerHTML = '';
   const standings = Array.isArray(tournament.standings) ? tournament.standings : [];
-  if(!standings.length){
-    const row = document.createElement('tr');
-    row.innerHTML = '<td class="tournament-table-empty" colspan="7">Die Tabelle erscheint nach dem Turnierstart.</td>';
-    tournamentStandingsBody.appendChild(row);
-  } else {
-    standings.forEach(item => {
+  const appendRows = (body, rows, emptyText) => {
+    if(!rows.length){
       const row = document.createElement('tr');
-      [item.rank,item.username,item.played,item.wins,item.draws,item.losses,Number(item.points || 0).toLocaleString('de-DE')].forEach(value => {
+      const cell = document.createElement('td');
+      cell.className = 'tournament-table-empty';
+      cell.colSpan = 8;
+      cell.textContent = emptyText;
+      row.appendChild(cell);
+      body.appendChild(row);
+      return;
+    }
+    rows.forEach(item => {
+      const row = document.createElement('tr');
+      [item.rank,item.username,item.played,item.wins,item.draws,item.losses,Number(item.points || 0).toLocaleString('de-DE'),Number(item.buchholz || 0).toLocaleString('de-DE')].forEach(value => {
         const cell = document.createElement('td');
         cell.textContent = String(value);
         row.appendChild(cell);
       });
-      tournamentStandingsBody.appendChild(row);
+      body.appendChild(row);
+    });
+  };
+  if(tournamentGroupStandings){
+    tournamentGroupStandings.innerHTML = '';
+    const groups = Array.isArray(tournament.groupStandings) ? tournament.groupStandings : [];
+    tournamentGroupStandings.hidden = normalizeTournamentMode(tournament.mode) !== 'groups_knockout' || !groups.length;
+    groups.forEach(group => {
+      const card = document.createElement('div');
+      card.className = 'tournament-group-card';
+      const title = document.createElement('h4');
+      title.className = 'tournament-group-title';
+      title.textContent = 'Gruppe ' + group.groupName;
+      const wrap = document.createElement('div');
+      wrap.className = 'tournament-table-wrap';
+      const table = document.createElement('table');
+      table.className = 'tournament-table';
+      table.innerHTML = '<thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th><th>BH</th></tr></thead>';
+      const body = document.createElement('tbody');
+      appendRows(body, Array.isArray(group.standings) ? group.standings : [], 'Noch keine Gruppenergebnisse.');
+      table.appendChild(body);
+      wrap.appendChild(table);
+      card.appendChild(title);
+      card.appendChild(wrap);
+      tournamentGroupStandings.appendChild(card);
     });
   }
+  if(!standings.length){
+    appendRows(tournamentStandingsBody, [], 'Die Tabelle erscheint nach dem Turnierstart.');
+  } else {
+    appendRows(tournamentStandingsBody, standings, 'Die Tabelle erscheint nach dem Turnierstart.');
+  }
+  const winners = Array.isArray(tournament.winners) ? tournament.winners : [];
   const winnerEls = [tournamentWinner1,tournamentWinner2,tournamentWinner3];
-  winnerEls.forEach((element,index) => { if(element) element.textContent = tournament.status === 'ended' && standings[index] ? standings[index].username : '—'; });
+  winnerEls.forEach((element,index) => { if(element) element.textContent = tournament.status === 'ended' && winners[index] ? winners[index].username : '—'; });
 }
 function renderTournamentDetail(tournament){
   const info = tournamentStatusInfo(tournament.status);
+  const mode = normalizeTournamentMode(tournament.mode);
+  const modeConfig = TOURNAMENT_MODE_CONFIG[mode];
   if(tournamentDetailName) tournamentDetailName.textContent = tournament.name;
   setTournamentStatusBadge(tournamentDetailStatus, tournament.status);
   if(tournamentOverviewKicker) tournamentOverviewKicker.textContent = tournament.status === 'draft' ? 'Serverentwurf · nicht veröffentlicht' : info.label;
   if(tournamentOverviewName) tournamentOverviewName.textContent = tournament.name;
   if(tournamentOverviewText){
-    const progress = tournament.status === 'running' ? (' Aktuell läuft Doppelrunde ' + tournament.currentRound + ' von ' + tournament.totalRounds + '.') : '';
-    const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? ' Jede Doppelrunde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.' : '';
-    tournamentOverviewText.textContent = 'Daily-Doppelrundenturnier für ' + tournament.players + ' Teilnehmer. Jeder spielt gegen jeden Gegner zwei parallele Partien mit vertauschten Farben.' + freestyle + progress;
+    const current = Array.isArray(tournament.rounds) ? tournament.rounds.find(round => Number(round.roundNumber) === Number(tournament.currentRound)) : null;
+    const progress = tournament.status === 'running' ? (' Aktuell läuft ' + (current && current.label ? current.label : ('Runde ' + tournament.currentRound)) + ' von insgesamt ' + tournament.totalRounds + ' Runden.') : '';
+    const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? ' Jede Runde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.' : '';
+    tournamentOverviewText.textContent = 'Daily-' + modeConfig.label + ' für ' + tournament.players + ' Teilnehmer. ' + modeConfig.description + freestyle + progress;
   }
   if(tournamentLocalNote){
     tournamentLocalNote.hidden = tournament.status !== 'draft';
     tournamentLocalNote.textContent = 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail.';
   }
   if(tournamentFactStatus) tournamentFactStatus.textContent = info.label;
+  if(tournamentFactMode) tournamentFactMode.textContent = modeConfig.label;
   if(tournamentFactPlayers) tournamentFactPlayers.textContent = tournament.status === 'draft' ? String(tournament.players) : (String(tournament.confirmedCount || 0) + ' / ' + String(tournament.players));
   if(tournamentFactClock) tournamentFactClock.textContent = tournament.hours + ' Stunden/Zug';
   if(tournamentFactVariant) tournamentFactVariant.textContent = tournament.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch';
   if(tournamentFactRating) tournamentFactRating.textContent = tournament.rated ? 'Gewertet' : 'Ohne Rating';
-  if(tournamentDescriptionText) tournamentDescriptionText.textContent = tournament.description || defaultTournamentDescription();
+  if(tournamentDescriptionText) tournamentDescriptionText.textContent = tournament.description || defaultTournamentDescription(mode);
   renderTournamentParticipants(tournament);
   renderTournamentPairings(tournament);
   renderTournamentStandings(tournament);
@@ -7080,7 +7171,7 @@ function renderTournamentDetail(tournament){
     tournamentStartBtn.hidden = !(admin && (['open','full'].includes(tournament.status) || recoverable));
     tournamentStartBtn.disabled = !recoverable && Number(tournament.confirmedCount || 0) !== Number(tournament.players || 0);
     tournamentStartBtn.textContent = recoverable ? '↻ Fehlende Partien vorbereiten' : '▶️ Turnier starten';
-    tournamentStartBtn.title = tournamentStartBtn.disabled ? 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.' : recoverable ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.' : 'Turnier und erste Doppelrunde manuell starten.';
+    tournamentStartBtn.title = tournamentStartBtn.disabled ? 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.' : recoverable ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.' : 'Turnier und erste Turnierrunde manuell starten.';
   }
 }
 function setTournamentCreateStatus(message, kind){
@@ -7131,7 +7222,7 @@ async function loadTournaments(options){
         for(const legacy of legacyDrafts){
           const normalized = normalizeLocalTournament(legacy,0);
           if(!normalized || serverNames.has(normalized.name.toLocaleLowerCase('de-DE'))) continue;
-          const imported = await authApi('/api/tournaments', {method:'POST',body:JSON.stringify({name:normalized.name,description:normalized.description,players:normalized.players,hours:normalized.hours,rated:normalized.rated,variant:normalized.variant})});
+          const imported = await authApi('/api/tournaments', {method:'POST',body:JSON.stringify({name:normalized.name,description:normalized.description,players:normalized.players,hours:normalized.hours,rated:normalized.rated,variant:normalized.variant,mode:normalized.mode})});
           if(imported && imported.tournament) data.tournaments.push(imported.tournament);
         }
         localStorage.setItem(migrationKey,'done');
@@ -7215,7 +7306,8 @@ function openTournamentCreateDialog(tournamentId){
     : 'Erstelle zunächst einen serverseitigen Entwurf. Erst die getrennte Veröffentlichung öffnet die Anmeldung und versendet die einmalige Turniermail.';
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.textContent = draft ? 'Änderungen speichern' : 'Entwurf speichern';
   if(tournamentNameInput) tournamentNameInput.value = draft ? draft.name : '';
-  if(tournamentPlayersSelect) tournamentPlayersSelect.value = String(draft ? draft.players : 6);
+  if(tournamentModeSelect) tournamentModeSelect.value = normalizeTournamentMode(draft ? draft.mode : 'double_round_robin');
+  updateTournamentPlayerOptions(draft ? draft.players : 6);
   if(tournamentClockSelect) tournamentClockSelect.value = String(draft ? draft.hours : 24);
   if(tournamentVariantSelect) tournamentVariantSelect.value = draft && draft.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
   if(tournamentRatingSelect) tournamentRatingSelect.value = draft && !draft.rated ? 'unrated' : 'rated';
@@ -7234,6 +7326,7 @@ async function saveTournamentDraft(event){
     return;
   }
   const players = Number(tournamentPlayersSelect ? tournamentPlayersSelect.value : 6);
+  const mode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
   const hours = Number(tournamentClockSelect ? tournamentClockSelect.value : 24);
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.disabled = true;
   setTournamentCreateStatus('Entwurf wird gespeichert…', '');
@@ -7244,7 +7337,8 @@ async function saveTournamentDraft(event){
         id:tournamentEditingId || '',
         name:name.slice(0,80),
         description:String(tournamentDescriptionInput ? tournamentDescriptionInput.value : '').trim().slice(0,1200),
-        players:[4,6,8].includes(players) ? players : 6,
+        players:TOURNAMENT_MODE_CONFIG[mode].players.includes(players) ? players : TOURNAMENT_MODE_CONFIG[mode].players[0],
+        mode,
         hours:[24,48,72].includes(hours) ? hours : 24,
         variant:tournamentVariantSelect && tournamentVariantSelect.value === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
         rated:!tournamentRatingSelect || tournamentRatingSelect.value !== 'unrated'
@@ -7317,9 +7411,9 @@ async function startSelectedTournament(){
     if(statusEl) statusEl.textContent = 'Das Turnier kann erst bei vollständig belegtem Teilnehmerfeld gestartet werden.';
     return;
   }
-  if(recoverable && !window.confirm('Die Vorbereitung dieser Doppelrunde wurde unterbrochen. Fehlende Turnierpartien jetzt erneut vorbereiten?')) return;
-  const freestyleNote = tournament.variant === GAME_VARIANT_FREESTYLE ? '\n\nFür die erste Doppelrunde wird jetzt serverseitig eine zufällige Chess960-Stellung erzeugt.' : '';
-  if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?\n\nDadurch werden alle Partien der ersten Doppelrunde sofort eröffnet.' + freestyleNote)) return;
+  if(recoverable && !window.confirm('Die Vorbereitung dieser Turnierrunde wurde unterbrochen. Fehlende Turnierpartien jetzt erneut vorbereiten?')) return;
+  const freestyleNote = tournament.variant === GAME_VARIANT_FREESTYLE ? '\n\nFür die erste Runde wird jetzt serverseitig eine zufällige Chess960-Stellung erzeugt.' : '';
+  if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?\n\nDadurch werden alle Partien der ersten Turnierrunde sofort eröffnet.' + freestyleNote)) return;
   if(tournamentStartBtn) tournamentStartBtn.disabled = true;
   try{
     const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/start', {method:'POST',body:JSON.stringify({confirmed:true})});
@@ -7348,6 +7442,7 @@ if(tournamentLobbyLaterBtn) tournamentLobbyLaterBtn.addEventListener('click', ()
 });
 if(tournamentCreateCancelBtn) tournamentCreateCancelBtn.addEventListener('click', closeTournamentCreateDialog);
 if(tournamentCreateForm) tournamentCreateForm.addEventListener('submit', saveTournamentDraft);
+if(tournamentModeSelect) tournamentModeSelect.addEventListener('change', () => updateTournamentPlayerOptions());
 window.setInterval(() => {
   if(!onlineAuthToken || !onlineAuthUser) return;
   loadTournaments({keepDetail:!!(tournamentBackdrop && !tournamentBackdrop.hidden && tournamentSelectedId)}).catch(() => {});
@@ -7584,7 +7679,7 @@ function createDailyGameCard(game){
   if(game.isTournamentGame){
     const tournamentBadge = document.createElement('div');
     tournamentBadge.className = 'daily-tournament-badge';
-    tournamentBadge.textContent = '🏆 ' + (game.tournamentName || 'Turnier') + ' · Doppelrunde ' + Number(game.tournamentRound || 0) + (game.tournamentPositionId === null || game.tournamentPositionId === undefined ? '' : ' · Position ' + Number(game.tournamentPositionId));
+    tournamentBadge.textContent = '🏆 ' + (game.tournamentName || 'Turnier') + ' · ' + (game.tournamentRoundLabel || ('Runde ' + Number(game.tournamentRound || 0))) + (game.tournamentPositionId === null || game.tournamentPositionId === undefined ? '' : ' · Position ' + Number(game.tournamentPositionId));
     content.appendChild(tournamentBadge);
   }
   content.appendChild(status);
