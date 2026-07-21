@@ -550,6 +550,39 @@
   .tournament-modal-title{font-size:26px;font-weight:900;color:#222;line-height:1.08;}
   .tournament-modal-subtitle{margin-top:4px;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
   .tournament-test-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:6px 10px;background:rgba(180,83,9,.10);border:1px solid rgba(180,83,9,.25);color:#8a4308;font-size:12px;font-weight:900;white-space:nowrap;}
+  .tournament-view[hidden]{display:none!important;}
+  .tournament-selection-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px;padding:11px 12px;border-bottom:1px solid rgba(132,63,70,.12);background:#f7f7f9;}
+  .tournament-selection-tab{position:relative;min-width:0!important;min-height:43px!important;padding:8px 7px!important;border-radius:11px!important;background:#fff!important;color:#444!important;border:1px solid rgba(0,0,0,.10)!important;box-shadow:none!important;font-size:13px!important;line-height:1.12!important;white-space:normal!important;}
+  .tournament-selection-tab.active{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.48)!important;}
+  .tournament-selection-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;margin-left:4px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:rgba(132,63,70,.10);color:#843f46;font-size:11px;font-weight:900;vertical-align:middle;}
+  .tournament-selection-tab.active .tournament-selection-count{background:rgba(255,255,255,.20);color:#fff;}
+  .tournament-selection-content{min-height:330px;overflow:auto;padding:17px 20px 5px;}
+  .tournament-selection-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;}
+  .tournament-selection-heading h3{margin:0;font-size:21px;font-weight:900;color:#222;line-height:1.15;}
+  .tournament-selection-note{margin-top:4px;font-size:13px;font-weight:700;color:#666;line-height:1.35;}
+  .tournament-list-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;}
+  .tournament-list-card{display:flex;flex-direction:column;gap:9px;min-width:0;border-radius:15px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:13px 14px;box-sizing:border-box;}
+  .tournament-list-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:9px;}
+  .tournament-list-card-name{min-width:0;font-size:18px;font-weight:900;color:#222;line-height:1.2;overflow-wrap:anywhere;}
+  .tournament-status-badge{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:5px 8px;border:1px solid rgba(0,0,0,.10);background:#ececef;color:#555;font-size:10px;font-weight:900;line-height:1.1;text-transform:uppercase;letter-spacing:.025em;white-space:nowrap;}
+  .tournament-status-badge.status-draft{background:rgba(180,83,9,.10);border-color:rgba(180,83,9,.22);color:#8a4308;}
+  .tournament-status-badge.status-open{background:rgba(34,107,54,.10);border-color:rgba(34,107,54,.22);color:#226b36;}
+  .tournament-status-badge.status-full{background:rgba(59,110,167,.11);border-color:rgba(59,110,167,.23);color:#2f6096;}
+  .tournament-status-badge.status-running{background:rgba(91,63,132,.11);border-color:rgba(91,63,132,.22);color:#654596;}
+  .tournament-status-badge.status-ended{background:rgba(70,70,70,.09);border-color:rgba(70,70,70,.18);color:#555;}
+  .tournament-status-badge.status-cancelled{background:rgba(154,45,51,.09);border-color:rgba(154,45,51,.20);color:#9A2D33;}
+  .tournament-list-card-description{font-size:13px;font-weight:700;color:#666;line-height:1.38;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .tournament-list-meta{display:flex;flex-wrap:wrap;gap:6px;}
+  .tournament-list-meta span{display:inline-flex;align-items:center;border-radius:999px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:5px 7px;color:#555;font-size:11px;font-weight:900;line-height:1.1;}
+  .tournament-list-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:2px;}
+  .tournament-list-updated{font-size:11px;font-weight:800;color:#888;line-height:1.25;}
+  .tournament-list-actions{display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;}
+  .tournament-list-actions button{min-height:34px!important;padding:6px 9px!important;border-radius:10px!important;font-size:12px!important;}
+  .tournament-list-empty{grid-column:1 / -1;border-radius:15px;background:#f7f7f9;border:1px dashed rgba(132,63,70,.24);padding:34px 18px;text-align:center;color:#666;font-size:14px;font-weight:800;line-height:1.45;}
+  .tournament-detail-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(132,63,70,.12);background:#f7f7f9;}
+  .tournament-back-btn{min-height:36px!important;padding:7px 10px!important;border-radius:10px!important;font-size:12px!important;}
+  .tournament-detail-identity{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
+  .tournament-detail-name{max-width:430px;color:#444;font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tournament-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:10px 12px;border-bottom:1px solid rgba(132,63,70,.12);background:#f7f7f9;}
   .tournament-tab{min-width:0!important;min-height:40px!important;padding:7px 6px!important;border-radius:11px!important;background:#fff!important;color:#444!important;border:1px solid rgba(0,0,0,.10)!important;box-shadow:none!important;font-size:13px!important;line-height:1.12!important;white-space:normal!important;}
   .tournament-tab.active{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.48)!important;}
@@ -582,6 +615,7 @@
   .tournament-modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;padding:13px 20px 17px;}
   .tournament-modal-actions button{border-radius:12px;min-height:39px;}
   .tournament-create-btn{margin-right:auto;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .tournament-detail-edit-btn{margin-right:auto;}
   .tournament-create-modal{width:690px;max-width:100%;max-height:92vh;overflow:auto;}
   .tournament-create-modal h3{margin:0 0 6px;font-size:23px;color:#222;}
   .tournament-create-intro{margin:0 0 13px!important;}
@@ -956,21 +990,44 @@
   html.dark-mode .tournament-modal-head{background:linear-gradient(135deg,#252930,#272126);border-color:rgba(255,255,255,.08);}
   html.dark-mode .tournament-modal-title,
   html.dark-mode .tournament-panel-title,
+  html.dark-mode .tournament-selection-heading h3,
+  html.dark-mode .tournament-list-card-name,
   html.dark-mode .tournament-card-title,
   html.dark-mode .tournament-create-modal h3{color:#f3f4f6;}
   html.dark-mode .tournament-modal-subtitle,
+  html.dark-mode .tournament-selection-note,
+  html.dark-mode .tournament-list-card-description,
+  html.dark-mode .tournament-list-empty,
+  html.dark-mode .tournament-list-updated,
   html.dark-mode .tournament-card-text,
   html.dark-mode .tournament-empty,
   html.dark-mode .tournament-create-status{color:#b8bdc6;}
   html.dark-mode .tournament-test-badge,
   html.dark-mode .tournament-local-note{background:rgba(224,137,54,.13);border-color:rgba(224,137,54,.26);color:#efb06f;}
+  html.dark-mode .tournament-selection-tabs,
+  html.dark-mode .tournament-detail-toolbar,
   html.dark-mode .tournament-tabs{background:#1c1f24;border-color:rgba(255,255,255,.08);}
+  html.dark-mode .tournament-selection-tab,
   html.dark-mode .tournament-tab{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
+  html.dark-mode .tournament-selection-tab.active,
   html.dark-mode .tournament-tab.active{background:#9f4d56!important;color:#fff!important;border-color:rgba(255,255,255,.12)!important;}
+  html.dark-mode .tournament-selection-count{background:rgba(255,255,255,.08);color:#e6a3ab;}
+  html.dark-mode .tournament-selection-tab.active .tournament-selection-count{background:rgba(255,255,255,.18);color:#fff;}
+  html.dark-mode .tournament-list-card,
+  html.dark-mode .tournament-list-empty,
+  html.dark-mode .tournament-list-meta span,
   html.dark-mode .tournament-card,
   html.dark-mode .tournament-fact,
   html.dark-mode .tournament-empty,
   html.dark-mode .tournament-podium-card{background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode .tournament-list-meta span{color:#c9cdd3;}
+  html.dark-mode .tournament-detail-name{color:#e4e6ea;}
+  html.dark-mode .tournament-status-badge.status-draft{background:rgba(224,137,54,.13);border-color:rgba(224,137,54,.26);color:#efb06f;}
+  html.dark-mode .tournament-status-badge.status-open{background:rgba(92,190,119,.13);border-color:rgba(92,190,119,.25);color:#9bdfad;}
+  html.dark-mode .tournament-status-badge.status-full{background:rgba(88,148,210,.14);border-color:rgba(88,148,210,.25);color:#9fc9ef;}
+  html.dark-mode .tournament-status-badge.status-running{background:rgba(169,126,222,.14);border-color:rgba(169,126,222,.25);color:#cdb0ef;}
+  html.dark-mode .tournament-status-badge.status-ended{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12);color:#c4c8ce;}
+  html.dark-mode .tournament-status-badge.status-cancelled{background:rgba(208,94,102,.13);border-color:rgba(208,94,102,.24);color:#f1a5aa;}
   html.dark-mode .tournament-card-kicker,
   html.dark-mode .tournament-podium-place{color:#e6a3ab;}
   html.dark-mode .tournament-fact-label{color:#b8bdc6;}
@@ -1003,7 +1060,7 @@
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
-  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-overview-grid,.tournament-form-grid,.tournament-podium{grid-template-columns:1fr}.tournament-field-wide{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}}
+  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium{grid-template-columns:1fr}.tournament-field-wide{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}}
 </style>
 </head>
 <body>
@@ -1919,77 +1976,110 @@
         <div class="tournament-modal-head">
           <div>
             <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
-            <div class="tournament-modal-subtitle">Turnierzentrale für Daily-Rundenturniere mit Hin- und Rückspiel</div>
+            <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily-Rundenturniere</div>
           </div>
           <div class="tournament-test-badge">🔒 Admin-Testbereich</div>
         </div>
 
-        <div class="tournament-tabs" role="tablist" aria-label="Turnierbereiche">
-          <button class="tournament-tab active" type="button" role="tab" aria-selected="true" aria-controls="tournamentPanelOverview" data-tournament-tab="overview">Übersicht</button>
-          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelDescription" data-tournament-tab="description">Beschreibung</button>
-          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelParticipants" data-tournament-tab="participants">Teilnehmer</button>
-          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelPairings" data-tournament-tab="pairings">Paarungen</button>
-          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelStandings" data-tournament-tab="standings">Tabelle</button>
-          <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelWinners" data-tournament-tab="winners">Siegerliste</button>
-        </div>
-
-        <div class="tournament-content">
-          <section id="tournamentPanelOverview" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="overview">
-            <h3 class="tournament-panel-title">Turnierübersicht</h3>
-            <div class="tournament-overview-grid">
-              <div class="tournament-card">
-                <div id="tournamentOverviewKicker" class="tournament-card-kicker">Noch nicht veröffentlicht</div>
-                <div id="tournamentOverviewName" class="tournament-card-title">Noch kein Turnier angelegt</div>
-                <div id="tournamentOverviewText" class="tournament-card-text">Erstelle zunächst einen lokalen Testentwurf. Dabei werden noch keine Teilnehmer eingeladen und keine Turnierpartien erzeugt.</div>
-                <div id="tournamentLocalNote" class="tournament-local-note">Diese erste Ausbaustufe dient ausschließlich der Gestaltung und Vorbereitung. Der Entwurf bleibt auf diesem Gerät und ist für andere Mitglieder unsichtbar.</div>
-              </div>
-              <div class="tournament-card tournament-facts" aria-label="Turnierdaten">
-                <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div class="tournament-fact-value">Doppelrunde</div></div>
-                <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">4–8</div></div>
-                <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
-                <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
+        <div id="tournamentSelectionView" class="tournament-view">
+          <div class="tournament-selection-tabs" role="tablist" aria-label="Turnierauswahl">
+            <button class="tournament-selection-tab active" type="button" role="tab" aria-selected="true" data-tournament-list-tab="current">Aktuelle Turniere <span id="tournamentCurrentCount" class="tournament-selection-count">0</span></button>
+            <button class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="mine">Meine Turniere <span id="tournamentMineCount" class="tournament-selection-count">0</span></button>
+            <button class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="archive">Archiv <span id="tournamentArchiveCount" class="tournament-selection-count">0</span></button>
+            <button id="tournamentDraftsTab" class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="drafts">Meine Entwürfe <span id="tournamentDraftCount" class="tournament-selection-count">0</span></button>
+          </div>
+          <div class="tournament-selection-content">
+            <div class="tournament-selection-heading">
+              <div>
+                <h3 id="tournamentListHeading">Aktuelle Turniere</h3>
+                <div id="tournamentListNote" class="tournament-selection-note">Turniere mit offener Anmeldung und bereits laufende Wettbewerbe.</div>
               </div>
             </div>
-          </section>
-
-          <section id="tournamentPanelDescription" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="description" hidden>
-            <h3 class="tournament-panel-title">Turnierbeschreibung</h3>
-            <div id="tournamentDescriptionText" class="tournament-description">Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.</div>
-          </section>
-
-          <section id="tournamentPanelParticipants" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="participants" hidden>
-            <h3 class="tournament-panel-title">Teilnehmer</h3>
-            <div class="tournament-empty">Noch keine Teilnehmer angemeldet.<br />Die Anmeldung wird in einer späteren Ausbaustufe mit den Gamer-Accounts verbunden.</div>
-          </section>
-
-          <section id="tournamentPanelPairings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="pairings" hidden>
-            <h3 class="tournament-panel-title">Paarungen</h3>
-            <div class="tournament-empty">Paarungen und Runden werden erzeugt, sobald ein veröffentlichtes Turnier gestartet wird.</div>
-          </section>
-
-          <section id="tournamentPanelStandings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="standings" hidden>
-            <h3 class="tournament-panel-title">Turniertabelle</h3>
-            <div class="tournament-table-wrap">
-              <table class="tournament-table">
-                <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th></tr></thead>
-                <tbody><tr><td class="tournament-table-empty" colspan="7">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
-              </table>
-            </div>
-          </section>
-
-          <section id="tournamentPanelWinners" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="winners" hidden>
-            <h3 class="tournament-panel-title">Siegerliste · Top 3</h3>
-            <div class="tournament-podium">
-              <div class="tournament-podium-card"><div class="tournament-podium-medal">🥇</div><div class="tournament-podium-place">1. Platz</div><div class="tournament-podium-name">—</div></div>
-              <div class="tournament-podium-card"><div class="tournament-podium-medal">🥈</div><div class="tournament-podium-place">2. Platz</div><div class="tournament-podium-name">—</div></div>
-              <div class="tournament-podium-card"><div class="tournament-podium-medal">🥉</div><div class="tournament-podium-place">3. Platz</div><div class="tournament-podium-name">—</div></div>
-            </div>
-          </section>
+            <div id="tournamentListGrid" class="tournament-list-grid" aria-live="polite"></div>
+          </div>
+          <div class="tournament-modal-actions">
+            <button id="tournamentCreateOpenBtn" class="tournament-create-btn" type="button">➕ Neues Turnier erstellen</button>
+            <button id="tournamentCloseBtn" type="button">Schließen</button>
+          </div>
         </div>
 
-        <div class="tournament-modal-actions">
-          <button id="tournamentCreateOpenBtn" class="tournament-create-btn" type="button">➕ Turnier erstellen</button>
-          <button id="tournamentCloseBtn" type="button">Schließen</button>
+        <div id="tournamentDetailView" class="tournament-view" hidden>
+          <div class="tournament-detail-toolbar">
+            <button id="tournamentBackToListBtn" class="button-flat tournament-back-btn" type="button">← Zurück zur Turnierauswahl</button>
+            <div class="tournament-detail-identity">
+              <div id="tournamentDetailName" class="tournament-detail-name">Turnier</div>
+              <div id="tournamentDetailStatus" class="tournament-status-badge status-draft">Entwurf</div>
+            </div>
+          </div>
+
+          <div class="tournament-tabs" role="tablist" aria-label="Turnierbereiche">
+            <button class="tournament-tab active" type="button" role="tab" aria-selected="true" aria-controls="tournamentPanelOverview" data-tournament-tab="overview">Übersicht</button>
+            <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelDescription" data-tournament-tab="description">Beschreibung</button>
+            <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelParticipants" data-tournament-tab="participants">Teilnehmer</button>
+            <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelPairings" data-tournament-tab="pairings">Paarungen</button>
+            <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelStandings" data-tournament-tab="standings">Tabelle</button>
+            <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelWinners" data-tournament-tab="winners">Siegerliste</button>
+          </div>
+
+          <div class="tournament-content">
+            <section id="tournamentPanelOverview" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="overview">
+              <h3 class="tournament-panel-title">Turnierübersicht</h3>
+              <div class="tournament-overview-grid">
+                <div class="tournament-card">
+                  <div id="tournamentOverviewKicker" class="tournament-card-kicker">Lokaler Testentwurf</div>
+                  <div id="tournamentOverviewName" class="tournament-card-title">Turnier</div>
+                  <div id="tournamentOverviewText" class="tournament-card-text">Dieses Turnier befindet sich noch in Vorbereitung.</div>
+                  <div id="tournamentLocalNote" class="tournament-local-note">Lokale Entwürfe bleiben auf diesem Gerät und sind für andere Mitglieder unsichtbar.</div>
+                </div>
+                <div class="tournament-card tournament-facts" aria-label="Turnierdaten">
+                  <div class="tournament-fact"><div class="tournament-fact-label">Status</div><div id="tournamentFactStatus" class="tournament-fact-value">Entwurf</div></div>
+                  <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div class="tournament-fact-value">Doppelrunde</div></div>
+                  <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">6</div></div>
+                  <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
+                  <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
+                </div>
+              </div>
+            </section>
+
+            <section id="tournamentPanelDescription" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="description" hidden>
+              <h3 class="tournament-panel-title">Turnierbeschreibung</h3>
+              <div id="tournamentDescriptionText" class="tournament-description">Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.</div>
+            </section>
+
+            <section id="tournamentPanelParticipants" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="participants" hidden>
+              <h3 class="tournament-panel-title">Teilnehmer</h3>
+              <div id="tournamentParticipantsEmpty" class="tournament-empty">Noch keine Teilnehmer angemeldet.<br />Die Anmeldung wird in einer späteren Ausbaustufe mit den Gamer-Accounts verbunden.</div>
+            </section>
+
+            <section id="tournamentPanelPairings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="pairings" hidden>
+              <h3 class="tournament-panel-title">Paarungen</h3>
+              <div id="tournamentPairingsEmpty" class="tournament-empty">Paarungen und Runden werden erzeugt, sobald ein veröffentlichtes Turnier gestartet wird.</div>
+            </section>
+
+            <section id="tournamentPanelStandings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="standings" hidden>
+              <h3 class="tournament-panel-title">Turniertabelle</h3>
+              <div class="tournament-table-wrap">
+                <table class="tournament-table">
+                  <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th></tr></thead>
+                  <tbody><tr><td id="tournamentStandingsEmpty" class="tournament-table-empty" colspan="7">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section id="tournamentPanelWinners" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="winners" hidden>
+              <h3 class="tournament-panel-title">Siegerliste · Top 3</h3>
+              <div class="tournament-podium">
+                <div class="tournament-podium-card"><div class="tournament-podium-medal">🥇</div><div class="tournament-podium-place">1. Platz</div><div class="tournament-podium-name">—</div></div>
+                <div class="tournament-podium-card"><div class="tournament-podium-medal">🥈</div><div class="tournament-podium-place">2. Platz</div><div class="tournament-podium-name">—</div></div>
+                <div class="tournament-podium-card"><div class="tournament-podium-medal">🥉</div><div class="tournament-podium-place">3. Platz</div><div class="tournament-podium-name">—</div></div>
+              </div>
+            </section>
+          </div>
+
+          <div class="tournament-modal-actions">
+            <button id="tournamentDetailEditBtn" class="button-flat tournament-detail-edit-btn" type="button">✏️ Entwurf bearbeiten</button>
+            <button id="tournamentDetailCloseBtn" type="button">Schließen</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1997,7 +2087,7 @@
     <div id="tournamentCreateBackdrop" class="identity-backdrop tournament-create-backdrop" hidden>
       <div class="identity-modal tournament-create-modal" role="dialog" aria-modal="true" aria-labelledby="tournamentCreateTitle">
         <h3 id="tournamentCreateTitle">Turnier erstellen</h3>
-        <p class="tournament-create-intro">Erstelle zunächst eine lokale Vorschau. Es werden weder Mitglieder informiert noch Partien oder Datenbankeinträge erzeugt.</p>
+        <p id="tournamentCreateIntro" class="tournament-create-intro">Erstelle zunächst einen lokalen Entwurf. Es werden weder Mitglieder informiert noch Partien oder Datenbankeinträge erzeugt.</p>
         <form id="tournamentCreateForm">
           <div class="tournament-form-grid">
             <div class="tournament-field tournament-field-wide">
@@ -2035,7 +2125,7 @@
           <div id="tournamentCreateStatus" class="tournament-create-status" aria-live="polite"></div>
           <div class="identity-actions">
             <button id="tournamentCreateCancelBtn" class="button-flat" type="button">Abbrechen</button>
-            <button id="tournamentCreatePreviewBtn" type="submit">Vorschau übernehmen</button>
+            <button id="tournamentCreatePreviewBtn" type="submit">Entwurf speichern</button>
           </div>
         </form>
       </div>
@@ -3600,6 +3690,7 @@ const ONLINE_PLAYER_NAME_CONFIRMED_KEY = 'hammerschachGamerOnlineDisplayNameConf
 const ONLINE_AUTH_TOKEN_STORAGE_KEY = 'hammerschachGamerAuthToken';
 const ONLINE_AUTH_USER_STORAGE_KEY = 'hammerschachGamerAuthUser';
 const TOURNAMENT_DRAFT_STORAGE_KEY = 'hammerschachTournamentLocalDraftV1';
+const TOURNAMENT_LIST_STORAGE_KEY = 'hammerschachTournamentLocalListV2';
 const ONLINE_INVITE_COLOR_STORAGE_KEY = 'hammerschachGamerInviteColorPreference';
 const ONLINE_SEAT_STORAGE_PREFIX = 'hammerschachGamerSeat:';
 const ONLINE_LAST_ROOM_STORAGE_KEY = 'hammerschachGamerLastActiveRoom';
@@ -3668,17 +3759,37 @@ const tournamentsOpenBtn = document.getElementById('tournamentsOpenBtn');
 const tournamentBackdrop = document.getElementById('tournamentBackdrop');
 const tournamentCloseBtn = document.getElementById('tournamentCloseBtn');
 const tournamentCreateOpenBtn = document.getElementById('tournamentCreateOpenBtn');
+const tournamentSelectionView = document.getElementById('tournamentSelectionView');
+const tournamentDetailView = document.getElementById('tournamentDetailView');
+const tournamentListTabButtons = Array.from(document.querySelectorAll('[data-tournament-list-tab]'));
+const tournamentListGrid = document.getElementById('tournamentListGrid');
+const tournamentListHeading = document.getElementById('tournamentListHeading');
+const tournamentListNote = document.getElementById('tournamentListNote');
+const tournamentCurrentCount = document.getElementById('tournamentCurrentCount');
+const tournamentMineCount = document.getElementById('tournamentMineCount');
+const tournamentArchiveCount = document.getElementById('tournamentArchiveCount');
+const tournamentDraftCount = document.getElementById('tournamentDraftCount');
+const tournamentDraftsTab = document.getElementById('tournamentDraftsTab');
+const tournamentBackToListBtn = document.getElementById('tournamentBackToListBtn');
+const tournamentDetailName = document.getElementById('tournamentDetailName');
+const tournamentDetailStatus = document.getElementById('tournamentDetailStatus');
+const tournamentDetailEditBtn = document.getElementById('tournamentDetailEditBtn');
+const tournamentDetailCloseBtn = document.getElementById('tournamentDetailCloseBtn');
 const tournamentTabButtons = Array.from(document.querySelectorAll('[data-tournament-tab]'));
 const tournamentTabPanels = Array.from(document.querySelectorAll('[data-tournament-panel]'));
 const tournamentOverviewKicker = document.getElementById('tournamentOverviewKicker');
 const tournamentOverviewName = document.getElementById('tournamentOverviewName');
 const tournamentOverviewText = document.getElementById('tournamentOverviewText');
+const tournamentLocalNote = document.getElementById('tournamentLocalNote');
+const tournamentFactStatus = document.getElementById('tournamentFactStatus');
 const tournamentFactPlayers = document.getElementById('tournamentFactPlayers');
 const tournamentFactClock = document.getElementById('tournamentFactClock');
 const tournamentFactRating = document.getElementById('tournamentFactRating');
 const tournamentDescriptionText = document.getElementById('tournamentDescriptionText');
 const tournamentCreateBackdrop = document.getElementById('tournamentCreateBackdrop');
 const tournamentCreateForm = document.getElementById('tournamentCreateForm');
+const tournamentCreateTitle = document.getElementById('tournamentCreateTitle');
+const tournamentCreateIntro = document.getElementById('tournamentCreateIntro');
 const tournamentNameInput = document.getElementById('tournamentNameInput');
 const tournamentPlayersSelect = document.getElementById('tournamentPlayersSelect');
 const tournamentClockSelect = document.getElementById('tournamentClockSelect');
@@ -3686,6 +3797,7 @@ const tournamentRatingSelect = document.getElementById('tournamentRatingSelect')
 const tournamentDescriptionInput = document.getElementById('tournamentDescriptionInput');
 const tournamentCreateStatus = document.getElementById('tournamentCreateStatus');
 const tournamentCreateCancelBtn = document.getElementById('tournamentCreateCancelBtn');
+const tournamentCreatePreviewBtn = document.getElementById('tournamentCreatePreviewBtn');
 const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
 const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
@@ -6352,6 +6464,8 @@ function updateAuthUi(){
     tournamentsOpenBtn.tabIndex = isAdmin ? 0 : -1;
     tournamentsOpenBtn.title = isAdmin ? 'Turnierbereich öffnen.' : '';
   }
+  if(tournamentDraftsTab) tournamentDraftsTab.hidden = !isAdmin;
+  if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.hidden = !isAdmin;
   if(!isAdmin){
     if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = true;
     if(tournamentBackdrop) tournamentBackdrop.hidden = true;
@@ -6526,22 +6640,205 @@ function hasTournamentAdminAccess(){
 function defaultTournamentDescription(){
   return 'Daily-Doppelrundenturnier: Jeder Teilnehmer spielt gegen jeden Gegner zwei Partien mit vertauschten Farben. Die beiden Partien einer Begegnung laufen parallel, damit der Turnierzeitraum überschaubar bleibt.';
 }
-function loadLocalTournamentDraft(){
+const TOURNAMENT_STATUS_CONFIG = Object.freeze({
+  draft:{label:'Entwurf',className:'status-draft'},
+  open:{label:'Anmeldung offen',className:'status-open'},
+  full:{label:'Ausgebucht',className:'status-full'},
+  running:{label:'Läuft',className:'status-running'},
+  ended:{label:'Beendet',className:'status-ended'},
+  cancelled:{label:'Abgesagt',className:'status-cancelled'}
+});
+const TOURNAMENT_LIST_CONFIG = Object.freeze({
+  current:{title:'Aktuelle Turniere',note:'Turniere mit offener Anmeldung und bereits laufende Wettbewerbe.',empty:'Derzeit ist noch kein Turnier veröffentlicht oder gestartet.'},
+  mine:{title:'Meine Turniere',note:'Anmeldungen, Wartelistenplätze sowie laufende und frühere eigene Turniere.',empty:'Du bist derzeit bei keinem veröffentlichten Turnier angemeldet.'},
+  archive:{title:'Archiv',note:'Beendete und abgesagte Turniere bleiben mit ihren Ergebnissen einsehbar.',empty:'Das Turnierarchiv ist momentan noch leer.'},
+  drafts:{title:'Meine Entwürfe',note:'Lokale, noch nicht veröffentlichte Turnierentwürfe auf diesem Gerät.',empty:'Noch keine lokalen Turnierentwürfe vorhanden.'}
+});
+let tournamentActiveListTab = 'current';
+let tournamentSelectedId = '';
+let tournamentEditingId = '';
+
+function createLocalTournamentId(){
+  return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9);
+}
+function normalizeLocalTournament(value, index){
+  if(!value || typeof value !== 'object') return null;
+  const name = String(value.name || '').trim().slice(0,80);
+  if(!name) return null;
+  const players = [4,6,8].includes(Number(value.players)) ? Number(value.players) : 6;
+  const hours = [24,48,72].includes(Number(value.hours)) ? Number(value.hours) : 24;
+  const status = Object.prototype.hasOwnProperty.call(TOURNAMENT_STATUS_CONFIG, value.status) ? value.status : 'draft';
+  const createdAt = String(value.createdAt || value.created_at || new Date().toISOString());
+  const updatedAt = String(value.updatedAt || value.updated_at || createdAt);
+  const participants = Array.isArray(value.participants) ? value.participants.slice(0,players) : [];
+  const userState = ['confirmed','waiting','playing','finished'].includes(String(value.userState || '')) ? String(value.userState) : '';
+  return {
+    id:String(value.id || ('local_migrated_' + Date.now().toString(36) + '_' + Number(index || 0))).slice(0,100),
+    name,
+    description:String(value.description || '').trim().slice(0,1200),
+    players,
+    hours,
+    rated:value.rated !== false,
+    status,
+    participants,
+    userState,
+    createdAt,
+    updatedAt
+  };
+}
+function saveLocalTournamentList(tournaments){
   try{
-    const raw = localStorage.getItem(TOURNAMENT_DRAFT_STORAGE_KEY);
-    if(!raw) return null;
-    const draft = JSON.parse(raw);
-    if(!draft || typeof draft !== 'object' || !String(draft.name || '').trim()) return null;
-    const players = [4,6,8].includes(Number(draft.players)) ? Number(draft.players) : 6;
-    const hours = [24,48,72].includes(Number(draft.hours)) ? Number(draft.hours) : 24;
-    return {
-      name:String(draft.name || '').trim().slice(0,80),
-      description:String(draft.description || '').trim().slice(0,1200),
-      players,
-      hours,
-      rated:draft.rated !== false
-    };
-  } catch(_){ return null; }
+    localStorage.setItem(TOURNAMENT_LIST_STORAGE_KEY, JSON.stringify({version:2,tournaments:tournaments.map((item,index) => normalizeLocalTournament(item,index)).filter(Boolean)}));
+    return true;
+  } catch(_){ return false; }
+}
+function loadLocalTournamentList(){
+  try{
+    const raw = localStorage.getItem(TOURNAMENT_LIST_STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      const source = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.tournaments) ? parsed.tournaments : []);
+      return source.map((item,index) => normalizeLocalTournament(item,index)).filter(Boolean);
+    }
+    const legacyRaw = localStorage.getItem(TOURNAMENT_DRAFT_STORAGE_KEY);
+    if(!legacyRaw) return [];
+    const legacy = normalizeLocalTournament(Object.assign({}, JSON.parse(legacyRaw), {status:'draft'}), 0);
+    if(!legacy) return [];
+    saveLocalTournamentList([legacy]);
+    return [legacy];
+  } catch(_){ return []; }
+}
+function tournamentStatusInfo(status){
+  return TOURNAMENT_STATUS_CONFIG[status] || TOURNAMENT_STATUS_CONFIG.draft;
+}
+function tournamentBelongsToList(tournament, tabName){
+  if(tabName === 'drafts') return tournament.status === 'draft';
+  if(tabName === 'current') return ['open','full','running'].includes(tournament.status);
+  if(tabName === 'archive') return ['ended','cancelled'].includes(tournament.status);
+  if(tabName === 'mine') return !!tournament.userState;
+  return false;
+}
+function tournamentsForList(tabName, tournaments){
+  return tournaments.filter(tournament => tournamentBelongsToList(tournament, tabName)).sort((a,b) => {
+    const bt = Date.parse(b.updatedAt || b.createdAt || '') || 0;
+    const at = Date.parse(a.updatedAt || a.createdAt || '') || 0;
+    return bt - at || a.name.localeCompare(b.name, 'de');
+  });
+}
+function formatTournamentLocalDate(value){
+  const date = value ? new Date(value) : null;
+  if(!date || Number.isNaN(date.getTime())) return '';
+  try{ return date.toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'}); }
+  catch(_){ return ''; }
+}
+function setTournamentStatusBadge(element, status){
+  if(!element) return;
+  const info = tournamentStatusInfo(status);
+  Object.values(TOURNAMENT_STATUS_CONFIG).forEach(item => element.classList.remove(item.className));
+  element.classList.add(info.className);
+  element.textContent = info.label;
+}
+function appendTournamentMeta(container, text){
+  const chip = document.createElement('span');
+  chip.textContent = text;
+  container.appendChild(chip);
+}
+function createTournamentListCard(tournament){
+  const card = document.createElement('article');
+  card.className = 'tournament-list-card';
+
+  const head = document.createElement('div');
+  head.className = 'tournament-list-card-head';
+  const name = document.createElement('div');
+  name.className = 'tournament-list-card-name';
+  name.textContent = tournament.name;
+  const badge = document.createElement('div');
+  badge.className = 'tournament-status-badge';
+  setTournamentStatusBadge(badge, tournament.status);
+  head.appendChild(name);
+  head.appendChild(badge);
+
+  const description = document.createElement('div');
+  description.className = 'tournament-list-card-description';
+  description.textContent = tournament.description || defaultTournamentDescription();
+
+  const meta = document.createElement('div');
+  meta.className = 'tournament-list-meta';
+  const participantCount = Array.isArray(tournament.participants) ? tournament.participants.length : 0;
+  appendTournamentMeta(meta, tournament.status === 'draft' ? ('👥 ' + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players));
+  appendTournamentMeta(meta, '⏱ ' + tournament.hours + ' Std./Zug');
+  appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
+  appendTournamentMeta(meta, '↔ Doppelrunde');
+
+  const foot = document.createElement('div');
+  foot.className = 'tournament-list-card-foot';
+  const updated = document.createElement('div');
+  updated.className = 'tournament-list-updated';
+  const dateText = formatTournamentLocalDate(tournament.updatedAt);
+  updated.textContent = tournament.status === 'draft' ? ('Zuletzt bearbeitet' + (dateText ? ': ' + dateText : '')) : (dateText ? 'Stand: ' + dateText : '');
+  const actions = document.createElement('div');
+  actions.className = 'tournament-list-actions';
+  const viewButton = document.createElement('button');
+  viewButton.type = 'button';
+  viewButton.className = 'button-flat';
+  viewButton.textContent = 'Turnier ansehen';
+  viewButton.addEventListener('click', () => openTournamentDetail(tournament.id));
+  actions.appendChild(viewButton);
+  if(tournament.status === 'draft' && hasTournamentAdminAccess()){
+    const editButton = document.createElement('button');
+    editButton.type = 'button';
+    editButton.textContent = '✏️ Bearbeiten';
+    editButton.addEventListener('click', () => openTournamentCreateDialog(tournament.id));
+    actions.appendChild(editButton);
+  }
+  foot.appendChild(updated);
+  foot.appendChild(actions);
+
+  card.appendChild(head);
+  card.appendChild(description);
+  card.appendChild(meta);
+  card.appendChild(foot);
+  return card;
+}
+function updateTournamentListCounts(tournaments){
+  if(tournamentCurrentCount) tournamentCurrentCount.textContent = String(tournamentsForList('current', tournaments).length);
+  if(tournamentMineCount) tournamentMineCount.textContent = String(tournamentsForList('mine', tournaments).length);
+  if(tournamentArchiveCount) tournamentArchiveCount.textContent = String(tournamentsForList('archive', tournaments).length);
+  if(tournamentDraftCount) tournamentDraftCount.textContent = String(tournamentsForList('drafts', tournaments).length);
+}
+function renderTournamentList(){
+  const tournaments = loadLocalTournamentList();
+  updateTournamentListCounts(tournaments);
+  const config = TOURNAMENT_LIST_CONFIG[tournamentActiveListTab] || TOURNAMENT_LIST_CONFIG.current;
+  if(tournamentListHeading) tournamentListHeading.textContent = config.title;
+  if(tournamentListNote) tournamentListNote.textContent = config.note;
+  if(!tournamentListGrid) return;
+  tournamentListGrid.innerHTML = '';
+  const items = tournamentsForList(tournamentActiveListTab, tournaments);
+  if(items.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'tournament-list-empty';
+    empty.textContent = config.empty;
+    tournamentListGrid.appendChild(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  items.forEach(tournament => fragment.appendChild(createTournamentListCard(tournament)));
+  tournamentListGrid.appendChild(fragment);
+}
+function setTournamentListTab(tabName, focusTab){
+  const requested = String(tabName || 'current');
+  const allowed = Object.prototype.hasOwnProperty.call(TOURNAMENT_LIST_CONFIG, requested) && (requested !== 'drafts' || hasTournamentAdminAccess());
+  const valid = allowed ? requested : 'current';
+  tournamentActiveListTab = valid;
+  tournamentListTabButtons.forEach(button => {
+    const active = button.dataset.tournamentListTab === valid;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+    button.tabIndex = active ? 0 : -1;
+    if(active && focusTab) button.focus();
+  });
+  renderTournamentList();
 }
 function setTournamentTab(tabName, focusTab){
   const requested = String(tabName || 'overview');
@@ -6555,20 +6852,25 @@ function setTournamentTab(tabName, focusTab){
   });
   tournamentTabPanels.forEach(panel => { panel.hidden = panel.dataset.tournamentPanel !== valid; });
 }
-function renderTournamentDraft(){
-  const draft = loadLocalTournamentDraft();
-  if(tournamentOverviewKicker) tournamentOverviewKicker.textContent = draft ? 'Lokaler Testentwurf · nicht veröffentlicht' : 'Noch nicht veröffentlicht';
-  if(tournamentOverviewName) tournamentOverviewName.textContent = draft ? draft.name : 'Noch kein Turnier angelegt';
+function renderTournamentDetail(tournament){
+  const info = tournamentStatusInfo(tournament.status);
+  if(tournamentDetailName) tournamentDetailName.textContent = tournament.name;
+  setTournamentStatusBadge(tournamentDetailStatus, tournament.status);
+  if(tournamentOverviewKicker) tournamentOverviewKicker.textContent = tournament.status === 'draft' ? 'Lokaler Testentwurf · nicht veröffentlicht' : info.label;
+  if(tournamentOverviewName) tournamentOverviewName.textContent = tournament.name;
   if(tournamentOverviewText){
-    tournamentOverviewText.textContent = draft
-      ? ('Geplant ist ein Daily-Doppelrundenturnier für ' + draft.players + ' Teilnehmer. Pro Begegnung werden zwei Partien mit Farbwechsel parallel gespielt.')
-      : 'Erstelle zunächst einen lokalen Testentwurf. Dabei werden noch keine Teilnehmer eingeladen und keine Turnierpartien erzeugt.';
+    tournamentOverviewText.textContent = 'Daily-Doppelrundenturnier für ' + tournament.players + ' Teilnehmer. Jeder spielt gegen jeden Gegner zwei parallele Partien mit vertauschten Farben.';
   }
-  if(tournamentFactPlayers) tournamentFactPlayers.textContent = draft ? String(draft.players) : '4–8';
-  if(tournamentFactClock) tournamentFactClock.textContent = (draft ? draft.hours : 24) + ' Stunden/Zug';
-  if(tournamentFactRating) tournamentFactRating.textContent = !draft || draft.rated ? 'Gewertet' : 'Ohne Rating';
-  if(tournamentDescriptionText) tournamentDescriptionText.textContent = draft && draft.description ? draft.description : defaultTournamentDescription();
-  if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.textContent = draft ? '✏️ Entwurf bearbeiten' : '➕ Turnier erstellen';
+  if(tournamentLocalNote){
+    tournamentLocalNote.hidden = tournament.status !== 'draft';
+    tournamentLocalNote.textContent = 'Dieser Entwurf bleibt auf diesem Gerät und ist für andere Mitglieder unsichtbar. Es werden noch keine Anmeldungen oder Partien erzeugt.';
+  }
+  if(tournamentFactStatus) tournamentFactStatus.textContent = info.label;
+  if(tournamentFactPlayers) tournamentFactPlayers.textContent = String(tournament.players);
+  if(tournamentFactClock) tournamentFactClock.textContent = tournament.hours + ' Stunden/Zug';
+  if(tournamentFactRating) tournamentFactRating.textContent = tournament.rated ? 'Gewertet' : 'Ohne Rating';
+  if(tournamentDescriptionText) tournamentDescriptionText.textContent = tournament.description || defaultTournamentDescription();
+  if(tournamentDetailEditBtn) tournamentDetailEditBtn.hidden = !(tournament.status === 'draft' && hasTournamentAdminAccess());
 }
 function setTournamentCreateStatus(message, kind){
   if(!tournamentCreateStatus) return;
@@ -6583,26 +6885,57 @@ function closeTournamentCreateDialog(){
 function closeTournamentDialog(){
   closeTournamentCreateDialog();
   if(tournamentBackdrop) tournamentBackdrop.hidden = true;
+  tournamentSelectedId = '';
   try{ refreshHeaderStatusFromState(); } catch(_){ }
+  hammerschachScheduleHeightReport(false);
+}
+function openTournamentSelection(tabName, focusTab){
+  tournamentSelectedId = '';
+  if(tournamentSelectionView) tournamentSelectionView.hidden = false;
+  if(tournamentDetailView) tournamentDetailView.hidden = true;
+  setTournamentListTab(tabName || tournamentActiveListTab, !!focusTab);
+  hammerschachScheduleHeightReport(false);
+}
+function openTournamentDetail(tournamentId){
+  const tournament = loadLocalTournamentList().find(item => item.id === String(tournamentId || ''));
+  if(!tournament){
+    openTournamentSelection(tournamentActiveListTab, false);
+    return;
+  }
+  tournamentSelectedId = tournament.id;
+  renderTournamentDetail(tournament);
+  setTournamentTab('overview', false);
+  if(tournamentSelectionView) tournamentSelectionView.hidden = true;
+  if(tournamentDetailView) tournamentDetailView.hidden = false;
+  setTimeout(() => { if(tournamentBackToListBtn) tournamentBackToListBtn.focus(); }, 0);
   hammerschachScheduleHeightReport(false);
 }
 function openTournamentDialog(){
   if(!hasTournamentAdminAccess()) return;
   closeEmbeddedTools();
   closePlayerMenu();
-  renderTournamentDraft();
-  setTournamentTab('overview', false);
   if(tournamentBackdrop) tournamentBackdrop.hidden = false;
+  const tournaments = loadLocalTournamentList();
+  const hasCurrent = tournamentsForList('current', tournaments).length > 0;
+  const hasDrafts = tournamentsForList('drafts', tournaments).length > 0;
+  openTournamentSelection(hasCurrent ? 'current' : (hasDrafts ? 'drafts' : 'current'), false);
   if(statusEl) statusEl.textContent = 'Hammerschach – Turniere';
   setTimeout(() => {
-    const activeTab = tournamentTabButtons.find(button => button.classList.contains('active'));
+    const activeTab = tournamentListTabButtons.find(button => button.classList.contains('active'));
     if(activeTab) activeTab.focus();
   }, 0);
   hammerschachScheduleHeightReport(false);
 }
-function openTournamentCreateDialog(){
+function openTournamentCreateDialog(tournamentId){
   if(!hasTournamentAdminAccess()) return;
-  const draft = loadLocalTournamentDraft();
+  const requestedId = typeof tournamentId === 'string' ? tournamentId : '';
+  const draft = requestedId ? loadLocalTournamentList().find(item => item.id === requestedId && item.status === 'draft') : null;
+  tournamentEditingId = draft ? draft.id : '';
+  if(tournamentCreateTitle) tournamentCreateTitle.textContent = draft ? 'Turnierentwurf bearbeiten' : 'Turnier erstellen';
+  if(tournamentCreateIntro) tournamentCreateIntro.textContent = draft
+    ? 'Bearbeite diesen lokalen Entwurf. Mitglieder werden weiterhin nicht informiert und es entstehen keine Partien.'
+    : 'Erstelle zunächst einen lokalen Entwurf. Es werden weder Mitglieder informiert noch Partien oder Datenbankeinträge erzeugt.';
+  if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.textContent = draft ? 'Änderungen speichern' : 'Entwurf speichern';
   if(tournamentNameInput) tournamentNameInput.value = draft ? draft.name : '';
   if(tournamentPlayersSelect) tournamentPlayersSelect.value = String(draft ? draft.players : 6);
   if(tournamentClockSelect) tournamentClockSelect.value = String(draft ? draft.hours : 24);
@@ -6623,23 +6956,34 @@ function saveLocalTournamentPreview(event){
   }
   const players = Number(tournamentPlayersSelect ? tournamentPlayersSelect.value : 6);
   const hours = Number(tournamentClockSelect ? tournamentClockSelect.value : 24);
+  const tournaments = loadLocalTournamentList();
+  const existingIndex = tournamentEditingId ? tournaments.findIndex(item => item.id === tournamentEditingId && item.status === 'draft') : -1;
+  const existing = existingIndex >= 0 ? tournaments[existingIndex] : null;
+  const now = new Date().toISOString();
   const draft = {
+    id:existing ? existing.id : createLocalTournamentId(),
     name:name.slice(0,80),
     description:String(tournamentDescriptionInput ? tournamentDescriptionInput.value : '').trim().slice(0,1200),
     players:[4,6,8].includes(players) ? players : 6,
     hours:[24,48,72].includes(hours) ? hours : 24,
-    rated:!tournamentRatingSelect || tournamentRatingSelect.value !== 'unrated'
+    rated:!tournamentRatingSelect || tournamentRatingSelect.value !== 'unrated',
+    status:'draft',
+    participants:existing && Array.isArray(existing.participants) ? existing.participants : [],
+    userState:existing ? existing.userState : '',
+    createdAt:existing ? existing.createdAt : now,
+    updatedAt:now
   };
-  try{
-    localStorage.setItem(TOURNAMENT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-  } catch(_){
+  if(existingIndex >= 0) tournaments[existingIndex] = draft;
+  else tournaments.push(draft);
+  if(!saveLocalTournamentList(tournaments)){
     setTournamentCreateStatus('Der lokale Testentwurf konnte in diesem Browser nicht gespeichert werden.', 'error');
     return;
   }
-  renderTournamentDraft();
-  setTournamentTab('overview', false);
+  tournamentEditingId = '';
   closeTournamentCreateDialog();
-  if(statusEl) statusEl.textContent = 'Lokaler Turnierentwurf wurde übernommen.';
+  tournamentActiveListTab = 'drafts';
+  openTournamentDetail(draft.id);
+  if(statusEl) statusEl.textContent = existing ? 'Turnierentwurf wurde aktualisiert.' : 'Neuer Turnierentwurf wurde gespeichert.';
 }
 
 if(authOpenBtn) authOpenBtn.addEventListener('click', () => openAuthDialog('login'));
@@ -6647,9 +6991,23 @@ if(profileOpenBtn) profileOpenBtn.addEventListener('click', () => openAuthDialog
 if(membersOpenBtn) membersOpenBtn.addEventListener('click', openMembersDialog);
 if(tournamentsOpenBtn) tournamentsOpenBtn.addEventListener('click', openTournamentDialog);
 if(tournamentCloseBtn) tournamentCloseBtn.addEventListener('click', closeTournamentDialog);
-if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.addEventListener('click', openTournamentCreateDialog);
+if(tournamentDetailCloseBtn) tournamentDetailCloseBtn.addEventListener('click', closeTournamentDialog);
+if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.addEventListener('click', () => openTournamentCreateDialog(''));
+if(tournamentBackToListBtn) tournamentBackToListBtn.addEventListener('click', () => openTournamentSelection(tournamentActiveListTab, true));
+if(tournamentDetailEditBtn) tournamentDetailEditBtn.addEventListener('click', () => openTournamentCreateDialog(tournamentSelectedId));
 if(tournamentCreateCancelBtn) tournamentCreateCancelBtn.addEventListener('click', closeTournamentCreateDialog);
 if(tournamentCreateForm) tournamentCreateForm.addEventListener('submit', saveLocalTournamentPreview);
+tournamentListTabButtons.forEach(button => {
+  button.addEventListener('click', () => setTournamentListTab(button.dataset.tournamentListTab, false));
+  button.addEventListener('keydown', event => {
+    if(event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    const index = tournamentListTabButtons.indexOf(button);
+    const direction = event.key === 'ArrowRight' ? 1 : -1;
+    const next = tournamentListTabButtons[(index + direction + tournamentListTabButtons.length) % tournamentListTabButtons.length];
+    if(next) setTournamentListTab(next.dataset.tournamentListTab, true);
+  });
+});
 tournamentTabButtons.forEach(button => {
   button.addEventListener('click', () => setTournamentTab(button.dataset.tournamentTab, false));
   button.addEventListener('keydown', event => {
