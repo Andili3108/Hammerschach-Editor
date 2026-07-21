@@ -2917,10 +2917,12 @@ async function ensureTournamentTables(env) {
        published_at TEXT,
        started_at TEXT,
        ended_at TEXT,
-       publication_mail_sent_at TEXT
+       publication_mail_sent_at TEXT,
+       full_notification_sent_at TEXT
      )`
   ).run();
   try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN publication_mail_sent_at TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN full_notification_sent_at TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_participants (
        tournament_id TEXT NOT NULL,
@@ -3369,6 +3371,60 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier ansehen</a></p>` : '';
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses Daily-Doppelrundenturnier ist die Anmeldung geöffnet.</p><p><strong>${Number(tournament.max_players)} Teilnehmer · ${Number(tournament.hours_per_move)} Stunden pro Zug · ${escapeEmailHtml(variant)} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_published', recipientEmail:recipient.email, recipientName:name, subject, textPart, htmlPart, attachments:[]};
+}
+
+function prepareTournamentFullAdminEmail(env, tournament, admin) {
+  const link = tournamentPublicUrl(env, tournament.id);
+  const adminName = cleanDisplayName(admin.username) || 'Andili';
+  const title = cleanTournamentName(tournament.name);
+  const playerCount = Number(tournament.max_players || 0);
+  const subject = `Turnier vollständig belegt: ${title}`;
+  const textPart = `Hallo ${adminName},\n\ndas Turnier „${title}“ ist mit ${playerCount} von ${playerCount} bestätigten Teilnehmern vollständig belegt und kann jetzt gestartet werden.\n\n${link ? `Turnier öffnen und starten:\n${link}\n\n` : ''}Der Turnierstart erfolgt weiterhin ausschließlich manuell durch dich.\n\nViele Grüße\nHammerschach-Gamer`;
+  const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier öffnen und starten</a></p>` : '';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere · Admin-Hinweis</div><h2 style="color:#843f46;">${escapeEmailHtml(title)} ist vollständig belegt</h2><p>Hallo ${escapeEmailHtml(adminName)},</p><p>das Turnier ist mit <strong>${playerCount} von ${playerCount} bestätigten Teilnehmern</strong> vollständig belegt und kann jetzt gestartet werden.</p>${button}<p>Der Turnierstart erfolgt weiterhin ausschließlich manuell durch dich.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return {ok:true, mailType:'tournament_full_admin', recipientEmail:admin.email, recipientName:adminName, subject, textPart, htmlPart, attachments:[]};
+}
+
+async function notifyAdminTournamentFull(env, tournamentId) {
+  let claimedAt = '';
+  try {
+    const tournament = await loadTournamentRow(env, tournamentId);
+    if (!tournament || tournament.status !== 'full') return {sent:false, reason:'not_full'};
+    claimedAt = new Date().toISOString();
+    const claimed = await env.DB.prepare(
+      `UPDATE tournaments SET full_notification_sent_at = ?
+        WHERE id = ? AND status = 'full' AND full_notification_sent_at IS NULL`
+    ).bind(claimedAt, tournamentId).run();
+    if (d1Changes(claimed) < 1) return {sent:false, reason:'already_notified'};
+
+    const result = await env.DB.prepare(`SELECT id, username, email FROM users ORDER BY id`).all();
+    const admin = (result && result.results ? result.results : []).find(user => isAdminUser(user, env));
+    const email = normalizeEmail(admin && admin.email);
+    if (!admin || !email) {
+      await env.DB.prepare(`UPDATE tournaments SET full_notification_sent_at = NULL WHERE id = ? AND full_notification_sent_at = ?`).bind(tournamentId, claimedAt).run();
+      return {sent:false, reason:'admin_email_missing'};
+    }
+    const security = await getUserEmailSecurityState(env, admin);
+    if (!security.emailVerified) {
+      await env.DB.prepare(`UPDATE tournaments SET full_notification_sent_at = NULL WHERE id = ? AND full_notification_sent_at = ?`).bind(tournamentId, claimedAt).run();
+      return {sent:false, reason:'admin_email_unverified'};
+    }
+    const mail = await sendInvitationEmail(env, {
+      preparedMail:prepareTournamentFullAdminEmail(env, tournament, {username:admin.username, email}),
+      mailType:'tournament_full_admin'
+    });
+    if (!mail || !mail.ok) {
+      await env.DB.prepare(`UPDATE tournaments SET full_notification_sent_at = NULL WHERE id = ? AND full_notification_sent_at = ?`).bind(tournamentId, claimedAt).run();
+      return {sent:false, reason:'send_failed'};
+    }
+    return {sent:true};
+  } catch (error) {
+    console.error('Tournament full admin notification failed', error && error.message ? error.message : String(error || 'unknown'));
+    if (claimedAt) {
+      try { await env.DB.prepare(`UPDATE tournaments SET full_notification_sent_at = NULL WHERE id = ? AND full_notification_sent_at = ?`).bind(tournamentId, claimedAt).run(); } catch (_) {}
+    }
+    return {sent:false, reason:'notification_failed'};
+  }
 }
 
 async function sendTournamentPublishedEmails(env, tournament) {
@@ -4472,11 +4528,13 @@ async function deleteUserAccount(env, target, options = {}) {
       ).bind(new Date().toISOString(), target.id).run();
       for (const tournament of activeTournaments) {
         const balanced = await rebalanceTournamentParticipants(env, tournament.id, tournament.max_players);
-        await env.DB.prepare(`UPDATE tournaments SET status = ?, updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(
-          balanced.confirmed >= Number(tournament.max_players || 0) ? 'full' : 'open',
-          new Date().toISOString(),
-          tournament.id
-        ).run();
+        const nextStatus = balanced.confirmed >= Number(tournament.max_players || 0) ? 'full' : 'open';
+        await env.DB.prepare(
+          `UPDATE tournaments
+              SET status = ?, updated_at = ?,
+                  full_notification_sent_at = CASE WHEN ? = 'open' THEN NULL ELSE full_notification_sent_at END
+            WHERE id = ? AND status IN ('open','full')`
+        ).bind(nextStatus, new Date().toISOString(), nextStatus, tournament.id).run();
       }
       await env.DB.prepare(`DELETE FROM tournament_views WHERE user_id = ?`).bind(target.id).run();
     }
@@ -5706,6 +5764,7 @@ async function handleAuthApi(request, env, url) {
         const balanced = await rebalanceTournamentParticipants(env, tournamentId, tournament.max_players);
         const nextStatus = balanced.confirmed >= Number(tournament.max_players || 0) ? 'full' : 'open';
         await env.DB.prepare(`UPDATE tournaments SET status = ?, updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(nextStatus, now, tournamentId).run();
+        if (nextStatus === 'full') await notifyAdminTournamentFull(env, tournamentId);
         const row = await loadTournamentRow(env, tournamentId);
         const dto = await tournamentDto(env, row, session.user);
         return json({ok:true, tournament:dto, message:dto.userState === 'waiting' ? `Das Turnier ist voll. Du stehst auf Wartelistenplatz ${dto.waitlistPosition || 1}.` : 'Deine Teilnahme wurde bestätigt.'});
@@ -5716,7 +5775,12 @@ async function handleAuthApi(request, env, url) {
       await env.DB.prepare(`UPDATE tournament_participants SET status = 'withdrawn', updated_at = ? WHERE tournament_id = ? AND user_id = ?`).bind(now, tournamentId, session.user.id).run();
       const balanced = await rebalanceTournamentParticipants(env, tournamentId, tournament.max_players);
       const nextStatus = balanced.confirmed >= Number(tournament.max_players || 0) ? 'full' : 'open';
-      await env.DB.prepare(`UPDATE tournaments SET status = ?, updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(nextStatus, now, tournamentId).run();
+      await env.DB.prepare(
+        `UPDATE tournaments
+            SET status = ?, updated_at = ?,
+                full_notification_sent_at = CASE WHEN ? = 'open' THEN NULL ELSE full_notification_sent_at END
+          WHERE id = ? AND status IN ('open','full')`
+      ).bind(nextStatus, now, nextStatus, tournamentId).run();
       const row = await loadTournamentRow(env, tournamentId);
       return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Deine Turnierteilnahme wurde zurückgezogen.'});
     } catch (error) {
