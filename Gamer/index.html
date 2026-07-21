@@ -1978,7 +1978,7 @@
             <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
             <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily-Rundenturniere</div>
           </div>
-          <div class="tournament-test-badge">🔒 Admin-Testbereich</div>
+          <div id="tournamentTestBadge" class="tournament-test-badge">🔒 Admin-Testbereich</div>
         </div>
 
         <div id="tournamentSelectionView" class="tournament-view">
@@ -3757,6 +3757,7 @@ const authOpenBtn = document.getElementById('authOpenBtn');
 const profileOpenBtn = document.getElementById('profileOpenBtn');
 const tournamentsOpenBtn = document.getElementById('tournamentsOpenBtn');
 const tournamentBackdrop = document.getElementById('tournamentBackdrop');
+const tournamentTestBadge = document.getElementById('tournamentTestBadge');
 const tournamentCloseBtn = document.getElementById('tournamentCloseBtn');
 const tournamentCreateOpenBtn = document.getElementById('tournamentCreateOpenBtn');
 const tournamentSelectionView = document.getElementById('tournamentSelectionView');
@@ -6442,9 +6443,16 @@ function updateVisitorLandingUi(){
   hammerschachScheduleHeightReport(false);
 }
 
+function isTournamentMemberTester(user){
+  return String(user && user.username || '').trim().toLocaleLowerCase('de-DE') === 'gamer-tester';
+}
+function hasTournamentViewerAccess(){
+  return !!(onlineAuthToken && onlineAuthUser && (onlineAuthUser.isAdmin === true || isTournamentMemberTester(onlineAuthUser)));
+}
 function updateAuthUi(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);
+  const canViewTournaments = !!(loggedIn && (isAdmin || isTournamentMemberTester(onlineAuthUser)));
   const accountName = loggedIn ? (onlineAuthUser.username || 'aktiv') : '';
   if(authOpenBtn){
     authOpenBtn.hidden = loggedIn;
@@ -6460,13 +6468,13 @@ function updateAuthUi(){
     profileOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — Accountverwaltung und Logout öffnen.' : '';
   }
   if(tournamentsOpenBtn){
-    tournamentsOpenBtn.setAttribute('aria-disabled', isAdmin ? 'false' : 'true');
-    tournamentsOpenBtn.tabIndex = isAdmin ? 0 : -1;
-    tournamentsOpenBtn.title = isAdmin ? 'Turnierbereich öffnen.' : '';
+    tournamentsOpenBtn.setAttribute('aria-disabled', canViewTournaments ? 'false' : 'true');
+    tournamentsOpenBtn.tabIndex = canViewTournaments ? 0 : -1;
+    tournamentsOpenBtn.title = canViewTournaments ? 'Turnierbereich öffnen.' : '';
   }
   if(tournamentDraftsTab) tournamentDraftsTab.hidden = !isAdmin;
   if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.hidden = !isAdmin;
-  if(!isAdmin){
+  if(!canViewTournaments){
     if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = true;
     if(tournamentBackdrop) tournamentBackdrop.hidden = true;
   }
@@ -6911,14 +6919,15 @@ function openTournamentDetail(tournamentId){
   hammerschachScheduleHeightReport(false);
 }
 function openTournamentDialog(){
-  if(!hasTournamentAdminAccess()) return;
+  if(!hasTournamentViewerAccess()) return;
   closeEmbeddedTools();
   closePlayerMenu();
   if(tournamentBackdrop) tournamentBackdrop.hidden = false;
   const tournaments = loadLocalTournamentList();
   const hasCurrent = tournamentsForList('current', tournaments).length > 0;
   const hasDrafts = tournamentsForList('drafts', tournaments).length > 0;
-  openTournamentSelection(hasCurrent ? 'current' : (hasDrafts ? 'drafts' : 'current'), false);
+  if(tournamentTestBadge) tournamentTestBadge.textContent = hasTournamentAdminAccess() ? '🔒 Admin-Testbereich' : '🧪 Mitglieder-Testansicht';
+  openTournamentSelection(hasTournamentAdminAccess() && !hasCurrent && hasDrafts ? 'drafts' : 'current', false);
   if(statusEl) statusEl.textContent = 'Hammerschach – Turniere';
   setTimeout(() => {
     const activeTab = tournamentListTabButtons.find(button => button.classList.contains('active'));
