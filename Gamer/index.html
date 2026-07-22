@@ -1401,7 +1401,7 @@
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
           <h4>27. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
-          <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Rapid und Blitz laufen zunächst im Schweizer System mit maximal 32 Teilnehmern: Zehn Minuten vor dem Termin öffnet der Check-in; Andili kann ab vier eingecheckten Spielern starten. Nicht eingecheckte Anmeldungen nehmen nicht teil. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Nach Abschluss aller Partien einer Runde folgen 60 Sekunden Pause und die nächste automatische Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Runde serverseitig eine neue zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und können zusätzlich über <strong>„Meine Turnierpartien“</strong> gefiltert werden.</p>
+          <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und können zusätzlich über <strong>„Meine Turnierpartien“</strong> gefiltert werden.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -2143,6 +2143,8 @@
             <button id="tournamentPublishBtn" class="button-flat" type="button" hidden>📣 Turnier veröffentlichen</button>
             <button id="tournamentJoinBtn" type="button" hidden>✅ Am Turnier teilnehmen</button>
             <button id="tournamentCheckInBtn" type="button" hidden>✅ Anwesenheit bestätigen</button>
+            <button id="tournamentArenaJoinBtn" type="button" hidden>⚔️ Jetzt in die Arena</button>
+            <button id="tournamentArenaPauseBtn" class="button-flat" type="button" hidden>Arena pausieren</button>
             <button id="tournamentWithdrawBtn" class="button-flat" type="button" hidden>Teilnahme zurückziehen</button>
             <button id="tournamentStartBtn" type="button" hidden>▶️ Turnier starten</button>
             <button id="tournamentDetailCloseBtn" type="button">Schließen</button>
@@ -2158,8 +2160,8 @@
         <form id="tournamentCreateForm">
           <div id="tournamentTypePicker" class="tournament-type-picker" role="radiogroup" aria-label="Turnierart wählen">
             <button class="tournament-type-option active" type="button" role="radio" aria-checked="true" data-tournament-type="daily"><strong>⏳ Daily</strong><span>24, 48 oder 72 Stunden pro Zug</span></button>
-            <button class="tournament-type-option" type="button" role="radio" aria-checked="false" data-tournament-type="rapid"><strong>⏱️ Rapid</strong><span>Live-Turnier · Schweizer System</span></button>
-            <button class="tournament-type-option" type="button" role="radio" aria-checked="false" data-tournament-type="blitz"><strong>⚡ Blitz</strong><span>Live-Turnier · Schweizer System</span></button>
+            <button class="tournament-type-option" type="button" role="radio" aria-checked="false" data-tournament-type="rapid"><strong>⏱️ Rapid</strong><span>Live · Schweizer System oder Arena</span></button>
+            <button class="tournament-type-option" type="button" role="radio" aria-checked="false" data-tournament-type="blitz"><strong>⚡ Blitz</strong><span>Live · Schweizer System oder Arena</span></button>
           </div>
           <div class="tournament-form-grid">
             <div class="tournament-field tournament-field-wide">
@@ -2173,9 +2175,10 @@
                 <option value="double_round_robin" selected>Doppelrundenturnier</option>
                 <option value="swiss">Schweizer System</option>
                 <option value="groups_knockout">Gruppenphase + K.-o.</option>
+                <option value="arena">Arena</option>
               </select>
             </div>
-            <div class="tournament-field">
+            <div id="tournamentPlayersField" class="tournament-field">
               <label id="tournamentPlayersLabel" for="tournamentPlayersSelect">Teilnehmerzahl</label>
               <select id="tournamentPlayersSelect" class="tournament-select">
                 <option value="4">4 Teilnehmer</option>
@@ -2194,6 +2197,17 @@
             <div id="tournamentScheduleField" class="tournament-field" hidden>
               <label for="tournamentScheduleInput">Starttermin</label>
               <input id="tournamentScheduleInput" class="tournament-input" type="datetime-local" />
+            </div>
+            <div id="tournamentArenaDurationField" class="tournament-field" hidden>
+              <label for="tournamentArenaDurationSelect">Arena-Dauer</label>
+              <select id="tournamentArenaDurationSelect" class="tournament-select">
+                <option value="60">60 Minuten</option>
+                <option value="90" selected>90 Minuten</option>
+                <option value="120">120 Minuten</option>
+                <option value="180">180 Minuten</option>
+                <option value="240">240 Minuten</option>
+                <option value="1440">24 Stunden</option>
+              </select>
             </div>
             <div class="tournament-field">
               <label for="tournamentVariantSelect">Variante</label>
@@ -3900,6 +3914,8 @@ const tournamentWinner3 = document.getElementById('tournamentWinner3');
 const tournamentPublishBtn = document.getElementById('tournamentPublishBtn');
 const tournamentJoinBtn = document.getElementById('tournamentJoinBtn');
 const tournamentCheckInBtn = document.getElementById('tournamentCheckInBtn');
+const tournamentArenaJoinBtn = document.getElementById('tournamentArenaJoinBtn');
+const tournamentArenaPauseBtn = document.getElementById('tournamentArenaPauseBtn');
 const tournamentWithdrawBtn = document.getElementById('tournamentWithdrawBtn');
 const tournamentStartBtn = document.getElementById('tournamentStartBtn');
 const tournamentCreateBackdrop = document.getElementById('tournamentCreateBackdrop');
@@ -3911,11 +3927,14 @@ const tournamentNameInput = document.getElementById('tournamentNameInput');
 const tournamentModeSelect = document.getElementById('tournamentModeSelect');
 const tournamentModeField = document.getElementById('tournamentModeField');
 const tournamentPlayersSelect = document.getElementById('tournamentPlayersSelect');
+const tournamentPlayersField = document.getElementById('tournamentPlayersField');
 const tournamentPlayersLabel = document.getElementById('tournamentPlayersLabel');
 const tournamentClockSelect = document.getElementById('tournamentClockSelect');
 const tournamentClockLabel = document.getElementById('tournamentClockLabel');
 const tournamentScheduleField = document.getElementById('tournamentScheduleField');
 const tournamentScheduleInput = document.getElementById('tournamentScheduleInput');
+const tournamentArenaDurationField = document.getElementById('tournamentArenaDurationField');
+const tournamentArenaDurationSelect = document.getElementById('tournamentArenaDurationSelect');
 const tournamentVariantSelect = document.getElementById('tournamentVariantSelect');
 const tournamentRatingSelect = document.getElementById('tournamentRatingSelect');
 const tournamentDescriptionInput = document.getElementById('tournamentDescriptionInput');
@@ -6803,7 +6822,8 @@ const TOURNAMENT_MODE_CONFIG = Object.freeze({
   single_round_robin:{label:'Einfaches Rundenturnier',players:[4,6,8],description:'Jeder Teilnehmer spielt genau eine Partie gegen jeden Gegner.'},
   double_round_robin:{label:'Doppelrundenturnier',players:[4,6,8],description:'Jede Begegnung besteht aus zwei parallelen Partien mit vertauschten Farben.'},
   swiss:{label:'Schweizer System',players:[8,12,16,24,32],description:'Spieler mit ähnlicher Punktzahl werden pro Runde neu gepaart; Wiederholungspaarungen werden vermieden.'},
-  groups_knockout:{label:'Gruppenphase + K.-o.',players:[8,16,32],description:'Vierergruppen ermitteln jeweils zwei Qualifikanten. Danach folgen K.-o.-Duelle bis zum Finale und Spiel um Platz 3.'}
+  groups_knockout:{label:'Gruppenphase + K.-o.',players:[8,16,32],description:'Vierergruppen ermitteln jeweils zwei Qualifikanten. Danach folgen K.-o.-Duelle bis zum Finale und Spiel um Platz 3.'},
+  arena:{label:'Arena',players:[],description:'Offene Teilnehmerzahl, laufender Einstieg und automatische Paarungen. Sieg 2 Punkte, Remis 1 Punkt, Niederlage 0 Punkte.'}
 });
 const TOURNAMENT_TYPE_CONFIG = Object.freeze({
   daily:{label:'Daily',live:false,times:[['24','24 Stunden pro Zug'],['48','48 Stunden pro Zug'],['72','72 Stunden pro Zug']]},
@@ -6825,6 +6845,9 @@ function updateTournamentPlayerOptions(preferredValue){
   if(!tournamentPlayersSelect) return;
   const type = normalizeTournamentType(tournamentEditingType);
   const mode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
+  const arena = TOURNAMENT_TYPE_CONFIG[type].live && mode === 'arena';
+  if(tournamentPlayersField) tournamentPlayersField.hidden = arena;
+  if(arena) return;
   const allowed = TOURNAMENT_TYPE_CONFIG[type].live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players;
   const preferred = Number(preferredValue == null ? tournamentPlayersSelect.value : preferredValue);
   tournamentPlayersSelect.innerHTML = '';
@@ -6835,6 +6858,27 @@ function updateTournamentPlayerOptions(preferredValue){
     option.selected = allowed.includes(preferred) ? players === preferred : index === 0;
     tournamentPlayersSelect.appendChild(option);
   });
+}
+function updateTournamentModeOptions(preferredMode){
+  if(!tournamentModeSelect) return;
+  const live = TOURNAMENT_TYPE_CONFIG[normalizeTournamentType(tournamentEditingType)].live;
+  const allowed = live ? ['swiss','arena'] : ['single_round_robin','double_round_robin','swiss','groups_knockout'];
+  const requested = allowed.includes(String(preferredMode || '')) ? String(preferredMode) : (live ? 'swiss' : 'double_round_robin');
+  tournamentModeSelect.innerHTML = '';
+  allowed.forEach(mode => {
+    const option = document.createElement('option');
+    option.value = mode;
+    option.textContent = TOURNAMENT_MODE_CONFIG[mode].label;
+    option.selected = mode === requested;
+    tournamentModeSelect.appendChild(option);
+  });
+}
+function updateTournamentModeUi(preferredPlayers){
+  const mode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
+  const arena = TOURNAMENT_TYPE_CONFIG[normalizeTournamentType(tournamentEditingType)].live && mode === 'arena';
+  if(tournamentArenaDurationField) tournamentArenaDurationField.hidden = !arena;
+  if(tournamentPlayersField) tournamentPlayersField.hidden = arena;
+  updateTournamentPlayerOptions(preferredPlayers);
 }
 function tournamentDefaultScheduleValue(){
   const date = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -6848,7 +6892,7 @@ function tournamentScheduleInputValue(value){
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0,16);
 }
-function updateTournamentTypeUi(typeValue, preferredPlayers, preferredTime){
+function updateTournamentTypeUi(typeValue, preferredPlayers, preferredTime, preferredMode){
   tournamentEditingType = normalizeTournamentType(typeValue);
   const config = TOURNAMENT_TYPE_CONFIG[tournamentEditingType];
   tournamentTypeButtons.forEach(button => {
@@ -6856,13 +6900,12 @@ function updateTournamentTypeUi(typeValue, preferredPlayers, preferredTime){
     button.classList.toggle('active', active);
     button.setAttribute('aria-checked', active ? 'true' : 'false');
   });
-  if(tournamentModeSelect){
-    if(config.live) tournamentModeSelect.value = 'swiss';
-    tournamentModeSelect.disabled = config.live;
-  }
-  if(tournamentModeField) tournamentModeField.title = config.live ? 'Rapid- und Blitzturniere starten zunächst im Schweizer System.' : '';
+  const currentMode = preferredMode || (tournamentModeSelect ? tournamentModeSelect.value : '');
+  updateTournamentModeOptions(currentMode);
+  if(tournamentModeSelect) tournamentModeSelect.disabled = false;
+  if(tournamentModeField) tournamentModeField.title = config.live ? 'Wähle zwischen Schweizer System und offener Arena.' : '';
   if(tournamentPlayersLabel) tournamentPlayersLabel.textContent = config.live ? 'Maximale Teilnehmerzahl' : 'Teilnehmerzahl';
-  updateTournamentPlayerOptions(preferredPlayers);
+  updateTournamentModeUi(preferredPlayers);
   if(tournamentClockLabel) tournamentClockLabel.textContent = config.live ? (config.label + '-Bedenkzeit') : 'Daily-Bedenkzeit';
   if(tournamentClockSelect){
     const requested = String(preferredTime == null ? tournamentClockSelect.value : preferredTime);
@@ -6915,9 +6958,10 @@ function formatLiveTournamentCountdown(targetValue){
   const remaining = Math.max(0, target - (Date.now() + liveTournamentClockOffsetMs));
   if(remaining <= 0) return 'Bretter werden jetzt aufgebaut …';
   const totalSeconds = Math.ceil(remaining / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return 'Noch ' + String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
+  return 'Noch ' + (hours > 0 ? (String(hours).padStart(2,'0') + ':') : '') + String(minutes).padStart(2,'0') + ':' + String(seconds).padStart(2,'0');
 }
 function updateLiveTournamentCountdown(){
   const selected = tournamentSelectedId ? selectedTournament() : null;
@@ -6946,10 +6990,26 @@ function renderLiveTournamentWaiting(tournament){
 
   let title = beforeStart ? '✅ Eingecheckt – startbereit' : '♟️ Live-Turnier-Warteraum';
   let text = beforeStart
-    ? 'Bleib zum Turnierstart im Hammerschach-Gamer. Sobald der Admin startet, erscheint dein Brett mit Gegner automatisch.'
+    ? 'Bleib zum Turnierstart im Hammerschach-Gamer. Das Turnier startet automatisch und dein Brett mit Gegner erscheint von selbst.'
     : 'Bleib hier im Gamer. Dein nächstes Brett wird automatisch geöffnet.';
-  let target = beforeStart ? tournament.scheduledStartAt : tournament.nextRoundAt;
+  let target = beforeStart ? tournament.scheduledStartAt : (tournament.arena ? tournament.arenaEndsAt : tournament.nextRoundAt);
   if(liveStatus){
+    if(liveStatus.arena){
+      target = liveStatus.arenaEndsAt || target;
+      if(liveStatus.arenaClosed){
+        title = '🏁 Arena-Zeit beendet';
+        text = liveStatus.game && liveStatus.game.status === 'running' ? 'Deine laufende Partie wird noch vollständig gewertet.' : 'Es werden keine neuen Paarungen mehr erzeugt.';
+      } else if(liveStatus.paused){
+        title = '⏸️ Arena pausiert';
+        text = 'Du erhältst momentan keine neue Paarung. Mit „Arena fortsetzen“ steigst du wieder in die Warteschlange ein.';
+      } else if(liveStatus.game && liveStatus.game.status === 'creating'){
+        title = '🛠️ Dein Arena-Brett wird aufgebaut';
+        text = 'Gleich geht es gegen ' + (liveStatus.game.opponentName || 'deinen Gegner') + '. Du wirst automatisch ans Brett gesetzt.';
+      } else {
+        title = '⚔️ Arena-Warteraum';
+        text = 'Du bist aktiv. Sobald ein passender Gegner frei ist, öffnet sich dein Brett automatisch.';
+      }
+    } else {
     target = liveStatus.nextRoundAt || target;
     if(liveStatus.bye){
       title = '🎟️ Freilos in ' + (liveStatus.roundLabel || ('Runde ' + liveStatus.currentRound));
@@ -6965,6 +7025,7 @@ function renderLiveTournamentWaiting(tournament){
       text = liveStatus.nextRoundAt
         ? 'Nach der kurzen Rundenpause wird dein nächstes Brett automatisch geöffnet.'
         : 'Die Paarungen werden vorbereitet. Bleib im Gamer – dein Brett erscheint automatisch.';
+    }
     }
   }
   if(tournamentLiveWaitingTitle) tournamentLiveWaitingTitle.textContent = title;
@@ -7025,6 +7086,12 @@ function handleLiveTournamentStatus(status){
     liveTournamentNavigatingRoomId = '';
     return;
   }
+  const liveItem = tournamentItems.find(item => item && String(item.id) === String(status.tournamentId));
+  if(liveItem && status.arena){
+    liveItem.arenaActive = Number(status.arenaActive || 0);
+    liveItem.arenaEndsAt = status.arenaEndsAt || liveItem.arenaEndsAt;
+    liveItem.arenaClosedAt = status.arenaClosed ? (liveItem.arenaClosedAt || new Date().toISOString()) : null;
+  }
   if(status.game && status.game.status === 'running'){
     openLiveTournamentBoard(status);
   } else if(status.bye || !status.game || status.game.status === 'creating' || status.game.status === 'ended'){
@@ -7072,14 +7139,15 @@ function normalizeLocalTournament(value, index){
   if(!name) return null;
   const tournamentType = normalizeTournamentType(value.tournamentType);
   const live = value.live === true || TOURNAMENT_TYPE_CONFIG[tournamentType].live;
-  const mode = live ? 'swiss' : normalizeTournamentMode(value.mode);
-  const allowedPlayers = live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players;
-  const players = allowedPlayers.includes(Number(value.players)) ? Number(value.players) : allowedPlayers[0];
+  const requestedMode = normalizeTournamentMode(value.mode);
+  const mode = live ? (requestedMode === 'arena' ? 'arena' : 'swiss') : requestedMode;
+  const allowedPlayers = mode === 'arena' ? [0] : (live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players);
+  const players = mode === 'arena' ? 0 : (allowedPlayers.includes(Number(value.players)) ? Number(value.players) : allowedPlayers[0]);
   const hours = [24,48,72].includes(Number(value.hours)) ? Number(value.hours) : 24;
   const status = Object.prototype.hasOwnProperty.call(TOURNAMENT_STATUS_CONFIG, value.status) ? value.status : 'draft';
   const createdAt = String(value.createdAt || value.created_at || new Date().toISOString());
   const updatedAt = String(value.updatedAt || value.updated_at || createdAt);
-  const participants = Array.isArray(value.participants) ? value.participants.slice(0,200) : [];
+  const participants = Array.isArray(value.participants) ? value.participants.slice(0,2000) : [];
   const userState = ['confirmed','waiting','playing','finished','absent'].includes(String(value.userState || '')) ? String(value.userState) : '';
   return {
     id:String(value.id || ('local_migrated_' + Date.now().toString(36) + '_' + Number(index || 0))).slice(0,100),
@@ -7097,6 +7165,13 @@ function normalizeLocalTournament(value, index){
     timeKey:String(value.timeKey || ''),
     timeLabel:String(value.timeLabel || (live ? '' : (hours + ' Stunden pro Zug'))),
     scheduledStartAt:value.scheduledStartAt || null,
+    arena:mode === 'arena' || value.arena === true,
+    arenaDurationMinutes:[60,90,120,180,240,1440].includes(Number(value.arenaDurationMinutes)) ? Number(value.arenaDurationMinutes) : (mode === 'arena' ? 90 : null),
+    arenaEndsAt:value.arenaEndsAt || null,
+    arenaClosedAt:value.arenaClosedAt || null,
+    arenaActive:Math.max(0,Math.min(2,Number(value.arenaActive || 0))),
+    arenaRunningGames:Math.max(0,Number(value.arenaRunningGames || 0)),
+    canArenaJoin:value.canArenaJoin === true,
     checkInOpensAt:value.checkInOpensAt || null,
     checkInOpen:value.checkInOpen === true,
     nextRoundAt:value.nextRoundAt || null,
@@ -7196,9 +7271,10 @@ function createTournamentListCard(tournament){
   meta.className = 'tournament-list-meta';
   const participantCount = Number(tournament.confirmedCount || 0);
   appendTournamentMeta(meta, (tournament.tournamentType === 'blitz' ? '⚡ ' : tournament.tournamentType === 'rapid' ? '⏱️ ' : '⏳ ') + tournament.tournamentTypeLabel);
-  appendTournamentMeta(meta, tournament.status === 'draft' ? ('👥 ' + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players));
+  appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer · offen') : (tournament.status === 'draft' ? ('👥 ' + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players)));
   appendTournamentMeta(meta, '⏱ ' + (tournament.timeLabel || (tournament.hours + ' Std./Zug')));
   if(tournament.live && tournament.scheduledStartAt) appendTournamentMeta(meta, '📅 ' + formatTournamentLocalDateTime(tournament.scheduledStartAt));
+  if(tournament.arena) appendTournamentMeta(meta, '⌛ ' + (Number(tournament.arenaDurationMinutes) === 1440 ? '24 Stunden' : (tournament.arenaDurationMinutes + ' Minuten')));
   appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
   appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');
   appendTournamentMeta(meta, '🏁 ' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(tournament.mode)].label);
@@ -7307,6 +7383,7 @@ function renderTournamentParticipants(tournament){
     const group = participant.groupName ? (' · Gruppe ' + participant.groupName) : '';
     if(participant.status === 'waiting') state.textContent = 'Warteliste · Platz ' + (participant.waitlistPosition || index + 1);
     else if(participant.status === 'absent') state.textContent = 'Nicht eingecheckt';
+    else if(tournament.arena && tournament.status === 'running') state.textContent = Number(participant.arenaActive || 0) === 2 ? 'Spielt gerade' : Number(participant.arenaActive || 0) === 1 ? 'Aktiv · wartet auf Paarung' : 'Arena pausiert';
     else if(tournament.live) state.textContent = (participant.checkedIn ? 'Eingecheckt · startbereit' : 'Angemeldet · Check-in ausstehend') + group;
     else state.textContent = 'Teilnahme bestätigt' + group;
     row.appendChild(name);
@@ -7319,10 +7396,42 @@ function renderTournamentPairings(tournament){
   tournamentPairingsList.innerHTML = '';
   const rounds = Array.isArray(tournament.rounds) ? tournament.rounds : [];
   const games = Array.isArray(tournament.games) ? tournament.games : [];
+  if(tournament.arena){
+    if(!games.length){
+      const empty = document.createElement('div');
+      empty.className = 'tournament-empty';
+      empty.textContent = tournament.status === 'running' ? 'Sobald mindestens zwei aktive Spieler im Gamer warten, erzeugt die Arena automatisch die erste Paarung.' : 'Arena-Paarungen entstehen nach dem automatischen Start.';
+      tournamentPairingsList.appendChild(empty);
+      return;
+    }
+    const block = document.createElement('div');
+    block.className = 'tournament-round-block';
+    const title = document.createElement('div');
+    title.className = 'tournament-round-title';
+    title.innerHTML = '<span>Arena-Partien</span><span></span>';
+    title.children[1].textContent = games.length + ' Partie' + (games.length === 1 ? '' : 'n');
+    block.appendChild(title);
+    games.slice().sort((a,b) => Number(b.pairingNumber)-Number(a.pairingNumber)).forEach(game => {
+      const row = document.createElement('div');
+      row.className = 'tournament-pairing-row';
+      const names = document.createElement('span');
+      names.textContent = (game.pairingLabel || ('Arena-Partie ' + game.pairingNumber)) + ': ' + game.whiteName + ' ↔ ' + game.blackName;
+      const links = document.createElement('span');
+      links.className = 'tournament-pairing-links';
+      const link = document.createElement('a');
+      link.href = dailyGameRoomUrl({roomId:game.roomId}) || '#';
+      link.textContent = game.status === 'ended' ? ('Ergebnis ' + game.result) : 'Partie öffnen';
+      links.appendChild(link);
+      row.append(names, links);
+      block.appendChild(row);
+    });
+    tournamentPairingsList.appendChild(block);
+    return;
+  }
   if(!rounds.length){
     const empty = document.createElement('div');
     empty.className = 'tournament-empty';
-    empty.textContent = 'Paarungen werden beim manuellen Turnierstart erzeugt. Die nächste Turnierrunde öffnet erst, wenn alle Partien der laufenden Runde beendet sind.';
+    empty.textContent = 'Paarungen werden beim Turnierstart erzeugt. Live-Turniere starten zum geplanten Termin automatisch.';
     tournamentPairingsList.appendChild(empty);
     return;
   }
@@ -7444,20 +7553,21 @@ function renderTournamentDetail(tournament){
   if(tournamentOverviewName) tournamentOverviewName.textContent = tournament.name;
   if(tournamentOverviewText){
     const current = Array.isArray(tournament.rounds) ? tournament.rounds.find(round => Number(round.roundNumber) === Number(tournament.currentRound)) : null;
-    const progress = tournament.status === 'running' ? (' Aktuell läuft ' + (current && current.label ? current.label : ('Runde ' + tournament.currentRound)) + ' von insgesamt ' + tournament.totalRounds + ' Runden.') : '';
-    const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? ' Jede Runde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.' : '';
-    const schedule = tournament.live && tournament.scheduledStartAt ? (' Geplanter Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '. Der Check-in öffnet zehn Minuten vorher.') : '';
-    const capacity = tournament.live ? ('bis zu ' + tournament.players) : String(tournament.players);
-    tournamentOverviewText.textContent = typeConfig.label + '-' + modeConfig.label + ' für ' + capacity + ' Teilnehmer. ' + modeConfig.description + schedule + freestyle + progress;
+    const progress = tournament.status === 'running' ? (tournament.arena ? (' Die Arena läuft' + (tournament.arenaEndsAt ? ' bis ' + formatTournamentLocalDateTime(tournament.arenaEndsAt) : '') + '.') : (' Aktuell läuft ' + (current && current.label ? current.label : ('Runde ' + tournament.currentRound)) + ' von insgesamt ' + tournament.totalRounds + ' Runden.')) : '';
+    const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? (tournament.arena ? ' Jede Arena-Partie erhält serverseitig eine zufällige Chess960-Stellung.' : ' Jede Runde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.') : '';
+    const schedule = tournament.live && tournament.scheduledStartAt ? (' Geplanter automatischer Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '. Der Check-in öffnet eine Stunde vorher.') : '';
+    const capacity = tournament.arena ? 'mit offener Teilnehmerzahl' : ('für ' + (tournament.live ? ('bis zu ' + tournament.players) : tournament.players) + ' Teilnehmer');
+    tournamentOverviewText.textContent = typeConfig.label + '-' + modeConfig.label + ' ' + capacity + '. ' + modeConfig.description + schedule + freestyle + progress;
   }
   if(tournamentLocalNote){
     tournamentLocalNote.hidden = tournament.status !== 'draft';
-    tournamentLocalNote.textContent = 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler kurz vor dem Termin zusätzlich ihre Anwesenheit.' : '');
+    tournamentLocalNote.textContent = 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler ab einer Stunde vor dem Termin ihre Anwesenheit; der Start erfolgt automatisch.' : '');
   }
   if(tournamentFactStatus) tournamentFactStatus.textContent = info.label;
   if(tournamentFactMode) tournamentFactMode.textContent = typeConfig.label + ' · ' + modeConfig.label;
   if(tournamentFactPlayers){
-    if(tournament.status === 'draft') tournamentFactPlayers.textContent = (tournament.live ? 'max. ' : '') + String(tournament.players);
+    if(tournament.arena) tournamentFactPlayers.textContent = String(tournament.confirmedCount || 0) + ' Teilnehmer · offen' + (tournament.status === 'running' ? (' · ' + String(tournament.arenaRunningGames || 0) + ' laufende Partien') : '');
+    else if(tournament.status === 'draft') tournamentFactPlayers.textContent = (tournament.live ? 'max. ' : '') + String(tournament.players);
     else tournamentFactPlayers.textContent = String(tournament.confirmedCount || 0) + ' / ' + String(tournament.players) + (tournament.live ? (' · ' + String(tournament.checkedInCount || 0) + ' eingecheckt') : '');
   }
   if(tournamentFactClock) tournamentFactClock.textContent = tournament.timeLabel || (tournament.hours + ' Stunden/Zug');
@@ -7476,6 +7586,17 @@ function renderTournamentDetail(tournament){
     tournamentJoinBtn.hidden = !(['open','full'].includes(tournament.status) && !registered);
     tournamentJoinBtn.textContent = tournament.status === 'full' ? '⏳ Auf die Warteliste' : '✅ Am Turnier teilnehmen';
   }
+  if(tournamentArenaJoinBtn){
+    tournamentArenaJoinBtn.hidden = !(tournament.arena && tournament.status === 'running' && !tournament.arenaClosedAt && !registered);
+    tournamentArenaJoinBtn.textContent = '⚔️ Jetzt in die Arena einsteigen';
+  }
+  if(tournamentArenaPauseBtn){
+    const showArenaControl = !!(tournament.arena && tournament.status === 'running' && registered && !tournament.arenaClosedAt);
+    tournamentArenaPauseBtn.hidden = !showArenaControl;
+    tournamentArenaPauseBtn.disabled = Number(tournament.arenaActive || 0) === 2;
+    tournamentArenaPauseBtn.textContent = Number(tournament.arenaActive || 0) === 0 ? '▶️ Arena fortsetzen' : Number(tournament.arenaActive || 0) === 2 ? '♟️ Partie läuft' : '⏸️ Arena pausieren';
+    tournamentArenaPauseBtn.title = Number(tournament.arenaActive || 0) === 2 ? 'Während der laufenden Partie kannst du nicht pausieren.' : '';
+  }
   if(tournamentCheckInBtn){
     const showCheckIn = !!(tournament.live && ['open','full'].includes(tournament.status) && tournament.userState === 'confirmed');
     tournamentCheckInBtn.hidden = !showCheckIn;
@@ -7489,7 +7610,7 @@ function renderTournamentDetail(tournament){
     } else {
       const opens = formatTournamentLocalDateTime(tournament.checkInOpensAt);
       tournamentCheckInBtn.textContent = opens ? ('🕒 Check-in ab ' + opens) : '🕒 Check-in noch geschlossen';
-      tournamentCheckInBtn.title = 'Der Check-in öffnet zehn Minuten vor dem geplanten Start.';
+      tournamentCheckInBtn.title = 'Der Check-in öffnet eine Stunde vor dem geplanten Start.';
     }
   }
   if(tournamentWithdrawBtn){
@@ -7498,7 +7619,7 @@ function renderTournamentDetail(tournament){
   }
   if(tournamentStartBtn){
     const recoverable = tournament.status === 'running' && Array.isArray(tournament.games) && tournament.games.some(game => game.status === 'creating');
-    const startReady = tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0);
+    const startReady = tournament.arena ? true : (tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0));
     tournamentStartBtn.hidden = !(admin && (['open','full'].includes(tournament.status) || recoverable));
     tournamentStartBtn.disabled = !recoverable && !startReady;
     tournamentStartBtn.textContent = recoverable ? '↻ Fehlende Partien vorbereiten' : '▶️ Turnier starten';
@@ -7642,7 +7763,8 @@ function openTournamentCreateDialog(tournamentId){
   if(tournamentNameInput) tournamentNameInput.value = draft ? draft.name : '';
   if(tournamentModeSelect) tournamentModeSelect.value = normalizeTournamentMode(draft ? draft.mode : 'double_round_robin');
   if(tournamentScheduleInput) tournamentScheduleInput.value = tournamentScheduleInputValue(draft ? draft.scheduledStartAt : '');
-  updateTournamentTypeUi(type, draft ? draft.players : (type === 'daily' ? 6 : 16), draft ? (draft.live ? draft.timeKey : draft.hours) : undefined);
+  updateTournamentTypeUi(type, draft ? draft.players : (type === 'daily' ? 6 : 16), draft ? (draft.live ? draft.timeKey : draft.hours) : undefined, draft ? draft.mode : undefined);
+  if(tournamentArenaDurationSelect) tournamentArenaDurationSelect.value = String(draft && draft.arenaDurationMinutes ? draft.arenaDurationMinutes : 90);
   if(tournamentVariantSelect) tournamentVariantSelect.value = draft && draft.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
   if(tournamentRatingSelect) tournamentRatingSelect.value = draft && !draft.rated ? 'unrated' : 'rated';
   if(tournamentDescriptionInput) tournamentDescriptionInput.value = draft ? draft.description : '';
@@ -7662,8 +7784,9 @@ async function saveTournamentDraft(event){
   const players = Number(tournamentPlayersSelect ? tournamentPlayersSelect.value : 6);
   const tournamentType = normalizeTournamentType(tournamentEditingType);
   const live = TOURNAMENT_TYPE_CONFIG[tournamentType].live;
-  const mode = live ? 'swiss' : normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
-  const allowedPlayers = live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players;
+  const selectedMode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
+  const mode = live ? (selectedMode === 'arena' ? 'arena' : 'swiss') : selectedMode;
+  const allowedPlayers = mode === 'arena' ? [0] : (live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players);
   const timeValue = String(tournamentClockSelect ? tournamentClockSelect.value : (live ? TOURNAMENT_TYPE_CONFIG[tournamentType].times[0][0] : '24'));
   let scheduledStartAt = null;
   if(live){
@@ -7689,6 +7812,7 @@ async function saveTournamentDraft(event){
         mode,
         hours:live ? 24 : ([24,48,72].includes(Number(timeValue)) ? Number(timeValue) : 24),
         timeKey:live ? timeValue : '',
+        arenaDurationMinutes:mode === 'arena' ? Number(tournamentArenaDurationSelect ? tournamentArenaDurationSelect.value : 90) : null,
         scheduledStartAt,
         variant:tournamentVariantSelect && tournamentVariantSelect.value === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
         rated:!tournamentRatingSelect || tournamentRatingSelect.value !== 'unrated'
@@ -7746,7 +7870,7 @@ async function checkInSelectedTournament(){
   const tournament = selectedTournament();
   if(!tournament || !tournament.live || !['open','full'].includes(tournament.status) || tournament.userState !== 'confirmed' || tournament.checkedIn) return;
   if(!tournament.canCheckIn){
-    if(statusEl) statusEl.textContent = 'Der Check-in öffnet zehn Minuten vor dem geplanten Start.';
+    if(statusEl) statusEl.textContent = 'Der Check-in öffnet eine Stunde vor dem geplanten Start.';
     return;
   }
   if(tournamentCheckInBtn) tournamentCheckInBtn.disabled = true;
@@ -7759,6 +7883,30 @@ async function checkInSelectedTournament(){
   } finally {
     if(tournamentCheckInBtn) tournamentCheckInBtn.disabled = false;
   }
+}
+async function joinRunningArena(){
+  const tournament = selectedTournament();
+  if(!tournament || !tournament.arena || tournament.status !== 'running' || tournament.arenaClosedAt) return;
+  if(!window.confirm('Jetzt in die laufende Arena „' + tournament.name + '“ einsteigen?\n\nSobald ein passender Gegner verfügbar ist, öffnet sich dein Brett automatisch.')) return;
+  if(tournamentArenaJoinBtn) tournamentArenaJoinBtn.disabled = true;
+  try{
+    const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/arena/join', {method:'POST',body:JSON.stringify({confirmed:true})});
+    await refreshSelectedTournament(data.message || 'Du bist in der Arena.');
+    startLiveTournamentPolling();
+  } catch(err){ if(statusEl) statusEl.textContent = err && err.message ? err.message : 'Der Arena-Einstieg ist fehlgeschlagen.'; }
+  finally { if(tournamentArenaJoinBtn) tournamentArenaJoinBtn.disabled = false; }
+}
+async function toggleArenaPause(){
+  const tournament = selectedTournament();
+  if(!tournament || !tournament.arena || tournament.status !== 'running' || Number(tournament.arenaActive || 0) === 2) return;
+  const resume = Number(tournament.arenaActive || 0) === 0;
+  if(tournamentArenaPauseBtn) tournamentArenaPauseBtn.disabled = true;
+  try{
+    const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/arena/' + (resume ? 'resume' : 'pause'), {method:'POST',body:JSON.stringify({})});
+    await refreshSelectedTournament(data.message || (resume ? 'Arena fortgesetzt.' : 'Arena pausiert.'));
+    startLiveTournamentPolling();
+  } catch(err){ if(statusEl) statusEl.textContent = err && err.message ? err.message : 'Die Arena-Pause konnte nicht geändert werden.'; }
+  finally { if(tournamentArenaPauseBtn) tournamentArenaPauseBtn.disabled = false; }
 }
 async function withdrawSelectedTournament(){
   const tournament = selectedTournament();
@@ -7775,7 +7923,7 @@ async function startSelectedTournament(){
   const tournament = selectedTournament();
   if(!tournament || !hasTournamentAdminAccess()) return;
   const recoverable = tournament.status === 'running' && Array.isArray(tournament.games) && tournament.games.some(game => game.status === 'creating');
-  const startReady = tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0);
+  const startReady = tournament.arena ? true : (tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0));
   if(!recoverable && !startReady){
     if(statusEl) statusEl.textContent = tournament.live
       ? 'Für den Start müssen mindestens vier angemeldete Spieler eingecheckt sein.'
@@ -7785,7 +7933,7 @@ async function startSelectedTournament(){
   if(recoverable && !window.confirm('Die Vorbereitung dieser Turnierrunde wurde unterbrochen. Fehlende Turnierpartien jetzt erneut vorbereiten?')) return;
   const freestyleNote = tournament.variant === GAME_VARIANT_FREESTYLE ? '\n\nFür die erste Runde wird jetzt serverseitig eine zufällige Chess960-Stellung erzeugt.' : '';
   const liveNote = tournament.live
-    ? ('\n\nEs starten ' + Number(tournament.checkedInCount || 0) + ' eingecheckte Spieler. Nicht eingecheckte Anmeldungen werden für dieses Turnier als abwesend markiert. Die Bretter öffnen sich automatisch.')
+    ? (tournament.arena ? '\n\nDie Arena startet sofort und bleibt während der gewählten Dauer für spätere Einsteiger offen.' : ('\n\nEs starten ' + Number(tournament.checkedInCount || 0) + ' eingecheckte Spieler. Nicht eingecheckte Anmeldungen werden für dieses Turnier als abwesend markiert. Die Bretter öffnen sich automatisch.'))
     : '\n\nDadurch werden alle Partien der ersten Turnierrunde sofort eröffnet.';
   if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?' + liveNote + freestyleNote)) return;
   if(tournamentStartBtn) tournamentStartBtn.disabled = true;
@@ -7809,6 +7957,8 @@ if(tournamentDetailEditBtn) tournamentDetailEditBtn.addEventListener('click', ()
 if(tournamentPublishBtn) tournamentPublishBtn.addEventListener('click', publishSelectedTournament);
 if(tournamentJoinBtn) tournamentJoinBtn.addEventListener('click', joinSelectedTournament);
 if(tournamentCheckInBtn) tournamentCheckInBtn.addEventListener('click', checkInSelectedTournament);
+if(tournamentArenaJoinBtn) tournamentArenaJoinBtn.addEventListener('click', joinRunningArena);
+if(tournamentArenaPauseBtn) tournamentArenaPauseBtn.addEventListener('click', toggleArenaPause);
 if(tournamentWithdrawBtn) tournamentWithdrawBtn.addEventListener('click', withdrawSelectedTournament);
 if(tournamentStartBtn) tournamentStartBtn.addEventListener('click', startSelectedTournament);
 if(tournamentLobbyViewBtn) tournamentLobbyViewBtn.addEventListener('click', () => openTournamentDialog(tournamentLobbyViewBtn.dataset.tournamentId || ''));
@@ -7819,7 +7969,7 @@ if(tournamentLobbyLaterBtn) tournamentLobbyLaterBtn.addEventListener('click', ()
 if(tournamentCreateCancelBtn) tournamentCreateCancelBtn.addEventListener('click', closeTournamentCreateDialog);
 if(tournamentCreateForm) tournamentCreateForm.addEventListener('submit', saveTournamentDraft);
 if(tournamentModeSelect) tournamentModeSelect.addEventListener('change', () => {
-  if(!TOURNAMENT_TYPE_CONFIG[normalizeTournamentType(tournamentEditingType)].live) updateTournamentPlayerOptions();
+  updateTournamentModeUi();
 });
 tournamentTypeButtons.forEach(button => {
   button.addEventListener('click', () => updateTournamentTypeUi(button.dataset.tournamentType));
