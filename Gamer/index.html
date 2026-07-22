@@ -612,6 +612,40 @@
   .tournament-lobby-banner span{margin-top:3px;font-size:13px;font-weight:700;opacity:.92;}
   .tournament-lobby-banner-actions{display:flex;gap:7px;flex-wrap:wrap;}
   .tournament-lobby-banner-actions button{min-height:36px;}
+  .lobby-ticker{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto;gap:8px;align-items:center;border-radius:16px;background:linear-gradient(135deg,#fff8cf,#eef39f);border:1px solid rgba(132,63,70,.22);padding:9px 11px;box-shadow:0 7px 20px rgba(90,74,20,.13);color:#2d2d2d;}
+  .lobby-ticker[hidden]{display:none!important;}
+  .lobby-ticker-nav,.lobby-ticker-close{min-width:34px;min-height:34px!important;padding:5px 8px!important;border-radius:10px!important;background:rgba(255,255,255,.68)!important;color:#843f46!important;border-color:rgba(132,63,70,.18)!important;}
+  .lobby-ticker-content{display:flex;align-items:center;gap:10px;min-width:0;}
+  .lobby-ticker-icon{font-size:24px;line-height:1;flex:0 0 auto;}
+  .lobby-ticker-copy{min-width:0;line-height:1.25;}
+  .lobby-ticker-title{display:block;color:#843f46;font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lobby-ticker-text{display:block;margin-top:2px;color:#444;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lobby-ticker-action{min-height:36px!important;border-radius:11px!important;white-space:nowrap;}
+  .lobby-ticker-counter{min-width:34px;text-align:center;font-size:11px;font-weight:900;color:#765f20;}
+  .admin-ticker-open-btn{background:linear-gradient(180deg,#fff8cf 0%,#e9f06b 100%)!important;color:#643f10!important;border-color:rgba(100,63,16,.26)!important;}
+  .admin-ticker-modal{width:900px;max-width:100%;max-height:92vh;overflow:auto;}
+  .admin-ticker-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
+  .admin-ticker-panel{border-radius:14px;background:#f7f7f9;border:1px solid rgba(0,0,0,.09);padding:12px;}
+  .admin-ticker-panel h4{margin:0 0 9px;font-size:17px;color:#222;}
+  .admin-ticker-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .admin-ticker-field{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .admin-ticker-field-wide{grid-column:1 / -1;}
+  .admin-ticker-field label{font-size:12px;font-weight:900;color:#666;}
+  .admin-ticker-input,.admin-ticker-select,.admin-ticker-textarea{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.23);border-radius:10px;background:#fff;color:#222;padding:8px 9px;font:800 13px Arial,sans-serif;outline:none;}
+  .admin-ticker-textarea{min-height:72px;resize:vertical;line-height:1.35;}
+  .admin-ticker-input:focus,.admin-ticker-select:focus,.admin-ticker-textarea:focus{box-shadow:0 0 0 3px rgba(132,63,70,.12);}
+  .admin-ticker-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px;}
+  .admin-ticker-inline label{font-size:12px;font-weight:900;color:#555;display:flex;gap:6px;align-items:center;}
+  .admin-ticker-list{display:flex;flex-direction:column;gap:8px;max-height:430px;overflow:auto;padding-right:3px;}
+  .admin-ticker-card{border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.09);padding:9px 10px;}
+  .admin-ticker-card.inactive{opacity:.62;}
+  .admin-ticker-card-title{font-size:14px;font-weight:900;color:#843f46;}
+  .admin-ticker-card-text{font-size:12px;font-weight:800;color:#555;line-height:1.35;margin-top:3px;}
+  .admin-ticker-card-meta{font-size:10px;font-weight:800;color:#777;margin-top:5px;}
+  .admin-ticker-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px;}
+  .admin-ticker-card-actions button{min-height:32px!important;padding:5px 8px!important;font-size:11px!important;border-radius:9px!important;}
+  .admin-ticker-status{min-height:18px;font-size:12px;font-weight:900;color:#666;margin-top:8px;}
+  .admin-ticker-status.error{color:#9a2d33;}.admin-ticker-status.success{color:#226b36;}
   .tournament-facts{display:grid;grid-template-columns:1fr;gap:8px;}
   .tournament-fact{border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;}
   .tournament-fact-label{font-size:11px;font-weight:900;color:#777;text-transform:uppercase;letter-spacing:.03em;}
@@ -931,6 +965,12 @@
   html.dark-mode .header-menu-item:hover:not(:disabled){background:#353a42!important;box-shadow:none!important;}
   html.dark-mode .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(226,151,160,.22),0 8px 18px rgba(0,0,0,.34)!important;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.admin-delete-card,.admin-delete-target,.freestyle-position-controls,.next-daily-game-box,.room-rating-status,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode .lobby-ticker{background:linear-gradient(135deg,#3b3926,#343a26);border-color:rgba(233,240,107,.25);color:#f3f4f6;box-shadow:none;}
+  html.dark-mode .lobby-ticker-title{color:#f1c4c9;}html.dark-mode .lobby-ticker-text{color:#e7e8dc;}html.dark-mode .lobby-ticker-counter{color:#e9f06b;}
+  html.dark-mode :is(.admin-ticker-panel,.admin-ticker-card){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
+  html.dark-mode :is(.admin-ticker-input,.admin-ticker-select,.admin-ticker-textarea){background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
+  html.dark-mode :is(.admin-ticker-panel h4,.admin-ticker-card-title){color:#f1c4c9;}
+  html.dark-mode :is(.admin-ticker-field label,.admin-ticker-inline label,.admin-ticker-card-text,.admin-ticker-card-meta,.admin-ticker-status){color:#c5c9d0;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
   html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
   html.dark-mode .daily-game-card.my-turn{background:linear-gradient(135deg,rgba(62,154,88,.20),rgba(62,154,88,.08));border-color:rgba(92,190,119,.34);box-shadow:inset 4px 0 0 rgba(92,190,119,.74),inset 0 0 0 1px rgba(92,190,119,.05),0 5px 15px rgba(0,0,0,.18);}
@@ -1095,7 +1135,7 @@
   html.dark-mode *{scrollbar-color:#555b65 #1b1e23;}
 
   @media (max-width:1080px){.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr 1fr}.member-lobby-settings-mount #timeSetupBox{grid-column:1 / -1}.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}}
-  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.tournament-lobby-banner-actions button{flex:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
+  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.tournament-lobby-banner-actions button{flex:1}.lobby-ticker{grid-template-columns:auto minmax(0,1fr) auto auto}#lobbyTickerPrevBtn{grid-column:1;grid-row:1}.lobby-ticker-content{grid-column:2;grid-row:1}#lobbyTickerNextBtn{grid-column:3;grid-row:1}.lobby-ticker-close{grid-column:4;grid-row:1}.lobby-ticker-action{grid-column:2 / 4;grid-row:2;width:100%}.lobby-ticker-counter{display:none}.lobby-ticker-text{white-space:normal}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{font-size:11px;gap:6px}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px;flex-wrap:wrap}.gamer-board-nav{flex:0 0 100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
@@ -1201,9 +1241,16 @@
     </section>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
-      <div id="tournamentLobbyBanner" class="tournament-lobby-banner" hidden>
-        <div><strong>🏆 Neues Hammerschach-Turnier</strong><span id="tournamentLobbyBannerText">Die Anmeldung ist geöffnet.</span></div>
-        <div class="tournament-lobby-banner-actions"><button id="tournamentLobbyViewBtn" type="button">Turnier ansehen</button><button id="tournamentLobbyLaterBtn" class="button-flat" type="button">Später</button></div>
+      <div id="lobbyTicker" class="lobby-ticker" hidden aria-live="polite" aria-label="Hammerschach-Veranstaltungsticker">
+        <button id="lobbyTickerPrevBtn" class="lobby-ticker-nav" type="button" title="Vorherige Meldung">‹</button>
+        <div class="lobby-ticker-content">
+          <span id="lobbyTickerIcon" class="lobby-ticker-icon" aria-hidden="true">📢</span>
+          <div class="lobby-ticker-copy"><strong id="lobbyTickerTitle" class="lobby-ticker-title">Hammerschach aktuell</strong><span id="lobbyTickerText" class="lobby-ticker-text"></span></div>
+        </div>
+        <button id="lobbyTickerActionBtn" class="lobby-ticker-action" type="button" hidden>Mehr erfahren</button>
+        <span id="lobbyTickerCounter" class="lobby-ticker-counter"></span>
+        <button id="lobbyTickerNextBtn" class="lobby-ticker-nav" type="button" title="Nächste Meldung">›</button>
+        <button id="lobbyTickerCloseBtn" class="lobby-ticker-close" type="button" title="Diese Meldung ausblenden">×</button>
       </div>
       <div class="box member-lobby-section">
         <div class="member-lobby-heading">
@@ -1402,6 +1449,9 @@
           <h4>27. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
           <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und können zusätzlich über <strong>„Meine Turnierpartien“</strong> gefiltert werden.</p>
+          <h4>28. Veranstaltungsticker und Mitgliederbegrüßung</h4>
+          <p>Ganz oben in der Mitglieder-Lobby zeigt der Veranstaltungsticker aktuelle Hinweise. Neu veröffentlichte und laufende Turniere werden automatisch mit einem direkten Link zur Turnierzentrale übernommen. Mehrere Meldungen wechseln ruhig nacheinander; mit den Pfeilen kannst du selbst blättern und mit <strong>×</strong> die aktuelle Meldung für deine laufende Browsersitzung ausblenden.</p>
+          <p>Andili verwaltet zusätzliche Veranstaltungen und Neuigkeiten unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Lobby-Ticker verwalten“</strong>. Dort lassen sich Überschrift, Kurztext, optionaler Link, Priorität sowie Beginn und Ende festlegen. Nach erfolgreicher Bestätigung der Mailadresse wird ein neues Mitglied außerdem automatisch begrüßt. Begrüßungstext, Anzeigedauer und die gesamte Automatik sind im selben Verwaltungsfenster einstellbar.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -1760,11 +1810,52 @@
         </div>
         <div id="adminOverviewStatus" class="admin-overview-status" aria-live="polite"></div>
         <div class="admin-overview-actions">
+          <button id="adminTickerOpenBtn" class="button-flat admin-ticker-open-btn" type="button">Lobby-Ticker verwalten</button>
           <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
           <button id="adminMemberDeleteOpenBtn" class="admin-member-delete-open-btn" type="button">Mitglieder löschen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
         </div>
+      </div>
+    </div>
+
+    <div id="adminTickerBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal admin-ticker-modal" role="dialog" aria-modal="true" aria-labelledby="adminTickerTitle">
+        <h3 id="adminTickerTitle">Lobby-Ticker verwalten</h3>
+        <p>Turniere werden automatisch angezeigt. Hier erstellst du zusätzliche Meldungen und steuerst die Begrüßung neuer bestätigter Mitglieder.</p>
+        <div class="admin-ticker-grid">
+          <div>
+            <section class="admin-ticker-panel">
+              <h4>Automatische Mitgliederbegrüßung</h4>
+              <div class="admin-ticker-form-grid">
+                <div class="admin-ticker-field"><label for="adminTickerWelcomeDuration">Anzeigedauer</label><select id="adminTickerWelcomeDuration" class="admin-ticker-select"><option value="24">24 Stunden</option><option value="48">48 Stunden</option><option value="72" selected>72 Stunden</option><option value="120">5 Tage</option><option value="168">7 Tage</option></select></div>
+                <div class="admin-ticker-field admin-ticker-field-wide"><label for="adminTickerWelcomeTemplate">Begrüßungstext · {username} wird automatisch ersetzt</label><input id="adminTickerWelcomeTemplate" class="admin-ticker-input" maxlength="220" value="Herzlich willkommen bei Hammerschach, {username}! Schön, dass du dabei bist." /></div>
+              </div>
+              <div class="admin-ticker-inline"><label><input id="adminTickerWelcomeEnabled" type="checkbox" checked /> Neue bestätigte Mitglieder automatisch begrüßen</label><button id="adminTickerWelcomeSaveBtn" type="button">Einstellung speichern</button></div>
+            </section>
+            <section class="admin-ticker-panel" style="margin-top:12px">
+              <h4 id="adminTickerFormTitle">Neue Meldung</h4>
+              <form id="adminTickerForm" class="admin-ticker-form-grid">
+                <div class="admin-ticker-field"><label for="adminTickerCategory">Kategorie</label><select id="adminTickerCategory" class="admin-ticker-select"><option value="event">📅 Veranstaltung</option><option value="news">📢 Neuigkeit</option></select></div>
+                <div class="admin-ticker-field"><label for="adminTickerPriority">Priorität</label><select id="adminTickerPriority" class="admin-ticker-select"><option value="50">Normal</option><option value="80">Wichtig</option><option value="100">Sehr wichtig</option></select></div>
+                <div class="admin-ticker-field admin-ticker-field-wide"><label for="adminTickerItemTitle">Überschrift</label><input id="adminTickerItemTitle" class="admin-ticker-input" maxlength="80" required /></div>
+                <div class="admin-ticker-field admin-ticker-field-wide"><label for="adminTickerItemMessage">Kurze Meldung</label><textarea id="adminTickerItemMessage" class="admin-ticker-textarea" maxlength="220" required></textarea></div>
+                <div class="admin-ticker-field admin-ticker-field-wide"><label for="adminTickerLinkUrl">Link · optional</label><input id="adminTickerLinkUrl" class="admin-ticker-input" maxlength="500" placeholder="https://www.andili.de/…" /></div>
+                <div class="admin-ticker-field"><label for="adminTickerActionLabel">Schaltflächentext</label><input id="adminTickerActionLabel" class="admin-ticker-input" maxlength="80" placeholder="Mehr erfahren" /></div>
+                <div class="admin-ticker-field"><label for="adminTickerStartsAt">Sichtbar ab</label><input id="adminTickerStartsAt" class="admin-ticker-input" type="datetime-local" required /></div>
+                <div class="admin-ticker-field"><label for="adminTickerEndsAt">Sichtbar bis</label><input id="adminTickerEndsAt" class="admin-ticker-input" type="datetime-local" required /></div>
+                <div class="admin-ticker-field admin-ticker-field-wide"><div class="admin-ticker-inline"><label><input id="adminTickerItemActive" type="checkbox" checked /> Meldung aktiv</label><button id="adminTickerResetBtn" class="button-flat" type="button">Neue Meldung</button><button id="adminTickerSaveBtn" type="submit">Meldung speichern</button></div></div>
+              </form>
+            </section>
+          </div>
+          <section class="admin-ticker-panel">
+            <h4>Gespeicherte Meldungen</h4>
+            <div class="auth-ratings-note">Automatische Turniermeldungen erscheinen ohne zusätzlichen Eintrag. Begrüßungen sind mit 👋 gekennzeichnet.</div>
+            <div id="adminTickerList" class="admin-ticker-list" style="margin-top:9px"><div class="admin-list-empty">Ticker-Meldungen werden geladen…</div></div>
+          </section>
+        </div>
+        <div id="adminTickerStatus" class="admin-ticker-status" aria-live="polite"></div>
+        <div class="identity-actions"><button id="adminTickerCloseBtn" type="button">Schließen</button></div>
       </div>
     </div>
 
@@ -2031,7 +2122,7 @@
         <div class="tournament-modal-head">
           <div>
             <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
-            <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily-Turniere</div>
+            <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily- und Live-Turniere</div>
           </div>
           <div id="tournamentTestBadge" class="tournament-test-badge">🏆 Mitgliederbereich</div>
         </div>
@@ -3867,6 +3958,15 @@ const tournamentLobbyBanner = document.getElementById('tournamentLobbyBanner');
 const tournamentLobbyBannerText = document.getElementById('tournamentLobbyBannerText');
 const tournamentLobbyViewBtn = document.getElementById('tournamentLobbyViewBtn');
 const tournamentLobbyLaterBtn = document.getElementById('tournamentLobbyLaterBtn');
+const lobbyTicker = document.getElementById('lobbyTicker');
+const lobbyTickerIcon = document.getElementById('lobbyTickerIcon');
+const lobbyTickerTitle = document.getElementById('lobbyTickerTitle');
+const lobbyTickerText = document.getElementById('lobbyTickerText');
+const lobbyTickerActionBtn = document.getElementById('lobbyTickerActionBtn');
+const lobbyTickerCounter = document.getElementById('lobbyTickerCounter');
+const lobbyTickerPrevBtn = document.getElementById('lobbyTickerPrevBtn');
+const lobbyTickerNextBtn = document.getElementById('lobbyTickerNextBtn');
+const lobbyTickerCloseBtn = document.getElementById('lobbyTickerCloseBtn');
 const tournamentBackdrop = document.getElementById('tournamentBackdrop');
 const tournamentTestBadge = document.getElementById('tournamentTestBadge');
 const tournamentCloseBtn = document.getElementById('tournamentCloseBtn');
@@ -4194,6 +4294,28 @@ const adminOverviewRefreshBtn = document.getElementById('adminOverviewRefreshBtn
 const adminOverviewCloseBtn = document.getElementById('adminOverviewCloseBtn');
 const adminMemberMessageOpenBtn = document.getElementById('adminMemberMessageOpenBtn');
 const adminMemberDeleteOpenBtn = document.getElementById('adminMemberDeleteOpenBtn');
+const adminTickerOpenBtn = document.getElementById('adminTickerOpenBtn');
+const adminTickerBackdrop = document.getElementById('adminTickerBackdrop');
+const adminTickerWelcomeDuration = document.getElementById('adminTickerWelcomeDuration');
+const adminTickerWelcomeTemplate = document.getElementById('adminTickerWelcomeTemplate');
+const adminTickerWelcomeEnabled = document.getElementById('adminTickerWelcomeEnabled');
+const adminTickerWelcomeSaveBtn = document.getElementById('adminTickerWelcomeSaveBtn');
+const adminTickerFormTitle = document.getElementById('adminTickerFormTitle');
+const adminTickerForm = document.getElementById('adminTickerForm');
+const adminTickerCategory = document.getElementById('adminTickerCategory');
+const adminTickerPriority = document.getElementById('adminTickerPriority');
+const adminTickerItemTitle = document.getElementById('adminTickerItemTitle');
+const adminTickerItemMessage = document.getElementById('adminTickerItemMessage');
+const adminTickerLinkUrl = document.getElementById('adminTickerLinkUrl');
+const adminTickerActionLabel = document.getElementById('adminTickerActionLabel');
+const adminTickerStartsAt = document.getElementById('adminTickerStartsAt');
+const adminTickerEndsAt = document.getElementById('adminTickerEndsAt');
+const adminTickerItemActive = document.getElementById('adminTickerItemActive');
+const adminTickerResetBtn = document.getElementById('adminTickerResetBtn');
+const adminTickerSaveBtn = document.getElementById('adminTickerSaveBtn');
+const adminTickerList = document.getElementById('adminTickerList');
+const adminTickerStatus = document.getElementById('adminTickerStatus');
+const adminTickerCloseBtn = document.getElementById('adminTickerCloseBtn');
 const adminDeleteMembersBackdrop = document.getElementById('adminDeleteMembersBackdrop');
 const adminDeleteSearchInput = document.getElementById('adminDeleteSearchInput');
 const adminDeleteRefreshBtn = document.getElementById('adminDeleteRefreshBtn');
@@ -4680,6 +4802,7 @@ function saveAuthState(token, user){
   updateOnlineUi();
   if(onlineAuthToken && onlineAuthUser){
     loadDailyGames({silent:true}).catch(() => {});
+    loadLobbyTicker().catch(() => {});
     loadTournaments().then(() => {
       if(tournamentAddressHandled) return;
       let requested = '';
@@ -4690,6 +4813,7 @@ function saveAuthState(token, user){
     tournamentItems = [];
     tournamentAddressHandled = false;
     updateTournamentNotificationUi();
+    clearLobbyTicker();
   }
   if(onlineAuthToken && onlineAuthUser){
     startPresenceHeartbeat();
@@ -4718,6 +4842,101 @@ async function authApi(path, options){
     throw err;
   }
   return data;
+}
+
+let lobbyTickerItems = [];
+let lobbyTickerIndex = 0;
+let lobbyTickerRotationTimer = null;
+function lobbyTickerStorageKey(){
+  return 'hammerschachLobbyTickerDismissed:' + String(onlineAuthUser && onlineAuthUser.id || 'guest');
+}
+function lobbyTickerDismissedIds(){
+  try{
+    const value = JSON.parse(sessionStorage.getItem(lobbyTickerStorageKey()) || '[]');
+    return new Set(Array.isArray(value) ? value.map(String) : []);
+  } catch(_){ return new Set(); }
+}
+function saveLobbyTickerDismissedIds(ids){
+  try{ sessionStorage.setItem(lobbyTickerStorageKey(), JSON.stringify(Array.from(ids).slice(-100))); } catch(_){}
+}
+function stopLobbyTickerRotation(){
+  if(lobbyTickerRotationTimer){ clearInterval(lobbyTickerRotationTimer); lobbyTickerRotationTimer = null; }
+}
+function startLobbyTickerRotation(){
+  stopLobbyTickerRotation();
+  if(lobbyTickerItems.length > 1){
+    lobbyTickerRotationTimer = setInterval(() => showLobbyTickerAt(lobbyTickerIndex + 1), 9000);
+  }
+}
+function clearLobbyTicker(){
+  stopLobbyTickerRotation();
+  lobbyTickerItems = [];
+  lobbyTickerIndex = 0;
+  if(lobbyTicker) lobbyTicker.hidden = true;
+}
+function currentLobbyTickerItem(){ return lobbyTickerItems[lobbyTickerIndex] || null; }
+function showLobbyTickerAt(index){
+  if(!lobbyTicker || !lobbyTickerItems.length){ clearLobbyTicker(); return; }
+  lobbyTickerIndex = (Number(index || 0) + lobbyTickerItems.length) % lobbyTickerItems.length;
+  const item = currentLobbyTickerItem();
+  lobbyTicker.hidden = false;
+  if(lobbyTickerIcon) lobbyTickerIcon.textContent = item.icon || (item.category === 'event' ? '📅' : item.category === 'welcome' ? '👋' : '📢');
+  if(lobbyTickerTitle) lobbyTickerTitle.textContent = item.title || 'Hammerschach aktuell';
+  if(lobbyTickerText) lobbyTickerText.textContent = item.message || '';
+  const actionable = ['tournament','profile','link'].includes(String(item.actionKind || '')) && !!String(item.actionValue || '').trim();
+  if(lobbyTickerActionBtn){
+    lobbyTickerActionBtn.hidden = !actionable;
+    lobbyTickerActionBtn.textContent = item.actionLabel || (item.actionKind === 'tournament' ? 'Turnier ansehen' : item.actionKind === 'profile' ? 'Profil ansehen' : 'Mehr erfahren');
+  }
+  if(lobbyTickerCounter) lobbyTickerCounter.textContent = lobbyTickerItems.length > 1 ? ((lobbyTickerIndex + 1) + '/' + lobbyTickerItems.length) : '';
+  if(lobbyTickerPrevBtn) lobbyTickerPrevBtn.hidden = lobbyTickerItems.length < 2;
+  if(lobbyTickerNextBtn) lobbyTickerNextBtn.hidden = lobbyTickerItems.length < 2;
+}
+async function loadLobbyTicker(){
+  if(!onlineAuthToken || !onlineAuthUser){ clearLobbyTicker(); return; }
+  const data = await authApi('/api/lobby-ticker');
+  const dismissed = lobbyTickerDismissedIds();
+  lobbyTickerItems = (Array.isArray(data.items) ? data.items : []).filter(item => item && item.id && !dismissed.has(String(item.id)));
+  lobbyTickerIndex = Math.min(lobbyTickerIndex, Math.max(0, lobbyTickerItems.length - 1));
+  showLobbyTickerAt(lobbyTickerIndex);
+  startLobbyTickerRotation();
+}
+function dismissCurrentLobbyTickerItem(){
+  const item = currentLobbyTickerItem();
+  if(!item) return;
+  const dismissed = lobbyTickerDismissedIds();
+  dismissed.add(String(item.id));
+  saveLobbyTickerDismissedIds(dismissed);
+  lobbyTickerItems.splice(lobbyTickerIndex, 1);
+  if(lobbyTickerIndex >= lobbyTickerItems.length) lobbyTickerIndex = 0;
+  showLobbyTickerAt(lobbyTickerIndex);
+  startLobbyTickerRotation();
+}
+function openCurrentLobbyTickerItem(){
+  const item = currentLobbyTickerItem();
+  if(!item) return;
+  if(item.actionKind === 'tournament'){
+    openTournamentDialog(String(item.actionValue || ''));
+  } else if(item.actionKind === 'profile'){
+    openMemberProfile({id:String(item.actionValue || '')}, 'standalone');
+  } else if(item.actionKind === 'link'){
+    const raw = String(item.actionValue || '').trim();
+    try{
+      const url = new URL(raw, window.location.origin);
+      if(!['http:','https:'].includes(url.protocol)) return;
+      window.open(url.href, '_blank', 'noopener,noreferrer');
+    } catch(_){}
+  }
+}
+if(lobbyTickerPrevBtn) lobbyTickerPrevBtn.addEventListener('click', () => { showLobbyTickerAt(lobbyTickerIndex - 1); startLobbyTickerRotation(); });
+if(lobbyTickerNextBtn) lobbyTickerNextBtn.addEventListener('click', () => { showLobbyTickerAt(lobbyTickerIndex + 1); startLobbyTickerRotation(); });
+if(lobbyTickerCloseBtn) lobbyTickerCloseBtn.addEventListener('click', dismissCurrentLobbyTickerItem);
+if(lobbyTickerActionBtn) lobbyTickerActionBtn.addEventListener('click', openCurrentLobbyTickerItem);
+if(lobbyTicker){
+  lobbyTicker.addEventListener('mouseenter', stopLobbyTickerRotation);
+  lobbyTicker.addEventListener('mouseleave', startLobbyTickerRotation);
+  lobbyTicker.addEventListener('focusin', stopLobbyTickerRotation);
+  lobbyTicker.addEventListener('focusout', startLobbyTickerRotation);
 }
 
 let analyzerToolActive = false;
@@ -5446,7 +5665,8 @@ const ADMIN_TABLE_LABELS = {
   users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',
   rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', trainer_progress:'Taktik-Ratings', trainer_attempts:'Taktik-Versuche', auth_security_events:'Sicherheitsereignisse',
   auth_rate_limit_log:'Rate-Limit-Einträge', account_action_tokens:'Aktionslinks', mail_delivery_log:'Mailprotokoll',
-  email_notification_log:'Daily-Mailprotokoll', user_onboarding:'Leitbild-Bestätigungen', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger'
+  email_notification_log:'Daily-Mailprotokoll', user_onboarding:'Leitbild-Bestätigungen', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger',
+  lobby_ticker_items:'Lobby-Ticker-Meldungen'
 };
 function renderAdminSecurityEvents(events){
   if(!adminSecurityEvents) return;
@@ -5640,6 +5860,215 @@ if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.addEventListener('click', re
 if(adminBackupMarkBtn) adminBackupMarkBtn.addEventListener('click', markAdminBackupNow);
 if(adminOverviewCloseBtn) adminOverviewCloseBtn.addEventListener('click', () => closeAdminOverview(true));
 if(adminOverviewBackdrop) adminOverviewBackdrop.addEventListener('click', ev => { if(ev.target === adminOverviewBackdrop) closeAdminOverview(true); });
+
+let adminTickerItems = [];
+let adminTickerEditingId = '';
+let adminTickerBusy = false;
+function setAdminTickerStatus(message, kind){
+  if(!adminTickerStatus) return;
+  adminTickerStatus.textContent = message || '';
+  adminTickerStatus.classList.toggle('error', kind === 'error');
+  adminTickerStatus.classList.toggle('success', kind === 'success');
+}
+function adminTickerInputDate(value){
+  const date = value ? new Date(value) : null;
+  if(!date || Number.isNaN(date.getTime())) return '';
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+function resetAdminTickerForm(){
+  adminTickerEditingId = '';
+  if(adminTickerFormTitle) adminTickerFormTitle.textContent = 'Neue Meldung';
+  if(adminTickerCategory) adminTickerCategory.value = 'event';
+  if(adminTickerPriority) adminTickerPriority.value = '50';
+  if(adminTickerItemTitle) adminTickerItemTitle.value = '';
+  if(adminTickerItemMessage) adminTickerItemMessage.value = '';
+  if(adminTickerLinkUrl) adminTickerLinkUrl.value = '';
+  if(adminTickerActionLabel) adminTickerActionLabel.value = '';
+  const now = Date.now();
+  if(adminTickerStartsAt) adminTickerStartsAt.value = adminTickerInputDate(new Date(now));
+  if(adminTickerEndsAt) adminTickerEndsAt.value = adminTickerInputDate(new Date(now + 7 * 24 * 60 * 60 * 1000));
+  if(adminTickerItemActive) adminTickerItemActive.checked = true;
+  if(adminTickerSaveBtn) adminTickerSaveBtn.textContent = 'Meldung speichern';
+}
+function editAdminTickerItem(item){
+  if(!item || item.category === 'welcome') return;
+  adminTickerEditingId = String(item.id || '');
+  if(adminTickerFormTitle) adminTickerFormTitle.textContent = 'Meldung bearbeiten';
+  if(adminTickerCategory) adminTickerCategory.value = item.category === 'event' ? 'event' : 'news';
+  if(adminTickerPriority) adminTickerPriority.value = ['50','80','100'].includes(String(item.priority)) ? String(item.priority) : '50';
+  if(adminTickerItemTitle) adminTickerItemTitle.value = item.title || '';
+  if(adminTickerItemMessage) adminTickerItemMessage.value = item.message || '';
+  if(adminTickerLinkUrl) adminTickerLinkUrl.value = item.actionKind === 'link' ? (item.actionValue || '') : '';
+  if(adminTickerActionLabel) adminTickerActionLabel.value = item.actionLabel || '';
+  if(adminTickerStartsAt) adminTickerStartsAt.value = adminTickerInputDate(item.startsAt);
+  if(adminTickerEndsAt) adminTickerEndsAt.value = adminTickerInputDate(item.endsAt);
+  if(adminTickerItemActive) adminTickerItemActive.checked = item.active !== false;
+  if(adminTickerSaveBtn) adminTickerSaveBtn.textContent = 'Änderungen speichern';
+  if(adminTickerItemTitle) adminTickerItemTitle.focus();
+}
+function adminTickerCategoryLabel(item){
+  if(item.category === 'welcome') return '👋 Automatische Begrüßung';
+  if(item.category === 'event') return '📅 Veranstaltung';
+  return '📢 Neuigkeit';
+}
+function renderAdminTickerItems(){
+  if(!adminTickerList) return;
+  adminTickerList.innerHTML = '';
+  if(!adminTickerItems.length){
+    const empty = document.createElement('div');
+    empty.className = 'admin-list-empty';
+    empty.textContent = 'Noch keine gespeicherten Ticker-Meldungen vorhanden.';
+    adminTickerList.appendChild(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  adminTickerItems.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'admin-ticker-card' + (item.active === false ? ' inactive' : '');
+    const title = document.createElement('div');
+    title.className = 'admin-ticker-card-title';
+    title.textContent = (item.icon || '') + ' ' + (item.title || 'Ticker-Meldung');
+    const message = document.createElement('div');
+    message.className = 'admin-ticker-card-text';
+    message.textContent = item.message || '';
+    const meta = document.createElement('div');
+    meta.className = 'admin-ticker-card-meta';
+    meta.textContent = adminTickerCategoryLabel(item) + ' · Priorität ' + Number(item.priority || 0) + ' · ' + formatAdminDateTime(item.startsAt) + ' bis ' + formatAdminDateTime(item.endsAt) + (item.active === false ? ' · AUSGEBLENDET' : '');
+    const actions = document.createElement('div');
+    actions.className = 'admin-ticker-card-actions';
+    if(item.category !== 'welcome'){
+      const edit = document.createElement('button');
+      edit.type = 'button'; edit.className = 'button-flat'; edit.textContent = 'Bearbeiten';
+      edit.addEventListener('click', () => editAdminTickerItem(item));
+      actions.appendChild(edit);
+    }
+    const toggle = document.createElement('button');
+    toggle.type = 'button'; toggle.className = 'button-flat'; toggle.textContent = item.active === false ? 'Einblenden' : 'Ausblenden';
+    toggle.addEventListener('click', () => setAdminTickerItemActive(item, item.active === false));
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.className = 'button-flat'; remove.textContent = 'Löschen';
+    remove.addEventListener('click', () => deleteAdminTickerItem(item));
+    actions.append(toggle, remove);
+    card.append(title, message, meta, actions);
+    fragment.appendChild(card);
+  });
+  adminTickerList.appendChild(fragment);
+}
+async function loadAdminTicker(){
+  if(!isCurrentUserAdmin()) return;
+  setAdminTickerStatus('Ticker-Daten werden geladen…', '');
+  try{
+    const data = await authApi('/api/admin/lobby-ticker');
+    adminTickerItems = Array.isArray(data.items) ? data.items : [];
+    const settings = data.settings || {};
+    if(adminTickerWelcomeEnabled) adminTickerWelcomeEnabled.checked = settings.welcomeEnabled !== false;
+    if(adminTickerWelcomeDuration) adminTickerWelcomeDuration.value = String(settings.welcomeDurationHours || 72);
+    if(adminTickerWelcomeTemplate) adminTickerWelcomeTemplate.value = settings.welcomeTemplate || 'Herzlich willkommen bei Hammerschach, {username}! Schön, dass du dabei bist.';
+    renderAdminTickerItems();
+    setAdminTickerStatus('Ticker-Verwaltung ist aktuell.', 'success');
+  } catch(err){
+    setAdminTickerStatus(err && err.message ? err.message : 'Die Ticker-Verwaltung konnte nicht geladen werden.', 'error');
+  }
+}
+function openAdminTicker(){
+  if(!isCurrentUserAdmin()) return;
+  if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  if(adminTickerBackdrop) adminTickerBackdrop.hidden = false;
+  resetAdminTickerForm();
+  loadAdminTicker();
+}
+function closeAdminTicker(reopenOverview){
+  if(adminTickerBusy) return;
+  if(adminTickerBackdrop) adminTickerBackdrop.hidden = true;
+  setAdminTickerStatus('', '');
+  if(reopenOverview && isCurrentUserAdmin()){
+    if(adminOverviewBackdrop) adminOverviewBackdrop.hidden = false;
+    refreshAdminOverview();
+  }
+}
+async function saveAdminTickerWelcomeSettings(){
+  if(adminTickerBusy || !isCurrentUserAdmin()) return;
+  adminTickerBusy = true;
+  if(adminTickerWelcomeSaveBtn) adminTickerWelcomeSaveBtn.disabled = true;
+  setAdminTickerStatus('Begrüßungseinstellung wird gespeichert…', '');
+  try{
+    const data = await authApi('/api/admin/lobby-ticker', {method:'POST', body:JSON.stringify({
+      action:'save_settings',
+      welcomeEnabled:!!(adminTickerWelcomeEnabled && adminTickerWelcomeEnabled.checked),
+      welcomeDurationHours:Number(adminTickerWelcomeDuration && adminTickerWelcomeDuration.value || 72),
+      welcomeTemplate:String(adminTickerWelcomeTemplate && adminTickerWelcomeTemplate.value || '')
+    })});
+    setAdminTickerStatus(data.message || 'Die automatische Begrüßung wurde gespeichert.', 'success');
+  } catch(err){ setAdminTickerStatus(err && err.message ? err.message : 'Die Begrüßungseinstellung konnte nicht gespeichert werden.', 'error'); }
+  finally { adminTickerBusy = false; if(adminTickerWelcomeSaveBtn) adminTickerWelcomeSaveBtn.disabled = false; }
+}
+async function saveAdminTickerForm(event){
+  if(event) event.preventDefault();
+  if(adminTickerBusy || !isCurrentUserAdmin()) return;
+  const starts = new Date(String(adminTickerStartsAt && adminTickerStartsAt.value || ''));
+  const ends = new Date(String(adminTickerEndsAt && adminTickerEndsAt.value || ''));
+  if(Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts){
+    setAdminTickerStatus('Bitte einen gültigen Anzeigezeitraum eingeben; das Ende muss nach dem Beginn liegen.', 'error');
+    return;
+  }
+  adminTickerBusy = true;
+  if(adminTickerSaveBtn) adminTickerSaveBtn.disabled = true;
+  setAdminTickerStatus('Ticker-Meldung wird gespeichert…', '');
+  try{
+    const data = await authApi('/api/admin/lobby-ticker', {method:'POST', body:JSON.stringify({
+      id:adminTickerEditingId,
+      category:adminTickerCategory && adminTickerCategory.value || 'event',
+      priority:Number(adminTickerPriority && adminTickerPriority.value || 50),
+      title:String(adminTickerItemTitle && adminTickerItemTitle.value || ''),
+      message:String(adminTickerItemMessage && adminTickerItemMessage.value || ''),
+      linkUrl:String(adminTickerLinkUrl && adminTickerLinkUrl.value || ''),
+      actionLabel:String(adminTickerActionLabel && adminTickerActionLabel.value || ''),
+      startsAt:starts.toISOString(), endsAt:ends.toISOString(),
+      active:!!(adminTickerItemActive && adminTickerItemActive.checked)
+    })});
+    resetAdminTickerForm();
+    await loadAdminTicker();
+    await loadLobbyTicker();
+    setAdminTickerStatus(data.message || 'Die Ticker-Meldung wurde gespeichert.', 'success');
+  } catch(err){ setAdminTickerStatus(err && err.message ? err.message : 'Die Ticker-Meldung konnte nicht gespeichert werden.', 'error'); }
+  finally { adminTickerBusy = false; if(adminTickerSaveBtn) adminTickerSaveBtn.disabled = false; }
+}
+async function setAdminTickerItemActive(item, active){
+  if(adminTickerBusy || !item || !item.id) return;
+  adminTickerBusy = true;
+  setAdminTickerStatus(active ? 'Meldung wird eingeblendet…' : 'Meldung wird ausgeblendet…', '');
+  try{
+    const data = await authApi('/api/admin/lobby-ticker/' + encodeURIComponent(item.id) + '/status', {method:'POST', body:JSON.stringify({active})});
+    await loadAdminTicker(); await loadLobbyTicker();
+    setAdminTickerStatus(data.message || 'Der Status wurde geändert.', 'success');
+  } catch(err){ setAdminTickerStatus(err && err.message ? err.message : 'Der Status konnte nicht geändert werden.', 'error'); }
+  finally { adminTickerBusy = false; }
+}
+async function deleteAdminTickerItem(item){
+  if(adminTickerBusy || !item || !item.id) return;
+  if(!window.confirm('Ticker-Meldung „' + (item.title || 'ohne Titel') + '“ wirklich löschen?')) return;
+  adminTickerBusy = true;
+  setAdminTickerStatus('Ticker-Meldung wird gelöscht…', '');
+  try{
+    const data = await authApi('/api/admin/lobby-ticker/' + encodeURIComponent(item.id), {method:'DELETE'});
+    if(adminTickerEditingId === String(item.id)) resetAdminTickerForm();
+    await loadAdminTicker(); await loadLobbyTicker();
+    setAdminTickerStatus(data.message || 'Die Ticker-Meldung wurde gelöscht.', 'success');
+  } catch(err){ setAdminTickerStatus(err && err.message ? err.message : 'Die Ticker-Meldung konnte nicht gelöscht werden.', 'error'); }
+  finally { adminTickerBusy = false; }
+}
+if(adminTickerOpenBtn) adminTickerOpenBtn.addEventListener('click', openAdminTicker);
+if(adminTickerCloseBtn) adminTickerCloseBtn.addEventListener('click', () => closeAdminTicker(true));
+if(adminTickerWelcomeSaveBtn) adminTickerWelcomeSaveBtn.addEventListener('click', saveAdminTickerWelcomeSettings);
+if(adminTickerForm) adminTickerForm.addEventListener('submit', saveAdminTickerForm);
+if(adminTickerResetBtn) adminTickerResetBtn.addEventListener('click', resetAdminTickerForm);
+if(adminTickerBackdrop) adminTickerBackdrop.addEventListener('click', event => { if(event.target === adminTickerBackdrop) closeAdminTicker(true); });
+document.addEventListener('keydown', event => {
+  if(event.key === 'Escape' && adminTickerBackdrop && !adminTickerBackdrop.hidden){
+    event.preventDefault(); closeAdminTicker(true);
+  }
+});
 
 let adminDeleteMembers = [];
 let adminDeleteMembersLoading = false;
@@ -6713,6 +7142,7 @@ function updateAuthUi(){
     adminOverviewOpenBtn.disabled = !isAdmin;
   }
   if(!isAdmin && adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  if(!isAdmin && adminTickerBackdrop) adminTickerBackdrop.hidden = true;
   if(!isAdmin && adminMessageBackdrop) adminMessageBackdrop.hidden = true;
   if(!isAdmin && adminDeleteMembersBackdrop) adminDeleteMembersBackdrop.hidden = true;
   if(!isAdmin && adminDeleteConfirmBackdrop) adminDeleteConfirmBackdrop.hidden = true;
@@ -7978,6 +8408,7 @@ window.setInterval(() => {
   if(!onlineAuthToken || !onlineAuthUser) return;
   loadTournaments({keepDetail:!!(tournamentBackdrop && !tournamentBackdrop.hidden && tournamentSelectedId)}).catch(() => {});
   loadDailyGames({silent:true}).catch(() => {});
+  loadLobbyTicker().catch(() => {});
 }, 120000);
 tournamentListTabButtons.forEach(button => {
   button.addEventListener('click', () => setTournamentListTab(button.dataset.tournamentListTab, false));
