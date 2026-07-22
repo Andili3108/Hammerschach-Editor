@@ -5975,6 +5975,7 @@ async function buildAdminOverview(env) {
     ensureMailDeliveryLogTable(env),
     ensureAdminSettingsTable(env),
     ensureAdminMemberMessageTables(env),
+    ensureLobbyTickerTables(env),
     ensureStatsTable(env)
   ]);
 
@@ -6054,7 +6055,7 @@ async function buildAdminOverview(env) {
     'users','sessions','daily_games','public_games','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
-    'admin_member_messages','admin_member_message_recipients'
+    'admin_member_messages','admin_member_message_recipients','lobby_ticker_items'
   ];
   const rowCounts = {};
   for (const tableName of importantTableNames) {
@@ -6140,6 +6141,247 @@ async function markManualBackup(env, adminUser) {
        updated_by = excluded.updated_by`
   ).bind(nowIso, nowIso, String(adminUser && adminUser.id || '').slice(0, 128)).run();
   return nowIso;
+}
+
+let lobbyTickerTablesReady = false;
+async function ensureLobbyTickerTables(env) {
+  if (!env || !env.DB) return false;
+  if (lobbyTickerTablesReady) return true;
+  await ensureAdminSettingsTable(env);
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS lobby_ticker_items (
+       id TEXT PRIMARY KEY,
+       source_key TEXT UNIQUE,
+       category TEXT NOT NULL,
+       title TEXT NOT NULL,
+       message TEXT NOT NULL,
+       action_kind TEXT NOT NULL DEFAULT 'none',
+       action_value TEXT,
+       action_label TEXT,
+       priority INTEGER NOT NULL DEFAULT 50,
+       starts_at TEXT NOT NULL,
+       ends_at TEXT NOT NULL,
+       active INTEGER NOT NULL DEFAULT 1,
+       subject_user_id TEXT,
+       created_by_user_id TEXT,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.batch([
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_lobby_ticker_active ON lobby_ticker_items (active, starts_at, ends_at, priority)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_lobby_ticker_subject ON lobby_ticker_items (subject_user_id, category)`)
+  ]);
+  lobbyTickerTablesReady = true;
+  return true;
+}
+
+function cleanLobbyTickerTitle(value) {
+  return String(value || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+}
+
+function cleanLobbyTickerMessage(value) {
+  return String(value || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 220);
+}
+
+function cleanLobbyTickerCategory(value) {
+  const category = String(value || '').toLowerCase();
+  return ['event', 'news', 'welcome'].includes(category) ? category : 'news';
+}
+
+function cleanLobbyTickerLink(value) {
+  const link = String(value || '').trim().slice(0, 500);
+  if (!link) return '';
+  if (link.startsWith('/') && !link.startsWith('//')) return link;
+  try {
+    const url = new URL(link);
+    return ['https:', 'http:'].includes(url.protocol) ? url.toString() : '';
+  } catch (_) { return ''; }
+}
+
+function lobbyTickerIcon(category) {
+  if (category === 'event') return '📅';
+  if (category === 'welcome') return '👋';
+  return '📢';
+}
+
+function lobbyTickerItemDto(row, automatic = false) {
+  const category = cleanLobbyTickerCategory(row && row.category);
+  return {
+    id:String(row && row.id || ''),
+    automatic:!!automatic,
+    category,
+    icon:String(row && row.icon || lobbyTickerIcon(category)).slice(0, 8),
+    title:cleanLobbyTickerTitle(row && row.title),
+    message:cleanLobbyTickerMessage(row && row.message),
+    actionKind:['tournament', 'profile', 'link'].includes(String(row && row.action_kind || '')) ? String(row.action_kind) : 'none',
+    actionValue:String(row && row.action_value || '').slice(0, 500),
+    actionLabel:cleanLobbyTickerTitle(row && row.action_label) || '',
+    priority:Math.max(0, Math.min(100, Number(row && row.priority || 0))),
+    startsAt:row && row.starts_at || null,
+    endsAt:row && row.ends_at || null,
+    active:Number(row && row.active == null ? 1 : row.active) === 1,
+    subjectUserId:String(row && row.subject_user_id || ''),
+    createdAt:row && row.created_at || null,
+    updatedAt:row && row.updated_at || null
+  };
+}
+
+async function lobbyWelcomeSettings(env) {
+  await ensureLobbyTickerTables(env);
+  const result = await env.DB.prepare(
+    `SELECT setting_key, setting_value FROM admin_settings
+      WHERE setting_key IN ('ticker_welcome_enabled','ticker_welcome_duration_hours','ticker_welcome_template')`
+  ).all();
+  const values = new Map((result && result.results ? result.results : []).map(row => [String(row.setting_key), String(row.setting_value == null ? '' : row.setting_value)]));
+  const duration = Number(values.get('ticker_welcome_duration_hours') || 72);
+  return {
+    welcomeEnabled:values.get('ticker_welcome_enabled') !== '0',
+    welcomeDurationHours:[24, 48, 72, 120, 168].includes(duration) ? duration : 72,
+    welcomeTemplate:cleanLobbyTickerMessage(values.get('ticker_welcome_template') || 'Herzlich willkommen bei Hammerschach, {username}! Schön, dass du dabei bist.')
+  };
+}
+
+async function saveLobbyWelcomeSettings(env, adminUser, body) {
+  await ensureLobbyTickerTables(env);
+  const enabled = body && body.welcomeEnabled === false ? '0' : '1';
+  const duration = [24, 48, 72, 120, 168].includes(Number(body && body.welcomeDurationHours)) ? Number(body.welcomeDurationHours) : 72;
+  const template = cleanLobbyTickerMessage(body && body.welcomeTemplate);
+  if (template.length < 8 || !template.includes('{username}')) {
+    return {ok:false, status:400, code:'INVALID_WELCOME_TEMPLATE', message:'Der Begrüßungstext muss {username} enthalten.'};
+  }
+  const now = new Date().toISOString();
+  for (const [key, value] of [
+    ['ticker_welcome_enabled', enabled],
+    ['ticker_welcome_duration_hours', String(duration)],
+    ['ticker_welcome_template', template]
+  ]) {
+    await env.DB.prepare(
+      `INSERT INTO admin_settings (setting_key, setting_value, updated_at, updated_by) VALUES (?, ?, ?, ?)
+       ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`
+    ).bind(key, value, now, String(adminUser && adminUser.id || '')).run();
+  }
+  return {ok:true, settings:{welcomeEnabled:enabled === '1', welcomeDurationHours:duration, welcomeTemplate:template}};
+}
+
+async function createWelcomeTickerItem(env, userId) {
+  await ensureLobbyTickerTables(env);
+  const settings = await lobbyWelcomeSettings(env);
+  if (!settings.welcomeEnabled) return {created:false, reason:'disabled'};
+  const user = await env.DB.prepare(`SELECT id, username FROM users WHERE id = ? LIMIT 1`).bind(String(userId || '')).first();
+  if (!user) return {created:false, reason:'user_missing'};
+  const username = cleanDisplayName(user.username) || 'neues Mitglied';
+  const nowMs = Date.now();
+  const now = new Date(nowMs).toISOString();
+  const endsAt = new Date(nowMs + settings.welcomeDurationHours * 60 * 60 * 1000).toISOString();
+  const id = 'welcome_' + String(user.id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+  const message = cleanLobbyTickerMessage(settings.welcomeTemplate.replace(/\{username\}/g, username));
+  const inserted = await env.DB.prepare(
+    `INSERT INTO lobby_ticker_items
+       (id, source_key, category, title, message, action_kind, action_value, action_label, priority,
+        starts_at, ends_at, active, subject_user_id, created_by_user_id, created_at, updated_at)
+     VALUES (?, ?, 'welcome', 'Neues Mitglied', ?, 'profile', ?, 'Profil ansehen', 30, ?, ?, 1, ?, NULL, ?, ?)
+     ON CONFLICT(source_key) DO NOTHING`
+  ).bind(id, 'welcome:' + String(user.id), message, String(user.id), now, endsAt, String(user.id), now, now).run();
+  return {created:d1Changes(inserted) > 0, id};
+}
+
+function tickerTournamentMessage(row) {
+  const status = normalizeTournamentStatus(row && row.status);
+  const type = tournamentTypeLabel(row && row.tournament_type);
+  const mode = tournamentModeLabel(row && row.mode);
+  const scheduled = row && row.scheduled_start_at
+    ? new Date(row.scheduled_start_at).toLocaleString('de-DE', {timeZone:'Europe/Berlin', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) + ' Uhr'
+    : '';
+  if (status === 'running') return `${type} · ${mode} läuft – jetzt ansehen${normalizeTournamentMode(row.mode) === TOURNAMENT_MODE_ARENA ? ' oder noch einsteigen' : ''}.`;
+  return `${type} · ${mode} · Anmeldung geöffnet${scheduled ? ` · Start ${scheduled}` : ''}.`;
+}
+
+async function listLobbyTickerItems(env) {
+  await ensureLobbyTickerTables(env);
+  await ensureTournamentTables(env);
+  const now = new Date().toISOString();
+  const [storedResult, tournamentResult] = await Promise.all([
+    env.DB.prepare(
+      `SELECT * FROM lobby_ticker_items
+        WHERE active = 1 AND starts_at <= ? AND ends_at > ?
+        ORDER BY priority DESC, starts_at DESC LIMIT 30`
+    ).bind(now, now).all(),
+    env.DB.prepare(
+      `SELECT id, name, tournament_type, mode, status, scheduled_start_at, published_at, started_at, updated_at
+         FROM tournaments WHERE status IN ('open','full','running') AND published_at IS NOT NULL
+        ORDER BY CASE status WHEN 'running' THEN 0 ELSE 1 END, COALESCE(scheduled_start_at, published_at) ASC LIMIT 8`
+    ).all()
+  ]);
+  const stored = (storedResult && storedResult.results ? storedResult.results : []).map(row => lobbyTickerItemDto(row, false));
+  const tournaments = (tournamentResult && tournamentResult.results ? tournamentResult.results : []).map(row => {
+    const running = String(row.status) === 'running';
+    const scheduledMs = Date.parse(row.scheduled_start_at || '');
+    const soon = Number.isFinite(scheduledMs) && scheduledMs > Date.now() && scheduledMs - Date.now() <= 24 * 60 * 60 * 1000;
+    return lobbyTickerItemDto({
+      id:'tournament_' + String(row.id), category:'event', icon:running ? '⚔️' : '🏆',
+      title:cleanTournamentName(row.name), message:tickerTournamentMessage(row), action_kind:'tournament', action_value:String(row.id),
+      action_label:running ? 'Turnier öffnen' : 'Turnier ansehen', priority:soon ? 100 : running ? 90 : 70,
+      starts_at:row.published_at || row.updated_at, ends_at:'9999-12-31T23:59:59.999Z', active:1,
+      created_at:row.published_at || row.updated_at, updated_at:row.updated_at
+    }, true);
+  });
+  return stored.concat(tournaments).sort((a, b) => b.priority - a.priority
+    || Date.parse(b.startsAt || '') - Date.parse(a.startsAt || '')
+    || a.title.localeCompare(b.title, 'de-DE', {sensitivity:'base'})).slice(0, 30);
+}
+
+async function listAdminLobbyTicker(env) {
+  await ensureLobbyTickerTables(env);
+  const result = await env.DB.prepare(
+    `SELECT * FROM lobby_ticker_items ORDER BY active DESC, starts_at DESC, created_at DESC LIMIT 150`
+  ).all();
+  return {
+    items:(result && result.results ? result.results : []).map(row => lobbyTickerItemDto(row, false)),
+    settings:await lobbyWelcomeSettings(env)
+  };
+}
+
+async function saveAdminLobbyTickerItem(env, adminUser, body) {
+  await ensureLobbyTickerTables(env);
+  const id = String(body && body.id || '').trim();
+  const existing = id ? await env.DB.prepare(`SELECT * FROM lobby_ticker_items WHERE id = ? LIMIT 1`).bind(id).first() : null;
+  if (id && (!existing || existing.category === 'welcome')) return {ok:false, status:409, code:'TICKER_NOT_EDITABLE', message:'Diese automatische Meldung kann nicht als manueller Hinweis bearbeitet werden.'};
+  const category = cleanLobbyTickerCategory(body && body.category) === 'welcome' ? 'news' : cleanLobbyTickerCategory(body && body.category);
+  const title = cleanLobbyTickerTitle(body && body.title);
+  const message = cleanLobbyTickerMessage(body && body.message);
+  if (title.length < 3 || message.length < 3) return {ok:false, status:400, code:'INVALID_TICKER_TEXT', message:'Bitte Überschrift und Meldung vollständig eingeben.'};
+  const startsMs = Date.parse(String(body && body.startsAt || ''));
+  const endsMs = Date.parse(String(body && body.endsAt || ''));
+  const effectiveStarts = Number.isFinite(startsMs) ? startsMs : Date.now();
+  const effectiveEnds = Number.isFinite(endsMs) ? endsMs : effectiveStarts + 7 * 24 * 60 * 60 * 1000;
+  if (effectiveEnds <= effectiveStarts) return {ok:false, status:400, code:'INVALID_TICKER_PERIOD', message:'Das Ende muss nach dem Beginn liegen.'};
+  const link = cleanLobbyTickerLink(body && body.linkUrl);
+  if (String(body && body.linkUrl || '').trim() && !link) return {ok:false, status:400, code:'INVALID_TICKER_LINK', message:'Der Link muss mit https:// oder / beginnen.'};
+  const actionLabel = cleanLobbyTickerTitle(body && body.actionLabel) || (link ? 'Mehr erfahren' : '');
+  const requestedPriority = Number(body && body.priority == null ? 50 : body.priority);
+  const priority = Number.isFinite(requestedPriority) ? Math.max(0, Math.min(100, Math.round(requestedPriority))) : 50;
+  const active = body && body.active === false ? 0 : 1;
+  const now = new Date().toISOString();
+  const itemId = existing ? String(existing.id) : crypto.randomUUID();
+  if (existing) {
+    await env.DB.prepare(
+      `UPDATE lobby_ticker_items SET category = ?, title = ?, message = ?, action_kind = ?, action_value = ?, action_label = ?,
+              priority = ?, starts_at = ?, ends_at = ?, active = ?, updated_at = ? WHERE id = ?`
+    ).bind(category, title, message, link ? 'link' : 'none', link || null, actionLabel || null, priority,
+      new Date(effectiveStarts).toISOString(), new Date(effectiveEnds).toISOString(), active, now, itemId).run();
+  } else {
+    await env.DB.prepare(
+      `INSERT INTO lobby_ticker_items
+         (id, source_key, category, title, message, action_kind, action_value, action_label, priority,
+          starts_at, ends_at, active, subject_user_id, created_by_user_id, created_at, updated_at)
+       VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`
+    ).bind(itemId, category, title, message, link ? 'link' : 'none', link || null, actionLabel || null, priority,
+      new Date(effectiveStarts).toISOString(), new Date(effectiveEnds).toISOString(), active,
+      String(adminUser && adminUser.id || ''), now, now).run();
+  }
+  const row = await env.DB.prepare(`SELECT * FROM lobby_ticker_items WHERE id = ? LIMIT 1`).bind(itemId).first();
+  return {ok:true, item:lobbyTickerItemDto(row, false)};
 }
 
 
@@ -7416,6 +7658,8 @@ async function handleAuthApi(request, env, url) {
       await clearAuthSubjectFailures(env, 'email_verification_confirm', rate.context.subjectHash);
       await recordAuthSecurityEvent(env, request, 'email_verification_confirm', 'success', { context:rate.context, userId:tokenRow.user_id, detailCode:'REGISTRATION_VERIFIED' });
     } catch (_) {}
+    try { await createWelcomeTickerItem(env, tokenRow.user_id); }
+    catch (error) { console.error('Automatic welcome ticker failed', error && error.message ? error.message : String(error || 'unknown')); }
     return json({ ok:true, message:'Deine Mailadresse ist bestätigt. Du kannst dich jetzt einloggen.' });
   }
 
@@ -7734,11 +7978,73 @@ async function handleAuthApi(request, env, url) {
     return json({ ok: true, users, isAdmin: isAdminUser(session.user, env) });
   }
 
+  if (url.pathname === '/api/lobby-ticker' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Der Lobby-Ticker ist nur für Mitglieder sichtbar.'}, {status:401});
+    try {
+      return json({ok:true, items:await listLobbyTickerItems(env), serverNow:Date.now()});
+    } catch (error) {
+      console.error('Lobby ticker list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'LOBBY_TICKER_UNAVAILABLE', message:'Der Veranstaltungsticker konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
   if (url.pathname === '/api/admin/users' && request.method === 'GET') {
     const admin = await requireAdminSession(request, env);
     if (!admin.ok) return admin.response;
     const users = await listMembers(env, admin.session.user, 100);
     return json({ ok:true, users });
+  }
+
+  if (url.pathname === '/api/admin/lobby-ticker' && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try { return json({ok:true, ...(await listAdminLobbyTicker(env))}); }
+    catch (error) {
+      console.error('Admin lobby ticker list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'ADMIN_TICKER_UNAVAILABLE', message:'Die Ticker-Verwaltung konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/admin/lobby-ticker' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    const body = await readJsonBody(request);
+    if (!body) return json({ok:false, code:'BAD_JSON', message:'Die Ticker-Daten konnten nicht gelesen werden.'}, {status:400});
+    try {
+      const result = body.action === 'save_settings'
+        ? await saveLobbyWelcomeSettings(env, admin.session.user, body)
+        : await saveAdminLobbyTickerItem(env, admin.session.user, body);
+      if (!result.ok) return json(result, {status:result.status || 400});
+      return json({...result, message:body.action === 'save_settings' ? 'Die automatische Mitgliederbegrüßung wurde gespeichert.' : 'Die Ticker-Meldung wurde gespeichert.'});
+    } catch (error) {
+      console.error('Admin lobby ticker save failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'ADMIN_TICKER_SAVE_FAILED', message:'Die Ticker-Einstellungen konnten nicht gespeichert werden.'}, {status:500});
+    }
+  }
+
+  const adminTickerStatusMatch = url.pathname.match(/^\/api\/admin\/lobby-ticker\/([^/]+)\/status$/);
+  if (adminTickerStatusMatch && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    await ensureLobbyTickerTables(env);
+    const body = await readJsonBody(request);
+    const id = String(decodeURIComponent(adminTickerStatusMatch[1]) || '').trim();
+    const changed = await env.DB.prepare(`UPDATE lobby_ticker_items SET active = ?, updated_at = ? WHERE id = ?`)
+      .bind(body && body.active === false ? 0 : 1, new Date().toISOString(), id).run();
+    if (d1Changes(changed) < 1) return json({ok:false, code:'TICKER_NOT_FOUND', message:'Die Ticker-Meldung wurde nicht gefunden.'}, {status:404});
+    return json({ok:true, message:body && body.active === false ? 'Ticker-Meldung wurde ausgeblendet.' : 'Ticker-Meldung wurde wieder aktiviert.'});
+  }
+
+  const adminTickerDeleteMatch = url.pathname.match(/^\/api\/admin\/lobby-ticker\/([^/]+)$/);
+  if (adminTickerDeleteMatch && request.method === 'DELETE') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    await ensureLobbyTickerTables(env);
+    const id = String(decodeURIComponent(adminTickerDeleteMatch[1]) || '').trim();
+    const changed = await env.DB.prepare(`DELETE FROM lobby_ticker_items WHERE id = ?`).bind(id).run();
+    if (d1Changes(changed) < 1) return json({ok:false, code:'TICKER_NOT_FOUND', message:'Die Ticker-Meldung wurde nicht gefunden.'}, {status:404});
+    return json({ok:true, message:'Ticker-Meldung wurde gelöscht.'});
   }
 
   if (url.pathname === '/api/admin/member-message/audience' && request.method === 'GET') {
@@ -11941,8 +12247,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
