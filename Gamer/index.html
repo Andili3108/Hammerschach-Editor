@@ -272,6 +272,10 @@
   #moveList{display:grid;grid-template-columns:34px 1fr 1fr 34px 1fr 1fr;gap:5px 4px;max-height:calc(var(--board-size) - 136px);overflow-y:auto;padding-right:6px;font-size:15px;line-height:1.42;}
   .move-cell{border-radius:6px;padding:1px 3px;}
   .move-cell.current{background:rgba(132,63,70,.12);font-weight:900;}
+  .move-cell.theme-move{color:#777;font-style:italic;background:rgba(59,110,167,.055);}
+  .move-cell.theme-end{box-shadow:inset 0 -2px 0 rgba(59,110,167,.48);}
+  .theme-move-notice{margin:0 0 9px;border-radius:11px;background:rgba(59,110,167,.08);border:1px solid rgba(59,110,167,.18);padding:7px 9px;color:#43566b;font-size:12px;font-weight:850;line-height:1.35;}
+  .theme-move-notice[hidden]{display:none!important;}
   .moves-footer{margin-top:12px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:center;}
   .move-nav-group{display:contents;}
   .nav-btn{width:100%;min-width:0;min-height:34px;font-size:18px;padding:4px 0;border-radius:12px;}
@@ -704,6 +708,40 @@
   .tournament-input,.tournament-select,.tournament-textarea{width:100%;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:9px 11px;font-family:inherit;font-size:15px;font-weight:800;outline:none;}
   .tournament-input:focus,.tournament-select:focus,.tournament-textarea:focus{background:#fff;box-shadow:0 0 0 3px rgba(132,63,70,.14);}
   .tournament-textarea{min-height:105px;resize:vertical;line-height:1.4;}
+  .tournament-theme-card{grid-column:1 / -1;border-radius:15px;background:linear-gradient(135deg,rgba(59,110,167,.075),rgba(132,63,70,.055));border:1px solid rgba(59,110,167,.20);padding:12px 13px;display:flex;flex-direction:column;gap:10px;}
+  .tournament-theme-toggle{display:flex;align-items:flex-start;gap:9px;color:#2f3d4d;font-size:14px;font-weight:900;line-height:1.35;cursor:pointer;}
+  .tournament-theme-toggle input{margin-top:2px;width:18px;height:18px;accent-color:#843f46;flex:0 0 auto;}
+  .tournament-theme-hint{font-size:12px;font-weight:750;color:#66717d;line-height:1.4;}
+  .tournament-theme-selected{border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.09);padding:10px 11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;}
+  .tournament-theme-selected[hidden]{display:none!important;}
+  .tournament-theme-selected-name{font-size:15px;font-weight:900;color:#843f46;line-height:1.25;}
+  .tournament-theme-selected-moves{margin-top:4px;color:#4d5660;font-size:12px;font-weight:800;line-height:1.35;}
+  .tournament-theme-selected-side{margin-top:4px;color:#6c7580;font-size:11px;font-weight:800;}
+  .tournament-theme-choose{align-self:flex-start;border-radius:11px!important;min-height:37px!important;}
+  .theme-picker-backdrop{z-index:3410;}
+  .theme-picker-modal{width:920px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;}
+  .theme-picker-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+  .theme-picker-head h3{margin:0 0 5px;font-size:23px;color:#222;}
+  .theme-picker-head p{margin:0;color:#666;font-size:13px;font-weight:750;line-height:1.35;}
+  .theme-picker-search-row{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:9px;margin:13px 0 11px;}
+  .theme-picker-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr);gap:12px;min-height:0;overflow:hidden;}
+  .theme-picker-list{min-height:260px;max-height:52vh;overflow:auto;border-radius:13px;border:1px solid rgba(0,0,0,.09);background:#f7f7f9;padding:7px;}
+  .theme-picker-empty{padding:28px 12px;text-align:center;color:#707782;font-size:13px;font-weight:800;}
+  .theme-picker-item{width:100%;min-height:0!important;margin:0 0 6px;padding:9px 10px!important;border-radius:10px!important;background:#fff!important;color:#30343a!important;border:1px solid rgba(0,0,0,.08)!important;text-align:left!important;box-shadow:none!important;}
+  .theme-picker-item:last-child{margin-bottom:0;}
+  .theme-picker-item:hover,.theme-picker-item.active{border-color:rgba(132,63,70,.55)!important;background:rgba(132,63,70,.07)!important;}
+  .theme-picker-item-name{font-size:14px;font-weight:900;color:#843f46;line-height:1.25;}
+  .theme-picker-item-moves{margin-top:3px;font-size:11px;font-weight:750;color:#606873;line-height:1.3;}
+  .theme-picker-preview{border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.09);padding:12px;overflow:auto;}
+  .theme-preview-name{font-size:17px;font-weight:900;color:#843f46;line-height:1.25;}
+  .theme-preview-meta{margin-top:5px;font-size:11px;font-weight:850;color:#68717b;}
+  .theme-preview-moves{margin-top:9px;border-radius:9px;background:#f3f4f6;padding:7px 8px;color:#38424e;font-size:12px;font-weight:800;line-height:1.4;}
+  .theme-preview-idea{margin-top:8px;color:#59636d;font-size:12px;font-weight:750;line-height:1.38;}
+  .theme-preview-board{display:grid;grid-template-columns:repeat(8,1fr);width:min(100%,270px);aspect-ratio:1;margin:11px auto 0;border:1px solid rgba(0,0,0,.24);box-shadow:0 4px 14px rgba(0,0,0,.10);}
+  .theme-preview-square{display:flex;align-items:center;justify-content:center;font-family:"DejaVu Sans","Arial Unicode MS",sans-serif;font-size:clamp(20px,3.4vw,31px);line-height:1;aspect-ratio:1;}
+  .theme-preview-square.light{background:#ece2d2;}
+  .theme-preview-square.dark{background:#a86f65;}
+  .theme-picker-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
   .tournament-create-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;}
   .tournament-create-status.error{color:#9A2D33;}
   .tournament-create-status.success{color:#226b36;}
@@ -1148,6 +1186,25 @@
   html.dark-mode .tournament-textarea:focus{background:#20242a;box-shadow:0 0 0 3px rgba(226,151,160,.16);}
   html.dark-mode .tournament-type-option{background:#252930!important;color:#eef0f2!important;border-color:rgba(255,255,255,.09)!important;}
   html.dark-mode .tournament-type-option.active{background:rgba(159,77,86,.20)!important;color:#f1b6bd!important;border-color:#c36c76!important;}
+  html.dark-mode .tournament-theme-card{background:linear-gradient(135deg,rgba(88,148,210,.15),rgba(159,77,86,.12));border-color:rgba(120,177,231,.24);}
+  html.dark-mode .tournament-theme-toggle{color:#eef0f2;}
+  html.dark-mode .tournament-theme-hint,
+  html.dark-mode .tournament-theme-selected-moves,
+  html.dark-mode .tournament-theme-selected-side{color:#b8bdc6;}
+  html.dark-mode .tournament-theme-selected,
+  html.dark-mode .theme-picker-preview,
+  html.dark-mode .theme-picker-item{background:#252930!important;border-color:rgba(255,255,255,.09)!important;color:#eef0f2!important;}
+  html.dark-mode .theme-picker-head h3{color:#f3f4f6;}
+  html.dark-mode .theme-picker-head p,
+  html.dark-mode .theme-picker-item-moves,
+  html.dark-mode .theme-preview-meta,
+  html.dark-mode .theme-preview-idea{color:#b8bdc6;}
+  html.dark-mode .theme-picker-list{background:#171a1f;border-color:rgba(255,255,255,.10);}
+  html.dark-mode .theme-picker-item:hover,
+  html.dark-mode .theme-picker-item.active{background:rgba(159,77,86,.20)!important;border-color:#c36c76!important;}
+  html.dark-mode .theme-preview-moves{background:#171a1f;color:#eef0f2;}
+  html.dark-mode .theme-move-notice{background:rgba(88,148,210,.13);border-color:rgba(88,148,210,.24);color:#bcd5eb;}
+  html.dark-mode .move-cell.theme-move{color:#aeb7c1;background:rgba(88,148,210,.09);}
   html.dark-mode .tournament-live-waiting{background:linear-gradient(135deg,rgba(88,148,210,.17),rgba(159,77,86,.16));border-color:rgba(120,177,231,.26);}
   html.dark-mode .tournament-live-waiting-title{color:#9fc9ef;}
   html.dark-mode .tournament-live-waiting-text{color:#d7dae0;}
@@ -1167,7 +1224,7 @@
   @media (max-width:460px){.board-tools{gap:4px}.icon-btn{width:36px;height:36px;min-width:36px;min-height:36px;font-size:19px}.board-game-actions,.board-daily-actions{gap:4px}.board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}.board-daily-cancel-btn{width:34px!important;min-width:34px!important;font-size:18px!important}}
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
-  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium,.tournament-group-tables{grid-template-columns:1fr}.tournament-type-picker{grid-template-columns:1fr}.tournament-type-option{min-height:62px!important}.tournament-field-wide{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}}
+  @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium,.tournament-group-tables{grid-template-columns:1fr}.tournament-type-picker{grid-template-columns:1fr}.tournament-type-option{min-height:62px!important}.tournament-field-wide,.tournament-theme-card{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}.theme-picker-search-row,.theme-picker-layout{grid-template-columns:1fr}.theme-picker-layout{overflow:auto}.theme-picker-list{max-height:35vh}.theme-picker-preview{overflow:visible}.tournament-theme-selected{grid-template-columns:1fr}.tournament-theme-choose{width:100%}}
 </style>
 </head>
 <body>
@@ -2207,6 +2264,7 @@
                   <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">6</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Variante</div><div id="tournamentFactVariant" class="tournament-fact-value">Klassisch</div></div>
+                  <div id="tournamentFactThemeWrap" class="tournament-fact" hidden><div class="tournament-fact-label">Thementurnier</div><div id="tournamentFactTheme" class="tournament-fact-value">—</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
                 </div>
               </div>
@@ -2331,6 +2389,21 @@
                 <option value="freestyle960">Freestyle (Chess960)</option>
               </select>
             </div>
+            <div class="tournament-theme-card">
+              <label class="tournament-theme-toggle" for="tournamentThemeCheckbox">
+                <input id="tournamentThemeCheckbox" type="checkbox" />
+                <span>Partien mit vorgegebener Eröffnung starten <strong>· Thementurnier</strong></span>
+              </label>
+              <div class="tournament-theme-hint">Alle Partien beginnen mit derselben Zugfolge. Die Vorgabe steht bereits in der Zugliste und kann vom Anfang bis zur Turnierstellung zurückverfolgt werden.</div>
+              <div id="tournamentThemeSelected" class="tournament-theme-selected" hidden>
+                <div>
+                  <div id="tournamentThemeSelectedName" class="tournament-theme-selected-name">Noch keine Eröffnung gewählt</div>
+                  <div id="tournamentThemeSelectedMoves" class="tournament-theme-selected-moves"></div>
+                  <div id="tournamentThemeSelectedSide" class="tournament-theme-selected-side"></div>
+                </div>
+                <button id="tournamentThemeChooseBtn" class="button-flat tournament-theme-choose" type="button">Eröffnung wählen</button>
+              </div>
+            </div>
             <div class="tournament-field tournament-field-wide">
               <label for="tournamentRatingSelect">Wertung</label>
               <select id="tournamentRatingSelect" class="tournament-select">
@@ -2349,6 +2422,37 @@
             <button id="tournamentCreatePreviewBtn" type="submit">Entwurf speichern</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div id="themePickerBackdrop" class="identity-backdrop theme-picker-backdrop" hidden>
+      <div class="identity-modal theme-picker-modal" role="dialog" aria-modal="true" aria-labelledby="themePickerTitle">
+        <div class="theme-picker-head">
+          <div>
+            <h3 id="themePickerTitle">Eröffnung für das Thementurnier</h3>
+            <p>124 geprüfte Startvarianten. Auswahl und Vorschau verändern noch keine Turnierdaten.</p>
+          </div>
+        </div>
+        <div class="theme-picker-search-row">
+          <input id="themePickerSearch" class="tournament-input" type="search" placeholder="Eröffnung oder Zugfolge suchen …" autocomplete="off" />
+          <select id="themePickerGroup" class="tournament-select" aria-label="Eröffnungsgruppe">
+            <option value="">Alle Gruppen</option>
+          </select>
+        </div>
+        <div class="theme-picker-layout">
+          <div id="themePickerList" class="theme-picker-list" aria-label="Eröffnungsliste"></div>
+          <div class="theme-picker-preview">
+            <div id="themePreviewName" class="theme-preview-name">Eröffnung auswählen</div>
+            <div id="themePreviewMeta" class="theme-preview-meta"></div>
+            <div id="themePreviewMoves" class="theme-preview-moves">Die Zielstellung erscheint nach der Auswahl.</div>
+            <div id="themePreviewIdea" class="theme-preview-idea"></div>
+            <div id="themePreviewBoard" class="theme-preview-board" aria-label="Vorschau der Startstellung"></div>
+          </div>
+        </div>
+        <div class="theme-picker-actions">
+          <button id="themePickerCancelBtn" class="button-flat" type="button">Abbrechen</button>
+          <button id="themePickerApplyBtn" type="button" disabled>Diese Eröffnung übernehmen</button>
+        </div>
       </div>
     </div>
 
@@ -2622,6 +2726,7 @@
 
           <div id="movesPanel" class="side-content moves-panel" hidden>
             <div class="moves-title"><span>Zugliste</span><span id="movesInfo">0/0</span></div>
+            <div id="themeMoveNotice" class="theme-move-notice" hidden></div>
             <div id="moveList"></div>
             <div class="moves-footer">
               <div class="move-nav-group" aria-label="Zugnavigation">
@@ -2876,11 +2981,40 @@ function randomChess960Setup(){
   const positionId = bytes[0] % 960;
   return {variant: GAME_VARIANT_FREESTYLE, positionId, backRank: chess960BackRankById(positionId)};
 }
+function normalizeThemeDefinition(value){
+  if(!value || typeof value !== 'object') return null;
+  const moves = (Array.isArray(value.moves) ? value.moves : []).slice(0,40).map(move => {
+    if(!move || !Array.isArray(move.from) || !Array.isArray(move.to)) return null;
+    const from = move.from.slice(0,2).map(Number);
+    const to = move.to.slice(0,2).map(Number);
+    if(from.concat(to).some(square => !Number.isInteger(square) || square < 0 || square > 7)) return null;
+    const promotion = ['Q','R','B','N'].includes(String(move.promotion || '').toUpperCase()) ? String(move.promotion).toUpperCase() : null;
+    const castle = ['K','Q'].includes(String(move.castle || '').toUpperCase()) ? String(move.castle).toUpperCase() : null;
+    return {from,to,promotion,castle,san:String(move.san || '').trim().slice(0,40)};
+  }).filter(Boolean);
+  const name = String(value.name || '').replace(/\s+/g,' ').trim().slice(0,100);
+  if(!name || !moves.length) return null;
+  return {
+    id:String(value.id || '').replace(/[^A-Za-z0-9_-]/g,'').slice(0,48),
+    name,
+    eco:String(value.eco || '').replace(/\s+/g,' ').trim().slice(0,12),
+    moveText:String(value.moveText || value.move_text || '').replace(/\s+/g,' ').trim().slice(0,500),
+    idea:String(value.idea || '').replace(/\s+/g,' ').trim().slice(0,500),
+    startPly:moves.length,
+    sideToMove:moves.length % 2 === 0 ? 'w' : 'b',
+    moves
+  };
+}
+function themeSignature(value){
+  const theme = normalizeThemeDefinition(value);
+  if(!theme) return '';
+  return theme.id + '|' + theme.name + '|' + theme.moves.map(move => move.from.join('') + '-' + move.to.join('') + '-' + (move.promotion || '') + '-' + (move.castle || '')).join(',');
+}
 function normalizeGameSetup(setup){
   setup = setup || {};
   const variant = String(setup.variant || setup.mode || '').toLowerCase() === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
   if(variant !== GAME_VARIANT_FREESTYLE){
-    return {variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK};
+    return {variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK, theme:normalizeThemeDefinition(setup.theme || setup.openingTheme || setup.opening_theme)};
   }
   let positionId = Number.isFinite(Number(setup.positionId ?? setup.position_id)) ? Math.floor(Number(setup.positionId ?? setup.position_id)) : null;
   if(positionId !== null) positionId = Math.max(0, Math.min(959, positionId));
@@ -2895,12 +3029,12 @@ function normalizeGameSetup(setup){
     positionId = positionId !== null ? positionId : 0;
     backRank = chess960BackRankById(positionId);
   }
-  return {variant: GAME_VARIANT_FREESTYLE, positionId, backRank};
+  return {variant: GAME_VARIANT_FREESTYLE, positionId, backRank, theme:null};
 }
 function sameGameSetup(a,b){
   const left = normalizeGameSetup(a);
   const right = normalizeGameSetup(b);
-  return left.variant === right.variant && left.positionId === right.positionId && left.backRank === right.backRank;
+  return left.variant === right.variant && left.positionId === right.positionId && left.backRank === right.backRank && themeSignature(left.theme) === themeSignature(right.theme);
 }
 function blackBackRankFromWhite(backRank){ return String(backRank || STANDARD_BACK_RANK).toLowerCase().split('').join(''); }
 function castlingInfoFromBackRank(backRank){
@@ -2933,6 +3067,7 @@ function rangeBetweenExclusive(a,b){
 }
 function setupLabel(setup){
   const normalized = normalizeGameSetup(setup || currentGameSetup);
+  if(normalized.theme) return 'Thementurnier · ' + normalized.theme.name + ' · Vorgabe: ' + (normalized.theme.moveText || (normalized.theme.startPly + ' Halbzüge'));
   if(normalized.variant !== GAME_VARIANT_FREESTYLE) return 'Klassisches Schach: normale Startstellung.';
   return 'Freestyle-Stellung #' + normalized.positionId + ' · Grundreihe: ' + normalized.backRank;
 }
@@ -2969,7 +3104,13 @@ loadGameSetupPreference();
 
 function Game(setup){ this.reset(setup); }
 Game.prototype.reset = function(setup){
-  this.setup = normalizeGameSetup(setup || currentGameSetup);
+  const normalizedSetup = normalizeGameSetup(setup || currentGameSetup);
+  this.setup = {
+    variant:normalizedSetup.variant,
+    positionId:normalizedSetup.positionId,
+    backRank:normalizedSetup.backRank,
+    theme:null
+  };
   const backRank = this.setup.backRank || STANDARD_BACK_RANK;
   this.variant = this.setup.variant;
   this.startBackRank = backRank;
@@ -3368,6 +3509,7 @@ const statusEl = document.getElementById('status');
 const illegalFlashEl = document.getElementById('illegalFlash');
 const flipBoardBtn = document.getElementById('flipBoardBtn');
 const moveListEl = document.getElementById('moveList');
+const themeMoveNotice = document.getElementById('themeMoveNotice');
 const preRoomSetupPanelEl = document.getElementById('preRoomSetupPanel');
 const sideToggleRowEl = document.getElementById('sideToggleRow');
 const movesInfoEl = document.getElementById('movesInfo');
@@ -3709,7 +3851,7 @@ function isMoveNavigationLocked(){
   return !!pendingDailyMove;
 }
 function isGameInProgressForUi(){
-  return !!(isOnlineGameLiveForUi() || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost);
+  return !!(isOnlineGameLiveForUi() || actualMoveCount() > 0 || firstMoveDone || clockRunning || timeLost);
 }
 function updateTimeSetupVisibility(){
   if(!timeSetupBoxEl) return;
@@ -3723,7 +3865,7 @@ function updateTimeSetupVisibility(){
 }
 
 function isVariantSetupLocked(){
-  if(masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return true;
+  if(actualMoveCount() > 0 || firstMoveDone || clockRunning || timeLost) return true;
   if(onlineGameStarted) return true;
   return !!onlineRoomId;
 }
@@ -3769,14 +3911,16 @@ function updateVariantUi(){
 function applyGameSetup(setup, options){
   options = options || {};
   const beforeSetup = normalizeGameSetup(currentGameSetup);
+  const playedMovesBeforeChange = Math.max(0, masterHistory.length - (beforeSetup.theme ? beforeSetup.theme.moves.length : 0));
   const normalized = normalizeGameSetup(setup);
   const changed = !sameGameSetup(beforeSetup, normalized);
   if(options.save === false) currentGameSetup = normalized;
   else saveGameSetupPreference(normalized);
-  if((changed || options.forceReset) && masterHistory.length === 0 && !onlineGameStarted && !firstMoveDone && !clockRunning){
+  if((changed || options.forceReset) && playedMovesBeforeChange === 0 && !onlineGameStarted && !firstMoveDone && !clockRunning){
     selected = null;
-    lastMove = null;
-    viewIndex = 0;
+    masterHistory = buildThemeHistory(normalized);
+    viewIndex = masterHistory.length;
+    lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
     renderBoard();
   }
   updateVariantUi();
@@ -4037,6 +4181,8 @@ const tournamentFactMode = document.getElementById('tournamentFactMode');
 const tournamentFactPlayers = document.getElementById('tournamentFactPlayers');
 const tournamentFactClock = document.getElementById('tournamentFactClock');
 const tournamentFactVariant = document.getElementById('tournamentFactVariant');
+const tournamentFactThemeWrap = document.getElementById('tournamentFactThemeWrap');
+const tournamentFactTheme = document.getElementById('tournamentFactTheme');
 const tournamentFactRating = document.getElementById('tournamentFactRating');
 const tournamentDescriptionText = document.getElementById('tournamentDescriptionText');
 const tournamentParticipantsList = document.getElementById('tournamentParticipantsList');
@@ -4071,11 +4217,28 @@ const tournamentScheduleInput = document.getElementById('tournamentScheduleInput
 const tournamentArenaDurationField = document.getElementById('tournamentArenaDurationField');
 const tournamentArenaDurationSelect = document.getElementById('tournamentArenaDurationSelect');
 const tournamentVariantSelect = document.getElementById('tournamentVariantSelect');
+const tournamentThemeCheckbox = document.getElementById('tournamentThemeCheckbox');
+const tournamentThemeSelected = document.getElementById('tournamentThemeSelected');
+const tournamentThemeSelectedName = document.getElementById('tournamentThemeSelectedName');
+const tournamentThemeSelectedMoves = document.getElementById('tournamentThemeSelectedMoves');
+const tournamentThemeSelectedSide = document.getElementById('tournamentThemeSelectedSide');
+const tournamentThemeChooseBtn = document.getElementById('tournamentThemeChooseBtn');
 const tournamentRatingSelect = document.getElementById('tournamentRatingSelect');
 const tournamentDescriptionInput = document.getElementById('tournamentDescriptionInput');
 const tournamentCreateStatus = document.getElementById('tournamentCreateStatus');
 const tournamentCreateCancelBtn = document.getElementById('tournamentCreateCancelBtn');
 const tournamentCreatePreviewBtn = document.getElementById('tournamentCreatePreviewBtn');
+const themePickerBackdrop = document.getElementById('themePickerBackdrop');
+const themePickerSearch = document.getElementById('themePickerSearch');
+const themePickerGroup = document.getElementById('themePickerGroup');
+const themePickerList = document.getElementById('themePickerList');
+const themePreviewName = document.getElementById('themePreviewName');
+const themePreviewMeta = document.getElementById('themePreviewMeta');
+const themePreviewMoves = document.getElementById('themePreviewMoves');
+const themePreviewIdea = document.getElementById('themePreviewIdea');
+const themePreviewBoard = document.getElementById('themePreviewBoard');
+const themePickerCancelBtn = document.getElementById('themePickerCancelBtn');
+const themePickerApplyBtn = document.getElementById('themePickerApplyBtn');
 const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
 const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
@@ -7301,7 +7464,148 @@ const TOURNAMENT_TYPE_CONFIG = Object.freeze({
   rapid:{label:'Rapid',live:true,times:[['600+5','10 Min + 5 Sek/Zug'],['900+10','15 Min + 10 Sek/Zug'],['1500+10','25 Min + 10 Sek/Zug'],['1800+0','30 Min ohne Inkrement']]},
   blitz:{label:'Blitz',live:true,times:[['180+2','3 Min + 2 Sek/Zug'],['300+0','5 Min ohne Inkrement'],['300+3','5 Min + 3 Sek/Zug'],['600+0','10 Min ohne Inkrement']]}
 });
+const TOURNAMENT_THEME_CATALOG = Object.freeze([{"id":"theme-001","name":"Italienisch: Grundstellung","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5","startPly":6,"sideToMove":"w","idea":"Die Italienische Partie entwickelt den Läufer aktiv nach c4 und richtet den Blick früh auf das empfindliche Feld f7. Weiß verbindet schnelle Entwicklung, kurze Rochade und Druck im Zentrum; Schwarz erhält bei sauberer Entwicklung eine solide, aber wachsame Stellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"},{"from":[5,0],"to":[2,3],"promotion":null,"castle":null,"san":"Bc5"}]},{"id":"theme-002","name":"Italienisch: Giuoco Piano","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6","startPly":8,"sideToMove":"w","idea":"Die Italienische Partie entwickelt den Läufer aktiv nach c4 und richtet den Blick früh auf das empfindliche Feld f7. Weiß verbindet schnelle Entwicklung, kurze Rochade und Druck im Zentrum; Schwarz erhält bei sauberer Entwicklung eine solide, aber wachsame Stellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"},{"from":[5,0],"to":[2,3],"promotion":null,"castle":null,"san":"Bc5"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-003","name":"Evans-Gambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4","startPly":8,"sideToMove":"w","idea":"Das Evans-Gambit opfert mit b4 einen Bauern, um den schwarzen Läufer von c5 abzulenken und Zeit für c3, d4 und schnelle Entwicklung zu gewinnen. Der Sinn ist Initiative statt materieller Ruhe.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"},{"from":[5,0],"to":[2,3],"promotion":null,"castle":null,"san":"Bc5"},{"from":[1,6],"to":[1,4],"promotion":null,"castle":null,"san":"b4"},{"from":[2,3],"to":[1,4],"promotion":null,"castle":null,"san":"Bxb4"}]},{"id":"theme-004","name":"Zweispringerspiel im Nachzug","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6","startPly":6,"sideToMove":"w","idea":"Das Zweispringerspiel im Nachzug ist eine scharfe Antwort auf Italienisch: Schwarz entwickelt aktiv den Königsspringer nach f6 und greift e4 an, erlaubt aber oft taktische Linien um Ng5 und f7.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-005","name":"Fried-Liver-Angriff","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Nxd5","startPly":10,"sideToMove":"w","idea":"Das Zweispringerspiel im Nachzug ist eine scharfe Antwort auf Italienisch: Schwarz entwickelt aktiv den Königsspringer nach f6 und greift e4 an, erlaubt aber oft taktische Linien um Ng5 und f7.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[5,5],"to":[6,3],"promotion":null,"castle":null,"san":"Ng5"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[5,2],"to":[3,3],"promotion":null,"castle":null,"san":"Nxd5"}]},{"id":"theme-006","name":"Schottische Partie","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. d4 exd4","startPly":6,"sideToMove":"w","idea":"Die Schottische Partie öffnet das Zentrum sehr früh mit d4. Weiß verzichtet auf langsamen Aufbau und fragt Schwarz sofort, wie er den e5-Bauern und die zentrale Spannung behandeln will.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[4,3],"to":[3,4],"promotion":null,"castle":null,"san":"exd4"}]},{"id":"theme-007","name":"Schottisches Vierspringerspiel","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6 4. d4 exd4","startPly":8,"sideToMove":"w","idea":"Diese offenen Spiele verfolgen klassische Entwicklung mit besonderer Zugfolge: Weiß baut Druck gegen e5 auf, entwickelt harmonisch und entscheidet erst danach, ob das Zentrum geöffnet oder stabil gehalten wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[4,3],"to":[3,4],"promotion":null,"castle":null,"san":"exd4"}]},{"id":"theme-008","name":"Spanisch: Morphy-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 a6","startPly":6,"sideToMove":"w","idea":"Die Spanische Partie übt mit Bb5 indirekten Druck auf e5 aus: Der Springer c6 deckt den Bauern, wird aber selbst zum Ziel. Die Eröffnung ist strategisch reich, weil Zentrum, Läuferpaar, Raum und langfristige Figurenmanöver zusammenhängen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"}]},{"id":"theme-009","name":"Spanisch: Berliner Verteidigung","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6","startPly":6,"sideToMove":"w","idea":"Die Berliner Verteidigung gegen Spanisch sucht früh Vereinfachung und solide Kontrolle statt scharfer Initiative. Sie ist bekannt für robuste Strukturen, frühe Damenabtausch-Ideen und sehr präzise Endspielbehandlung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-010","name":"Spanisch: Abtauschvariante","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6","startPly":8,"sideToMove":"w","idea":"Die Spanische Partie übt mit Bb5 indirekten Druck auf e5 aus: Der Springer c6 deckt den Bauern, wird aber selbst zum Ziel. Die Eröffnung ist strategisch reich, weil Zentrum, Läuferpaar, Raum und langfristige Figurenmanöver zusammenhängen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"},{"from":[1,3],"to":[2,2],"promotion":null,"castle":null,"san":"Bxc6"},{"from":[3,1],"to":[2,2],"promotion":null,"castle":null,"san":"dxc6"}]},{"id":"theme-011","name":"Spanisch: Geschlossene Variante","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7","startPly":10,"sideToMove":"w","idea":"Die Spanische Partie übt mit Bb5 indirekten Druck auf e5 aus: Der Springer c6 deckt den Bauern, wird aber selbst zum Ziel. Die Eröffnung ist strategisch reich, weil Zentrum, Läuferpaar, Raum und langfristige Figurenmanöver zusammenhängen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"},{"from":[1,3],"to":[0,4],"promotion":null,"castle":null,"san":"Ba4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,7],"to":[6,7],"promotion":null,"castle":"K","san":"O-O"},{"from":[5,0],"to":[4,1],"promotion":null,"castle":null,"san":"Be7"}]},{"id":"theme-012","name":"Spanisch: Offene Variante","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4","startPly":10,"sideToMove":"w","idea":"Die Spanische Partie übt mit Bb5 indirekten Druck auf e5 aus: Der Springer c6 deckt den Bauern, wird aber selbst zum Ziel. Die Eröffnung ist strategisch reich, weil Zentrum, Läuferpaar, Raum und langfristige Figurenmanöver zusammenhängen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"},{"from":[1,3],"to":[0,4],"promotion":null,"castle":null,"san":"Ba4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,7],"to":[6,7],"promotion":null,"castle":"K","san":"O-O"},{"from":[5,2],"to":[4,4],"promotion":null,"castle":null,"san":"Nxe4"}]},{"id":"theme-013","name":"Spanisch: Schliemann-Variante","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 f5","startPly":6,"sideToMove":"w","idea":"Die Schliemann-Variante greift mit ...f5 sofort das weiße Zentrum an und verwandelt Spanisch in ein taktischeres Kampfgebiet. Schwarz nimmt strukturelle Risiken in Kauf, um Initiative und Ungleichgewicht zu erzeugen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[5,1],"to":[5,3],"promotion":null,"castle":null,"san":"f5"}]},{"id":"theme-014","name":"Spanisch: Marshall-Angriff","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5","startPly":16,"sideToMove":"w","idea":"Die Spanische Partie übt mit Bb5 indirekten Druck auf e5 aus: Der Springer c6 deckt den Bauern, wird aber selbst zum Ziel. Die Eröffnung ist strategisch reich, weil Zentrum, Läuferpaar, Raum und langfristige Figurenmanöver zusammenhängen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,7],"to":[1,3],"promotion":null,"castle":null,"san":"Bb5"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"},{"from":[1,3],"to":[0,4],"promotion":null,"castle":null,"san":"Ba4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,7],"to":[6,7],"promotion":null,"castle":"K","san":"O-O"},{"from":[5,0],"to":[4,1],"promotion":null,"castle":null,"san":"Be7"},{"from":[5,7],"to":[4,7],"promotion":null,"castle":null,"san":"Re1"},{"from":[1,1],"to":[1,3],"promotion":null,"castle":null,"san":"b5"},{"from":[0,4],"to":[1,5],"promotion":null,"castle":null,"san":"Bb3"},{"from":[4,0],"to":[6,0],"promotion":null,"castle":"K","san":"O-O"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"}]},{"id":"theme-015","name":"Petroff-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nf6","startPly":4,"sideToMove":"w","idea":"Die Petroff-Verteidigung beantwortet Nf3 symmetrisch mit ...Nf6 und greift e4 an. Der Sinn ist solide Gegenkontrolle im Zentrum: Schwarz vermeidet überdehnte Verteidigung von e5 und sucht schnelles Gleichgewicht.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-016","name":"Petroff: Klassische Variante","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nf6 3. Nxe5 d6","startPly":6,"sideToMove":"w","idea":"Die Petroff-Verteidigung beantwortet Nf3 symmetrisch mit ...Nf6 und greift e4 an. Der Sinn ist solide Gegenkontrolle im Zentrum: Schwarz vermeidet überdehnte Verteidigung von e5 und sucht schnelles Gleichgewicht. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[5,5],"to":[4,3],"promotion":null,"castle":null,"san":"Nxe5"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-017","name":"Philidor-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 d6","startPly":4,"sideToMove":"w","idea":"Die Philidor-Verteidigung stützt e5 mit ...d6 und baut zunächst kompakt. Schwarz akzeptiert weniger Raum, möchte aber eine feste zentrale Basis und flexible Entwicklung behalten.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-018","name":"Philidor: Hanham-Aufbau","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 d6 3. d4 Nf6 4. Nc3 Nbd7","startPly":8,"sideToMove":"w","idea":"Die Philidor-Verteidigung stützt e5 mit ...d6 und baut zunächst kompakt. Schwarz akzeptiert weniger Raum, möchte aber eine feste zentrale Basis und flexible Entwicklung behalten.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[1,0],"to":[3,1],"promotion":null,"castle":null,"san":"Nbd7"}]},{"id":"theme-019","name":"Königsgambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. f4","startPly":3,"sideToMove":"b","idea":"Diese offene Gambit-Idee setzt auf Initiative, Entwicklungsvorsprung und Linienöffnung. Material wird nicht aus Romantik geopfert, sondern für Zeit, Angriffschancen und die Störung der gegnerischen Entwicklung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"}]},{"id":"theme-020","name":"Königsgambit angenommen","eco":"?","group":"e4","moveText":"1. e4 e5 2. f4 exf4","startPly":4,"sideToMove":"w","idea":"Diese offene Gambit-Idee setzt auf Initiative, Entwicklungsvorsprung und Linienöffnung. Material wird nicht aus Romantik geopfert, sondern für Zeit, Angriffschancen und die Störung der gegnerischen Entwicklung. Die angenommene Form klärt früh die Spannung und stellt sofort die Frage, ob der genommene Bauer gehalten oder besser zur Entwicklung zurückgegeben wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"},{"from":[4,3],"to":[5,4],"promotion":null,"castle":null,"san":"exf4"}]},{"id":"theme-021","name":"Wiener Partie","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nc3","startPly":3,"sideToMove":"b","idea":"Diese offenen Spiele verfolgen klassische Entwicklung mit besonderer Zugfolge: Weiß baut Druck gegen e5 auf, entwickelt harmonisch und entscheidet erst danach, ob das Zentrum geöffnet oder stabil gehalten wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"}]},{"id":"theme-022","name":"Wiener Gambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nc3 Nf6 3. f4","startPly":5,"sideToMove":"b","idea":"Diese offenen Spiele verfolgen klassische Entwicklung mit besonderer Zugfolge: Weiß baut Druck gegen e5 auf, entwickelt harmonisch und entscheidet erst danach, ob das Zentrum geöffnet oder stabil gehalten wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"}]},{"id":"theme-023","name":"Läuferspiel","eco":"?","group":"e4","moveText":"1. e4 e5 2. Bc4","startPly":3,"sideToMove":"b","idea":"Diese offenen Spiele verfolgen klassische Entwicklung mit besonderer Zugfolge: Weiß baut Druck gegen e5 auf, entwickelt harmonisch und entscheidet erst danach, ob das Zentrum geöffnet oder stabil gehalten wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"}]},{"id":"theme-024","name":"Mittelgambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. d4 exd4","startPly":4,"sideToMove":"w","idea":"Diese offene Gambit-Idee setzt auf Initiative, Entwicklungsvorsprung und Linienöffnung. Material wird nicht aus Romantik geopfert, sondern für Zeit, Angriffschancen und die Störung der gegnerischen Entwicklung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[4,3],"to":[3,4],"promotion":null,"castle":null,"san":"exd4"}]},{"id":"theme-025","name":"Dänisches Gambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. d4 exd4 3. c3 dxc3 4. Bc4","startPly":7,"sideToMove":"b","idea":"Diese offene Gambit-Idee setzt auf Initiative, Entwicklungsvorsprung und Linienöffnung. Material wird nicht aus Romantik geopfert, sondern für Zeit, Angriffschancen und die Störung der gegnerischen Entwicklung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[4,3],"to":[3,4],"promotion":null,"castle":null,"san":"exd4"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"},{"from":[3,4],"to":[2,5],"promotion":null,"castle":null,"san":"dxc3"},{"from":[5,7],"to":[2,4],"promotion":null,"castle":null,"san":"Bc4"}]},{"id":"theme-026","name":"Ponziani-Eröffnung","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. c3","startPly":5,"sideToMove":"b","idea":"Diese offenen Spiele verfolgen klassische Entwicklung mit besonderer Zugfolge: Weiß baut Druck gegen e5 auf, entwickelt harmonisch und entscheidet erst danach, ob das Zentrum geöffnet oder stabil gehalten wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"}]},{"id":"theme-027","name":"Sizilianisch: Grundstellung","eco":"?","group":"e4","moveText":"1. e4 c5","startPly":2,"sideToMove":"w","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"}]},{"id":"theme-028","name":"Sizilianisch: Najdorf-Variante","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6","startPly":10,"sideToMove":"w","idea":"Die Najdorf-Variante mit ...a6 ist eine flexible sizilianische Hauptwaffe. ...a6 verhindert oft Nb5, bereitet ...b5 vor und hält mehrere Entwicklungspläne offen, ohne die zentrale Spannung sofort zu klären.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"}]},{"id":"theme-029","name":"Sizilianisch: Drachenvariante","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 g6","startPly":10,"sideToMove":"w","idea":"Die Drachenstruktur fianchettiert den schwarzen Läufer nach g7 und richtet ihn auf die lange Diagonale. Schwarz nimmt häufig scharfe Angriffe gegen den eigenen König in Kauf, weil Läufer g7, c-Linie und ...d5 starkes Gegenspiel geben können.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"}]},{"id":"theme-030","name":"Sizilianisch: Beschleunigter Drache","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6","startPly":8,"sideToMove":"w","idea":"Die Drachenstruktur fianchettiert den schwarzen Läufer nach g7 und richtet ihn auf die lange Diagonale. Schwarz nimmt häufig scharfe Angriffe gegen den eigenen König in Kauf, weil Läufer g7, c-Linie und ...d5 starkes Gegenspiel geben können.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"}]},{"id":"theme-031","name":"Sizilianisch: Sweschnikow","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e5","startPly":10,"sideToMove":"w","idea":"Diese Sizilianisch-Strukturen spielen früh ...e5 und geben das Feld d5 preis, gewinnen aber Raum und aktive Figurenfelder. Der Kampf dreht sich oft um die Frage, ob das schwarze Aktivspiel die Schwäche d5 kompensiert.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-032","name":"Sizilianisch: Kalaschnikow","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 e5","startPly":8,"sideToMove":"w","idea":"Diese Sizilianisch-Strukturen spielen früh ...e5 und geben das Feld d5 preis, gewinnen aber Raum und aktive Figurenfelder. Der Kampf dreht sich oft um die Frage, ob das schwarze Aktivspiel die Schwäche d5 kompensiert.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-033","name":"Sizilianisch: Scheveninger Variante","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 e6","startPly":10,"sideToMove":"w","idea":"Die Scheveninger Struktur mit ...d6 und ...e6 baut ein elastisches Zentrum. Schwarz hält sich ...d5 als Befreiungsidee offen und sucht aktives Gegenspiel, ohne sofort strukturelle Zugeständnisse zu machen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"}]},{"id":"theme-034","name":"Sizilianisch: Klassische Variante","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6","startPly":10,"sideToMove":"w","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"}]},{"id":"theme-035","name":"Sizilianisch: Taimanow-Variante","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nc6","startPly":8,"sideToMove":"w","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"}]},{"id":"theme-036","name":"Sizilianisch: Kan-Variante","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6","startPly":8,"sideToMove":"w","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[5,5],"to":[3,4],"promotion":null,"castle":null,"san":"Nxd4"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"}]},{"id":"theme-037","name":"Sizilianisch: Alapin-Variante","eco":"?","group":"e4","moveText":"1. e4 c5 2. c3","startPly":3,"sideToMove":"b","idea":"Die Alapin-Variante mit c3 vermeidet viele offene sizilianische Hauptvarianten und bereitet d4 mit stabiler Bauernunterstützung vor. Weiß sucht ein breites Zentrum statt sofortiger taktischer Verwicklungen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"}]},{"id":"theme-038","name":"Geschlossene Sizilianische Partie","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nc3 Nc6 3. g3","startPly":5,"sideToMove":"b","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"}]},{"id":"theme-039","name":"Sizilianisch: Grand-Prix-Angriff","eco":"?","group":"e4","moveText":"1. e4 c5 2. Nc3 Nc6 3. f4","startPly":5,"sideToMove":"b","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"}]},{"id":"theme-040","name":"Smith-Morra-Gambit","eco":"?","group":"e4","moveText":"1. e4 c5 2. d4 cxd4 3. c3","startPly":5,"sideToMove":"b","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[2,3],"to":[3,4],"promotion":null,"castle":null,"san":"cxd4"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"}]},{"id":"theme-041","name":"Sizilianisch: Flügelgambit","eco":"?","group":"e4","moveText":"1. e4 c5 2. b4","startPly":3,"sideToMove":"b","idea":"Die Sizilianische Verteidigung antwortet auf e4 mit ...c5 und kämpft asymmetrisch um das Zentrum. Schwarz greift das Feld d4 von der Seite an, vermeidet symmetrische e5-Strukturen und schafft langfristiges Gegenspiel.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[1,6],"to":[1,4],"promotion":null,"castle":null,"san":"b4"}]},{"id":"theme-042","name":"Französisch: Grundstellung","eco":"?","group":"e4","moveText":"1. e4 e6","startPly":2,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"}]},{"id":"theme-043","name":"Französisch: Vorstoßvariante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. e5","startPly":5,"sideToMove":"b","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-044","name":"Französisch: Abtauschvariante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. exd5 exd5","startPly":6,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[4,2],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"}]},{"id":"theme-045","name":"Französisch: Tarrasch-Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nd2","startPly":5,"sideToMove":"b","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[3,6],"promotion":null,"castle":null,"san":"Nd2"}]},{"id":"theme-046","name":"Französisch: Winawer-Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nc3 Bb4","startPly":6,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[5,0],"to":[1,4],"promotion":null,"castle":null,"san":"Bb4"}]},{"id":"theme-047","name":"Französisch: Klassische Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nc3 Nf6","startPly":6,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-048","name":"Französisch: Rubinstein-Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nc3 dxe4","startPly":6,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,3],"to":[4,4],"promotion":null,"castle":null,"san":"dxe4"}]},{"id":"theme-049","name":"Französisch: Burn-Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. Bg5 dxe4","startPly":8,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"},{"from":[3,3],"to":[4,4],"promotion":null,"castle":null,"san":"dxe4"}]},{"id":"theme-050","name":"Französisch: MacCutcheon-Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. Bg5 Bb4","startPly":8,"sideToMove":"w","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"},{"from":[5,0],"to":[1,4],"promotion":null,"castle":null,"san":"Bb4"}]},{"id":"theme-051","name":"Französisch: Steinitz-Variante","eco":"?","group":"e4","moveText":"1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5","startPly":7,"sideToMove":"b","idea":"Die Französische Verteidigung antwortet auf e4 mit ...e6 und bereitet ...d5 vor. Schwarz baut eine feste Bauernkette auf, akzeptiert oft den eingeschlossenen Läufer c8 und erhält dafür klare Gegenangriffe gegen das weiße Zentrum.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,4],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-052","name":"Caro-Kann: Grundstellung","eco":"?","group":"e4","moveText":"1. e4 c6","startPly":2,"sideToMove":"w","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"}]},{"id":"theme-053","name":"Caro-Kann: Vorstoßvariante","eco":"?","group":"e4","moveText":"1. e4 c6 2. d4 d5 3. e5","startPly":5,"sideToMove":"b","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-054","name":"Caro-Kann: Abtauschvariante","eco":"?","group":"e4","moveText":"1. e4 c6 2. d4 d5 3. exd5 cxd5","startPly":6,"sideToMove":"w","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[2,2],"to":[3,3],"promotion":null,"castle":null,"san":"cxd5"}]},{"id":"theme-055","name":"Caro-Kann: Panow-Angriff","eco":"?","group":"e4","moveText":"1. e4 c6 2. d4 d5 3. exd5 cxd5 4. c4","startPly":7,"sideToMove":"b","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[2,2],"to":[3,3],"promotion":null,"castle":null,"san":"cxd5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"}]},{"id":"theme-056","name":"Caro-Kann: Klassische Variante","eco":"?","group":"e4","moveText":"1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5","startPly":8,"sideToMove":"w","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,3],"to":[4,4],"promotion":null,"castle":null,"san":"dxe4"},{"from":[2,5],"to":[4,4],"promotion":null,"castle":null,"san":"Nxe4"},{"from":[2,0],"to":[5,3],"promotion":null,"castle":null,"san":"Bf5"}]},{"id":"theme-057","name":"Caro-Kann: Karpow-Variante","eco":"?","group":"e4","moveText":"1. e4 c6 2. d4 d5 3. Nd2 dxe4 4. Nxe4 Nd7","startPly":8,"sideToMove":"w","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[3,6],"promotion":null,"castle":null,"san":"Nd2"},{"from":[3,3],"to":[4,4],"promotion":null,"castle":null,"san":"dxe4"},{"from":[3,6],"to":[4,4],"promotion":null,"castle":null,"san":"Nxe4"},{"from":[1,0],"to":[3,1],"promotion":null,"castle":null,"san":"Nd7"}]},{"id":"theme-058","name":"Caro-Kann: Fantasy-Variante","eco":"?","group":"e4","moveText":"1. e4 c6 2. d4 d5 3. f3","startPly":5,"sideToMove":"b","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[5,6],"to":[5,5],"promotion":null,"castle":null,"san":"f3"}]},{"id":"theme-059","name":"Caro-Kann: Zweispringer-Variante","eco":"?","group":"e4","moveText":"1. e4 c6 2. Nc3 d5 3. Nf3","startPly":5,"sideToMove":"b","idea":"Die Caro-Kann-Verteidigung bereitet ...d5 mit ...c6 vor und sucht eine solide Struktur ohne den Damenläufer sofort einzusperren. Schwarz nimmt oft weniger Raum, erhält aber eine widerstandsfähige Bauernstellung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"}]},{"id":"theme-060","name":"Pirc-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 d6 2. d4 Nf6 3. Nc3 g6","startPly":6,"sideToMove":"w","idea":"Pirc und Moderne Verteidigung lassen Weiß zunächst ein starkes Zentrum aufbauen und greifen es später mit Figuren und Bauernhebeln an. Schwarz setzt auf Flexibilität, Fianchetto und Gegenschläge statt auf frühe Besetzung des Zentrums.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"}]},{"id":"theme-061","name":"Moderne Verteidigung","eco":"?","group":"e4","moveText":"1. e4 g6 2. d4 Bg7 3. Nc3 d6","startPly":6,"sideToMove":"w","idea":"Pirc und Moderne Verteidigung lassen Weiß zunächst ein starkes Zentrum aufbauen und greifen es später mit Figuren und Bauernhebeln an. Schwarz setzt auf Flexibilität, Fianchetto und Gegenschläge statt auf frühe Besetzung des Zentrums.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-062","name":"Aljechin-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 Nf6","startPly":2,"sideToMove":"w","idea":"Die Aljechin-Verteidigung provoziert mit ...Nf6 die weißen Bauern nach vorn. Schwarz möchte das weiße Zentrum später als Angriffsobjekt behandeln, statt es sofort frontal zu besetzen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-063","name":"Aljechin: Vierbauernangriff","eco":"?","group":"e4","moveText":"1. e4 Nf6 2. e5 Nd5 3. d4 d6 4. c4 Nb6 5. f4","startPly":9,"sideToMove":"b","idea":"Die Aljechin-Verteidigung provoziert mit ...Nf6 die weißen Bauern nach vorn. Schwarz möchte das weiße Zentrum später als Angriffsobjekt behandeln, statt es sofort frontal zu besetzen.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,4],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[5,2],"to":[3,3],"promotion":null,"castle":null,"san":"Nd5"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[3,3],"to":[1,2],"promotion":null,"castle":null,"san":"Nb6"},{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"}]},{"id":"theme-064","name":"Skandinavische Verteidigung","eco":"?","group":"e4","moveText":"1. e4 d5","startPly":2,"sideToMove":"w","idea":"Die Skandinavische Verteidigung greift e4 sofort mit ...d5 an und erzwingt frühe Klärung im Zentrum. Schwarz akzeptiert oft frühe Damenentwicklung oder ein modernes Figurenspiel, um eine klare Struktur zu erhalten.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"}]},{"id":"theme-065","name":"Skandinavisch: Hauptvariante","eco":"?","group":"e4","moveText":"1. e4 d5 2. exd5 Qxd5 3. Nc3 Qa5","startPly":6,"sideToMove":"w","idea":"Die Skandinavische Verteidigung greift e4 sofort mit ...d5 an und erzwingt frühe Klärung im Zentrum. Schwarz akzeptiert oft frühe Damenentwicklung oder ein modernes Figurenspiel, um eine klare Struktur zu erhalten.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[3,0],"to":[3,3],"promotion":null,"castle":null,"san":"Qxd5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,3],"to":[0,3],"promotion":null,"castle":null,"san":"Qa5"}]},{"id":"theme-066","name":"Skandinavisch: Moderne Variante","eco":"?","group":"e4","moveText":"1. e4 d5 2. exd5 Nf6","startPly":4,"sideToMove":"w","idea":"Die Skandinavische Verteidigung greift e4 sofort mit ...d5 an und erzwingt frühe Klärung im Zentrum. Schwarz akzeptiert oft frühe Damenentwicklung oder ein modernes Figurenspiel, um eine klare Struktur zu erhalten.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,4],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-067","name":"Nimzowitsch-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 Nc6","startPly":2,"sideToMove":"w","idea":"Diese unorthodoxen Antworten auf e4 vermeiden symmetrische Hauptwege und greifen das Zentrum indirekt an. Schwarz sucht Überraschungswert, flexible Figurenentwicklung und späteren Druck gegen weiße Bauern.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"}]},{"id":"theme-068","name":"Owen-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 b6","startPly":2,"sideToMove":"w","idea":"Diese unorthodoxen Antworten auf e4 vermeiden symmetrische Hauptwege und greifen das Zentrum indirekt an. Schwarz sucht Überraschungswert, flexible Figurenentwicklung und späteren Druck gegen weiße Bauern.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[1,1],"to":[1,2],"promotion":null,"castle":null,"san":"b6"}]},{"id":"theme-069","name":"St.-George-Verteidigung","eco":"?","group":"e4","moveText":"1. e4 a6 2. d4 b5","startPly":4,"sideToMove":"w","idea":"Diese unorthodoxen Antworten auf e4 vermeiden symmetrische Hauptwege und greifen das Zentrum indirekt an. Schwarz sucht Überraschungswert, flexible Figurenentwicklung und späteren Druck gegen weiße Bauern.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[0,1],"to":[0,2],"promotion":null,"castle":null,"san":"a6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[1,1],"to":[1,3],"promotion":null,"castle":null,"san":"b5"}]},{"id":"theme-070","name":"Lettisches Gambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 f5","startPly":4,"sideToMove":"w","idea":"Diese offene Gambit-Idee setzt auf Initiative, Entwicklungsvorsprung und Linienöffnung. Material wird nicht aus Romantik geopfert, sondern für Zeit, Angriffschancen und die Störung der gegnerischen Entwicklung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[5,1],"to":[5,3],"promotion":null,"castle":null,"san":"f5"}]},{"id":"theme-071","name":"Elefantengambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 d5","startPly":4,"sideToMove":"w","idea":"Diese offene Gambit-Idee setzt auf Initiative, Entwicklungsvorsprung und Linienöffnung. Material wird nicht aus Romantik geopfert, sondern für Zeit, Angriffschancen und die Störung der gegnerischen Entwicklung.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"}]},{"id":"theme-072","name":"Vierspringerspiel","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. Nc3 Nf6","startPly":6,"sideToMove":"w","idea":"Diese offenen Spiele verfolgen klassische Entwicklung mit besonderer Zugfolge: Weiß baut Druck gegen e5 auf, entwickelt harmonisch und entscheidet erst danach, ob das Zentrum geöffnet oder stabil gehalten wird.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-073","name":"Göring-Gambit","eco":"?","group":"e4","moveText":"1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. c3","startPly":7,"sideToMove":"b","idea":"Die Schottische Partie öffnet das Zentrum sehr früh mit d4. Weiß verzichtet auf langsamen Aufbau und fragt Schwarz sofort, wie er den e5-Bauern und die zentrale Spannung behandeln will.","moves":[{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[4,3],"to":[3,4],"promotion":null,"castle":null,"san":"exd4"},{"from":[2,6],"to":[2,5],"promotion":null,"castle":null,"san":"c3"}]},{"id":"theme-074","name":"Damengambit","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4","startPly":3,"sideToMove":"b","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"}]},{"id":"theme-075","name":"Damengambit angenommen","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 dxc4","startPly":4,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen. Die angenommene Form klärt früh die Spannung und stellt sofort die Frage, ob der genommene Bauer gehalten oder besser zur Entwicklung zurückgegeben wird.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[3,3],"to":[2,4],"promotion":null,"castle":null,"san":"dxc4"}]},{"id":"theme-076","name":"Damengambit abgelehnt","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 e6","startPly":4,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen. Die abgelehnte Form hält die zentrale Spannung und zielt auf solide Entwicklung, statt Materialfragen sofort zu klären.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"}]},{"id":"theme-077","name":"Damengambit abgelehnt: Orthodoxe Variante","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7","startPly":8,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege. Die abgelehnte Form hält die zentrale Spannung und zielt auf solide Entwicklung, statt Materialfragen sofort zu klären.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"},{"from":[5,0],"to":[4,1],"promotion":null,"castle":null,"san":"Be7"}]},{"id":"theme-078","name":"Slawische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 c6","startPly":4,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"}]},{"id":"theme-079","name":"Halbslawische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6","startPly":8,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"}]},{"id":"theme-080","name":"Halbslawisch: Meraner Variante","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 e6 5. e3 Nbd7 6. Bd3 dxc4 7. Bxc4 b5","startPly":14,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[4,6],"to":[4,5],"promotion":null,"castle":null,"san":"e3"},{"from":[1,0],"to":[3,1],"promotion":null,"castle":null,"san":"Nbd7"},{"from":[5,7],"to":[3,5],"promotion":null,"castle":null,"san":"Bd3"},{"from":[3,3],"to":[2,4],"promotion":null,"castle":null,"san":"dxc4"},{"from":[3,5],"to":[2,4],"promotion":null,"castle":null,"san":"Bxc4"},{"from":[1,1],"to":[1,3],"promotion":null,"castle":null,"san":"b5"}]},{"id":"theme-081","name":"Cambridge-Springs-Variante","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Nbd7 5. e3 c6 6. Nf3 Qa5","startPly":12,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"},{"from":[1,0],"to":[3,1],"promotion":null,"castle":null,"san":"Nbd7"},{"from":[4,6],"to":[4,5],"promotion":null,"castle":null,"san":"e3"},{"from":[2,1],"to":[2,2],"promotion":null,"castle":null,"san":"c6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,0],"to":[0,3],"promotion":null,"castle":null,"san":"Qa5"}]},{"id":"theme-082","name":"Tarrasch-Verteidigung im Damengambit","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 e6 3. Nc3 c5","startPly":6,"sideToMove":"w","idea":"Die Damengambit-Familie dreht sich um den Kampf um d5 und c4. Weiß bietet den c-Bauern nicht als billiges Opfer an, sondern nutzt ihn als Hebel, um das schwarze Zentrum zu befragen und Raum zu gewinnen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"}]},{"id":"theme-083","name":"Albin-Gegengambit","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 e5","startPly":4,"sideToMove":"w","idea":"Das Albin-Gegengambit antwortet auf das Damengambit mit dem scharfen ...e5. Schwarz gibt häufig Material oder Strukturkomfort für aktives Figurenspiel und Druck gegen den weißen König.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-084","name":"Tschigorin-Verteidigung","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 Nc6","startPly":4,"sideToMove":"w","idea":"Die Tschigorin-Verteidigung entwickelt früh ...Nc6 und setzt auf Figurenaktivität gegen das weiße Zentrum. Schwarz verzichtet auf besonders orthodoxe Bauernstützen und spielt dynamischer.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"}]},{"id":"theme-085","name":"Londoner System","eco":"?","group":"d4","moveText":"1. d4 d5 2. Nf3 Nf6 3. Bf4","startPly":5,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[5,4],"promotion":null,"castle":null,"san":"Bf4"}]},{"id":"theme-086","name":"Colle-System","eco":"?","group":"d4","moveText":"1. d4 d5 2. Nf3 Nf6 3. e3 e6 4. Bd3","startPly":7,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,6],"to":[4,5],"promotion":null,"castle":null,"san":"e3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[5,7],"to":[3,5],"promotion":null,"castle":null,"san":"Bd3"}]},{"id":"theme-087","name":"Torre-Angriff","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. Nf3 e6 3. Bg5","startPly":5,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"}]},{"id":"theme-088","name":"Trompowsky-Angriff","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. Bg5","startPly":3,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"}]},{"id":"theme-089","name":"Veresov-Eröffnung","eco":"?","group":"d4","moveText":"1. d4 d5 2. Nc3 Nf6 3. Bg5","startPly":5,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,7],"to":[6,3],"promotion":null,"castle":null,"san":"Bg5"}]},{"id":"theme-090","name":"Blackmar-Diemer-Gambit","eco":"?","group":"d4","moveText":"1. d4 d5 2. e4 dxe4 3. Nc3 Nf6 4. f3","startPly":7,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,3],"to":[4,4],"promotion":null,"castle":null,"san":"dxe4"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[5,6],"to":[5,5],"promotion":null,"castle":null,"san":"f3"}]},{"id":"theme-091","name":"Stonewall-Angriff","eco":"?","group":"d4","moveText":"1. d4 d5 2. e3 Nf6 3. Bd3 e6 4. f4","startPly":7,"sideToMove":"b","idea":"Diese d4-Systeme liefern wiedererkennbare Aufbauten mit klaren Figurenfeldern. Der Sinn ist, schnell eine vertraute Struktur zu erreichen und typische Pläne zu trainieren, ohne in jede Hauptvariante des Damengambits zu gehen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,6],"to":[4,5],"promotion":null,"castle":null,"san":"e3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[5,7],"to":[3,5],"promotion":null,"castle":null,"san":"Bd3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"}]},{"id":"theme-092","name":"Katalanische Eröffnung","eco":"?","group":"d4","moveText":"1. d4 d5 2. c4 e6 3. Nf3 Nf6 4. g3","startPly":7,"sideToMove":"b","idea":"Die Katalanische Eröffnung verbindet Damengambit-Zentrum mit Fianchetto des weißen Königsläufers. Weiß übt langfristigen Druck auf der langen Diagonale aus und spielt oft gegen schwarze Damenflügel- und Zentrumsbindungen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"}]},{"id":"theme-093","name":"Indische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6","startPly":2,"sideToMove":"w","idea":"Indische Verteidigungen gegen d4 kontrollieren das Zentrum häufig zunächst mit Figuren, besonders mit dem Springer f6, und greifen es später mit Bauernhebeln an. Schwarz wählt flexible, oft asymmetrische Strukturen statt früh symmetrisch ...d5 zu spielen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"}]},{"id":"theme-094","name":"Königsindische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6","startPly":8,"sideToMove":"w","idea":"Die Königsindische Verteidigung erlaubt Weiß ein breites Zentrum, plant aber späteren Gegenangriff mit ...e5 oder ...c5. Häufig entstehen strategische Rennen: Weiß am Damenflügel oder im Zentrum, Schwarz oft am Königsflügel.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-095","name":"Königsindisch: Klassische Variante","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Nf3 O-O 6. Be2 e5","startPly":12,"sideToMove":"w","idea":"Die Königsindische Verteidigung erlaubt Weiß ein breites Zentrum, plant aber späteren Gegenangriff mit ...e5 oder ...c5. Häufig entstehen strategische Rennen: Weiß am Damenflügel oder im Zentrum, Schwarz oft am Königsflügel. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[4,0],"to":[6,0],"promotion":null,"castle":"K","san":"O-O"},{"from":[5,7],"to":[4,6],"promotion":null,"castle":null,"san":"Be2"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-096","name":"Königsindisch: Sämisch-Variante","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f3","startPly":9,"sideToMove":"b","idea":"Die Königsindische Verteidigung erlaubt Weiß ein breites Zentrum, plant aber späteren Gegenangriff mit ...e5 oder ...c5. Häufig entstehen strategische Rennen: Weiß am Damenflügel oder im Zentrum, Schwarz oft am Königsflügel.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[5,6],"to":[5,5],"promotion":null,"castle":null,"san":"f3"}]},{"id":"theme-097","name":"Königsindisch: Fianchetto-System","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 g6 3. Nf3 Bg7 4. g3 O-O 5. Bg2 d6","startPly":10,"sideToMove":"w","idea":"Die Königsindische Verteidigung erlaubt Weiß ein breites Zentrum, plant aber späteren Gegenangriff mit ...e5 oder ...c5. Häufig entstehen strategische Rennen: Weiß am Damenflügel oder im Zentrum, Schwarz oft am Königsflügel.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[4,0],"to":[6,0],"promotion":null,"castle":"K","san":"O-O"},{"from":[5,7],"to":[6,6],"promotion":null,"castle":null,"san":"Bg2"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-098","name":"Grünfeld-Indische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 g6 3. Nc3 d5","startPly":6,"sideToMove":"w","idea":"Die Grünfeld-Indische Verteidigung erlaubt Weiß ein starkes Bauernzentrum und greift es dann sofort mit Figuren und dem Läufer g7 an. Schwarz vertraut darauf, dass das Zentrum beweglich, aber angreifbar ist.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"}]},{"id":"theme-099","name":"Grünfeld-Indisch: Abtauschvariante","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. e4 Nxc3 6. bxc3","startPly":11,"sideToMove":"b","idea":"Die Grünfeld-Indische Verteidigung erlaubt Weiß ein starkes Bauernzentrum und greift es dann sofort mit Figuren und dem Läufer g7 an. Schwarz vertraut darauf, dass das Zentrum beweglich, aber angreifbar ist.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,4],"to":[3,3],"promotion":null,"castle":null,"san":"cxd5"},{"from":[5,2],"to":[3,3],"promotion":null,"castle":null,"san":"Nxd5"},{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"},{"from":[3,3],"to":[2,5],"promotion":null,"castle":null,"san":"Nxc3"},{"from":[1,6],"to":[2,5],"promotion":null,"castle":null,"san":"bxc3"}]},{"id":"theme-100","name":"Nimzo-Indische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 e6 3. Nc3 Bb4","startPly":6,"sideToMove":"w","idea":"Die Nimzo-Indische Verteidigung fesselt den Springer c3 mit ...Bb4 und kämpft indirekt gegen e4. Schwarz ist bereit, das Läuferpaar abzugeben, wenn er dafür Strukturvorteile oder Kontrolle über zentrale Felder erhält.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[5,0],"to":[1,4],"promotion":null,"castle":null,"san":"Bb4"}]},{"id":"theme-101","name":"Damenindische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 e6 3. Nf3 b6","startPly":6,"sideToMove":"w","idea":"Indische Verteidigungen gegen d4 kontrollieren das Zentrum häufig zunächst mit Figuren, besonders mit dem Springer f6, und greifen es später mit Bauernhebeln an. Schwarz wählt flexible, oft asymmetrische Strukturen statt früh symmetrisch ...d5 zu spielen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,1],"to":[1,2],"promotion":null,"castle":null,"san":"b6"}]},{"id":"theme-102","name":"Bogo-Indische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 e6 3. Nf3 Bb4+","startPly":6,"sideToMove":"w","idea":"Indische Verteidigungen gegen d4 kontrollieren das Zentrum häufig zunächst mit Figuren, besonders mit dem Springer f6, und greifen es später mit Bauernhebeln an. Schwarz wählt flexible, oft asymmetrische Strukturen statt früh symmetrisch ...d5 zu spielen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[5,0],"to":[1,4],"promotion":null,"castle":null,"san":"Bb4+"}]},{"id":"theme-103","name":"Benoni-Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 c5 3. d5 e6","startPly":6,"sideToMove":"w","idea":"Benoni-Strukturen geben Weiß Raum im Zentrum, aber Schwarz erhält dynamisches Gegenspiel über ...c5, ...e6, die lange Diagonale und Angriffspunkte am Damenflügel.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[3,4],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"}]},{"id":"theme-104","name":"Modernes Benoni","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6","startPly":10,"sideToMove":"w","idea":"Benoni-Strukturen geben Weiß Raum im Zentrum, aber Schwarz erhält dynamisches Gegenspiel über ...c5, ...e6, die lange Diagonale und Angriffspunkte am Damenflügel.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[3,4],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[4,2],"to":[3,3],"promotion":null,"castle":null,"san":"exd5"},{"from":[2,4],"to":[3,3],"promotion":null,"castle":null,"san":"cxd5"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-105","name":"Benko-Gambit","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 c5 3. d5 b5","startPly":6,"sideToMove":"w","idea":"Das Benko-Gambit opfert am Damenflügel Material für langfristige Linien auf a- und b-Linie. Schwarz sucht dauerhaften Druck gegen weiße Damenflügelbauern statt kurzfristiger Taktik.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[3,4],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[1,1],"to":[1,3],"promotion":null,"castle":null,"san":"b5"}]},{"id":"theme-106","name":"Budapester Gambit","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 e5","startPly":4,"sideToMove":"w","idea":"Indische Verteidigungen gegen d4 kontrollieren das Zentrum häufig zunächst mit Figuren, besonders mit dem Springer f6, und greifen es später mit Bauernhebeln an. Schwarz wählt flexible, oft asymmetrische Strukturen statt früh symmetrisch ...d5 zu spielen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-107","name":"Holländische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 f5","startPly":2,"sideToMove":"w","idea":"Die Holländische Verteidigung antwortet auf d4 mit ...f5 und kämpft sofort um e4. Schwarz nimmt eine gewisse Schwächung des Königsflügels in Kauf, um Raum, Kontrolle und Angriffschancen zu erhalten.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[5,1],"to":[5,3],"promotion":null,"castle":null,"san":"f5"}]},{"id":"theme-108","name":"Holländisch: Leningrader System","eco":"?","group":"d4","moveText":"1. d4 f5 2. c4 Nf6 3. g3 g6 4. Bg2 Bg7 5. Nf3 O-O 6. O-O d6","startPly":12,"sideToMove":"w","idea":"Die Holländische Verteidigung antwortet auf d4 mit ...f5 und kämpft sofort um e4. Schwarz nimmt eine gewisse Schwächung des Königsflügels in Kauf, um Raum, Kontrolle und Angriffschancen zu erhalten.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[5,1],"to":[5,3],"promotion":null,"castle":null,"san":"f5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[5,7],"to":[6,6],"promotion":null,"castle":null,"san":"Bg2"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[4,0],"to":[6,0],"promotion":null,"castle":"K","san":"O-O"},{"from":[4,7],"to":[6,7],"promotion":null,"castle":"K","san":"O-O"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"}]},{"id":"theme-109","name":"Holländisch: Stonewall-System","eco":"?","group":"d4","moveText":"1. d4 f5 2. c4 Nf6 3. g3 e6 4. Bg2 d5","startPly":8,"sideToMove":"w","idea":"Die Holländische Verteidigung antwortet auf d4 mit ...f5 und kämpft sofort um e4. Schwarz nimmt eine gewisse Schwächung des Königsflügels in Kauf, um Raum, Kontrolle und Angriffschancen zu erhalten.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[5,1],"to":[5,3],"promotion":null,"castle":null,"san":"f5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[5,7],"to":[6,6],"promotion":null,"castle":null,"san":"Bg2"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"}]},{"id":"theme-110","name":"Altindische Verteidigung","eco":"?","group":"d4","moveText":"1. d4 Nf6 2. c4 d6 3. Nc3 e5","startPly":6,"sideToMove":"w","idea":"Indische Verteidigungen gegen d4 kontrollieren das Zentrum häufig zunächst mit Figuren, besonders mit dem Springer f6, und greifen es später mit Bauernhebeln an. Schwarz wählt flexible, oft asymmetrische Strukturen statt früh symmetrisch ...d5 zu spielen.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[3,1],"to":[3,2],"promotion":null,"castle":null,"san":"d6"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-111","name":"Englund-Gambit","eco":"?","group":"d4","moveText":"1. d4 e5","startPly":2,"sideToMove":"w","idea":"Das Englund-Gambit sucht sofortiges Ungleichgewicht gegen 1.d4. Es ist eher eine Überraschungswaffe als ein klassischer Ausgleichsweg und lebt von konkreten Fallen und aktiver Entwicklung.","moves":[{"from":[3,6],"to":[3,4],"promotion":null,"castle":null,"san":"d4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"}]},{"id":"theme-112","name":"Englische Eröffnung","eco":"?","group":"c4","moveText":"1. c4","startPly":1,"sideToMove":"b","idea":"Die Englische Eröffnung beginnt mit c4 und kontrolliert d5 von der Seite. Weiß verzichtet zunächst auf ein sofortiges Bauernzentrum und hält Übergänge in viele Strukturen offen.","moves":[{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"}]},{"id":"theme-113","name":"Englisch: Symmetrische Variante","eco":"?","group":"c4","moveText":"1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7","startPly":8,"sideToMove":"w","idea":"Die Englische Eröffnung beginnt mit c4 und kontrolliert d5 von der Seite. Weiß verzichtet zunächst auf ein sofortiges Bauernzentrum und hält Übergänge in viele Strukturen offen.","moves":[{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[5,7],"to":[6,6],"promotion":null,"castle":null,"san":"Bg2"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"}]},{"id":"theme-114","name":"Englisch: Reversed Sicilian","eco":"?","group":"c4","moveText":"1. c4 e5 2. Nc3 Nf6 3. g3 d5 4. cxd5 Nxd5","startPly":8,"sideToMove":"w","idea":"Die Englische Eröffnung beginnt mit c4 und kontrolliert d5 von der Seite. Weiß verzichtet zunächst auf ein sofortiges Bauernzentrum und hält Übergänge in viele Strukturen offen.","moves":[{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,4],"to":[3,3],"promotion":null,"castle":null,"san":"cxd5"},{"from":[5,2],"to":[3,3],"promotion":null,"castle":null,"san":"Nxd5"}]},{"id":"theme-115","name":"Englisch: Botwinnik-System","eco":"?","group":"c4","moveText":"1. c4 c5 2. Nc3 Nc6 3. g3 g6 4. Bg2 Bg7 5. e4","startPly":9,"sideToMove":"b","idea":"Die Englische Eröffnung beginnt mit c4 und kontrolliert d5 von der Seite. Weiß verzichtet zunächst auf ein sofortiges Bauernzentrum und hält Übergänge in viele Strukturen offen.","moves":[{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[2,1],"to":[2,3],"promotion":null,"castle":null,"san":"c5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[6,1],"to":[6,2],"promotion":null,"castle":null,"san":"g6"},{"from":[5,7],"to":[6,6],"promotion":null,"castle":null,"san":"Bg2"},{"from":[5,0],"to":[6,1],"promotion":null,"castle":null,"san":"Bg7"},{"from":[4,6],"to":[4,4],"promotion":null,"castle":null,"san":"e4"}]},{"id":"theme-116","name":"Englisch: Vierspringersystem","eco":"?","group":"c4","moveText":"1. c4 e5 2. Nc3 Nf6 3. Nf3 Nc6","startPly":6,"sideToMove":"w","idea":"Die Englische Eröffnung beginnt mit c4 und kontrolliert d5 von der Seite. Weiß verzichtet zunächst auf ein sofortiges Bauernzentrum und hält Übergänge in viele Strukturen offen.","moves":[{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[1,7],"to":[2,5],"promotion":null,"castle":null,"san":"Nc3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[1,0],"to":[2,2],"promotion":null,"castle":null,"san":"Nc6"}]},{"id":"theme-117","name":"Réti-Eröffnung","eco":"?","group":"Nf3","moveText":"1. Nf3 d5 2. c4","startPly":3,"sideToMove":"b","idea":"Réti und Königsindischer Angriff sind flexible Systeme mit früher Springerentwicklung und häufigem Fianchetto. Weiß kontrolliert das Zentrum zunächst indirekt und entscheidet später, ob er es mit c4, d4 oder e4 besetzt.","moves":[{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[2,6],"to":[2,4],"promotion":null,"castle":null,"san":"c4"}]},{"id":"theme-118","name":"Königsindischer Angriff","eco":"?","group":"Nf3","moveText":"1. Nf3 d5 2. g3 Nf6 3. Bg2 e6 4. O-O Be7 5. d3","startPly":9,"sideToMove":"b","idea":"Réti und Königsindischer Angriff sind flexible Systeme mit früher Springerentwicklung und häufigem Fianchetto. Weiß kontrolliert das Zentrum zunächst indirekt und entscheidet später, ob er es mit c4, d4 oder e4 besetzt.","moves":[{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[6,6],"to":[6,5],"promotion":null,"castle":null,"san":"g3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[5,7],"to":[6,6],"promotion":null,"castle":null,"san":"Bg2"},{"from":[4,1],"to":[4,2],"promotion":null,"castle":null,"san":"e6"},{"from":[4,7],"to":[6,7],"promotion":null,"castle":"K","san":"O-O"},{"from":[5,0],"to":[4,1],"promotion":null,"castle":null,"san":"Be7"},{"from":[3,6],"to":[3,5],"promotion":null,"castle":null,"san":"d3"}]},{"id":"theme-119","name":"Bird-Eröffnung","eco":"?","group":"f4","moveText":"1. f4","startPly":1,"sideToMove":"b","idea":"Die Bird-Eröffnung mit f4 kontrolliert e5 und signalisiert Königsflügelambitionen. Weiß erhält asymmetrisches Spiel, schwächt aber auch die eigene Königssicherheit.","moves":[{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"}]},{"id":"theme-120","name":"Bird: Klassischer Aufbau","eco":"?","group":"f4","moveText":"1. f4 d5 2. Nf3 Nf6 3. e3","startPly":5,"sideToMove":"b","idea":"Die Bird-Eröffnung mit f4 kontrolliert e5 und signalisiert Königsflügelambitionen. Weiß erhält asymmetrisches Spiel, schwächt aber auch die eigene Königssicherheit. Die klassische Behandlung betont gesunde Entwicklung und bewährte zentrale Kontrolle statt früher Nebenwege.","moves":[{"from":[5,6],"to":[5,4],"promotion":null,"castle":null,"san":"f4"},{"from":[3,1],"to":[3,3],"promotion":null,"castle":null,"san":"d5"},{"from":[6,7],"to":[5,5],"promotion":null,"castle":null,"san":"Nf3"},{"from":[6,0],"to":[5,2],"promotion":null,"castle":null,"san":"Nf6"},{"from":[4,6],"to":[4,5],"promotion":null,"castle":null,"san":"e3"}]},{"id":"theme-121","name":"Larsen-Eröffnung","eco":"?","group":"b3","moveText":"1. b3","startPly":1,"sideToMove":"b","idea":"Die Larsen-Eröffnung mit b3 fianchettiert den Damenläufer und kontrolliert e5/d4 aus der Ferne. Weiß sucht flexible, weniger ausanalysierte Strukturen.","moves":[{"from":[1,6],"to":[1,5],"promotion":null,"castle":null,"san":"b3"}]},{"id":"theme-122","name":"Grob-Eröffnung","eco":"?","group":"g4","moveText":"1. g4","startPly":1,"sideToMove":"b","idea":"Die Grob-Eröffnung mit g4 ist sehr unorthodox und sucht sofortiges Ungleichgewicht am Königsflügel. Sie kann praktisch überraschen, schwächt aber deutlich die eigene Königssicherheit.","moves":[{"from":[6,6],"to":[6,4],"promotion":null,"castle":null,"san":"g4"}]},{"id":"theme-123","name":"Sokolsky-Eröffnung","eco":"?","group":"b4","moveText":"1. b4","startPly":1,"sideToMove":"b","idea":"Die Sokolsky-Eröffnung mit b4 gewinnt Raum am Damenflügel und bereitet Bb2 vor. Weiß sucht asymmetrisches Spiel und Druck auf der langen Diagonale.","moves":[{"from":[1,6],"to":[1,4],"promotion":null,"castle":null,"san":"b4"}]},{"id":"theme-124","name":"Sokolsky: Polnische Variante","eco":"?","group":"b4","moveText":"1. b4 e5 2. Bb2","startPly":3,"sideToMove":"b","idea":"Die Sokolsky-Eröffnung mit b4 gewinnt Raum am Damenflügel und bereitet Bb2 vor. Weiß sucht asymmetrisches Spiel und Druck auf der langen Diagonale.","moves":[{"from":[1,6],"to":[1,4],"promotion":null,"castle":null,"san":"b4"},{"from":[4,1],"to":[4,3],"promotion":null,"castle":null,"san":"e5"},{"from":[2,7],"to":[1,6],"promotion":null,"castle":null,"san":"Bb2"}]}]);
 let tournamentEditingType = 'daily';
+let tournamentEditingTheme = null;
+let themePickerCandidate = null;
+function tournamentThemeGroup(theme){
+  const first = theme && theme.moves && theme.moves[0] ? String(theme.moves[0].san || '') : '';
+  if(first === 'e4') return 'Königsbauer (1. e4)';
+  if(first === 'd4') return 'Damenbauer (1. d4)';
+  if(first === 'c4') return 'Englische Eröffnung (1. c4)';
+  if(first === 'Nf3') return 'Réti und flexible Systeme (1. Sf3)';
+  return 'Flanken- und Sondereröffnungen';
+}
+function themeSideToMoveLabel(theme){
+  return theme && theme.moves && theme.moves.length % 2 ? 'Schwarz hat den ersten freien Zug.' : 'Weiß hat den ersten freien Zug.';
+}
+function themeCatalogEntry(value){
+  const normalized = normalizeThemeDefinition(value);
+  if(!normalized) return null;
+  return normalized;
+}
+function updateTournamentThemeUi(){
+  const active = !!(tournamentThemeCheckbox && tournamentThemeCheckbox.checked);
+  if(tournamentThemeSelected) tournamentThemeSelected.hidden = !active;
+  if(tournamentVariantSelect){
+    if(active) tournamentVariantSelect.value = GAME_VARIANT_STANDARD;
+    tournamentVariantSelect.disabled = active;
+    tournamentVariantSelect.title = active ? 'Thementurniere verwenden klassische Eröffnungszüge und können nicht mit Freestyle kombiniert werden.' : '';
+  }
+  if(tournamentThemeSelectedName) tournamentThemeSelectedName.textContent = tournamentEditingTheme ? tournamentEditingTheme.name : 'Bitte eine Eröffnung auswählen';
+  if(tournamentThemeSelectedMoves) tournamentThemeSelectedMoves.textContent = tournamentEditingTheme ? (tournamentEditingTheme.moveText || (tournamentEditingTheme.startPly + ' vorgegebene Halbzüge')) : 'Über „Eröffnung wählen“ öffnet sich der durchsuchbare Katalog.';
+  if(tournamentThemeSelectedSide) tournamentThemeSelectedSide.textContent = tournamentEditingTheme ? themeSideToMoveLabel(tournamentEditingTheme) : '';
+  if(tournamentThemeChooseBtn) tournamentThemeChooseBtn.textContent = tournamentEditingTheme ? 'Eröffnung ändern' : 'Eröffnung wählen';
+}
+function themePreviewPosition(theme){
+  const g = new Game({variant:GAME_VARIANT_STANDARD});
+  const history = buildThemeHistory({variant:GAME_VARIANT_STANDARD,theme});
+  history.forEach(move => {
+    const found = findMatchingLegalMove(g.legalMoves(),move);
+    if(found) g.makeMove({from:found.from,to:found.to,meta:found.meta || {},promotion:move.promotion || null},true);
+  });
+  return g;
+}
+function renderThemePreview(theme){
+  const normalized = themeCatalogEntry(theme);
+  if(themePreviewName) themePreviewName.textContent = normalized ? normalized.name : 'Eröffnung auswählen';
+  if(themePreviewMeta) themePreviewMeta.textContent = normalized ? (normalized.startPly + ' Halbzüge · ' + themeSideToMoveLabel(normalized)) : '';
+  if(themePreviewMoves) themePreviewMoves.textContent = normalized ? (normalized.moveText || 'Zugfolge wird serverseitig geprüft.') : 'Die Zielstellung erscheint nach der Auswahl.';
+  if(themePreviewIdea) themePreviewIdea.textContent = normalized && normalized.idea ? normalized.idea : '';
+  if(themePickerApplyBtn) themePickerApplyBtn.disabled = !normalized;
+  if(!themePreviewBoard) return;
+  themePreviewBoard.innerHTML = '';
+  const game = normalized ? themePreviewPosition(normalized) : new Game({variant:GAME_VARIANT_STANDARD});
+  const symbols = {K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      const square = document.createElement('div');
+      square.className = 'theme-preview-square ' + ((x+y)%2 ? 'dark' : 'light');
+      square.textContent = symbols[game.at(x,y)] || '';
+      themePreviewBoard.appendChild(square);
+    }
+  }
+}
+function filteredTournamentThemes(){
+  const query = String(themePickerSearch ? themePickerSearch.value : '').trim().toLocaleLowerCase('de-DE');
+  const group = String(themePickerGroup ? themePickerGroup.value : '');
+  return TOURNAMENT_THEME_CATALOG.filter(theme => {
+    if(group && tournamentThemeGroup(theme) !== group) return false;
+    if(!query) return true;
+    return [theme.name,theme.moveText,theme.idea,tournamentThemeGroup(theme)].some(value => String(value || '').toLocaleLowerCase('de-DE').includes(query));
+  });
+}
+function renderThemePickerList(){
+  if(!themePickerList) return;
+  themePickerList.innerHTML = '';
+  const themes = filteredTournamentThemes();
+  if(!themes.length){
+    const empty = document.createElement('div');
+    empty.className = 'theme-picker-empty';
+    empty.textContent = 'Keine passende Eröffnung gefunden.';
+    themePickerList.appendChild(empty);
+    themePickerCandidate = null;
+    renderThemePreview(null);
+    return;
+  }
+  if(!themePickerCandidate || !themes.some(theme => theme.id === themePickerCandidate.id)) themePickerCandidate = themes[0];
+  const fragment = document.createDocumentFragment();
+  themes.forEach(theme => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'theme-picker-item' + (themePickerCandidate && theme.id === themePickerCandidate.id ? ' active' : '');
+    const name = document.createElement('div');
+    name.className = 'theme-picker-item-name';
+    name.textContent = theme.name;
+    const moves = document.createElement('div');
+    moves.className = 'theme-picker-item-moves';
+    moves.textContent = theme.moveText + ' · ' + themeSideToMoveLabel(theme);
+    button.appendChild(name);
+    button.appendChild(moves);
+    button.addEventListener('click', () => {
+      themePickerCandidate = theme;
+      renderThemePickerList();
+      const active = themePickerList.querySelector('.theme-picker-item.active');
+      if(active) active.scrollIntoView({block:'nearest'});
+    });
+    fragment.appendChild(button);
+  });
+  themePickerList.appendChild(fragment);
+  renderThemePreview(themePickerCandidate);
+}
+function openThemePicker(){
+  if(!TOURNAMENT_THEME_CATALOG.length){
+    setTournamentCreateStatus('Der Eröffnungskatalog konnte nicht geladen werden.', 'error');
+    return;
+  }
+  if(themePickerGroup && themePickerGroup.options.length === 1){
+    Array.from(new Set(TOURNAMENT_THEME_CATALOG.map(tournamentThemeGroup))).sort((a,b) => a.localeCompare(b,'de')).forEach(group => {
+      const option = document.createElement('option');
+      option.value = group;
+      option.textContent = group;
+      themePickerGroup.appendChild(option);
+    });
+  }
+  if(themePickerSearch) themePickerSearch.value = '';
+  if(themePickerGroup) themePickerGroup.value = '';
+  themePickerCandidate = tournamentEditingTheme
+    ? TOURNAMENT_THEME_CATALOG.find(theme => theme.id === tournamentEditingTheme.id) || tournamentEditingTheme
+    : TOURNAMENT_THEME_CATALOG[0];
+  renderThemePickerList();
+  if(themePickerBackdrop) themePickerBackdrop.hidden = false;
+  setTimeout(() => { if(themePickerSearch) themePickerSearch.focus(); },0);
+}
+function closeThemePicker(){
+  if(themePickerBackdrop) themePickerBackdrop.hidden = true;
+}
+function applyThemePickerSelection(){
+  const selected = themeCatalogEntry(themePickerCandidate);
+  if(!selected) return;
+  tournamentEditingTheme = selected;
+  if(tournamentThemeCheckbox) tournamentThemeCheckbox.checked = true;
+  updateTournamentThemeUi();
+  closeThemePicker();
+}
 function normalizeTournamentMode(value){
   return Object.prototype.hasOwnProperty.call(TOURNAMENT_MODE_CONFIG, value) ? value : 'double_round_robin';
 }
@@ -7620,6 +7924,7 @@ function normalizeLocalTournament(value, index){
   const updatedAt = String(value.updatedAt || value.updated_at || createdAt);
   const participants = Array.isArray(value.participants) ? value.participants.slice(0,2000) : [];
   const userState = ['confirmed','waiting','playing','finished','absent'].includes(String(value.userState || '')) ? String(value.userState) : '';
+  const theme = themeCatalogEntry(value.theme || value.openingTheme || value.opening_theme);
   return {
     id:String(value.id || ('local_migrated_' + Date.now().toString(36) + '_' + Number(index || 0))).slice(0,100),
     name,
@@ -7627,7 +7932,8 @@ function normalizeLocalTournament(value, index){
     players,
     hours,
     rated:value.rated !== false,
-    variant:value.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    variant:theme ? GAME_VARIANT_STANDARD : (value.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD),
+    theme,
     mode,
     modeLabel:String(value.modeLabel || TOURNAMENT_MODE_CONFIG[mode].label),
     tournamentType,
@@ -7748,6 +8054,7 @@ function createTournamentListCard(tournament){
   if(tournament.arena) appendTournamentMeta(meta, '⌛ ' + (Number(tournament.arenaDurationMinutes) === 1440 ? '24 Stunden' : (tournament.arenaDurationMinutes + ' Minuten')));
   appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
   appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');
+  if(tournament.theme) appendTournamentMeta(meta, '🎯 Thementurnier · ' + tournament.theme.name);
   appendTournamentMeta(meta, '🏁 ' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(tournament.mode)].label);
 
   const foot = document.createElement('div');
@@ -8026,9 +8333,10 @@ function renderTournamentDetail(tournament){
     const current = Array.isArray(tournament.rounds) ? tournament.rounds.find(round => Number(round.roundNumber) === Number(tournament.currentRound)) : null;
     const progress = tournament.status === 'running' ? (tournament.arena ? (' Die Arena läuft' + (tournament.arenaEndsAt ? ' bis ' + formatTournamentLocalDateTime(tournament.arenaEndsAt) : '') + '.') : (' Aktuell läuft ' + (current && current.label ? current.label : ('Runde ' + tournament.currentRound)) + ' von insgesamt ' + tournament.totalRounds + ' Runden.')) : '';
     const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? (tournament.arena ? ' Jede Arena-Partie erhält serverseitig eine zufällige Chess960-Stellung.' : ' Jede Runde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.') : '';
+    const thematic = tournament.theme ? (' Thementurnier: Alle Partien beginnen nach „' + tournament.theme.name + '“ (' + tournament.theme.moveText + '). ' + themeSideToMoveLabel(tournament.theme)) : '';
     const schedule = tournament.live && tournament.scheduledStartAt ? (' Geplanter automatischer Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '. Der Check-in öffnet eine Stunde vorher.') : '';
     const capacity = tournament.arena ? 'mit offener Teilnehmerzahl' : ('für ' + (tournament.live ? ('bis zu ' + tournament.players) : tournament.players) + ' Teilnehmer');
-    tournamentOverviewText.textContent = typeConfig.label + '-' + modeConfig.label + ' ' + capacity + '. ' + modeConfig.description + schedule + freestyle + progress;
+    tournamentOverviewText.textContent = typeConfig.label + '-' + modeConfig.label + ' ' + capacity + '. ' + modeConfig.description + schedule + freestyle + thematic + progress;
   }
   if(tournamentLocalNote){
     tournamentLocalNote.hidden = tournament.status !== 'draft';
@@ -8043,6 +8351,8 @@ function renderTournamentDetail(tournament){
   }
   if(tournamentFactClock) tournamentFactClock.textContent = tournament.timeLabel || (tournament.hours + ' Stunden/Zug');
   if(tournamentFactVariant) tournamentFactVariant.textContent = tournament.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch';
+  if(tournamentFactThemeWrap) tournamentFactThemeWrap.hidden = !tournament.theme;
+  if(tournamentFactTheme) tournamentFactTheme.textContent = tournament.theme ? (tournament.theme.name + ' · ' + tournament.theme.moveText) : '—';
   if(tournamentFactRating) tournamentFactRating.textContent = tournament.rated ? 'Gewertet' : 'Ohne Rating';
   if(tournamentDescriptionText) tournamentDescriptionText.textContent = tournament.description || defaultTournamentDescription(mode, tournament.tournamentType);
   renderTournamentParticipants(tournament);
@@ -8106,6 +8416,7 @@ function setTournamentCreateStatus(message, kind){
   tournamentCreateStatus.classList.toggle('success', kind === 'success');
 }
 function closeTournamentCreateDialog(){
+  closeThemePicker();
   if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = true;
   setTournamentCreateStatus('', '');
 }
@@ -8237,6 +8548,9 @@ function openTournamentCreateDialog(tournamentId){
   updateTournamentTypeUi(type, draft ? draft.players : (type === 'daily' ? 6 : 16), draft ? (draft.live ? draft.timeKey : draft.hours) : undefined, draft ? draft.mode : undefined);
   if(tournamentArenaDurationSelect) tournamentArenaDurationSelect.value = String(draft && draft.arenaDurationMinutes ? draft.arenaDurationMinutes : 90);
   if(tournamentVariantSelect) tournamentVariantSelect.value = draft && draft.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
+  tournamentEditingTheme = draft && draft.theme ? themeCatalogEntry(draft.theme) : null;
+  if(tournamentThemeCheckbox) tournamentThemeCheckbox.checked = !!tournamentEditingTheme;
+  updateTournamentThemeUi();
   if(tournamentRatingSelect) tournamentRatingSelect.value = draft && !draft.rated ? 'unrated' : 'rated';
   if(tournamentDescriptionInput) tournamentDescriptionInput.value = draft ? draft.description : '';
   setTournamentCreateStatus('', '');
@@ -8259,6 +8573,13 @@ async function saveTournamentDraft(event){
   const mode = live ? (selectedMode === 'arena' ? 'arena' : 'swiss') : selectedMode;
   const allowedPlayers = mode === 'arena' ? [0] : (live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players);
   const timeValue = String(tournamentClockSelect ? tournamentClockSelect.value : (live ? TOURNAMENT_TYPE_CONFIG[tournamentType].times[0][0] : '24'));
+  const thematic = !!(tournamentThemeCheckbox && tournamentThemeCheckbox.checked);
+  const theme = thematic ? themeCatalogEntry(tournamentEditingTheme) : null;
+  if(thematic && !theme){
+    setTournamentCreateStatus('Bitte eine Eröffnung für das Thementurnier auswählen.', 'error');
+    openThemePicker();
+    return;
+  }
   let scheduledStartAt = null;
   if(live){
     const scheduled = new Date(String(tournamentScheduleInput ? tournamentScheduleInput.value : ''));
@@ -8285,7 +8606,8 @@ async function saveTournamentDraft(event){
         timeKey:live ? timeValue : '',
         arenaDurationMinutes:mode === 'arena' ? Number(tournamentArenaDurationSelect ? tournamentArenaDurationSelect.value : 90) : null,
         scheduledStartAt,
-        variant:tournamentVariantSelect && tournamentVariantSelect.value === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+        variant:theme ? GAME_VARIANT_STANDARD : (tournamentVariantSelect && tournamentVariantSelect.value === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD),
+        theme,
         rated:!tournamentRatingSelect || tournamentRatingSelect.value !== 'unrated'
       })
     });
@@ -8439,6 +8761,16 @@ if(tournamentLobbyLaterBtn) tournamentLobbyLaterBtn.addEventListener('click', ()
 });
 if(tournamentCreateCancelBtn) tournamentCreateCancelBtn.addEventListener('click', closeTournamentCreateDialog);
 if(tournamentCreateForm) tournamentCreateForm.addEventListener('submit', saveTournamentDraft);
+if(tournamentThemeCheckbox) tournamentThemeCheckbox.addEventListener('change', () => {
+  updateTournamentThemeUi();
+  if(tournamentThemeCheckbox.checked && !tournamentEditingTheme) openThemePicker();
+});
+if(tournamentThemeChooseBtn) tournamentThemeChooseBtn.addEventListener('click', openThemePicker);
+if(themePickerSearch) themePickerSearch.addEventListener('input', renderThemePickerList);
+if(themePickerGroup) themePickerGroup.addEventListener('change', renderThemePickerList);
+if(themePickerCancelBtn) themePickerCancelBtn.addEventListener('click', closeThemePicker);
+if(themePickerApplyBtn) themePickerApplyBtn.addEventListener('click', applyThemePickerSelection);
+if(themePickerBackdrop) themePickerBackdrop.addEventListener('click', event => { if(event.target === themePickerBackdrop) closeThemePicker(); });
 if(tournamentModeSelect) tournamentModeSelect.addEventListener('change', () => {
   updateTournamentModeUi();
 });
@@ -8477,7 +8809,10 @@ if(tournamentBackdrop) tournamentBackdrop.addEventListener('click', event => { i
 if(tournamentCreateBackdrop) tournamentCreateBackdrop.addEventListener('click', event => { if(event.target === tournamentCreateBackdrop) closeTournamentCreateDialog(); });
 document.addEventListener('keydown', event => {
   if(event.key !== 'Escape') return;
-  if(tournamentCreateBackdrop && !tournamentCreateBackdrop.hidden){
+  if(themePickerBackdrop && !themePickerBackdrop.hidden){
+    event.preventDefault();
+    closeThemePicker();
+  } else if(tournamentCreateBackdrop && !tournamentCreateBackdrop.hidden){
     event.preventDefault();
     closeTournamentCreateDialog();
   } else if(tournamentBackdrop && !tournamentBackdrop.hidden){
@@ -10447,7 +10782,7 @@ function extractOnlineGameSetup(msg){
 }
 function shouldKeepLocalGameSetupForNewRoom(incomingSetup){
   if(!onlineDesiredGameSetupForNewRoom) return false;
-  if(onlineGameStarted || masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return false;
+  if(onlineGameStarted || actualMoveCount() > 0 || firstMoveDone || clockRunning || timeLost) return false;
   const desired = normalizeGameSetup(onlineDesiredGameSetupForNewRoom);
   const incoming = normalizeGameSetup(incomingSetup || {});
   if(sameGameSetup(incoming, desired)) return false;
@@ -10477,7 +10812,7 @@ function applyGameSetupFromOnline(gameSetup){
   }
   applyingRemoteGameSetup = true;
   try{
-    applyGameSetup(normalized, {save:false, forceReset: masterHistory.length === 0 && !onlineGameStarted});
+    applyGameSetup(normalized, {save:false, forceReset: actualMoveCount() === 0 && !onlineGameStarted});
   } finally {
     applyingRemoteGameSetup = false;
   }
@@ -10604,7 +10939,7 @@ function applyOnlineClockState(clockState){
   onlineClockSync = normalized;
   clocks = {w: normalized.wMs, b: normalized.bMs};
   clockRunning = !!(normalized.running && !normalized.timeLost);
-  if(onlineGameStarted || masterHistory.length > 0) firstMoveDone = true;
+  if(onlineGameStarted || actualMoveCount() > 0) firstMoveDone = true;
   timeLost = !!normalized.timeLost;
   if(timeLost){
     pendingDailyMove = null;
@@ -10696,8 +11031,10 @@ function commitRemoteMove(found, promotion){
 function applyOnlineMove(move){
   const normalized = normalizeIncomingMove(move);
   if(!normalized) return false;
-  if(normalized.ply && normalized.ply <= masterHistory.length){
-    const existing = masterHistory[normalized.ply - 1];
+  const themePly = currentThemePly();
+  const playedPly = actualMoveCount();
+  if(normalized.ply && normalized.ply <= playedPly){
+    const existing = masterHistory[themePly + normalized.ply - 1];
     if(!sameMoveCoords(existing, normalized)){
       onlineLastMessage = 'Raumzug passt nicht zur lokalen Zugliste. Raumzustand wird neu abgefragt.';
       requestOnlineState();
@@ -10705,7 +11042,7 @@ function applyOnlineMove(move){
     }
     return false;
   }
-  if(normalized.ply && normalized.ply > masterHistory.length + 1){
+  if(normalized.ply && normalized.ply > playedPly + 1){
     onlineLastMessage = 'Zugfolge ist voraus. Raumzustand wird neu abgefragt.';
     requestOnlineState();
     updateOnlineUi();
@@ -11478,7 +11815,7 @@ function applyTimeControlFromOnline(timeControl){
     Sonst läuft die aktive Uhr kurz herunter und springt beim nächsten
     request_state/room_state wieder auf die Anfangszeit.
   */
-  const mayResetClock = !onlineGameStarted && masterHistory.length === 0 && !clockRunning && !firstMoveDone && !timeLost;
+  const mayResetClock = !onlineGameStarted && actualMoveCount() === 0 && !clockRunning && !firstMoveDone && !timeLost;
 
   applyingRemoteTimeControl = true;
   try{
@@ -11497,7 +11834,7 @@ function applyTimeControlFromOnline(timeControl){
     setTimeout(() => openAuthDialog('login'), 120);
   }
 
-  if(mayResetClock || changed && !onlineGameStarted && masterHistory.length === 0){
+  if(mayResetClock || changed && !onlineGameStarted && actualMoveCount() === 0){
     resetClockForNewGame();
   } else {
     updateTimeStatus();
@@ -11520,9 +11857,9 @@ function applyOnlineGameState(game){
     pendingDailyMove = null;
     selected = null;
     stopClock();
-    masterHistory = [];
-    viewIndex = 0;
-    lastMove = null;
+    masterHistory = buildThemeHistory(currentGameSetup);
+    viewIndex = masterHistory.length;
+    lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
     gameEnded = false;
     onlineDrawOffer = null;
     resetClockForNewGame();
@@ -11967,6 +12304,40 @@ function findMatchingLegalMove(legalMoves, moveLike){
   return exact.find(move => !castleSideCode(move)) || exact[0];
 }
 
+function currentTheme(){
+  return normalizeGameSetup(currentGameSetup).theme;
+}
+function currentThemePly(){
+  const theme = currentTheme();
+  return theme ? theme.moves.length : 0;
+}
+function actualMoveCount(){
+  return Math.max(0, masterHistory.length - currentThemePly());
+}
+function buildThemeHistory(setup){
+  const normalized = normalizeGameSetup(setup || currentGameSetup);
+  const theme = normalized.theme;
+  if(!theme) return [];
+  const g = new Game({variant:GAME_VARIANT_STANDARD});
+  const history = [];
+  for(let index=0; index<theme.moves.length; index++){
+    const source = theme.moves[index];
+    const found = findMatchingLegalMove(g.legalMoves(), source);
+    if(!found){
+      console.warn('Themenzug konnte nicht aufgebaut werden:', theme.name, index + 1);
+      return [];
+    }
+    const before = g.clone();
+    const mv = {from:found.from.slice(),to:found.to.slice(),meta:clone(found.meta || {}),promotion:source.promotion || null,themePreset:true,themeIndex:index};
+    const applied = g.makeMove(mv,false);
+    mv.piece = applied.piece;
+    mv.taken = applied.taken;
+    mv.san = source.san || moveToSan(before,mv,g);
+    history.push(mv);
+  }
+  return history;
+}
+
 function buildGameFromHistory(n){
   const g = new Game();
   for(let i=0; i<n && i<masterHistory.length; i++){
@@ -12133,7 +12504,7 @@ function updateStatus(g){
     if(!onlineGameStarted){
       if(isDailyTimeControl()){
         if(onlineRoleCode === 'w') statusEl.textContent = onlineAssignedSeats.black ? 'Daily-Partie angenommen — automatischer Start wird vorbereitet.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Annahme durch Schwarz.' : 'Daily-Partie erstellt — warte auf Annahme durch Schwarz.');
-        else if(onlineRoleCode === 'b') statusEl.textContent = 'Daily-Partie angenommen — sie startet automatisch. Weiß führt den ersten Zug aus.';
+        else if(onlineRoleCode === 'b') statusEl.textContent = 'Daily-Partie angenommen — sie startet automatisch. ' + (currentThemePly() % 2 ? 'Schwarz' : 'Weiß') + ' führt den ersten freien Zug aus.';
         else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — Daily-Partie wartet auf Annahme.';
         else statusEl.textContent = 'Daily-Raum wird verbunden.';
       } else {
@@ -12166,7 +12537,11 @@ function updateStatus(g){
     else text = (g.turn === 'w' ? 'Weiß' : 'Schwarz') + ' am Zug — du spielst ' + roleLabel(onlineRoleCode);
   }
   if(g.inCheck(g.turn)) text += ' — Schach!';
-  if(viewIndex !== masterHistory.length) text = 'Analyseansicht — gehe zum letzten Zug, um weiterzuspielen';
+  if(viewIndex !== masterHistory.length){
+    text = currentTheme() && viewIndex <= currentThemePly()
+      ? 'Themenvorgabe — hier kannst du die Entstehung der Startstellung prüfen'
+      : 'Analyseansicht — gehe zum letzten Zug, um weiterzuspielen';
+  }
   statusEl.textContent = text;
 }
 function showIllegalMoveFeedback(message){
@@ -12789,7 +13164,7 @@ function syncMoveToOnline(mv, movedSide){
   if(onlineRoleCode !== movedSide) return;
   const messageId = 'mv_' + Date.now() + '_' + randomToken(5);
   const move = {
-    ply: masterHistory.length,
+    ply: actualMoveCount(),
     side: movedSide,
     from: mv.from,
     to: mv.to,
@@ -12851,6 +13226,12 @@ function showPromotionOverlay(color){
 }
 function renderMoveList(){
   moveListEl.innerHTML = '';
+  const theme = currentTheme();
+  const themePly = currentThemePly();
+  if(themeMoveNotice){
+    themeMoveNotice.hidden = !theme;
+    themeMoveNotice.textContent = theme ? ('🎯 Thementurnier: ' + theme.name + ' · ' + themePly + ' vorgegebene Halbzüge. Mit den Pfeilen lässt sich ihre Entstehung vollständig zurückverfolgen.') : '';
+  }
   if(masterHistory.length === 0){
     moveListEl.innerHTML = '<div>—</div>';
     return;
@@ -12869,6 +13250,8 @@ function renderMoveList(){
     if(cellIndex % 6 >= 3) div.classList.add('hide-mobile-pair');
     div.textContent = c.txt;
     if(c.idx !== null){
+      if(c.idx < themePly) div.classList.add('theme-move');
+      if(c.idx === themePly - 1) div.classList.add('theme-end');
       if(viewIndex === c.idx + 1) div.classList.add('current');
       if(navigationLocked){
         div.title = 'Bitte die Daily-Zugvorschau zuerst bestätigen oder zurücknehmen.';
@@ -13043,6 +13426,12 @@ function buildPgn(){
     tags.push(['HammerschachPosition', String(setup.positionId)]);
     tags.push(['HammerschachBackRank', setup.backRank]);
   }
+  if(setup.theme){
+    tags.push(['HammerschachTournamentTheme', '1']);
+    tags.push(['Opening', setup.theme.name]);
+    tags.push(['ThemeStartPly', String(setup.theme.startPly)]);
+    if(setup.theme.moveText) tags.push(['HammerschachThemeMoves', setup.theme.moveText]);
+  }
   const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
   return header + '\n\n' + buildPgnMoveText(result);
 }
@@ -13056,7 +13445,7 @@ function safePgnFilePart(value){
 function buildPgnFileName(){
   const setup = normalizeGameSetup(currentGameSetup);
   const datePart = currentPgnDate().replace(/\./g, '-');
-  const variantPart = setup.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle-' + String(setup.positionId) : 'Klassisch';
+  const variantPart = setup.theme ? ('Thementurnier-' + safePgnFilePart(setup.theme.name)) : (setup.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle-' + String(setup.positionId) : 'Klassisch');
   const whitePart = safePgnFilePart(pgnPlayerNameForRole('w'));
   const blackPart = safePgnFilePart(pgnPlayerNameForRole('b'));
   return safePgnFilePart('Hammerschach-' + datePart + '-' + variantPart + '-' + whitePart + '-vs-' + blackPart) + '.pgn';
@@ -13096,11 +13485,11 @@ function newGame(){
   stopClock();
   setRightPanelMode('players');
   onlineClockSync = null;
-  masterHistory = [];
-  viewIndex = 0;
+  masterHistory = buildThemeHistory(currentGameSetup);
+  viewIndex = masterHistory.length;
   pendingDailyMove = null;
   selected = null;
-  lastMove = null;
+  lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
   gameEnded = false;
   resetClockForNewGame();
   renderBoard();
@@ -13442,7 +13831,7 @@ function getTimeOption(key, category){
   return null;
 }
 function isTimeControlLocked(){
-  if(masterHistory.length > 0 || firstMoveDone || clockRunning || timeLost) return true;
+  if(actualMoveCount() > 0 || firstMoveDone || clockRunning || timeLost) return true;
   if(onlineGameStarted) return true;
 
   /*
