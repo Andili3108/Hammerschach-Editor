@@ -235,6 +235,14 @@
   .side-toggle-btn.has-unread{background:#fff3cd!important;color:#843f46!important;border-color:rgba(132,63,70,.42)!important;box-shadow:0 0 0 3px rgba(132,63,70,.12),0 7px 18px rgba(132,63,70,.14)!important;}
   .side-toggle-btn.has-unread::after{content:"";display:inline-block;width:8px;height:8px;border-radius:999px;background:#843f46;margin-left:6px;vertical-align:middle;}
   .side-toggle-btn.has-unread.active{background:var(--andili-rot)!important;color:#fff!important;}
+  .rematch-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin:0 0 12px;padding:9px;border-radius:14px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);}
+  .rematch-bar[hidden]{display:none!important;}
+  .rematch-btn{min-height:40px;border-radius:12px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;font-size:14px;font-weight:900;}
+  .rematch-btn.ready{background:#226b36!important;border-color:rgba(34,107,54,.55)!important;}
+  .rematch-decline-btn{min-height:40px;border-radius:12px;padding:7px 10px!important;}
+  .rematch-decline-btn[hidden]{display:none!important;}
+  .rematch-hint{grid-column:1 / -1;min-height:0;text-align:center;font-size:11px;font-weight:800;color:#666;line-height:1.25;}
+  .rematch-hint:empty{display:none;}
   .side-content{min-height:0;flex:1;overflow:auto;}
   .side-content[hidden]{display:none!important;}
   .players-panel{display:flex;flex-direction:column;gap:12px;}
@@ -255,6 +263,8 @@
   .player-rating-value{color:#843f46;white-space:nowrap;}
   .player-rating-line.unrated{background:#f3f3f5;border-color:rgba(0,0,0,.08);color:#777;}
   .player-rating-line.unrated .player-rating-value{color:#777;}
+  .head-to-head-line{border-radius:9px;background:rgba(59,110,167,.07);border:1px solid rgba(59,110,167,.15);padding:5px 7px;font-size:11px;font-weight:900;color:#4f5864;line-height:1.25;text-align:center;}
+  .head-to-head-line[hidden]{display:none!important;}
   .room-rating-status{border-radius:12px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:9px 11px;text-align:center;font-size:14px;font-weight:900;color:#843f46;line-height:1.25;}
   .room-rating-status[hidden]{display:none!important;}
   .player-clock-time{font-size:38px;line-height:1;font-weight:900;letter-spacing:.02em;text-align:right;}
@@ -982,6 +992,9 @@
   html.dark-mode .member-lobby-offer-action{background:linear-gradient(180deg,#3a3f47 0%,#292d33 100%)!important;color:#f0b8be!important;border-color:rgba(255,255,255,.14)!important;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
   html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
+  html.dark-mode .rematch-bar{background:#252930;border-color:rgba(255,255,255,.09);}
+  html.dark-mode .rematch-hint{color:#b8bdc6;}
+  html.dark-mode .head-to-head-line{background:#222d39;border-color:rgba(118,166,219,.19);color:#c8d4e1;}
   html.dark-mode .daily-game-card.my-turn{background:linear-gradient(135deg,rgba(62,154,88,.20),rgba(62,154,88,.08));border-color:rgba(92,190,119,.34);box-shadow:inset 4px 0 0 rgba(92,190,119,.74),inset 0 0 0 1px rgba(92,190,119,.05),0 5px 15px rgba(0,0,0,.18);}
   html.dark-mode .daily-game-card.my-turn .daily-game-status{background:rgba(62,154,88,.16);border-color:rgba(92,190,119,.30);color:#9bdfad!important;}
   html.dark-mode .daily-game-card.my-turn .daily-game-status::before{background:#69c982;box-shadow:0 0 0 3px rgba(105,201,130,.15);}
@@ -1388,6 +1401,8 @@
 
           <h4>14. Partieaktionen</h4>
           <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. <strong>„Aufgeben“</strong> ist bewusst neutral dargestellt; erst die endgültige Bestätigung im Sicherheitsfenster ist rot. <strong>„Weiterspielen“</strong> bricht den Vorgang ab. Bei einer Daily-Zugvorschau erscheinen zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
+          <p>Bei zwei registrierten Mitgliedern steht unter dem Namen des Gegners der <strong>direkte Vergleich</strong> mit Siegen, Remis und Niederlagen. Gezählt wird ausschließlich innerhalb derselben Hammerschach-Kategorie: Daily Classic, Daily Freestyle, Live Classic, Live Rapid, Live Blitz oder Live Freestyle. Normale und Turnierpartien sowie gewertete und ungewertete Partien fließen gemeinsam in die jeweils passende Kategorie ein.</p>
+          <p>Nach dem Ende einer normalen Partie erscheint direkt unter <strong>„Spieler &amp; Zeit | Zugliste | Chat“</strong> die Schaltfläche <strong>„🔁 Revanche anbieten“</strong>. Der Gegner kann annehmen oder ablehnen. Erst bei Annahme wird ein neuer Spielraum mit identischer Bedenkzeit, identischem Spielmodus und identischer Wertung erstellt; die Farben werden automatisch getauscht. Bei Turnierpartien, Zuschauern und Gastspielern wird keine direkte Revanche angeboten.</p>
 
           <h4>15. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
@@ -2547,6 +2562,11 @@
             <button id="showMovesPanelBtn" class="side-toggle-btn" type="button">Zugliste</button>
             <button id="showChatPanelBtn" class="side-toggle-btn" type="button">Chat</button>
           </div>
+          <div id="rematchBar" class="rematch-bar" hidden aria-live="polite">
+            <button id="rematchBtn" class="rematch-btn" type="button">🔁 Revanche anbieten</button>
+            <button id="rematchDeclineBtn" class="button-flat rematch-decline-btn" type="button" hidden>Ablehnen</button>
+            <div id="rematchHint" class="rematch-hint"></div>
+          </div>
 
           <div id="playersPanel" class="side-content players-panel" hidden>
             <div class="player-clock-card" id="clockCardW">
@@ -2561,6 +2581,7 @@
                 </span>
               </div>
               <div id="whitePlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
+              <div id="whiteHeadToHead" class="head-to-head-line" hidden></div>
               <div class="player-clock-time" id="clockW">--:--</div>
             </div>
             <div class="player-clock-card" id="clockCardB">
@@ -2575,6 +2596,7 @@
                 </span>
               </div>
               <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
+              <div id="blackHeadToHead" class="head-to-head-line" hidden></div>
               <div class="player-clock-time" id="clockB">--:--</div>
             </div>
             <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
@@ -3955,6 +3977,10 @@ let onlineSpectatorOnly = false;
 let onlinePublicWatchId = '';
 let onlineRatingState = null;
 let onlineRatedRequested = true;
+let onlineHeadToHead = null;
+let onlineRematchState = null;
+let rematchActionBusy = false;
+let rematchAutoOpenWhenReady = false;
 
 const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
@@ -4426,8 +4452,14 @@ const whitePlayerNameEl = document.getElementById('whitePlayerName');
 const blackPlayerNameEl = document.getElementById('blackPlayerName');
 const whitePlayerRatingEl = document.getElementById('whitePlayerRating');
 const blackPlayerRatingEl = document.getElementById('blackPlayerRating');
+const whiteHeadToHeadEl = document.getElementById('whiteHeadToHead');
+const blackHeadToHeadEl = document.getElementById('blackHeadToHead');
 const whitePlayerPresenceEl = document.getElementById('whitePlayerPresence');
 const blackPlayerPresenceEl = document.getElementById('blackPlayerPresence');
+const rematchBarEl = document.getElementById('rematchBar');
+const rematchBtn = document.getElementById('rematchBtn');
+const rematchDeclineBtn = document.getElementById('rematchDeclineBtn');
+const rematchHintEl = document.getElementById('rematchHint');
 const dailyGamesBackdrop = document.getElementById('dailyGamesBackdrop');
 const dailyGamesTitle = document.getElementById('dailyGamesTitle');
 const dailyGamesIntro = dailyGamesBackdrop ? dailyGamesBackdrop.querySelector('.daily-games-intro') : null;
@@ -9572,7 +9604,13 @@ function updateOnlineUi(){
     whitePlayerNameEl.textContent = '—';
     blackPlayerNameEl.textContent = '—';
     onlineRatingState = null;
+    onlineHeadToHead = null;
+    onlineRematchState = null;
+    rematchActionBusy = false;
+    rematchAutoOpenWhenReady = false;
     updateRoomRatingUi();
+    updateHeadToHeadUi();
+    updateRematchUi();
     setOnlineValueClass(onlineStatusEl, 'neutral');
     setOnlineValueClass(onlineRoleEl, 'neutral');
     setOnlineValueClass(onlineRoomEl, 'neutral');
@@ -9603,7 +9641,13 @@ function updateOnlineUi(){
     whitePlayerNameEl.textContent = '—';
     blackPlayerNameEl.textContent = '—';
     onlineRatingState = null;
+    onlineHeadToHead = null;
+    onlineRematchState = null;
+    rematchActionBusy = false;
+    rematchAutoOpenWhenReady = false;
     updateRoomRatingUi();
+    updateHeadToHeadUi();
+    updateRematchUi();
     setOnlineValueClass(onlineStatusEl, 'wait');
     setOnlineValueClass(onlineRoleEl, 'neutral');
     setOnlineValueClass(onlineRoomEl, 'neutral');
@@ -9662,6 +9706,8 @@ function updateOnlineUi(){
   blackPlayerNameEl.textContent = onlineSideText('b');
   updatePlayerPresenceBadges();
   updateRoomRatingUi();
+  updateHeadToHeadUi();
+  updateRematchUi();
 
   let syncNote;
   if(onlineRoleCode === 'spectator'){
@@ -10815,6 +10861,144 @@ function updateRoomRatingUi(){
   }
 }
 
+function normalizeHeadToHeadState(value){
+  if(!value || typeof value !== 'object' || value.available !== true) return null;
+  return {
+    available:true,
+    ratingType:String(value.ratingType || value.rating_type || ''),
+    label:String(value.label || ''),
+    wins:Math.max(0, Math.floor(Number(value.wins || 0))),
+    draws:Math.max(0, Math.floor(Number(value.draws || 0))),
+    losses:Math.max(0, Math.floor(Number(value.losses || 0))),
+    total:Math.max(0, Math.floor(Number(value.total || 0)))
+  };
+}
+function headToHeadShortLabel(state){
+  const labels = {
+    daily_classic:'Daily Classic',
+    daily_freestyle:'Daily Freestyle',
+    live_classic:'Classic',
+    live_rapid:'Rapid',
+    live_blitz:'Blitz',
+    live_freestyle:'Freestyle'
+  };
+  return labels[String(state && state.ratingType || '')] || String(state && state.label || 'Modus');
+}
+function updateHeadToHeadUi(){
+  if(whiteHeadToHeadEl) whiteHeadToHeadEl.hidden = true;
+  if(blackHeadToHeadEl) blackHeadToHeadEl.hidden = true;
+  const state = onlineHeadToHead;
+  if(!onlineRoomId || !state || !state.available || (onlineRoleCode !== 'w' && onlineRoleCode !== 'b')) return;
+  const target = onlineRoleCode === 'w' ? blackHeadToHeadEl : whiteHeadToHeadEl;
+  if(!target) return;
+  target.textContent = 'Direkter Vergleich · ' + headToHeadShortLabel(state) + ': S ' + state.wins + ' · R ' + state.draws + ' · N ' + state.losses;
+  target.title = 'Bisherige beendete Partien gegen diesen Gegner in derselben Hammerschach-Kategorie.';
+  target.hidden = false;
+}
+function normalizeRematchState(value){
+  if(!value || typeof value !== 'object' || value.available !== true) return null;
+  const status = ['available','requested','incoming','creating','ready','declined'].includes(String(value.status || ''))
+    ? String(value.status)
+    : 'available';
+  return {
+    available:true,
+    status,
+    offerId:String(value.offerId || value.offer_id || ''),
+    requestedByName:cleanDisplayName(value.requestedByName || value.requested_by_name || ''),
+    opponentName:cleanDisplayName(value.opponentName || value.opponent_name || ''),
+    roomId:cleanRoomId(value.roomId || value.room_id || ''),
+    createdAt:value.createdAt || value.created_at || null
+  };
+}
+function updateRematchUi(){
+  if(!rematchBarEl || !rematchBtn || !rematchDeclineBtn) return;
+  const state = onlineRematchState;
+  rematchBarEl.hidden = !state || !state.available;
+  if(rematchBarEl.hidden) return;
+  rematchBtn.classList.remove('ready');
+  rematchDeclineBtn.hidden = true;
+  rematchBtn.disabled = !!rematchActionBusy;
+  rematchDeclineBtn.disabled = !!rematchActionBusy;
+  if(rematchHintEl) rematchHintEl.textContent = '';
+
+  if(state.status === 'requested'){
+    rematchBtn.textContent = '✓ Revanche angefragt';
+    rematchBtn.disabled = true;
+    if(rematchHintEl) rematchHintEl.textContent = 'Der Gegner kann die Revanche annehmen oder ablehnen.';
+  } else if(state.status === 'incoming'){
+    rematchBtn.textContent = rematchActionBusy ? 'Revanche wird angenommen…' : '🔁 Revanche annehmen';
+    rematchDeclineBtn.hidden = false;
+    if(rematchHintEl) rematchHintEl.textContent = (state.requestedByName || 'Dein Gegner') + ' bietet dir eine Revanche mit vertauschten Farben an.';
+  } else if(state.status === 'creating'){
+    rematchBtn.textContent = 'Revanche wird vorbereitet…';
+    rematchBtn.disabled = true;
+    if(rematchHintEl) rematchHintEl.textContent = 'Bedenkzeit, Spielmodus und Wertung werden übernommen.';
+  } else if(state.status === 'ready'){
+    rematchBtn.textContent = '🔁 Revanche öffnen';
+    rematchBtn.classList.add('ready');
+    rematchBtn.disabled = !state.roomId || !!rematchActionBusy;
+    if(rematchHintEl) rematchHintEl.textContent = 'Die neue Partie ist bereit. Die Farben wurden getauscht.';
+  } else if(state.status === 'declined'){
+    rematchBtn.textContent = 'Revanche abgelehnt';
+    rematchBtn.disabled = true;
+    if(rematchHintEl) rematchHintEl.textContent = 'Für diese beendete Partie wird keine Revanche gestartet.';
+  } else {
+    rematchBtn.textContent = rematchActionBusy ? 'Revanche wird angefragt…' : '🔁 Revanche anbieten';
+    if(rematchHintEl) rematchHintEl.textContent = 'Gleiche Einstellungen, vertauschte Farben.';
+  }
+}
+function openReadyRematchRoom(){
+  const roomId = cleanRoomId(onlineRematchState && onlineRematchState.roomId || '');
+  if(!roomId) return;
+  rematchActionBusy = false;
+  rematchAutoOpenWhenReady = false;
+  onlineHeadToHead = null;
+  onlineRematchState = null;
+  onlineDesiredGameSetupForNewRoom = null;
+  onlineDesiredPublicGameForNewRoom = false;
+  onlineDesiredOpenOfferForNewRoom = false;
+  connectOnlineRoom(roomId, {reconnect:true, spectatorOnly:false});
+}
+function handleRematchButtonClick(){
+  const state = onlineRematchState;
+  if(!state || rematchActionBusy) return;
+  if(state.status === 'ready'){
+    openReadyRematchRoom();
+    return;
+  }
+  if(state.status === 'incoming'){
+    rematchActionBusy = true;
+    rematchAutoOpenWhenReady = true;
+    updateRematchUi();
+    if(!sendOnlineMessage({type:'respond_rematch', accepted:true})){
+      rematchActionBusy = false;
+      rematchAutoOpenWhenReady = false;
+      updateRematchUi();
+    }
+    return;
+  }
+  if(state.status !== 'available') return;
+  rematchActionBusy = true;
+  updateRematchUi();
+  if(!sendOnlineMessage({type:'request_rematch'})){
+    rematchActionBusy = false;
+    updateRematchUi();
+  }
+}
+function handleRematchDeclineClick(){
+  const state = onlineRematchState;
+  if(!state || state.status !== 'incoming' || rematchActionBusy) return;
+  rematchActionBusy = true;
+  rematchAutoOpenWhenReady = false;
+  updateRematchUi();
+  if(!sendOnlineMessage({type:'respond_rematch', accepted:false})){
+    rematchActionBusy = false;
+    updateRematchUi();
+  }
+}
+if(rematchBtn) rematchBtn.addEventListener('click', handleRematchButtonClick);
+if(rematchDeclineBtn) rematchDeclineBtn.addEventListener('click', handleRematchDeclineClick);
+
 function extractOnlinePlayers(msg){
   return msg.players || (msg.state && msg.state.players) || (msg.roomState && msg.roomState.players) || (msg.lobby && msg.lobby.players) || null;
 }
@@ -10877,6 +11061,10 @@ function connectOnlineRoom(roomId, opts){
   onlineRoomTimeControl = null;
   onlineRoomGameSetup = null;
   onlineRatingState = null;
+  onlineHeadToHead = null;
+  onlineRematchState = null;
+  rematchActionBusy = false;
+  rematchAutoOpenWhenReady = false;
   onlinePendingGameSetupMessageId = null;
   onlineCanSetTimeControl = false;
   onlineCreatedByMe = false;
@@ -10969,6 +11157,11 @@ function connectOnlineRoom(roomId, opts){
       onlineLastMessage = msg.message || ('Online-Fehler: ' + (msg.code || 'Unbekannt'));
       if(msg.code === 'PUBLIC_SPECTATOR_ACCESS_UNAVAILABLE' || msg.code === 'PUBLIC_GAME_VISIBILITY_REVOKED' || String(msg.code || '').indexOf('OPEN_OFFER_') === 0) onlineReconnectSuppressed = true;
       if(String(msg.code || '').indexOf('CHAT_') === 0) setChatStatus(msg.message || 'Chat-Fehler.', true);
+      if(String(msg.code || '').indexOf('REMATCH_') === 0){
+        rematchActionBusy = false;
+        rematchAutoOpenWhenReady = false;
+        updateRematchUi();
+      }
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
       if(String(msg.code || '').indexOf('PUBLIC_GAME_') === 0 || msg.code === 'ONLY_CREATOR_CAN_SET_PUBLIC_GAME' || msg.code === 'GAME_ALREADY_ENDED') onlinePendingPublicGameMessageId = null;
       updateOnlineUi();
@@ -10983,6 +11176,7 @@ function connectOnlineRoom(roomId, opts){
     const previousStarted = onlineGameStarted;
     let orientationChanged = false;
     let handled = false;
+    let shouldAutoOpenRematch = false;
 
     const incomingRoom = extractOnlineRoom(msg);
     if(incomingRoom){ onlineRoomId = cleanRoomId(incomingRoom) || onlineRoomId; handled = true; }
@@ -11057,6 +11251,16 @@ function connectOnlineRoom(roomId, opts){
       applyOnlineRatingState(incomingRating);
       handled = true;
     }
+    if(Object.prototype.hasOwnProperty.call(msg, 'headToHead')){
+      onlineHeadToHead = normalizeHeadToHeadState(msg.headToHead);
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'rematch')){
+      onlineRematchState = normalizeRematchState(msg.rematch);
+      rematchActionBusy = false;
+      shouldAutoOpenRematch = !!(rematchAutoOpenWhenReady && onlineRematchState && onlineRematchState.status === 'ready' && onlineRematchState.roomId);
+      handled = true;
+    }
 
     const incomingDrawOffer = extractOnlineDrawOffer(msg);
     if(incomingDrawOffer){
@@ -11113,7 +11317,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['seat_challenge','seat_replaced','hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','player_name','public_game_ack','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -11124,6 +11328,7 @@ function connectOnlineRoom(roomId, opts){
     else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
     else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
+    else if(msg.type === 'rematch_state') onlineLastMessage = 'Revanche-Status wurde aktualisiert.';
     else if(msg.type === 'game_finished' || msg.type === 'resignation') onlineLastMessage = 'Online-Partie beendet.';
     else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
     else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){
@@ -11148,6 +11353,7 @@ function connectOnlineRoom(roomId, opts){
     }
     if(orientationChanged) renderBoard();
     updateOnlineUi();
+    if(shouldAutoOpenRematch) setTimeout(openReadyRematchRoom, 180);
     if(msg.type === 'hello' && msg.seatCode === 'DAILY_ACCOUNT_REQUIRED' && !onlineAuthUser){
       if(statusEl) statusEl.textContent = msg.message || 'Daily Chess erfordert einen Login.';
       setTimeout(() => openAuthDialog('login'), 120);
