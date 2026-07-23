@@ -2986,6 +2986,7 @@ async function ensureTournamentTables(env) {
        hours_per_move INTEGER NOT NULL,
        rated INTEGER NOT NULL DEFAULT 1,
        variant TEXT NOT NULL DEFAULT 'standard',
+       theme_json TEXT,
        tournament_type TEXT NOT NULL DEFAULT 'daily',
        time_key TEXT,
        time_label TEXT,
@@ -3023,6 +3024,7 @@ async function ensureTournamentTables(env) {
   try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN scheduler_room_id TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN round_pause_seconds INTEGER NOT NULL DEFAULT 60`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN next_round_at TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournaments ADD COLUMN theme_json TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_participants (
        tournament_id TEXT NOT NULL,
@@ -3122,6 +3124,11 @@ function cleanTournamentDescription(value) {
 
 function normalizeTournamentVariant(value) {
   return String(value || '').toLowerCase() === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
+}
+
+function tournamentThemeFromRow(row) {
+  if (!row || !row.theme_json) return null;
+  try { return cleanThemeDefinition(JSON.parse(String(row.theme_json))); } catch (_) { return null; }
 }
 
 const TOURNAMENT_MODE_SINGLE = 'single_round_robin';
@@ -3460,6 +3467,7 @@ async function tournamentDto(env, row, sessionUser) {
     hours:Number(row.hours_per_move || 24),
     rated:Number(row.rated || 0) === 1,
     variant:normalizeTournamentVariant(row.variant),
+    theme:tournamentThemeFromRow(row),
     tournamentType,
     tournamentTypeLabel:tournamentTypeLabel(tournamentType),
     live,
@@ -4068,9 +4076,10 @@ async function pairArenaPlayers(env, tournamentId) {
       ).bind(gameId, tournament.id, pairingNumber, roomId, oriented[0].userId, oriented[1].userId, 'Arena-Partie ' + pairingNumber, now).run();
       const variant = normalizeTournamentVariant(tournament.variant);
       const positionId = variant === GAME_VARIANT_FREESTYLE ? randomTournamentPositionId([]) : null;
+      const theme = variant === GAME_VARIANT_STANDARD ? tournamentThemeFromRow(tournament) : null;
       const setup = variant === GAME_VARIANT_FREESTYLE
         ? cleanGameSetup({variant, positionId, backRank:chess960BackRankById(positionId)})
-        : cleanGameSetup({variant:GAME_VARIANT_STANDARD});
+        : cleanGameSetup({variant:GAME_VARIANT_STANDARD, theme});
       await initializeTournamentGameRoom(env, {
         roomId, tournamentGameId:gameId, tournamentId:String(tournament.id), tournamentName:cleanTournamentName(tournament.name),
         tournamentType:normalizeTournamentType(tournament.tournament_type), tournamentMode:TOURNAMENT_MODE_ARENA,
@@ -4204,7 +4213,8 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
     ).bind(tournamentId, roundNumber, plan.bye.userId, now).run();
   }
 
-  const setup = cleanGameSetup(variant === GAME_VARIANT_FREESTYLE ? {variant, positionId, backRank} : {variant:GAME_VARIANT_STANDARD});
+  const theme = variant === GAME_VARIANT_STANDARD ? tournamentThemeFromRow(tournamentRow) : null;
+  const setup = cleanGameSetup(variant === GAME_VARIANT_FREESTYLE ? {variant, positionId, backRank} : {variant:GAME_VARIANT_STANDARD, theme});
   const timeControl = tournamentTimeControl(tournamentRow);
   for (let pairingIndex = 0; pairingIndex < plan.pairs.length; pairingIndex += 1) {
     const pair = plan.pairs[pairingIndex];
@@ -4377,7 +4387,8 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
   const link = tournamentPublicUrl(env, tournament.id);
   const name = cleanDisplayName(recipient.username) || 'Schachfreund';
   const title = cleanTournamentName(tournament.name);
-  const variant = normalizeTournamentVariant(tournament.variant) === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch';
+  const theme = tournamentThemeFromRow(tournament);
+  const variant = theme ? `Thementurnier: ${theme.name} (${theme.moveText})` : (normalizeTournamentVariant(tournament.variant) === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch');
   const mode = tournamentModeLabel(tournament.mode);
   const type = tournamentTypeLabel(tournament.tournament_type);
   const time = tournamentTimeLabel(tournament.tournament_type, tournament.time_key, tournament.hours_per_move);
@@ -6401,11 +6412,13 @@ function tickerTournamentMessage(row) {
   const status = normalizeTournamentStatus(row && row.status);
   const type = tournamentTypeLabel(row && row.tournament_type);
   const mode = tournamentModeLabel(row && row.mode);
+  const theme = tournamentThemeFromRow(row);
   const scheduled = row && row.scheduled_start_at
     ? new Date(row.scheduled_start_at).toLocaleString('de-DE', {timeZone:'Europe/Berlin', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) + ' Uhr'
     : '';
-  if (status === 'running') return `${type} · ${mode} läuft – jetzt ansehen${normalizeTournamentMode(row.mode) === TOURNAMENT_MODE_ARENA ? ' oder noch einsteigen' : ''}.`;
-  return `${type} · ${mode} · Anmeldung geöffnet${scheduled ? ` · Start ${scheduled}` : ''}.`;
+  const thematic = theme ? ` · Thementurnier: ${theme.name}` : '';
+  if (status === 'running') return `${type} · ${mode}${thematic} läuft – jetzt ansehen${normalizeTournamentMode(row.mode) === TOURNAMENT_MODE_ARENA ? ' oder noch einsteigen' : ''}.`;
+  return `${type} · ${mode}${thematic} · Anmeldung geöffnet${scheduled ? ` · Start ${scheduled}` : ''}.`;
 }
 
 async function listLobbyTickerItems(env) {
@@ -7018,7 +7031,12 @@ async function handleAuthApi(request, env, url) {
     const scheduledStartMs = live ? Date.parse(String(body.scheduledStartAt || '')) : NaN;
     const scheduledStartAt = live && Number.isFinite(scheduledStartMs) ? new Date(scheduledStartMs).toISOString() : null;
     const variant = normalizeTournamentVariant(body.variant);
+    const themeRequested = body.theme !== null && body.theme !== undefined;
+    const theme = themeRequested ? cleanThemeDefinition(body.theme) : null;
+    const themeJson = theme ? JSON.stringify(theme) : null;
     if (name.length < 3) return json({ok:false, code:'INVALID_TOURNAMENT_NAME', message:'Bitte einen Turniernamen mit mindestens drei Zeichen eingeben.'}, {status:400});
+    if (themeRequested && !theme) return json({ok:false, code:'INVALID_TOURNAMENT_THEME', message:'Die gewählte Eröffnung ist ungültig oder enthält keine vollständig legale Zugfolge.'}, {status:400});
+    if (theme && variant === GAME_VARIANT_FREESTYLE) return json({ok:false, code:'THEME_FREESTYLE_CONFLICT', message:'Thementurniere verwenden klassische Eröffnungen und können nicht mit Freestyle kombiniert werden.'}, {status:400});
     if (live && !scheduledStartAt) return json({ok:false, code:'INVALID_TOURNAMENT_START', message:'Bitte einen gültigen Starttermin für das Live-Turnier wählen.'}, {status:400});
     if (live && Date.parse(scheduledStartAt) <= Date.now()) return json({ok:false, code:'TOURNAMENT_START_IN_PAST', message:'Der Starttermin des Live-Turniers muss in der Zukunft liegen.'}, {status:400});
     try {
@@ -7033,19 +7051,19 @@ async function handleAuthApi(request, env, url) {
       if (existing) {
         await env.DB.prepare(
           `UPDATE tournaments
-              SET name = ?, description = ?, max_players = ?, hours_per_move = ?, rated = ?, variant = ?, tournament_type = ?,
+              SET name = ?, description = ?, max_players = ?, hours_per_move = ?, rated = ?, variant = ?, theme_json = ?, tournament_type = ?,
                   time_key = ?, time_label = ?, scheduled_start_at = ?, arena_duration_minutes = ?, arena_ends_at = NULL,
                   arena_closed_at = NULL, round_pause_seconds = 60, mode = ?, updated_at = ?
             WHERE id = ? AND status = 'draft'`
-        ).bind(name, description, players, hours, body.rated === false ? 0 : 1, variant, tournamentType, timeKey || null, timeLabel, scheduledStartAt, arenaDuration, mode, now, id).run();
+        ).bind(name, description, players, hours, body.rated === false ? 0 : 1, variant, themeJson, tournamentType, timeKey || null, timeLabel, scheduledStartAt, arenaDuration, mode, now, id).run();
       } else {
         await env.DB.prepare(
           `INSERT INTO tournaments
-             (id, name, description, max_players, hours_per_move, rated, variant, tournament_type, time_key, time_label,
+             (id, name, description, max_players, hours_per_move, rated, variant, theme_json, tournament_type, time_key, time_label,
               scheduled_start_at, arena_duration_minutes, round_pause_seconds, mode, status, created_by_user_id,
               current_round, total_rounds, created_at, updated_at, published_at, started_at, ended_at, publication_mail_sent_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 60, ?, 'draft', ?, 0, 0, ?, ?, NULL, NULL, NULL, NULL)`
-        ).bind(id, name, description, players, hours, body.rated === false ? 0 : 1, variant, tournamentType, timeKey || null, timeLabel, scheduledStartAt, arenaDuration, mode, admin.session.user.id, now, now).run();
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 60, ?, 'draft', ?, 0, 0, ?, ?, NULL, NULL, NULL, NULL)`
+        ).bind(id, name, description, players, hours, body.rated === false ? 0 : 1, variant, themeJson, tournamentType, timeKey || null, timeLabel, scheduledStartAt, arenaDuration, mode, admin.session.user.id, now, now).run();
       }
       const row = await loadTournamentRow(env, id);
       return json({ok:true, tournament:await tournamentDto(env, row, admin.session.user), message:existing ? 'Turnierentwurf wurde aktualisiert.' : 'Turnierentwurf wurde gespeichert.'});
@@ -8450,12 +8468,12 @@ function cleanMove(value) {
   };
 }
 
-function makeInitialClock(timeControl, now = Date.now()) {
+function makeInitialClock(timeControl, now = Date.now(), startingTurn = 'w') {
   const baseMs = Math.max(0, Math.floor(Number(timeControl.baseSeconds || 0) * 1000));
   return {
     wMs: baseMs,
     bMs: baseMs,
-    turn: 'w',
+    turn: startingTurn === 'b' ? 'b' : 'w',
     running: true,
     lastTs: now,
     timeLost: false,
@@ -8532,6 +8550,7 @@ function pieceColor(ch) {
 const GAME_VARIANT_STANDARD = 'standard';
 const GAME_VARIANT_FREESTYLE = 'freestyle960';
 const STANDARD_BACK_RANK = 'RNBQKBNR';
+const themeValidationCache = new Map();
 let chess960BackRankCache = null;
 let chess960BackRankIdCache = null;
 
@@ -8601,10 +8620,83 @@ function chess960IdByBackRank(backRank) {
   return chess960BackRankIdCache.has(rank) ? chess960BackRankIdCache.get(rank) : null;
 }
 
+function cleanThemeDefinition(value) {
+  if (!value || typeof value !== 'object') return null;
+  let cacheKey = '';
+  try {
+    const serialized = JSON.stringify(value);
+    if (serialized.length <= 20000) cacheKey = serialized;
+  } catch (_) {}
+  if (cacheKey && themeValidationCache.has(cacheKey)) {
+    return JSON.parse(JSON.stringify(themeValidationCache.get(cacheKey)));
+  }
+  const name = String(value.name || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 100);
+  const sourceMoves = Array.isArray(value.moves) ? value.moves.slice(0, 40) : [];
+  if (!name || !sourceMoves.length) return null;
+
+  const game = new ChessGame({variant:GAME_VARIANT_STANDARD});
+  const moves = [];
+  for (const source of sourceMoves) {
+    const cleaned = cleanMove(source);
+    if (!cleaned) return null;
+    const found = findMatchingLegalMove(game.legalMoves(), cleaned);
+    if (!found) return null;
+    const before = game.clone();
+    const mv = {from:found.from, to:found.to, meta:found.meta || {}, promotion:cleaned.promotion || null};
+    const movingPiece = before.at(found.from[0], found.from[1]);
+    const needsPromotion = movingPiece && movingPiece.toLowerCase() === 'p' && (found.to[1] === 0 || found.to[1] === 7);
+    if (needsPromotion !== !!cleaned.promotion) return null;
+    game.makeMove(mv, false);
+    moves.push({
+      from:mv.from.slice(),
+      to:mv.to.slice(),
+      promotion:mv.promotion || null,
+      castle:castleSideCode(mv) || null,
+      san:serverMoveToSan(before, mv, game)
+    });
+  }
+  if (game.gameOver()) return null;
+
+  let moveText = String(value.moveText || value.move_text || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500);
+  if (!moveText) {
+    const parts = [];
+    for (let index = 0; index < moves.length; index += 2) {
+      parts.push(String(Math.floor(index / 2) + 1) + '.');
+      if (moves[index]) parts.push(moves[index].san);
+      if (moves[index + 1]) parts.push(moves[index + 1].san);
+    }
+    moveText = parts.join(' ');
+  }
+  const cleanedTheme = {
+    id:String(value.id || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 48),
+    name,
+    eco:String(value.eco || '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 12),
+    moveText,
+    idea:String(value.idea || '').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 500),
+    startPly:moves.length,
+    sideToMove:game.turn,
+    moves
+  };
+  if (cacheKey) {
+    if (themeValidationCache.size >= 256) themeValidationCache.delete(themeValidationCache.keys().next().value);
+    themeValidationCache.set(cacheKey, cleanedTheme);
+    const normalizedKey = JSON.stringify(cleanedTheme);
+    if (normalizedKey.length <= 20000) themeValidationCache.set(normalizedKey, cleanedTheme);
+  }
+  return JSON.parse(JSON.stringify(cleanedTheme));
+}
+
 function cleanGameSetup(setup) {
   setup = setup || {};
   const variant = String(setup.variant || setup.mode || '').toLowerCase() === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD;
-  if (variant !== GAME_VARIANT_FREESTYLE) return { variant: GAME_VARIANT_STANDARD, positionId: null, backRank: STANDARD_BACK_RANK };
+  if (variant !== GAME_VARIANT_FREESTYLE) {
+    return {
+      variant: GAME_VARIANT_STANDARD,
+      positionId: null,
+      backRank: STANDARD_BACK_RANK,
+      theme:cleanThemeDefinition(setup.theme || setup.openingTheme || setup.opening_theme)
+    };
+  }
   let positionId = Number.isFinite(Number(setup.positionId ?? setup.position_id)) ? Math.floor(Number(setup.positionId ?? setup.position_id)) : null;
   if (positionId !== null) positionId = Math.max(0, Math.min(959, positionId));
   let backRank = String(setup.backRank || setup.back_rank || '').toUpperCase();
@@ -8617,7 +8709,7 @@ function cleanGameSetup(setup) {
     positionId = positionId !== null ? positionId : 0;
     backRank = chess960BackRankById(positionId);
   }
-  return { variant: GAME_VARIANT_FREESTYLE, positionId, backRank };
+  return { variant: GAME_VARIANT_FREESTYLE, positionId, backRank, theme:null };
 }
 
 function blackBackRankFromWhite(backRank) {
@@ -8660,7 +8752,16 @@ function ChessGame(setup) {
 }
 
 ChessGame.prototype.reset = function(setup) {
-  this.setup = cleanGameSetup(setup);
+  const normalizedSetup = cleanGameSetup(setup);
+  // Die Eröffnungszugfolge gehört zum Raum-Setup, nicht in jede interne
+  // Brettkopie. Sonst würde die Serverprüfung sie bei jedem legalen Zug erneut
+  // validieren.
+  this.setup = {
+    variant:normalizedSetup.variant,
+    positionId:normalizedSetup.positionId,
+    backRank:normalizedSetup.backRank,
+    theme:null
+  };
   const backRank = this.setup.backRank || STANDARD_BACK_RANK;
   this.variant = this.setup.variant;
   this.startBackRank = backRank;
@@ -9085,8 +9186,12 @@ function findMatchingLegalMove(legalMoves, moveLike) {
 }
 
 function buildGameFromStoredMoves(moves, gameSetup = null) {
-  const g = new ChessGame(cleanGameSetup(gameSetup));
-  for (const stored of moves || []) {
+  const setup = cleanGameSetup(gameSetup);
+  const g = new ChessGame(setup);
+  const combined = [];
+  if (setup.theme && Array.isArray(setup.theme.moves)) combined.push(...setup.theme.moves);
+  combined.push(...(moves || []));
+  for (const stored of combined) {
     const legal = g.legalMoves();
     const found = findMatchingLegalMove(legal, stored);
     if (!found) throw new Error('Gespeicherte Zugliste enthält einen illegalen Zug.');
@@ -9094,6 +9199,10 @@ function buildGameFromStoredMoves(moves, gameSetup = null) {
     g.makeMove(mv, true);
   }
   return g;
+}
+
+function gameTurnForSetup(gameSetup) {
+  return buildGameFromStoredMoves([], gameSetup).turn;
 }
 
 function validateMoveOnServer(storedMoves, incoming, gameSetup = null) {
@@ -9196,6 +9305,12 @@ function pgnMoveTextFromStoredMoves(moves, result) {
   return parts.join(' ');
 }
 
+function pgnMovesIncludingTheme(setup, moves) {
+  const normalized = cleanGameSetup(setup);
+  const themeMoves = normalized.theme && Array.isArray(normalized.theme.moves) ? normalized.theme.moves : [];
+  return themeMoves.concat(Array.isArray(moves) ? moves : []);
+}
+
 function buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, blackName, tournamentMeta = null }) {
   const normalizedSetup = cleanGameSetup(setup || (game && game.gameSetup) || null);
   const result = game && game.result ? String(game.result) : '*';
@@ -9229,8 +9344,14 @@ function buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, bla
     tags.push(['HammerschachPosition', String(normalizedSetup.positionId)]);
     tags.push(['HammerschachBackRank', normalizedSetup.backRank]);
   }
+  if (normalizedSetup.theme) {
+    tags.push(['HammerschachTournamentTheme', '1']);
+    tags.push(['Opening', normalizedSetup.theme.name]);
+    tags.push(['ThemeStartPly', String(normalizedSetup.theme.startPly)]);
+    if (normalizedSetup.theme.moveText) tags.push(['HammerschachThemeMoves', normalizedSetup.theme.moveText]);
+  }
   const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
-  return header + '\n\n' + pgnMoveTextFromStoredMoves(moves, result) + '\n';
+  return header + '\n\n' + pgnMoveTextFromStoredMoves(pgnMovesIncludingTheme(normalizedSetup, moves), result) + '\n';
 }
 
 function pgnTimeControlFromServerTimeControl(timeControl) {
@@ -9275,8 +9396,14 @@ function buildCompletedPgnDocument({ game, timeControl, setup, moves, whiteName,
     tags.push(['HammerschachPosition', String(normalizedSetup.positionId)]);
     tags.push(['HammerschachBackRank', normalizedSetup.backRank]);
   }
+  if (normalizedSetup.theme) {
+    tags.push(['HammerschachTournamentTheme', '1']);
+    tags.push(['Opening', normalizedSetup.theme.name]);
+    tags.push(['ThemeStartPly', String(normalizedSetup.theme.startPly)]);
+    if (normalizedSetup.theme.moveText) tags.push(['HammerschachThemeMoves', normalizedSetup.theme.moveText]);
+  }
   const header = tags.map(([key, value]) => '[' + key + ' "' + pgnEscapeTagValue(value) + '"]').join('\n');
-  return header + '\n\n' + pgnMoveTextFromStoredMoves(moves, result) + '\n';
+  return header + '\n\n' + pgnMoveTextFromStoredMoves(pgnMovesIncludingTheme(normalizedSetup, moves), result) + '\n';
 }
 
 function safePgnFilePart(value) {
@@ -10301,7 +10428,7 @@ export class GameRoom {
     const tournamentMeta = (await this.state.storage.get('tournamentMeta')) || null;
     const pgn = buildDailyPgnDocument({ game, timeControl, setup, moves, whiteName, blackName, tournamentMeta });
     const datePart = pgnDateFromIso(game.endedAt || game.startedAt || null).replace(/\./g, '-');
-    const variantPart = setup.variant === GAME_VARIANT_FREESTYLE ? ('Freestyle-' + setup.positionId) : 'Klassisch';
+    const variantPart = setup.theme ? ('Thementurnier-' + setup.theme.name) : (setup.variant === GAME_VARIANT_FREESTYLE ? ('Freestyle-' + setup.positionId) : 'Klassisch');
     const filename = safePgnFilePart('Hammerschach-' + datePart + '-' + variantPart + '-' + whiteName + '-vs-' + blackName) + '.pgn';
     return { ok:true, status:200, pgn, filename };
   }
@@ -11394,7 +11521,8 @@ export class GameRoom {
       playStatsCounted: false,
       playStatsCountedAt: null
     };
-    const clock = makeInitialClock(timeControl, now);
+    const initialTurn = gameTurnForSetup(gameSetup);
+    const clock = makeInitialClock(timeControl, now, initialTurn);
 
     await this.state.storage.put('gameSetup', gameSetup);
     await this.state.storage.put('game', game);
@@ -11421,13 +11549,13 @@ export class GameRoom {
       // Live-Turnierpartien werden zeitgleich serverseitig eröffnet. Die Spieler
       // übernehmen ihren bereits accountgebundenen Platz beim automatischen Laden.
     } else if (acceptedOpenOffer) {
-      // Der Anbieter erhält genau eine Annahmebestätigung. Spielt er Weiß,
+      // Der Anbieter erhält genau eine Annahmebestätigung. Ist er zugleich am Zug,
       // enthält dieselbe Mail zugleich den Hinweis „Du bist am Zug“, damit
       // nicht unmittelbar zwei Nachrichten für denselben Partiestart eintreffen.
       this.queueDailyOpenOfferAcceptedNotification(clock);
-      if (creatorRole !== 'w') this.queueDailyTurnNotification('w', null, clock);
+      if (creatorRole !== initialTurn) this.queueDailyTurnNotification(initialTurn, null, clock);
     } else {
-      this.queueDailyTurnNotification('w', null, clock);
+      this.queueDailyTurnNotification(initialTurn, null, clock);
     }
 
     return { started:true, reason:'auto_started', game, clock, timeControl, gameSetup };
@@ -12166,7 +12294,7 @@ export class GameRoom {
         playStatsCounted: false,
         playStatsCountedAt: null
       };
-      const clock = makeInitialClock(timeControl, now);
+      const clock = makeInitialClock(timeControl, now, gameTurnForSetup(gameSetup));
       await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('game', game);
       await this.state.storage.delete('ratingResult');
@@ -12428,7 +12556,7 @@ export class GameRoom {
         return;
       }
 
-      let clock = timedState.clock || (await this.state.storage.get('clock')) || makeInitialClock(timeControl, Date.parse(game.startedAt) || Date.now());
+      let clock = timedState.clock || (await this.state.storage.get('clock')) || makeInitialClock(timeControl, Date.parse(game.startedAt) || Date.now(), gameTurnForSetup(gameSetup));
       const now = Date.now();
       clock = advanceClock(clock, now);
       if (!clock || clock.timeLost || game.ended) {
@@ -12671,7 +12799,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
