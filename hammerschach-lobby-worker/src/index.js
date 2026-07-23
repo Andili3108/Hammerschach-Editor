@@ -544,6 +544,7 @@ async function durableObjectBackupRoomNameMap(env) {
     'daily_game_archives',
     'public_games',
     'open_game_offers',
+    'completed_games',
     'rated_games',
     'account_game_rooms',
     'invitation_email_log',
@@ -2675,6 +2676,29 @@ function prepareDailyResultEmail(payload) {
   return { ok:true, mailType:'daily_result', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
+function prepareRematchRequestEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const opponentName = cleanDisplayName(payload && payload.opponentName) || 'dein Gegner';
+  const inviteUrl = String(payload && payload.inviteUrl || '').trim();
+  const timeLabel = String(payload && payload.timeLabel || '').slice(0, 120);
+  const variantLabel = String(payload && payload.variantLabel || '').slice(0, 120);
+  if (!recipientEmail || !inviteUrl) {
+    return { ok:false, status:400, code:'INVALID_REMATCH_MAIL', message:'Die Revanche-Mail konnte nicht vorbereitet werden.' };
+  }
+  const details = [];
+  if (variantLabel) details.push(`Spielmodus: ${variantLabel}`);
+  if (timeLabel) details.push(`Bedenkzeit: ${timeLabel}`);
+  const detailText = details.length ? `\n\n${details.join('\n')}` : '';
+  const subject = `${opponentName} bietet dir eine Revanche an`;
+  const textPart = `Hallo ${recipientName},\n\n${opponentName} möchte nach eurer gerade beendeten Partie eine Revanche spielen.${detailText}\n\nRevanche ansehen und beantworten:\n${inviteUrl}\n\nDie neue Partie wird erst erstellt, wenn du die Revanche im Hammerschach-Gamer annimmst.\n\nViele Grüße\nHammerschach-Gamer`;
+  const detailHtml = details.length
+    ? `<div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${details.map(line => escapeEmailHtml(line)).join('<br>')}</div>`
+    : '';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Revanche angeboten</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(opponentName)}</strong> möchte nach eurer gerade beendeten Partie eine Revanche spielen.</p>${detailHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Revanche beantworten</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Die neue Partie wird erst nach deiner Annahme erstellt.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, mailType:'rematch_request', recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
 async function loadEmailNotificationRecipient(env, userId, preferenceName) {
   const id = String(userId || '').trim();
   if (!id || !env || !env.DB) return { ok:false, reason:'invalid_user' };
@@ -2738,6 +2762,26 @@ async function sendDailyResultEmailNotification(env, payload) {
     result = await sendPreparedTransactionalEmail(env, mail);
   } catch (error) {
     result = { ok:false, code:'DAILY_RESULT_MAIL_FAILED', message:error && error.message ? error.message : 'Ergebnisbenachrichtigung fehlgeschlagen.' };
+  }
+  try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
+  return result;
+}
+
+async function sendRematchRequestEmailNotification(env, payload) {
+  const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, null);
+  if (!recipient.ok) return { ok:true, skipped:true, reason:recipient.reason };
+  const claim = await claimEmailNotification(env, payload.notificationKey, 'rematch_request', recipient.user.id, payload.roomId);
+  if (!claim.claimed) return { ok:true, skipped:true, reason:claim.reason };
+  let result;
+  try {
+    const mail = prepareRematchRequestEmail({
+      ...payload,
+      recipientEmail:recipient.email,
+      recipientName:recipient.user.username
+    });
+    result = await sendPreparedTransactionalEmail(env, mail);
+  } catch (error) {
+    result = { ok:false, code:'REMATCH_MAIL_FAILED', message:error && error.message ? error.message : 'Revanche-Mail fehlgeschlagen.' };
   }
   try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
   return result;
@@ -4456,14 +4500,81 @@ async function ensureCompletedGamesTable(env) {
        result TEXT NOT NULL,
        end_reason TEXT,
        rated INTEGER NOT NULL DEFAULT 0,
+       rating_type TEXT,
        pgn TEXT NOT NULL,
        updated_at TEXT NOT NULL
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN rating_type TEXT`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_white ON completed_games (white_user_id, ended_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_black ON completed_games (black_user_id, ended_at)`).run();
   completedGamesTableReady = true;
   return true;
+}
+
+function ratingTypeFromCompletedGameRow(row) {
+  const explicit = String(row && row.rating_type || '');
+  if (RATING_TYPE_KEYS.has(explicit)) return explicit;
+  const mode = String(row && row.mode || '').toLowerCase();
+  const variant = String(row && row.variant || '').toLowerCase();
+  if (mode === 'daily') return variant === GAME_VARIANT_FREESTYLE ? 'daily_freestyle' : 'daily_classic';
+  if (variant === GAME_VARIANT_FREESTYLE) return 'live_freestyle';
+  const label = String(row && row.time_label || '').toLowerCase();
+  if (label.includes('classic')) return 'live_classic';
+  if (label.includes('rapid')) return 'live_rapid';
+  if (label.includes('blitz')) return 'live_blitz';
+  return '';
+}
+
+async function headToHeadForUsers(env, viewerUserId, opponentUserId, ratingType) {
+  const viewerId = String(viewerUserId || '').trim();
+  const opponentId = String(opponentUserId || '').trim();
+  const type = RATING_TYPE_KEYS.has(String(ratingType || '')) ? String(ratingType) : '';
+  const info = ratingTypeInfo(type);
+  const empty = {
+    available:false,
+    ratingType:type,
+    label:info ? info.label : '',
+    wins:0,
+    draws:0,
+    losses:0,
+    total:0
+  };
+  if (!env || !env.DB || !viewerId || !opponentId || viewerId === opponentId || !type) return empty;
+  if (!(await ensureCompletedGamesTable(env))) return empty;
+
+  const result = await env.DB.prepare(
+    `SELECT white_user_id, black_user_id, result, mode, time_label, variant, rating_type
+       FROM completed_games
+      WHERE (white_user_id = ? AND black_user_id = ?)
+         OR (white_user_id = ? AND black_user_id = ?)`
+  ).bind(viewerId, opponentId, opponentId, viewerId).all();
+
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  for (const row of (result && Array.isArray(result.results) ? result.results : [])) {
+    if (ratingTypeFromCompletedGameRow(row) !== type) continue;
+    const gameResult = String(row.result || '');
+    if (gameResult === '1/2-1/2') {
+      draws += 1;
+      continue;
+    }
+    if (gameResult !== '1-0' && gameResult !== '0-1') continue;
+    const viewerWasWhite = String(row.white_user_id || '') === viewerId;
+    const viewerWon = (gameResult === '1-0' && viewerWasWhite) || (gameResult === '0-1' && !viewerWasWhite);
+    if (viewerWon) wins += 1;
+    else losses += 1;
+  }
+  return {
+    available:true,
+    ratingType:type,
+    label:info ? info.label : type,
+    wins,
+    draws,
+    losses,
+    total:wins + draws + losses
+  };
 }
 
 function analyzerGameForUser(row, sessionUser, source = 'archive') {
@@ -6052,7 +6163,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
+    'users','sessions','daily_games','public_games','completed_games','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients','lobby_ticker_items'
@@ -9422,6 +9533,7 @@ export class GameRoom {
     this.userPresenceCache = { key:'', expiresAt:0, values:{} };
     this.accountNameCache = { key:'', expiresAt:0, values:{} };
     this.ratingStateCache = { key:'', expiresAt:0, value:null };
+    this.headToHeadCache = new Map();
   }
 
 
@@ -9431,6 +9543,205 @@ export class GameRoom {
     });
     if (this.state && typeof this.state.waitUntil === 'function') this.state.waitUntil(guarded);
     return guarded;
+  }
+
+  playerRoleForUser(players, userId) {
+    const uid = String(userId || '');
+    if (!uid) return '';
+    if (players && players.white && String(players.white.userId || '') === uid) return 'w';
+    if (players && players.black && String(players.black.userId || '') === uid) return 'b';
+    return '';
+  }
+
+  async headToHeadStateFor(info, players, timeControl, gameSetup) {
+    const viewerUserId = String(info && info.userId || '');
+    const viewerRole = this.playerRoleForUser(players, viewerUserId);
+    if (!viewerUserId || !viewerRole) return null;
+    const opponentSlot = viewerRole === 'w' ? players.black : players.white;
+    const opponentUserId = String(opponentSlot && opponentSlot.userId || '');
+    const ratingType = ratingTypeFromGame(timeControl, gameSetup);
+    if (!opponentUserId || !ratingType) return null;
+
+    const cacheKey = [viewerUserId, opponentUserId, ratingType].join('|');
+    const cached = this.headToHeadCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    try {
+      const value = await headToHeadForUsers(this.env, viewerUserId, opponentUserId, ratingType);
+      this.headToHeadCache.set(cacheKey, { expiresAt:Date.now() + 30000, value });
+      return value;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async rematchStateFor(info, players, game, tournamentMeta) {
+    const userId = String(info && info.userId || '');
+    const role = this.playerRoleForUser(players, userId);
+    const opponentSlot = role === 'w' ? players.black : role === 'b' ? players.white : null;
+    const opponentUserId = String(opponentSlot && opponentSlot.userId || '');
+    if (!userId || !role || !opponentUserId || !game || !game.ended || (tournamentMeta && tournamentMeta.tournamentId)) return null;
+
+    let offer = (await this.state.storage.get('rematchOffer')) || null;
+    if (!offer) {
+      return { available:true, status:'available', opponentName:'' };
+    }
+    const requestedByUserId = String(offer.requestedByUserId || '');
+    const targetUserId = String(offer.targetUserId || '');
+    if (userId !== requestedByUserId && userId !== targetUserId) return null;
+
+    const common = {
+      available:true,
+      offerId:String(offer.id || ''),
+      requestedByName:cleanDisplayName(offer.requestedByName || ''),
+      opponentName:cleanDisplayName(userId === requestedByUserId ? offer.targetName : offer.requestedByName),
+      createdAt:offer.createdAt || null
+    };
+    if (offer.status === 'pending') {
+      return Object.assign(common, { status:userId === requestedByUserId ? 'requested' : 'incoming' });
+    }
+    if (offer.status === 'creating') {
+      return Object.assign(common, { status:'creating' });
+    }
+    if (offer.status === 'ready' && cleanRoomId(offer.roomId)) {
+      return Object.assign(common, { status:'ready', roomId:cleanRoomId(offer.roomId) });
+    }
+    if (offer.status === 'declined') {
+      return Object.assign(common, { status:'declined' });
+    }
+    return { available:true, status:'available', opponentName:common.opponentName };
+  }
+
+  async sendRematchRequestNotification(offer, timeControl, gameSetup) {
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const inviteUrl = gamerInvitationUrl(this.env, roomId);
+    if (!offer || !roomId || !inviteUrl) return { ok:true, skipped:true, reason:'context_missing' };
+    return sendRematchRequestEmailNotification(this.env, {
+      notificationKey:`rematch_request:${roomId}:${String(offer.id || '')}:${String(offer.targetUserId || '')}`,
+      roomId,
+      recipientUserId:String(offer.targetUserId || ''),
+      opponentName:cleanDisplayName(offer.requestedByName || ''),
+      inviteUrl,
+      timeLabel:invitationTimeLabel(timeControl),
+      variantLabel:invitationVariantLabel(gameSetup)
+    });
+  }
+
+  async requestRematch(info) {
+    const game = (await this.state.storage.get('game')) || null;
+    const tournamentMeta = (await this.state.storage.get('tournamentMeta')) || null;
+    if (!game || !game.ended) return { ok:false, code:'REMATCH_GAME_RUNNING', message:'Eine Revanche kann erst nach Partieende angeboten werden.' };
+    if (tournamentMeta && tournamentMeta.tournamentId) return { ok:false, code:'REMATCH_TOURNAMENT_BLOCKED', message:'Bei Turnierpartien ist keine direkte Revanche vorgesehen.' };
+
+    const players = await this.getSecurePlayers();
+    const requesterUserId = String(info && info.userId || '');
+    const requesterRole = this.playerRoleForUser(players, requesterUserId);
+    const targetSlot = requesterRole === 'w' ? players.black : requesterRole === 'b' ? players.white : null;
+    const targetUserId = String(targetSlot && targetSlot.userId || '');
+    if (!requesterUserId || !requesterRole) return { ok:false, code:'REMATCH_PLAYER_REQUIRED', message:'Nur ein angemeldeter Spieler dieser Partie kann eine Revanche anbieten.' };
+    if (!targetUserId) return { ok:false, code:'REMATCH_MEMBER_REQUIRED', message:'Eine direkte Revanche ist nur zwischen zwei registrierten Mitgliedern möglich.' };
+
+    const existing = (await this.state.storage.get('rematchOffer')) || null;
+    if (existing) {
+      if (String(existing.requestedByUserId || '') === requesterUserId || String(existing.targetUserId || '') === requesterUserId) {
+        return { ok:true, alreadyExists:true };
+      }
+      return { ok:false, code:'REMATCH_ALREADY_EXISTS', message:'Für diese Partie besteht bereits eine Revanche-Anfrage.' };
+    }
+
+    const names = await this.getAccountNamesByUserIds([requesterUserId, targetUserId]);
+    const offer = {
+      id:'rm_' + randomBase64Url(12),
+      status:'pending',
+      requestedByUserId:requesterUserId,
+      requestedByRole:requesterRole,
+      requestedByName:cleanDisplayName(names[requesterUserId] || '') || (requesterRole === 'w' ? 'Weiß' : 'Schwarz'),
+      targetUserId,
+      targetRole:opposite(requesterRole),
+      targetName:cleanDisplayName(names[targetUserId] || '') || (requesterRole === 'w' ? 'Schwarz' : 'Weiß'),
+      createdAt:new Date().toISOString()
+    };
+    await this.state.storage.put('rematchOffer', offer);
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    this.runBackgroundTask(
+      this.sendRematchRequestNotification(offer, timeControl, gameSetup),
+      'Revanche-Benachrichtigung fehlgeschlagen'
+    );
+    return { ok:true };
+  }
+
+  async respondToRematch(info, accepted) {
+    const offer = (await this.state.storage.get('rematchOffer')) || null;
+    const userId = String(info && info.userId || '');
+    if (!offer || offer.status !== 'pending') return { ok:false, code:'REMATCH_NOT_PENDING', message:'Es liegt keine offene Revanche-Anfrage vor.' };
+    if (!userId || String(offer.targetUserId || '') !== userId) return { ok:false, code:'REMATCH_TARGET_REQUIRED', message:'Nur der eingeladene Gegner kann diese Revanche beantworten.' };
+    if (!accepted) {
+      await this.state.storage.put('rematchOffer', Object.assign({}, offer, {
+        status:'declined',
+        respondedAt:new Date().toISOString()
+      }));
+      return { ok:true, accepted:false };
+    }
+
+    const tournamentMeta = (await this.state.storage.get('tournamentMeta')) || null;
+    if (tournamentMeta && tournamentMeta.tournamentId) return { ok:false, code:'REMATCH_TOURNAMENT_BLOCKED', message:'Bei Turnierpartien ist keine direkte Revanche vorgesehen.' };
+    const players = await this.getSecurePlayers();
+    const oldWhiteUserId = String(players.white && players.white.userId || '');
+    const oldBlackUserId = String(players.black && players.black.userId || '');
+    if (!oldWhiteUserId || !oldBlackUserId || oldWhiteUserId === oldBlackUserId) {
+      return { ok:false, code:'REMATCH_MEMBERS_MISSING', message:'Die beiden Mitglieder konnten nicht mehr eindeutig zugeordnet werden.' };
+    }
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    const game = (await this.state.storage.get('game')) || null;
+    const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    if (!timeControl) return { ok:false, code:'REMATCH_TIME_MISSING', message:'Die ursprüngliche Bedenkzeit konnte nicht übernommen werden.' };
+
+    const names = await this.getAccountNamesByUserIds([oldWhiteUserId, oldBlackUserId]);
+    const roomId = cleanRoomId(randomBase64Url(12));
+    const sourceRoomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const creatingOffer = Object.assign({}, offer, {
+      status:'creating',
+      respondedAt:new Date().toISOString(),
+      roomId
+    });
+    await this.state.storage.put('rematchOffer', creatingOffer);
+
+    try {
+      const id = this.env.GAME_ROOM.idFromName(roomId);
+      const stub = this.env.GAME_ROOM.get(id);
+      const response = await stub.fetch(new Request('https://game-room.internal/rematch-init?room=' + encodeURIComponent(roomId), {
+        method:'POST',
+        headers:{'content-type':'application/json'},
+        body:JSON.stringify({
+          sourceRoomId,
+          offerId:String(offer.id || ''),
+          white:{ userId:oldBlackUserId, username:cleanDisplayName(names[oldBlackUserId] || '') || 'Weiß' },
+          black:{ userId:oldWhiteUserId, username:cleanDisplayName(names[oldWhiteUserId] || '') || 'Schwarz' },
+          timeControl,
+          gameSetup,
+          ratedRequested:(await this.state.storage.get('ratedRequested')) !== false,
+          publicGame:(await this.state.storage.get('publicGame')) === true,
+          createdByUserId:String(offer.requestedByUserId || '')
+        })
+      }));
+      let initialized = null;
+      try { initialized = await response.json(); } catch (_) { initialized = null; }
+      if (!response.ok || !initialized || !initialized.ok) {
+        throw new Error(initialized && initialized.message ? initialized.message : 'Der neue Revanche-Raum konnte nicht vorbereitet werden.');
+      }
+    } catch (error) {
+      await this.state.storage.put('rematchOffer', Object.assign({}, offer, {
+        status:'pending',
+        lastError:error && error.message ? String(error.message).slice(0, 200) : 'Revanche konnte nicht vorbereitet werden.'
+      }));
+      return { ok:false, code:'REMATCH_CREATE_FAILED', message:error && error.message ? error.message : 'Die Revanche konnte nicht vorbereitet werden.' };
+    }
+
+    await this.state.storage.put('rematchOffer', Object.assign({}, creatingOffer, {
+      status:'ready',
+      readyAt:new Date().toISOString()
+    }));
+    return { ok:true, accepted:true, roomId };
   }
 
   async dailyEmailRoomContext() {
@@ -10029,6 +10340,84 @@ export class GameRoom {
       await this.state.storage.put('tournamentScheduleMeta', {tournamentId, scheduledAt:new Date(alarmAt).toISOString(), action});
       await this.state.storage.setAlarm(Math.max(Date.now() + 25, alarmAt));
       return json({ok:true, tournamentId, scheduledAt:new Date(alarmAt).toISOString(), action});
+    }
+
+    if (request.method === 'POST' && url.pathname === '/rematch-init') {
+      const body = await readJsonBody(request);
+      const sourceRoomId = cleanRoomId(body && body.sourceRoomId);
+      const offerId = String(body && body.offerId || '').trim().slice(0, 100);
+      const whiteUserId = String(body && body.white && body.white.userId || '').trim();
+      const blackUserId = String(body && body.black && body.black.userId || '').trim();
+      if (!body || !sourceRoomId || !offerId || !whiteUserId || !blackUserId || whiteUserId === blackUserId) {
+        return json({ok:false, code:'INVALID_REMATCH_GAME', message:'Die Revanche-Daten sind unvollständig.'}, {status:400});
+      }
+      const existingMeta = await this.state.storage.get('rematchMeta');
+      if (existingMeta && String(existingMeta.offerId || '') === offerId && String(existingMeta.sourceRoomId || '') === sourceRoomId) {
+        return json({ok:true, roomId:room, alreadyInitialized:true});
+      }
+      if (existingMeta || (await this.state.storage.get('tournamentMeta')) || (await this.state.storage.get('players'))) {
+        return json({ok:false, code:'ROOM_ALREADY_ASSIGNED', message:'Dieser Spielraum ist bereits vergeben.'}, {status:409});
+      }
+
+      const accounts = await this.env.DB.prepare(
+        `SELECT id, username, disabled, deleted_at FROM users WHERE id IN (?, ?)`
+      ).bind(whiteUserId, blackUserId).all();
+      const accountRows = accounts && Array.isArray(accounts.results) ? accounts.results : [];
+      const accountMap = new Map(accountRows.map(row => [String(row.id || ''), row]));
+      const whiteAccount = accountMap.get(whiteUserId);
+      const blackAccount = accountMap.get(blackUserId);
+      if (!whiteAccount || !blackAccount || whiteAccount.disabled || blackAccount.disabled || whiteAccount.deleted_at || blackAccount.deleted_at) {
+        return json({ok:false, code:'REMATCH_ACCOUNT_UNAVAILABLE', message:'Mindestens ein Spieleraccount ist nicht mehr verfügbar.'}, {status:409});
+      }
+
+      const timeControl = cleanTimeControl(body.timeControl || null);
+      if (!timeControl) return json({ok:false, code:'INVALID_REMATCH_TIME_CONTROL', message:'Die ursprüngliche Bedenkzeit ist ungültig.'}, {status:400});
+      const gameSetup = cleanGameSetup(body.gameSetup || null);
+      const whiteName = cleanDisplayName(whiteAccount.username || body.white.username) || 'Weiß';
+      const blackName = cleanDisplayName(blackAccount.username || body.black.username) || 'Schwarz';
+      const whitePlayerId = 'rematch_' + whiteUserId.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 48) + '_w';
+      const blackPlayerId = 'rematch_' + blackUserId.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 48) + '_b';
+      const now = Date.now();
+      const players = {
+        white:{playerId:whitePlayerId, userId:whiteUserId, seatTokenHash:await sha256Hex(randomBase64Url(32)), assignedAt:now, updatedAt:now},
+        black:{playerId:blackPlayerId, userId:blackUserId, seatTokenHash:await sha256Hex(randomBase64Url(32)), assignedAt:now, updatedAt:now}
+      };
+      const profiles = {
+        [whitePlayerId]:{playerId:whitePlayerId, displayName:whiteName, name:whiteName, guest:false, userId:whiteUserId, username:whiteName, role:'w', updatedAt:now},
+        [blackPlayerId]:{playerId:blackPlayerId, displayName:blackName, name:blackName, guest:false, userId:blackUserId, username:blackName, role:'b', updatedAt:now}
+      };
+      const publicGame = body.publicGame === true;
+      const createdByUserId = String(body.createdByUserId || '');
+      const createdByRole = createdByUserId === blackUserId ? 'b' : 'w';
+      const values = {
+        roomId:room,
+        players,
+        playerProfiles:profiles,
+        timeControl,
+        gameSetup,
+        ratedRequested:body.ratedRequested !== false,
+        publicGame,
+        openOffer:false,
+        openOfferStatus:'none',
+        createdByRole,
+        createdByUserId:createdByUserId || whiteUserId,
+        rematchMeta:{ sourceRoomId, offerId, createdAt:new Date().toISOString() }
+      };
+      if (publicGame) values.publicWatchId = randomBase64Url(24);
+      await this.state.storage.put(values);
+      await this.syncAccountRoomIndex(players);
+
+      let started = false;
+      if (timeControl.mode === 'daily') {
+        const startResult = await this.autoStartDailyGameIfReady('rematch');
+        if (!startResult.started && startResult.reason !== 'already_started') {
+          return json({ok:false, code:'REMATCH_GAME_START_FAILED', message:'Die Daily-Revanche konnte nicht gestartet werden.'}, {status:500});
+        }
+        started = true;
+      } else {
+        await this.syncGameIndexes();
+      }
+      return json({ok:true, roomId:room, started});
     }
 
     if (request.method === 'POST' && url.pathname === '/tournament-init') {
@@ -10850,14 +11239,15 @@ export class GameRoom {
       const pgn = buildCompletedPgnDocument({game, timeControl, setup, moves, whiteName, blackName, tournamentMeta});
       const mode = timeControl && timeControl.mode === 'daily' ? 'daily' : 'live';
       const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
+      const ratingType = ratingTypeFromGame(timeControl, setup);
       const updatedAt = new Date().toISOString();
 
       await this.env.DB.prepare(
         `INSERT INTO completed_games (
            room_id, white_user_id, black_user_id, white_name, black_name,
            mode, time_label, days_per_move, variant, position_id, back_rank,
-           started_at, ended_at, result, end_reason, rated, pgn, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           started_at, ended_at, result, end_reason, rated, rating_type, pgn, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
@@ -10874,6 +11264,7 @@ export class GameRoom {
            result = excluded.result,
            end_reason = excluded.end_reason,
            rated = excluded.rated,
+           rating_type = excluded.rating_type,
            pgn = excluded.pgn,
            updated_at = excluded.updated_at`
       ).bind(
@@ -10883,8 +11274,9 @@ export class GameRoom {
         setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
         setup.variant === GAME_VARIANT_FREESTYLE ? setup.backRank : null,
         game.startedAt || null, game.endedAt || updatedAt, game.result || '*', game.endReason || null,
-        rated ? 1 : 0, pgn, updatedAt
+        rated ? 1 : 0, ratingType || null, pgn, updatedAt
       ).run();
+      this.headToHeadCache.clear();
     } catch (_) {
       // Das Analyse-Archiv darf den laufenden Spielraum niemals beeinträchtigen.
     }
@@ -11101,8 +11493,11 @@ export class GameRoom {
     const openOffer = (await this.state.storage.get('openOffer')) === true;
     const openOfferStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : 'none'));
     const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
+    const tournamentMeta = (await this.state.storage.get('tournamentMeta')) || null;
     if (timed.game && timed.game.ended) await this.finalizeRatingIfNeeded(timed.game);
     const rating = await this.buildRatingState(timed.game || null, storedTimeControl, storedGameSetup);
+    const headToHead = await this.headToHeadStateFor(info, players, storedTimeControl, storedGameSetup);
+    const rematch = await this.rematchStateFor(info, players, timed.game || null, tournamentMeta);
 
     return {
       type: 'room_state',
@@ -11124,6 +11519,8 @@ export class GameRoom {
       gameSetup,
       game,
       rating,
+      headToHead,
+      rematch,
       moves,
       drawOffer,
       chatMessages,
@@ -11464,6 +11861,31 @@ export class GameRoom {
 
     if (data.type === 'request_state') {
       await this.sendRoomState(ws, 'room_state');
+      return;
+    }
+
+    if (data.type === 'request_rematch') {
+      let result;
+      try { result = await this.requestRematch(info); }
+      catch (_) { result = {ok:false, code:'REMATCH_REQUEST_FAILED', message:'Die Revanche konnte momentan nicht angefragt werden.'}; }
+      if (!result.ok) {
+        safeSend(ws, {type:'error', code:result.code || 'REMATCH_REQUEST_FAILED', message:result.message || 'Die Revanche konnte nicht angefragt werden.'});
+        return;
+      }
+      await this.broadcastRoomState('rematch_state');
+      return;
+    }
+
+    if (data.type === 'respond_rematch') {
+      const accepted = data.accepted === true || data.accept === true || data.response === 'accept';
+      let result;
+      try { result = await this.respondToRematch(info, accepted); }
+      catch (_) { result = {ok:false, code:'REMATCH_RESPONSE_FAILED', message:'Die Revanche konnte momentan nicht beantwortet werden.'}; }
+      if (!result.ok) {
+        safeSend(ws, {type:'error', code:result.code || 'REMATCH_RESPONSE_FAILED', message:result.message || 'Die Revanche konnte nicht beantwortet werden.'});
+        return;
+      }
+      await this.broadcastRoomState('rematch_state');
       return;
     }
 
@@ -12118,6 +12540,7 @@ export class GameRoom {
         serverNow: now
       });
       await this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock, game);
+      if (game.ended) await this.broadcastRoomState('game_finished');
       return;
     }
 
@@ -12248,7 +12671,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
