@@ -4,7 +4,7 @@ compatibility_date = "2026-06-26"
 keep_vars = true
 
 [vars]
-GAMER_PUBLIC_URL = "https://www.andili.de/page-hammerschach-gamer.html"
+GAMER_PUBLIC_URL = "https://hammerschach-gamer.webmaster-5bb.workers.dev/"
 MAIL_LOGO_URL = "https://raw.githubusercontent.com/Andili3108/Hammerschach-Editor/main/Gamer/Gamer-Logo.png"
 
 [durable_objects]
