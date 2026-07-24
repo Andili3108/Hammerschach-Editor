@@ -1540,6 +1540,27 @@
       loadGameByIndex(0, false);
       return true;
     }
+    function importOpeningFromGamer(text){
+      const parsed = parsePGNFile(text);
+      if(!parsed.length) return false;
+      const imported = parsed.map(buildGameObjectFromParsed).filter(Boolean);
+      if(!imported.length) return false;
+      persistCurrentGame();
+      const first = allGames[0] || null;
+      const firstHeaders = first && first.headers ? first.headers : {};
+      const pristine = allGames.length === 1
+        && Array.isArray(first && first.history) && first.history.length === 0
+        && (!firstHeaders.Event || firstHeaders.Event === '?')
+        && (!firstHeaders.White || firstHeaders.White === '?')
+        && (!firstHeaders.Black || firstHeaders.Black === '?');
+      if(pristine) allGames = imported;
+      else allGames.push(...imported);
+      currentGameIndex = allGames.length - 1;
+      loadGameByIndex(currentGameIndex, false);
+      showAnalyzerPanel('engineBox');
+      scheduleAnalyzerSessionSave();
+      return true;
+    }
 
     function loadGameByIndex(index, doPersist=true, restoredViewIndex=null){
       ensureAtLeastOneGame();
@@ -2239,6 +2260,10 @@
       if(event.source!==window.parent) return; const m=event.data&&typeof event.data==='object'?event.data:{};
       if(m.type==='hammerschach-analyzer-context') document.documentElement.classList.toggle('dark-mode',!!m.darkMode);
       if(m.type==='hammerschach-analyzer-visibility'&&!m.visible&&engineState.analyzing) stopEngineAnalysis(true);
+      if(m.type==='hammerschach-analyzer-import-opening'){
+        if(!importOpeningFromGamer(String(m.pgn||''))) alert('Die Eröffnungsstellung konnte nicht in den Analyzer übernommen werden.');
+        return;
+      }
       if(m.type==='hammerschach-analyzer-games-result'||m.type==='hammerschach-analyzer-pgn-result'){
         const pending=parentRequests.get(String(m.requestId||''));if(!pending)return;clearTimeout(pending.timer);parentRequests.delete(String(m.requestId));m.ok?pending.resolve(m):pending.reject(new Error(m.message||'Anfrage fehlgeschlagen.'));
       }
