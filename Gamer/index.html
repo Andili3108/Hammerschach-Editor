@@ -52,8 +52,24 @@
   }
   html,body{margin:0;font-family:"Times New Roman",serif;background:transparent;color:#111;overflow-x:hidden;}
   button,select,input{font-family:inherit;}
-  .app{padding:10px 0 18px;width:100%;}
+  .app{position:relative;z-index:1;padding:10px 0 18px;width:100%;}
   .shell{width:min(calc(var(--board-max) + var(--gap) + var(--right-col)), 100vw);max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px;}
+  html.hammerschach-standalone body::before,
+  html.hammerschach-standalone body::after{
+    content:"";
+    position:fixed;
+    z-index:0;
+    top:0;
+    bottom:0;
+    width:calc((100vw - 1100px) / 2);
+    pointer-events:none;
+    background-image:url("Gamer-Hintergrund.svg");
+    background-repeat:repeat-y;
+    background-size:520px 1040px;
+    opacity:.30;
+  }
+  html.hammerschach-standalone body::before{left:0;background-position:center top;}
+  html.hammerschach-standalone body::after{right:0;background-position:center -165px;transform:scaleX(-1);}
   .box{background:rgba(255,255,255,.98);border:1px solid rgba(132,63,70,.16);border-radius:18px;box-shadow:0 14px 32px rgba(0,0,0,.12);box-sizing:border-box;}
   .header{display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;padding:12px 16px;align-items:center;}
   .header-brand{min-width:0;display:flex;align-items:center;justify-content:center;}
@@ -980,7 +996,9 @@
 
   html.dark-mode{color-scheme:dark;}
   html.dark-mode,html.dark-mode body{background:#111317!important;color:#f2f3f5;}
-  html.dark-mode .app{background:#111317;}
+  html.dark-mode .app{background:transparent;}
+  html.dark-mode.hammerschach-standalone body::before,
+  html.dark-mode.hammerschach-standalone body::after{filter:brightness(2.35) saturate(.65);opacity:.34;}
   html.dark-mode .box,
   html.dark-mode .identity-modal,
   html.dark-mode .info-modal,
@@ -1214,6 +1232,7 @@
   html.dark-mode *{scrollbar-color:#555b65 #1b1e23;}
 
   @media (max-width:1080px){.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr 1fr}.member-lobby-settings-mount #timeSetupBox{grid-column:1 / -1}.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}}
+  @media (max-width:1299px){html.hammerschach-standalone body::before,html.hammerschach-standalone body::after{display:none}}
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.member-lobby-setup-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.member-lobby-setup-action{width:100%;white-space:normal}.tournament-lobby-banner-actions button{flex:1}.lobby-ticker{grid-template-columns:auto minmax(0,1fr) auto auto}#lobbyTickerPrevBtn{grid-column:1;grid-row:1}.lobby-ticker-content{grid-column:2;grid-row:1}#lobbyTickerNextBtn{grid-column:3;grid-row:1}.lobby-ticker-close{grid-column:4;grid-row:1}.lobby-ticker-action{grid-column:2 / 4;grid-row:2;width:100%}.lobby-ticker-counter{display:none}.lobby-ticker-text{white-space:normal}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
@@ -11380,6 +11399,7 @@ function connectOnlineRoom(roomId, opts){
   roomId = cleanRoomId(roomId);
   if(!roomId) return;
   const previousRoomId = onlineRoomId;
+  const restoringInterruptedConnection = !!(opts.reconnect && previousRoomId === roomId && (onlineConnectionState === 'closed' || onlineConnectionState === 'error'));
   if(previousRoomId !== roomId) resetChatMessages();
   onlineRoomId = roomId;
   updateAnalyzerToolAvailability();
@@ -11679,6 +11699,7 @@ function connectOnlineRoom(roomId, opts){
     else if(onlineRoleCode === 'w') onlineLastMessage = 'Du hast die Partie erstellt. Warte auf Schwarz.';
     else if(onlineRoleCode === 'b') onlineLastMessage = 'Du bist der Partie beigetreten. Warte auf Partiestart durch Weiß.';
     else if(onlineRoleCode === 'spectator') onlineLastMessage = onlineSpectatorOnly ? 'Du schaust dieser öffentlichen Partie zu.' : 'Der Raum ist bereits mit Weiß und Schwarz besetzt.';
+    if(msg.type === 'hello' && restoringInterruptedConnection && !msg.seatDenied) onlineLastMessage = 'Verbindung wiederhergestellt.';
 
     if(!onlineSpectatorOnly && !onlineAutoSyncedInitialSetup && (onlineRoleCode === 'w' || onlineCanSetTimeControl) && (!incomingGameSetup || onlineDesiredGameSetupForNewRoom) && !onlineGameStarted){
       onlineAutoSyncedInitialSetup = true;
@@ -11690,6 +11711,10 @@ function connectOnlineRoom(roomId, opts){
     }
     if(orientationChanged) renderBoard();
     updateOnlineUi();
+    if(msg.type === 'hello' && restoringInterruptedConnection && !msg.seatDenied && statusEl){
+      statusEl.textContent = 'Verbindung wiederhergestellt.';
+      setTimeout(refreshHeaderStatusFromState, 2500);
+    }
     if(shouldAutoOpenRematch) setTimeout(openReadyRematchRoom, 180);
     if(msg.type === 'hello' && msg.seatCode === 'DAILY_ACCOUNT_REQUIRED' && !onlineAuthUser){
       if(statusEl) statusEl.textContent = msg.message || 'Daily Chess erfordert einen Login.';
@@ -11717,7 +11742,7 @@ function connectOnlineRoom(roomId, opts){
       onlineReconnectSuppressed = true;
       onlineLastMessage = 'Dieser öffentliche Zuschauerzugang ist nicht mehr verfügbar.';
     }
-    if(!onlineReconnectSuppressed) onlineLastMessage = 'Lobby-Verbindung getrennt.';
+    if(!onlineReconnectSuppressed) onlineLastMessage = 'Verbindung zum Spielraum unterbrochen – Wiederverbindung läuft automatisch.';
     updateOnlineUi();
     if(onlineRoomId && !onlineReconnectSuppressed){
       onlineReconnectTimer = setTimeout(() => connectOnlineRoom(onlineRoomId, {reconnect:true, spectatorOnly:onlineSpectatorOnly, publicWatchId:onlinePublicWatchId}), opts.reconnect ? 3500 : 2000);
@@ -11726,7 +11751,7 @@ function connectOnlineRoom(roomId, opts){
   onlineSocket.addEventListener('error', () => {
     onlineConnected = false;
     onlineConnectionState = 'error';
-    onlineLastMessage = 'Lobby-Verbindung fehlgeschlagen.';
+    onlineLastMessage = 'Verbindung zum Spielraum fehlgeschlagen.';
     updateOnlineUi();
   });
 }

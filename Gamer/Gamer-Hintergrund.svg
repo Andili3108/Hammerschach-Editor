@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 1040" role="img" aria-label="">
+  <defs>
+    <linearGradient id="side-fade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".68" stop-color="#fff"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="fade-mask">
+      <rect width="520" height="1040" fill="url(#side-fade)"/>
+    </mask>
+
+    <g id="king">
+      <path d="M71 8v29M57 22h28"/>
+      <path d="M49 43c8-7 36-7 44 0l-8 24H57z"/>
+      <path d="M56 67c-2 29-11 54-24 75h78C97 121 88 96 86 67"/>
+      <path d="M35 142h72l8 18H27zM23 160h96l9 20H14z"/>
+    </g>
+
+    <g id="queen">
+      <circle cx="24" cy="25" r="7"/>
+      <circle cx="60" cy="11" r="7"/>
+      <circle cx="96" cy="25" r="7"/>
+      <path d="M24 34l13 42 23-54 23 54 13-42-6 68H30z"/>
+      <path d="M34 102c-2 20-9 38-20 55h92c-11-17-18-35-20-55"/>
+      <path d="M18 157h84l9 19H9z"/>
+    </g>
+
+    <g id="bishop">
+      <path d="M60 8c18 19 28 35 28 50 0 18-12 31-28 31S32 76 32 58C32 43 42 27 60 8z"/>
+      <path d="M68 31L49 64"/>
+      <path d="M42 87c0 24-9 47-24 68h84C87 134 78 111 78 87"/>
+      <path d="M22 155h76l9 19H13z"/>
+    </g>
+
+    <g id="rook">
+      <path d="M18 13h19v21h17V13h20v21h17V13h19v44H18z"/>
+      <path d="M29 57c0 33-6 63-19 91h108c-13-28-19-58-19-91"/>
+      <path d="M17 148h94l10 21H7z"/>
+    </g>
+
+    <g id="pawn">
+      <circle cx="60" cy="37" r="27"/>
+      <path d="M42 62c1 25-8 48-25 69h86C86 110 77 87 78 62"/>
+      <path d="M21 131h78l9 20H12z"/>
+    </g>
+
+    <g id="knight">
+      <path d="M30 150h96l-9-20H43c18-17 32-36 36-57 4-17 0-31-10-42 22 3 38 14 51 31 5-20-2-38-19-51-13-10-34-13-54-5L18 19l22 15C28 56 27 79 35 99c7 18 7 34-5 51z"/>
+      <circle cx="78" cy="30" r="3" fill="#843f46" stroke="none"/>
+    </g>
+  </defs>
+
+  <g mask="url(#fade-mask)" fill="none" stroke="#843f46" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <g opacity=".25" transform="translate(-20 30) rotate(-7 70 90) scale(1.42)">
+      <use href="#king"/>
+    </g>
+    <g opacity=".19" transform="translate(330 -12) rotate(9 60 90) scale(.88)">
+      <use href="#pawn"/>
+    </g>
+    <g opacity=".23" transform="translate(278 310) rotate(12 60 90) scale(1.08)">
+      <use href="#bishop"/>
+    </g>
+    <g opacity=".24" transform="translate(16 592) rotate(-9 60 90) scale(1.28)">
+      <use href="#rook"/>
+    </g>
+    <g opacity=".20" transform="translate(298 755) rotate(8 70 90) scale(1.3)">
+      <use href="#knight"/>
+    </g>
+    <g opacity=".14" transform="translate(70 890) rotate(-13 60 90) scale(.72)">
+      <use href="#queen"/>
+    </g>
+  </g>
+</svg>
