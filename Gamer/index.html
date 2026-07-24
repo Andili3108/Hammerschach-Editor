@@ -1283,7 +1283,8 @@
                 <span>ℹ️ Info</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
               </button>
               <div id="infoMenuPopup" class="header-menu-popup" role="menu" aria-label="Informationen" hidden>
-                <button id="infoGuideOpenBtn" class="header-menu-item" type="button" role="menuitem">📖 Anleitung</button>
+                <button id="firstStepsOpenBtn" class="header-menu-item" type="button" role="menuitem">🚀 Erste Schritte</button>
+                <button id="infoGuideOpenBtn" class="header-menu-item" type="button" role="menuitem">📖 Handbuch</button>
                 <button id="leitbildOpenBtn" class="header-menu-item" type="button" role="menuitem">🤝 Unser Leitbild</button>
               </div>
             </div>
@@ -1388,15 +1389,48 @@
       </div>
     </section>
 
+    <div id="firstStepsBackdrop" class="info-backdrop" hidden>
+      <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="firstStepsTitle" aria-describedby="firstStepsIntro">
+        <h3 id="firstStepsTitle">Erste Schritte im Hammerschach-Gamer</h3>
+        <p id="firstStepsIntro" class="info-modal-intro">Vom ersten Besuch bis zur ersten Partie – kurz und verständlich erklärt.</p>
+        <div class="info-scroll" id="firstStepsScroll" tabindex="0">
+          <h4>1. Registrieren</h4>
+          <p>Klicke oben auf <strong>„👤 Registrierung / Login“</strong> und wähle im geöffneten Fenster den Reiter <strong>„Registrierung“</strong>. Trage deinen gewünschten Benutzernamen, deine Mailadresse und zweimal dasselbe Kennwort ein. Das Kennwort muss mindestens acht Zeichen lang sein. Schließe den Vorgang mit <strong>„Registrieren“</strong> ab.</p>
+
+          <h4>2. Mailadresse bestätigen</h4>
+          <p>Du erhältst eine Bestätigungsmail. Öffne sie und klicke auf den enthaltenen Link. <strong>Erst nach dieser Bestätigung ist der Login möglich.</strong> Falls die Mail nicht ankommt, prüfe bitte auch den Spam- oder Junk-Ordner. Im Login-Fenster kannst du über <strong>„Bestätigungsmail erneut senden“</strong> eine neue Mail anfordern.</p>
+
+          <h4>3. Einloggen und orientieren</h4>
+          <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
+
+          <h4>4. Eine Partie beginnen</h4>
+          <p>Im Bereich <strong>„Neue Partie“</strong> wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Zur Partie einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
+
+          <h4>5. Eigene Partien wiederfinden</h4>
+          <p>Unter <strong>„📂 Partien“ → „📋 Meine Partien“</strong> findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
+
+          <h4>6. Was bedeutet eine Verbindungsmeldung?</h4>
+          <p>Bei einer kurzen Unterbrechung versucht der Gamer automatisch, die Verbindung und den aktuellen Raumzustand wiederherzustellen. Eine solche Meldung bedeutet daher <strong>nicht automatisch, dass die Partie verloren oder der Spielstand verschwunden ist</strong>. Warte zunächst einen Moment. Bleibt die Verbindung aus, lade die Seite neu oder öffne die Partie erneut über <strong>„Meine Partien“</strong> beziehungsweise den Einladungslink.</p>
+          <p><strong>Bei Daily Chess läuft die serverseitige Zugfrist auch ohne geöffnete Seite weiter.</strong> Melde dich später mit demselben Account an und öffne die Partie über „Meine Partien“ erneut.</p>
+
+          <h4>Mehr erfahren</h4>
+          <p>Ausführliche Erklärungen zu Live- und Daily-Partien, Turnieren, Ratings, Chats, Analyzer, Trainer und allen weiteren Funktionen findest du jederzeit unter <strong>„ℹ️ Info“ → „📖 Handbuch“</strong>.</p>
+        </div>
+        <div class="info-actions">
+          <button id="firstStepsCloseBtn" class="button-flat" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
     <div id="infoBackdrop" class="info-backdrop" hidden>
       <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-        <h3 id="infoTitle">Anleitung zum Hammerschach-Gamer</h3>
-        <p class="info-modal-intro">Alle wichtigen Gamer-Funktionen einschließlich des integrierten Analyzers verständlich erklärt. Die Anleitung kann gescrollt werden.</p>
+        <h3 id="infoTitle">Hammerschach-Gamer – Handbuch</h3>
+        <p class="info-modal-intro">Alle Gamer-Funktionen einschließlich der integrierten Werkzeuge ausführlich erklärt. Das Handbuch kann gescrollt werden.</p>
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p>Auf der anonymen Startseite wird die Vorbereitungsspalte ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Nach dem Login erscheinen Farbe, Spielmodus, Bedenkzeit und Zuschauerfreigabe. Öffnest du dagegen einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
-          <p>Das öffentliche Dropdown <strong>„ℹ️ Info“</strong> enthält die <strong>„📖 Anleitung“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Beide Texte sind bereits vor dem Login für Gäste lesbar. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
+          <p>Das öffentliche Dropdown <strong>„ℹ️ Info“</strong> enthält <strong>„🚀 Erste Schritte“</strong>, das ausführliche <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Alle drei Texte sind bereits vor dem Login für Gäste lesbar. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
@@ -4282,6 +4316,7 @@ const membersOpenBtn = document.getElementById('membersOpenBtn');
 const infoMenuEl = document.getElementById('infoMenu');
 const infoMenuBtn = document.getElementById('infoMenuBtn');
 const infoMenuPopup = document.getElementById('infoMenuPopup');
+const firstStepsOpenBtn = document.getElementById('firstStepsOpenBtn');
 const infoGuideOpenBtn = document.getElementById('infoGuideOpenBtn');
 const leitbildOpenBtn = document.getElementById('leitbildOpenBtn');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -4437,6 +4472,9 @@ function setDarkMode(enabled){
 }
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => setDarkMode(!darkModeEnabled));
 updateThemeToggleUi();
+const firstStepsBackdrop = document.getElementById('firstStepsBackdrop');
+const firstStepsCloseBtn = document.getElementById('firstStepsCloseBtn');
+const firstStepsScroll = document.getElementById('firstStepsScroll');
 const infoBackdrop = document.getElementById('infoBackdrop');
 const infoCloseBtn = document.getElementById('infoCloseBtn');
 const infoScroll = document.getElementById('infoScroll');
@@ -9566,6 +9604,26 @@ if(publicGamesRefreshBtn) publicGamesRefreshBtn.addEventListener('click', () => 
 if(publicGamesCloseBtn) publicGamesCloseBtn.addEventListener('click', closePublicGamesDialog);
 if(publicGamesBackdrop) publicGamesBackdrop.addEventListener('click', ev => { if(ev.target === publicGamesBackdrop) closePublicGamesDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && publicGamesBackdrop && !publicGamesBackdrop.hidden) closePublicGamesDialog(); });
+
+function openFirstStepsDialog(){
+  if(!firstStepsBackdrop) return;
+  firstStepsBackdrop.hidden = false;
+  setTimeout(() => {
+    try{
+      if(firstStepsScroll){
+        firstStepsScroll.scrollTop = 0;
+        firstStepsScroll.focus();
+      }
+    } catch(_){}
+  }, 0);
+}
+function closeFirstStepsDialog(){
+  if(firstStepsBackdrop) firstStepsBackdrop.hidden = true;
+}
+if(firstStepsOpenBtn) firstStepsOpenBtn.addEventListener('click', openFirstStepsDialog);
+if(firstStepsCloseBtn) firstStepsCloseBtn.addEventListener('click', closeFirstStepsDialog);
+if(firstStepsBackdrop) firstStepsBackdrop.addEventListener('click', ev => { if(ev.target === firstStepsBackdrop) closeFirstStepsDialog(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && firstStepsBackdrop && !firstStepsBackdrop.hidden) closeFirstStepsDialog(); });
 
 function openInfoDialog(){
   if(!infoBackdrop) return;
