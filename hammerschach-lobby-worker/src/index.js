@@ -1,6 +1,6 @@
 import { connect } from 'cloudflare:sockets';
 
-const DEFAULT_GAMER_PUBLIC_URL = 'https://www.andili.de/page-hammerschach-gamer.html';
+const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
 
 function configuredGamerPublicUrl(env) {
   return String((env && env.GAMER_PUBLIC_URL) || DEFAULT_GAMER_PUBLIC_URL).trim();
