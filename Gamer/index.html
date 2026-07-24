@@ -14048,6 +14048,7 @@ let initialSpectatorOnly = false;
 let freshGameRequested = false;
 let initialVerifyEmailToken = '';
 let initialResetPasswordToken = '';
+let initialFirstStepsRequested = false;
 try{
   const initialUrl = new URL(window.location.href);
   initialVerifyEmailToken = String(initialUrl.searchParams.get('verifyEmail') || '').trim();
@@ -14061,6 +14062,7 @@ try{
   initialPublicWatchId = cleanPublicWatchId(initialUrl.searchParams.get('watch'));
   initialSpectatorOnly = !!initialPublicWatchId;
   freshGameRequested = initialUrl.searchParams.get('fresh') === '1';
+  initialFirstStepsRequested = String(initialUrl.searchParams.get('info') || '').trim().toLowerCase() === 'erste-schritte';
   if(freshGameRequested){
     initialUrl.searchParams.delete('fresh');
     initialUrl.searchParams.delete('watch');
@@ -14095,6 +14097,7 @@ initialAuthRefreshPromise.finally(() => {
     onlineSpectatorOnly = false;
     onlinePublicWatchId = '';
     updateOnlineUi();
+    if(initialFirstStepsRequested && !initialVerifyEmailToken && !initialResetPasswordToken) openFirstStepsDialog();
   }
 });
 </script>
