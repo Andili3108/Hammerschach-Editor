@@ -1,6 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
+const FAIRPLAY_RAW_DATA_VERSION = 1;
 
 function configuredGamerPublicUrl(env) {
   return String((env && env.GAMER_PUBLIC_URL) || DEFAULT_GAMER_PUBLIC_URL).trim();
@@ -4523,6 +4524,79 @@ async function ensureCompletedGamesTable(env) {
   return true;
 }
 
+let fairplayGameDataTableReady = false;
+async function ensureFairplayGameDataTable(env) {
+  if (!env || !env.DB) return false;
+  if (fairplayGameDataTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS fairplay_game_data (
+       room_id TEXT PRIMARY KEY,
+       data_version INTEGER NOT NULL,
+       move_count INTEGER NOT NULL DEFAULT 0,
+       moves_json TEXT NOT NULL,
+       started_at TEXT,
+       ended_at TEXT,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_fairplay_game_data_ended ON fairplay_game_data (ended_at)`).run();
+  fairplayGameDataTableReady = true;
+  return true;
+}
+
+function fairplayFiniteMilliseconds(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.floor(number) : null;
+}
+
+function fairplayMoveAcceptedAtMs(move) {
+  const serverNow = fairplayFiniteMilliseconds(move && move.serverNow);
+  if (serverNow !== null && serverNow > 0) return serverNow;
+  const parsed = Date.parse(String(move && move.receivedAt || ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function buildFairplayMoveArchive(moves, game) {
+  const safeMoves = Array.isArray(moves) ? moves : [];
+  const gameStartedAtMs = Date.parse(String(game && game.startedAt || ''));
+  let previousAcceptedAtMs = Number.isFinite(gameStartedAtMs) && gameStartedAtMs > 0 ? gameStartedAtMs : null;
+
+  return safeMoves.map((move, index) => {
+    const privateAudit = move && move._fairplay && typeof move._fairplay === 'object' ? move._fairplay : {};
+    const acceptedAtMs = fairplayMoveAcceptedAtMs(move);
+    const derivedThinkTimeMs = acceptedAtMs !== null && previousAcceptedAtMs !== null
+      ? Math.max(0, acceptedAtMs - previousAcceptedAtMs)
+      : null;
+    const recordedThinkTimeMs = fairplayFiniteMilliseconds(privateAudit.thinkTimeMs);
+    const thinkTimeMs = recordedThinkTimeMs !== null ? recordedThinkTimeMs : derivedThinkTimeMs;
+    if (acceptedAtMs !== null) previousAcceptedAtMs = acceptedAtMs;
+
+    return {
+      ply:Number.isFinite(Number(move && move.ply)) ? Math.max(1, Math.floor(Number(move.ply))) : index + 1,
+      side:move && move.side === 'b' ? 'b' : 'w',
+      from:cleanSquare(move && move.from),
+      to:cleanSquare(move && move.to),
+      promotion:['Q', 'R', 'B', 'N'].includes(String(move && move.promotion || '').toUpperCase())
+        ? String(move.promotion).toUpperCase()
+        : null,
+      castle:String(move && move.castle || '') === 'K' || String(move && move.castle || '') === 'Q'
+        ? String(move.castle)
+        : null,
+      san:String(move && move.san || '').slice(0, 40),
+      acceptedAt:acceptedAtMs !== null ? new Date(acceptedAtMs).toISOString() : null,
+      thinkTimeMs,
+      moverClockBeforeMs:fairplayFiniteMilliseconds(privateAudit.moverClockBeforeMs),
+      moverClockAfterMs:fairplayFiniteMilliseconds(privateAudit.moverClockAfterMs),
+      whiteClockBeforeMs:fairplayFiniteMilliseconds(privateAudit.whiteClockBeforeMs),
+      blackClockBeforeMs:fairplayFiniteMilliseconds(privateAudit.blackClockBeforeMs),
+      whiteClockAfterMs:fairplayFiniteMilliseconds(privateAudit.whiteClockAfterMs),
+      blackClockAfterMs:fairplayFiniteMilliseconds(privateAudit.blackClockAfterMs)
+    };
+  });
+}
+
 function ratingTypeFromCompletedGameRow(row) {
   const explicit = String(row && row.rating_type || '');
   if (RATING_TYPE_KEYS.has(explicit)) return explicit;
@@ -8381,6 +8455,7 @@ function safeMoveForClient(value) {
   delete out.byPlayer;
   delete out.playerId;
   delete out.userId;
+  delete out._fairplay;
   return out;
 }
 
@@ -11403,6 +11478,33 @@ export class GameRoom {
         game.startedAt || null, game.endedAt || updatedAt, game.result || '*', game.endReason || null,
         rated ? 1 : 0, ratingType || null, pgn, updatedAt
       ).run();
+
+      if (await ensureFairplayGameDataTable(this.env)) {
+        const fairplayMoves = buildFairplayMoveArchive(moves, game);
+        const fairplayCreatedAt = game.endedAt || updatedAt;
+        await this.env.DB.prepare(
+          `INSERT INTO fairplay_game_data (
+             room_id, data_version, move_count, moves_json,
+             started_at, ended_at, created_at, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(room_id) DO UPDATE SET
+             data_version = excluded.data_version,
+             move_count = excluded.move_count,
+             moves_json = excluded.moves_json,
+             started_at = excluded.started_at,
+             ended_at = excluded.ended_at,
+             updated_at = excluded.updated_at`
+        ).bind(
+          roomId,
+          FAIRPLAY_RAW_DATA_VERSION,
+          fairplayMoves.length,
+          JSON.stringify(fairplayMoves),
+          game.startedAt || null,
+          game.endedAt || updatedAt,
+          fairplayCreatedAt,
+          updatedAt
+        ).run();
+      }
       this.headToHeadCache.clear();
     } catch (_) {
       // Das Analyse-Archiv darf den laufenden Spielraum niemals beeinträchtigen.
@@ -12585,6 +12687,13 @@ export class GameRoom {
         return;
       }
 
+      const previousAcceptedAtMs = moves.length
+        ? fairplayMoveAcceptedAtMs(moves[moves.length - 1])
+        : (() => {
+            const parsed = Date.parse(String(game.startedAt || ''));
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+          })();
+      const thinkTimeMs = previousAcceptedAtMs !== null ? Math.max(0, now - previousAcceptedAtMs) : null;
       const move = {
         ply,
         side: role,
@@ -12597,7 +12706,17 @@ export class GameRoom {
         taken: validation.move.taken,
         messageId: data.messageId || incoming.clientMessageId || null,
         receivedAt: new Date(now).toISOString(),
-        serverNow: now
+        serverNow: now,
+        _fairplay:{
+          version:FAIRPLAY_RAW_DATA_VERSION,
+          thinkTimeMs,
+          moverClockBeforeMs:Math.max(0, Math.floor(Number(clock[role + 'Ms'] || 0))),
+          whiteClockBeforeMs:Math.max(0, Math.floor(Number(clock.wMs || 0))),
+          blackClockBeforeMs:Math.max(0, Math.floor(Number(clock.bMs || 0))),
+          moverClockAfterMs:null,
+          whiteClockAfterMs:null,
+          blackClockAfterMs:null
+        }
       };
 
       if (validation.gameOver) {
@@ -12622,6 +12741,9 @@ export class GameRoom {
       }
       clock.lastTs = now;
       clock.updatedAt = now;
+      move._fairplay.moverClockAfterMs = Math.max(0, Math.floor(Number(clock[role + 'Ms'] || 0)));
+      move._fairplay.whiteClockAfterMs = Math.max(0, Math.floor(Number(clock.wMs || 0)));
+      move._fairplay.blackClockAfterMs = Math.max(0, Math.floor(Number(clock.bMs || 0)));
 
       if (!game.playStatsCounted) {
         try {
@@ -12799,7 +12921,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
