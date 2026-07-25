@@ -4597,6 +4597,147 @@ function buildFairplayMoveArchive(moves, game) {
   });
 }
 
+function fairplayIsoTimestamp(value) {
+  const parsed = Date.parse(String(value || ''));
+  return Number.isFinite(parsed) && parsed > 0 ? new Date(parsed).toISOString() : null;
+}
+
+function fairplayArchivedMoveForAdmin(move, index) {
+  const side = move && move.side === 'b' ? 'b' : 'w';
+  const promotion = String(move && move.promotion || '').toUpperCase();
+  const castle = String(move && move.castle || '');
+  return {
+    ply:Number.isFinite(Number(move && move.ply)) ? Math.max(1, Math.floor(Number(move.ply))) : index + 1,
+    side,
+    from:cleanSquare(move && move.from),
+    to:cleanSquare(move && move.to),
+    promotion:['Q', 'R', 'B', 'N'].includes(promotion) ? promotion : null,
+    castle:castle === 'K' || castle === 'Q' ? castle : null,
+    san:String(move && move.san || '').slice(0, 40),
+    acceptedAt:fairplayIsoTimestamp(move && move.acceptedAt),
+    thinkTimeMs:fairplayFiniteMilliseconds(move && move.thinkTimeMs),
+    moverClockBeforeMs:fairplayFiniteMilliseconds(move && move.moverClockBeforeMs),
+    moverClockAfterMs:fairplayFiniteMilliseconds(move && move.moverClockAfterMs),
+    whiteClockBeforeMs:fairplayFiniteMilliseconds(move && move.whiteClockBeforeMs),
+    blackClockBeforeMs:fairplayFiniteMilliseconds(move && move.blackClockBeforeMs),
+    whiteClockAfterMs:fairplayFiniteMilliseconds(move && move.whiteClockAfterMs),
+    blackClockAfterMs:fairplayFiniteMilliseconds(move && move.blackClockAfterMs)
+  };
+}
+
+function fairplayAdminGameSummary(row) {
+  return {
+    roomId:cleanRoomId(row && row.room_id),
+    whiteName:cleanDisplayName(row && row.white_name) || 'Weiß',
+    blackName:cleanDisplayName(row && row.black_name) || 'Schwarz',
+    mode:row && row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel:String(row && row.time_label || '').slice(0, 80),
+    daysPerMove:Number.isFinite(Number(row && row.days_per_move)) && Number(row.days_per_move) > 0
+      ? Math.floor(Number(row.days_per_move))
+      : null,
+    variant:String(row && row.variant || GAME_VARIANT_STANDARD) === GAME_VARIANT_FREESTYLE
+      ? GAME_VARIANT_FREESTYLE
+      : GAME_VARIANT_STANDARD,
+    positionId:Number.isFinite(Number(row && row.position_id)) ? Number(row.position_id) : null,
+    startedAt:fairplayIsoTimestamp(row && row.started_at),
+    endedAt:fairplayIsoTimestamp(row && row.ended_at),
+    result:['1-0', '0-1', '1/2-1/2', '*'].includes(String(row && row.result || ''))
+      ? String(row.result)
+      : '*',
+    endReason:String(row && row.end_reason || '').slice(0, 80) || null,
+    rated:Number(row && row.rated || 0) === 1,
+    ratingType:RATING_TYPE_KEYS.has(String(row && row.rating_type || '')) ? String(row.rating_type) : '',
+    dataVersion:Math.max(1, Math.floor(Number(row && row.data_version || FAIRPLAY_RAW_DATA_VERSION))),
+    moveCount:Math.max(0, Math.floor(Number(row && row.move_count || 0))),
+    archivedAt:fairplayIsoTimestamp(row && (row.fairplay_updated_at || row.updated_at))
+  };
+}
+
+async function listAdminFairplayGames(env) {
+  if (!(await ensureCompletedGamesTable(env)) || !(await ensureFairplayGameDataTable(env))) return [];
+  const result = await env.DB.prepare(
+    `SELECT completed.room_id,
+            completed.white_name,
+            completed.black_name,
+            completed.mode,
+            completed.time_label,
+            completed.days_per_move,
+            completed.variant,
+            completed.position_id,
+            completed.started_at,
+            completed.ended_at,
+            completed.result,
+            completed.end_reason,
+            completed.rated,
+            completed.rating_type,
+            fairplay.data_version,
+            fairplay.move_count,
+            fairplay.updated_at AS fairplay_updated_at
+       FROM fairplay_game_data fairplay
+       JOIN completed_games completed ON completed.room_id = fairplay.room_id
+      ORDER BY completed.ended_at DESC
+      LIMIT 250`
+  ).all();
+  return (result && Array.isArray(result.results) ? result.results : [])
+    .map(fairplayAdminGameSummary)
+    .filter(game => !!game.roomId);
+}
+
+async function getAdminFairplayGame(env, roomId) {
+  const cleanId = cleanRoomId(roomId);
+  if (!cleanId || !(await ensureCompletedGamesTable(env)) || !(await ensureFairplayGameDataTable(env))) return null;
+  const row = await env.DB.prepare(
+    `SELECT completed.room_id,
+            completed.white_name,
+            completed.black_name,
+            completed.mode,
+            completed.time_label,
+            completed.days_per_move,
+            completed.variant,
+            completed.position_id,
+            completed.back_rank,
+            completed.started_at,
+            completed.ended_at,
+            completed.result,
+            completed.end_reason,
+            completed.rated,
+            completed.rating_type,
+            completed.pgn,
+            fairplay.data_version,
+            fairplay.move_count,
+            fairplay.moves_json,
+            fairplay.updated_at AS fairplay_updated_at
+       FROM fairplay_game_data fairplay
+       JOIN completed_games completed ON completed.room_id = fairplay.room_id
+      WHERE fairplay.room_id = ?
+      LIMIT 1`
+  ).bind(cleanId).first();
+  if (!row) return null;
+
+  let parsedMoves = [];
+  try {
+    const parsed = JSON.parse(String(row.moves_json || '[]'));
+    if (Array.isArray(parsed)) parsedMoves = parsed.slice(0, 2000);
+  } catch (_) {}
+  const moves = parsedMoves.map(fairplayArchivedMoveForAdmin);
+  const timedMoveCount = moves.reduce((count, move) => count + (move.thinkTimeMs !== null ? 1 : 0), 0);
+  const clockSnapshotCount = moves.reduce(
+    (count, move) => count + (move.moverClockBeforeMs !== null && move.moverClockAfterMs !== null ? 1 : 0),
+    0
+  );
+  return {
+    ...fairplayAdminGameSummary(row),
+    backRank:/^[RNBQK]{8}$/.test(String(row.back_rank || '')) ? String(row.back_rank) : null,
+    pgn:String(row.pgn || '').slice(0, 100000),
+    moves,
+    timingCoverage:{
+      totalMoves:moves.length,
+      thinkTimeMoves:timedMoveCount,
+      clockSnapshotMoves:clockSnapshotCount
+    }
+  };
+}
+
 function ratingTypeFromCompletedGameRow(row) {
   const explicit = String(row && row.rating_type || '');
   if (RATING_TYPE_KEYS.has(explicit)) return explicit;
@@ -6248,7 +6389,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','completed_games','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
+    'users','sessions','daily_games','public_games','completed_games','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients','lobby_ticker_items'
@@ -8197,6 +8338,56 @@ async function handleAuthApi(request, env, url) {
     if (!admin.ok) return admin.response;
     const users = await listMembers(env, admin.session.user, 100);
     return json({ ok:true, users });
+  }
+
+  if (url.pathname === '/api/admin/fairplay/games' && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      const games = await listAdminFairplayGames(env);
+      return json(
+        {ok:true, games, archivedCount:games.length},
+        {headers:{'cache-control':'no-store, max-age=0', 'x-content-type-options':'nosniff'}}
+      );
+    } catch (error) {
+      console.error('Admin fairplay game list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json(
+        {ok:false, code:'FAIRPLAY_LIST_FAILED', message:'Die Fairplay-Partien konnten nicht geladen werden.'},
+        {status:500, headers:{'cache-control':'no-store, max-age=0'}}
+      );
+    }
+  }
+
+  const adminFairplayGameMatch = url.pathname.match(/^\/api\/admin\/fairplay\/games\/([^/]+)$/);
+  if (adminFairplayGameMatch && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    const roomId = cleanRoomId(decodeURIComponent(adminFairplayGameMatch[1]));
+    if (!roomId) {
+      return json(
+        {ok:false, code:'INVALID_ROOM', message:'Die Partiekennung ist ungültig.'},
+        {status:400, headers:{'cache-control':'no-store, max-age=0'}}
+      );
+    }
+    try {
+      const game = await getAdminFairplayGame(env, roomId);
+      if (!game) {
+        return json(
+          {ok:false, code:'FAIRPLAY_GAME_NOT_FOUND', message:'Für diese Partie sind keine Fairplay-Rohdaten archiviert.'},
+          {status:404, headers:{'cache-control':'no-store, max-age=0'}}
+        );
+      }
+      return json(
+        {ok:true, game},
+        {headers:{'cache-control':'no-store, max-age=0', 'x-content-type-options':'nosniff'}}
+      );
+    } catch (error) {
+      console.error('Admin fairplay game detail failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json(
+        {ok:false, code:'FAIRPLAY_GAME_FAILED', message:'Die Fairplay-Rohdaten konnten nicht geladen werden.'},
+        {status:500, headers:{'cache-control':'no-store, max-age=0'}}
+      );
+    }
   }
 
   if (url.pathname === '/api/admin/lobby-ticker' && request.method === 'GET') {
@@ -12920,8 +13111,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   }
