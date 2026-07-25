@@ -20,6 +20,9 @@
       --success:#277442;
       --warning:#956815;
       --shadow:0 12px 32px rgba(31,23,25,.10);
+      --board-light:#f0d9b5;
+      --board-dark:#843f46;
+      --engine-blue:#3973a5;
     }
     *{box-sizing:border-box}
     html,body{margin:0;min-height:100%;background:transparent;color:var(--ink);font-family:Arial,Helvetica,sans-serif}
@@ -69,11 +72,63 @@
     .fact-value{margin-top:4px;font-size:12px;font-weight:900;overflow-wrap:anywhere}
     .coverage{margin-top:12px;padding:11px 12px;border-radius:13px;background:rgba(39,116,66,.07);border:1px solid rgba(39,116,66,.18);color:#215f37;font-size:12px;font-weight:800;line-height:1.4}
     .coverage.partial{background:#fff8e8;border-color:rgba(149,104,21,.24);color:#76510f}
-    .table-wrap{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:auto}
-    table{width:100%;border-collapse:collapse;min-width:790px;font-size:12px}
+    .analysis-shell{display:grid;grid-template-columns:minmax(300px,440px) minmax(0,1fr);gap:14px;margin-top:14px;align-items:start}
+    .board-card,.engine-card{padding:13px;border:1px solid var(--line);border-radius:16px;background:var(--panel-soft);min-width:0}
+    .analysis-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .analysis-card-title{margin:0;font-size:15px}
+    .analysis-card-note{margin:3px 0 0;color:var(--muted);font-size:11px;font-weight:700;line-height:1.35}
+    .board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;border:5px solid var(--board-dark);border-radius:10px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.16);background:var(--board-dark)}
+    .square{position:relative;display:flex;align-items:center;justify-content:center;min-width:0;aspect-ratio:1}
+    .square.light{background:var(--board-light)}
+    .square.dark{background:var(--board-dark)}
+    .square.actual-from::after,.square.actual-to::after,.square.engine-from::before,.square.engine-to::before{content:"";position:absolute;z-index:1;pointer-events:none}
+    .square.actual-from::after,.square.actual-to::after{inset:7%;border:4px solid rgba(255,196,0,.82);border-radius:12%}
+    .square.engine-from::before,.square.engine-to::before{inset:15%;border:4px solid rgba(58,143,213,.92);border-radius:50%}
+    .piece-img{position:relative;z-index:2;width:88%;height:88%;object-fit:contain;user-select:none;pointer-events:none}
+    .piece-glyph{position:relative;z-index:2;font-family:Georgia,serif;font-size:clamp(23px,5vw,52px);line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.18))}
+    .coord-file,.coord-rank{position:absolute;z-index:3;font-size:9px;font-weight:900;line-height:1;pointer-events:none}
+    .coord-file{right:3px;bottom:2px}.coord-rank{left:3px;top:2px}
+    .square.light .coord-file,.square.light .coord-rank{color:var(--board-dark)}
+    .square.dark .coord-file,.square.dark .coord-rank{color:var(--board-light)}
+    .board-toolbar{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:6px;margin-top:9px}
+    .board-nav,.board-flip{min-height:36px;border:1px solid rgba(132,63,70,.26);border-radius:10px;background:var(--panel);color:var(--wine);font-weight:900;cursor:pointer}
+    .board-nav:hover:not(:disabled),.board-flip:hover:not(:disabled){background:var(--wine-soft)}
+    .board-nav:disabled{opacity:.42;cursor:default}
+    .board-ply{margin-top:8px;text-align:center;color:var(--muted);font-size:12px;font-weight:900}
+    .engine-controls{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:end}
+    .engine-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .engine-field label{color:var(--muted);font-size:10px;font-weight:900;text-transform:uppercase}
+    .engine-select{width:100%;min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:7px 9px;font-weight:800}
+    .engine-btn{min-height:38px;border:1px solid rgba(132,63,70,.30);border-radius:10px;padding:7px 11px;background:var(--wine);color:#fff;font-weight:900;cursor:pointer;white-space:nowrap}
+    .engine-btn.secondary{background:var(--panel);color:var(--wine)}
+    .engine-btn:disabled{opacity:.5;cursor:default}
+    .engine-status{margin-top:10px;padding:10px 11px;border:1px solid var(--line);border-radius:11px;background:var(--panel);color:var(--muted);font-size:12px;font-weight:800;line-height:1.4}
+    .engine-progress{height:9px;margin-top:8px;border-radius:999px;background:rgba(120,120,130,.15);overflow:hidden}
+    .engine-progress-bar{width:0;height:100%;background:linear-gradient(90deg,var(--wine),#c77780);transition:width .18s ease}
+    .engine-summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+    .player-analysis{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+    .player-analysis-name{font-size:12px;font-weight:900;overflow-wrap:anywhere}
+    .player-analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+    .analysis-kpi{min-width:0}.analysis-kpi-label{color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase}.analysis-kpi-value{margin-top:2px;color:var(--wine);font-size:17px;font-weight:900}
+    .selected-move-card{margin-top:10px;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+    .selected-move-title{font-size:12px;font-weight:900}
+    .selected-move-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px}
+    .selected-move-item{font-size:11px;font-weight:800;color:var(--muted);line-height:1.35}
+    .selected-move-item strong{display:block;margin-top:2px;color:var(--ink);font-size:12px;overflow-wrap:anywhere}
+    .engine-caution{margin-top:10px;color:var(--muted);font-size:11px;font-weight:700;line-height:1.4}
+    .engine-license{color:var(--wine);text-decoration:none;border-bottom:1px solid rgba(132,63,70,.24)}
+    .table-wrap{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:auto;max-height:720px}
+    table{width:100%;border-collapse:collapse;min-width:1020px;font-size:12px}
     th{position:sticky;top:0;z-index:1;padding:9px 10px;background:var(--panel-soft);color:var(--muted);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
     td{padding:9px 10px;border-top:1px solid var(--line);font-weight:800;white-space:nowrap}
     tbody tr:nth-child(even){background:rgba(120,120,130,.035)}
+    tbody tr.move-row{cursor:pointer}
+    tbody tr.move-row:hover,tbody tr.move-row.selected{background:var(--wine-soft)}
+    .quality-pill{display:inline-flex;align-items:center;min-height:24px;padding:3px 7px;border-radius:999px;background:rgba(120,120,130,.11);color:var(--muted);font-size:10px;font-weight:900}
+    .quality-pill.best{background:rgba(39,116,66,.11);color:var(--success)}
+    .quality-pill.good{background:rgba(58,143,213,.11);color:var(--engine-blue)}
+    .quality-pill.inaccuracy{background:rgba(149,104,21,.11);color:var(--warning)}
+    .quality-pill.mistake{background:rgba(177,69,46,.12);color:#a3402c}
     .move-white{color:#4a4d54}
     .move-black{color:var(--wine)}
     .footer-note{padding:2px 5px 0;color:var(--muted);font-size:11px;font-weight:700;line-height:1.4}
@@ -96,11 +151,18 @@
     html.dark .coverage{background:rgba(74,170,102,.10);color:#a8dfb8;border-color:rgba(74,170,102,.20)}
     html.dark .coverage.partial{background:#332b1d;color:#efd49b;border-color:rgba(239,212,155,.18)}
     html.dark .move-white{color:#d9dbe0}
+    html.dark .engine-btn{background:#9f4d56}
+    html.dark .quality-pill.best{color:#a8dfb8}
+    html.dark .quality-pill.good{color:#9fc9ef}
+    html.dark .quality-pill.inaccuracy{color:#efd49b}
+    html.dark .quality-pill.mistake{color:#f1a493}
     @media(max-width:850px){
       .workspace{grid-template-columns:1fr}
       .games-panel{position:static}
       .games-list{max-height:310px}
       .game-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .analysis-shell{grid-template-columns:1fr}
+      .board-card{max-width:620px;width:100%;margin-inline:auto}
     }
     @media(max-width:600px){
       .hero{align-items:flex-start;flex-direction:column;padding:15px}
@@ -109,6 +171,9 @@
       .summary{grid-template-columns:1fr}
       .game-facts{grid-template-columns:1fr}
       .detail-panel,.games-panel{padding:12px}
+      .engine-controls{grid-template-columns:1fr 1fr}.engine-field{grid-column:1/-1}
+      .engine-summary{grid-template-columns:1fr}
+      .board-toolbar{grid-template-columns:repeat(4,1fr)}.board-flip{grid-column:1/-1}
     }
   </style>
 </head>
@@ -118,7 +183,7 @@
       <div class="hero-copy">
         <p class="eyebrow">Hammerschach · Fairplay</p>
         <h1>Partiedaten prüfen</h1>
-        <p class="intro">Gespeicherte Züge und serverseitige Zeitdaten – als Grundlage für die spätere Stockfish-Auswertung.</p>
+        <p class="intro">Gespeicherte Züge, serverseitige Zeitdaten und eine lokale Stockfish-Auswertung.</p>
       </div>
       <div class="hero-actions">
         <span class="admin-badge">🔒 Nur Administrator</span>
@@ -126,7 +191,7 @@
       </div>
     </section>
 
-    <div class="notice"><strong>Noch keine Schummelbewertung:</strong> Diese Ausbaustufe zeigt zunächst unveränderte Rohdaten. Eine spätere Engine-Analyse liefert Indizien, aber niemals allein einen sicheren Betrugsnachweis.</div>
+    <div class="notice"><strong>Kein automatisches Schummelurteil:</strong> Stockfish zeigt Zugqualität und Engine-Übereinstimmungen. Auch sehr genaue Züge sind allein kein sicherer Betrugsnachweis; Kontext, Spielstärke und mehrere Partien müssen immer mitbetrachtet werden.</div>
 
     <section class="summary" aria-label="Zusammenfassung">
       <div class="panel summary-card"><div class="summary-label">Archivierte Partien</div><div id="gameCount" class="summary-value">–</div><div class="summary-note">mit Fairplay-Datensatz</div></div>
@@ -154,6 +219,74 @@
           </div>
           <div id="gameFacts" class="game-facts"></div>
           <div id="coverageNote" class="coverage"></div>
+          <section class="analysis-shell" aria-label="Brett und Stockfish-Analyse">
+            <div class="board-card">
+              <div class="analysis-card-head">
+                <div>
+                  <h3 class="analysis-card-title">Partieverlauf</h3>
+                  <p class="analysis-card-note">Gelb: gespielter Zug · Blau: Stockfish-Empfehlung</p>
+                </div>
+              </div>
+              <div id="chessBoard" class="board" role="img" aria-label="Schachbrett"></div>
+              <div class="board-toolbar">
+                <button id="boardStartBtn" class="board-nav" type="button" title="Zur Ausgangsstellung">⏮</button>
+                <button id="boardBackBtn" class="board-nav" type="button" title="Einen Zug zurück">◀</button>
+                <button id="boardNextBtn" class="board-nav" type="button" title="Einen Zug vor">▶</button>
+                <button id="boardEndBtn" class="board-nav" type="button" title="Zur Endstellung">⏭</button>
+                <button id="boardFlipBtn" class="board-flip" type="button">↻ Brett drehen</button>
+              </div>
+              <div id="boardPlyLabel" class="board-ply">Ausgangsstellung</div>
+            </div>
+
+            <div class="engine-card">
+              <div class="analysis-card-head">
+                <div>
+                  <h3 class="analysis-card-title">Stockfish 17.1 · Lite Single</h3>
+                  <p class="analysis-card-note">Die Berechnung läuft ausschließlich auf diesem Gerät.</p>
+                </div>
+              </div>
+              <div class="engine-controls">
+                <div class="engine-field">
+                  <label for="engineDepthSelect">Prüftiefe</label>
+                  <select id="engineDepthSelect" class="engine-select">
+                    <option value="11">Schnell · Tiefe 11</option>
+                    <option value="14" selected>Standard · Tiefe 14</option>
+                    <option value="17">Gründlich · Tiefe 17</option>
+                  </select>
+                </div>
+                <button id="engineStartBtn" class="engine-btn" type="button" disabled>Analyse starten</button>
+                <button id="engineStopBtn" class="engine-btn secondary" type="button" disabled>Stoppen</button>
+              </div>
+              <div id="engineStatus" class="engine-status">Die Engine wird erst nach einem Klick auf „Analyse starten“ geladen.</div>
+              <div class="engine-progress" aria-hidden="true"><div id="engineProgressBar" class="engine-progress-bar"></div></div>
+              <div class="engine-summary">
+                <div class="player-analysis">
+                  <div id="whiteAnalysisName" class="player-analysis-name">Weiß</div>
+                  <div class="player-analysis-grid">
+                    <div class="analysis-kpi"><div class="analysis-kpi-label">Bestzug-Treffer</div><div id="whiteBestRate" class="analysis-kpi-value">–</div></div>
+                    <div class="analysis-kpi"><div class="analysis-kpi-label">Ø Verlust</div><div id="whiteAcpl" class="analysis-kpi-value">–</div></div>
+                  </div>
+                </div>
+                <div class="player-analysis">
+                  <div id="blackAnalysisName" class="player-analysis-name">Schwarz</div>
+                  <div class="player-analysis-grid">
+                    <div class="analysis-kpi"><div class="analysis-kpi-label">Bestzug-Treffer</div><div id="blackBestRate" class="analysis-kpi-value">–</div></div>
+                    <div class="analysis-kpi"><div class="analysis-kpi-label">Ø Verlust</div><div id="blackAcpl" class="analysis-kpi-value">–</div></div>
+                  </div>
+                </div>
+              </div>
+              <div id="selectedMoveCard" class="selected-move-card">
+                <div id="selectedMoveTitle" class="selected-move-title">Noch kein Zug ausgewählt</div>
+                <div class="selected-move-grid">
+                  <div class="selected-move-item">Stockfish-Bestzug<strong id="selectedBestMove">–</strong></div>
+                  <div class="selected-move-item">Bewertungsverlust<strong id="selectedLoss">–</strong></div>
+                  <div class="selected-move-item">Bedenkzeit<strong id="selectedThinkTime">–</strong></div>
+                  <div class="selected-move-item">Bewertung vorher<strong id="selectedEval">–</strong></div>
+                </div>
+              </div>
+              <div class="engine-caution">Bestzugquote und durchschnittlicher Bewertungsverlust sind reine Schachkennzahlen. Sie berücksichtigen unter anderem keine Eröffnungstheorie, taktische Eindeutigkeit oder die übliche Spielstärke. <a class="engine-license" href="engine/Copying.txt" target="_blank" rel="noopener">GPLv3-Lizenz</a></div>
+            </div>
+          </section>
           <div class="table-wrap">
             <table>
               <thead>
@@ -164,6 +297,8 @@
                   <th>Bedenkzeit</th>
                   <th>Rest vorher</th>
                   <th>Rest danach</th>
+                  <th>Stockfish</th>
+                  <th>Bestzug</th>
                   <th>Server-Zeitpunkt</th>
                 </tr>
               </thead>
@@ -348,6 +483,8 @@
       clear(movesBodyEl);
       moves.forEach((move,index)=>{
         const row=document.createElement('tr');
+        row.className='move-row';
+        row.dataset.moveIndex=String(index);
         const ply=Math.max(1,Math.floor(Number(move&&move.ply)||index+1));
         const side=move&&move.side==='b'?'Schwarz':'Weiß';
         const number=Math.ceil(ply/2)+(side==='Schwarz'?'…':'.');
@@ -361,13 +498,19 @@
           formatDuration(move&&move.thinkTimeMs),
           formatDuration(before),
           formatDuration(after),
+          'Nicht analysiert',
+          '–',
           formatDate(move&&move.acceptedAt)
         ].forEach((value,column)=>{
           const cell=make('td',column===2?(side==='Schwarz'?'move-black':'move-white'):'',value);
+          if(column===6)cell.dataset.engineQuality=String(index);
+          if(column===7)cell.dataset.engineBestMove=String(index);
           row.appendChild(cell);
         });
         movesBodyEl.appendChild(row);
       });
+      window.hammerschachFairplayPendingGame=game;
+      document.dispatchEvent(new CustomEvent('hammerschach-fairplay-game-rendered',{detail:{game}}));
       reportHeight();
     }
     async function selectGame(roomId){
@@ -473,6 +616,7 @@
       }
       if(message.type==='hammerschach-fairplay-visibility'){
         visible=!!message.visible;
+        document.dispatchEvent(new CustomEvent('hammerschach-fairplay-visibility-change',{detail:{visible}}));
         if(visible&&context.loggedIn&&context.isAdmin&&!games.length)loadGames();
         reportHeight();
       }
@@ -483,5 +627,6 @@
     reportHeight();
   })();
   </script>
+  <script src="./analysis.js"></script>
 </body>
 </html>

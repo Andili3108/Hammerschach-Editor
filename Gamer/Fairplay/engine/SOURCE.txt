@@ -1,0 +1,34 @@
+Stockfish.js 17.1 – Herkunft der ausgelieferten Engine
+=====================================================
+
+Projekt:
+https://github.com/nmrugg/stockfish.js
+
+Exakte Paketversion:
+https://www.npmjs.com/package/stockfish/v/17.1.0
+
+Verwendete Originaldateien aus stockfish@17.1.0:
+- src/stockfish-17.1-lite-single-03e3232.js
+- src/stockfish-17.1-lite-single-03e3232.wasm
+
+Im Hammerschach-Gamer wurden ausschließlich die Dateinamen vereinfacht:
+- stockfish.js
+- stockfish.wasm
+
+Der Inhalt beider Engine-Dateien wurde nicht verändert.
+
+SHA-256:
+- stockfish.js
+  1c8265e52fdaef797684b4979b42c5dcfe0350df3e11a87e48e4ec5f86e0ca5c
+- stockfish.wasm
+  7ca31bedd166148931a1cc84dbd8dd9cf001744e9994caf23a3c6ff4988d7086
+
+Lizenz:
+GNU General Public License Version 3; vollständiger Text in Copying.txt.
+
+Weitere Originaldokumente:
+- AUTHORS
+- README.md
+
+Der vollständige Quellcode der exakten Version ist über das oben genannte
+Projekt beziehungsweise die Paketversion abrufbar.
