@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Hammerschach – Fairplay-Prüfung</title>
+  <style>
+    :root{
+      color-scheme:light;
+      --wine:#843f46;
+      --wine-dark:#6f3239;
+      --wine-soft:rgba(132,63,70,.08);
+      --ink:#22242a;
+      --muted:#6d7078;
+      --line:rgba(21,23,29,.11);
+      --panel:#fff;
+      --panel-soft:#f7f7f9;
+      --page:#f1f2f4;
+      --success:#277442;
+      --warning:#956815;
+      --shadow:0 12px 32px rgba(31,23,25,.10);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:transparent;color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    body{padding:4px 0 12px}
+    button{font:inherit}
+    .fairplay-app{display:flex;flex-direction:column;gap:14px;width:100%}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+    .hero{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;background:linear-gradient(135deg,var(--panel),var(--wine-soft))}
+    .hero-copy{min-width:0}
+    .eyebrow{margin:0 0 5px;color:var(--wine);font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    h1{margin:0;font-size:25px;line-height:1.15}
+    .intro{margin:7px 0 0;color:var(--muted);font-size:13px;font-weight:700;line-height:1.4}
+    .hero-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+    .admin-badge{display:inline-flex;align-items:center;min-height:34px;padding:7px 11px;border-radius:999px;background:var(--wine);color:#fff;font-size:12px;font-weight:900;white-space:nowrap}
+    .refresh-btn{min-height:38px;border:1px solid rgba(132,63,70,.32);border-radius:11px;padding:8px 13px;background:var(--panel);color:var(--wine);font-weight:900;cursor:pointer}
+    .refresh-btn:hover:not(:disabled){background:var(--wine-soft)}
+    .refresh-btn:disabled{opacity:.55;cursor:wait}
+    .notice{padding:11px 14px;border-radius:14px;background:#fff8e8;border:1px solid rgba(149,104,21,.24);color:#76510f;font-size:13px;font-weight:800;line-height:1.4}
+    .notice strong{color:#5f3e05}
+    .summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .summary-card{padding:13px 15px}
+    .summary-label{color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+    .summary-value{margin-top:4px;font-size:24px;font-weight:900;color:var(--wine)}
+    .summary-note{margin-top:3px;color:var(--muted);font-size:11px;font-weight:700;line-height:1.35}
+    .status{min-height:20px;padding:0 4px;color:var(--muted);font-size:13px;font-weight:800}
+    .status.error{color:#a12f38}
+    .status.success{color:var(--success)}
+    .workspace{display:grid;grid-template-columns:minmax(250px,31%) minmax(0,1fr);gap:14px;align-items:start}
+    .games-panel{padding:14px;position:sticky;top:4px}
+    .panel-title{margin:0 0 10px;font-size:15px}
+    .games-list{display:flex;flex-direction:column;gap:8px;max-height:760px;overflow:auto;padding-right:2px}
+    .game-item{display:block;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:var(--panel-soft);color:var(--ink);text-align:left;cursor:pointer}
+    .game-item:hover{border-color:rgba(132,63,70,.32);background:var(--wine-soft)}
+    .game-item.active{border-color:var(--wine);box-shadow:inset 0 0 0 1px var(--wine);background:var(--wine-soft)}
+    .game-players{font-size:13px;font-weight:900;line-height:1.35;overflow-wrap:anywhere}
+    .game-meta{display:flex;justify-content:space-between;gap:8px;margin-top:7px;color:var(--muted);font-size:11px;font-weight:800}
+    .game-result{color:var(--wine);white-space:nowrap}
+    .empty{padding:28px 16px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);text-align:center;font-size:13px;font-weight:800;line-height:1.45}
+    .detail-panel{padding:16px;min-width:0}
+    .detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .detail-title{margin:0;font-size:19px;overflow-wrap:anywhere}
+    .detail-subtitle{margin:5px 0 0;color:var(--muted);font-size:12px;font-weight:800}
+    .result-badge{display:inline-flex;align-items:center;justify-content:center;min-width:66px;min-height:34px;padding:7px 10px;border-radius:999px;background:var(--wine-soft);color:var(--wine);font-weight:900}
+    .game-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+    .fact{padding:10px 11px;border-radius:12px;background:var(--panel-soft);border:1px solid var(--line);min-width:0}
+    .fact-label{font-size:10px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .fact-value{margin-top:4px;font-size:12px;font-weight:900;overflow-wrap:anywhere}
+    .coverage{margin-top:12px;padding:11px 12px;border-radius:13px;background:rgba(39,116,66,.07);border:1px solid rgba(39,116,66,.18);color:#215f37;font-size:12px;font-weight:800;line-height:1.4}
+    .coverage.partial{background:#fff8e8;border-color:rgba(149,104,21,.24);color:#76510f}
+    .table-wrap{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:790px;font-size:12px}
+    th{position:sticky;top:0;z-index:1;padding:9px 10px;background:var(--panel-soft);color:var(--muted);font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+    td{padding:9px 10px;border-top:1px solid var(--line);font-weight:800;white-space:nowrap}
+    tbody tr:nth-child(even){background:rgba(120,120,130,.035)}
+    .move-white{color:#4a4d54}
+    .move-black{color:var(--wine)}
+    .footer-note{padding:2px 5px 0;color:var(--muted);font-size:11px;font-weight:700;line-height:1.4}
+    html.dark{
+      color-scheme:dark;
+      --ink:#f0f1f3;
+      --muted:#b0b4bc;
+      --line:rgba(255,255,255,.10);
+      --panel:#1b1e23;
+      --panel-soft:#252930;
+      --page:#111317;
+      --wine:#efaeb6;
+      --wine-dark:#efaeb6;
+      --wine-soft:rgba(239,174,182,.10);
+      --shadow:0 13px 34px rgba(0,0,0,.28);
+    }
+    html.dark .admin-badge{background:#9f4d56;color:#fff}
+    html.dark .notice{background:#332b1d;color:#efd49b;border-color:rgba(239,212,155,.18)}
+    html.dark .notice strong{color:#ffe4aa}
+    html.dark .coverage{background:rgba(74,170,102,.10);color:#a8dfb8;border-color:rgba(74,170,102,.20)}
+    html.dark .coverage.partial{background:#332b1d;color:#efd49b;border-color:rgba(239,212,155,.18)}
+    html.dark .move-white{color:#d9dbe0}
+    @media(max-width:850px){
+      .workspace{grid-template-columns:1fr}
+      .games-panel{position:static}
+      .games-list{max-height:310px}
+      .game-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:600px){
+      .hero{align-items:flex-start;flex-direction:column;padding:15px}
+      .hero-actions{justify-content:flex-start}
+      h1{font-size:21px}
+      .summary{grid-template-columns:1fr}
+      .game-facts{grid-template-columns:1fr}
+      .detail-panel,.games-panel{padding:12px}
+    }
+  </style>
+</head>
+<body>
+  <main class="fairplay-app">
+    <section class="panel hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Hammerschach · Fairplay</p>
+        <h1>Partiedaten prüfen</h1>
+        <p class="intro">Gespeicherte Züge und serverseitige Zeitdaten – als Grundlage für die spätere Stockfish-Auswertung.</p>
+      </div>
+      <div class="hero-actions">
+        <span class="admin-badge">🔒 Nur Administrator</span>
+        <button id="refreshBtn" class="refresh-btn" type="button">↻ Aktualisieren</button>
+      </div>
+    </section>
+
+    <div class="notice"><strong>Noch keine Schummelbewertung:</strong> Diese Ausbaustufe zeigt zunächst unveränderte Rohdaten. Eine spätere Engine-Analyse liefert Indizien, aber niemals allein einen sicheren Betrugsnachweis.</div>
+
+    <section class="summary" aria-label="Zusammenfassung">
+      <div class="panel summary-card"><div class="summary-label">Archivierte Partien</div><div id="gameCount" class="summary-value">–</div><div class="summary-note">mit Fairplay-Datensatz</div></div>
+      <div class="panel summary-card"><div class="summary-label">Züge der Auswahl</div><div id="moveCount" class="summary-value">–</div><div class="summary-note">Halbzüge im Archiv</div></div>
+      <div class="panel summary-card"><div class="summary-label">Zeitabdeckung</div><div id="timingCoverage" class="summary-value">–</div><div class="summary-note">Züge mit Bedenkzeit</div></div>
+    </section>
+
+    <div id="status" class="status" role="status" aria-live="polite">Verbindung zum Gamer wird hergestellt…</div>
+
+    <section class="workspace">
+      <aside class="panel games-panel">
+        <h2 class="panel-title">Beendete Partien</h2>
+        <div id="gamesList" class="games-list"><div class="empty">Partieliste wird geladen…</div></div>
+      </aside>
+
+      <section id="detailPanel" class="panel detail-panel">
+        <div id="detailEmpty" class="empty">Wähle links eine Partie aus.</div>
+        <div id="detailContent" hidden>
+          <div class="detail-head">
+            <div>
+              <h2 id="detailTitle" class="detail-title">–</h2>
+              <p id="detailSubtitle" class="detail-subtitle">–</p>
+            </div>
+            <span id="resultBadge" class="result-badge">–</span>
+          </div>
+          <div id="gameFacts" class="game-facts"></div>
+          <div id="coverageNote" class="coverage"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nr.</th>
+                  <th>Seite</th>
+                  <th>Zug</th>
+                  <th>Bedenkzeit</th>
+                  <th>Rest vorher</th>
+                  <th>Rest danach</th>
+                  <th>Server-Zeitpunkt</th>
+                </tr>
+              </thead>
+              <tbody id="movesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <div class="footer-note">Die Admin-Anmeldung bleibt im Gamer. Dieses eingebettete Fenster erhält kein Login-Token und kann die Worker-API nicht selbst aufrufen.</div>
+  </main>
+
+  <script>
+  (() => {
+    'use strict';
+    const refreshBtn=document.getElementById('refreshBtn');
+    const gameCountEl=document.getElementById('gameCount');
+    const moveCountEl=document.getElementById('moveCount');
+    const timingCoverageEl=document.getElementById('timingCoverage');
+    const statusEl=document.getElementById('status');
+    const gamesListEl=document.getElementById('gamesList');
+    const detailEmptyEl=document.getElementById('detailEmpty');
+    const detailContentEl=document.getElementById('detailContent');
+    const detailTitleEl=document.getElementById('detailTitle');
+    const detailSubtitleEl=document.getElementById('detailSubtitle');
+    const resultBadgeEl=document.getElementById('resultBadge');
+    const gameFactsEl=document.getElementById('gameFacts');
+    const coverageNoteEl=document.getElementById('coverageNote');
+    const movesBodyEl=document.getElementById('movesBody');
+
+    const pending=new Map();
+    let requestSequence=0;
+    let games=[];
+    let selectedRoomId='';
+    let loadingGames=false;
+    let visible=false;
+    let context={darkMode:false,loggedIn:false,isAdmin:false,username:''};
+
+    function parentOrigin(){
+      try{
+        if(document.referrer){
+          const origin=new URL(document.referrer).origin;
+          if(origin&&origin!=='null')return origin;
+        }
+      }catch(_){}
+      return '*';
+    }
+    function post(message){
+      if(window.parent===window)return;
+      try{window.parent.postMessage(message,parentOrigin());}catch(_){}
+    }
+    function setStatus(message,kind){
+      statusEl.textContent=message||'';
+      statusEl.classList.toggle('error',kind==='error');
+      statusEl.classList.toggle('success',kind==='success');
+    }
+    function requestParent(type,resultType,payload){
+      return new Promise((resolve,reject)=>{
+        if(window.parent===window){
+          reject(new Error('Bitte die Fairplay-Prüfung aus dem Hammerschach-Gamer öffnen.'));
+          return;
+        }
+        const requestId='fairplay_'+Date.now().toString(36)+'_'+(++requestSequence).toString(36);
+        const timer=setTimeout(()=>{
+          pending.delete(requestId);
+          reject(new Error('Der Gamer hat nicht rechtzeitig geantwortet.'));
+        },20000);
+        pending.set(requestId,{resultType,resolve,reject,timer});
+        post(Object.assign({type,requestId},payload||{}));
+      });
+    }
+    function resolveRequest(message){
+      const requestId=String(message&&message.requestId||'');
+      const item=pending.get(requestId);
+      if(!item||message.type!==item.resultType)return false;
+      clearTimeout(item.timer);
+      pending.delete(requestId);
+      if(message.ok===false)item.reject(new Error(String(message.message||'Anfrage fehlgeschlagen.')));
+      else item.resolve(message);
+      return true;
+    }
+    function setDarkMode(enabled){
+      document.documentElement.classList.toggle('dark',!!enabled);
+    }
+    function text(value,fallback='–'){
+      const clean=String(value===null||value===undefined?'':value).trim();
+      return clean||fallback;
+    }
+    function formatDate(value){
+      const date=new Date(String(value||''));
+      if(!Number.isFinite(date.getTime()))return '–';
+      return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short'}).format(date);
+    }
+    function formatDuration(value){
+      if(value===null||value===undefined||value==='')return '–';
+      const total=Math.max(0,Math.floor(Number(value)||0));
+      if(total<1000)return total+' ms';
+      const seconds=Math.floor(total/1000);
+      const days=Math.floor(seconds/86400);
+      const hours=Math.floor((seconds%86400)/3600);
+      const minutes=Math.floor((seconds%3600)/60);
+      const secs=seconds%60;
+      if(days)return days+' T '+hours+' Std '+minutes+' Min';
+      if(hours)return hours+' Std '+minutes+' Min '+secs+' Sek';
+      if(minutes)return minutes+' Min '+secs+' Sek';
+      return secs+' Sek';
+    }
+    function gameMode(game){
+      if(game&&game.mode==='daily')return 'Daily';
+      return text(game&&game.timeLabel,'Live');
+    }
+    function variantLabel(game){
+      return game&&game.variant==='freestyle960'?'Freestyle / Chess960':'Klassisch';
+    }
+    function make(tag,className,value){
+      const node=document.createElement(tag);
+      if(className)node.className=className;
+      if(value!==undefined)node.textContent=value;
+      return node;
+    }
+    function clear(node){
+      while(node.firstChild)node.removeChild(node.firstChild);
+    }
+    function renderGames(){
+      clear(gamesListEl);
+      gameCountEl.textContent=String(games.length);
+      if(!games.length){
+        gamesListEl.appendChild(make('div','empty','Noch keine Partie mit Fairplay-Rohdaten gefunden.'));
+        return;
+      }
+      games.forEach(game=>{
+        const button=make('button','game-item');
+        button.type='button';
+        button.classList.toggle('active',String(game.roomId||'')===selectedRoomId);
+        const players=make('div','game-players',text(game.whiteName,'Weiß')+' – '+text(game.blackName,'Schwarz'));
+        const meta=make('div','game-meta');
+        meta.appendChild(make('span','',gameMode(game)+' · '+variantLabel(game)));
+        meta.appendChild(make('span','game-result',text(game.result)));
+        button.append(players,meta);
+        button.title='Beendet: '+formatDate(game.endedAt);
+        button.addEventListener('click',()=>selectGame(String(game.roomId||'')));
+        gamesListEl.appendChild(button);
+      });
+    }
+    function addFact(label,value){
+      const box=make('div','fact');
+      box.append(make('div','fact-label',label),make('div','fact-value',value));
+      gameFactsEl.appendChild(box);
+    }
+    function renderDetail(game){
+      const moves=Array.isArray(game&&game.moves)?game.moves:[];
+      const coverage=game&&game.timingCoverage&&typeof game.timingCoverage==='object'?game.timingCoverage:{};
+      const timed=Math.max(0,Number(coverage.thinkTimeMoves||0));
+      const clocked=Math.max(0,Number(coverage.clockSnapshotMoves||0));
+      detailEmptyEl.hidden=true;
+      detailContentEl.hidden=false;
+      detailTitleEl.textContent=text(game.whiteName,'Weiß')+' – '+text(game.blackName,'Schwarz');
+      detailSubtitleEl.textContent='Beendet am '+formatDate(game.endedAt)+' · Raum '+text(game.roomId);
+      resultBadgeEl.textContent=text(game.result);
+      moveCountEl.textContent=String(moves.length);
+      timingCoverageEl.textContent=moves.length?Math.round(timed/moves.length*100)+' %':'0 %';
+      clear(gameFactsEl);
+      addFact('Partieart',gameMode(game));
+      addFact('Variante',variantLabel(game));
+      addFact('Bedenkzeit',text(game.timeLabel,game.mode==='daily'?(game.daysPerMove+' Tag(e) / Zug'):'–'));
+      addFact('Wertung',game.rated?'Gewertet':'Ungewertet');
+      addFact('Beginn',formatDate(game.startedAt));
+      addFact('Ende',formatDate(game.endedAt));
+      addFact('Endgrund',text(game.endReason));
+      addFact('Datensatz','Version '+text(game.dataVersion,'1'));
+      coverageNoteEl.classList.toggle('partial',clocked<moves.length);
+      if(!moves.length){
+        coverageNoteEl.textContent='Der Datensatz enthält keine Züge.';
+      }else if(clocked===moves.length){
+        coverageNoteEl.textContent='Vollständige Erfassung: Für '+timed+' von '+moves.length+' Zügen liegen Bedenkzeiten und für alle Züge Uhrstände vor.';
+      }else if(timed===moves.length){
+        coverageNoteEl.textContent='Historische Erfassung: Für alle '+moves.length+' Züge wurde die Bedenkzeit aus den gespeicherten Server-Zeitpunkten abgeleitet. Separate Uhrstände vor und nach dem Zug fehlen bei dieser älteren Partie.';
+      }else{
+        coverageNoteEl.textContent='Teilweise Erfassung: Für '+timed+' von '+moves.length+' Zügen liegt eine Bedenkzeit vor; vollständige Uhrstände gibt es bei '+clocked+' Zügen.';
+      }
+      clear(movesBodyEl);
+      moves.forEach((move,index)=>{
+        const row=document.createElement('tr');
+        const ply=Math.max(1,Math.floor(Number(move&&move.ply)||index+1));
+        const side=move&&move.side==='b'?'Schwarz':'Weiß';
+        const number=Math.ceil(ply/2)+(side==='Schwarz'?'…':'.');
+        const moveText=text(move&&move.san,text(move&&move.from,'')+text(move&&move.to,''));
+        const before=move&&move.moverClockBeforeMs;
+        const after=move&&move.moverClockAfterMs;
+        [
+          number,
+          side,
+          moveText,
+          formatDuration(move&&move.thinkTimeMs),
+          formatDuration(before),
+          formatDuration(after),
+          formatDate(move&&move.acceptedAt)
+        ].forEach((value,column)=>{
+          const cell=make('td',column===2?(side==='Schwarz'?'move-black':'move-white'):'',value);
+          row.appendChild(cell);
+        });
+        movesBodyEl.appendChild(row);
+      });
+      reportHeight();
+    }
+    async function selectGame(roomId){
+      if(!roomId)return;
+      selectedRoomId=roomId;
+      renderGames();
+      setStatus('Partiedaten werden geladen…','');
+      detailEmptyEl.hidden=false;
+      detailEmptyEl.textContent='Partiedaten werden geladen…';
+      detailContentEl.hidden=true;
+      try{
+        const response=await requestParent(
+          'hammerschach-fairplay-request-game',
+          'hammerschach-fairplay-game-result',
+          {roomId}
+        );
+        if(selectedRoomId!==roomId)return;
+        if(!response.game)throw new Error('Die Partie enthält keine lesbaren Fairplay-Daten.');
+        renderDetail(response.game);
+        setStatus('Rohdaten wurden geladen.','success');
+      }catch(error){
+        if(selectedRoomId!==roomId)return;
+        detailEmptyEl.hidden=false;
+        detailContentEl.hidden=true;
+        detailEmptyEl.textContent=error&&error.message?error.message:'Die Partiedaten konnten nicht geladen werden.';
+        moveCountEl.textContent='–';
+        timingCoverageEl.textContent='–';
+        setStatus(detailEmptyEl.textContent,'error');
+        reportHeight();
+      }
+    }
+    async function loadGames(){
+      if(loadingGames)return;
+      if(!context.loggedIn||!context.isAdmin){
+        setStatus('Die Fairplay-Prüfung ist ausschließlich für den eingeloggten Administrator verfügbar.','error');
+        return;
+      }
+      loadingGames=true;
+      refreshBtn.disabled=true;
+      setStatus('Archivierte Fairplay-Partien werden geladen…','');
+      try{
+        const response=await requestParent(
+          'hammerschach-fairplay-request-games',
+          'hammerschach-fairplay-games-result'
+        );
+        games=Array.isArray(response.games)?response.games:[];
+        const previous=selectedRoomId;
+        if(!games.some(game=>String(game&&game.roomId||'')===previous)){
+          selectedRoomId=games[0]?String(games[0].roomId||''):'';
+        }
+        renderGames();
+        if(selectedRoomId)await selectGame(selectedRoomId);
+        else{
+          detailEmptyEl.hidden=false;
+          detailEmptyEl.textContent='Noch keine Partie mit Fairplay-Rohdaten gefunden.';
+          detailContentEl.hidden=true;
+          moveCountEl.textContent='–';
+          timingCoverageEl.textContent='–';
+          setStatus('Das Fairplay-Archiv ist derzeit leer.','');
+          reportHeight();
+        }
+      }catch(error){
+        games=[];
+        selectedRoomId='';
+        renderGames();
+        setStatus(error&&error.message?error.message:'Die Partieliste konnte nicht geladen werden.','error');
+        reportHeight();
+      }finally{
+        loadingGames=false;
+        refreshBtn.disabled=false;
+      }
+    }
+    let heightTimer=0;
+    function reportHeight(){
+      clearTimeout(heightTimer);
+      heightTimer=setTimeout(()=>{
+        const height=Math.max(
+          document.documentElement.scrollHeight,
+          document.body.scrollHeight,
+          document.documentElement.offsetHeight,
+          document.body.offsetHeight
+        );
+        post({type:'hammerschach-fairplay-height',height});
+      },40);
+    }
+    refreshBtn.addEventListener('click',loadGames);
+    window.addEventListener('message',event=>{
+      if(window.parent!==window&&event.source!==window.parent)return;
+      if(parentOrigin()!=='*'&&event.origin!==parentOrigin())return;
+      const message=event.data&&typeof event.data==='object'?event.data:{};
+      if(resolveRequest(message))return;
+      if(message.type==='hammerschach-fairplay-context'){
+        context={
+          darkMode:!!message.darkMode,
+          loggedIn:!!message.loggedIn,
+          isAdmin:!!message.isAdmin,
+          username:String(message.username||'')
+        };
+        setDarkMode(context.darkMode);
+        if(visible&&context.loggedIn&&context.isAdmin&&!games.length)loadGames();
+        reportHeight();
+        return;
+      }
+      if(message.type==='hammerschach-fairplay-visibility'){
+        visible=!!message.visible;
+        if(visible&&context.loggedIn&&context.isAdmin&&!games.length)loadGames();
+        reportHeight();
+      }
+    });
+    if('ResizeObserver' in window)new ResizeObserver(reportHeight).observe(document.body);
+    else window.addEventListener('resize',reportHeight);
+    post({type:'hammerschach-fairplay-ready'});
+    reportHeight();
+  })();
+  </script>
+</body>
+</html>
