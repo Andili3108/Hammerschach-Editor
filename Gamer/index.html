@@ -981,15 +981,17 @@
 
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
   .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
-  .analyzer-tool-view,.trainer-tool-view,.openings-tool-view{width:100%;min-width:0;}
-  .analyzer-tool-view[hidden],.trainer-tool-view[hidden],.openings-tool-view[hidden]{display:none!important;}
-  .analyzer-tool-frame,.trainer-tool-frame,.openings-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
+  .analyzer-tool-view,.trainer-tool-view,.openings-tool-view,.fairplay-tool-view{width:100%;min-width:0;}
+  .analyzer-tool-view[hidden],.trainer-tool-view[hidden],.openings-tool-view[hidden],.fairplay-tool-view[hidden]{display:none!important;}
+  .analyzer-tool-frame,.trainer-tool-frame,.openings-tool-frame,.fairplay-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
   html.analyzer-tool-active .member-lobby,
   html.analyzer-tool-active .top-layout,
   html.trainer-tool-active .member-lobby,
   html.trainer-tool-active .top-layout,
   html.openings-tool-active .member-lobby,
-  html.openings-tool-active .top-layout{display:none!important;}
+  html.openings-tool-active .top-layout,
+  html.fairplay-tool-active .member-lobby,
+  html.fairplay-tool-active .top-layout{display:none!important;}
   .next-daily-game-box{border-radius:16px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:11px 12px;display:flex;flex-direction:column;gap:7px;}
   .next-daily-game-box[hidden]{display:none!important;}
   .next-daily-game-btn{width:100%;min-height:44px;border-radius:13px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;white-space:normal;line-height:1.2;}
@@ -1238,7 +1240,7 @@
   @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.member-lobby-setup-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.member-lobby-setup-action{width:100%;white-space:normal}.tournament-lobby-banner-actions button{flex:1}.lobby-ticker{grid-template-columns:auto minmax(0,1fr) auto auto}#lobbyTickerPrevBtn{grid-column:1;grid-row:1}.lobby-ticker-content{grid-column:2;grid-row:1}#lobbyTickerNextBtn{grid-column:3;grid-row:1}.lobby-ticker-close{grid-column:4;grid-row:1}.lobby-ticker-action{grid-column:2 / 4;grid-row:2;width:100%}.lobby-ticker-counter{display:none}.lobby-ticker-text{white-space:normal}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
-  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{justify-content:center;flex-wrap:wrap;font-size:12px;gap:7px;white-space:normal}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-origin-site-button{width:138px;min-width:138px;flex-basis:138px;min-height:27px;padding:4px 11px 4px 9px;font-size:12px}.brand-origin-rook{width:15px;height:17px;flex-basis:15px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px;flex-wrap:wrap}.gamer-board-nav{flex:0 0 100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
+  @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame,.openings-tool-frame,.fairplay-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{justify-content:center;flex-wrap:wrap;font-size:12px;gap:7px;white-space:normal}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-origin-site-button{width:138px;min-width:138px;flex-basis:138px;min-height:27px;padding:4px 11px 4px 9px;font-size:12px}.brand-origin-rook{width:15px;height:17px;flex-basis:15px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px;flex-wrap:wrap}.gamer-board-nav{flex:0 0 100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
   @media (max-width:760px){.variation-panel{gap:8px}.variation-moves{min-height:100px;max-height:220px;flex:0 1 auto;font-size:14px;grid-template-columns:38px 1fr 1fr}}
   @media (max-width:760px){.invite-link-row,.member-result-card,.chat-input-row,.daily-game-card,.public-game-card,.open-offer-card,.auth-account-actions{grid-template-columns:1fr}.invite-link-row button,.member-result-card button,.member-result-actions button,.chat-input-row button,.daily-game-actions button,.daily-game-open-btn,.public-game-watch-btn{width:100%}.member-result-actions,.daily-game-actions,.open-offer-actions{justify-content:stretch}}
   @media (max-width:620px){.admin-delete-search-row,.admin-delete-card{grid-template-columns:1fr}.admin-delete-search-row button,.admin-delete-btn{width:100%}}
@@ -1340,6 +1342,10 @@
 
     <section id="openingsToolView" class="openings-tool-view" hidden aria-label="Hammerschach-Eröffnungsschule">
       <iframe id="openingsToolFrame" class="openings-tool-frame" title="Hammerschach-Eröffnungsschule" data-src="./Openings/" loading="lazy"></iframe>
+    </section>
+
+    <section id="fairplayToolView" class="fairplay-tool-view" hidden aria-label="Hammerschach-Fairplay-Prüfung">
+      <iframe id="fairplayToolFrame" class="fairplay-tool-frame" title="Hammerschach-Fairplay-Prüfung" data-src="./Fairplay/" loading="lazy"></iframe>
     </section>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
@@ -1655,6 +1661,7 @@
 
           <h4>4. Partien, Taktiktraining und Ratings</h4>
           <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen und die jeweilige Zugfrist gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt werden kann.</p>
+          <p>Für die administrative Fairplay-Prüfung werden bei beendeten Partien außerdem die serverseitigen Zugannahme-Zeitpunkte, daraus ermittelte Bedenkzeiten und – bei neu gespielten Partien – die Uhrstände unmittelbar vor und nach einem Zug archiviert. Zugriff auf diese Rohdaten hat ausschließlich der Administrator. Eine spätere computergestützte Auswertung dient nur als Prüfhinweis und trifft keine automatische Feststellung über ein mögliches Schummeln.</p>
           <p>Gewertete Partien zwischen registrierten Mitgliedern verändern die getrennten Ratings. Dazu werden Ratingwerte, Unsicherheitswerte, Partiezahlen und Ergebnisse gespeichert. Besucherzähler und die Zahl gespielter Partien werden nur als allgemeine Summen geführt und nicht einem persönlichen Nutzerprofil zugeordnet.</p>
           <p>Beim Taktiktraining werden nur im ausdrücklich ausgewählten Modus <strong>„Mit Rating“</strong> die Account-Zuordnung, Aufgabenkennung, Aufgabenrating, Erfolg oder Fehlversuch, Ratingänderung und Zeitpunkt gespeichert. Wiederholungen, Aufgaben nach Lösungsanzeige und der Modus <strong>„Ohne Rating“</strong> erzeugen keinen gewerteten Taktikversuch.</p>
 
@@ -1964,6 +1971,7 @@
         <div class="admin-overview-actions">
           <button id="adminTickerOpenBtn" class="button-flat admin-ticker-open-btn" type="button">Lobby-Ticker verwalten</button>
           <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
+          <button id="adminFairplayOpenBtn" class="button-flat" type="button">Fairplay-Prüfung öffnen</button>
           <button id="adminMemberDeleteOpenBtn" class="admin-member-delete-open-btn" type="button">Mitglieder löschen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
@@ -4347,6 +4355,8 @@ const trainerToolFrame = document.getElementById('trainerToolFrame');
 const openingsToolBtn = document.getElementById('openingsToolBtn');
 const openingsToolView = document.getElementById('openingsToolView');
 const openingsToolFrame = document.getElementById('openingsToolFrame');
+const fairplayToolView = document.getElementById('fairplayToolView');
+const fairplayToolFrame = document.getElementById('fairplayToolFrame');
 const themeColorMeta = document.getElementById('themeColorMeta');
 const matchActionsEl = document.querySelector('.match-actions');
 const memberLobbyEl = document.getElementById('memberLobby');
@@ -4381,6 +4391,10 @@ function updateSiteFootnotePlacement(){
   }
   if(openingsToolActive&&openingsToolView){
     if(siteFootnoteEl.parentNode!==openingsToolView)openingsToolView.appendChild(siteFootnoteEl);
+    return;
+  }
+  if(fairplayToolActive&&fairplayToolView){
+    if(siteFootnoteEl.parentNode!==fairplayToolView)fairplayToolView.appendChild(siteFootnoteEl);
     return;
   }
   if(isMemberLobbyView()&&memberLobbyEl){
@@ -4494,6 +4508,7 @@ function setDarkMode(enabled){
   postAnalyzerToolContext();
   postTrainerToolContext();
   postOpeningsToolContext();
+  postFairplayToolContext();
   hammerschachScheduleHeightReport(true);
 }
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => setDarkMode(!darkModeEnabled));
@@ -4576,6 +4591,7 @@ const adminOverviewCloseBtn = document.getElementById('adminOverviewCloseBtn');
 const adminMemberMessageOpenBtn = document.getElementById('adminMemberMessageOpenBtn');
 const adminMemberDeleteOpenBtn = document.getElementById('adminMemberDeleteOpenBtn');
 const adminTickerOpenBtn = document.getElementById('adminTickerOpenBtn');
+const adminFairplayOpenBtn = document.getElementById('adminFairplayOpenBtn');
 const adminTickerBackdrop = document.getElementById('adminTickerBackdrop');
 const adminTickerWelcomeDuration = document.getElementById('adminTickerWelcomeDuration');
 const adminTickerWelcomeTemplate = document.getElementById('adminTickerWelcomeTemplate');
@@ -5116,6 +5132,7 @@ function saveAuthState(token, user){
   postAnalyzerToolContext();
   postTrainerToolContext();
   postOpeningsToolContext();
+  postFairplayToolContext();
   setTimeout(maybeOpenLeitbildAfterLogin, 80);
 }
 async function authApi(path, options){
@@ -5230,12 +5247,15 @@ if(lobbyTicker){
 let analyzerToolActive = false;
 let trainerToolActive = false;
 let openingsToolActive = false;
+let fairplayToolActive = false;
 let analyzerToolFrameStarted = false;
 let trainerToolFrameStarted = false;
 let openingsToolFrameStarted = false;
+let fairplayToolFrameStarted = false;
 let analyzerToolLastOpenAt = 0;
 let trainerToolLastOpenAt = 0;
 let openingsToolLastOpenAt = 0;
+let fairplayToolLastOpenAt = 0;
 let analyzerToolReady = false;
 let pendingAnalyzerOpeningPgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
@@ -5243,9 +5263,10 @@ function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
 }
 function embeddedToolActive(){
-  return analyzerToolActive || trainerToolActive || openingsToolActive;
+  return analyzerToolActive || trainerToolActive || openingsToolActive || fairplayToolActive;
 }
 function embeddedToolStatusText(){
+  if(fairplayToolActive) return 'Hammerschach - Fairplay-Prüfung';
   if(openingsToolActive) return 'Hammerschach - Eröffnungsschule';
   if(trainerToolActive) return 'Hammerschach - Trainer';
   if(analyzerToolActive) return 'Hammerschach - Analyzer';
@@ -5253,8 +5274,10 @@ function embeddedToolStatusText(){
 }
 function updateAnalyzerToolAvailability(){
   const available = embeddedToolsAvailable();
+  const fairplayAvailable = available && !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
   if(!available && embeddedToolActive()) setEmbeddedToolActive('');
+  if(!fairplayAvailable && fairplayToolActive) setEmbeddedToolActive('');
   if(analyzerToolBtn){analyzerToolBtn.hidden=!available;analyzerToolBtn.title='Hammerschach-Analyzer öffnen';}
   if(trainerToolBtn){trainerToolBtn.hidden=!available;trainerToolBtn.title='Hammerschach-Trainer öffnen';}
   if(openingsToolBtn){openingsToolBtn.hidden=!available;openingsToolBtn.title='Hammerschach-Eröffnungsschule öffnen';}
@@ -5277,6 +5300,10 @@ function postTrainerToolMessage(message){
 function postOpeningsToolMessage(message){
   if(!openingsToolFrameStarted || !openingsToolFrame || !openingsToolFrame.contentWindow) return;
   try{ openingsToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
+}
+function postFairplayToolMessage(message){
+  if(!fairplayToolFrameStarted || !fairplayToolFrame || !fairplayToolFrame.contentWindow) return;
+  try{ fairplayToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
 }
 function postAnalyzerToolContext(){
   postAnalyzerToolMessage({
@@ -5304,17 +5331,32 @@ function postOpeningsToolContext(){
     openingCatalog:Array.isArray(TOURNAMENT_THEME_CATALOG) ? TOURNAMENT_THEME_CATALOG : []
   });
 }
+function postFairplayToolContext(){
+  postFairplayToolMessage({
+    type:'hammerschach-fairplay-context',
+    darkMode:!!darkModeEnabled,
+    loggedIn:!!(onlineAuthToken && onlineAuthUser),
+    isAdmin:!!(onlineAuthUser && onlineAuthUser.isAdmin === true),
+    username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
+  });
+}
 function setEmbeddedToolActive(toolName){
-  const requested=embeddedToolsAvailable()?(toolName==='openings'?'openings':(toolName==='trainer'?'trainer':(toolName==='analyzer'?'analyzer':''))):'';
+  const fairplayAllowed=!!(onlineAuthUser && onlineAuthUser.isAdmin === true);
+  const requested=embeddedToolsAvailable()
+    ? (toolName==='fairplay'&&fairplayAllowed?'fairplay':(toolName==='openings'?'openings':(toolName==='trainer'?'trainer':(toolName==='analyzer'?'analyzer':''))))
+    : '';
   analyzerToolActive=requested==='analyzer';
   trainerToolActive=requested==='trainer';
   openingsToolActive=requested==='openings';
+  fairplayToolActive=requested==='fairplay';
   document.documentElement.classList.toggle('analyzer-tool-active',analyzerToolActive);
   document.documentElement.classList.toggle('trainer-tool-active',trainerToolActive);
   document.documentElement.classList.toggle('openings-tool-active',openingsToolActive);
+  document.documentElement.classList.toggle('fairplay-tool-active',fairplayToolActive);
   if(analyzerToolView)analyzerToolView.hidden=!analyzerToolActive;
   if(trainerToolView)trainerToolView.hidden=!trainerToolActive;
   if(openingsToolView)openingsToolView.hidden=!openingsToolActive;
+  if(fairplayToolView)fairplayToolView.hidden=!fairplayToolActive;
   if(embeddedToolActive()){
     closeNewGameMenu();
     closeGamesMenu();
@@ -5333,12 +5375,18 @@ function setEmbeddedToolActive(toolName){
     openingsToolFrameStarted=true;
     openingsToolFrame.src=openingsToolFrame.dataset.src||'./Openings/';
   }
+  if(fairplayToolActive&&fairplayToolFrame&&!fairplayToolFrameStarted){
+    fairplayToolFrameStarted=true;
+    fairplayToolFrame.src=fairplayToolFrame.dataset.src||'./Fairplay/';
+  }
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility',visible:analyzerToolActive});
   postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
   postOpeningsToolMessage({type:'hammerschach-openings-visibility',visible:openingsToolActive});
+  postFairplayToolMessage({type:'hammerschach-fairplay-visibility',visible:fairplayToolActive});
   if(analyzerToolActive)postAnalyzerToolContext();
   if(trainerToolActive)postTrainerToolContext();
   if(openingsToolActive)postOpeningsToolContext();
+  if(fairplayToolActive)postFairplayToolContext();
   if(statusEl){
     const toolStatus=embeddedToolStatusText();
     if(toolStatus)statusEl.textContent=toolStatus;else refreshHeaderStatusFromState();
@@ -5352,6 +5400,7 @@ function setEmbeddedToolActive(toolName){
 function setAnalyzerToolActive(active){setEmbeddedToolActive(active?'analyzer':'');}
 function setTrainerToolActive(active){setEmbeddedToolActive(active?'trainer':'');}
 function setOpeningsToolActive(active){setEmbeddedToolActive(active?'openings':'');}
+function setFairplayToolActive(active){setEmbeddedToolActive(active?'fairplay':'');}
 function closeEmbeddedTools(){setEmbeddedToolActive('');}
 function openAnalyzerToolDebounced(){
   const now=Date.now();
@@ -5371,6 +5420,12 @@ function openOpeningsToolDebounced(){
   openingsToolLastOpenAt=now;
   setOpeningsToolActive(true);
 }
+function openFairplayToolDebounced(){
+  const now=Date.now();
+  if(now-fairplayToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
+  fairplayToolLastOpenAt=now;
+  setFairplayToolActive(true);
+}
 if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebounced);
 if(trainerToolBtn)trainerToolBtn.addEventListener('click',openTrainerToolDebounced);
 if(openingsToolBtn)openingsToolBtn.addEventListener('click',openOpeningsToolDebounced);
@@ -5386,6 +5441,10 @@ if(openingsToolFrame)openingsToolFrame.addEventListener('load',()=>{
   postOpeningsToolContext();
   postOpeningsToolMessage({type:'hammerschach-openings-visibility',visible:openingsToolActive});
 });
+if(fairplayToolFrame)fairplayToolFrame.addEventListener('load',()=>{
+  postFairplayToolContext();
+  postFairplayToolMessage({type:'hammerschach-fairplay-visibility',visible:fairplayToolActive});
+});
 [newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,membersOpenBtn,profileOpenBtn].forEach(button=>{
   if(button)button.addEventListener('click',closeEmbeddedTools,{capture:true});
 });
@@ -5393,9 +5452,55 @@ window.addEventListener('message',async event=>{
   const fromAnalyzer=!!(analyzerToolFrame&&event.source===analyzerToolFrame.contentWindow);
   const fromTrainer=!!(trainerToolFrame&&event.source===trainerToolFrame.contentWindow);
   const fromOpenings=!!(openingsToolFrame&&event.source===openingsToolFrame.contentWindow);
-  if(!fromAnalyzer&&!fromTrainer&&!fromOpenings)return;
+  const fromFairplay=!!(fairplayToolFrame&&event.source===fairplayToolFrame.contentWindow);
+  if(!fromAnalyzer&&!fromTrainer&&!fromOpenings&&!fromFairplay)return;
   if(embeddedToolTargetOrigin()!=='*'&&event.origin!==embeddedToolTargetOrigin())return;
   const message=event.data&&typeof event.data==='object'?event.data:{};
+  if(fromFairplay){
+    if(message.type==='hammerschach-fairplay-ready'){
+      postFairplayToolContext();
+      postFairplayToolMessage({type:'hammerschach-fairplay-visibility',visible:fairplayToolActive});
+      return;
+    }
+    if(message.type==='hammerschach-fairplay-height'){
+      const requested=Math.ceil(Number(message.height||0));
+      if(Number.isFinite(requested)&&requested>0){
+        fairplayToolFrame.style.height=Math.max(720,Math.min(4200,requested+4))+'px';
+        hammerschachScheduleHeightReport(true);
+      }
+      return;
+    }
+    if(message.type==='hammerschach-fairplay-request-games'){
+      const requestId=String(message.requestId||'');
+      if(!onlineAuthToken||!onlineAuthUser||onlineAuthUser.isAdmin!==true){
+        postFairplayToolMessage({type:'hammerschach-fairplay-games-result',requestId,ok:false,message:'Die Fairplay-Prüfung ist ausschließlich für den Administrator verfügbar.',games:[]});
+        return;
+      }
+      try{
+        const data=await authApi('/api/admin/fairplay/games');
+        postFairplayToolMessage({type:'hammerschach-fairplay-games-result',requestId,ok:true,games:Array.isArray(data.games)?data.games:[]});
+      }catch(err){
+        postFairplayToolMessage({type:'hammerschach-fairplay-games-result',requestId,ok:false,message:err&&err.message?err.message:'Die Fairplay-Partien konnten nicht geladen werden.',games:[]});
+      }
+      return;
+    }
+    if(message.type==='hammerschach-fairplay-request-game'){
+      const requestId=String(message.requestId||'');
+      const roomId=cleanRoomId(message.roomId);
+      if(!onlineAuthToken||!onlineAuthUser||onlineAuthUser.isAdmin!==true||!roomId){
+        postFairplayToolMessage({type:'hammerschach-fairplay-game-result',requestId,ok:false,message:'Die Fairplay-Partie konnte nicht geladen werden.'});
+        return;
+      }
+      try{
+        const data=await authApi('/api/admin/fairplay/games/'+encodeURIComponent(roomId));
+        postFairplayToolMessage({type:'hammerschach-fairplay-game-result',requestId,ok:true,game:data.game||null});
+      }catch(err){
+        postFairplayToolMessage({type:'hammerschach-fairplay-game-result',requestId,ok:false,message:err&&err.message?err.message:'Die Fairplay-Rohdaten konnten nicht geladen werden.'});
+      }
+      return;
+    }
+    return;
+  }
   if(fromOpenings){
     if(message.type==='hammerschach-openings-ready'){
       postOpeningsToolContext();
@@ -6201,6 +6306,18 @@ function closeAdminOverview(reopenAccount){
   setAdminOverviewStatus('', '');
   if(reopenAccount && onlineAuthToken && onlineAuthUser) openAuthDialog('login');
 }
+function openFairplayFromAdminOverview(){
+  if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true){
+    setAdminOverviewStatus('Die Fairplay-Prüfung ist ausschließlich für den Administrator verfügbar.', 'error');
+    return;
+  }
+  if(!embeddedToolsAvailable()){
+    setAdminOverviewStatus('Bitte zuerst den geöffneten Spielraum verlassen und zur Lobby zurückkehren.', 'error');
+    return;
+  }
+  closeAdminOverview(false);
+  openFairplayToolDebounced();
+}
 async function markAdminBackupNow(){
   if(!onlineAuthToken || !onlineAuthUser || onlineAuthUser.isAdmin !== true) return;
   if(!window.confirm('Hast du den manuellen SQL-Export der D1-Datenbank tatsächlich erstellt und sicher gespeichert?')) return;
@@ -6220,6 +6337,7 @@ async function markAdminBackupNow(){
 if(adminOverviewOpenBtn) adminOverviewOpenBtn.addEventListener('click', openAdminOverview);
 if(adminOverviewRefreshBtn) adminOverviewRefreshBtn.addEventListener('click', refreshAdminOverview);
 if(adminBackupMarkBtn) adminBackupMarkBtn.addEventListener('click', markAdminBackupNow);
+if(adminFairplayOpenBtn) adminFairplayOpenBtn.addEventListener('click', openFairplayFromAdminOverview);
 if(adminOverviewCloseBtn) adminOverviewCloseBtn.addEventListener('click', () => closeAdminOverview(true));
 if(adminOverviewBackdrop) adminOverviewBackdrop.addEventListener('click', ev => { if(ev.target === adminOverviewBackdrop) closeAdminOverview(true); });
 
