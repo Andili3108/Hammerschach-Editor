@@ -127,7 +127,11 @@
   .board-game-actions[hidden],.board-daily-actions[hidden]{display:none!important;}
   .board-action-btn{width:auto!important;min-width:0!important;min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
   .board-daily-cancel-btn{width:40px!important;min-width:40px!important;padding:0!important;font-size:20px!important;}
-  .board-daily-confirm-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  .board-daily-confirm-btn{min-width:126px!important;padding-inline:14px!important;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
+  @media (min-width:761px){
+    .board-tools:has(.board-daily-actions:not([hidden])){justify-content:flex-start;}
+    .board-tools:has(.board-daily-actions:not([hidden])) .board-daily-actions{margin-left:auto;}
+  }
   .variation-launcher{width:auto;display:flex;justify-content:center;flex:0 0 auto;}
   .variation-launcher[hidden]{display:none!important;}
   .variation-open-btn{min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
