@@ -4185,6 +4185,7 @@ let onlineOrientationRoleApplied = null;
 let onlinePendingTimeControlMessageId = null;
 let onlinePendingStartMessageId = null;
 let onlineStatePollTimer = null;
+const ONLINE_STATE_POLL_INTERVAL_MS = 12000;
 let applyingRemoteMove = false;
 let onlineLastMoveMessageId = null;
 let onlineClockSync = null;
@@ -4859,7 +4860,10 @@ function startPresenceHeartbeat(){
 }
 window.addEventListener('focus', () => sendPresenceHeartbeat(true, true));
 document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible') sendPresenceHeartbeat(true, true);
+  if(document.visibilityState === 'visible'){
+    sendPresenceHeartbeat(true, true);
+    requestOnlineState();
+  }
 });
 function cleanDisplayName(value){
   return String(value || '')
@@ -11029,8 +11033,8 @@ function requestOnlineState(){
 function startOnlineStatePolling(){
   if(onlineStatePollTimer) clearInterval(onlineStatePollTimer);
   onlineStatePollTimer = setInterval(() => {
-    if(onlineRoomId && onlineConnected) requestOnlineState();
-  }, 3000);
+    if(document.visibilityState === 'visible' && onlineRoomId && onlineConnected) requestOnlineState();
+  }, ONLINE_STATE_POLL_INTERVAL_MS);
 }
 function normalizeIncomingTimeControl(candidate){
   if(!candidate) return null;
@@ -11331,6 +11335,9 @@ function commitRemoteMove(found, promotion){
 function applyOnlineMove(move){
   const normalized = normalizeIncomingMove(move);
   if(!normalized) return false;
+  if(normalized.messageId && normalized.messageId === onlineLastMoveMessageId){
+    onlineLastMoveMessageId = null;
+  }
   const themePly = currentThemePly();
   const playedPly = actualMoveCount();
   if(normalized.ply && normalized.ply <= playedPly){
@@ -11369,9 +11376,7 @@ function applyOnlineMove(move){
   } finally {
     applyingRemoteMove = false;
   }
-  onlineLastMoveMessageId = normalized.messageId || onlineLastMoveMessageId;
   onlineLastMessage = 'Online-Zug wurde übernommen.';
-  updateOnlineUi();
   return true;
 }
 function applyOnlineMoveList(moves){
@@ -13487,7 +13492,7 @@ function syncMoveToOnline(mv, movedSide){
       if(onlineLastMoveMessageId === messageId && onlineConnected){
         requestOnlineState();
       }
-    }, 800);
+    }, 1800);
   } else {
     onlineLastMessage = 'Zug konnte nicht übertragen werden.';
     updateOnlineUi();
