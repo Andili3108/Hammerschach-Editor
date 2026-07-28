@@ -11734,7 +11734,7 @@ export class GameRoom {
     }
   }
 
-  async refreshTimedGameState(now = Date.now()) {
+  async refreshTimedGameState(now = Date.now(), options = {}) {
     let game = (await this.state.storage.get('game')) || { started: false, ended: false, result: '*' };
     let clock = (await this.state.storage.get('clock')) || null;
     if (!clock) return { game, clock: null, justEnded: false };
@@ -11760,7 +11760,7 @@ export class GameRoom {
 
     if (game.ended || !clock.running || clock.timeLost) {
       try { await this.state.storage.deleteAlarm(); } catch (_) {}
-    } else {
+    } else if (options.rescheduleAlarm !== false) {
       await this.scheduleClockAlarm(clock, now);
     }
     return { game, clock, justEnded };
@@ -11976,12 +11976,12 @@ export class GameRoom {
     }
   }
 
-  async broadcastMove(move, messageId = null, clock = null, game = null) {
+  broadcastMove(move, messageId = null, clock = null, game = null, drawOffer = null) {
     const now = Date.now();
-    const drawOffer = (await this.state.storage.get('drawOffer')) || null;
-    const timeControl = (await this.state.storage.get('timeControl')) || null;
-    const gameSetup = (await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null;
-    const rating = await this.buildRatingState(game || null, timeControl, gameSetup);
+    const publicMove = safeMoveForClient(move);
+    const publicGame = safeGameForClient(game);
+    const publicDrawOffer = safeDrawOfferForClient(drawOffer);
+    const publicClock = clockPayload(clock, now);
     for (const ws of this.state.getWebSockets()) {
       const info = ws.deserializeAttachment() || {};
       safeSend(ws, {
@@ -11990,11 +11990,10 @@ export class GameRoom {
         messageId,
         room: info.room || 'unknown',
         role: info.role || 'spectator',
-        move: safeMoveForClient(move),
-        game: safeGameForClient(game),
-        rating,
-        drawOffer: safeDrawOfferForClient(drawOffer),
-        clock: clockPayload(clock, now),
+        move: publicMove,
+        game: publicGame,
+        drawOffer: publicDrawOffer,
+        clock: publicClock,
         serverNow: now
       });
     }
@@ -12784,7 +12783,7 @@ export class GameRoom {
         return;
       }
 
-      const timedState = await this.refreshTimedGameState(Date.now());
+      const timedState = await this.refreshTimedGameState(Date.now(), { rescheduleAlarm:false });
       let game = timedState.game || { started: false, ended: false };
       if (!game.started) {
         safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
@@ -12936,38 +12935,34 @@ export class GameRoom {
       move._fairplay.whiteClockAfterMs = Math.max(0, Math.floor(Number(clock.wMs || 0)));
       move._fairplay.blackClockAfterMs = Math.max(0, Math.floor(Number(clock.bMs || 0)));
 
-      if (!game.playStatsCounted) {
-        try {
-          const counted = await incrementGamerStat(this.env, 'games_played');
-          if (counted) {
-            game.playStatsCounted = true;
-            game.playStatsCountedAt = new Date(now).toISOString();
-          }
-        } catch (_) {
-          /* Die Partie darf nicht scheitern, nur weil der Statistikzähler nicht verfügbar ist. */
-        }
+      const shouldIncrementGamesPlayedStat = !game.playStatsCounted;
+      if (shouldIncrementGamesPlayedStat) {
+        /*
+          Die Spielstatistik ist für den Live-Zug nicht kritisch. Wir markieren
+          sie zusammen mit dem Zug und aktualisieren D1 erst nach der Verteilung.
+        */
+        game.playStatsCounted = true;
+        game.playStatsCountedAt = new Date(now).toISOString();
       }
 
       const openDrawOffer = (await this.state.storage.get('drawOffer')) || null;
       let outgoingDrawOffer = openDrawOffer;
       if (validation.gameOver || (openDrawOffer && openDrawOffer.byRole && openDrawOffer.byRole !== role)) {
-        await this.state.storage.delete('drawOffer');
         outgoingDrawOffer = null;
       }
 
       moves.push(move);
-      await this.state.storage.put('moves', moves);
-      await this.state.storage.put('clock', clock);
-      await this.state.storage.put('game', game);
+      await this.state.storage.put({
+        moves,
+        clock,
+        game,
+        drawOffer:outgoingDrawOffer
+      });
       if (game.ended) {
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
-        await this.finalizeRatingIfNeeded(game);
       } else {
         await this.scheduleClockAlarm(clock, now);
       }
-      await this.syncGameIndexes();
-      if (game.ended) this.queueDailyResultNotifications(game);
-      else if (timeControl.mode === 'daily') this.queueDailyTurnNotification(clock.turn, move, clock);
 
       safeSend(ws, {
         type: 'move_ack',
@@ -12980,8 +12975,25 @@ export class GameRoom {
         clock: clockPayload(clock, now),
         serverNow: now
       });
-      await this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock, game);
-      if (game.ended) await this.broadcastRoomState('game_finished');
+      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock, game, outgoingDrawOffer);
+
+      /*
+        Erst jetzt folgen Rating, Listen/Turnier-Indizes und Statistik.
+        Diese Aufgaben dürfen die Brettfreigabe des Gegners nicht verzögern.
+      */
+      this.runBackgroundTask((async () => {
+        if (game.ended) {
+          await this.finalizeRatingIfNeeded(game);
+          await this.broadcastRoomState('game_finished');
+        }
+        await this.syncGameIndexes();
+        if (shouldIncrementGamesPlayedStat) {
+          try { await incrementGamerStat(this.env, 'games_played'); } catch (_) {}
+        }
+      })(), 'Nacharbeiten nach Live-Zug fehlgeschlagen');
+
+      if (game.ended) this.queueDailyResultNotifications(game);
+      else if (timeControl.mode === 'daily') this.queueDailyTurnNotification(clock.turn, move, clock);
       return;
     }
 
