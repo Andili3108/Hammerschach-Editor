@@ -2973,6 +2973,7 @@ const TOURNAMENT_LIVE_TIME_CONTROLS = Object.freeze({
   })
 });
 const TOURNAMENT_ALLOWED_HOURS = Object.freeze([24, 48, 72]);
+const ARENA_REPAIR_DELAY_MS = 10000;
 let tournamentTablesReady = false;
 
 async function ensureTournamentTables(env) {
@@ -3036,6 +3037,7 @@ async function ensureTournamentTables(env) {
        arena_active INTEGER NOT NULL DEFAULT 0,
        arena_joined_at TEXT,
        arena_waiting_since TEXT,
+       arena_pairing_not_before TEXT,
        joined_at TEXT NOT NULL,
        updated_at TEXT NOT NULL,
        PRIMARY KEY (tournament_id, user_id)
@@ -3046,6 +3048,7 @@ async function ensureTournamentTables(env) {
   try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_active INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_joined_at TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_waiting_since TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_pairing_not_before TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_rounds (
        tournament_id TEXT NOT NULL,
@@ -3106,6 +3109,7 @@ async function ensureTournamentTables(env) {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournaments_status ON tournaments (status, updated_at)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_participants_status ON tournament_participants (tournament_id, status, joined_at)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_participants_arena ON tournament_participants (tournament_id, arena_active, arena_waiting_since)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_participants_arena_ready ON tournament_participants (tournament_id, arena_active, arena_pairing_not_before, arena_waiting_since)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_round ON tournament_games (tournament_id, round_number, status)`),
     env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tournament_games_slot ON tournament_games (tournament_id, round_number, pairing_number, game_number)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_white ON tournament_games (white_user_id, status)`),
@@ -3323,6 +3327,7 @@ async function tournamentParticipantsFor(env, tournamentId) {
   const result = await env.DB.prepare(
     `SELECT participant.user_id, participant.status, participant.group_name, participant.checked_in_at,
             participant.arena_active, participant.arena_joined_at, participant.arena_waiting_since,
+            participant.arena_pairing_not_before,
             participant.joined_at, participant.updated_at,
             COALESCE(account.username, 'Gelöschter Benutzer') AS username
        FROM tournament_participants participant
@@ -3344,6 +3349,7 @@ async function tournamentParticipantsFor(env, tournamentId) {
       arenaActive:Number(row.arena_active || 0),
       arenaJoinedAt:row.arena_joined_at || null,
       arenaWaitingSince:row.arena_waiting_since || null,
+      arenaPairingNotBefore:row.arena_pairing_not_before || null,
       joinedAt:row.joined_at || null,
       updatedAt:row.updated_at || null,
       waitlistPosition:row.status === 'waiting' ? waitingPosition : null
@@ -3480,6 +3486,7 @@ async function tournamentDto(env, row, sessionUser) {
     arenaEndsAt:arena ? (row.arena_ends_at || null) : null,
     arenaClosedAt:arena ? (row.arena_closed_at || null) : null,
     arenaActive:own ? Number(own.arenaActive || 0) : 0,
+    arenaPairingNotBefore:arena && own ? (own.arenaPairingNotBefore || null) : null,
     arenaRunningGames:arena ? games.filter(game => ['creating', 'running'].includes(game.status)).length : 0,
     checkInOpensAt,
     checkInOpen,
@@ -3561,7 +3568,7 @@ async function liveTournamentStatusForUser(env, sessionUser) {
     if (!tournament || !['running', 'ended'].includes(tournament.status)) return null;
     if (tournament.status === 'running' && !tournament.arena_closed_at) await pairArenaPlayers(env, tournament.id);
     const participant = await env.DB.prepare(
-      `SELECT arena_active FROM tournament_participants WHERE tournament_id = ? AND user_id = ? AND status = 'confirmed' LIMIT 1`
+      `SELECT arena_active, arena_pairing_not_before FROM tournament_participants WHERE tournament_id = ? AND user_id = ? AND status = 'confirmed' LIMIT 1`
     ).bind(tournament.id, sessionUser.id).first();
     const game = await env.DB.prepare(
       `SELECT game.room_id, game.status, game.result, game.white_user_id, game.black_user_id,
@@ -3580,6 +3587,7 @@ async function liveTournamentStatusForUser(env, sessionUser) {
       tournamentType:normalizeTournamentType(tournament.tournament_type), tournamentTypeLabel:tournamentTypeLabel(tournament.tournament_type),
       timeLabel:tournamentTimeLabel(tournament.tournament_type, tournament.time_key, tournament.hours_per_move),
       status:String(tournament.status), arena:true, arenaActive:Number(participant && participant.arena_active || 0),
+      pairingNotBefore:participant && participant.arena_pairing_not_before || null,
       arenaDurationMinutes:normalizeTournamentArenaDuration(tournament.arena_duration_minutes),
       arenaEndsAt:tournament.arena_ends_at || null, arenaClosed:!!tournament.arena_closed_at || tournament.status === 'ended',
       currentRound:0, totalRounds:0, roundLabel:'Arena', roundStartedAt:tournament.started_at || null, nextRoundAt:null, bye:false,
@@ -3962,7 +3970,7 @@ async function closeArenaTournamentIfDue(env, tournamentId) {
     `UPDATE tournaments SET arena_closed_at = COALESCE(arena_closed_at, ?), updated_at = ? WHERE id = ? AND status = 'running'`
   ).bind(now, now, tournament.id).run();
   await env.DB.prepare(
-    `UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, updated_at = ?
+    `UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, arena_pairing_not_before = NULL, updated_at = ?
       WHERE tournament_id = ? AND arena_active = 1`
   ).bind(now, tournament.id).run();
   const active = await env.DB.prepare(
@@ -4021,14 +4029,16 @@ async function pairArenaPlayers(env, tournamentId) {
   const closed = await closeArenaTournamentIfDue(env, tournament.id);
   if (closed.closed) return {paired:0, closed:true};
   const onlineSince = presenceOnlineSinceIso();
+  const pairingNow = new Date().toISOString();
   const result = await env.DB.prepare(
     `SELECT participant.user_id, participant.status, participant.checked_in_at, participant.arena_active,
-            participant.arena_joined_at, participant.arena_waiting_since, participant.joined_at,
+            participant.arena_joined_at, participant.arena_waiting_since, participant.arena_pairing_not_before, participant.joined_at,
             COALESCE(account.username, 'Mitglied') AS username
        FROM tournament_participants participant
        JOIN users account ON account.id = participant.user_id
        JOIN user_presence presence ON presence.user_id = participant.user_id AND presence.last_seen_at >= ?
       WHERE participant.tournament_id = ? AND participant.status = 'confirmed' AND participant.arena_active = 1
+        AND (participant.arena_pairing_not_before IS NULL OR participant.arena_pairing_not_before <= ?)
         AND NOT EXISTS (
           SELECT 1 FROM tournament_games game
            WHERE game.tournament_id = participant.tournament_id
@@ -4036,11 +4046,12 @@ async function pairArenaPlayers(env, tournamentId) {
              AND (game.white_user_id = participant.user_id OR game.black_user_id = participant.user_id)
         )
       ORDER BY COALESCE(participant.arena_waiting_since, participant.arena_joined_at, participant.joined_at) ASC`
-  ).bind(onlineSince, tournament.id).all();
+  ).bind(onlineSince, tournament.id, pairingNow).all();
   const eligible = (result && result.results ? result.results : []).map(row => ({
     userId:String(row.user_id), username:cleanDisplayName(row.username) || 'Mitglied', status:'confirmed',
     checkedIn:!!row.checked_in_at, arenaActive:Number(row.arena_active || 0),
-    arenaJoinedAt:row.arena_joined_at || null, arenaWaitingSince:row.arena_waiting_since || null, joinedAt:row.joined_at || null
+    arenaJoinedAt:row.arena_joined_at || null, arenaWaitingSince:row.arena_waiting_since || null,
+    arenaPairingNotBefore:row.arena_pairing_not_before || null, joinedAt:row.joined_at || null
   }));
   if (eligible.length < 2) return {paired:0};
   const participants = await tournamentParticipantsFor(env, tournament.id);
@@ -4050,16 +4061,16 @@ async function pairArenaPlayers(env, tournamentId) {
   let paired = 0;
   for (const pair of pairs) {
     const firstClaim = await env.DB.prepare(
-      `UPDATE tournament_participants SET arena_active = 2, arena_waiting_since = NULL, updated_at = ?
+      `UPDATE tournament_participants SET arena_active = 2, arena_waiting_since = NULL, arena_pairing_not_before = NULL, updated_at = ?
         WHERE tournament_id = ? AND user_id = ? AND arena_active = 1`
     ).bind(new Date().toISOString(), tournament.id, pair[0].userId).run();
     if (d1Changes(firstClaim) < 1) continue;
     const secondClaim = await env.DB.prepare(
-      `UPDATE tournament_participants SET arena_active = 2, arena_waiting_since = NULL, updated_at = ?
+      `UPDATE tournament_participants SET arena_active = 2, arena_waiting_since = NULL, arena_pairing_not_before = NULL, updated_at = ?
         WHERE tournament_id = ? AND user_id = ? AND arena_active = 1`
     ).bind(new Date().toISOString(), tournament.id, pair[1].userId).run();
     if (d1Changes(secondClaim) < 1) {
-      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ? WHERE tournament_id = ? AND user_id = ? AND arena_active = 2`)
+      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, arena_pairing_not_before = NULL WHERE tournament_id = ? AND user_id = ? AND arena_active = 2`)
         .bind(new Date().toISOString(), tournament.id, pair[0].userId).run();
       continue;
     }
@@ -4095,7 +4106,7 @@ async function pairArenaPlayers(env, tournamentId) {
       paired += 1;
     } catch (error) {
       await env.DB.prepare(`DELETE FROM tournament_games WHERE id = ? AND status = 'creating'`).bind(gameId).run();
-      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, updated_at = ? WHERE tournament_id = ? AND user_id IN (?, ?) AND arena_active = 2`)
+      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id IN (?, ?) AND arena_active = 2`)
         .bind(now, now, tournament.id, pair[0].userId, pair[1].userId).run();
       console.error('Arena pairing failed', error && error.message ? error.message : String(error || 'unknown'));
     }
@@ -4130,7 +4141,8 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
     await env.DB.prepare(
       `UPDATE tournament_participants SET arena_active = CASE WHEN checked_in_at IS NULL THEN 0 ELSE 1 END,
               arena_joined_at = CASE WHEN checked_in_at IS NULL THEN arena_joined_at ELSE COALESCE(arena_joined_at, ?) END,
-              arena_waiting_since = CASE WHEN checked_in_at IS NULL THEN NULL ELSE ? END, updated_at = ?
+              arena_waiting_since = CASE WHEN checked_in_at IS NULL THEN NULL ELSE ? END,
+              arena_pairing_not_before = NULL, updated_at = ?
         WHERE tournament_id = ? AND status = 'confirmed'`
     ).bind(now, now, now, tournament.id).run();
     return {started:true, arena:true, startingPlayers, arenaEndsAt};
@@ -4360,12 +4372,14 @@ async function syncTournamentGameResult(env, tournamentMeta, game) {
   const tournament = await loadTournamentRow(env, tournamentId);
   if (tournament && normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_ARENA) {
     const deadlinePassed = !!tournament.arena_closed_at || (Number.isFinite(Date.parse(tournament.arena_ends_at || '')) && Date.parse(tournament.arena_ends_at) <= Date.now());
-    const now = new Date().toISOString();
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const pairingNotBefore = deadlinePassed ? null : new Date(nowMs + ARENA_REPAIR_DELAY_MS).toISOString();
     if (indexedGame) {
       await env.DB.prepare(
-        `UPDATE tournament_participants SET arena_active = ?, arena_waiting_since = ?, updated_at = ?
+        `UPDATE tournament_participants SET arena_active = ?, arena_waiting_since = ?, arena_pairing_not_before = ?, updated_at = ?
           WHERE tournament_id = ? AND user_id IN (?, ?) AND status = 'confirmed'`
-      ).bind(deadlinePassed ? 0 : 1, deadlinePassed ? null : now, now, tournamentId, indexedGame.white_user_id, indexedGame.black_user_id).run();
+      ).bind(deadlinePassed ? 0 : 1, deadlinePassed ? null : now, pairingNotBefore, now, tournamentId, indexedGame.white_user_id, indexedGame.black_user_id).run();
     }
     if (deadlinePassed) await closeArenaTournamentIfDue(env, tournamentId);
     else await pairArenaPlayers(env, tournamentId);
@@ -7362,9 +7376,10 @@ async function handleAuthApi(request, env, url) {
       await env.DB.prepare(
         `UPDATE tournament_participants SET checked_in_at = ?, arena_active = CASE WHEN ? = 1 THEN 1 ELSE arena_active END,
                 arena_joined_at = CASE WHEN ? = 1 THEN COALESCE(arena_joined_at, ?) ELSE arena_joined_at END,
-                arena_waiting_since = CASE WHEN ? = 1 THEN ? ELSE arena_waiting_since END, updated_at = ?
+                arena_waiting_since = CASE WHEN ? = 1 THEN ? ELSE arena_waiting_since END,
+                arena_pairing_not_before = CASE WHEN ? = 1 THEN NULL ELSE arena_pairing_not_before END, updated_at = ?
           WHERE tournament_id = ? AND user_id = ? AND status = 'confirmed'`
-      ).bind(now, arena ? 1 : 0, arena ? 1 : 0, now, arena ? 1 : 0, now, now, tournamentId, session.user.id).run();
+      ).bind(now, arena ? 1 : 0, arena ? 1 : 0, now, arena ? 1 : 0, now, arena ? 1 : 0, now, tournamentId, session.user.id).run();
       if (Number.isFinite(scheduled) && Date.now() >= scheduled) {
         const outcome = await autoStartScheduledTournament(env, tournamentId);
         if (outcome.started && outcome.arena && outcome.arenaEndsAt) {
@@ -7402,10 +7417,11 @@ async function handleAuthApi(request, env, url) {
         if (arena) {
           await env.DB.prepare(
             `INSERT INTO tournament_participants
-               (tournament_id, user_id, status, checked_in_at, arena_active, arena_joined_at, arena_waiting_since, joined_at, updated_at)
-             VALUES (?, ?, 'confirmed', NULL, 0, NULL, NULL, ?, ?)
+               (tournament_id, user_id, status, checked_in_at, arena_active, arena_joined_at, arena_waiting_since, arena_pairing_not_before, joined_at, updated_at)
+             VALUES (?, ?, 'confirmed', NULL, 0, NULL, NULL, NULL, ?, ?)
              ON CONFLICT(tournament_id, user_id) DO UPDATE SET status = 'confirmed', checked_in_at = NULL, arena_active = 0,
-               arena_joined_at = NULL, arena_waiting_since = NULL, joined_at = excluded.joined_at, updated_at = excluded.updated_at`
+               arena_joined_at = NULL, arena_waiting_since = NULL, arena_pairing_not_before = NULL,
+               joined_at = excluded.joined_at, updated_at = excluded.updated_at`
           ).bind(tournamentId, session.user.id, now, now).run();
           await env.DB.prepare(`UPDATE tournaments SET status = 'open', updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(now, tournamentId).run();
           const row = await loadTournamentRow(env, tournamentId);
@@ -7429,7 +7445,7 @@ async function handleAuthApi(request, env, url) {
       if (!existing || !['confirmed', 'waiting'].includes(existing.status)) return json({ok:false, code:'NOT_REGISTERED', message:'Du bist für dieses Turnier nicht angemeldet.'}, {status:409});
       await env.DB.prepare(`UPDATE tournament_participants SET status = 'withdrawn', checked_in_at = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ?`).bind(now, tournamentId, session.user.id).run();
       if (arena) {
-        await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL WHERE tournament_id = ? AND user_id = ?`).bind(tournamentId, session.user.id).run();
+        await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, arena_pairing_not_before = NULL WHERE tournament_id = ? AND user_id = ?`).bind(tournamentId, session.user.id).run();
         await env.DB.prepare(`UPDATE tournaments SET status = 'open', updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(now, tournamentId).run();
         const row = await loadTournamentRow(env, tournamentId);
         return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Deine Arena-Anmeldung wurde zurückgezogen.'});
@@ -7471,11 +7487,11 @@ async function handleAuthApi(request, env, url) {
       if (action === 'join') {
         await env.DB.prepare(
           `INSERT INTO tournament_participants
-             (tournament_id, user_id, status, checked_in_at, arena_active, arena_joined_at, arena_waiting_since, joined_at, updated_at)
-           VALUES (?, ?, 'confirmed', ?, 1, ?, ?, ?, ?)
+             (tournament_id, user_id, status, checked_in_at, arena_active, arena_joined_at, arena_waiting_since, arena_pairing_not_before, joined_at, updated_at)
+           VALUES (?, ?, 'confirmed', ?, 1, ?, ?, NULL, ?, ?)
            ON CONFLICT(tournament_id, user_id) DO UPDATE SET status = 'confirmed', checked_in_at = COALESCE(tournament_participants.checked_in_at, excluded.checked_in_at),
              arena_active = 1, arena_joined_at = COALESCE(tournament_participants.arena_joined_at, excluded.arena_joined_at),
-             arena_waiting_since = excluded.arena_waiting_since, updated_at = excluded.updated_at`
+             arena_waiting_since = excluded.arena_waiting_since, arena_pairing_not_before = NULL, updated_at = excluded.updated_at`
         ).bind(tournamentId, session.user.id, now, now, now, now, now).run();
         await pairArenaPlayers(env, tournamentId);
         const row = await loadTournamentRow(env, tournamentId);
@@ -7487,12 +7503,12 @@ async function handleAuthApi(request, env, url) {
       if (!participant || participant.status !== 'confirmed') return json({ok:false, code:'NOT_IN_ARENA', message:'Du bist dieser Arena noch nicht beigetreten.'}, {status:409});
       if (action === 'pause') {
         if (Number(participant.arena_active || 0) === 2) return json({ok:false, code:'ARENA_GAME_RUNNING', message:'Während einer laufenden Arena-Partie kannst du nicht pausieren.'}, {status:409});
-        await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ?`)
+        await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ?`)
           .bind(now, tournamentId, session.user.id).run();
         const row = await loadTournamentRow(env, tournamentId);
         return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Arena pausiert. Du erhältst bis zum Fortsetzen keine neue Paarung.'});
       }
-      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, updated_at = ? WHERE tournament_id = ? AND user_id = ?`)
+      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ?`)
         .bind(now, now, tournamentId, session.user.id).run();
       await pairArenaPlayers(env, tournamentId);
       const row = await loadTournamentRow(env, tournamentId);
