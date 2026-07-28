@@ -657,7 +657,7 @@
   .lobby-ticker-copy{min-width:0;line-height:1.25;}
   .lobby-ticker-title{display:block;color:#843f46;font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .lobby-ticker-text{display:block;margin-top:2px;color:#444;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .lobby-ticker-action{min-height:36px!important;border-radius:11px!important;white-space:nowrap;}
+  .lobby-ticker-action{justify-self:end;width:auto!important;min-width:190px;max-width:220px;min-height:36px!important;padding-inline:18px!important;border-radius:11px!important;white-space:nowrap;}
   .lobby-ticker-counter{min-width:34px;text-align:center;font-size:11px;font-weight:900;color:#765f20;}
   .admin-ticker-open-btn{background:linear-gradient(180deg,#fff8cf 0%,#e9f06b 100%)!important;color:#643f10!important;border-color:rgba(100,63,16,.26)!important;}
   .admin-ticker-modal{width:900px;max-width:100%;max-height:92vh;overflow:auto;}
@@ -1241,7 +1241,7 @@
 
   @media (max-width:1080px){.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr 1fr}.member-lobby-settings-mount #timeSetupBox{grid-column:1 / -1}.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}}
   @media (max-width:1299px){html.hammerschach-standalone body::before,html.hammerschach-standalone body::after{display:none}}
-  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.member-lobby-setup-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.member-lobby-setup-action{width:100%;white-space:normal}.tournament-lobby-banner-actions button{flex:1}.lobby-ticker{grid-template-columns:auto minmax(0,1fr) auto auto}#lobbyTickerPrevBtn{grid-column:1;grid-row:1}.lobby-ticker-content{grid-column:2;grid-row:1}#lobbyTickerNextBtn{grid-column:3;grid-row:1}.lobby-ticker-close{grid-column:4;grid-row:1}.lobby-ticker-action{grid-column:2 / 4;grid-row:2;width:100%}.lobby-ticker-counter{display:none}.lobby-ticker-text{white-space:normal}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
+  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.member-lobby-setup-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.member-lobby-setup-action{width:100%;white-space:normal}.tournament-lobby-banner-actions button{flex:1}.lobby-ticker{grid-template-columns:auto minmax(0,1fr) auto auto}#lobbyTickerPrevBtn{grid-column:1;grid-row:1}.lobby-ticker-content{grid-column:2;grid-row:1}#lobbyTickerNextBtn{grid-column:3;grid-row:1}.lobby-ticker-close{grid-column:4;grid-row:1}.lobby-ticker-action{grid-column:2 / 4;grid-row:2;width:100%!important;min-width:0;max-width:none}.lobby-ticker-counter{display:none}.lobby-ticker-text{white-space:normal}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame,.openings-tool-frame,.fairplay-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{justify-content:center;flex-wrap:wrap;font-size:12px;gap:7px;white-space:normal}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-origin-site-button{width:138px;min-width:138px;flex-basis:138px;min-height:27px;padding:4px 11px 4px 9px;font-size:12px}.brand-origin-rook{width:15px;height:17px;flex-basis:15px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px;flex-wrap:wrap}.gamer-board-nav{flex:0 0 100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
@@ -8010,6 +8010,7 @@ let liveTournamentPollBusy = false;
 let liveTournamentNavigatingRoomId = '';
 let liveTournamentClockOffsetMs = 0;
 let liveTournamentWaitingTournamentId = '';
+let liveTournamentWaitingDismissedKey = '';
 
 function formatLiveTournamentCountdown(targetValue){
   const target = targetValue ? Date.parse(targetValue) : NaN;
@@ -8061,6 +8062,10 @@ function renderLiveTournamentWaiting(tournament){
       } else if(liveStatus.paused){
         title = '⏸️ Arena pausiert';
         text = 'Du erhältst momentan keine neue Paarung. Mit „Arena fortsetzen“ steigst du wieder in die Warteschlange ein.';
+      } else if(Number.isFinite(Date.parse(liveStatus.pairingNotBefore || '')) && Date.parse(liveStatus.pairingNotBefore) > Date.now() + liveTournamentClockOffsetMs){
+        target = liveStatus.pairingNotBefore;
+        title = '⏱️ Kurzes Pausenfenster';
+        text = 'Die nächste Paarung startet in wenigen Sekunden. Mit „Arena pausieren“ kannst du die Neuverpaarung jetzt stoppen.';
       } else if(liveStatus.game && liveStatus.game.status === 'creating'){
         title = '🛠️ Dein Arena-Brett wird aufgebaut';
         text = 'Gleich geht es gegen ' + (liveStatus.game.opponentName || 'deinen Gegner') + '. Du wirst automatisch ans Brett gesetzt.';
@@ -8102,6 +8107,22 @@ function tournamentWaitingAddress(tournamentId){
     return url;
   } catch(_){ return null; }
 }
+function liveTournamentWaitingStateKey(status){
+  if(!status || !status.tournamentId) return '';
+  const game = status.game || {};
+  return [
+    String(status.tournamentId),
+    status.arena ? 'arena' : 'swiss',
+    String(status.status || ''),
+    status.arena ? String(Number(status.arenaActive || 0)) : String(Number(status.currentRound || 0)),
+    String(game.roomId || ''),
+    String(game.status || ''),
+    status.bye ? 'bye' : '',
+    String(status.pairingNotBefore || ''),
+    String(status.nextRoundAt || ''),
+    status.arenaClosed ? 'closed' : ''
+  ].join('|');
+}
 function showLiveTournamentWaitingRoom(status){
   if(!status || !status.tournamentId) return;
   const endedRoomId = status.game && status.game.roomId ? cleanRoomId(status.game.roomId) : '';
@@ -8123,8 +8144,10 @@ function showLiveTournamentWaitingRoom(status){
     if(tournament) renderLiveTournamentWaiting(tournament);
     return;
   }
-  if(liveTournamentWaitingTournamentId === String(status.tournamentId)) return;
-  liveTournamentWaitingTournamentId = String(status.tournamentId);
+  if(status.arena && status.paused) return;
+  const waitingStateKey = liveTournamentWaitingStateKey(status);
+  if(!waitingStateKey || liveTournamentWaitingDismissedKey === waitingStateKey || liveTournamentWaitingTournamentId === waitingStateKey) return;
+  liveTournamentWaitingTournamentId = waitingStateKey;
   openTournamentDialog(String(status.tournamentId)).finally(() => { liveTournamentWaitingTournamentId = ''; });
 }
 function openLiveTournamentBoard(status){
@@ -8143,6 +8166,7 @@ function handleLiveTournamentStatus(status){
   activeLiveTournamentStatus = status || null;
   if(!status){
     liveTournamentNavigatingRoomId = '';
+    liveTournamentWaitingDismissedKey = '';
     return;
   }
   const liveItem = tournamentItems.find(item => item && String(item.id) === String(status.tournamentId));
@@ -8150,6 +8174,7 @@ function handleLiveTournamentStatus(status){
     liveItem.arenaActive = Number(status.arenaActive || 0);
     liveItem.arenaEndsAt = status.arenaEndsAt || liveItem.arenaEndsAt;
     liveItem.arenaClosedAt = status.arenaClosed ? (liveItem.arenaClosedAt || new Date().toISOString()) : null;
+    liveItem.arenaPairingNotBefore = status.pairingNotBefore || null;
   }
   if(status.game && status.game.status === 'running'){
     openLiveTournamentBoard(status);
@@ -8186,6 +8211,8 @@ function stopLiveTournamentPolling(){
   liveTournamentPollBusy = false;
   activeLiveTournamentStatus = null;
   liveTournamentNavigatingRoomId = '';
+  liveTournamentWaitingTournamentId = '';
+  liveTournamentWaitingDismissedKey = '';
 }
 window.setInterval(updateLiveTournamentCountdown, 1000);
 
@@ -8231,6 +8258,7 @@ function normalizeLocalTournament(value, index){
     arenaEndsAt:value.arenaEndsAt || null,
     arenaClosedAt:value.arenaClosedAt || null,
     arenaActive:Math.max(0,Math.min(2,Number(value.arenaActive || 0))),
+    arenaPairingNotBefore:value.arenaPairingNotBefore || value.pairingNotBefore || null,
     arenaRunningGames:Math.max(0,Number(value.arenaRunningGames || 0)),
     canArenaJoin:value.canArenaJoin === true,
     checkInOpensAt:value.checkInOpensAt || null,
@@ -8705,6 +8733,13 @@ function closeTournamentCreateDialog(){
   setTournamentCreateStatus('', '');
 }
 function closeTournamentDialog(){
+  const closingTournamentId = String(tournamentSelectedId || '');
+  const closingLiveStatus = activeLiveTournamentStatus && (!closingTournamentId || String(activeLiveTournamentStatus.tournamentId || '') === closingTournamentId)
+    ? activeLiveTournamentStatus
+    : null;
+  if(closingLiveStatus && tournamentBackdrop && !tournamentBackdrop.hidden){
+    liveTournamentWaitingDismissedKey = liveTournamentWaitingStateKey(closingLiveStatus);
+  }
   closeTournamentCreateDialog();
   if(tournamentBackdrop) tournamentBackdrop.hidden = true;
   tournamentSelectedId = '';
@@ -8977,10 +9012,30 @@ async function toggleArenaPause(){
   const tournament = selectedTournament();
   if(!tournament || !tournament.arena || tournament.status !== 'running' || Number(tournament.arenaActive || 0) === 2) return;
   const resume = Number(tournament.arenaActive || 0) === 0;
+  const tournamentId = String(tournament.id);
   if(tournamentArenaPauseBtn) tournamentArenaPauseBtn.disabled = true;
   try{
-    const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/arena/' + (resume ? 'resume' : 'pause'), {method:'POST',body:JSON.stringify({})});
-    await refreshSelectedTournament(data.message || (resume ? 'Arena fortgesetzt.' : 'Arena pausiert.'));
+    const data = await authApi('/api/tournaments/' + encodeURIComponent(tournamentId) + '/arena/' + (resume ? 'resume' : 'pause'), {method:'POST',body:JSON.stringify({})});
+    const message = data.message || (resume ? 'Arena fortgesetzt.' : 'Arena pausiert.');
+    await refreshSelectedTournament(message);
+    if(resume){
+      liveTournamentWaitingDismissedKey = '';
+    } else {
+      const liveItem = tournamentItems.find(item => item && String(item.id) === tournamentId);
+      if(liveItem){
+        liveItem.arenaActive = 0;
+        liveItem.arenaPairingNotBefore = null;
+      }
+      if(activeLiveTournamentStatus && String(activeLiveTournamentStatus.tournamentId || '') === tournamentId){
+        activeLiveTournamentStatus = Object.assign({}, activeLiveTournamentStatus, {
+          arenaActive:0,
+          paused:true,
+          pairingNotBefore:null
+        });
+      }
+      closeTournamentDialog();
+      if(statusEl) statusEl.textContent = message;
+    }
     startLiveTournamentPolling();
   } catch(err){ if(statusEl) statusEl.textContent = err && err.message ? err.message : 'Die Arena-Pause konnte nicht geändert werden.'; }
   finally { if(tournamentArenaPauseBtn) tournamentArenaPauseBtn.disabled = false; }
