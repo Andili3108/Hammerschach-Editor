@@ -1,4 +1,4 @@
-// BUILD: TV-PLAYLIST-POPUP-20260729-2
+// BUILD: TV-PLAYLIST-PLAYER-20260729-3
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -6498,7 +6498,6 @@ async function markManualBackup(env, adminUser) {
 const HAMMERSCHACH_TV_CONFIG_KEY = 'hammerschach_tv_config';
 const HAMMERSCHACH_TV_CACHE_KEY = 'hammerschach_tv_stream_cache';
 const HAMMERSCHACH_TV_REFRESH_MS = 60 * 60 * 1000;
-const HAMMERSCHACH_TV_PLAYLIST_LIMIT = 50;
 const HAMMERSCHACH_TV_SLOT_COUNT = 3;
 
 function cleanTvText(value, maxLength) {
@@ -6728,93 +6727,17 @@ function tvStreamFromVideoResource(video, fallbackStatus) {
   };
 }
 
-function normalizeTvPlaylistItem(value, fallbackPosition, playlistId) {
-  const source = value && typeof value === 'object' ? value : {};
-  const videoId = cleanYoutubeVideoId(source.videoId);
-  if (!videoId) return null;
-  const position = Math.max(0, Math.min(9999, Number.isFinite(Number(source.position)) ? Number(source.position) : Number(fallbackPosition) || 0));
-  const liveStatus = ['live', 'upcoming'].includes(String(source.liveStatus || '').toLowerCase())
-    ? String(source.liveStatus).toLowerCase()
-    : '';
-  return {
-    videoId,
-    position,
-    title:cleanTvText(source.title || `Video ${position + 1}`, 180) || `Video ${position + 1}`,
-    channelTitle:cleanTvText(source.channelTitle, 100),
-    liveStatus,
-    thumbnailUrl:`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-    youtubeUrl:`https://www.youtube.com/watch?v=${videoId}&list=${encodeURIComponent(playlistId)}&index=${position + 1}`
-  };
-}
-
-function normalizeTvPlaylistItems(values, playlistId) {
-  const seen = new Set();
-  return (Array.isArray(values) ? values : [])
-    .map((item, index) => normalizeTvPlaylistItem(item, index, playlistId))
-    .filter(item => {
-      if (!item || seen.has(item.videoId)) return false;
-      seen.add(item.videoId);
-      return true;
-    })
-    .sort((a, b) => a.position - b.position)
-    .slice(0, HAMMERSCHACH_TV_PLAYLIST_LIMIT);
-}
-
-async function youtubePlaylistVideos(apiKey, playlistId) {
-  const playlistUrl = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
-  playlistUrl.searchParams.set('part', 'snippet,contentDetails');
-  playlistUrl.searchParams.set('playlistId', playlistId);
-  playlistUrl.searchParams.set('maxResults', String(HAMMERSCHACH_TV_PLAYLIST_LIMIT));
-  playlistUrl.searchParams.set('key', apiKey);
-  const playlistResponse = await fetch(playlistUrl.toString(), {headers:{accept:'application/json'}});
-  if (!playlistResponse.ok) throw new Error(`YouTube-Playlist konnte nicht gelesen werden (${playlistResponse.status}).`);
-  const playlistData = await playlistResponse.json();
-  const entries = (playlistData.items || []).map((item, index) => {
-    const snippet = item && item.snippet || {};
-    const videoId = cleanYoutubeVideoId(item && item.contentDetails && item.contentDetails.videoId)
-      || cleanYoutubeVideoId(snippet.resourceId && snippet.resourceId.videoId);
-    if (!videoId) return null;
-    return {
-      videoId,
-      position:Number.isFinite(Number(snippet.position)) ? Number(snippet.position) : index,
-      title:snippet.title || '',
-      channelTitle:snippet.videoOwnerChannelTitle || ''
-    };
-  }).filter(Boolean);
-  if (!entries.length) return [];
-
-  const videosUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
-  videosUrl.searchParams.set('part', 'snippet,status');
-  videosUrl.searchParams.set('id', entries.map(item => item.videoId).join(','));
-  videosUrl.searchParams.set('key', apiKey);
-  const videosResponse = await fetch(videosUrl.toString(), {headers:{accept:'application/json'}});
-  if (!videosResponse.ok) throw new Error(`YouTube-Videodaten der Playlist konnten nicht gelesen werden (${videosResponse.status}).`);
-  const videosData = await videosResponse.json();
-  const videosById = new Map((videosData.items || []).map(video => [cleanYoutubeVideoId(video && video.id), video]));
-  return normalizeTvPlaylistItems(entries.map(entry => {
-    const video = videosById.get(entry.videoId);
-    if (!video || (video.status && video.status.embeddable === false)) return null;
-    return {
-      ...entry,
-      title:video.snippet && video.snippet.title || entry.title,
-      channelTitle:video.snippet && video.snippet.channelTitle || entry.channelTitle,
-      liveStatus:video.snippet && video.snippet.liveBroadcastContent || ''
-    };
-  }).filter(Boolean), playlistId);
-}
-
-function tvPlaylistStream(config, playlistItems, playlistItemsMessage) {
+function tvPlaylistStream(config) {
   if (!config.playlistId) return null;
-  const items = normalizeTvPlaylistItems(playlistItems, config.playlistId);
   return {
     kind:'playlist',
     playlistId:config.playlistId,
     title:config.eventName || config.title,
     channelTitle:config.channelName,
     status:'playlist',
-    playlistItems:items,
-    playlistItemCount:items.length,
-    playlistItemsMessage:cleanTvText(playlistItemsMessage, 240),
+    playlistItems:[],
+    playlistItemCount:0,
+    playlistItemsMessage:'Die Videoliste wird direkt aus dem YouTube-Player geladen.',
     youtubeUrl:`https://www.youtube.com/playlist?list=${config.playlistId}`
   };
 }
@@ -6900,67 +6823,16 @@ async function resolveTvStream(env, config, options = {}) {
       return {
         stream:null,
         checkedAt:null,
-        automationAvailable:!!env.YOUTUBE_API_KEY,
+        automationAvailable:true,
         message:'Noch keine YouTube-Playlist festgelegt.'
       };
     }
-    const cache = await loadTvStreamCache(env, config.slotId);
-    const cacheMatches = !!(cache && cache.playlistId === config.playlistId);
-    const checkedAtMs = cacheMatches ? Date.parse(cache.checkedAt || '') : 0;
-    const cacheFresh = checkedAtMs && Date.now() - checkedAtMs < HAMMERSCHACH_TV_REFRESH_MS;
-    const cachedItems = cacheMatches ? normalizeTvPlaylistItems(cache.playlistItems, config.playlistId) : [];
-    if (cacheMatches && cacheFresh && options.force !== true) {
-      return {
-        stream:tvPlaylistStream(config, cachedItems, cache.playlistItemsMessage || ''),
-        checkedAt:cache.checkedAt || null,
-        automationAvailable:!!env.YOUTUBE_API_KEY,
-        message:'Die festgelegte YouTube-Playlist ist aktiv.'
-      };
-    }
-    if (!env.YOUTUBE_API_KEY) {
-      const playlistItemsMessage = cachedItems.length
-        ? 'Die zuletzt geladene Videoliste wird angezeigt.'
-        : 'Die Videoliste benötigt noch den Worker-Schlüssel YOUTUBE_API_KEY.';
-      return {
-        stream:tvPlaylistStream(config, cachedItems, playlistItemsMessage),
-        checkedAt:cacheMatches ? cache.checkedAt || null : null,
-        automationAvailable:false,
-        message:'Die festgelegte YouTube-Playlist ist aktiv.'
-      };
-    }
-
-    const checkedAt = new Date().toISOString();
-    try {
-      const playlistItems = await youtubePlaylistVideos(env.YOUTUBE_API_KEY, config.playlistId);
-      const playlistItemsMessage = playlistItems.length
-        ? `${playlistItems.length} Videos dieser Playlist sind auswählbar.`
-        : 'In dieser Playlist wurden keine einbettbaren Videos gefunden.';
-      const nextCache = {
-        slotId:config.slotId,
-        playlistId:config.playlistId,
-        checkedAt,
-        playlistItems,
-        playlistItemsMessage
-      };
-      await writeAdminSetting(env, tvCacheKey(config.slotId), JSON.stringify(nextCache), 'youtube-playlist');
-      return {
-        stream:tvPlaylistStream(config, playlistItems, playlistItemsMessage),
-        checkedAt,
-        automationAvailable:true,
-        message:'Die festgelegte YouTube-Playlist ist aktiv.'
-      };
-    } catch (error) {
-      console.error('Hammerschach TV playlist lookup failed', error && error.message ? error.message : String(error || 'unknown'));
-      const playlistItemsMessage = cachedItems.length
-        ? 'YouTube war vorübergehend nicht erreichbar. Die zuletzt geladene Videoliste bleibt verfügbar.'
-        : 'Die Videoliste konnte momentan nicht von YouTube geladen werden.';
-      return {
-        stream:tvPlaylistStream(config, cachedItems, playlistItemsMessage),
-        checkedAt:cacheMatches ? cache.checkedAt || null : checkedAt,
-        automationAvailable:true,
-        message:'Die festgelegte YouTube-Playlist ist aktiv.'
-      };
-    }
+    return {
+      stream:tvPlaylistStream(config),
+      checkedAt:config.updatedAt || null,
+      automationAvailable:true,
+      message:'Die festgelegte YouTube-Playlist ist aktiv.'
+    };
   }
 
   const cache = await loadTvStreamCache(env, config.slotId);
