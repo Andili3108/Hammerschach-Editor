@@ -6494,6 +6494,317 @@ async function markManualBackup(env, adminUser) {
   return nowIso;
 }
 
+const HAMMERSCHACH_TV_CONFIG_KEY = 'hammerschach_tv_config';
+const HAMMERSCHACH_TV_CACHE_KEY = 'hammerschach_tv_stream_cache';
+const HAMMERSCHACH_TV_REFRESH_MS = 60 * 60 * 1000;
+
+function cleanTvText(value, maxLength) {
+  return String(value == null ? '' : value)
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .replace(/\r\n?/g, '\n')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function cleanYoutubeVideoId(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (/^(?:www\.)?youtu\.be$/i.test(url.hostname)) {
+      const id = url.pathname.split('/').filter(Boolean)[0] || '';
+      return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : '';
+    }
+    if (/(?:^|\.)youtube(?:-nocookie)?\.com$/i.test(url.hostname)) {
+      const segments = url.pathname.split('/').filter(Boolean);
+      const id = url.searchParams.get('v') || (['embed', 'live', 'shorts'].includes(segments[0]) ? segments[1] : '');
+      return /^[A-Za-z0-9_-]{11}$/.test(id || '') ? id : '';
+    }
+  } catch (_) {}
+  return '';
+}
+
+function cleanYoutubePlaylistId(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  if (/^[A-Za-z0-9_-]{10,80}$/.test(raw)) return raw;
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    const id = url.searchParams.get('list') || '';
+    return /^[A-Za-z0-9_-]{10,80}$/.test(id) ? id : '';
+  } catch (_) {
+    return '';
+  }
+}
+
+function cleanYoutubeChannelId(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  const direct = raw.match(/(?:^|\/)(UC[A-Za-z0-9_-]{22})(?:$|[/?#])/);
+  if (direct) return direct[1];
+  return /^UC[A-Za-z0-9_-]{22}$/.test(raw) ? raw : '';
+}
+
+function normalizeTvMode(value) {
+  return value === 'manual' ? 'manual' : value === 'playlist' ? 'playlist' : 'channel';
+}
+
+function defaultTvConfig() {
+  return {
+    enabled:true,
+    mode:'channel',
+    title:'Hammerschach TV',
+    eventName:'',
+    description:'Schach-Livestreams direkt im Hammerschach-Gamer.',
+    channelName:'',
+    channelId:'',
+    manualVideoId:'',
+    playlistId:'',
+    updatedAt:null
+  };
+}
+
+function normalizeTvConfig(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  return {
+    enabled:source.enabled !== false,
+    mode:normalizeTvMode(source.mode),
+    title:cleanTvText(source.title || 'Hammerschach TV', 90) || 'Hammerschach TV',
+    eventName:cleanTvText(source.eventName, 120),
+    description:cleanTvText(source.description || 'Schach-Livestreams direkt im Hammerschach-Gamer.', 600),
+    channelName:cleanTvText(source.channelName, 90),
+    channelId:cleanYoutubeChannelId(source.channelId),
+    manualVideoId:cleanYoutubeVideoId(source.manualVideoId || source.videoUrl),
+    playlistId:cleanYoutubePlaylistId(source.playlistId || source.playlistUrl),
+    updatedAt:source.updatedAt || null
+  };
+}
+
+async function readAdminSetting(env, key) {
+  if (!(await ensureAdminSettingsTable(env))) return null;
+  const row = await env.DB.prepare(
+    `SELECT setting_value, updated_at FROM admin_settings WHERE setting_key = ? LIMIT 1`
+  ).bind(String(key)).first();
+  if (!row) return null;
+  return {value:String(row.setting_value == null ? '' : row.setting_value), updatedAt:row.updated_at || null};
+}
+
+async function writeAdminSetting(env, key, value, updatedBy) {
+  if (!(await ensureAdminSettingsTable(env))) throw new Error('Admin-Einstellungen sind momentan nicht verfügbar.');
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO admin_settings (setting_key, setting_value, updated_at, updated_by)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(setting_key) DO UPDATE SET
+       setting_value = excluded.setting_value,
+       updated_at = excluded.updated_at,
+       updated_by = excluded.updated_by`
+  ).bind(String(key), String(value), nowIso, String(updatedBy || '').slice(0, 128)).run();
+  return nowIso;
+}
+
+async function loadTvConfig(env) {
+  const stored = await readAdminSetting(env, HAMMERSCHACH_TV_CONFIG_KEY);
+  if (!stored || !stored.value) return defaultTvConfig();
+  try {
+    return normalizeTvConfig({...JSON.parse(stored.value), updatedAt:stored.updatedAt});
+  } catch (_) {
+    return defaultTvConfig();
+  }
+}
+
+async function saveTvConfig(env, input, adminUser) {
+  const config = normalizeTvConfig(input);
+  if (config.mode === 'channel' && input && input.channelId && !config.channelId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_CHANNEL', message:'Die YouTube-Kanal-ID ist ungültig. Benötigt wird die mit „UC“ beginnende Kanal-ID.'};
+  }
+  if (config.mode === 'manual' && input && (input.manualVideoId || input.videoUrl) && !config.manualVideoId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_VIDEO', message:'Die YouTube-Video-ID beziehungsweise Video-Adresse ist ungültig.'};
+  }
+  if (config.mode === 'playlist' && input && (input.playlistId || input.playlistUrl) && !config.playlistId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_PLAYLIST', message:'Die YouTube-Playlist-ID beziehungsweise Playlist-Adresse ist ungültig.'};
+  }
+  const nowIso = await writeAdminSetting(
+    env,
+    HAMMERSCHACH_TV_CONFIG_KEY,
+    JSON.stringify({...config, updatedAt:undefined}),
+    adminUser && adminUser.id
+  );
+  config.updatedAt = nowIso;
+  return {ok:true, config};
+}
+
+function tvStreamFromVideoResource(video, fallbackStatus) {
+  const id = cleanYoutubeVideoId(video && video.id);
+  if (!id) return null;
+  const details = video.liveStreamingDetails || {};
+  const actualStartAt = details.actualStartTime || null;
+  const actualEndAt = details.actualEndTime || null;
+  const scheduledStartAt = details.scheduledStartTime || null;
+  const status = actualEndAt ? 'replay' : actualStartAt ? 'live' : (fallbackStatus === 'live' ? 'live' : 'upcoming');
+  return {
+    kind:'video',
+    videoId:id,
+    title:cleanTvText(video.snippet && video.snippet.title, 160),
+    channelTitle:cleanTvText(video.snippet && video.snippet.channelTitle, 100),
+    status,
+    scheduledStartAt,
+    actualStartAt,
+    actualEndAt,
+    thumbnailUrl:`https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+    youtubeUrl:`https://www.youtube.com/watch?v=${id}`
+  };
+}
+
+async function youtubeEventCandidates(apiKey, channelId, eventType) {
+  const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
+  searchUrl.searchParams.set('part', 'snippet');
+  searchUrl.searchParams.set('channelId', channelId);
+  searchUrl.searchParams.set('eventType', eventType);
+  searchUrl.searchParams.set('type', 'video');
+  searchUrl.searchParams.set('videoEmbeddable', 'true');
+  searchUrl.searchParams.set('maxResults', '5');
+  searchUrl.searchParams.set('order', 'date');
+  searchUrl.searchParams.set('key', apiKey);
+  const searchResponse = await fetch(searchUrl.toString(), {headers:{accept:'application/json'}});
+  if (!searchResponse.ok) throw new Error(`YouTube-Suche fehlgeschlagen (${searchResponse.status}).`);
+  const searchData = await searchResponse.json();
+  const ids = (searchData.items || []).map(item => cleanYoutubeVideoId(item && item.id && item.id.videoId)).filter(Boolean);
+  if (!ids.length) return [];
+
+  const videosUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
+  videosUrl.searchParams.set('part', 'snippet,liveStreamingDetails,status');
+  videosUrl.searchParams.set('id', ids.join(','));
+  videosUrl.searchParams.set('key', apiKey);
+  const videosResponse = await fetch(videosUrl.toString(), {headers:{accept:'application/json'}});
+  if (!videosResponse.ok) throw new Error(`YouTube-Videodaten fehlgeschlagen (${videosResponse.status}).`);
+  const videosData = await videosResponse.json();
+  return (videosData.items || [])
+    .filter(video => !video.status || video.status.embeddable !== false)
+    .map(video => tvStreamFromVideoResource(video, eventType))
+    .filter(Boolean);
+}
+
+function chooseTvStream(candidates, eventType) {
+  if (!Array.isArray(candidates) || !candidates.length) return null;
+  if (eventType === 'live') return candidates.find(item => item.status === 'live') || candidates[0];
+  return candidates.slice().sort((a, b) => {
+    const aTime = Date.parse(a.scheduledStartAt || '') || Number.MAX_SAFE_INTEGER;
+    const bTime = Date.parse(b.scheduledStartAt || '') || Number.MAX_SAFE_INTEGER;
+    return aTime - bTime;
+  })[0] || null;
+}
+
+async function loadTvStreamCache(env) {
+  const stored = await readAdminSetting(env, HAMMERSCHACH_TV_CACHE_KEY);
+  if (!stored || !stored.value) return null;
+  try {
+    const parsed = JSON.parse(stored.value);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function resolveTvStream(env, config, options = {}) {
+  const mode = normalizeTvMode(config && config.mode);
+  if (mode === 'manual') {
+    return {
+      stream:config.manualVideoId ? {
+        kind:'video',
+        videoId:config.manualVideoId,
+        title:config.eventName || config.title,
+        channelTitle:config.channelName,
+        status:'manual',
+        scheduledStartAt:null,
+        actualStartAt:null,
+        actualEndAt:null,
+        thumbnailUrl:`https://i.ytimg.com/vi/${config.manualVideoId}/hqdefault.jpg`,
+        youtubeUrl:`https://www.youtube.com/watch?v=${config.manualVideoId}`
+      } : null,
+      checkedAt:config.updatedAt,
+      automationAvailable:!!env.YOUTUBE_API_KEY,
+      message:config.manualVideoId ? 'Das festgelegte YouTube-Video ist aktiv.' : 'Noch kein YouTube-Video festgelegt.'
+    };
+  }
+  if (mode === 'playlist') {
+    return {
+      stream:config.playlistId ? {
+        kind:'playlist',
+        playlistId:config.playlistId,
+        title:config.eventName || config.title,
+        channelTitle:config.channelName,
+        status:'playlist',
+        youtubeUrl:`https://www.youtube.com/playlist?list=${config.playlistId}`
+      } : null,
+      checkedAt:config.updatedAt,
+      automationAvailable:!!env.YOUTUBE_API_KEY,
+      message:config.playlistId ? 'Die festgelegte YouTube-Playlist ist aktiv.' : 'Noch keine YouTube-Playlist festgelegt.'
+    };
+  }
+
+  const cache = await loadTvStreamCache(env);
+  const cacheMatches = !!(cache && cache.channelId === config.channelId);
+  const checkedAtMs = cacheMatches ? Date.parse(cache.checkedAt || '') : 0;
+  const cacheFresh = checkedAtMs && Date.now() - checkedAtMs < HAMMERSCHACH_TV_REFRESH_MS;
+  if (!config.channelId) {
+    return {stream:null, checkedAt:null, automationAvailable:!!env.YOUTUBE_API_KEY, message:'Noch kein YouTube-Kanal festgelegt.'};
+  }
+  if (cacheMatches && cacheFresh && options.force !== true) {
+    return {stream:cache.stream || null, checkedAt:cache.checkedAt || null, automationAvailable:!!env.YOUTUBE_API_KEY, message:cache.message || ''};
+  }
+  if (!env.YOUTUBE_API_KEY) {
+    return {
+      stream:cacheMatches ? cache.stream || null : null,
+      checkedAt:cacheMatches ? cache.checkedAt || null : null,
+      automationAvailable:false,
+      message:'Die automatische YouTube-Suche benötigt noch den Worker-Schlüssel YOUTUBE_API_KEY.'
+    };
+  }
+
+  const checkedAt = new Date().toISOString();
+  try {
+    let stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, config.channelId, 'live'), 'live');
+    if (!stream) stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, config.channelId, 'upcoming'), 'upcoming');
+    const message = stream
+      ? (stream.status === 'live' ? 'Der laufende Stream wurde automatisch gefunden.' : 'Der nächste angekündigte Stream wurde automatisch gefunden.')
+      : 'Der Kanal hat momentan keinen laufenden oder angekündigten Livestream.';
+    const nextCache = {channelId:config.channelId, checkedAt, stream, message};
+    await writeAdminSetting(env, HAMMERSCHACH_TV_CACHE_KEY, JSON.stringify(nextCache), 'youtube-auto');
+    return {stream, checkedAt, automationAvailable:true, message};
+  } catch (error) {
+    console.error('Hammerschach TV YouTube lookup failed', error && error.message ? error.message : String(error || 'unknown'));
+    return {
+      stream:cacheMatches ? cache.stream || null : null,
+      checkedAt:cacheMatches ? cache.checkedAt || null : checkedAt,
+      automationAvailable:true,
+      message:cacheMatches && cache.stream
+        ? 'Die YouTube-Abfrage war vorübergehend nicht erreichbar. Der zuletzt gefundene Stream bleibt sichtbar.'
+        : 'Die YouTube-Abfrage war vorübergehend nicht erreichbar.'
+    };
+  }
+}
+
+function tvDto(config, resolved) {
+  return {
+    enabled:config.enabled === true,
+    mode:normalizeTvMode(config.mode),
+    title:config.title,
+    eventName:config.eventName,
+    description:config.description,
+    channelName:config.channelName,
+    channelId:config.channelId,
+    manualVideoId:config.manualVideoId,
+    playlistId:config.playlistId,
+    updatedAt:config.updatedAt,
+    stream:resolved && resolved.stream || null,
+    checkedAt:resolved && resolved.checkedAt || null,
+    automationAvailable:resolved && resolved.automationAvailable === true,
+    message:cleanTvText(resolved && resolved.message, 240)
+  };
+}
+
 let lobbyTickerTablesReady = false;
 async function ensureLobbyTickerTables(env) {
   if (!env || !env.DB) return false;
@@ -6982,6 +7293,48 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Nicht angemeldet.' }, { status: 401 });
     const me = await publicUserWithRatings(env, session.user); me.moderation = await moderationStateForUser(env, session.user.id); return json({ ok: true, user: me });
+  }
+
+  if (url.pathname === '/api/tv' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Hammerschach TV ist nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
+    try {
+      const config = await loadTvConfig(env);
+      const resolved = await resolveTvStream(env, config);
+      return json({ok:true, tv:tvDto(config, resolved)});
+    } catch (error) {
+      console.error('Hammerschach TV load failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'HAMMERSCHACH_TV_UNAVAILABLE', message:'Hammerschach TV konnte momentan nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/admin/tv' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    const body = await readJsonBody(request);
+    if (!body) return json({ok:false, code:'BAD_JSON', message:'Die TV-Einstellungen konnten nicht gelesen werden.'}, {status:400});
+    try {
+      const saved = await saveTvConfig(env, body, admin.session.user);
+      if (!saved.ok) return json({ok:false, code:saved.code, message:saved.message}, {status:saved.status || 400});
+      const resolved = await resolveTvStream(env, saved.config, {force:true});
+      return json({ok:true, tv:tvDto(saved.config, resolved), message:'Hammerschach TV wurde gespeichert.'});
+    } catch (error) {
+      console.error('Hammerschach TV save failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'HAMMERSCHACH_TV_SAVE_FAILED', message:'Die TV-Einstellungen konnten nicht gespeichert werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/admin/tv/refresh' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      const config = await loadTvConfig(env);
+      const resolved = await resolveTvStream(env, config, {force:true});
+      return json({ok:true, tv:tvDto(config, resolved), message:resolved.message || 'Die YouTube-Suche wurde aktualisiert.'});
+    } catch (error) {
+      console.error('Hammerschach TV refresh failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'HAMMERSCHACH_TV_REFRESH_FAILED', message:'Die YouTube-Suche konnte nicht aktualisiert werden.'}, {status:500});
+    }
   }
 
   if (url.pathname === '/api/account/leitbild' && request.method === 'POST') {
