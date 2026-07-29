@@ -1709,7 +1709,7 @@
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>22. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby stehen <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> unmittelbar oben rechts im Bereich <strong>„Neue Partie“</strong>. Beide verwenden genau die darunter gewählten Einstellungen; ein zusätzliches Menü im Header ist deshalb nicht nötig. Sobald du dich in einem Spielraum befindest, erscheint im Header <strong>„↩️ Zur Lobby“</strong> und führt zurück zu „Neue Partie“ und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer, Trainer, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche das Werkzeug direkt und stellt die Lobby ohne Neuladen wieder her. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer beim Verlassen eines Spielraums im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
+          <p>In der Lobby stehen <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> unmittelbar oben rechts im Bereich <strong>„Neue Partie“</strong>. Beide verwenden genau die darunter gewählten Einstellungen; ein zusätzliches Menü im Header ist deshalb nicht nötig. Sobald du dich in einem Spielraum befindest, erscheint im Header <strong>„↩️ Zur Lobby“</strong> und führt zurück zu „Neue Partie“ und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer, Trainer, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche das Werkzeug direkt und stellt die Lobby ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
 
           <h4>23. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -10552,7 +10552,7 @@ function updateOnlineActionButtons(){
     roomLobbyBtn.hidden = !showLobbyButton;
     roomLobbyBtn.title = embeddedToolActive()
       ? ((openingsToolActive ? 'Eröffnungsschule' : (trainerToolActive ? 'Trainer' : 'Analyzer')) + ' schließen und zur Lobby zurückkehren.')
-      : (HAMMERSCHACH_IS_EMBEDDED ? 'Zur Mitglieder-Lobby zurückkehren.' : 'Mitglieder-Lobby in einem neuen Tab öffnen.');
+      : 'Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.';
   }
   if(createOnlineBtn){
     createOnlineBtn.hidden = inRoom;
@@ -14237,14 +14237,12 @@ function openNewGameView(){
     targetUrl = (window.location.pathname || '/') + '?fresh=1';
   }
 
-  if(HAMMERSCHACH_IS_EMBEDDED){
-    /* Im iFrame nur dessen Inhalt wechseln. Die Andili-Seite und der
-       eingebettete Darstellungsmodus bleiben dadurch erhalten. */
-    window.location.assign(targetUrl);
-    return;
-  }
-
-  window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  /*
+   * Einen Spielraum immer im aktuellen Browser-Tab verlassen. Das gilt
+   * sowohl für den direkt geöffneten Gamer als auch für die Einbettung auf
+   * Andili; dadurch entstehen beim Wechsel zur Lobby keine zusätzlichen Tabs.
+   */
+  window.location.assign(targetUrl);
 }
 if(newGameBtn) newGameBtn.addEventListener('click', event => {
   if(onlineRoomId) openNewGameView();
