@@ -2,6 +2,8 @@ name = "hammerschach-gamer-lobby"
 main = "src/index.js"
 compatibility_date = "2026-06-26"
 keep_vars = true
+# Optionales Worker-Secret für die automatische Hammerschach-TV-Kanalsuche:
+# YOUTUBE_API_KEY (nicht in diese Datei eintragen)
 
 [vars]
 GAMER_PUBLIC_URL = "https://hammerschach-gamer.webmaster-5bb.workers.dev/"
