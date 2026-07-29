@@ -1002,8 +1002,23 @@
       width:min(100%, calc(177.778vh - 400px));
       width:min(100%, calc(177.778dvh - 400px));
     }
+    html.tv-tool-active .tv-layout:has(.tv-channel-switcher:not([hidden])){
+      width:min(100%, calc(177.778vh - 514px));
+      width:min(100%, calc(177.778dvh - 514px));
+    }
   }
   .tv-player-card,.tv-admin-card{border:1px solid rgba(132,63,70,.16);border-radius:18px;background:rgba(255,255,255,.88);box-shadow:0 12px 30px rgba(0,0,0,.10);overflow:hidden;}
+  .tv-channel-switcher{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px;}
+  .tv-channel-switcher[hidden]{display:none!important;}
+  .tv-channel-button{min-width:0;min-height:54px!important;display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 12px!important;border-radius:14px!important;background:linear-gradient(180deg,#fff 0%,#f1edef 100%)!important;color:#333!important;border-color:rgba(132,63,70,.20)!important;box-shadow:0 5px 14px rgba(0,0,0,.08)!important;text-align:left;}
+  .tv-channel-button[hidden]{display:none!important;}
+  .tv-channel-button.active{background:linear-gradient(135deg,#843f46,#a6535d)!important;color:#fff!important;border-color:#843f46!important;box-shadow:0 8px 20px rgba(132,63,70,.25)!important;}
+  .tv-channel-number{font-size:15px;font-weight:900;white-space:nowrap;}
+  .tv-channel-event{min-width:0;font-family:Arial,sans-serif;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tv-channel-button:not(.active) .tv-channel-event{color:#666;}
+  .tv-channel-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#b91c1c;color:#fff;font-family:Arial,sans-serif;font-size:9px;font-weight:900;line-height:1;letter-spacing:.04em;}
+  .tv-channel-badge.upcoming{background:#3b6ea7;}
+  .tv-channel-badge[hidden]{display:none!important;}
   .tv-player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:radial-gradient(circle at 50% 48%,#2f3036,#111216 67%);overflow:hidden;}
   .tv-player-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;}
   .tv-player-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:30px;text-align:center;color:#fff;}
@@ -1016,6 +1031,10 @@
   .tv-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
   .tv-admin-title{font-size:18px;font-weight:900;color:#222;}
   .tv-admin-subtitle{margin-top:4px;color:#666;font-size:12px;font-weight:800;line-height:1.35;}
+  .tv-admin-slot-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 15px;}
+  .tv-admin-slot-tab{min-height:42px!important;border-radius:12px!important;background:linear-gradient(180deg,#fff 0%,#f1edef 100%)!important;color:#843f46!important;border-color:rgba(132,63,70,.22)!important;}
+  .tv-admin-slot-tab.active{background:#843f46!important;color:#fff!important;border-color:#843f46!important;box-shadow:0 7px 16px rgba(132,63,70,.22)!important;}
+  .tv-admin-slot-state{display:inline-block;margin-left:5px;font-family:Arial,sans-serif;font-size:9px;font-weight:900;opacity:.78;}
   .tv-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .tv-field{display:flex;flex-direction:column;gap:6px;min-width:0;}
   .tv-field-wide{grid-column:1/-1;}
@@ -1029,6 +1048,12 @@
   .tv-admin-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:14px;}
   .tv-admin-status{min-height:18px;margin-top:10px;color:#666;font-size:12px;font-weight:900;}
   .tv-admin-status.error{color:#9A2D33}.tv-admin-status.success{color:#226b36}
+  @media (max-width:760px){
+    .tv-channel-switcher{display:flex;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:3px;}
+    .tv-channel-button{flex:0 0 min(230px,calc(100vw - 48px));scroll-snap-align:start;}
+    .tv-admin-slot-tabs{gap:5px;}
+    .tv-admin-slot-tab{padding-inline:6px!important;font-size:12px!important;}
+  }
   html.analyzer-tool-active .member-lobby,
   html.analyzer-tool-active .top-layout,
   html.trainer-tool-active .member-lobby,
@@ -1091,6 +1116,9 @@
   html.dark-mode .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(226,151,160,.22),0 8px 18px rgba(0,0,0,.34)!important;}
   html.dark-mode .tv-stage{background:transparent;}
   html.dark-mode .tv-player-card,html.dark-mode .tv-admin-card{background:#22262c;border-color:rgba(255,255,255,.09);box-shadow:0 14px 32px rgba(0,0,0,.34);}
+  html.dark-mode .tv-channel-button,html.dark-mode .tv-admin-slot-tab{background:linear-gradient(180deg,#3a3f47 0%,#292d33 100%)!important;color:#eef0f2!important;border-color:rgba(255,255,255,.13)!important;}
+  html.dark-mode .tv-channel-button:not(.active) .tv-channel-event{color:#b8bdc6;}
+  html.dark-mode .tv-channel-button.active,html.dark-mode .tv-admin-slot-tab.active{background:linear-gradient(135deg,#843f46,#a6535d)!important;color:#fff!important;border-color:#a6535d!important;}
   html.dark-mode .tv-admin-title{color:#f1f2f4;}
   html.dark-mode .tv-admin-subtitle,html.dark-mode .tv-field label,html.dark-mode .tv-enabled-label,html.dark-mode .tv-mode-help,html.dark-mode .tv-admin-status{color:#bfc3ca;}
   html.dark-mode .tv-input,html.dark-mode .tv-select,html.dark-mode .tv-textarea{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
@@ -1406,6 +1434,23 @@
       <div class="box tv-stage">
         <div class="tv-content">
           <div class="tv-layout">
+            <div id="tvChannelSwitcher" class="tv-channel-switcher" role="tablist" aria-label="Hammerschach-TV-Sender" hidden>
+              <button class="tv-channel-button" type="button" role="tab" data-tv-slot="tv1" aria-selected="false">
+                <span class="tv-channel-number">TV 1</span>
+                <span class="tv-channel-event">Sender 1</span>
+                <span class="tv-channel-badge" hidden>LIVE</span>
+              </button>
+              <button class="tv-channel-button" type="button" role="tab" data-tv-slot="tv2" aria-selected="false" hidden>
+                <span class="tv-channel-number">TV 2</span>
+                <span class="tv-channel-event">Sender 2</span>
+                <span class="tv-channel-badge" hidden>LIVE</span>
+              </button>
+              <button class="tv-channel-button" type="button" role="tab" data-tv-slot="tv3" aria-selected="false" hidden>
+                <span class="tv-channel-number">TV 3</span>
+                <span class="tv-channel-event">Sender 3</span>
+                <span class="tv-channel-badge" hidden>LIVE</span>
+              </button>
+            </div>
             <div class="tv-player-card">
               <div class="tv-player-wrap">
                 <iframe id="tvPlayerFrame" title="YouTube-Livestream bei Hammerschach TV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen hidden></iframe>
@@ -1422,8 +1467,13 @@
             <div class="tv-admin-head">
               <div>
                 <div class="tv-admin-title">TV-Regie</div>
-                <div class="tv-admin-subtitle">Nur für Andili sichtbar. Änderungen gelten sofort für alle Mitglieder.</div>
+                <div class="tv-admin-subtitle">Drei unabhängige Senderplätze. Nur für Andili sichtbar; Änderungen gelten sofort für alle Mitglieder.</div>
               </div>
+            </div>
+            <div id="tvAdminSlotTabs" class="tv-admin-slot-tabs" role="tablist" aria-label="Senderplatz bearbeiten">
+              <button class="tv-admin-slot-tab active" type="button" role="tab" data-tv-admin-slot="tv1" aria-selected="true">TV 1 <span class="tv-admin-slot-state">AN</span></button>
+              <button class="tv-admin-slot-tab" type="button" role="tab" data-tv-admin-slot="tv2" aria-selected="false">TV 2 <span class="tv-admin-slot-state">AUS</span></button>
+              <button class="tv-admin-slot-tab" type="button" role="tab" data-tv-admin-slot="tv3" aria-selected="false">TV 3 <span class="tv-admin-slot-state">AUS</span></button>
             </div>
             <div class="tv-admin-grid">
               <div class="tv-field">
@@ -1435,7 +1485,7 @@
                 </select>
                 <div class="tv-mode-help">Für mehrtägige Turniere ist die automatische Kanalsuche vorgesehen.</div>
               </div>
-              <label class="tv-enabled-label"><input id="tvEnabledInput" type="checkbox" checked> Hammerschach TV für Mitglieder einschalten</label>
+              <label class="tv-enabled-label"><input id="tvEnabledInput" type="checkbox" checked> Diesen Senderplatz für Mitglieder einschalten</label>
               <div class="tv-field">
                 <label for="tvTitleInput">Seitentitel</label>
                 <input id="tvTitleInput" class="tv-input" type="text" maxlength="90" value="Hammerschach TV">
@@ -1705,7 +1755,7 @@
           </ul>
 
           <h4>21. Hammerschach TV</h4>
-          <p>Über <strong>„🛠️ Tools“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Bei mehrtägigen Veranstaltungen kann die TV-Regie einen YouTube-Kanal einmalig hinterlegen; der laufende oder nächste angekündigte Stream dieses Kanals wird anschließend automatisch gesucht und eingebettet. Ist momentan keine Übertragung vorhanden, zeigt Hammerschach TV eine klare Sendepause statt eines leeren Videofensters.</p>
+          <p>Über <strong>„🛠️ Tools“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; der laufende oder nächste angekündigte Stream dieses Kanals wird anschließend automatisch gesucht und eingebettet. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>22. Neue Partie und Rückkehr zur Lobby</h4>
@@ -4496,7 +4546,11 @@ const tvPlayerFrame = document.getElementById('tvPlayerFrame');
 const tvPlayerPlaceholder = document.getElementById('tvPlayerPlaceholder');
 const tvPlaceholderTitle = document.getElementById('tvPlaceholderTitle');
 const tvPlaceholderText = document.getElementById('tvPlaceholderText');
+const tvChannelSwitcher = document.getElementById('tvChannelSwitcher');
+const tvChannelButtons = Array.from(document.querySelectorAll('[data-tv-slot]'));
 const tvAdminCard = document.getElementById('tvAdminCard');
+const tvAdminSlotTabs = document.getElementById('tvAdminSlotTabs');
+const tvAdminSlotButtons = Array.from(document.querySelectorAll('[data-tv-admin-slot]'));
 const tvModeSelect = document.getElementById('tvModeSelect');
 const tvEnabledInput = document.getElementById('tvEnabledInput');
 const tvTitleInput = document.getElementById('tvTitleInput');
@@ -5410,6 +5464,87 @@ let hammerschachTvData = null;
 let hammerschachTvLoading = false;
 let hammerschachTvAdminDirty = false;
 let hammerschachTvPollTimer = null;
+let hammerschachTvSelectedSlotId = '';
+let hammerschachTvAdminSlotId = 'tv1';
+let hammerschachTvAdminDrafts = {};
+let hammerschachTvSupportsSlots = false;
+const HAMMERSCHACH_TV_SLOT_IDS = ['tv1','tv2','tv3'];
+const HAMMERSCHACH_TV_SELECTED_SLOT_KEY = 'hammerschachTvSelectedSlot';
+
+function tvSlotNumber(slotId){
+  const match = String(slotId || '').toLowerCase().match(/^tv([1-3])$/);
+  return match ? Number(match[1]) : 1;
+}
+
+function normalizeTvSlots(tv){
+  const data = tv && typeof tv === 'object' ? tv : {};
+  const incoming = Array.isArray(data.slots) ? data.slots : [data];
+  return HAMMERSCHACH_TV_SLOT_IDS.map((slotId,index)=>{
+    const found = incoming.find(slot=>String(slot && slot.slotId || '').toLowerCase()===slotId) || incoming[index] || {};
+    return {
+      ...found,
+      slotId,
+      slotNumber:index+1,
+      enabled:found.enabled == null ? index===0 : found.enabled === true,
+      mode:found.mode || 'channel',
+      title:found.title || 'Hammerschach TV',
+      eventName:found.eventName || '',
+      description:found.description || '',
+      channelName:found.channelName || '',
+      channelId:found.channelId || '',
+      manualVideoId:found.manualVideoId || '',
+      playlistId:found.playlistId || '',
+      stream:found.stream || null,
+      message:found.message || ''
+    };
+  });
+}
+
+function tvSlotById(slotId){
+  const slots = hammerschachTvData && Array.isArray(hammerschachTvData.slots) ? hammerschachTvData.slots : [];
+  return slots.find(slot=>slot.slotId===slotId) || null;
+}
+
+function tvSlotDisplayName(slot){
+  if(!slot) return '';
+  return String(slot.eventName || (slot.stream && slot.stream.title) || slot.channelName || `Sender ${slot.slotNumber || tvSlotNumber(slot.slotId)}`).trim();
+}
+
+function tvStoredSelectedSlot(){
+  try{
+    const value = String(localStorage.getItem(HAMMERSCHACH_TV_SELECTED_SLOT_KEY) || '').toLowerCase();
+    return HAMMERSCHACH_TV_SLOT_IDS.includes(value) ? value : '';
+  }catch(_){
+    return '';
+  }
+}
+
+function renderTvChannelSwitcher(){
+  const slots = hammerschachTvData && Array.isArray(hammerschachTvData.slots) ? hammerschachTvData.slots : [];
+  const enabledSlots = slots.filter(slot=>slot.enabled === true);
+  if(tvChannelSwitcher) tvChannelSwitcher.hidden = enabledSlots.length <= 1;
+  tvChannelButtons.forEach(button=>{
+    const slotId = String(button.dataset.tvSlot || '').toLowerCase();
+    const slot = slots.find(item=>item.slotId===slotId);
+    const visible = !!(slot && slot.enabled === true);
+    button.hidden = !visible;
+    const active = visible && slotId === hammerschachTvSelectedSlotId;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-selected',active?'true':'false');
+    const eventEl = button.querySelector('.tv-channel-event');
+    if(eventEl) eventEl.textContent = slot ? tvSlotDisplayName(slot) : '';
+    const badge = button.querySelector('.tv-channel-badge');
+    if(badge){
+      const status = String(slot && slot.stream && slot.stream.status || '').toLowerCase();
+      const showLive = status === 'live';
+      const showUpcoming = status === 'upcoming';
+      badge.hidden = !(showLive || showUpcoming);
+      badge.textContent = showLive ? 'LIVE' : 'BALD';
+      badge.classList.toggle('upcoming',showUpcoming);
+    }
+    button.title = slot ? `${slotId.toUpperCase()}: ${tvSlotDisplayName(slot)}` : '';
+  });
+}
 
 function tvModeFields(){
   const mode = tvModeSelect ? tvModeSelect.value : 'channel';
@@ -5422,18 +5557,85 @@ function tvModeFields(){
   }
 }
 
+function tvAdminDraft(slotId){
+  return hammerschachTvAdminDrafts[slotId] || tvSlotById(slotId) || {
+    slotId,
+    slotNumber:tvSlotNumber(slotId),
+    enabled:false,
+    mode:'channel',
+    title:'Hammerschach TV',
+    eventName:'',
+    description:'',
+    channelName:'',
+    channelId:'',
+    manualVideoId:'',
+    playlistId:''
+  };
+}
+
+function captureTvAdminForm(){
+  const slotId = hammerschachTvAdminSlotId;
+  if(!HAMMERSCHACH_TV_SLOT_IDS.includes(slotId)) return;
+  const base = tvAdminDraft(slotId);
+  hammerschachTvAdminDrafts[slotId] = {
+    ...base,
+    slotId,
+    slotNumber:tvSlotNumber(slotId),
+    enabled:!!(tvEnabledInput && tvEnabledInput.checked),
+    mode:tvModeSelect ? tvModeSelect.value : 'channel',
+    title:tvTitleInput ? tvTitleInput.value : '',
+    eventName:tvEventInput ? tvEventInput.value : '',
+    description:tvDescriptionInput ? tvDescriptionInput.value : '',
+    channelName:tvChannelNameInput ? tvChannelNameInput.value : '',
+    channelId:tvChannelIdInput ? tvChannelIdInput.value : '',
+    manualVideoId:tvVideoInput ? tvVideoInput.value : '',
+    playlistId:tvPlaylistInput ? tvPlaylistInput.value : ''
+  };
+}
+
 function populateTvAdminForm(tv){
-  if(!tv || hammerschachTvAdminDirty) return;
-  if(tvModeSelect) tvModeSelect.value = tv.mode || 'channel';
-  if(tvEnabledInput) tvEnabledInput.checked = tv.enabled !== false;
-  if(tvTitleInput) tvTitleInput.value = tv.title || 'Hammerschach TV';
-  if(tvEventInput) tvEventInput.value = tv.eventName || '';
-  if(tvChannelNameInput) tvChannelNameInput.value = tv.channelName || '';
-  if(tvChannelIdInput) tvChannelIdInput.value = tv.channelId || '';
-  if(tvVideoInput) tvVideoInput.value = tv.manualVideoId || '';
-  if(tvPlaylistInput) tvPlaylistInput.value = tv.playlistId || '';
-  if(tvDescriptionInput) tvDescriptionInput.value = tv.description || '';
+  const slot = tv || tvAdminDraft(hammerschachTvAdminSlotId);
+  if(!slot) return;
+  if(tvModeSelect) tvModeSelect.value = slot.mode || 'channel';
+  if(tvEnabledInput) tvEnabledInput.checked = slot.enabled === true;
+  if(tvTitleInput) tvTitleInput.value = slot.title || 'Hammerschach TV';
+  if(tvEventInput) tvEventInput.value = slot.eventName || '';
+  if(tvChannelNameInput) tvChannelNameInput.value = slot.channelName || '';
+  if(tvChannelIdInput) tvChannelIdInput.value = slot.channelId || '';
+  if(tvVideoInput) tvVideoInput.value = slot.manualVideoId || '';
+  if(tvPlaylistInput) tvPlaylistInput.value = slot.playlistId || '';
+  if(tvDescriptionInput) tvDescriptionInput.value = slot.description || '';
   tvModeFields();
+}
+
+function renderTvAdminSlotTabs(){
+  tvAdminSlotButtons.forEach(button=>{
+    const slotId = String(button.dataset.tvAdminSlot || '').toLowerCase();
+    const draft = tvAdminDraft(slotId);
+    const active = slotId === hammerschachTvAdminSlotId;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-selected',active?'true':'false');
+    button.disabled = !hammerschachTvSupportsSlots && slotId !== 'tv1';
+    button.title = button.disabled
+      ? 'TV 2 und TV 3 stehen nach der Aktualisierung des Workers zur Verfügung.'
+      : `${slotId.toUpperCase()} bearbeiten`;
+    const state = button.querySelector('.tv-admin-slot-state');
+    if(state) state.textContent = draft.enabled === true ? 'AN' : 'AUS';
+  });
+}
+
+function selectTvAdminSlot(slotId){
+  const normalized = String(slotId || '').toLowerCase();
+  if(!HAMMERSCHACH_TV_SLOT_IDS.includes(normalized)) return;
+  if(!hammerschachTvSupportsSlots && normalized !== 'tv1') return;
+  captureTvAdminForm();
+  hammerschachTvAdminSlotId = normalized;
+  populateTvAdminForm(tvAdminDraft(normalized));
+  renderTvAdminSlotTabs();
+  if(tvAdminStatus){
+    tvAdminStatus.textContent = `${normalized.toUpperCase()} wird bearbeitet.`;
+    tvAdminStatus.className = 'tv-admin-status';
+  }
 }
 
 function tvPlayerSource(stream){
@@ -5448,37 +5650,81 @@ function tvPlayerSource(stream){
   return '';
 }
 
-function renderHammerschachTv(tv, options){
-  hammerschachTvData = tv && typeof tv === 'object' ? tv : null;
-  const data = hammerschachTvData || {};
-  const stream = data.enabled !== false ? data.stream : null;
+function renderSelectedTvSlot(){
+  const data = tvSlotById(hammerschachTvSelectedSlotId) || tvSlotById('tv1') || {};
+  const stream = data.enabled === true ? data.stream : null;
   const playerSource = tvPlayerSource(stream);
-
   if(playerSource && tvPlayerFrame && tvToolActive){
     if(tvPlayerFrame.dataset.streamSrc !== playerSource){
       tvPlayerFrame.dataset.streamSrc = playerSource;
       tvPlayerFrame.src = playerSource;
     }
+    tvPlayerFrame.title = `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'}${tvSlotDisplayName(data) ? ` – ${tvSlotDisplayName(data)}` : ''}`;
     tvPlayerFrame.hidden = false;
     if(tvPlayerPlaceholder) tvPlayerPlaceholder.hidden = true;
   }else{
     if(tvPlayerFrame){
       tvPlayerFrame.hidden = true;
-      if(!tvToolActive) tvPlayerFrame.src = 'about:blank';
+      if(tvPlayerFrame.dataset.streamSrc){
+        tvPlayerFrame.src = 'about:blank';
+        delete tvPlayerFrame.dataset.streamSrc;
+      }
     }
     if(tvPlayerPlaceholder) tvPlayerPlaceholder.hidden = false;
   }
-
-  if(tvPlaceholderTitle) tvPlaceholderTitle.textContent = !data.enabled ? 'Hammerschach TV ist pausiert' : 'Noch keine Übertragung';
+  if(tvPlaceholderTitle) tvPlaceholderTitle.textContent = !data.enabled
+    ? `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'} ist ausgeschaltet`
+    : 'Noch keine Übertragung';
   if(tvPlaceholderText) tvPlaceholderText.textContent = !data.enabled
-    ? 'Die TV-Regie hat die Übertragung momentan ausgeschaltet.'
+    ? 'Die TV-Regie hat diesen Senderplatz momentan ausgeschaltet.'
     : (data.message || 'Sobald ein Livestream bereitsteht, erscheint er automatisch an dieser Stelle.');
+  renderTvChannelSwitcher();
+  hammerschachScheduleHeightReport(true);
+}
+
+function selectHammerschachTvSlot(slotId, options){
+  const normalized = String(slotId || '').toLowerCase();
+  const slot = tvSlotById(normalized);
+  if(!slot || slot.enabled !== true) return;
+  hammerschachTvSelectedSlotId = normalized;
+  if(!options || options.persist !== false){
+    try{localStorage.setItem(HAMMERSCHACH_TV_SELECTED_SLOT_KEY,normalized);}catch(_){}
+  }
+  renderSelectedTvSlot();
+}
+
+function renderHammerschachTv(tv, options){
+  const raw = tv && typeof tv === 'object' ? tv : {};
+  hammerschachTvSupportsSlots = raw.version === 2 || Array.isArray(raw.slots);
+  const slots = normalizeTvSlots(raw);
+  hammerschachTvData = {...raw,slots};
+  const enabledSlots = slots.filter(slot=>slot.enabled === true);
+  const currentStillAvailable = enabledSlots.some(slot=>slot.slotId===hammerschachTvSelectedSlotId);
+  if(!currentStillAvailable){
+    const stored = tvStoredSelectedSlot();
+    const preferred = enabledSlots.find(slot=>slot.slotId===stored)
+      || enabledSlots.find(slot=>slot.slotId===raw.defaultSlotId)
+      || enabledSlots.find(slot=>String(slot.stream && slot.stream.status || '').toLowerCase()==='live')
+      || enabledSlots[0]
+      || slots[0];
+    hammerschachTvSelectedSlotId = preferred ? preferred.slotId : 'tv1';
+  }
+  renderSelectedTvSlot();
 
   const isAdmin = !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   if(tvAdminCard) tvAdminCard.hidden = !isAdmin;
-  if(isAdmin && (!options || options.populateAdmin !== false)) populateTvAdminForm(data);
+  if(isAdmin && (!options || options.populateAdmin !== false)){
+    if(!hammerschachTvAdminDirty){
+      hammerschachTvAdminDrafts = {};
+      slots.forEach(slot=>{hammerschachTvAdminDrafts[slot.slotId]={...slot};});
+      if(!HAMMERSCHACH_TV_SLOT_IDS.includes(hammerschachTvAdminSlotId)) hammerschachTvAdminSlotId = 'tv1';
+      populateTvAdminForm(tvAdminDraft(hammerschachTvAdminSlotId));
+    }
+    renderTvAdminSlotTabs();
+  }
   if(tvForceRefreshBtn){
-    const autoReady = data.automationAvailable === true;
+    const selectedAdminSlot = tvAdminDraft(hammerschachTvAdminSlotId);
+    const autoReady = selectedAdminSlot.automationAvailable === true || slots.some(slot=>slot.automationAvailable === true);
     tvForceRefreshBtn.title = autoReady ? 'YouTube sofort erneut nach Live- und geplanten Streams durchsuchen.' : 'Für die automatische Suche muss YOUTUBE_API_KEY als Worker-Secret hinterlegt sein.';
   }
   hammerschachScheduleHeightReport(true);
@@ -5524,25 +5770,34 @@ function stopHammerschachTvPlayback(){
   }
 }
 
+function tvAdminPayloadSlot(slotId){
+  const draft = tvAdminDraft(slotId);
+  return {
+    slotId,
+    enabled:draft.enabled === true,
+    mode:draft.mode || 'channel',
+    title:draft.title || 'Hammerschach TV',
+    eventName:draft.eventName || '',
+    description:draft.description || '',
+    channelName:draft.channelName || '',
+    channelId:draft.channelId || '',
+    videoUrl:draft.manualVideoId || draft.videoUrl || '',
+    playlistUrl:draft.playlistId || draft.playlistUrl || ''
+  };
+}
+
 async function saveHammerschachTv(){
   if(!onlineAuthUser || onlineAuthUser.isAdmin !== true || !tvSaveBtn) return;
+  captureTvAdminForm();
   tvSaveBtn.disabled = true;
   if(tvForceRefreshBtn) tvForceRefreshBtn.disabled = true;
   if(tvAdminStatus){
     tvAdminStatus.textContent = 'TV-Einstellungen werden gespeichert …';
     tvAdminStatus.className = 'tv-admin-status';
   }
-  const payload = {
-    enabled:!!(tvEnabledInput && tvEnabledInput.checked),
-    mode:tvModeSelect ? tvModeSelect.value : 'channel',
-    title:tvTitleInput ? tvTitleInput.value : '',
-    eventName:tvEventInput ? tvEventInput.value : '',
-    description:tvDescriptionInput ? tvDescriptionInput.value : '',
-    channelName:tvChannelNameInput ? tvChannelNameInput.value : '',
-    channelId:tvChannelIdInput ? tvChannelIdInput.value : '',
-    videoUrl:tvVideoInput ? tvVideoInput.value : '',
-    playlistUrl:tvPlaylistInput ? tvPlaylistInput.value : ''
-  };
+  const payload = hammerschachTvSupportsSlots
+    ? {version:2,slots:HAMMERSCHACH_TV_SLOT_IDS.map(tvAdminPayloadSlot)}
+    : tvAdminPayloadSlot('tv1');
   try{
     const data = await authApi('/api/admin/tv',{method:'POST',body:JSON.stringify(payload)});
     hammerschachTvAdminDirty = false;
@@ -5564,13 +5819,14 @@ async function saveHammerschachTv(){
 
 async function forceHammerschachTvRefresh(){
   if(!onlineAuthUser || onlineAuthUser.isAdmin !== true || !tvForceRefreshBtn) return;
+  captureTvAdminForm();
   tvForceRefreshBtn.disabled = true;
   if(tvAdminStatus){
     tvAdminStatus.textContent = 'YouTube wird nach dem aktuellen Stream durchsucht …';
     tvAdminStatus.className = 'tv-admin-status';
   }
   try{
-    const data = await authApi('/api/admin/tv/refresh',{method:'POST',body:'{}'});
+    const data = await authApi('/api/admin/tv/refresh',{method:'POST',body:JSON.stringify({slotId:hammerschachTvAdminSlotId})});
     renderHammerschachTv(data.tv,{populateAdmin:false});
     if(tvAdminStatus){
       tvAdminStatus.textContent = data.message || 'Die YouTube-Suche wurde aktualisiert.';
@@ -5586,9 +5842,11 @@ async function forceHammerschachTvRefresh(){
   }
 }
 
-if(tvModeSelect) tvModeSelect.addEventListener('change',()=>{hammerschachTvAdminDirty=true;tvModeFields();});
+tvChannelButtons.forEach(button=>button.addEventListener('click',()=>selectHammerschachTvSlot(button.dataset.tvSlot)));
+tvAdminSlotButtons.forEach(button=>button.addEventListener('click',()=>selectTvAdminSlot(button.dataset.tvAdminSlot)));
+if(tvModeSelect) tvModeSelect.addEventListener('change',()=>{hammerschachTvAdminDirty=true;captureTvAdminForm();tvModeFields();renderTvAdminSlotTabs();});
 [tvEnabledInput,tvTitleInput,tvEventInput,tvChannelNameInput,tvChannelIdInput,tvVideoInput,tvPlaylistInput,tvDescriptionInput].forEach(input=>{
-  if(input) input.addEventListener('input',()=>{hammerschachTvAdminDirty=true;tvModeFields();});
+  if(input) input.addEventListener('input',()=>{hammerschachTvAdminDirty=true;captureTvAdminForm();tvModeFields();renderTvAdminSlotTabs();});
 });
 if(tvSaveBtn) tvSaveBtn.addEventListener('click',saveHammerschachTv);
 if(tvForceRefreshBtn) tvForceRefreshBtn.addEventListener('click',forceHammerschachTvRefresh);
