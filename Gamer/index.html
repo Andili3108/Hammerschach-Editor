@@ -990,7 +990,19 @@
   .analyzer-tool-frame,.trainer-tool-frame,.openings-tool-frame,.fairplay-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
   .tv-stage{overflow:visible;padding:0;background:transparent;border:0;box-shadow:none;}
   .tv-content{padding:0;}
-  .tv-layout{display:block;width:100%;}
+  .tv-layout{display:block;width:100%;margin-inline:auto;}
+  @media (min-width:761px){
+    html.tv-tool-active .tv-layout{
+      /*
+       * Auf breiten, aber niedrigen Bildschirmen darf die verfügbare Breite
+       * nicht allein die Playergröße bestimmen. Nach Abzug von Gamer-Kopf,
+       * Statuszeile, Abständen und Seitenrand bleibt der Player vollständig
+       * im sichtbaren Bereich; das 16:9-Verhältnis bleibt erhalten.
+       */
+      width:min(100%, calc(177.778vh - 400px));
+      width:min(100%, calc(177.778dvh - 400px));
+    }
+  }
   .tv-player-card,.tv-admin-card{border:1px solid rgba(132,63,70,.16);border-radius:18px;background:rgba(255,255,255,.88);box-shadow:0 12px 30px rgba(0,0,0,.10);overflow:hidden;}
   .tv-player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:radial-gradient(circle at 50% 48%,#2f3036,#111216 67%);overflow:hidden;}
   .tv-player-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;}
