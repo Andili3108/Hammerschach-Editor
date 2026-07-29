@@ -6497,6 +6497,7 @@ async function markManualBackup(env, adminUser) {
 const HAMMERSCHACH_TV_CONFIG_KEY = 'hammerschach_tv_config';
 const HAMMERSCHACH_TV_CACHE_KEY = 'hammerschach_tv_stream_cache';
 const HAMMERSCHACH_TV_REFRESH_MS = 60 * 60 * 1000;
+const HAMMERSCHACH_TV_SLOT_COUNT = 3;
 
 function cleanTvText(value, maxLength) {
   return String(value == null ? '' : value)
@@ -6550,9 +6551,22 @@ function normalizeTvMode(value) {
   return value === 'manual' ? 'manual' : value === 'playlist' ? 'playlist' : 'channel';
 }
 
-function defaultTvConfig() {
+function tvSlotId(slotNumber) {
+  const number = Math.min(HAMMERSCHACH_TV_SLOT_COUNT, Math.max(1, Number(slotNumber) || 1));
+  return `tv${number}`;
+}
+
+function tvSlotNumber(value, fallback = 1) {
+  const match = String(value == null ? '' : value).trim().toLowerCase().match(/^tv([1-3])$/);
+  return match ? Number(match[1]) : Math.min(HAMMERSCHACH_TV_SLOT_COUNT, Math.max(1, Number(fallback) || 1));
+}
+
+function defaultTvConfig(slotNumber = 1) {
+  const number = tvSlotNumber('', slotNumber);
   return {
-    enabled:true,
+    slotId:tvSlotId(number),
+    slotNumber:number,
+    enabled:number === 1,
     mode:'channel',
     title:'Hammerschach TV',
     eventName:'',
@@ -6565,10 +6579,13 @@ function defaultTvConfig() {
   };
 }
 
-function normalizeTvConfig(value) {
+function normalizeTvConfig(value, slotNumber = 1) {
   const source = value && typeof value === 'object' ? value : {};
+  const number = tvSlotNumber(source.slotId, slotNumber);
   return {
-    enabled:source.enabled !== false,
+    slotId:tvSlotId(number),
+    slotNumber:number,
+    enabled:source.enabled == null ? number === 1 : source.enabled === true,
     mode:normalizeTvMode(source.mode),
     title:cleanTvText(source.title || 'Hammerschach TV', 90) || 'Hammerschach TV',
     eventName:cleanTvText(source.eventName, 120),
@@ -6578,6 +6595,33 @@ function normalizeTvConfig(value) {
     manualVideoId:cleanYoutubeVideoId(source.manualVideoId || source.videoUrl),
     playlistId:cleanYoutubePlaylistId(source.playlistId || source.playlistUrl),
     updatedAt:source.updatedAt || null
+  };
+}
+
+function normalizeTvConfigSet(value, updatedAt = null) {
+  const source = value && typeof value === 'object' ? value : {};
+  const incomingSlots = Array.isArray(source.slots) ? source.slots : null;
+  const slots = [];
+  for (let number = 1; number <= HAMMERSCHACH_TV_SLOT_COUNT; number += 1) {
+    let raw = null;
+    if (incomingSlots) {
+      raw = incomingSlots.find(item => tvSlotNumber(item && item.slotId, 0) === number) || incomingSlots[number - 1] || null;
+    } else if (number === 1) {
+      /* Bestehende Einzelkonfiguration verlustfrei als TV 1 übernehmen. */
+      raw = source;
+    }
+    slots.push(normalizeTvConfig({...defaultTvConfig(number), ...(raw || {}), updatedAt:(raw && raw.updatedAt) || updatedAt || null}, number));
+  }
+  return {version:2, slots};
+}
+
+function tvStoredConfig(configSet) {
+  return {
+    version:2,
+    slots:(configSet && Array.isArray(configSet.slots) ? configSet.slots : []).map((slot, index) => {
+      const normalized = normalizeTvConfig(slot, index + 1);
+      return {...normalized, updatedAt:undefined};
+    })
   };
 }
 
@@ -6606,32 +6650,57 @@ async function writeAdminSetting(env, key, value, updatedBy) {
 
 async function loadTvConfig(env) {
   const stored = await readAdminSetting(env, HAMMERSCHACH_TV_CONFIG_KEY);
-  if (!stored || !stored.value) return defaultTvConfig();
+  if (!stored || !stored.value) return normalizeTvConfigSet(null);
   try {
-    return normalizeTvConfig({...JSON.parse(stored.value), updatedAt:stored.updatedAt});
+    return normalizeTvConfigSet(JSON.parse(stored.value), stored.updatedAt);
   } catch (_) {
-    return defaultTvConfig();
+    return normalizeTvConfigSet(null);
   }
 }
 
+function validateTvConfigInput(rawInput, config) {
+  const input = rawInput && typeof rawInput === 'object' ? rawInput : {};
+  if (config.mode === 'channel' && input.channelId && !config.channelId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_CHANNEL', message:`${config.slotId.toUpperCase()}: Die YouTube-Kanal-ID ist ungültig. Benötigt wird die mit „UC“ beginnende Kanal-ID.`};
+  }
+  if (config.mode === 'manual' && (input.manualVideoId || input.videoUrl) && !config.manualVideoId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_VIDEO', message:`${config.slotId.toUpperCase()}: Die YouTube-Video-ID beziehungsweise Video-Adresse ist ungültig.`};
+  }
+  if (config.mode === 'playlist' && (input.playlistId || input.playlistUrl) && !config.playlistId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_PLAYLIST', message:`${config.slotId.toUpperCase()}: Die YouTube-Playlist-ID beziehungsweise Playlist-Adresse ist ungültig.`};
+  }
+  return {ok:true};
+}
+
 async function saveTvConfig(env, input, adminUser) {
-  const config = normalizeTvConfig(input);
-  if (config.mode === 'channel' && input && input.channelId && !config.channelId) {
-    return {ok:false, status:400, code:'INVALID_YOUTUBE_CHANNEL', message:'Die YouTube-Kanal-ID ist ungültig. Benötigt wird die mit „UC“ beginnende Kanal-ID.'};
+  const current = await loadTvConfig(env);
+  const hasSlotSet = !!(input && Array.isArray(input.slots));
+  let rawSlots;
+  if (hasSlotSet) {
+    rawSlots = input.slots;
+  } else {
+    /*
+     * Übergangsfall: Eine ältere HTML sendet weiterhin nur TV 1. TV 2 und
+     * TV 3 bleiben dabei unangetastet.
+     */
+    rawSlots = current.slots.map(slot => ({...slot}));
+    rawSlots[0] = {...rawSlots[0], ...(input && typeof input === 'object' ? input : {}), slotId:'tv1', slotNumber:1};
   }
-  if (config.mode === 'manual' && input && (input.manualVideoId || input.videoUrl) && !config.manualVideoId) {
-    return {ok:false, status:400, code:'INVALID_YOUTUBE_VIDEO', message:'Die YouTube-Video-ID beziehungsweise Video-Adresse ist ungültig.'};
-  }
-  if (config.mode === 'playlist' && input && (input.playlistId || input.playlistUrl) && !config.playlistId) {
-    return {ok:false, status:400, code:'INVALID_YOUTUBE_PLAYLIST', message:'Die YouTube-Playlist-ID beziehungsweise Playlist-Adresse ist ungültig.'};
+  const config = normalizeTvConfigSet({version:2, slots:rawSlots});
+  for (let index = 0; index < config.slots.length; index += 1) {
+    const raw = hasSlotSet
+      ? (rawSlots.find(item => tvSlotNumber(item && item.slotId, 0) === index + 1) || rawSlots[index] || {})
+      : (index === 0 ? input : rawSlots[index]);
+    const validation = validateTvConfigInput(raw, config.slots[index]);
+    if (!validation.ok) return validation;
   }
   const nowIso = await writeAdminSetting(
     env,
     HAMMERSCHACH_TV_CONFIG_KEY,
-    JSON.stringify({...config, updatedAt:undefined}),
+    JSON.stringify(tvStoredConfig(config)),
     adminUser && adminUser.id
   );
-  config.updatedAt = nowIso;
+  config.slots = config.slots.map(slot => ({...slot, updatedAt:nowIso}));
   return {ok:true, config};
 }
 
@@ -6696,8 +6765,13 @@ function chooseTvStream(candidates, eventType) {
   })[0] || null;
 }
 
-async function loadTvStreamCache(env) {
-  const stored = await readAdminSetting(env, HAMMERSCHACH_TV_CACHE_KEY);
+function tvCacheKey(slotId) {
+  const normalized = tvSlotId(tvSlotNumber(slotId, 1));
+  return normalized === 'tv1' ? HAMMERSCHACH_TV_CACHE_KEY : `${HAMMERSCHACH_TV_CACHE_KEY}_${normalized}`;
+}
+
+async function loadTvStreamCache(env, slotId) {
+  const stored = await readAdminSetting(env, tvCacheKey(slotId));
   if (!stored || !stored.value) return null;
   try {
     const parsed = JSON.parse(stored.value);
@@ -6744,7 +6818,7 @@ async function resolveTvStream(env, config, options = {}) {
     };
   }
 
-  const cache = await loadTvStreamCache(env);
+  const cache = await loadTvStreamCache(env, config.slotId);
   const cacheMatches = !!(cache && cache.channelId === config.channelId);
   const checkedAtMs = cacheMatches ? Date.parse(cache.checkedAt || '') : 0;
   const cacheFresh = checkedAtMs && Date.now() - checkedAtMs < HAMMERSCHACH_TV_REFRESH_MS;
@@ -6770,8 +6844,8 @@ async function resolveTvStream(env, config, options = {}) {
     const message = stream
       ? (stream.status === 'live' ? 'Der laufende Stream wurde automatisch gefunden.' : 'Der nächste angekündigte Stream wurde automatisch gefunden.')
       : 'Der Kanal hat momentan keinen laufenden oder angekündigten Livestream.';
-    const nextCache = {channelId:config.channelId, checkedAt, stream, message};
-    await writeAdminSetting(env, HAMMERSCHACH_TV_CACHE_KEY, JSON.stringify(nextCache), 'youtube-auto');
+    const nextCache = {slotId:config.slotId, channelId:config.channelId, checkedAt, stream, message};
+    await writeAdminSetting(env, tvCacheKey(config.slotId), JSON.stringify(nextCache), 'youtube-auto');
     return {stream, checkedAt, automationAvailable:true, message};
   } catch (error) {
     console.error('Hammerschach TV YouTube lookup failed', error && error.message ? error.message : String(error || 'unknown'));
@@ -6788,6 +6862,8 @@ async function resolveTvStream(env, config, options = {}) {
 
 function tvDto(config, resolved) {
   return {
+    slotId:config.slotId,
+    slotNumber:config.slotNumber,
     enabled:config.enabled === true,
     mode:normalizeTvMode(config.mode),
     title:config.title,
@@ -6802,6 +6878,49 @@ function tvDto(config, resolved) {
     checkedAt:resolved && resolved.checkedAt || null,
     automationAvailable:resolved && resolved.automationAvailable === true,
     message:cleanTvText(resolved && resolved.message, 240)
+  };
+}
+
+async function resolveTvConfigSet(env, configSet, options = {}) {
+  const slots = configSet && Array.isArray(configSet.slots) ? configSet.slots : normalizeTvConfigSet(null).slots;
+  const resolved = [];
+  const forceSlotId = /^tv[1-3]$/.test(String(options.forceSlotId || '').toLowerCase())
+    ? String(options.forceSlotId).toLowerCase()
+    : '';
+  for (const config of slots) {
+    if (config.enabled !== true) {
+      resolved.push({
+        stream:null,
+        checkedAt:null,
+        automationAvailable:!!env.YOUTUBE_API_KEY,
+        message:'Dieser Senderplatz ist momentan ausgeschaltet.'
+      });
+      continue;
+    }
+    resolved.push(await resolveTvStream(env, config, {
+      force:options.forceAll === true || (!!forceSlotId && config.slotId === forceSlotId)
+    }));
+  }
+  return resolved;
+}
+
+function tvSetDto(configSet, resolvedSlots) {
+  const configs = configSet && Array.isArray(configSet.slots) ? configSet.slots : normalizeTvConfigSet(null).slots;
+  const slots = configs.map((config, index) => tvDto(config, resolvedSlots && resolvedSlots[index] || null));
+  const preferred = slots.find(slot => slot.enabled && slot.stream && slot.stream.status === 'live')
+    || slots.find(slot => slot.enabled && slot.stream)
+    || slots.find(slot => slot.enabled)
+    || slots[0];
+  /*
+   * Die Felder von TV 1 bleiben zusätzlich auf oberster Ebene erhalten,
+   * damit eine während des Deployments noch geladene Einzel-TV-HTML weiter
+   * funktioniert.
+   */
+  return {
+    ...(slots[0] || {}),
+    version:2,
+    slots,
+    defaultSlotId:preferred && preferred.slotId || 'tv1'
   };
 }
 
@@ -7300,8 +7419,8 @@ async function handleAuthApi(request, env, url) {
     if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Hammerschach TV ist nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
     try {
       const config = await loadTvConfig(env);
-      const resolved = await resolveTvStream(env, config);
-      return json({ok:true, tv:tvDto(config, resolved)});
+      const resolved = await resolveTvConfigSet(env, config);
+      return json({ok:true, tv:tvSetDto(config, resolved)});
     } catch (error) {
       console.error('Hammerschach TV load failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'HAMMERSCHACH_TV_UNAVAILABLE', message:'Hammerschach TV konnte momentan nicht geladen werden.'}, {status:500});
@@ -7316,8 +7435,8 @@ async function handleAuthApi(request, env, url) {
     try {
       const saved = await saveTvConfig(env, body, admin.session.user);
       if (!saved.ok) return json({ok:false, code:saved.code, message:saved.message}, {status:saved.status || 400});
-      const resolved = await resolveTvStream(env, saved.config, {force:true});
-      return json({ok:true, tv:tvDto(saved.config, resolved), message:'Hammerschach TV wurde gespeichert.'});
+      const resolved = await resolveTvConfigSet(env, saved.config, {forceAll:true});
+      return json({ok:true, tv:tvSetDto(saved.config, resolved), message:'Die drei Senderplätze von Hammerschach TV wurden gespeichert.'});
     } catch (error) {
       console.error('Hammerschach TV save failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'HAMMERSCHACH_TV_SAVE_FAILED', message:'Die TV-Einstellungen konnten nicht gespeichert werden.'}, {status:500});
@@ -7328,9 +7447,15 @@ async function handleAuthApi(request, env, url) {
     const admin = await requireAdminSession(request, env);
     if (!admin.ok) return admin.response;
     try {
+      const body = await readJsonBody(request);
+      const requestedSlotId = body && /^tv[1-3]$/.test(String(body.slotId || '').toLowerCase())
+        ? String(body.slotId).toLowerCase()
+        : 'tv1';
       const config = await loadTvConfig(env);
-      const resolved = await resolveTvStream(env, config, {force:true});
-      return json({ok:true, tv:tvDto(config, resolved), message:resolved.message || 'Die YouTube-Suche wurde aktualisiert.'});
+      const resolved = await resolveTvConfigSet(env, config, {forceSlotId:requestedSlotId});
+      const dto = tvSetDto(config, resolved);
+      const refreshed = dto.slots.find(slot => slot.slotId === requestedSlotId) || dto.slots[0];
+      return json({ok:true, tv:dto, message:refreshed && refreshed.message || `${requestedSlotId.toUpperCase()} wurde aktualisiert.`});
     } catch (error) {
       console.error('Hammerschach TV refresh failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'HAMMERSCHACH_TV_REFRESH_FAILED', message:'Die YouTube-Suche konnte nicht aktualisiert werden.'}, {status:500});
