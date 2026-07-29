@@ -999,10 +999,6 @@
   .tv-placeholder-icon{font-size:clamp(46px,8vw,82px);line-height:1;filter:drop-shadow(0 8px 16px rgba(0,0,0,.35));}
   .tv-placeholder-title{font-size:clamp(21px,3vw,30px);font-weight:900;}
   .tv-placeholder-text{max-width:520px;color:#c9cbd1;font-size:14px;font-weight:800;line-height:1.4;}
-  .tv-viewer-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:12px;}
-  .tv-youtube-link,.tv-refresh-btn{display:inline-flex;align-items:center;justify-content:center;min-width:210px;min-height:42px!important;box-sizing:border-box;padding:9px 15px!important;border-radius:13px!important;font-size:13px!important;font-weight:900;}
-  .tv-youtube-link{border:1px solid rgba(132,63,70,.35);background:#843f46;color:#fff;text-decoration:none;}
-  .tv-youtube-link[hidden]{display:none!important;}
   .tv-admin-card{margin-top:18px;padding:18px;}
   .tv-admin-card[hidden]{display:none!important;}
   .tv-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
@@ -1292,7 +1288,7 @@
   @media (max-width:720px){.admin-summary-grid,.admin-inline-stats{grid-template-columns:1fr 1fr}.admin-database-grid{grid-template-columns:1fr 1fr}.admin-event-row{grid-template-columns:1fr}.admin-event-time{text-align:left}.admin-backup-box{grid-template-columns:1fr}.admin-backup-btn{width:100%}}
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
   @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium,.tournament-group-tables{grid-template-columns:1fr}.tournament-type-picker{grid-template-columns:1fr}.tournament-type-option{min-height:62px!important}.tournament-field-wide,.tournament-theme-card{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}.theme-picker-search-row,.theme-picker-layout{grid-template-columns:1fr}.theme-picker-layout{overflow:auto}.theme-picker-list{max-height:35vh}.theme-picker-preview{overflow:visible}.tournament-theme-selected{grid-template-columns:1fr}.tournament-theme-choose{width:100%}}
-  @media (max-width:860px){.tv-viewer-actions{display:grid;grid-template-columns:1fr}.tv-youtube-link,.tv-refresh-btn{width:100%;min-width:0}.tv-admin-grid{grid-template-columns:1fr}.tv-field-wide{grid-column:1}.tv-admin-actions{display:grid;grid-template-columns:1fr}.tv-admin-actions button{width:100%}}
+  @media (max-width:860px){.tv-admin-grid{grid-template-columns:1fr}.tv-field-wide{grid-column:1}.tv-admin-actions{display:grid;grid-template-columns:1fr}.tv-admin-actions button{width:100%}}
 </style>
 </head>
 <body>
@@ -1407,10 +1403,6 @@
                   <div id="tvPlaceholderText" class="tv-placeholder-text">Sobald ein Livestream bereitsteht, erscheint er automatisch an dieser Stelle.</div>
                 </div>
               </div>
-            </div>
-            <div class="tv-viewer-actions">
-              <a id="tvYoutubeLink" class="tv-youtube-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Auf YouTube ansehen</a>
-              <button id="tvRefreshBtn" class="button-flat tv-refresh-btn" type="button">↻ Aktualisieren</button>
             </div>
           </div>
 
@@ -1702,7 +1694,7 @@
 
           <h4>21. Hammerschach TV</h4>
           <p>Über <strong>„🛠️ Tools“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Bei mehrtägigen Veranstaltungen kann die TV-Regie einen YouTube-Kanal einmalig hinterlegen; der laufende oder nächste angekündigte Stream dieses Kanals wird anschließend automatisch gesucht und eingebettet. Ist momentan keine Übertragung vorhanden, zeigt Hammerschach TV eine klare Sendepause statt eines leeren Videofensters.</p>
-          <p>Der Stream startet nicht ungefragt mit Ton. Über <strong>„Auf YouTube ansehen“</strong> lässt sich dieselbe Übertragung bei Bedarf direkt auf YouTube öffnen. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
+          <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>22. Neue Partie und Rückkehr zur Lobby</h4>
           <p>In der Lobby stehen <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> unmittelbar oben rechts im Bereich <strong>„Neue Partie“</strong>. Beide verwenden genau die darunter gewählten Einstellungen; ein zusätzliches Menü im Header ist deshalb nicht nötig. Sobald du dich in einem Spielraum befindest, erscheint im Header <strong>„↩️ Zur Lobby“</strong> und führt zurück zu „Neue Partie“ und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer, Trainer, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche das Werkzeug direkt und stellt die Lobby ohne Neuladen wieder her. Innerhalb der Andili-Seite bleibt der Hammerschach-Gamer beim Verlassen eines Spielraums im eingebetteten Bereich; beim direkten Aufruf wird die Lobby weiterhin in einem neuen Tab geöffnet.</p>
@@ -4488,22 +4480,10 @@ const fairplayToolView = document.getElementById('fairplayToolView');
 const fairplayToolFrame = document.getElementById('fairplayToolFrame');
 const tvToolBtn = document.getElementById('tvToolBtn');
 const tvToolView = document.getElementById('tvToolView');
-const tvPageTitle = document.getElementById('tvPageTitle');
-const tvHeroSubtitle = document.getElementById('tvHeroSubtitle');
-const tvSignal = document.getElementById('tvSignal');
-const tvSignalText = document.getElementById('tvSignalText');
 const tvPlayerFrame = document.getElementById('tvPlayerFrame');
 const tvPlayerPlaceholder = document.getElementById('tvPlayerPlaceholder');
 const tvPlaceholderTitle = document.getElementById('tvPlaceholderTitle');
 const tvPlaceholderText = document.getElementById('tvPlaceholderText');
-const tvStreamTitle = document.getElementById('tvStreamTitle');
-const tvStreamMeta = document.getElementById('tvStreamMeta');
-const tvRefreshBtn = document.getElementById('tvRefreshBtn');
-const tvEventName = document.getElementById('tvEventName');
-const tvDescription = document.getElementById('tvDescription');
-const tvChannelName = document.getElementById('tvChannelName');
-const tvYoutubeLink = document.getElementById('tvYoutubeLink');
-const tvAutoNote = document.getElementById('tvAutoNote');
 const tvAdminCard = document.getElementById('tvAdminCard');
 const tvModeSelect = document.getElementById('tvModeSelect');
 const tvEnabledInput = document.getElementById('tvEnabledInput');
@@ -5419,14 +5399,6 @@ let hammerschachTvLoading = false;
 let hammerschachTvAdminDirty = false;
 let hammerschachTvPollTimer = null;
 
-function tvFormatDate(value){
-  const date = new Date(value || '');
-  if(!Number.isFinite(date.getTime())) return '';
-  try{
-    return new Intl.DateTimeFormat('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(date) + ' Uhr';
-  }catch(_){return date.toLocaleString();}
-}
-
 function tvModeFields(){
   const mode = tvModeSelect ? tvModeSelect.value : 'channel';
   if(tvChannelIdField) tvChannelIdField.hidden = mode !== 'channel';
@@ -5469,18 +5441,6 @@ function renderHammerschachTv(tv, options){
   const data = hammerschachTvData || {};
   const stream = data.enabled !== false ? data.stream : null;
   const playerSource = tvPlayerSource(stream);
-  const status = !data.enabled ? 'off' : String(stream && stream.status || '');
-  const statusLabels = {live:'Jetzt live',upcoming:'Demnächst live',replay:'Wiederholung',manual:'Ausgewählt',playlist:'Playlist',off:'Pausiert'};
-
-  if(tvPageTitle) tvPageTitle.textContent = data.title || 'Hammerschach TV';
-  if(tvHeroSubtitle) tvHeroSubtitle.textContent = data.eventName ? `Live dabei: ${data.eventName}` : 'Die aktuellen Schachübertragungen – ohne Umweg direkt im Gamer.';
-  if(tvEventName) tvEventName.textContent = data.eventName || (stream && stream.title) || 'Schach live bei Hammerschach';
-  if(tvDescription) tvDescription.textContent = data.description || 'Aktuelle Schachturniere, ausgewählte Übertragungen und spannende Partien.';
-  if(tvChannelName) tvChannelName.textContent = data.channelName || (stream && stream.channelTitle) || 'YouTube-Livestream';
-  if(tvSignal){
-    tvSignal.className = 'tv-signal' + (status ? ` ${status}` : '');
-  }
-  if(tvSignalText) tvSignalText.textContent = statusLabels[status] || 'Sendepause';
 
   if(playerSource && tvPlayerFrame && tvToolActive){
     if(tvPlayerFrame.dataset.streamSrc !== playerSource){
@@ -5502,29 +5462,6 @@ function renderHammerschachTv(tv, options){
     ? 'Die TV-Regie hat die Übertragung momentan ausgeschaltet.'
     : (data.message || 'Sobald ein Livestream bereitsteht, erscheint er automatisch an dieser Stelle.');
 
-  if(tvStreamTitle) tvStreamTitle.textContent = stream && stream.title
-    ? stream.title
-    : (data.eventName || 'Hammerschach TV wartet auf das nächste Event');
-  let streamMetaText = 'Die Seite prüft regelmäßig, ob eine neue Übertragung verfügbar ist.';
-  if(stream){
-    if(stream.status === 'live') streamMetaText = 'Jetzt live';
-    else if(stream.status === 'upcoming') streamMetaText = stream.scheduledStartAt ? `Geplanter Start: ${tvFormatDate(stream.scheduledStartAt)}` : 'Der nächste Livestream ist bereits angekündigt.';
-    else if(stream.status === 'replay') streamMetaText = 'Diese Übertragung ist als Wiederholung verfügbar.';
-    else if(stream.status === 'playlist') streamMetaText = 'Die ausgewählte Livestream-Playlist ist geöffnet.';
-    else streamMetaText = 'Diese Übertragung wurde von der TV-Regie ausgewählt.';
-  }
-  if(tvStreamMeta) tvStreamMeta.textContent = streamMetaText;
-  if(tvAutoNote) tvAutoNote.textContent = data.message || (data.mode === 'channel'
-    ? 'Bei einem mehrtägigen Turnier wird der jeweils aktuelle Stream automatisch übernommen.'
-    : 'Die TV-Regie bestimmt, welche Übertragung hier erscheint.');
-  if(tvYoutubeLink){
-    const youtubeUrl = stream && stream.youtubeUrl
-      ? stream.youtubeUrl
-      : (data.channelId ? `https://www.youtube.com/channel/${encodeURIComponent(data.channelId)}/live` : '');
-    tvYoutubeLink.hidden = !youtubeUrl;
-    if(youtubeUrl) tvYoutubeLink.href = youtubeUrl;
-  }
-
   const isAdmin = !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   if(tvAdminCard) tvAdminCard.hidden = !isAdmin;
   if(isAdmin && (!options || options.populateAdmin !== false)) populateTvAdminForm(data);
@@ -5538,19 +5475,17 @@ function renderHammerschachTv(tv, options){
 async function loadHammerschachTv(options){
   if(hammerschachTvLoading || !onlineAuthToken || !onlineAuthUser) return;
   hammerschachTvLoading = true;
-  if(tvRefreshBtn) tvRefreshBtn.disabled = true;
   try{
     const data = await authApi('/api/tv');
     renderHammerschachTv(data.tv, {populateAdmin:!(options && options.keepAdminValues)});
   }catch(error){
-    if(tvAutoNote) tvAutoNote.textContent = error && error.message ? error.message : 'Hammerschach TV konnte nicht geladen werden.';
+    if(tvPlaceholderText) tvPlaceholderText.textContent = error && error.message ? error.message : 'Hammerschach TV konnte nicht geladen werden.';
     if(tvAdminStatus && onlineAuthUser && onlineAuthUser.isAdmin === true){
       tvAdminStatus.textContent = error && error.message ? error.message : 'TV-Daten konnten nicht geladen werden.';
       tvAdminStatus.className = 'tv-admin-status error';
     }
   }finally{
     hammerschachTvLoading = false;
-    if(tvRefreshBtn) tvRefreshBtn.disabled = false;
   }
 }
 
@@ -5643,7 +5578,6 @@ if(tvModeSelect) tvModeSelect.addEventListener('change',()=>{hammerschachTvAdmin
 [tvEnabledInput,tvTitleInput,tvEventInput,tvChannelNameInput,tvChannelIdInput,tvVideoInput,tvPlaylistInput,tvDescriptionInput].forEach(input=>{
   if(input) input.addEventListener('input',()=>{hammerschachTvAdminDirty=true;tvModeFields();});
 });
-if(tvRefreshBtn) tvRefreshBtn.addEventListener('click',()=>loadHammerschachTv({keepAdminValues:true}));
 if(tvSaveBtn) tvSaveBtn.addEventListener('click',saveHammerschachTv);
 if(tvForceRefreshBtn) tvForceRefreshBtn.addEventListener('click',forceHammerschachTvRefresh);
 
