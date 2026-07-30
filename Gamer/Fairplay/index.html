@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- BUILD: FAIRPLAY-PREMIUM-BOARD-20260730-1 -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -22,6 +23,11 @@
       --shadow:0 12px 32px rgba(31,23,25,.10);
       --board-light:#f0d9b5;
       --board-dark:#843f46;
+      --board-frame-dark:#32181b;
+      --board-frame-mid:#5b2b30;
+      --board-frame-light:#a96970;
+      --board-coord-light:#fff4e1;
+      --board-coord-dark:#32181b;
       --engine-blue:#3973a5;
     }
     *{box-sizing:border-box}
@@ -156,6 +162,128 @@
     html.dark .quality-pill.good{color:#9fc9ef}
     html.dark .quality-pill.inaccuracy{color:#efd49b}
     html.dark .quality-pill.mistake{color:#f1a493}
+
+    /*
+      Premium-Brettfinish für die Fairplay-Rekonstruktion. Die vorhandenen
+      Istzug- und Engine-Marker behalten ihre getrennten Pseudo-Layer.
+    */
+    .board{
+      position:relative;
+      border:6px solid var(--board-frame-mid);
+      border-radius:14px;
+      background:var(--board-frame-dark);
+      outline:1px solid var(--board-frame-dark);
+      outline-offset:1px;
+      isolation:isolate;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.34),
+        inset 1px 0 0 rgba(255,255,255,.14),
+        inset 0 -2px 0 rgba(0,0,0,.34),
+        inset -2px 0 0 rgba(0,0,0,.22),
+        0 2px 2px rgba(0,0,0,.20),
+        0 8px 14px rgba(0,0,0,.16),
+        0 22px 42px rgba(36,20,22,.24),
+        0 38px 76px rgba(36,20,22,.12);
+    }
+    .board::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      z-index:5;
+      pointer-events:none;
+      border-radius:8px;
+      background:
+        radial-gradient(ellipse at 18% 10%,rgba(255,255,255,.085) 0%,rgba(255,255,255,0) 43%),
+        linear-gradient(135deg,rgba(255,255,255,.025) 0%,rgba(255,255,255,0) 48%,rgba(0,0,0,.075) 100%);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.07),
+        inset 0 0 24px rgba(0,0,0,.09),
+        inset 0 -8px 18px rgba(0,0,0,.055);
+    }
+    .board .square{
+      background-color:transparent;
+      background-repeat:no-repeat;
+      backface-visibility:hidden;
+    }
+    .board .square.light{
+      background-color:var(--board-light);
+      background-image:
+        radial-gradient(circle at 24% 16%,rgba(255,255,255,.30) 0%,rgba(255,255,255,0) 52%),
+        linear-gradient(145deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.045) 43%,rgba(0,0,0,.085) 100%),
+        repeating-linear-gradient(14deg,rgba(255,255,255,.016) 0 1px,rgba(0,0,0,.012) 1px 3px);
+    }
+    .board .square.dark{
+      background-color:var(--board-dark);
+      background-image:
+        radial-gradient(circle at 24% 16%,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 51%),
+        linear-gradient(145deg,rgba(255,255,255,.115) 0%,rgba(255,255,255,.015) 42%,rgba(0,0,0,.17) 100%),
+        repeating-linear-gradient(14deg,rgba(255,255,255,.014) 0 1px,rgba(0,0,0,.018) 1px 3px);
+    }
+    .board .piece-img{
+      transform:translateY(-1.5%);
+      transform-origin:50% 82%;
+      filter:
+        drop-shadow(0 1px 0 rgba(255,255,255,.24))
+        drop-shadow(0 3px 2px rgba(0,0,0,.26))
+        drop-shadow(0 6px 5px rgba(0,0,0,.11));
+      transition:transform 90ms ease,filter 90ms ease;
+    }
+    .board .piece-glyph{
+      transform:translateY(-1.5%);
+      filter:none;
+      text-shadow:
+        0 1px 0 rgba(255,255,255,.24),
+        0 3px 2px rgba(0,0,0,.27),
+        0 7px 7px rgba(0,0,0,.14);
+    }
+    .board .square.actual-from::after,
+    .board .square.actual-to::after{
+      inset:7%;
+      border:4px solid rgba(255,190,28,.94);
+      border-radius:12%;
+      box-shadow:inset 0 0 18px rgba(255,190,28,.22),0 0 10px rgba(255,190,28,.22);
+    }
+    .board .square.engine-from::before{
+      inset:14%;
+      border:4px solid rgba(74,157,225,.96);
+      box-shadow:0 0 0 1px rgba(7,48,85,.25),0 0 11px rgba(74,157,225,.27);
+    }
+    .board .square.engine-to::before{
+      inset:14%;
+      border:4px solid rgba(74,157,225,.90);
+      background:radial-gradient(circle,rgba(74,157,225,.36),rgba(74,157,225,.13) 61%,rgba(74,157,225,0) 68%);
+      box-shadow:0 0 10px rgba(74,157,225,.24);
+    }
+    .coord-file,.coord-rank{font-weight:900;letter-spacing:.01em;opacity:.90}
+    .board .square.light .coord-file,
+    .board .square.light .coord-rank{
+      color:var(--board-coord-dark);
+      text-shadow:0 1px 0 rgba(255,255,255,.48);
+    }
+    .board .square.dark .coord-file,
+    .board .square.dark .coord-rank{
+      color:var(--board-coord-light);
+      text-shadow:0 1px 2px rgba(0,0,0,.48);
+    }
+    html.dark .board{
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.26),
+        inset 0 -2px 0 rgba(0,0,0,.52),
+        0 2px 3px rgba(0,0,0,.40),
+        0 10px 18px rgba(0,0,0,.34),
+        0 26px 52px rgba(0,0,0,.44);
+    }
+    @media(hover:hover) and (pointer:fine){
+      .board .square:hover .piece-img{
+        transform:translateY(-3%) scale(1.018);
+        filter:
+          drop-shadow(0 1px 0 rgba(255,255,255,.28))
+          drop-shadow(0 5px 3px rgba(0,0,0,.28))
+          drop-shadow(0 8px 7px rgba(0,0,0,.13));
+      }
+    }
+    @media(prefers-reduced-motion:reduce){.board .piece-img{transition:none}}
+
     @media(max-width:850px){
       .workspace{grid-template-columns:1fr}
       .games-panel{position:static}
