@@ -4619,7 +4619,7 @@ const fairplayToolView = document.getElementById('fairplayToolView');
 const fairplayToolFrame = document.getElementById('fairplayToolFrame');
 const tvToolBtn = document.getElementById('tvToolBtn');
 const tvToolView = document.getElementById('tvToolView');
-const tvPlayerFrame = document.getElementById('tvPlayerFrame');
+let tvPlayerFrame = document.getElementById('tvPlayerFrame');
 const tvPlayerPlaceholder = document.getElementById('tvPlayerPlaceholder');
 const tvPlaceholderTitle = document.getElementById('tvPlaceholderTitle');
 const tvPlaceholderText = document.getElementById('tvPlaceholderText');
@@ -5562,6 +5562,7 @@ let hammerschachTvYoutubeApiPromise = null;
 let hammerschachTvYoutubePlayer = null;
 let hammerschachTvYoutubePlayerReady = false;
 let hammerschachTvYoutubeApiError = false;
+let hammerschachTvYoutubePlayerGeneration = 0;
 const HAMMERSCHACH_TV_SLOT_IDS = ['tv1','tv2','tv3'];
 const HAMMERSCHACH_TV_SELECTED_SLOT_KEY = 'hammerschachTvSelectedSlot';
 
@@ -5882,13 +5883,49 @@ function syncTvPlaylistFromYoutubePlayer(){
   if(tvPlaylistBackdrop && !tvPlaylistBackdrop.hidden) renderTvPlaylistVideoList(data,stream);
 }
 
+function resetHammerschachTvPlayer(){
+  if(!tvPlayerFrame) return;
+  const previousFrame = tvPlayerFrame;
+  const parent = previousFrame.parentNode;
+  if(!parent) return;
+  const nextSibling = previousFrame.nextSibling;
+  const replacement = previousFrame.cloneNode(false);
+  replacement.hidden = true;
+  replacement.removeAttribute('src');
+  delete replacement.dataset.streamSrc;
+  delete replacement.dataset.streamKey;
+  delete replacement.dataset.pendingStreamKey;
+
+  const previousPlayer = hammerschachTvYoutubePlayer;
+  hammerschachTvYoutubePlayer = null;
+  hammerschachTvYoutubePlayerReady = false;
+  hammerschachTvYoutubePlayerGeneration += 1;
+  if(previousPlayer && typeof previousPlayer.destroy === 'function'){
+    try{previousPlayer.destroy();}catch(_){}
+  }
+
+  if(previousFrame.parentNode === parent){
+    parent.replaceChild(replacement,previousFrame);
+  }else{
+    parent.insertBefore(replacement,nextSibling && nextSibling.parentNode === parent ? nextSibling : parent.firstChild);
+  }
+  tvPlayerFrame = replacement;
+}
+
 function attachHammerschachYoutubePlayer(){
   if(!tvPlayerFrame || hammerschachTvYoutubePlayer) return;
+  const playerFrame = tvPlayerFrame;
+  const playerGeneration = hammerschachTvYoutubePlayerGeneration;
   ensureHammerschachYoutubePlayerApi().then(YT=>{
+    if(playerGeneration !== hammerschachTvYoutubePlayerGeneration || playerFrame !== tvPlayerFrame) return;
     if(!tvPlayerFrame || hammerschachTvYoutubePlayer || !tvToolActive || !tvPlayerFrame.dataset.streamKey) return;
-    hammerschachTvYoutubePlayer = new YT.Player(tvPlayerFrame,{
+    hammerschachTvYoutubePlayer = new YT.Player(playerFrame,{
       events:{
         onReady:event=>{
+          if(playerGeneration !== hammerschachTvYoutubePlayerGeneration || playerFrame !== tvPlayerFrame){
+            try{event.target.destroy();}catch(_){}
+            return;
+          }
           hammerschachTvYoutubePlayer = event.target;
           hammerschachTvYoutubePlayerReady = true;
           renderSelectedTvSlot();
@@ -5899,11 +5936,16 @@ function attachHammerschachYoutubePlayer(){
           setTimeout(syncTvPlaylistFromYoutubePlayer,300);
           setTimeout(syncTvPlaylistFromYoutubePlayer,1000);
         },
-        onStateChange:()=>syncTvPlaylistFromYoutubePlayer(),
-        onError:()=>syncTvPlaylistFromYoutubePlayer()
+        onStateChange:()=>{
+          if(playerGeneration === hammerschachTvYoutubePlayerGeneration && playerFrame === tvPlayerFrame) syncTvPlaylistFromYoutubePlayer();
+        },
+        onError:()=>{
+          if(playerGeneration === hammerschachTvYoutubePlayerGeneration && playerFrame === tvPlayerFrame) syncTvPlaylistFromYoutubePlayer();
+        }
       }
     });
   }).catch(()=>{
+    if(playerGeneration !== hammerschachTvYoutubePlayerGeneration || playerFrame !== tvPlayerFrame) return;
     const data = tvSlotById(hammerschachTvSelectedSlotId) || tvSlotById('tv1');
     renderTvPlaylistToolbar(data && data.stream);
   });
@@ -6140,6 +6182,8 @@ function selectHammerschachTvSlot(slotId, options){
   const normalized = String(slotId || '').toLowerCase();
   const slot = tvSlotById(normalized);
   if(!slot || slot.enabled !== true) return;
+  const channelChanged = !!hammerschachTvSelectedSlotId && normalized !== hammerschachTvSelectedSlotId;
+  if(channelChanged) resetHammerschachTvPlayer();
   hammerschachTvSelectedSlotId = normalized;
   if(!options || options.persist !== false){
     try{localStorage.setItem(HAMMERSCHACH_TV_SELECTED_SLOT_KEY,normalized);}catch(_){}
@@ -6153,6 +6197,7 @@ function renderHammerschachTv(tv, options){
   const slots = normalizeTvSlots(raw);
   hammerschachTvData = {...raw,slots};
   const enabledSlots = slots.filter(slot=>slot.enabled === true);
+  const previousSelectedSlotId = hammerschachTvSelectedSlotId;
   const currentStillAvailable = enabledSlots.some(slot=>slot.slotId===hammerschachTvSelectedSlotId);
   if(!currentStillAvailable){
     const stored = tvStoredSelectedSlot();
@@ -6163,6 +6208,7 @@ function renderHammerschachTv(tv, options){
       || slots[0];
     hammerschachTvSelectedSlotId = preferred ? preferred.slotId : 'tv1';
   }
+  if(previousSelectedSlotId && hammerschachTvSelectedSlotId !== previousSelectedSlotId) resetHammerschachTvPlayer();
   renderSelectedTvSlot();
 
   const isAdmin = !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
