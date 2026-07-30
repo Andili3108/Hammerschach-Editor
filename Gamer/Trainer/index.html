@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- BUILD: TRAINER-PREMIUM-BOARD-20260730-1 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
@@ -32,6 +33,11 @@
     --andili-rot:#843f46;
     --light-square:#f0d9b5;
     --dark-square:#843f46;
+    --board-frame-dark:#32181b;
+    --board-frame-mid:#5b2b30;
+    --board-frame-light:#a96970;
+    --board-coord-light:#fff4e1;
+    --board-coord-dark:#32181b;
   }
 
  html,body{
@@ -803,6 +809,152 @@ html.dark-mode .guide-section+.guide-section{border-color:rgba(255,255,255,.10)}
 html.dark-mode .guide-note{background:#252930;color:#e1e3e7;border-color:#b56a73}
 html.dark-mode .guide-modal-actions{background:#202329;border-color:rgba(255,255,255,.10)}
 
+/*
+  Premium-Brettfinish: statische Material-Layer; die Gegnerzug-Animation
+  bleibt als eigener Flyer mit unverändertem Transform-Pfad darüber.
+*/
+#board{
+  border:6px solid var(--board-frame-mid);
+  border-radius:14px;
+  background:var(--board-frame-dark);
+  outline:1px solid var(--board-frame-dark);
+  outline-offset:1px;
+  isolation:isolate;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 1px 0 0 rgba(255,255,255,.14),
+    inset 0 -2px 0 rgba(0,0,0,.34),
+    inset -2px 0 0 rgba(0,0,0,.22),
+    0 2px 2px rgba(0,0,0,.20),
+    0 8px 14px rgba(0,0,0,.16),
+    0 22px 42px rgba(36,20,22,.24),
+    0 38px 76px rgba(36,20,22,.12);
+}
+#board::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:5;
+  pointer-events:none;
+  border-radius:8px;
+  background:
+    radial-gradient(ellipse at 18% 10%,rgba(255,255,255,.085) 0%,rgba(255,255,255,0) 43%),
+    linear-gradient(135deg,rgba(255,255,255,.025) 0%,rgba(255,255,255,0) 48%,rgba(0,0,0,.075) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.07),
+    inset 0 0 24px rgba(0,0,0,.09),
+    inset 0 -8px 18px rgba(0,0,0,.055);
+}
+#board .square{
+  background-color:transparent;
+  background-repeat:no-repeat;
+  backface-visibility:hidden;
+}
+#board .square.light{
+  background-color:var(--light-square);
+  background-image:
+    radial-gradient(circle at 24% 16%,rgba(255,255,255,.30) 0%,rgba(255,255,255,0) 52%),
+    linear-gradient(145deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.045) 43%,rgba(0,0,0,.085) 100%),
+    repeating-linear-gradient(14deg,rgba(255,255,255,.016) 0 1px,rgba(0,0,0,.012) 1px 3px);
+}
+#board .square.dark{
+  background-color:var(--dark-square);
+  background-image:
+    radial-gradient(circle at 24% 16%,rgba(255,255,255,.18) 0%,rgba(255,255,255,0) 51%),
+    linear-gradient(145deg,rgba(255,255,255,.115) 0%,rgba(255,255,255,.015) 42%,rgba(0,0,0,.17) 100%),
+    repeating-linear-gradient(14deg,rgba(255,255,255,.014) 0 1px,rgba(0,0,0,.018) 1px 3px);
+}
+#board .square:has(.piece-img)::before{
+  content:"";
+  position:absolute;
+  z-index:1;
+  left:16%;
+  right:16%;
+  bottom:7%;
+  height:17%;
+  pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(ellipse at center,rgba(0,0,0,.31) 0%,rgba(0,0,0,.16) 38%,rgba(0,0,0,0) 73%);
+  transform:scaleX(.90);
+  opacity:.82;
+}
+#board .piece-img{
+  width:82%;
+  height:82%;
+  transform:translateY(-1.5%);
+  transform-origin:50% 82%;
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.24))
+    drop-shadow(0 3px 2px rgba(0,0,0,.26))
+    drop-shadow(0 6px 5px rgba(0,0,0,.11));
+  transition:transform 90ms ease,filter 90ms ease,opacity 90ms ease;
+}
+#board .piece-img.piece-drag-source{opacity:.13;filter:none}
+.piece-drag-ghost{
+  opacity:.99;
+  filter:
+    drop-shadow(0 2px 1px rgba(255,255,255,.24))
+    drop-shadow(0 11px 8px rgba(0,0,0,.34))!important;
+}
+.move-flyer img{
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.24))
+    drop-shadow(0 8px 6px rgba(0,0,0,.30));
+}
+#board .square.selected::after{
+  inset:5px;
+  border:3px solid rgba(255,249,222,.96);
+  border-radius:7px;
+  box-shadow:
+    inset 0 0 18px rgba(255,238,169,.28),
+    0 0 10px rgba(255,249,222,.22);
+}
+.coord-file,.coord-rank{font-weight:900;letter-spacing:.01em;opacity:.90}
+#board .square.light .coord-file,
+#board .square.light .coord-rank{
+  color:var(--board-coord-dark);
+  text-shadow:0 1px 0 rgba(255,255,255,.48);
+}
+#board .square.dark .coord-file,
+#board .square.dark .coord-rank{
+  color:var(--board-coord-light);
+  text-shadow:0 1px 2px rgba(0,0,0,.48);
+}
+.board-color-swatch{
+  border-color:rgba(0,0,0,.30);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.36),0 2px 5px rgba(0,0,0,.14);
+}
+.board-color-swatch>span{
+  position:relative;
+  background-image:
+    radial-gradient(circle at 24% 18%,rgba(255,255,255,.26),rgba(255,255,255,0) 54%),
+    linear-gradient(145deg,rgba(255,255,255,.15),rgba(0,0,0,.11))!important;
+  background-blend-mode:soft-light;
+}
+.piece-set-preview{
+  filter:
+    drop-shadow(0 1px 0 rgba(255,255,255,.28))
+    drop-shadow(0 3px 2px rgba(0,0,0,.24));
+}
+html.dark-mode #board{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.26),
+    inset 0 -2px 0 rgba(0,0,0,.52),
+    0 2px 3px rgba(0,0,0,.40),
+    0 10px 18px rgba(0,0,0,.34),
+    0 26px 52px rgba(0,0,0,.44);
+}
+@media(hover:hover) and (pointer:fine){
+  #board .square:hover .piece-img:not(.piece-drag-source){
+    transform:translateY(-3%) scale(1.018);
+    filter:
+      drop-shadow(0 1px 0 rgba(255,255,255,.28))
+      drop-shadow(0 5px 3px rgba(0,0,0,.28))
+      drop-shadow(0 8px 7px rgba(0,0,0,.13));
+  }
+}
+@media(prefers-reduced-motion:reduce){#board .piece-img{transition:none}}
+
 @media(max-width:460px){
   .icon-btn{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:19px!important}
   .top-action-btn{height:36px;min-width:104px;padding:6px 9px}
@@ -854,12 +1006,12 @@ html.dark-mode .guide-modal-actions{background:#202329;border-color:rgba(255,255
           <div id="boardColorPopup" class="board-color-popup" hidden>
             <div class="board-color-popup-title">Brettfarbe wählen</div>
             <div class="board-color-options">
-              <button type="button" class="board-color-option" data-board-color="basis"><span>Basis</span><span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span></button>
-              <button type="button" class="board-color-option" data-board-color="braun"><span>Klassisch Braun</span><span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span></button>
-              <button type="button" class="board-color-option" data-board-color="grau"><span>Grau / Neutral</span><span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span></button>
-              <button type="button" class="board-color-option" data-board-color="gruen"><span>Grün / Turnier</span><span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="basis"><span>Hammerschach Rubin</span><span class="board-color-swatch"><span style="background:#f0d9b5"></span><span style="background:#843f46"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="braun"><span>Walnuss</span><span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="grau"><span>Schiefer</span><span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="gruen"><span>Turniergrün</span><span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span></button>
             </div>
-            <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Basis</span></div>
+            <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Hammerschach Rubin</span></div>
           </div>
         </div>
         <div class="board-color-wrap" id="pieceSetWrap">
@@ -1338,11 +1490,30 @@ const btnGuideClose=document.getElementById('btnGuideClose');
 const BOARD_COLOR_STORAGE_KEY='hammerschachBoardColor';
 const LEGACY_BOARD_COLOR_STORAGE_KEY='hammerschachTrainerBoardColor';
 const boardColorPresets=[
-  {id:'basis',name:'Basis',light:'#f0d9b5',dark:'#843f46'},
-  {id:'braun',name:'Klassisch Braun',light:'#f3ddb7',dark:'#b4875e'},
-  {id:'grau',name:'Grau / Neutral',light:'#eeeeee',dark:'#9b9b9b'},
-  {id:'gruen',name:'Grün / Turnier',light:'#eeeed2',dark:'#769656'}
+  {id:'basis',name:'Hammerschach Rubin',light:'#f0d9b5',dark:'#843f46'},
+  {id:'braun',name:'Walnuss',light:'#f3ddb7',dark:'#b4875e'},
+  {id:'grau',name:'Schiefer',light:'#eeeeee',dark:'#9b9b9b'},
+  {id:'gruen',name:'Turniergrün',light:'#eeeed2',dark:'#769656'}
 ];
+function boardRgbFromHex(value){
+  const normalized=String(value||'').trim().replace(/^#/,'');
+  const full=normalized.length===3?normalized.split('').map(char=>char+char).join(''):normalized;
+  if(!/^[0-9a-f]{6}$/i.test(full))return{r:0,g:0,b:0};
+  return{r:parseInt(full.slice(0,2),16),g:parseInt(full.slice(2,4),16),b:parseInt(full.slice(4,6),16)};
+}
+function mixBoardHex(base,overlay,amount){
+  const from=boardRgbFromHex(base),to=boardRgbFromHex(overlay),ratio=Math.max(0,Math.min(1,Number(amount)||0));
+  const channel=key=>Math.round(from[key]+(to[key]-from[key])*ratio).toString(16).padStart(2,'0');
+  return'#'+channel('r')+channel('g')+channel('b');
+}
+function applyBoardMaterialVariables(preset){
+  const root=document.documentElement.style;
+  root.setProperty('--board-frame-dark',mixBoardHex(preset.dark,'#000000',.62));
+  root.setProperty('--board-frame-mid',mixBoardHex(preset.dark,'#000000',.31));
+  root.setProperty('--board-frame-light',mixBoardHex(preset.dark,'#ffffff',.24));
+  root.setProperty('--board-coord-dark',mixBoardHex(preset.dark,'#000000',.58));
+  root.setProperty('--board-coord-light',mixBoardHex(preset.light,'#ffffff',.56));
+}
 function closeBoardColorPopup(){
   if(!boardColorPopup||!btnBoardColor)return;
   boardColorPopup.hidden=true;
@@ -1388,6 +1559,7 @@ function applyBoardColorPreset(id,closeAfterSelection=false,persist=true){
   const preset=boardColorPresets.find(p=>p.id===id)||boardColorPresets[0];
   document.documentElement.style.setProperty('--light-square',preset.light);
   document.documentElement.style.setProperty('--dark-square',preset.dark);
+  applyBoardMaterialVariables(preset);
   if(boardColorCurrent)boardColorCurrent.textContent=preset.name;
   boardColorOptions.forEach(btn=>{
     btn.classList.toggle('active',btn.dataset.boardColor===preset.id);
