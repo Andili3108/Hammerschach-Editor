@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: TV-PLAYLIST-LIST-DESIGN-20260729-4 -->
+<!-- BUILD: GAMER-LIVE-PERFORMANCE-20260730-1 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -3228,6 +3228,12 @@ try{
 }catch(_){}
 const pieceImg = {...(pieceSetPresets.find(p => p.id === activePieceSetId) || pieceSetPresets[0]).paths};
 const pieceChar = {P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔',p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚'};
+Object.values(pieceImg).forEach(src => {
+  const preload = new Image();
+  preload.decoding = 'async';
+  preload.src = src;
+  if(typeof preload.decode === 'function') preload.decode().catch(() => {});
+});
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function coordToAlg(x,y){ return files[x] + (8-y); }
 function pieceColor(ch){ if(!ch || ch === '.') return null; return ch === ch.toUpperCase() ? 'w' : 'b'; }
@@ -3825,6 +3831,30 @@ function moveToSan(before, mv, after){
 }
 
 let masterHistory = [];
+let masterHistoryRevision = 0;
+const historyStateCache = new Map();
+function invalidateHistoryStateCache(){
+  masterHistoryRevision++;
+  historyStateCache.clear();
+}
+function cacheHistoryState(n,game,positionCounts){
+  const safeN = Math.max(0, Math.min(Number(n) || 0, masterHistory.length));
+  const counts = positionCounts instanceof Map ? new Map(positionCounts) : new Map();
+  const key = game.repetitionKey();
+  if(!counts.size) counts.set(key,1);
+  historyStateCache.set(safeN, {
+    revision:masterHistoryRevision,
+    game,
+    positionCounts:counts,
+    repetitionCount:counts.get(key) || 1
+  });
+}
+function cacheAdvancedHistoryState(game,previousCounts){
+  const counts = previousCounts instanceof Map ? new Map(previousCounts) : new Map();
+  const key = game.repetitionKey();
+  counts.set(key,(counts.get(key) || 0) + 1);
+  cacheHistoryState(masterHistory.length,game,counts);
+}
 let viewIndex = 0;
 let selected = null;
 let pendingDailyMove = null;
@@ -4254,9 +4284,11 @@ function applyGameSetup(setup, options){
   const changed = !sameGameSetup(beforeSetup, normalized);
   if(options.save === false) currentGameSetup = normalized;
   else saveGameSetupPreference(normalized);
+  if(changed) invalidateHistoryStateCache();
   if((changed || options.forceReset) && playedMovesBeforeChange === 0 && !onlineGameStarted && !firstMoveDone && !clockRunning){
     selected = null;
     masterHistory = buildThemeHistory(normalized);
+    invalidateHistoryStateCache();
     viewIndex = masterHistory.length;
     lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
     renderBoard();
@@ -4440,7 +4472,14 @@ let onlineOrientationRoleApplied = null;
 let onlinePendingTimeControlMessageId = null;
 let onlinePendingStartMessageId = null;
 let onlineStatePollTimer = null;
-const ONLINE_STATE_POLL_INTERVAL_MS = 12000;
+const ONLINE_HEARTBEAT_INTERVAL_MS = 15000;
+const ONLINE_HEARTBEAT_TIMEOUT_MS = 45000;
+const ONLINE_WAITING_STATE_SYNC_MS = 45000;
+const ONLINE_DAILY_STATE_SYNC_MS = 120000;
+let onlineLastPongAt = 0;
+let onlineLastFullSyncAt = 0;
+let onlineLastPingSentAt = 0;
+let onlineRoundTripMs = null;
 let applyingRemoteMove = false;
 let onlineLastMoveMessageId = null;
 let onlineClockSync = null;
@@ -4464,6 +4503,27 @@ let onlineHeadToHead = null;
 let onlineRematchState = null;
 let rematchActionBusy = false;
 let rematchAutoOpenWhenReady = false;
+const onlineMoveTimings = new Map();
+const onlinePerformanceState = {
+  roundTripMs:null,
+  moveAckMs:null,
+  serverMoveMs:null,
+  remoteRenderMs:null,
+  updatedAt:null
+};
+function recordOnlinePerformance(name,value){
+  const numeric = Number(value);
+  if(!Number.isFinite(numeric) || numeric < 0) return;
+  onlinePerformanceState[name] = Math.round(numeric * 10) / 10;
+  onlinePerformanceState.updatedAt = new Date().toISOString();
+}
+window.getHammerschachPerformance = function(){
+  return Object.assign({}, onlinePerformanceState, {
+    connected:!!onlineConnected,
+    room:onlineRoomId || '',
+    historyLength:masterHistory.length
+  });
+};
 
 const siteStatsEl = document.getElementById('siteStats');
 const createOnlineBtn = document.getElementById('createOnlineBtn');
@@ -9147,6 +9207,7 @@ let tournamentAddressHandled = false;
 let activeLiveTournamentStatus = null;
 let liveTournamentPollTimer = null;
 let liveTournamentPollBusy = false;
+let liveTournamentPollGeneration = 0;
 let liveTournamentNavigatingRoomId = '';
 let liveTournamentClockOffsetMs = 0;
 let liveTournamentWaitingTournamentId = '';
@@ -9341,13 +9402,24 @@ async function pollLiveTournamentStatus(){
   }
 }
 function startLiveTournamentPolling(){
-  if(liveTournamentPollTimer) clearInterval(liveTournamentPollTimer);
+  if(liveTournamentPollTimer) clearTimeout(liveTournamentPollTimer);
   if(!onlineAuthToken || !onlineAuthUser) return;
-  pollLiveTournamentStatus();
-  liveTournamentPollTimer = setInterval(pollLiveTournamentStatus, 2500);
+  const generation = ++liveTournamentPollGeneration;
+  const run = async () => {
+    if(generation !== liveTournamentPollGeneration || !onlineAuthToken || !onlineAuthUser) return;
+    await pollLiveTournamentStatus();
+    if(generation !== liveTournamentPollGeneration || !onlineAuthToken || !onlineAuthUser) return;
+    const active = !!activeLiveTournamentStatus;
+    const delay = document.visibilityState !== 'visible'
+      ? 60000
+      : (active ? 2500 : (onlineRoomId && onlineGameStarted ? 30000 : 15000));
+    liveTournamentPollTimer = setTimeout(run,delay);
+  };
+  run();
 }
 function stopLiveTournamentPolling(){
-  if(liveTournamentPollTimer){ clearInterval(liveTournamentPollTimer); liveTournamentPollTimer = null; }
+  liveTournamentPollGeneration++;
+  if(liveTournamentPollTimer){ clearTimeout(liveTournamentPollTimer); liveTournamentPollTimer = null; }
   liveTournamentPollBusy = false;
   activeLiveTournamentStatus = null;
   liveTournamentNavigatingRoomId = '';
@@ -12223,13 +12295,23 @@ function closeOnlineSocket(){
 
 function requestOnlineState(){
   if(!onlineRoomId || !onlineConnected) return false;
-  return sendOnlineMessage({type:'request_state'});
+  const sent = sendOnlineMessage({type:'request_state'});
+  if(sent) onlineLastFullSyncAt = Date.now();
+  return sent;
 }
 function startOnlineStatePolling(){
   if(onlineStatePollTimer) clearInterval(onlineStatePollTimer);
+  onlineLastPongAt = Date.now();
   onlineStatePollTimer = setInterval(() => {
-    if(document.visibilityState === 'visible' && onlineRoomId && onlineConnected) requestOnlineState();
-  }, ONLINE_STATE_POLL_INTERVAL_MS);
+    if(document.visibilityState !== 'visible' || !onlineRoomId || !onlineConnected) return;
+    const now = Date.now();
+    onlineLastPingSentAt = now;
+    sendOnlineMessage({type:'ping', clientTs:now});
+    const heartbeatMissing = now - onlineLastPongAt > ONLINE_HEARTBEAT_TIMEOUT_MS;
+    const waitingNeedsSync = !onlineGameStarted && now - onlineLastFullSyncAt > ONLINE_WAITING_STATE_SYNC_MS;
+    const dailyNeedsSync = isDailyTimeControl() && now - onlineLastFullSyncAt > ONLINE_DAILY_STATE_SYNC_MS;
+    if(heartbeatMissing || waitingNeedsSync || dailyNeedsSync) requestOnlineState();
+  }, ONLINE_HEARTBEAT_INTERVAL_MS);
 }
 function normalizeIncomingTimeControl(candidate){
   if(!candidate) return null;
@@ -12509,7 +12591,8 @@ function sameMoveCoords(a,b){
 }
 function commitRemoteMove(found, promotion){
   const wasAtLatestPosition = viewIndex === masterHistory.length;
-  const before = buildGameFromHistory(masterHistory.length);
+  const beforeState = buildHistoryState(masterHistory.length);
+  const before = beforeState.game;
   const mv = {from:found.from, to:found.to, meta:found.meta || {}, promotion};
   const info = before.clone();
   const applied = info.makeMove(mv, false);
@@ -12517,6 +12600,8 @@ function commitRemoteMove(found, promotion){
   mv.taken = applied.taken;
   mv.san = moveToSan(before, mv, info);
   masterHistory.push(mv);
+  invalidateHistoryStateCache();
+  cacheAdvancedHistoryState(info,beforeState.positionCounts);
   /* Wer gerade eine ältere Stellung betrachtet, bleibt dort. Nur in der
      Live-Ansicht folgt das Brett automatisch dem neu eingegangenen Zug. */
   viewIndex = wasAtLatestPosition ? masterHistory.length : Math.min(viewIndex, masterHistory.length);
@@ -12524,10 +12609,9 @@ function commitRemoteMove(found, promotion){
   selected = null;
   afterMoveClock(before.turn);
   playMoveSound({capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), check:info.inCheck(info.turn)});
-  renderBoard();
   return mv;
 }
-function applyOnlineMove(move){
+function applyOnlineMove(move,messageReceivedAt){
   const normalized = normalizeIncomingMove(move);
   if(!normalized) return false;
   if(normalized.messageId && normalized.messageId === onlineLastMoveMessageId){
@@ -12571,10 +12655,11 @@ function applyOnlineMove(move){
   } finally {
     applyingRemoteMove = false;
   }
+  scheduleBoardRender(messageReceivedAt);
   onlineLastMessage = 'Online-Zug wurde übernommen.';
   return true;
 }
-function applyOnlineMoveList(moves){
+function applyOnlineMoveList(moves,messageReceivedAt){
   if(!Array.isArray(moves) || moves.length === 0) return 0;
   const ordered = moves.slice().sort((a,b) => {
     const ap = Number(a.ply || 0), bp = Number(b.ply || 0);
@@ -12584,7 +12669,7 @@ function applyOnlineMoveList(moves){
   let applied = 0;
   for(const move of ordered){
     const beforeLen = masterHistory.length;
-    if(applyOnlineMove(move) && masterHistory.length > beforeLen) applied++;
+    if(applyOnlineMove(move,messageReceivedAt) && masterHistory.length > beforeLen) applied++;
   }
   return applied;
 }
@@ -12916,6 +13001,11 @@ function connectOnlineRoom(roomId, opts){
   applyingRemoteMove = false;
   onlineLastMoveMessageId = null;
   onlineClockSync = null;
+  onlineLastPongAt = 0;
+  onlineLastFullSyncAt = 0;
+  onlineLastPingSentAt = 0;
+  onlineRoundTripMs = null;
+  onlineMoveTimings.clear();
   onlineSeatClaimSent = false;
   onlineReconnectSuppressed = false;
   onlineRoomCancelled = false;
@@ -12956,8 +13046,31 @@ function connectOnlineRoom(roomId, opts){
     updateOnlineUi();
   });
   onlineSocket.addEventListener('message', ev => {
+    const messageReceivedAt = performance.now();
     let msg = null;
     try{ msg = JSON.parse(ev.data); } catch(_){ return; }
+    if(msg.type === 'pong'){
+      const now = Date.now();
+      onlineLastPongAt = now;
+      const echoedClientTs = Number(msg.clientTs || 0);
+      if(Number.isFinite(echoedClientTs) && echoedClientTs > 0){
+        onlineRoundTripMs = Math.max(0, now - echoedClientTs);
+        recordOnlinePerformance('roundTripMs', onlineRoundTripMs);
+      } else if(onlineLastPingSentAt){
+        onlineRoundTripMs = Math.max(0, now - onlineLastPingSentAt);
+        recordOnlinePerformance('roundTripMs', onlineRoundTripMs);
+      }
+      return;
+    }
+    if(Number.isFinite(Number(msg.serverProcessingMs))){
+      recordOnlinePerformance('serverMoveMs', Number(msg.serverProcessingMs));
+    }
+    if(msg.type === 'move_ack' && msg.messageId && onlineMoveTimings.has(String(msg.messageId))){
+      const timing = onlineMoveTimings.get(String(msg.messageId));
+      onlineMoveTimings.delete(String(msg.messageId));
+      recordOnlinePerformance('moveAckMs', performance.now() - timing.sentAt);
+    }
+    if(['hello_state','room_state','state','sync'].includes(msg.type)) onlineLastFullSyncAt = Date.now();
     if(msg.type === 'room_cancelled'){
       applyRoomCancelled(msg.message || 'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.');
       return;
@@ -12987,8 +13100,10 @@ function connectOnlineRoom(roomId, opts){
         setTimeout(syncCurrentGameSetupToOnline, 180);
         setTimeout(syncCurrentGameSetupToOnline, 750);
       }
-      setTimeout(requestOnlineState, 120);
-      setTimeout(requestOnlineState, 650);
+      const helloReceivedAt = Date.now();
+      setTimeout(() => {
+        if(onlineConnected && onlineLastFullSyncAt < helloReceivedAt) requestOnlineState();
+      }, 1200);
       startOnlineStatePolling();
     }
     if(msg.type === 'error'){
@@ -13107,11 +13222,11 @@ function connectOnlineRoom(roomId, opts){
     }
 
     const incomingMoves = extractOnlineMoves(msg);
-    const appliedMoveCount = applyOnlineMoveList(incomingMoves);
+    const appliedMoveCount = applyOnlineMoveList(incomingMoves, messageReceivedAt);
     if(incomingMoves.length) handled = true;
 
     const incomingMove = extractOnlineMove(msg);
-    const appliedSingleMove = incomingMove ? applyOnlineMove(incomingMove) : false;
+    const appliedSingleMove = incomingMove ? applyOnlineMove(incomingMove, messageReceivedAt) : false;
     if(incomingMove) handled = true;
 
     const incomingClock = extractOnlineClock(msg);
@@ -13155,7 +13270,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['seat_challenge','seat_replaced','hello','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -13364,6 +13479,7 @@ function applyOnlineGameState(game){
     selected = null;
     stopClock();
     masterHistory = buildThemeHistory(currentGameSetup);
+    invalidateHistoryStateCache();
     viewIndex = masterHistory.length;
     lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
     gameEnded = false;
@@ -13844,18 +13960,10 @@ function buildThemeHistory(setup){
   return history;
 }
 
-function buildGameFromHistory(n){
-  const g = new Game();
-  for(let i=0; i<n && i<masterHistory.length; i++){
-    const h = masterHistory[i];
-    const legal = g.legalMoves();
-    const found = findMatchingLegalMove(legal, h);
-    const mv = found ? {from:found.from, to:found.to, meta:found.meta || {}, promotion:h.promotion || null} : {from:h.from, to:h.to, meta:h.meta || {}, promotion:h.promotion || null};
-    g.makeMove(mv, true);
-  }
-  return g;
-}
-function repetitionCountForHistory(n){
+function buildHistoryState(n){
+  const safeN = Math.max(0, Math.min(Number(n) || 0, masterHistory.length));
+  const cached = historyStateCache.get(safeN);
+  if(cached && cached.revision === masterHistoryRevision) return cached;
   const g = new Game();
   const counts = new Map();
   const addCurrent = () => {
@@ -13863,7 +13971,7 @@ function repetitionCountForHistory(n){
     counts.set(key, (counts.get(key) || 0) + 1);
   };
   addCurrent();
-  for(let i=0; i<n && i<masterHistory.length; i++){
+  for(let i=0; i<safeN; i++){
     const h = masterHistory[i];
     const legal = g.legalMoves();
     const found = findMatchingLegalMove(legal, h);
@@ -13871,7 +13979,20 @@ function repetitionCountForHistory(n){
     g.makeMove(mv, true);
     addCurrent();
   }
-  return counts.get(g.repetitionKey()) || 1;
+  const state = {
+    revision:masterHistoryRevision,
+    game:g,
+    positionCounts:counts,
+    repetitionCount:counts.get(g.repetitionKey()) || 1
+  };
+  historyStateCache.set(safeN,state);
+  return state;
+}
+function buildGameFromHistory(n){
+  return buildHistoryState(n).game;
+}
+function repetitionCountForHistory(n){
+  return buildHistoryState(n).repetitionCount;
 }
 function gameOverForHistory(n, gameState){
   const g = gameState || buildGameFromHistory(n);
@@ -13884,7 +14005,57 @@ function drawReasonText(type){
   if(type === 'stalemate') return 'Patt — Unentschieden';
   return 'Remis — Unentschieden';
 }
+let boardRenderFrame = null;
+let boardRenderReceivedAt = 0;
+function scheduleBoardRender(messageReceivedAt){
+  const startedAt = Number(messageReceivedAt || 0);
+  if(Number.isFinite(startedAt) && startedAt > 0 && (!boardRenderReceivedAt || startedAt < boardRenderReceivedAt)){
+    boardRenderReceivedAt = startedAt;
+  }
+  if(boardRenderFrame !== null) return;
+  boardRenderFrame = requestAnimationFrame(() => {
+    boardRenderFrame = null;
+    const receivedAt = boardRenderReceivedAt;
+    boardRenderReceivedAt = 0;
+    renderBoard();
+    if(receivedAt) recordOnlinePerformance('remoteRenderMs',performance.now() - receivedAt);
+  });
+}
+function ensureBoardSquares(){
+  if(boardEl.children.length === 64 && Array.from(boardEl.children).every(el => el.classList.contains('square'))) return;
+  const fragment = document.createDocumentFragment();
+  for(let row=0; row<8; row++){
+    for(let col=0; col<8; col++){
+      const sq = document.createElement('div');
+      sq.className = 'square';
+      if(row === 7){
+        const file = document.createElement('span');
+        file.className = 'coord-file';
+        sq.appendChild(file);
+      }
+      if(col === 0){
+        const rank = document.createElement('span');
+        rank.className = 'coord-rank';
+        sq.appendChild(rank);
+      }
+      fragment.appendChild(sq);
+    }
+  }
+  boardEl.replaceChildren(fragment);
+}
+boardEl.addEventListener('click', event => {
+  const target = event.target instanceof Element ? event.target.closest('.square') : null;
+  if(!target || !boardEl.contains(target)) return;
+  const x = Number(target.dataset.x);
+  const y = Number(target.dataset.y);
+  if(Number.isInteger(x) && Number.isInteger(y)) onSquareClick(x,y);
+});
 function renderBoard(){
+  if(boardRenderFrame !== null){
+    cancelAnimationFrame(boardRenderFrame);
+    boardRenderFrame = null;
+    boardRenderReceivedAt = 0;
+  }
   cancelActivePieceDrag(boardEl);
   if(isMoveNavigationLocked() && viewIndex !== masterHistory.length) viewIndex = masterHistory.length;
   const g = buildGameFromHistory(viewIndex);
@@ -13898,37 +14069,33 @@ function renderBoard(){
       promotion:pendingDailyMove.move.promotion || null
     }, true);
   }
-  boardEl.innerHTML = '';
+  ensureBoardSquares();
   for(let row=0; row<8; row++){
     for(let col=0; col<8; col++){
       const x = orientationWhite ? col : 7-col;
       const y = orientationWhite ? row : 7-row;
-      const sq = document.createElement('div');
+      const sq = boardEl.children[row * 8 + col];
       sq.className = 'square ' + (((x+y)%2===0) ? 'light' : 'dark');
       sq.dataset.x = x;
       sq.dataset.y = y;
       const p = displayGame.at(x,y);
+      let img = sq.querySelector('.piece-img');
       if(p !== '.'){
-        const img = document.createElement('img');
-        img.className = 'piece-img';
-        img.src = pieceImg[p];
+        if(!img){
+          img = document.createElement('img');
+          img.className = 'piece-img';
+          sq.insertBefore(img,sq.firstChild);
+        }
+        if(img.dataset.piece !== p || img.getAttribute('src') !== pieceImg[p]){
+          img.dataset.piece = p;
+          img.src = pieceImg[p];
+        }
         img.alt = pieceChar[p] || '';
-        sq.appendChild(img);
-      }
-      if(row === 7){
-        const f = document.createElement('span');
-        f.className = 'coord-file';
-        f.textContent = files[x];
-        sq.appendChild(f);
-      }
-      if(col === 0){
-        const r = document.createElement('span');
-        r.className = 'coord-rank';
-        r.textContent = 8 - y;
-        sq.appendChild(r);
-      }
-      sq.addEventListener('click', () => onSquareClick(x,y));
-      boardEl.appendChild(sq);
+      } else if(img) img.remove();
+      const file = sq.querySelector('.coord-file');
+      if(file) file.textContent = files[x];
+      const rank = sq.querySelector('.coord-rank');
+      if(rank) rank.textContent = 8 - y;
     }
   }
   markLastMove();
@@ -14681,6 +14848,8 @@ function syncMoveToOnline(mv, movedSide){
   };
   onlineLastMoveMessageId = messageId;
   if(sendOnlineMessage({type:'move', move, messageId})){
+    onlineMoveTimings.set(messageId,{sentAt:performance.now()});
+    if(onlineMoveTimings.size > 12) onlineMoveTimings.delete(onlineMoveTimings.keys().next().value);
     onlineLastMessage = 'Zug wird übertragen...';
     updateOnlineUi();
     setTimeout(() => {
@@ -14694,8 +14863,12 @@ function syncMoveToOnline(mv, movedSide){
   }
 }
 function commitHumanMove(found, promotion){
-  const before = buildGameFromHistory(masterHistory.length);
-  if(viewIndex < masterHistory.length) masterHistory.splice(viewIndex);
+  if(viewIndex < masterHistory.length){
+    masterHistory.splice(viewIndex);
+    invalidateHistoryStateCache();
+  }
+  const beforeState = buildHistoryState(masterHistory.length);
+  const before = beforeState.game;
   const mv = {from:found.from, to:found.to, meta:found.meta || {}, promotion};
   const info = before.clone();
   const applied = info.makeMove(mv, false);
@@ -14703,13 +14876,15 @@ function commitHumanMove(found, promotion){
   mv.taken = applied.taken;
   mv.san = moveToSan(before, mv, info);
   masterHistory.push(mv);
+  invalidateHistoryStateCache();
+  cacheAdvancedHistoryState(info,beforeState.positionCounts);
   viewIndex = masterHistory.length;
   lastMove = {from:mv.from, to:mv.to};
   selected = null;
   afterMoveClock(before.turn);
   playMoveSound({capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), check:info.inCheck(info.turn)});
   syncMoveToOnline(mv, before.turn);
-  renderBoard();
+  scheduleBoardRender();
 }
 function showPromotionOverlay(color){
   return new Promise(resolve => {
@@ -14730,8 +14905,16 @@ function showPromotionOverlay(color){
     modal.querySelector('#promoCancel').addEventListener('click', e => { e.stopPropagation(); backdrop.remove(); resolve(null); });
   });
 }
+moveListEl.addEventListener('click', event => {
+  const cell = event.target instanceof Element ? event.target.closest('.move-cell[data-move-index]') : null;
+  if(!cell || !moveListEl.contains(cell) || isMoveNavigationLocked()) return;
+  const index = Number(cell.dataset.moveIndex);
+  if(!Number.isInteger(index) || index < 0 || index >= masterHistory.length) return;
+  viewIndex = index + 1;
+  selected = null;
+  renderBoard();
+});
 function renderMoveList(){
-  moveListEl.innerHTML = '';
   const theme = currentTheme();
   const themePly = currentThemePly();
   if(themeMoveNotice){
@@ -14739,7 +14922,15 @@ function renderMoveList(){
     themeMoveNotice.textContent = theme ? ('🎯 Thementurnier: ' + theme.name + ' · ' + themePly + ' vorgegebene Halbzüge. Mit den Pfeilen lässt sich ihre Entstehung vollständig zurückverfolgen.') : '';
   }
   if(masterHistory.length === 0){
-    moveListEl.innerHTML = '<div>—</div>';
+    let empty = moveListEl.firstElementChild;
+    if(!empty){
+      empty = document.createElement('div');
+      moveListEl.appendChild(empty);
+    }
+    empty.className = '';
+    empty.textContent = '—';
+    empty.removeAttribute('data-move-index');
+    while(moveListEl.children.length > 1) moveListEl.lastElementChild.remove();
     return;
   }
   const cells = [];
@@ -14751,11 +14942,19 @@ function renderMoveList(){
   }
   const navigationLocked = isMoveNavigationLocked();
   cells.forEach((c, cellIndex) => {
-    const div = document.createElement('div');
+    let div = moveListEl.children[cellIndex];
+    if(!div){
+      div = document.createElement('div');
+      moveListEl.appendChild(div);
+    }
     div.className = 'move-cell';
     if(cellIndex % 6 >= 3) div.classList.add('hide-mobile-pair');
     div.textContent = c.txt;
+    div.removeAttribute('data-move-index');
+    div.title = '';
+    div.style.cursor = '';
     if(c.idx !== null){
+      div.dataset.moveIndex = String(c.idx);
       if(c.idx < themePly) div.classList.add('theme-move');
       if(c.idx === themePly - 1) div.classList.add('theme-end');
       if(viewIndex === c.idx + 1) div.classList.add('current');
@@ -14765,11 +14964,10 @@ function renderMoveList(){
       } else {
         div.title = 'Zu dieser Stellung springen';
         div.style.cursor = 'pointer';
-        div.addEventListener('click', () => { viewIndex = c.idx + 1; selected = null; renderBoard(); });
       }
     }
-    moveListEl.appendChild(div);
   });
+  while(moveListEl.children.length > cells.length) moveListEl.lastElementChild.remove();
 }
 function updateBoardNavControls(){
   if(!boardNavStartBtn || !boardNavBackBtn || !boardNavForwardBtn || !boardNavEndBtn) return;
@@ -14992,6 +15190,7 @@ function newGame(){
   setRightPanelMode('players');
   onlineClockSync = null;
   masterHistory = buildThemeHistory(currentGameSetup);
+  invalidateHistoryStateCache();
   viewIndex = masterHistory.length;
   pendingDailyMove = null;
   selected = null;
