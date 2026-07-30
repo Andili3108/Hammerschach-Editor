@@ -5844,6 +5844,10 @@ function syncTvPlaylistFromYoutubePlayer(){
   let ids = [];
   let currentIndex = -1;
   try{
+    if(typeof hammerschachTvYoutubePlayer.getPlaylistId === 'function'){
+      const loadedPlaylistId = String(hammerschachTvYoutubePlayer.getPlaylistId() || '');
+      if(loadedPlaylistId !== String(stream.playlistId)) return;
+    }
     ids = hammerschachTvYoutubePlayer.getPlaylist();
     currentIndex = Number(hammerschachTvYoutubePlayer.getPlaylistIndex());
   }catch(_){
@@ -5881,12 +5885,16 @@ function syncTvPlaylistFromYoutubePlayer(){
 function attachHammerschachYoutubePlayer(){
   if(!tvPlayerFrame || hammerschachTvYoutubePlayer) return;
   ensureHammerschachYoutubePlayerApi().then(YT=>{
-    if(!tvPlayerFrame || hammerschachTvYoutubePlayer) return;
+    if(!tvPlayerFrame || hammerschachTvYoutubePlayer || !tvToolActive || !tvPlayerFrame.dataset.streamKey) return;
     hammerschachTvYoutubePlayer = new YT.Player(tvPlayerFrame,{
       events:{
         onReady:event=>{
           hammerschachTvYoutubePlayer = event.target;
           hammerschachTvYoutubePlayerReady = true;
+          renderSelectedTvSlot();
+          if(!tvToolActive || !tvPlayerFrame.dataset.streamKey){
+            try{hammerschachTvYoutubePlayer.stopVideo();}catch(_){}
+          }
           syncTvPlaylistFromYoutubePlayer();
           setTimeout(syncTvPlaylistFromYoutubePlayer,300);
           setTimeout(syncTvPlaylistFromYoutubePlayer,1000);
@@ -6071,12 +6079,27 @@ function renderSelectedTvSlot(){
   const playerKey = tvStreamPlayerKey(stream);
   if(playerSource && tvPlayerFrame && tvToolActive){
     if(tvPlayerFrame.dataset.streamKey !== playerKey){
-      tvPlayerFrame.dataset.streamKey = playerKey;
       tvPlayerFrame.dataset.streamSrc = playerSource;
-      if(!cueHammerschachTvStream(stream)){
+      if(hammerschachTvYoutubePlayerReady && hammerschachTvYoutubePlayer){
+        if(cueHammerschachTvStream(stream)){
+          tvPlayerFrame.dataset.streamKey = playerKey;
+          delete tvPlayerFrame.dataset.pendingStreamKey;
+        }
+      }else if(!hammerschachTvYoutubePlayer){
+        tvPlayerFrame.dataset.streamKey = playerKey;
         tvPlayerFrame.src = playerSource;
         attachHammerschachYoutubePlayer();
+      }else{
+        /*
+         * Der YouTube-Player wird gerade initialisiert. Seine iframe-Quelle
+         * darf in diesem Zustand nicht ausgetauscht werden, weil Player und
+         * sichtbarer Kanal sonst auseinanderlaufen. onReady übernimmt danach
+         * den zuletzt ausgewählten Sender.
+         */
+        tvPlayerFrame.dataset.pendingStreamKey = playerKey;
       }
+    }else{
+      delete tvPlayerFrame.dataset.pendingStreamKey;
     }
     tvPlayerFrame.title = selectedPlaylistItem
       ? `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'} – ${selectedPlaylistItem.title}`
@@ -6089,11 +6112,12 @@ function renderSelectedTvSlot(){
       if(tvPlayerFrame.dataset.streamKey){
         if(hammerschachTvYoutubePlayerReady && hammerschachTvYoutubePlayer){
           try{hammerschachTvYoutubePlayer.stopVideo();}catch(_){}
-        }else{
+        }else if(!hammerschachTvYoutubePlayer){
           tvPlayerFrame.src = 'about:blank';
         }
         delete tvPlayerFrame.dataset.streamSrc;
         delete tvPlayerFrame.dataset.streamKey;
+        delete tvPlayerFrame.dataset.pendingStreamKey;
       }
     }
     if(tvPlayerPlaceholder) tvPlayerPlaceholder.hidden = false;
@@ -6200,12 +6224,13 @@ function stopHammerschachTvPlayback(){
   if(tvPlayerFrame){
     if(hammerschachTvYoutubePlayerReady && hammerschachTvYoutubePlayer){
       try{hammerschachTvYoutubePlayer.stopVideo();}catch(_){}
-    }else{
+    }else if(!hammerschachTvYoutubePlayer){
       tvPlayerFrame.src = 'about:blank';
     }
     tvPlayerFrame.hidden = true;
     delete tvPlayerFrame.dataset.streamSrc;
     delete tvPlayerFrame.dataset.streamKey;
+    delete tvPlayerFrame.dataset.pendingStreamKey;
   }
 }
 
