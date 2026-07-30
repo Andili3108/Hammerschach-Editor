@@ -1,4 +1,4 @@
-// BUILD: TV-PLAYLIST-PLAYER-20260729-3
+// BUILD: GAMER-LIVE-PERFORMANCE-20260730-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -36,6 +36,13 @@ function privateJson(data, init = {}) {
 function cleanRoomId(value) {
   const room = String(value || '').trim();
   return /^[A-Za-z0-9_-]{3,64}$/.test(room) ? room : '';
+}
+
+const DURABLE_OBJECT_LOCATION_HINTS = new Set(['wnam','enam','weur','eeur','apac','apac-ne','apac-se','oc','afr','me','sam']);
+function gameRoomStub(env, id) {
+  const configuredHint = String((env && env.GAME_ROOM_LOCATION_HINT) || 'weur').trim().toLowerCase();
+  const options = DURABLE_OBJECT_LOCATION_HINTS.has(configuredHint) ? { locationHint:configuredHint } : undefined;
+  return options ? env.GAME_ROOM.get(id, options) : env.GAME_ROOM.get(id);
 }
 
 function cleanPublicWatchId(value) {
@@ -3928,7 +3935,7 @@ async function initializeTournamentGameRoom(env, payload) {
   if (!env || !env.GAME_ROOM) throw new Error('Der Spielraum-Dienst ist nicht verfügbar.');
   const roomId = cleanRoomId(payload && payload.roomId);
   const id = env.GAME_ROOM.idFromName(roomId);
-  const stub = env.GAME_ROOM.get(id);
+  const stub = gameRoomStub(env, id);
   const response = await stub.fetch(new Request('https://game-room.internal/tournament-init?room=' + encodeURIComponent(roomId), {
     method:'POST',
     headers:{'content-type':'application/json'},
@@ -3951,7 +3958,7 @@ async function scheduleTournamentAlarm(env, tournamentRow, scheduledAt, action =
   if (!Number.isFinite(alarmAt)) return false;
   const roomId = tournamentSchedulerRoomId(tournamentRow.id);
   const id = env.GAME_ROOM.idFromName(roomId);
-  const response = await env.GAME_ROOM.get(id).fetch(new Request('https://game-room.internal/tournament-schedule?room=' + encodeURIComponent(roomId), {
+  const response = await gameRoomStub(env, id).fetch(new Request('https://game-room.internal/tournament-schedule?room=' + encodeURIComponent(roomId), {
     method:'POST',
     headers:{'content-type':'application/json'},
     body:JSON.stringify({tournamentId:String(tournamentRow.id), scheduledAt:new Date(alarmAt).toISOString(), action:String(action || 'start')})
@@ -5616,7 +5623,7 @@ async function cancelOpenDailyInvitationsForUser(env, userId, invitations) {
     if (!roomId) continue;
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
-      const stub = env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(env, id);
       const response = await stub.fetch(new Request('https://game-room.internal/cancel-invitation?room=' + encodeURIComponent(roomId), {
         method: 'DELETE',
         headers: { 'x-hammerschach-user-id': String(userId) }
@@ -5717,7 +5724,7 @@ async function callAccountRoomAction(env, roomId, action, userId, anonymizedId =
   if (!env || !env.GAME_ROOM) return { ok:false, status:503, code:'ROOM_SERVICE_UNAVAILABLE', message:'Spielräume konnten nicht geprüft werden.' };
   try {
     const id = env.GAME_ROOM.idFromName(roomId);
-    const stub = env.GAME_ROOM.get(id);
+    const stub = gameRoomStub(env, id);
     const response = await stub.fetch(new Request(`https://game-room.internal/${action}?room=${encodeURIComponent(roomId)}`, {
       method:'POST',
       headers:{'content-type':'application/json'},
@@ -7312,7 +7319,7 @@ async function createModerationReport(env,sessionUser,body){
   await ensureModerationTables(env);
   const roomId=cleanRoomId(body&&body.roomId); const role=body&&body.reportedRole==='w'?'w':body&&body.reportedRole==='b'?'b':'';
   if(!roomId||!role) return {ok:false,status:400,code:'INVALID_REPORT',message:'Partie oder gemeldeter Spieler fehlt.'};
-  const id=env.GAME_ROOM.idFromName(roomId), stub=env.GAME_ROOM.get(id);
+  const id=env.GAME_ROOM.idFromName(roomId), stub=gameRoomStub(env,id);
   const response=await stub.fetch(new Request('https://game-room.internal/moderation-context?room='+encodeURIComponent(roomId),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({reporterUserId:sessionUser.id,reportedRole:role})}));
   const ctx=await response.json();
   if(!response.ok||!ctx.ok) return {ok:false,status:response.status||403,code:ctx.code||'REPORT_NOT_ALLOWED',message:ctx.message||'Die Meldung ist für diese Partie nicht möglich.'};
@@ -8137,7 +8144,7 @@ async function handleAuthApi(request, env, url) {
     if (!env.GAME_ROOM) return json({ ok:false, code:'ROOM_SERVICE_UNAVAILABLE', message:'Der Spielraum-Dienst ist nicht verfügbar.' }, { status:503 });
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
-      const stub = env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(env, id);
       const internalPath = request.method === 'POST' ? '/accept-open-offer' : '/withdraw-open-offer';
       const response = await stub.fetch(new Request('https://game-room.internal' + internalPath + '?room=' + encodeURIComponent(roomId), {
         method:'POST',
@@ -8271,7 +8278,7 @@ async function handleAuthApi(request, env, url) {
       if (!indexedGame.ended) return json({ ok: false, code: 'GAME_NOT_ENDED', message: 'Die PGN-Datei steht nach Partieende bereit.' }, { status: 409 });
 
       const id = env.GAME_ROOM.idFromName(roomId);
-      const stub = env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(env, id);
       const response = await stub.fetch(new Request('https://game-room.internal/daily-pgn?room=' + encodeURIComponent(roomId), {
         method: 'GET',
         headers: { 'x-hammerschach-user-id': String(session.user.id || '') }
@@ -8310,7 +8317,7 @@ async function handleAuthApi(request, env, url) {
 
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
-      const stub = env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(env, id);
       const response = await stub.fetch(new Request('https://game-room.internal/cancel-invitation?room=' + encodeURIComponent(roomId), {
         method: 'DELETE',
         headers: { 'x-hammerschach-user-id': String(session.user.id || '') }
@@ -8714,7 +8721,7 @@ async function handleAuthApi(request, env, url) {
     let access = null;
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
-      const stub = env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(env, id);
       const accessResponse = await stub.fetch(new Request('https://game-room.internal/invitation-email-context?room=' + encodeURIComponent(roomId), {
         method:'POST',
         headers:{ 'x-hammerschach-user-id':String(session.user.id || '') }
@@ -9985,8 +9992,8 @@ function gameTurnForSetup(gameSetup) {
   return buildGameFromStoredMoves([], gameSetup).turn;
 }
 
-function validateMoveOnServer(storedMoves, incoming, gameSetup = null) {
-  const before = buildGameFromStoredMoves(storedMoves || [], gameSetup);
+function validateMoveOnServer(storedMoves, incoming, gameSetup = null, preparedBefore = null) {
+  const before = preparedBefore ? preparedBefore.clone() : buildGameFromStoredMoves(storedMoves || [], gameSetup);
   const legal = before.legalMoves();
   const found = findMatchingLegalMove(legal, incoming);
   if (!found) {
@@ -10441,6 +10448,41 @@ export class GameRoom {
     this.accountNameCache = { key:'', expiresAt:0, values:{} };
     this.ratingStateCache = { key:'', expiresAt:0, value:null };
     this.headToHeadCache = new Map();
+    this.validationGameCache = { key:'', game:null };
+  }
+
+  validationGameKey(moves, gameSetup) {
+    const list = Array.isArray(moves) ? moves : [];
+    const tail = list.length ? list[list.length - 1] : null;
+    const tailKey = tail
+      ? [tail.ply || list.length, tail.side || '', (tail.from || []).join(','), (tail.to || []).join(','), tail.promotion || '', tail.castle || '', tail.messageId || ''].join(':')
+      : 'start';
+    return JSON.stringify(cleanGameSetup(gameSetup || null)) + '|' + list.length + '|' + tailKey;
+  }
+
+  validationGameFor(moves, gameSetup) {
+    const key = this.validationGameKey(moves, gameSetup);
+    if (this.validationGameCache.key === key && this.validationGameCache.game) {
+      /*
+        validateMoveOnServer arbeitet auf einer eigenen Kopie. Hier reicht daher
+        die unveränderte Cache-Instanz und eine zweite Klonierung entfällt.
+      */
+      return this.validationGameCache.game;
+    }
+    const game = buildGameFromStoredMoves(moves || [], gameSetup);
+    this.validationGameCache = { key, game:game.clone() };
+    return game;
+  }
+
+  rememberValidationGame(moves, gameSetup, game) {
+    if (!game) {
+      this.validationGameCache = { key:'', game:null };
+      return;
+    }
+    this.validationGameCache = {
+      key:this.validationGameKey(moves, gameSetup),
+      game:game.clone()
+    };
   }
 
 
@@ -10615,7 +10657,7 @@ export class GameRoom {
 
     try {
       const id = this.env.GAME_ROOM.idFromName(roomId);
-      const stub = this.env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(this.env, id);
       const response = await stub.fetch(new Request('https://game-room.internal/rematch-init?room=' + encodeURIComponent(roomId), {
         method:'POST',
         headers:{'content-type':'application/json'},
@@ -10827,7 +10869,7 @@ export class GameRoom {
 
     try {
       const id = this.env.GAME_ROOM.idFromName(RATING_SERVICE_ROOM);
-      const stub = this.env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(this.env, id);
       const response = await stub.fetch(new Request('https://rating-service.internal/rate-game', {
         method:'POST',
         headers:{'content-type':'application/json'},
@@ -12249,14 +12291,19 @@ export class GameRoom {
   }
 
   async refreshTimedGameState(now = Date.now(), options = {}) {
-    let game = (await this.state.storage.get('game')) || { started: false, ended: false, result: '*' };
-    let clock = (await this.state.storage.get('clock')) || null;
+    const stored = options.stored && typeof options.stored.get === 'function'
+      ? options.stored
+      : await this.state.storage.get(['game','clock']);
+    let game = stored.get('game') || { started: false, ended: false, result: '*' };
+    let clock = stored.get('clock') || null;
     if (!clock) return { game, clock: null, justEnded: false };
 
     const advanced = advanceClock(clock, now);
-    if (advanced && JSON.stringify(advanced) !== JSON.stringify(clock)) {
+    const clockChanged = !!(advanced && JSON.stringify(advanced) !== JSON.stringify(clock));
+    if (clockChanged) {
       clock = advanced;
-      await this.state.storage.put('clock', clock);
+      const willFinalizeByTime = !!(game.started && !game.ended && clock.timeLost);
+      if (options.persistClock !== false && !willFinalizeByTime) await this.state.storage.put('clock', clock);
     } else {
       clock = advanced || clock;
     }
@@ -12264,7 +12311,7 @@ export class GameRoom {
     let justEnded = false;
     if (game.started && !game.ended && clock && clock.timeLost) {
       game = finishGameState(game, 'time', clock.winner, now);
-      await this.state.storage.put('game', game);
+      await this.state.storage.put({game,clock});
       await this.state.storage.delete('drawOffer');
       justEnded = true;
       await this.finalizeRatingIfNeeded(game);
@@ -12484,19 +12531,21 @@ export class GameRoom {
     }
   }
 
-  async broadcastRoomState(type = 'room_state') {
+  async broadcastRoomState(type = 'room_state', excludeWs = null) {
     for (const ws of this.state.getWebSockets()) {
+      if (excludeWs && ws === excludeWs) continue;
       await this.sendRoomState(ws, type);
     }
   }
 
-  broadcastMove(move, messageId = null, clock = null, game = null, drawOffer = null) {
+  broadcastMove(move, messageId = null, clock = null, game = null, drawOffer = null, excludeWs = null, serverProcessingMs = null) {
     const now = Date.now();
     const publicMove = safeMoveForClient(move);
     const publicGame = safeGameForClient(game);
     const publicDrawOffer = safeDrawOfferForClient(drawOffer);
     const publicClock = clockPayload(clock, now);
     for (const ws of this.state.getWebSockets()) {
+      if (excludeWs && ws === excludeWs) continue;
       const info = ws.deserializeAttachment() || {};
       safeSend(ws, {
         type: 'move',
@@ -12508,6 +12557,7 @@ export class GameRoom {
         game: publicGame,
         drawOffer: publicDrawOffer,
         clock: publicClock,
+        serverProcessingMs,
         serverNow: now
       });
     }
@@ -12560,7 +12610,26 @@ export class GameRoom {
 
     let info = ws.deserializeAttachment() || {};
 
-    const cancellation = await this.state.storage.get('cancelled');
+    if (data.type === 'ping' && info.seatClaimed) {
+      safeSend(ws, {
+        type:'pong',
+        clientTs:Number.isFinite(Number(data.clientTs)) ? Number(data.clientTs) : null,
+        serverNow:Date.now()
+      });
+      return;
+    }
+
+    /*
+      Ein aktiver Spielerzug kann nicht mehr zu einer offenen Einladung gehören:
+      Beim Zurückziehen werden alle Attachments auf "revoked" gesetzt und die
+      Sockets geschlossen. Dadurch entfällt im Zug-Hotpath ein weiterer Read.
+    */
+    const activePlayerMove = data.type === 'move'
+      && info.seatClaimed
+      && (info.role === 'w' || info.role === 'b');
+    const cancellation = activePlayerMove
+      ? null
+      : await this.state.storage.get('cancelled');
     if (cancellation && cancellation.cancelled) {
       safeSend(ws, {
         type:'room_cancelled',
@@ -12633,7 +12702,7 @@ export class GameRoom {
           serverNow:Date.now()
         });
         await this.sendRoomState(ws, 'hello_state');
-        await this.broadcastRoomState('lobby');
+        await this.broadcastRoomState('lobby', ws);
         return;
       }
 
@@ -12777,7 +12846,7 @@ export class GameRoom {
       });
       await this.sendRoomState(ws, 'hello_state');
       if (!dailyAutoStart.started) await this.syncGameIndexes();
-      await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'lobby');
+      await this.broadcastRoomState(dailyAutoStart.started ? 'game_started' : 'lobby', ws);
       return;
     }
 
@@ -12787,11 +12856,6 @@ export class GameRoom {
     }
 
     const role = info.role || 'spectator';
-
-    if (data.type === 'ping') {
-      safeSend(ws, { type: 'pong', ts: Date.now(), serverNow: Date.now() });
-      return;
-    }
 
     if (data.type === 'request_state') {
       await this.sendRoomState(ws, 'room_state');
@@ -13292,12 +13356,18 @@ export class GameRoom {
     }
 
     if (data.type === 'move') {
+      const moveHandlerStartedAt = Date.now();
       if (role !== 'w' && role !== 'b') {
         safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können Züge senden.' });
         return;
       }
 
-      const timedState = await this.refreshTimedGameState(Date.now(), { rescheduleAlarm:false });
+      const moveState = await this.state.storage.get(['game','clock','timeControl','moves','gameSetup','drawOffer']);
+      const timedState = await this.refreshTimedGameState(Date.now(), {
+        rescheduleAlarm:false,
+        persistClock:false,
+        stored:moveState
+      });
       let game = timedState.game || { started: false, ended: false };
       if (!game.started) {
         safeSend(ws, { type: 'error', code: 'GAME_NOT_STARTED', message: 'Die Partie wurde noch nicht gestartet.' });
@@ -13309,13 +13379,13 @@ export class GameRoom {
         return;
       }
 
-      const timeControl = (await this.state.storage.get('timeControl')) || null;
+      const timeControl = moveState.get('timeControl') || null;
       if (!timeControl) {
         safeSend(ws, { type: 'error', code: 'TIME_CONTROL_REQUIRED', message: 'Keine Bedenkzeit im Raum gespeichert.' });
         return;
       }
 
-      const moves = (await this.state.storage.get('moves')) || [];
+      const moves = moveState.get('moves') || [];
       const incoming = cleanMove(data.move || data);
       if (!incoming) {
         safeSend(ws, { type: 'error', code: 'INVALID_MOVE', message: 'Ungültiges Zugformat.' });
@@ -13333,10 +13403,10 @@ export class GameRoom {
         return;
       }
 
-      const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+      const gameSetup = cleanGameSetup(moveState.get('gameSetup') || (game && game.gameSetup) || null);
       let validation;
       try {
-        validation = validateMoveOnServer(moves, incoming, gameSetup);
+        validation = validateMoveOnServer(moves, incoming, gameSetup, this.validationGameFor(moves, gameSetup));
       } catch (err) {
         safeSend(ws, {
           type: 'error',
@@ -13459,7 +13529,7 @@ export class GameRoom {
         game.playStatsCountedAt = new Date(now).toISOString();
       }
 
-      const openDrawOffer = (await this.state.storage.get('drawOffer')) || null;
+      const openDrawOffer = moveState.get('drawOffer') || null;
       let outgoingDrawOffer = openDrawOffer;
       if (validation.gameOver || (openDrawOffer && openDrawOffer.byRole && openDrawOffer.byRole !== role)) {
         outgoingDrawOffer = null;
@@ -13472,12 +13542,18 @@ export class GameRoom {
         game,
         drawOffer:outgoingDrawOffer
       });
-      if (game.ended) {
-        try { await this.state.storage.deleteAlarm(); } catch (_) {}
-      } else {
-        await this.scheduleClockAlarm(clock, now);
-      }
+      this.rememberValidationGame(moves, gameSetup, validation.after);
 
+      const updateClockAlarm = async () => {
+        if (game.ended) {
+          try { await this.state.storage.deleteAlarm(); } catch (_) {}
+        } else {
+          await this.scheduleClockAlarm(clock, now);
+        }
+      };
+      if (timeControl.mode === 'daily') await updateClockAlarm();
+
+      const serverProcessingMs = Math.max(0, Date.now() - moveHandlerStartedAt);
       safeSend(ws, {
         type: 'move_ack',
         ok: true,
@@ -13487,9 +13563,13 @@ export class GameRoom {
         drawOffer: safeDrawOfferForClient(outgoingDrawOffer),
         movesCount: moves.length,
         clock: clockPayload(clock, now),
+        serverProcessingMs,
         serverNow: now
       });
-      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock, game, outgoingDrawOffer);
+      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock, game, outgoingDrawOffer, ws, serverProcessingMs);
+      if (timeControl.mode !== 'daily') {
+        this.runBackgroundTask(updateClockAlarm(), 'Uhrenalarm nach Live-Zug fehlgeschlagen');
+      }
 
       /*
         Erst jetzt folgen Rating, Listen/Turnier-Indizes und Statistik.
@@ -13548,7 +13628,7 @@ export default {
         if (logicalName && String(env.GAME_ROOM.idFromName(logicalName)) !== objectId) {
           return privateJson({ok:false, code:'ROOM_ID_MISMATCH', message:'Raumkennung und Durable-Object-ID passen nicht zusammen.'}, {status:400});
         }
-        const stub = env.GAME_ROOM.get(env.GAME_ROOM.idFromString(objectId));
+        const stub = gameRoomStub(env, env.GAME_ROOM.idFromString(objectId));
         return await stub.fetch(forwardedBackupRequest(request, logicalName));
       } catch (error) {
         console.error('Interner Durable-Object-Export fehlgeschlagen', error && error.message ? error.message : String(error || 'unknown'));
@@ -13600,7 +13680,7 @@ export default {
         const room = cleanRoomId(indexed && indexed.room_id);
         if (!room) return new Response('Public game not found', { status: 404 });
         const id = env.GAME_ROOM.idFromName(room);
-        const stub = env.GAME_ROOM.get(id);
+        const stub = gameRoomStub(env, id);
         const forwardedUrl = new URL(request.url);
         forwardedUrl.pathname = '/ws';
         forwardedUrl.search = '';
@@ -13630,7 +13710,7 @@ export default {
       }
 
       const id = env.GAME_ROOM.idFromName(room);
-      const stub = env.GAME_ROOM.get(id);
+      const stub = gameRoomStub(env, id);
       return stub.fetch(request);
     }
 
