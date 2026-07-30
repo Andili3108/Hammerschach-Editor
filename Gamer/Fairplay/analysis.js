@@ -168,10 +168,10 @@
     this.board=[
       rank.toLowerCase().split(''),
       ['p','p','p','p','p','p','p','p'],
-      ['.','.','.','.','.','.','.','.','.'],
-      ['.','.','.','.','.','.','.','.','.'],
-      ['.','.','.','.','.','.','.','.','.'],
-      ['.','.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
+      ['.','.','.','.','.','.','.','.'],
       ['P','P','P','P','P','P','P','P'],
       rank.split('')
     ];
@@ -418,6 +418,16 @@
   };
 
   function coord(square){
+    if(Array.isArray(square)&&square.length>=2){
+      const x=Math.floor(Number(square[0]));
+      const y=Math.floor(Number(square[1]));
+      return Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<8&&y>=0&&y<8?[x,y]:null;
+    }
+    if(square&&typeof square==='object'){
+      const x=Math.floor(Number(square.x));
+      const y=Math.floor(Number(square.y));
+      return Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<8&&y>=0&&y<8?[x,y]:null;
+    }
     const value=String(square||'').toLowerCase();
     if(!/^[a-h][1-8]$/.test(value))return null;
     return ['abcdefgh'.indexOf(value[0]),8-Number(value[1])];
