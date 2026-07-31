@@ -8,7 +8,9 @@ keep_vars = true
 [vars]
 GAMER_PUBLIC_URL = "https://hammerschach-gamer.webmaster-5bb.workers.dev/"
 MAIL_LOGO_URL = "https://raw.githubusercontent.com/Andili3108/Hammerschach-Editor/main/Gamer/Gamer-Logo.png"
-GAME_ROOM_LOCATION_HINT = "weur"
+
+[triggers]
+crons = ["17 3 * * *"]
 
 [durable_objects]
 bindings = [
