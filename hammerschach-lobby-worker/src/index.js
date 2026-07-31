@@ -1,4 +1,4 @@
-// BUILD: GAMER-LIVE-PERFORMANCE-20260730-1
+// BUILD: TOURNAMENT-START-MAIL-20260731-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -4110,6 +4110,27 @@ async function pairArenaPlayers(env, tournamentId) {
         rated:Number(tournament.rated || 0) === 1, gameSetup:setup, createdByUserId:String(tournament.created_by_user_id || '')
       });
       await env.DB.prepare(`UPDATE tournament_games SET status = 'running' WHERE id = ?`).bind(gameId).run();
+      const arenaTimeControl = tournamentTimeControl(tournament);
+      const initialTurn = gameTurnForSetup(setup);
+      const gameUrl = gamerInvitationUrl(env, roomId);
+      try {
+        await Promise.all([
+          sendTournamentGameStartedEmailNotification(env, {
+            tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournament.name),
+            roundLabel:'Arena', pairingLabel:'Arena-Partie ' + pairingNumber, timeLabel:arenaTimeControl.label || '',
+            variantLabel:tournamentGameVariantLabel(setup), gameUrl,
+            recipientUserId:oriented[0].userId, opponentName:oriented[1].username, role:'w', isTurn:initialTurn === 'w'
+          }),
+          sendTournamentGameStartedEmailNotification(env, {
+            tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournament.name),
+            roundLabel:'Arena', pairingLabel:'Arena-Partie ' + pairingNumber, timeLabel:arenaTimeControl.label || '',
+            variantLabel:tournamentGameVariantLabel(setup), gameUrl,
+            recipientUserId:oriented[1].userId, opponentName:oriented[0].username, role:'b', isTurn:initialTurn === 'b'
+          })
+        ]);
+      } catch (error) {
+        console.error('Arena game start notification failed', error && error.message ? error.message : String(error || 'unknown'));
+      }
       games.push({id:gameId, roundNumber:0, pairingNumber, gameNumber:1, roomId, whiteUserId:oriented[0].userId, blackUserId:oriented[1].userId, status:'running', createdAt:now});
       paired += 1;
     } catch (error) {
@@ -4250,7 +4271,7 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
         `SELECT id, room_id, status FROM tournament_games
           WHERE tournament_id = ? AND round_number = ? AND pairing_number = ? AND game_number = ? LIMIT 1`
       ).bind(tournamentId, roundNumber, pairingIndex + 1, gameIndex + 1).first();
-      if (existingGame && ['running', 'ended'].includes(String(existingGame.status || ''))) continue;
+      if (existingGame && String(existingGame.status || '') === 'ended') continue;
       const gameId = existingGame ? String(existingGame.id) : crypto.randomUUID();
       const roomId = existingGame ? String(existingGame.room_id) : tournamentRoomId(tournamentId, roundNumber, pairingIndex + 1, gameIndex + 1);
       if (!existingGame) {
@@ -4260,31 +4281,53 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'creating', ?, ?, '*', NULL, ?, NULL)`
         ).bind(gameId, tournamentId, roundNumber, pairingIndex + 1, gameIndex + 1, roomId, white.userId, black.userId, pair.groupName || null, pair.pairingLabel || null, now).run();
       }
-      await initializeTournamentGameRoom(env, {
-        roomId,
-        tournamentGameId:gameId,
-        tournamentId,
-        tournamentName:cleanTournamentName(tournamentRow.name),
-        tournamentType:normalizeTournamentType(tournamentRow.tournament_type),
-        tournamentMode:normalizeTournamentMode(tournamentRow.mode),
-        tournamentModeLabel:tournamentModeLabel(tournamentRow.mode),
-        roundNumber,
-        roundLabel:plan.label,
-        stage:plan.stage,
-        groupName:pair.groupName || '',
-        pairingLabel:pair.pairingLabel || '',
-        totalRounds:Number(tournamentRow.total_rounds || tournamentTotalRounds(tournamentRow.mode, participants.length)),
-        pairingNumber:pairingIndex + 1,
-        gameNumber:gameIndex + 1,
-        white:{userId:white.userId, username:white.username},
-        black:{userId:black.userId, username:black.username},
-        hoursPerMove:Number(tournamentRow.hours_per_move || 24),
-        timeControl,
-        rated:Number(tournamentRow.rated || 0) === 1,
-        gameSetup:setup,
-        createdByUserId:String(tournamentRow.created_by_user_id || '')
-      });
-      await env.DB.prepare(`UPDATE tournament_games SET status = 'running' WHERE id = ?`).bind(gameId).run();
+      if (!existingGame || String(existingGame.status || '') !== 'running') {
+        await initializeTournamentGameRoom(env, {
+          roomId,
+          tournamentGameId:gameId,
+          tournamentId,
+          tournamentName:cleanTournamentName(tournamentRow.name),
+          tournamentType:normalizeTournamentType(tournamentRow.tournament_type),
+          tournamentMode:normalizeTournamentMode(tournamentRow.mode),
+          tournamentModeLabel:tournamentModeLabel(tournamentRow.mode),
+          roundNumber,
+          roundLabel:plan.label,
+          stage:plan.stage,
+          groupName:pair.groupName || '',
+          pairingLabel:pair.pairingLabel || '',
+          totalRounds:Number(tournamentRow.total_rounds || tournamentTotalRounds(tournamentRow.mode, participants.length)),
+          pairingNumber:pairingIndex + 1,
+          gameNumber:gameIndex + 1,
+          white:{userId:white.userId, username:white.username},
+          black:{userId:black.userId, username:black.username},
+          hoursPerMove:Number(tournamentRow.hours_per_move || 24),
+          timeControl,
+          rated:Number(tournamentRow.rated || 0) === 1,
+          gameSetup:setup,
+          createdByUserId:String(tournamentRow.created_by_user_id || '')
+        });
+        await env.DB.prepare(`UPDATE tournament_games SET status = 'running' WHERE id = ?`).bind(gameId).run();
+      }
+      const initialTurn = gameTurnForSetup(setup);
+      const gameUrl = gamerInvitationUrl(env, roomId);
+      try {
+        await Promise.all([
+          sendTournamentGameStartedEmailNotification(env, {
+            tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournamentRow.name),
+            roundLabel:plan.label, pairingLabel:pair.pairingLabel || '', timeLabel:timeControl.label || '',
+            variantLabel:tournamentGameVariantLabel(setup), gameUrl,
+            recipientUserId:white.userId, opponentName:black.username, role:'w', isTurn:initialTurn === 'w'
+          }),
+          sendTournamentGameStartedEmailNotification(env, {
+            tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournamentRow.name),
+            roundLabel:plan.label, pairingLabel:pair.pairingLabel || '', timeLabel:timeControl.label || '',
+            variantLabel:tournamentGameVariantLabel(setup), gameUrl,
+            recipientUserId:black.userId, opponentName:white.username, role:'b', isTurn:initialTurn === 'b'
+          })
+        ]);
+      } catch (error) {
+        console.error('Tournament game start notification failed', error && error.message ? error.message : String(error || 'unknown'));
+      }
     }
   }
   return {roundNumber, positionId, backRank, stage:plan.stage, label:plan.label, bye:plan.bye || null};
@@ -4426,6 +4469,69 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier ansehen</a></p>` : '';
   const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses ${escapeEmailHtml(type)}-Turnier ist die Anmeldung geöffnet.</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p>${tournamentIsLive(tournament) ? '<p>Der Check-in öffnet eine Stunde vor dem Turnierstart. Das Live-Turnier startet automatisch.</p>' : ''}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_published', recipientEmail:recipient.email, recipientName:name, subject, textPart, htmlPart, attachments:[]};
+}
+
+function tournamentGameVariantLabel(setup) {
+  const normalized = cleanGameSetup(setup || null);
+  if (normalized.variant === GAME_VARIANT_FREESTYLE) return `Freestyle · Stellung #${normalized.positionId}`;
+  if (normalized.theme && normalized.theme.name) return `Thementurnier · ${cleanTournamentName(normalized.theme.name)}`;
+  return 'Klassisch';
+}
+
+function prepareTournamentGameStartedEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const opponentName = cleanDisplayName(payload && payload.opponentName) || 'dein Gegner';
+  const tournamentName = cleanTournamentName(payload && payload.tournamentName) || 'Hammerschach-Turnier';
+  const roundLabel = String(payload && payload.roundLabel || 'Turnierrunde').replace(/[\r\n<>]/g, '').trim().slice(0, 80);
+  const pairingLabel = String(payload && payload.pairingLabel || '').replace(/[\r\n<>]/g, '').trim().slice(0, 80);
+  const color = payload && payload.role === 'b' ? 'Schwarz' : 'Weiß';
+  const timeLabel = String(payload && payload.timeLabel || '').replace(/[\r\n<>]/g, '').trim().slice(0, 120);
+  const variantLabel = String(payload && payload.variantLabel || 'Klassisch').replace(/[\r\n<>]/g, '').trim().slice(0, 140);
+  const gameUrl = String(payload && payload.gameUrl || '').trim();
+  const isTurn = payload && payload.isTurn === true;
+  if (!recipientEmail || !gameUrl) return {ok:false, status:400, code:'INVALID_TOURNAMENT_START_MAIL', message:'Die Turnierstart-Mail konnte nicht vorbereitet werden.'};
+  const subject = isTurn
+    ? `Turnierpartie gestartet – du bist am Zug gegen ${opponentName}`
+    : `Turnierpartie gestartet – gegen ${opponentName}`;
+  const details = [
+    `Turnier: ${tournamentName}`,
+    `Runde: ${roundLabel}`,
+    `Gegner: ${opponentName}`,
+    `Deine Farbe: ${color}`,
+    `Variante: ${variantLabel}`
+  ];
+  if (pairingLabel) details.push(`Paarung: ${pairingLabel}`);
+  if (timeLabel) details.push(`Bedenkzeit: ${timeLabel}`);
+  if (isTurn) details.push('Du bist am Zug.');
+  const turnText = isTurn
+    ? ' Die Partie ist eröffnet und du bist am Zug.'
+    : ` Die Partie ist eröffnet; zunächst ist ${opponentName} am Zug.`;
+  const textPart = `Hallo ${recipientName},\n\ndeine Partie im Turnier „${tournamentName}“ wurde gestartet.${turnText}\n\n${details.join('\n')}\n\nPartie öffnen:\n${gameUrl}\n\nDiese Nachricht ist eine notwendige Information zu deiner bestätigten Turnierteilnahme.\n\nViele Grüße\nHammerschach-Gamer`;
+  const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
+  const heading = isTurn ? 'Turnierpartie gestartet – du bist am Zug' : 'Deine Turnierpartie wurde gestartet';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="margin:8px 0 18px;color:#843f46;">${escapeEmailHtml(heading)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>Deine Partie im Turnier <strong>„${escapeEmailHtml(tournamentName)}“</strong> wurde gestartet.${isTurn ? ' <strong>Du bist am Zug.</strong>' : ` Zunächst ist <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.`}</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(gameUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(gameUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht ist eine notwendige Information zu deiner bestätigten Turnierteilnahme.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return {ok:true, mailType:'tournament_game_started', recipientEmail, recipientName, subject, textPart, htmlPart, attachments:[]};
+}
+
+async function sendTournamentGameStartedEmailNotification(env, payload) {
+  const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, null);
+  if (!recipient.ok) return {ok:true, skipped:true, reason:recipient.reason};
+  const notificationKey = `tournament_game_started:${String(payload && payload.tournamentGameId || '')}:${String(recipient.user.id || '')}`;
+  const claim = await claimEmailNotification(env, notificationKey, 'tournament_game_started', recipient.user.id, payload.roomId);
+  if (!claim.claimed) return {ok:true, skipped:true, reason:claim.reason};
+  let result;
+  try {
+    result = await sendPreparedTransactionalEmail(env, prepareTournamentGameStartedEmail({
+      ...payload,
+      recipientEmail:recipient.email,
+      recipientName:recipient.user.username
+    }));
+  } catch (error) {
+    result = {ok:false, code:'TOURNAMENT_START_MAIL_FAILED', message:error && error.message ? error.message : 'Turnierstart-Mail fehlgeschlagen.'};
+  }
+  try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
+  return result;
 }
 
 function prepareTournamentFullAdminEmail(env, tournament, admin) {
@@ -12700,7 +12806,11 @@ export class GameRoom {
         : '';
     const acceptedOpenOffer = !!(openOffer && openOfferStatus === 'accepted' && openOfferAcceptedByUserId && creatorRole);
 
-    if (timeControl.mode !== 'daily') {
+    if (tournamentMeta && tournamentMeta.tournamentId) {
+      // Beide Spieler erhalten außerhalb des Spielraums genau eine gemeinsame
+      // Turnierstart-Mail. Dadurch bekommt der Anziehende nicht zusätzlich
+      // sofort noch eine zweite „Du bist am Zug“-Nachricht.
+    } else if (timeControl.mode !== 'daily') {
       // Live-Turnierpartien werden zeitgleich serverseitig eröffnet. Die Spieler
       // übernehmen ihren bereits accountgebundenen Platz beim automatischen Laden.
     } else if (acceptedOpenOffer) {
