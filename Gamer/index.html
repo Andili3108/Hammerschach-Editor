@@ -189,6 +189,14 @@
   .square.legal:has(.piece-img)::before{width:86%;height:86%;background:radial-gradient(circle,rgba(255,255,255,.22) 0%,rgba(255,255,255,.18) 45%,rgba(255,255,255,0) 70%);box-shadow:inset 0 0 0 4px rgba(255,255,255,.34);}
   .square.last-move{box-shadow:inset 0 0 0 4px rgba(255,157,0,.48);}
   .square.pending-move{box-shadow:inset 0 0 0 5px rgba(34,107,54,.58);}
+  .square.premove-from{box-shadow:inset 0 0 0 5px rgba(211,163,56,.92),inset 0 0 20px rgba(255,215,104,.30);}
+  .square.premove-to{box-shadow:inset 0 0 0 5px rgba(211,163,56,.98),inset 0 0 28px rgba(255,207,73,.46);}
+  .square.premove-legal{box-shadow:inset 0 0 0 3px rgba(255,213,92,.72);}
+  .square.premove-legal::before{content:"";position:absolute;left:50%;top:50%;width:32%;height:32%;transform:translate(-50%,-50%);border-radius:999px;background:rgba(255,213,92,.60);box-shadow:0 1px 3px rgba(0,0,0,.24);z-index:1;}
+  .square.premove-legal:has(.piece-img)::before{width:86%;height:86%;background:radial-gradient(circle,rgba(255,213,92,0) 0 58%,rgba(255,213,92,.66) 60% 67%,rgba(255,213,92,0) 70%);box-shadow:none;}
+  .premove-notice{display:flex;align-items:center;justify-content:center;gap:10px;width:fit-content;max-width:100%;box-sizing:border-box;margin:-2px auto 0;padding:6px 8px 6px 13px;border:1px solid rgba(173,123,15,.40);border-radius:999px;background:linear-gradient(135deg,rgba(255,247,211,.98),rgba(245,218,135,.96));color:#5d4207;box-shadow:0 6px 16px rgba(109,77,8,.15);font-size:13px;font-weight:900;line-height:1.2;}
+  .premove-notice[hidden]{display:none!important;}
+  .premove-cancel{display:inline-grid!important;place-items:center;width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;padding:0!important;border-radius:999px!important;background:rgba(93,66,7,.12)!important;color:#5d4207!important;border-color:rgba(93,66,7,.18)!important;font-size:18px!important;line-height:1!important;}
   .coord-file,.coord-rank{position:absolute;font-size:12px;line-height:1;color:#111;opacity:.88;pointer-events:none;user-select:none;z-index:3;}
   .coord-file{right:4px;bottom:2px;}
   .coord-rank{left:4px;top:2px;}
@@ -1233,6 +1241,8 @@
   html.dark-mode select option{background:#171a1f;color:#f2f3f5;}
   html.dark-mode .board-color-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48);}
   html.dark-mode .board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
+  html.dark-mode .premove-notice{background:linear-gradient(135deg,rgba(91,68,17,.98),rgba(116,83,16,.98));border-color:rgba(244,198,79,.42);color:#ffe5a0;box-shadow:0 7px 18px rgba(0,0,0,.34);}
+  html.dark-mode .premove-cancel{background:rgba(255,229,160,.12)!important;color:#ffe5a0!important;border-color:rgba(255,229,160,.18)!important;}
   html.dark-mode .visitor-board-welcome{background:rgba(27,30,35,.91);border-color:rgba(226,151,160,.24);box-shadow:0 20px 48px rgba(0,0,0,.46);}
   html.dark-mode .visitor-board-slogan{color:#efb5bc;}
   html.dark-mode .visitor-board-values{color:#c3c8d0;}
@@ -1517,6 +1527,27 @@
     box-shadow:
       inset 0 0 0 4px rgba(45,132,67,.72),
       inset 0 0 22px rgba(70,165,91,.23);
+  }
+  .square.premove-from{
+    box-shadow:
+      inset 0 0 0 4px rgba(232,182,60,.90),
+      inset 0 0 23px rgba(255,213,92,.30);
+  }
+  .square.premove-to{
+    box-shadow:
+      inset 0 0 0 5px rgba(242,190,52,.98),
+      inset 0 0 29px rgba(255,207,73,.48);
+  }
+  .square.premove-legal{
+    box-shadow:
+      inset 0 0 0 3px rgba(255,213,92,.72),
+      inset 0 0 17px rgba(255,213,92,.16);
+  }
+  .square.premove-legal::before{
+    background:radial-gradient(circle,rgba(255,213,92,.76) 0 48%,rgba(109,77,8,.20) 49% 65%,rgba(109,77,8,0) 68%);
+  }
+  .square.premove-legal:has(.piece-img)::before{
+    background:radial-gradient(circle,rgba(255,213,92,0) 0 58%,rgba(255,213,92,.70) 60% 67%,rgba(255,213,92,0) 70%);
   }
   .square.legal{
     box-shadow:
@@ -3159,6 +3190,10 @@
           </div>
           <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
         </div>
+        <div id="premoveNotice" class="premove-notice" role="status" aria-live="polite" hidden>
+          <span id="premoveNoticeText">Premove vorgemerkt</span>
+          <button id="premoveCancelBtn" class="button-flat premove-cancel" type="button" title="Premove abbrechen" aria-label="Premove abbrechen">×</button>
+        </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
           <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
             <button id="boardNavStart" class="button-flat gamer-board-nav-btn" type="button" title="Anfang der Partie" aria-label="Anfang der Partie">&laquo;</button>
@@ -4161,6 +4196,7 @@ function cacheAdvancedHistoryState(game,previousCounts){
 let viewIndex = 0;
 let selected = null;
 let pendingDailyMove = null;
+let queuedPremove = null;
 let orientationWhite = true;
 let lastMove = null;
 let gameEnded = false;
@@ -4178,6 +4214,9 @@ let suppressPieceDragClickUntil = 0;
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
 const illegalFlashEl = document.getElementById('illegalFlash');
+const premoveNoticeEl = document.getElementById('premoveNotice');
+const premoveNoticeTextEl = document.getElementById('premoveNoticeText');
+const premoveCancelBtn = document.getElementById('premoveCancelBtn');
 const flipBoardBtn = document.getElementById('flipBoardBtn');
 const moveListEl = document.getElementById('moveList');
 const themeMoveNotice = document.getElementById('themeMoveNotice');
@@ -4517,9 +4556,9 @@ function isOnlineGameLiveForUi(){
 }
 function isMoveNavigationLocked(){
   /* Während einer laufenden Partie darf die Zugliste zur Analyse bedient werden.
-     Nur eine noch unbestätigte Daily-Zugvorschau bleibt auf der aktuellen
-     Stellung fixiert, damit Vorschau und Bestätigung eindeutig zusammenpassen. */
-  return !!pendingDailyMove;
+     Eine Daily-Zugvorschau oder ein vorgemerkter Premove bleibt auf der aktuellen
+     Stellung fixiert, damit Ausführung und Brettansicht eindeutig zusammenpassen. */
+  return !!(pendingDailyMove || queuedPremove);
 }
 function isGameInProgressForUi(){
   return !!(isOnlineGameLiveForUi() || actualMoveCount() > 0 || firstMoveDone || clockRunning || timeLost);
@@ -12740,6 +12779,7 @@ async function openInviteDialogForCurrentOrNewRoom(){
   return true;
 }
 function closeOnlineSocket(){
+  if(queuedPremove) cancelQueuedPremove({silent:true,render:false});
   if(onlineReconnectTimer){ clearTimeout(onlineReconnectTimer); onlineReconnectTimer = null; }
   if(onlineStatePollTimer){ clearInterval(onlineStatePollTimer); onlineStatePollTimer = null; }
   if(onlineSocket){
@@ -12979,6 +13019,9 @@ function applyOnlineClockState(clockState){
   timeLost = !!normalized.timeLost;
   if(timeLost){
     pendingDailyMove = null;
+    queuedPremove = null;
+    selected = null;
+    updatePremoveUi();
     onlineGameEnded = true;
     onlineGameResult = normalized.winner === 'w' ? '1-0' : normalized.winner === 'b' ? '0-1' : '*';
     onlineGameEndReason = 'time';
@@ -13388,6 +13431,9 @@ function extractOnlineRoom(msg){
 }
 function applyRoomCancelled(message){
   pendingDailyMove = null;
+  queuedPremove = null;
+  selected = null;
+  updatePremoveUi();
   onlineRoomCancelled = true;
   onlinePublicGame = false;
   onlineOpenOffer = false;
@@ -13406,6 +13452,7 @@ function applyRoomCancelled(message){
   if(onlineReconnectTimer){ clearTimeout(onlineReconnectTimer); onlineReconnectTimer = null; }
   if(onlineStatePollTimer){ clearInterval(onlineStatePollTimer); onlineStatePollTimer = null; }
   updateOnlineUi();
+  renderBoard();
   if(statusEl) statusEl.textContent = onlineLastMessage;
   if(onlineSocket){ try{ onlineSocket.close(); } catch(_){} }
 }
@@ -13691,6 +13738,11 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    let premoveExecuted = false;
+    if((appliedMoveCount || appliedSingleMove) && queuedPremove){
+      premoveExecuted = executeQueuedPremove();
+    }
+
     const incomingChatHistory = extractOnlineChatHistory(msg);
     if(incomingChatHistory){
       applyChatHistory(incomingChatHistory);
@@ -13733,6 +13785,7 @@ function connectOnlineRoom(roomId, opts){
     onlineConnectionState = 'connected';
 
     if(msg.type === 'hello' && msg.seatDenied && msg.message) onlineLastMessage = msg.message;
+    else if(premoveExecuted) onlineLastMessage = 'Premove wurde sofort ausgeführt und übertragen.';
     else if(appliedMoveCount || appliedSingleMove) onlineLastMessage = 'Online-Zug wurde übernommen.';
     else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
@@ -13780,6 +13833,9 @@ function connectOnlineRoom(roomId, opts){
   });
   onlineSocket.addEventListener('close', event => {
     onlineConnected = false;
+    queuedPremove = null;
+    selected = null;
+    updatePremoveUi();
     onlineConnectionState = onlineRoomCancelled ? 'cancelled' : 'closed';
     if(event && event.code === 4004){
       onlineRoomCancelled = true;
@@ -13796,15 +13852,20 @@ function connectOnlineRoom(roomId, opts){
     }
     if(!onlineReconnectSuppressed) onlineLastMessage = 'Verbindung zum Spielraum unterbrochen – Wiederverbindung läuft automatisch.';
     updateOnlineUi();
+    renderBoard();
     if(onlineRoomId && !onlineReconnectSuppressed){
       onlineReconnectTimer = setTimeout(() => connectOnlineRoom(onlineRoomId, {reconnect:true, spectatorOnly:onlineSpectatorOnly, publicWatchId:onlinePublicWatchId}), opts.reconnect ? 3500 : 2000);
     }
   });
   onlineSocket.addEventListener('error', () => {
     onlineConnected = false;
+    queuedPremove = null;
+    selected = null;
+    updatePremoveUi();
     onlineConnectionState = 'error';
     onlineLastMessage = 'Verbindung zum Spielraum fehlgeschlagen.';
     updateOnlineUi();
+    renderBoard();
   });
 }
 
@@ -13932,6 +13993,7 @@ function applyOnlineGameState(game){
   if(onlineGameStarted && !wasStarted){
     setRightPanelMode('players');
     pendingDailyMove = null;
+    queuedPremove = null;
     selected = null;
     stopClock();
     masterHistory = buildThemeHistory(currentGameSetup);
@@ -13950,7 +14012,9 @@ function applyOnlineGameState(game){
     stopClock();
     clockRunning = false;
     pendingDailyMove = null;
+    queuedPremove = null;
     selected = null;
+    updatePremoveUi();
     onlineDrawOffer = null;
     statusEl.textContent = formatOnlineEndMessage(game);
     playGameResultSound(onlineGameResult, onlineGameWinner);
@@ -14479,6 +14543,219 @@ function scheduleBoardRender(messageReceivedAt){
     if(receivedAt) recordOnlinePerformance('remoteRenderMs',performance.now() - receivedAt);
   });
 }
+function premoveSquareName(square){
+  return square && square.length >= 2 ? coordToAlg(square[0],square[1]) : '';
+}
+function premoveLabel(move){
+  if(!move) return '';
+  return premoveSquareName(move.from) + '–' + premoveSquareName(move.to) + (move.promotion ? '=' + String(move.promotion).toUpperCase() : '');
+}
+function canQueuePremove(gameState){
+  const g = gameState || buildGameFromHistory(masterHistory.length);
+  return !!(
+    !isDailyTimeControl() && !variationModeActive && !pendingDailyMove &&
+    viewIndex === masterHistory.length && onlineRoomId && onlineConnected && onlineGameStarted &&
+    !onlineGameEnded && !gameEnded && !timeLost &&
+    (onlineRoleCode === 'w' || onlineRoleCode === 'b') &&
+    g.turn !== onlineRoleCode
+  );
+}
+function updatePremoveUi(){
+  if(!premoveNoticeEl) return;
+  const visible = !!queuedPremove;
+  premoveNoticeEl.hidden = !visible;
+  if(premoveNoticeTextEl) premoveNoticeTextEl.textContent = visible ? 'Premove ' + premoveLabel(queuedPremove) + ' vorgemerkt' : 'Premove vorgemerkt';
+  if(premoveCancelBtn) premoveCancelBtn.disabled = !visible;
+}
+function cancelQueuedPremove(options){
+  options = options || {};
+  const existed = !!queuedPremove;
+  queuedPremove = null;
+  selected = null;
+  updatePremoveUi();
+  if(existed && options.render !== false) renderBoard();
+  if(existed && !options.silent && statusEl){
+    statusEl.textContent = 'Premove abgebrochen.';
+    setTimeout(refreshHeaderStatusFromState,900);
+  }
+  return existed;
+}
+function premovePathClear(gameState,from,to){
+  const dx = Math.sign(to[0] - from[0]);
+  const dy = Math.sign(to[1] - from[1]);
+  let x = from[0] + dx;
+  let y = from[1] + dy;
+  while(x !== to[0] || y !== to[1]){
+    if(gameState.at(x,y) !== '.') return false;
+    x += dx;
+    y += dy;
+  }
+  return true;
+}
+function premoveGeometryAllows(gameState,from,to){
+  if(!gameState || !from || !to) return false;
+  const fx = from[0], fy = from[1], tx = to[0], ty = to[1];
+  if([fx,fy,tx,ty].some(value => !Number.isInteger(value) || value < 0 || value > 7)) return false;
+  if(fx === tx && fy === ty) return false;
+  const piece = gameState.at(fx,fy);
+  if(piece === '.' || pieceColor(piece) !== onlineRoleCode) return false;
+  const dx = tx - fx;
+  const dy = ty - fy;
+  const ax = Math.abs(dx);
+  const ay = Math.abs(dy);
+  switch(piece.toLowerCase()){
+    case 'p': {
+      const direction = onlineRoleCode === 'w' ? -1 : 1;
+      const startRank = onlineRoleCode === 'w' ? 6 : 1;
+      if(ay === 1 && ax === 1 && dy === direction) return true;
+      if(dx === 0 && dy === direction) return true;
+      return dx === 0 && fy === startRank && dy === direction * 2 && gameState.at(fx,fy + direction) === '.';
+    }
+    case 'n': return (ax === 1 && ay === 2) || (ax === 2 && ay === 1);
+    case 'b': return ax === ay && premovePathClear(gameState,from,to);
+    case 'r': return (dx === 0 || dy === 0) && premovePathClear(gameState,from,to);
+    case 'q': return (dx === 0 || dy === 0 || ax === ay) && premovePathClear(gameState,from,to);
+    case 'k': return ax <= 1 && ay <= 1;
+    default: return false;
+  }
+}
+function premoveCandidatesFrom(gameState,from){
+  const candidates = [];
+  const seen = new Set();
+  const add = move => {
+    if(!move || !move.to) return;
+    const key = move.to[0] + ':' + move.to[1];
+    if(seen.has(key)) return;
+    seen.add(key);
+    candidates.push(move);
+  };
+  try{
+    const hypothetical = gameState.clone();
+    hypothetical.turn = onlineRoleCode;
+    hypothetical.legalMoves()
+      .filter(move => move.from[0] === from[0] && move.from[1] === from[1])
+      .forEach(add);
+  } catch(_){}
+  for(let y=0;y<8;y++){
+    for(let x=0;x<8;x++){
+      if(premoveGeometryAllows(gameState,from,[x,y])) add({from:from.slice(),to:[x,y],meta:{}});
+    }
+  }
+  return candidates;
+}
+function findPremoveCandidate(gameState,from,to){
+  return premoveCandidatesFrom(gameState,from).find(move => move.to[0] === to[0] && move.to[1] === to[1]) || null;
+}
+function highlightPremoveSelection(x,y,gameState){
+  clearBoardHighlights();
+  markLastMove();
+  markQueuedPremove();
+  markSquare(x,y,'selected');
+  premoveCandidatesFrom(gameState,[x,y]).forEach(move => markSquare(move.to[0],move.to[1],'premove-legal'));
+}
+function finishQueuePremove(candidate,promotion){
+  const g = buildGameFromHistory(masterHistory.length);
+  if(!canQueuePremove(g)){
+    selected = null;
+    renderBoard();
+    showIllegalMoveFeedback('Der Gegner hat bereits gezogen — bitte deinen Zug jetzt normal ausführen.');
+    return;
+  }
+  const currentCandidate = findPremoveCandidate(g,candidate.from,candidate.to);
+  if(!currentCandidate){
+    selected = null;
+    renderBoard();
+    showIllegalMoveFeedback('Dieser Premove kann nicht vorgemerkt werden.');
+    return;
+  }
+  queuedPremove = {
+    from:currentCandidate.from.slice(),
+    to:currentCandidate.to.slice(),
+    promotion:promotion || null,
+    castle:castleSideCode(currentCandidate) || null,
+    role:onlineRoleCode,
+    queuedAtPly:actualMoveCount()
+  };
+  selected = null;
+  renderBoard();
+}
+function queuePremoveCandidate(candidate,gameState){
+  const movingPiece = gameState.at(candidate.from[0],candidate.from[1]);
+  const needsPromotion = movingPiece.toLowerCase() === 'p' && (candidate.to[1] === 0 || candidate.to[1] === 7);
+  if(needsPromotion){
+    showPromotionOverlay(onlineRoleCode).then(choice => {
+      if(choice) finishQueuePremove(candidate,choice);
+      else { selected = null; renderBoard(); }
+    });
+  } else {
+    finishQueuePremove(candidate,null);
+  }
+}
+function onPremoveSquareClick(x,y,gameState){
+  const g = gameState || buildGameFromHistory(masterHistory.length);
+  const piece = g.at(x,y);
+  if(queuedPremove){
+    const clickedQueuedSquare = (queuedPremove.from[0] === x && queuedPremove.from[1] === y) || (queuedPremove.to[0] === x && queuedPremove.to[1] === y);
+    if(clickedQueuedSquare){ cancelQueuedPremove(); return; }
+    queuedPremove = null;
+    updatePremoveUi();
+  }
+  if(!selected){
+    if(piece === '.' || pieceColor(piece) !== onlineRoleCode) return;
+    selected = [x,y];
+    playMoveSound({pickup:true});
+    highlightPremoveSelection(x,y,g);
+    return;
+  }
+  if(selected[0] === x && selected[1] === y){
+    selected = null;
+    renderBoard();
+    return;
+  }
+  const candidate = findPremoveCandidate(g,selected,[x,y]);
+  if(piece !== '.' && pieceColor(piece) === onlineRoleCode && !candidate){
+    selected = [x,y];
+    playMoveSound({pickup:true});
+    highlightPremoveSelection(x,y,g);
+    return;
+  }
+  if(!candidate){
+    selected = null;
+    renderBoard();
+    showIllegalMoveFeedback('Dieser Premove ist für die gewählte Figur nicht möglich.');
+    return;
+  }
+  queuePremoveCandidate(candidate,g);
+}
+function executeQueuedPremove(){
+  if(!queuedPremove) return false;
+  const queued = queuedPremove;
+  queuedPremove = null;
+  selected = null;
+  updatePremoveUi();
+  const g = buildGameFromHistory(masterHistory.length);
+  const ready = !!(
+    queued.role === onlineRoleCode && !isDailyTimeControl() &&
+    onlineRoomId && onlineConnected && onlineGameStarted &&
+    !onlineGameEnded && !gameEnded && !timeLost &&
+    viewIndex === masterHistory.length && g.turn === onlineRoleCode
+  );
+  const found = ready ? findMatchingLegalMove(g.legalMoves(),queued) : null;
+  if(!found){
+    renderBoard();
+    if(statusEl){
+      const message = 'Premove ' + premoveLabel(queued) + ' verworfen — nach dem gegnerischen Zug nicht legal.';
+      setTimeout(() => {
+        statusEl.textContent = message;
+        setTimeout(refreshHeaderStatusFromState,1500);
+      },0);
+    }
+    return false;
+  }
+  commitHumanMove(found,queued.promotion || null);
+  return true;
+}
+if(premoveCancelBtn) premoveCancelBtn.addEventListener('click',() => cancelQueuedPremove());
 function ensureBoardSquares(){
   if(boardEl.children.length === 64 && Array.from(boardEl.children).every(el => el.classList.contains('square'))) return;
   const fragment = document.createDocumentFragment();
@@ -14558,9 +14835,11 @@ function renderBoard(){
   }
   markLastMove();
   markPendingDailyMove();
+  markQueuedPremove();
   reapplySelectionHighlight(g);
   updateStatus(g);
   if(pendingDailyMove) statusEl.textContent = 'Zugvorschau — rechts „Zug bestätigen“ oder „Zug zurücknehmen“ wählen.';
+  updatePremoveUi();
   renderMoveList();
   updateNavControls();
   updatePgnExportUi();
@@ -14571,7 +14850,7 @@ function renderBoard(){
 }
 function getSquareEl(x,y){ return boardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]'); }
 function markSquare(x,y,cls){ const el = getSquareEl(x,y); if(el) el.classList.add(cls); }
-function clearBoardHighlights(){ boardEl.querySelectorAll('.square.selected,.square.legal,.square.last-move,.square.pending-move').forEach(el => el.classList.remove('selected','legal','last-move','pending-move')); }
+function clearBoardHighlights(){ boardEl.querySelectorAll('.square.selected,.square.legal,.square.last-move,.square.pending-move,.square.premove-from,.square.premove-to,.square.premove-legal').forEach(el => el.classList.remove('selected','legal','last-move','pending-move','premove-from','premove-to','premove-legal')); }
 function markLastMove(){
   if(!lastMove || viewIndex !== masterHistory.length) return;
   markSquare(lastMove.from[0], lastMove.from[1], 'last-move');
@@ -14581,6 +14860,11 @@ function markPendingDailyMove(){
   if(!pendingDailyMove || viewIndex !== masterHistory.length) return;
   markSquare(pendingDailyMove.move.from[0], pendingDailyMove.move.from[1], 'pending-move');
   markSquare(pendingDailyMove.move.to[0], pendingDailyMove.move.to[1], 'pending-move');
+}
+function markQueuedPremove(){
+  if(!queuedPremove || viewIndex !== masterHistory.length) return;
+  markSquare(queuedPremove.from[0],queuedPremove.from[1],'premove-from');
+  markSquare(queuedPremove.to[0],queuedPremove.to[1],'premove-to');
 }
 function highlightSelection(x,y,gameState){
   clearBoardHighlights();
@@ -14592,8 +14876,11 @@ function highlightSelection(x,y,gameState){
 function reapplySelectionHighlight(g){
   if(!selected || viewIndex !== masterHistory.length) return;
   const piece = g.at(selected[0], selected[1]);
-  if(piece === '.' || pieceColor(piece) !== g.turn) return;
-  highlightSelection(selected[0], selected[1], g);
+  if(canQueuePremove(g) && piece !== '.' && pieceColor(piece) === onlineRoleCode){
+    highlightPremoveSelection(selected[0],selected[1],g);
+    return;
+  }
+  if(piece !== '.' && pieceColor(piece) === g.turn) highlightSelection(selected[0], selected[1], g);
 }
 function updateStatus(g){
   if(variationModeActive){
@@ -14667,6 +14954,7 @@ function updateStatus(g){
     if(onlineRoleCode === g.turn) text = 'Du bist am Zug (' + roleLabel(onlineRoleCode) + ')';
     else text = (g.turn === 'w' ? 'Weiß' : 'Schwarz') + ' am Zug — du spielst ' + roleLabel(onlineRoleCode);
   }
+  if(queuedPremove && canQueuePremove(g)) text = 'Premove ' + premoveLabel(queuedPremove) + ' vorgemerkt — Gegner ist am Zug';
   if(g.inCheck(g.turn)) text += ' — Schach!';
   if(viewIndex !== masterHistory.length){
     text = currentTheme() && viewIndex <= currentThemePly()
@@ -15077,6 +15365,10 @@ function onSquareClick(x,y){
   }
   const g = buildGameFromHistory(masterHistory.length);
   if(viewIndex !== masterHistory.length) return;
+  if(canQueuePremove(g)){
+    onPremoveSquareClick(x,y,g);
+    return;
+  }
   const blockReason = onlineInteractionBlockReason(g);
   if(blockReason){ showIllegalMoveFeedback(blockReason); return; }
   const piece = g.at(x,y);
@@ -15125,6 +15417,10 @@ function pieceDragCanStart(mode,x,y){
   }
   if(gameEnded || pendingDailyMove || viewIndex !== masterHistory.length) return false;
   const g = buildGameFromHistory(masterHistory.length);
+  if(canQueuePremove(g)){
+    const premovePiece = g.at(x,y);
+    return premovePiece !== '.' && pieceColor(premovePiece) === onlineRoleCode;
+  }
   if(onlineInteractionBlockReason(g)) return false;
   const piece = g.at(x,y);
   return piece !== '.' && pieceColor(piece) === g.turn;
@@ -15179,7 +15475,8 @@ function activatePieceDrag(state,event){
     const g = buildGameFromHistory(masterHistory.length);
     selected = state.from.slice();
     playMoveSound({pickup:true});
-    highlightSelection(state.from[0],state.from[1],g);
+    if(canQueuePremove(g)) highlightPremoveSelection(state.from[0],state.from[1],g);
+    else highlightSelection(state.from[0],state.from[1],g);
   }
 }
 
@@ -15662,6 +15959,7 @@ function newGame(){
   invalidateHistoryStateCache();
   viewIndex = masterHistory.length;
   pendingDailyMove = null;
+  queuedPremove = null;
   selected = null;
   lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
   gameEnded = false;
@@ -15708,6 +16006,7 @@ if(flipBoardBtn) flipBoardBtn.addEventListener('click', () => {
     renderVariationBoard();
     return;
   }
+  if(queuedPremove) cancelQueuedPremove({silent:true,render:false});
   orientationWhite = !orientationWhite;
   selected = null;
   renderBoard();
