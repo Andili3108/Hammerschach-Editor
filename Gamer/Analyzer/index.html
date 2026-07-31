@@ -2456,6 +2456,10 @@
         if(!importOpeningFromGamer(String(m.pgn||''))) alert('Die Eröffnungsstellung konnte nicht in den Analyzer übernommen werden.');
         return;
       }
+      if(m.type==='hammerschach-analyzer-import-game'){
+        if(!importGamesFromText(String(m.pgn||''))) alert('Die Archivpartie konnte nicht in den Analyzer übernommen werden.');
+        return;
+      }
       if(m.type==='hammerschach-analyzer-games-result'||m.type==='hammerschach-analyzer-pgn-result'){
         const pending=parentRequests.get(String(m.requestId||''));if(!pending)return;clearTimeout(pending.timer);parentRequests.delete(String(m.requestId));m.ok?pending.resolve(m):pending.reject(new Error(m.message||'Anfrage fehlgeschlagen.'));
       }
