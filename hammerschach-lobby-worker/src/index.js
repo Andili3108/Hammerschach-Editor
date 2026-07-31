@@ -4535,15 +4535,203 @@ async function ensureCompletedGamesTable(env) {
        end_reason TEXT,
        rated INTEGER NOT NULL DEFAULT 0,
        rating_type TEXT,
+       public_game INTEGER NOT NULL DEFAULT 0,
+       spectator_id TEXT,
+       tournament_id TEXT,
+       tournament_name TEXT,
+       tournament_round_label TEXT,
+       protected INTEGER NOT NULL DEFAULT 0,
+       archive_visible INTEGER NOT NULL DEFAULT 1,
        pgn TEXT NOT NULL,
        updated_at TEXT NOT NULL
      )`
   ).run();
   try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN rating_type TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN public_game INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN spectator_id TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN tournament_id TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN tournament_name TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN tournament_round_label TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN protected INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE completed_games ADD COLUMN archive_visible INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_white ON completed_games (white_user_id, ended_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_black ON completed_games (black_user_id, ended_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_public_archive ON completed_games (public_game, archive_visible, ended_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_completed_games_tournament ON completed_games (tournament_id, ended_at)`).run();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS game_archive_favorites (
+       room_id TEXT NOT NULL,
+       user_id TEXT NOT NULL,
+       created_at TEXT NOT NULL,
+       PRIMARY KEY (room_id, user_id)
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_game_archive_favorites_user ON game_archive_favorites (user_id, created_at)`).run();
   completedGamesTableReady = true;
   return true;
+}
+
+const ARCHIVE_PAGE_LIMIT_MAX = 50;
+const ARCHIVE_PUBLIC_RETENTION_DAYS = 1095;
+const ARCHIVE_PUBLIC_VISIBLE_LIMIT = 20000;
+const ARCHIVE_CORE_UNPROTECTED_LIMIT = 30000;
+const ARCHIVE_FAIRPLAY_RETENTION_DAYS = 365;
+
+function archivePositiveInteger(value, fallback, maximum) {
+  const number = Math.floor(Number(value));
+  if (!Number.isFinite(number) || number < 1) return fallback;
+  return Math.min(maximum, number);
+}
+
+function archiveGameDto(row, currentUserId) {
+  const userId = String(currentUserId || '');
+  const whiteUserId = String(row && row.white_user_id || '');
+  const blackUserId = String(row && row.black_user_id || '');
+  const participantRole = userId && userId === whiteUserId ? 'w' : userId && userId === blackUserId ? 'b' : '';
+  return {
+    roomId:cleanRoomId(row && row.room_id),
+    watchId:cleanPublicWatchId(row && row.spectator_id),
+    whiteName:cleanDisplayName(row && row.white_name) || 'Weiß',
+    blackName:cleanDisplayName(row && row.black_name) || 'Schwarz',
+    mode:row && row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel:String(row && row.time_label || '').slice(0, 80),
+    daysPerMove:row && row.days_per_move != null ? Number(row.days_per_move) : null,
+    variant:row && row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    positionId:row && row.position_id != null ? Number(row.position_id) : null,
+    startedAt:row && row.started_at || null,
+    endedAt:row && row.ended_at || null,
+    result:String(row && row.result || '*').slice(0, 16),
+    endReason:String(row && row.end_reason || '').slice(0, 80),
+    rated:Number(row && row.rated || 0) === 1,
+    ratingType:String(row && row.rating_type || '').slice(0, 40),
+    publicGame:Number(row && row.public_game || 0) === 1,
+    tournamentId:String(row && row.tournament_id || '').slice(0, 128),
+    tournamentName:String(row && row.tournament_name || '').slice(0, 160),
+    tournamentRoundLabel:String(row && row.tournament_round_label || '').slice(0, 80),
+    protected:Number(row && row.protected || 0) === 1,
+    favorite:Number(row && row.favorite || 0) === 1,
+    isParticipant:!!participantRole,
+    participantRole
+  };
+}
+
+async function listGameArchive(env, sessionUser, url) {
+  await ensureCompletedGamesTable(env);
+  const scope = url.searchParams.get('scope') === 'public' ? 'public' : 'mine';
+  const page = archivePositiveInteger(url.searchParams.get('page'), 1, 100000);
+  const limit = archivePositiveInteger(url.searchParams.get('limit'), 24, ARCHIVE_PAGE_LIMIT_MAX);
+  const offset = (page - 1) * limit;
+  const userId = String(sessionUser && sessionUser.id || '');
+  const clauses = [];
+  const values = [];
+  if (scope === 'public') {
+    clauses.push('games.public_game = 1', 'games.archive_visible = 1');
+  } else {
+    clauses.push('(games.white_user_id = ? OR games.black_user_id = ?)');
+    values.push(userId, userId);
+  }
+  const member = String(url.searchParams.get('member') || '').trim().toLowerCase().slice(0, 80);
+  if (member) {
+    clauses.push('(LOWER(games.white_name) LIKE ? OR LOWER(games.black_name) LIKE ?)');
+    values.push('%' + member + '%', '%' + member + '%');
+  }
+  const mode = url.searchParams.get('mode');
+  if (mode === 'live' || mode === 'daily') { clauses.push('games.mode = ?'); values.push(mode); }
+  const variant = url.searchParams.get('variant');
+  if (variant === GAME_VARIANT_STANDARD || variant === GAME_VARIANT_FREESTYLE) { clauses.push('games.variant = ?'); values.push(variant); }
+  const speed = url.searchParams.get('speed');
+  if (speed === 'classic' || speed === 'rapid' || speed === 'blitz') { clauses.push('games.rating_type = ?'); values.push('live_' + speed); }
+  const result = url.searchParams.get('result');
+  if (['1-0','0-1','1/2-1/2'].includes(result)) { clauses.push('games.result = ?'); values.push(result); }
+  const tournament = url.searchParams.get('tournament');
+  if (tournament === '1') clauses.push("COALESCE(games.tournament_id, '') <> ''");
+  if (tournament === '0') clauses.push("COALESCE(games.tournament_id, '') = ''");
+  const from = String(url.searchParams.get('from') || '');
+  const to = String(url.searchParams.get('to') || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(from)) { clauses.push('games.ended_at >= ?'); values.push(from + 'T00:00:00.000Z'); }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(to)) { clauses.push('games.ended_at < ?'); values.push(new Date(Date.parse(to + 'T00:00:00.000Z') + 86400000).toISOString()); }
+  const where = clauses.join(' AND ');
+  const selectSql = `SELECT games.*,
+      CASE WHEN favorites.room_id IS NULL THEN 0 ELSE 1 END AS favorite
+    FROM completed_games games
+    LEFT JOIN game_archive_favorites favorites ON favorites.room_id = games.room_id AND favorites.user_id = ?
+    WHERE ${where}
+    ORDER BY games.ended_at DESC
+    LIMIT ? OFFSET ?`;
+  const countSql = `SELECT COUNT(*) AS total FROM completed_games games WHERE ${where}`;
+  const [rowsResult, countRow] = await Promise.all([
+    env.DB.prepare(selectSql).bind(userId, ...values, limit, offset).all(),
+    env.DB.prepare(countSql).bind(...values).first()
+  ]);
+  const games = (rowsResult && rowsResult.results ? rowsResult.results : []).map(row => archiveGameDto(row, userId));
+  return {scope, page, limit, total:numberValue(countRow && countRow.total), games};
+}
+
+async function archiveGameForViewer(env, roomId, sessionUser) {
+  await ensureCompletedGamesTable(env);
+  const userId = String(sessionUser && sessionUser.id || '');
+  return env.DB.prepare(
+    `SELECT * FROM completed_games
+      WHERE room_id = ?
+        AND (white_user_id = ? OR black_user_id = ? OR (public_game = 1 AND archive_visible = 1))
+      LIMIT 1`
+  ).bind(roomId, userId, userId).first();
+}
+
+async function runGameArchiveMaintenance(env) {
+  if (!env || !env.DB) return {ok:false};
+  await ensureCompletedGamesTable(env);
+  await ensureFairplayGameDataTable(env);
+  await env.DB.prepare(
+    `UPDATE completed_games SET protected = 1
+      WHERE protected = 0 AND pgn LIKE '%[HammerschachTournamentId "%'`
+  ).run();
+  const now = Date.now();
+  const publicCutoff = new Date(now - ARCHIVE_PUBLIC_RETENTION_DAYS * 86400000).toISOString();
+  const fairplayCutoff = new Date(now - ARCHIVE_FAIRPLAY_RETENTION_DAYS * 86400000).toISOString();
+  const expired = await env.DB.prepare(
+    `UPDATE completed_games SET archive_visible = 0
+      WHERE public_game = 1 AND archive_visible = 1 AND protected = 0 AND ended_at < ?
+        AND NOT EXISTS (SELECT 1 FROM game_archive_favorites favorites WHERE favorites.room_id = completed_games.room_id)`
+  ).bind(publicCutoff).run();
+  const overflowPublic = await env.DB.prepare(
+    `UPDATE completed_games SET archive_visible = 0 WHERE room_id IN (
+       SELECT games.room_id FROM completed_games games
+        WHERE games.public_game = 1 AND games.archive_visible = 1 AND games.protected = 0
+          AND NOT EXISTS (SELECT 1 FROM game_archive_favorites favorites WHERE favorites.room_id = games.room_id)
+        ORDER BY games.ended_at DESC LIMIT -1 OFFSET ?
+     )`
+  ).bind(ARCHIVE_PUBLIC_VISIBLE_LIMIT).run();
+  await env.DB.prepare(
+    `DELETE FROM public_games WHERE room_id IN (
+       SELECT room_id FROM completed_games WHERE public_game = 1 AND archive_visible = 0
+     )`
+  ).run();
+  const fairplay = await env.DB.prepare(
+    `DELETE FROM fairplay_game_data WHERE room_id IN (
+       SELECT data.room_id FROM fairplay_game_data data
+       LEFT JOIN completed_games games ON games.room_id = data.room_id
+       WHERE COALESCE(games.protected, 0) = 0 AND COALESCE(data.ended_at, data.updated_at) < ?
+         AND NOT EXISTS (SELECT 1 FROM game_archive_favorites favorites WHERE favorites.room_id = data.room_id)
+     )`
+  ).bind(fairplayCutoff).run();
+  const overflowRows = await env.DB.prepare(
+    `SELECT games.room_id FROM completed_games games
+      WHERE games.protected = 0
+        AND NOT EXISTS (SELECT 1 FROM game_archive_favorites favorites WHERE favorites.room_id = games.room_id)
+      ORDER BY games.ended_at DESC LIMIT -1 OFFSET ?`
+  ).bind(ARCHIVE_CORE_UNPROTECTED_LIMIT).all();
+  const overflowIds = (overflowRows && overflowRows.results ? overflowRows.results : []).map(row => cleanRoomId(row.room_id)).filter(Boolean);
+  let removedCore = 0;
+  for (let index = 0; index < overflowIds.length; index += 80) {
+    const batch = overflowIds.slice(index, index + 80);
+    const marks = batch.map(() => '?').join(',');
+    await env.DB.prepare(`DELETE FROM fairplay_game_data WHERE room_id IN (${marks})`).bind(...batch).run();
+    await env.DB.prepare(`DELETE FROM public_games WHERE room_id IN (${marks})`).bind(...batch).run();
+    const result = await env.DB.prepare(`DELETE FROM completed_games WHERE room_id IN (${marks})`).bind(...batch).run();
+    removedCore += d1Changes(result);
+  }
+  return {ok:true, hiddenByAge:d1Changes(expired), hiddenByLimit:d1Changes(overflowPublic), fairplayRemoved:d1Changes(fairplay), coreRemoved:removedCore};
 }
 
 let fairplayGameDataTableReady = false;
@@ -6329,6 +6517,8 @@ async function buildAdminOverview(env) {
     ensureAccountSecurityTables(env),
     ensureDailyGamesTable(env),
     ensurePublicGamesTable(env),
+    ensureCompletedGamesTable(env),
+    ensureFairplayGameDataTable(env),
     ensureUserOnboardingTable(env),
     ensureEmailNotificationLogTable(env),
     ensureMailDeliveryLogTable(env),
@@ -6411,7 +6601,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','completed_games','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
+    'users','sessions','daily_games','public_games','completed_games','game_archive_favorites','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients','lobby_ticker_items'
@@ -6424,6 +6614,33 @@ async function buildAdminOverview(env) {
       rowCounts[tableName] = numberValue(row && row.count);
     } catch (_) {}
   }
+  let archiveStorage = {games:0, publicVisible:0, protectedGames:0, favoriteGames:0, pgnBytes:0, fairplayBytes:0};
+  try {
+    const row = await env.DB.prepare(
+      `SELECT COUNT(*) AS games,
+              SUM(CASE WHEN public_game = 1 AND archive_visible = 1 THEN 1 ELSE 0 END) AS public_visible,
+              SUM(CASE WHEN protected = 1 THEN 1 ELSE 0 END) AS protected_games,
+              SUM(LENGTH(pgn)) AS pgn_bytes,
+              (SELECT COUNT(DISTINCT room_id) FROM game_archive_favorites) AS favorite_games,
+              (SELECT SUM(LENGTH(moves_json)) FROM fairplay_game_data) AS fairplay_bytes
+         FROM completed_games`
+    ).first();
+    archiveStorage = {
+      games:numberValue(row && row.games),
+      publicVisible:numberValue(row && row.public_visible),
+      protectedGames:numberValue(row && row.protected_games),
+      favoriteGames:numberValue(row && row.favorite_games),
+      pgnBytes:numberValue(row && row.pgn_bytes),
+      fairplayBytes:numberValue(row && row.fairplay_bytes)
+    };
+  } catch (_) {}
+  const archiveBytes = archiveStorage.pgnBytes + archiveStorage.fairplayBytes;
+  const archiveReferenceBytes = 500 * 1024 * 1024;
+  const archivePercent = Math.min(100, Math.round(archiveBytes / archiveReferenceBytes * 1000) / 10);
+  archiveStorage.bytes = archiveBytes;
+  archiveStorage.referenceBytes = archiveReferenceBytes;
+  archiveStorage.percent = archivePercent;
+  archiveStorage.status = archivePercent >= 90 ? 'red' : archivePercent >= 75 ? 'orange' : archivePercent >= 60 ? 'yellow' : 'green';
 
   return {
     generatedAt:nowIso,
@@ -6478,7 +6695,8 @@ async function buildAdminOverview(env) {
     database:{
       tableCount:tableNames.length,
       importantRows:rowCounts,
-      importantRowsTotal:Object.values(rowCounts).reduce((sum, value) => sum + numberValue(value), 0)
+      importantRowsTotal:Object.values(rowCounts).reduce((sum, value) => sum + numberValue(value), 0),
+      archive:archiveStorage
     },
     backup:{
       lastManualAt:backupRow && backupRow.setting_value || null,
@@ -8123,6 +8341,72 @@ async function handleAuthApi(request, env, url) {
     } catch (_) {
       return json({ ok: false, code: 'PUBLIC_GAMES_UNAVAILABLE', message: 'Öffentliche Partien konnten nicht geladen werden.' }, { status: 500 });
     }
+  }
+
+  if (url.pathname === '/api/game-archive' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Das Partienarchiv ist nur nach Login verfügbar.'}, {status:401});
+    try {
+      const archive = await listGameArchive(env, session.user, url);
+      return json({ok:true, ...archive, serverNow:Date.now()});
+    } catch (error) {
+      console.error('Game archive list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'GAME_ARCHIVE_UNAVAILABLE', message:'Das Partienarchiv konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  const archivePgnMatch = url.pathname.match(/^\/api\/game-archive\/([^/]+)\/pgn$/);
+  if (archivePgnMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    const roomId = cleanRoomId(decodeURIComponent(archivePgnMatch[1]));
+    if (!roomId) return json({ok:false, code:'INVALID_ROOM', message:'Ungültiger Spielraum.'}, {status:400});
+    try {
+      const game = await archiveGameForViewer(env, roomId, session.user);
+      if (!game || !game.pgn) return json({ok:false, code:'GAME_NOT_FOUND', message:'Diese Partie ist nicht für dich im Archiv verfügbar.'}, {status:404});
+      const datePart = pgnDateFromIso(game.ended_at || null).replace(/\./g, '-');
+      const filename = safePgnFilePart('Hammerschach-' + datePart + '-' + (game.white_name || 'Weiss') + '-vs-' + (game.black_name || 'Schwarz')) + '.pgn';
+      return new Response(String(game.pgn), {status:200, headers:{
+        'content-type':'application/x-chess-pgn; charset=utf-8',
+        'content-disposition':'attachment; filename="' + filename + '"',
+        'cache-control':'private, no-store',
+        'access-control-allow-origin':'*',
+        'access-control-expose-headers':'content-disposition'
+      }});
+    } catch (_) {
+      return json({ok:false, code:'PGN_UNAVAILABLE', message:'Die PGN-Datei konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  const archiveFavoriteMatch = url.pathname.match(/^\/api\/game-archive\/([^/]+)\/favorite$/);
+  if (archiveFavoriteMatch && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    const roomId = cleanRoomId(decodeURIComponent(archiveFavoriteMatch[1]));
+    const body = await readJsonBody(request);
+    if (!roomId || !body) return json({ok:false, code:'BAD_REQUEST', message:'Die Archivmarkierung konnte nicht gelesen werden.'}, {status:400});
+    await ensureCompletedGamesTable(env);
+    const ownGame = await env.DB.prepare(
+      `SELECT room_id FROM completed_games WHERE room_id = ? AND (white_user_id = ? OR black_user_id = ?) LIMIT 1`
+    ).bind(roomId, session.user.id, session.user.id).first();
+    if (!ownGame) return json({ok:false, code:'GAME_NOT_FOUND', message:'Nur eigene Partien können dauerhaft gespeichert werden.'}, {status:404});
+    const favorite = body.favorite === true;
+    if (favorite) {
+      await env.DB.prepare(
+        `INSERT INTO game_archive_favorites (room_id, user_id, created_at) VALUES (?, ?, ?)
+         ON CONFLICT(room_id, user_id) DO UPDATE SET created_at = excluded.created_at`
+      ).bind(roomId, session.user.id, new Date().toISOString()).run();
+    } else {
+      await env.DB.prepare(`DELETE FROM game_archive_favorites WHERE room_id = ? AND user_id = ?`).bind(roomId, session.user.id).run();
+    }
+    return json({ok:true, roomId, favorite});
+  }
+
+  if (url.pathname === '/api/admin/game-archive/maintenance' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try { return json({ok:true, maintenance:await runGameArchiveMaintenance(env)}); }
+    catch (_) { return json({ok:false, code:'ARCHIVE_MAINTENANCE_FAILED', message:'Die Archivwartung konnte nicht ausgeführt werden.'}, {status:500}); }
   }
 
   if (url.pathname === '/api/open-offers' && request.method === 'GET') {
@@ -12014,7 +12298,7 @@ export class GameRoom {
       const cancellation = await this.state.storage.get('cancelled');
       const isPublic = (await this.state.storage.get('publicGame')) === true;
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
-      if ((cancellation && cancellation.cancelled) || !isPublic || !game.started || game.ended) {
+      if ((cancellation && cancellation.cancelled) || !isPublic || !game.started) {
         await removeFromIndex();
         return;
       }
@@ -12055,7 +12339,7 @@ export class GameRoom {
            mode, time_label, days_per_move, variant, position_id,
            started_at, updated_at, turn, moves_count, last_move_san,
            public_game, ended
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0)
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            spectator_id = excluded.spectator_id,
            white_user_id = excluded.white_user_id,
@@ -12073,14 +12357,15 @@ export class GameRoom {
            moves_count = excluded.moves_count,
            last_move_san = excluded.last_move_san,
            public_game = 1,
-           ended = 0`
+           ended = excluded.ended`
       ).bind(
         roomId, spectatorId, whiteUserId || null, blackUserId || null, whiteName, blackName,
         timeControl.mode === 'daily' ? 'daily' : 'live', timeControl.label || '',
         timeControl.mode === 'daily' ? Math.max(1, Number(timeControl.daysPerMove || 1)) : null,
         setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
         game.startedAt || updatedAt, updatedAt, turn, moves.length,
-        lastMove && lastMove.san ? String(lastMove.san).slice(0, 24) : null
+        lastMove && lastMove.san ? String(lastMove.san).slice(0, 24) : null,
+        game.ended ? 1 : 0
       ).run();
     } catch (_) {
       // Die öffentliche Übersicht darf die Partie niemals unterbrechen.
@@ -12189,14 +12474,21 @@ export class GameRoom {
       const mode = timeControl && timeControl.mode === 'daily' ? 'daily' : 'live';
       const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
       const ratingType = ratingTypeFromGame(timeControl, setup);
+      const isPublic = (await this.state.storage.get('publicGame')) === true;
+      const spectatorId = isPublic ? cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '') : '';
+      const tournamentId = tournamentMeta && tournamentMeta.tournamentId ? String(tournamentMeta.tournamentId).slice(0, 128) : '';
+      const tournamentName = tournamentMeta && tournamentMeta.tournamentName ? cleanTournamentName(tournamentMeta.tournamentName) : '';
+      const tournamentRoundLabel = tournamentMeta && tournamentMeta.roundLabel ? String(tournamentMeta.roundLabel).slice(0, 80) : '';
       const updatedAt = new Date().toISOString();
 
       await this.env.DB.prepare(
         `INSERT INTO completed_games (
            room_id, white_user_id, black_user_id, white_name, black_name,
            mode, time_label, days_per_move, variant, position_id, back_rank,
-           started_at, ended_at, result, end_reason, rated, rating_type, pgn, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           started_at, ended_at, result, end_reason, rated, rating_type,
+           public_game, spectator_id, tournament_id, tournament_name, tournament_round_label,
+           protected, archive_visible, pgn, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
@@ -12214,6 +12506,13 @@ export class GameRoom {
            end_reason = excluded.end_reason,
            rated = excluded.rated,
            rating_type = excluded.rating_type,
+           public_game = excluded.public_game,
+           spectator_id = excluded.spectator_id,
+           tournament_id = excluded.tournament_id,
+           tournament_name = excluded.tournament_name,
+           tournament_round_label = excluded.tournament_round_label,
+           protected = excluded.protected,
+           archive_visible = excluded.archive_visible,
            pgn = excluded.pgn,
            updated_at = excluded.updated_at`
       ).bind(
@@ -12223,7 +12522,9 @@ export class GameRoom {
         setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
         setup.variant === GAME_VARIANT_FREESTYLE ? setup.backRank : null,
         game.startedAt || null, game.endedAt || updatedAt, game.result || '*', game.endReason || null,
-        rated ? 1 : 0, ratingType || null, pgn, updatedAt
+        rated ? 1 : 0, ratingType || null,
+        isPublic ? 1 : 0, spectatorId || null, tournamentId || null, tournamentName || null, tournamentRoundLabel || null,
+        tournamentId ? 1 : 0, 1, pgn, updatedAt
       ).run();
 
       if (await ensureFairplayGameDataTable(this.env)) {
@@ -12668,7 +12969,7 @@ export class GameRoom {
         const routedWatchId = cleanPublicWatchId(info.publicWatchId || '');
         const submittedWatchId = cleanPublicWatchId(data.publicWatchId || data.public_watch_id || data.watchId || '');
         const watchAuthorized = !!(storedWatchId && routedWatchId === storedWatchId && submittedWatchId === storedWatchId);
-        if (!publicGame || !publicGameState.started || publicGameState.ended || !watchAuthorized) {
+        if (!publicGame || !publicGameState.started || !watchAuthorized) {
           safeSend(ws, {
             type:'error',
             code:'PUBLIC_SPECTATOR_ACCESS_UNAVAILABLE',
@@ -13674,7 +13975,7 @@ export default {
         if (!(await ensurePublicGamesTable(env))) throw new Error('Public game index unavailable');
         const indexed = await env.DB.prepare(
           `SELECT room_id FROM public_games
-            WHERE spectator_id = ? AND public_game = 1 AND ended = 0
+            WHERE spectator_id = ? AND public_game = 1
             LIMIT 1`
         ).bind(watchId).first();
         const room = cleanRoomId(indexed && indexed.room_id);
@@ -13718,8 +14019,16 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
+  },
+
+  async scheduled(_event, env, ctx) {
+    const maintenance = runGameArchiveMaintenance(env).catch(error => {
+      console.error('Scheduled game archive maintenance failed', error && error.message ? error.message : String(error || 'unknown'));
+    });
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(maintenance);
+    else await maintenance;
   }
 };
