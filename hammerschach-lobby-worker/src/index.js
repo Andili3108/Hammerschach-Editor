@@ -6879,6 +6879,24 @@ function cleanYoutubeChannelId(value) {
   return /^UC[A-Za-z0-9_-]{22}$/.test(raw) ? raw : '';
 }
 
+function cleanYoutubeChannelHandle(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  let candidate = raw;
+  try {
+    const url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+    if (/(?:^|\.)youtube\.com$/i.test(url.hostname)) {
+      const segment = url.pathname.split('/').filter(Boolean).find(part => part.startsWith('@')) || '';
+      candidate = segment ? decodeURIComponent(segment) : '';
+    }
+  } catch (_) {}
+  return /^@[^\s\/?#]{3,100}$/u.test(candidate) ? candidate : '';
+}
+
+function cleanYoutubeChannelReference(value) {
+  return cleanYoutubeChannelId(value) || cleanYoutubeChannelHandle(value);
+}
+
 function normalizeTvMode(value) {
   return value === 'manual' ? 'manual' : value === 'playlist' ? 'playlist' : 'channel';
 }
@@ -6923,7 +6941,9 @@ function normalizeTvConfig(value, slotNumber = 1) {
     eventName:cleanTvText(source.eventName, 120),
     description:cleanTvText(source.description || 'Schach-Livestreams direkt im Hammerschach-Gamer.', 600),
     channelName:cleanTvText(source.channelName, 90),
-    channelId:cleanYoutubeChannelId(source.channelId),
+    /* channelId bleibt aus Kompatibilitätsgründen der Feldname, enthält aber
+       wahlweise die UC-ID oder den öffentlich sichtbaren @Handle. */
+    channelId:cleanYoutubeChannelReference(source.channelId) || cleanYoutubeChannelReference(source.channelHandle),
     manualVideoId:cleanYoutubeVideoId(source.manualVideoId || source.videoUrl),
     playlistId:cleanYoutubePlaylistId(source.playlistId || source.playlistUrl),
     updatedAt:source.updatedAt || null
@@ -6992,8 +7012,8 @@ async function loadTvConfig(env) {
 
 function validateTvConfigInput(rawInput, config) {
   const input = rawInput && typeof rawInput === 'object' ? rawInput : {};
-  if (config.mode === 'channel' && input.channelId && !config.channelId) {
-    return {ok:false, status:400, code:'INVALID_YOUTUBE_CHANNEL', message:`${config.slotId.toUpperCase()}: Die YouTube-Kanal-ID ist ungültig. Benötigt wird die mit „UC“ beginnende Kanal-ID.`};
+  if (config.mode === 'channel' && (input.channelId || input.channelHandle) && !config.channelId) {
+    return {ok:false, status:400, code:'INVALID_YOUTUBE_CHANNEL', message:`${config.slotId.toUpperCase()}: Der YouTube-Kanal ist ungültig. Trage den @Kanalnamen, die mit „UC“ beginnende Kanal-ID oder eine passende Kanaladresse ein.`};
   }
   if (config.mode === 'manual' && (input.manualVideoId || input.videoUrl) && !config.manualVideoId) {
     return {ok:false, status:400, code:'INVALID_YOUTUBE_VIDEO', message:`${config.slotId.toUpperCase()}: Die YouTube-Video-ID beziehungsweise Video-Adresse ist ungültig.`};
@@ -7102,6 +7122,24 @@ async function youtubeEventCandidates(apiKey, channelId, eventType) {
     .filter(Boolean);
 }
 
+async function youtubeChannelIdFromReference(apiKey, channelReference) {
+  const directId = cleanYoutubeChannelId(channelReference);
+  if (directId) return directId;
+  const handle = cleanYoutubeChannelHandle(channelReference);
+  if (!handle) throw new Error('Der YouTube-Kanalname ist ungültig.');
+
+  const channelsUrl = new URL('https://www.googleapis.com/youtube/v3/channels');
+  channelsUrl.searchParams.set('part', 'id');
+  channelsUrl.searchParams.set('forHandle', handle);
+  channelsUrl.searchParams.set('key', apiKey);
+  const channelsResponse = await fetch(channelsUrl.toString(), {headers:{accept:'application/json'}});
+  if (!channelsResponse.ok) throw new Error(`YouTube-Kanalsuche fehlgeschlagen (${channelsResponse.status}).`);
+  const channelsData = await channelsResponse.json();
+  const channelId = cleanYoutubeChannelId(channelsData && channelsData.items && channelsData.items[0] && channelsData.items[0].id);
+  if (!channelId) throw new Error(`Der YouTube-Kanal ${handle} wurde nicht gefunden.`);
+  return channelId;
+}
+
 function chooseTvStream(candidates, eventType) {
   if (!Array.isArray(candidates) || !candidates.length) return null;
   if (eventType === 'live') return candidates.find(item => item.status === 'live') || candidates[0];
@@ -7167,7 +7205,10 @@ async function resolveTvStream(env, config, options = {}) {
   }
 
   const cache = await loadTvStreamCache(env, config.slotId);
-  const cacheMatches = !!(cache && cache.channelId === config.channelId);
+  const cacheMatches = !!(cache && (
+    cache.channelReference === config.channelId ||
+    (!cache.channelReference && cache.channelId === config.channelId)
+  ));
   const checkedAtMs = cacheMatches ? Date.parse(cache.checkedAt || '') : 0;
   const cacheFresh = checkedAtMs && Date.now() - checkedAtMs < HAMMERSCHACH_TV_REFRESH_MS;
   if (!config.channelId) {
@@ -7187,23 +7228,35 @@ async function resolveTvStream(env, config, options = {}) {
 
   const checkedAt = new Date().toISOString();
   try {
-    let stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, config.channelId, 'live'), 'live');
-    if (!stream) stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, config.channelId, 'upcoming'), 'upcoming');
+    const resolvedChannelId = await youtubeChannelIdFromReference(env.YOUTUBE_API_KEY, config.channelId);
+    let stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, resolvedChannelId, 'live'), 'live');
+    if (!stream) stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, resolvedChannelId, 'upcoming'), 'upcoming');
     const message = stream
       ? (stream.status === 'live' ? 'Der laufende Stream wurde automatisch gefunden.' : 'Der nächste angekündigte Stream wurde automatisch gefunden.')
       : 'Der Kanal hat momentan keinen laufenden oder angekündigten Livestream.';
-    const nextCache = {slotId:config.slotId, channelId:config.channelId, checkedAt, stream, message};
+    const nextCache = {
+      slotId:config.slotId,
+      channelReference:config.channelId,
+      channelId:resolvedChannelId,
+      checkedAt,
+      stream,
+      message
+    };
     await writeAdminSetting(env, tvCacheKey(config.slotId), JSON.stringify(nextCache), 'youtube-auto');
     return {stream, checkedAt, automationAvailable:true, message};
   } catch (error) {
-    console.error('Hammerschach TV YouTube lookup failed', error && error.message ? error.message : String(error || 'unknown'));
+    const lookupErrorMessage = error && error.message ? error.message : String(error || 'unknown');
+    console.error('Hammerschach TV YouTube lookup failed', lookupErrorMessage);
+    const channelNotFoundMessage = /^Der YouTube-Kanal\s+@.+\s+wurde nicht gefunden\.$/u.test(lookupErrorMessage)
+      ? lookupErrorMessage
+      : '';
     return {
       stream:cacheMatches ? cache.stream || null : null,
       checkedAt:cacheMatches ? cache.checkedAt || null : checkedAt,
       automationAvailable:true,
-      message:cacheMatches && cache.stream
+      message:channelNotFoundMessage || (cacheMatches && cache.stream
         ? 'Die YouTube-Abfrage war vorübergehend nicht erreichbar. Der zuletzt gefundene Stream bleibt sichtbar.'
-        : 'Die YouTube-Abfrage war vorübergehend nicht erreichbar.'
+        : 'Die YouTube-Abfrage war vorübergehend nicht erreichbar.')
     };
   }
 }
