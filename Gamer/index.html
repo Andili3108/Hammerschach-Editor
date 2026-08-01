@@ -1064,6 +1064,7 @@
   .tv-channel-button:not(.active) .tv-channel-event{color:#666;}
   .tv-channel-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:999px;background:#b91c1c;color:#fff;font-family:Arial,sans-serif;font-size:9px;font-weight:900;line-height:1;letter-spacing:.04em;}
   .tv-channel-badge.upcoming{background:#3b6ea7;}
+  .tv-channel-badge.replay{background:#5d6672;}
   .tv-channel-badge[hidden]{display:none!important;}
   .tv-playlist-toolbar{display:flex;justify-content:flex-end;align-items:center;margin:0 0 10px;}
   .tv-playlist-toolbar[hidden]{display:none!important;}
@@ -2136,7 +2137,7 @@
           </ul>
 
           <h4>21. Hammerschach TV</h4>
-          <p>Über <strong>„🛠️ Tools“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; der laufende oder nächste angekündigte Stream dieses Kanals wird anschließend automatisch gesucht und eingebettet. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Hammerschach TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
+          <p>Über <strong>„🛠️ Tools“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Hammerschach TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>22. Neue Partie und Rückkehr zur Lobby</h4>
@@ -6052,9 +6053,11 @@ function renderTvChannelSwitcher(){
       const status = String(slot && slot.stream && slot.stream.status || '').toLowerCase();
       const showLive = status === 'live';
       const showUpcoming = status === 'upcoming';
-      badge.hidden = !(showLive || showUpcoming);
-      badge.textContent = showLive ? 'LIVE' : 'BALD';
+      const showReplay = status === 'replay';
+      badge.hidden = !(showLive || showUpcoming || showReplay);
+      badge.textContent = showLive ? 'LIVE' : showUpcoming ? 'BALD' : 'REPLAY';
       badge.classList.toggle('upcoming',showUpcoming);
+      badge.classList.toggle('replay',showReplay);
     }
     button.title = slot ? `${slotId.toUpperCase()}: ${tvSlotDisplayName(slot)}` : '';
   });
