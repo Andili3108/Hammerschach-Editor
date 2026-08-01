@@ -7093,14 +7093,15 @@ function tvPlaylistStream(config) {
   };
 }
 
-async function youtubeEventCandidates(apiKey, channelId, eventType) {
+async function youtubeBroadcastCandidates(apiKey, channelId) {
   const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
   searchUrl.searchParams.set('part', 'snippet');
   searchUrl.searchParams.set('channelId', channelId);
-  searchUrl.searchParams.set('eventType', eventType);
   searchUrl.searchParams.set('type', 'video');
   searchUrl.searchParams.set('videoEmbeddable', 'true');
-  searchUrl.searchParams.set('maxResults', '5');
+  /* Eine gemeinsame Suche reicht für live, angekündigt und Replay. Das spart
+     gegenüber getrennten eventType-Abfragen YouTube-Kontingent. */
+  searchUrl.searchParams.set('maxResults', '50');
   searchUrl.searchParams.set('order', 'date');
   searchUrl.searchParams.set('key', apiKey);
   const searchResponse = await fetch(searchUrl.toString(), {headers:{accept:'application/json'}});
@@ -7118,7 +7119,15 @@ async function youtubeEventCandidates(apiKey, channelId, eventType) {
   const videosData = await videosResponse.json();
   return (videosData.items || [])
     .filter(video => !video.status || video.status.embeddable !== false)
-    .map(video => tvStreamFromVideoResource(video, eventType))
+    .filter(video => {
+      const details = video && video.liveStreamingDetails;
+      return !!(details && (
+        details.scheduledStartTime ||
+        details.actualStartTime ||
+        details.actualEndTime
+      ));
+    })
+    .map(video => tvStreamFromVideoResource(video, ''))
     .filter(Boolean);
 }
 
@@ -7140,13 +7149,28 @@ async function youtubeChannelIdFromReference(apiKey, channelReference) {
   return channelId;
 }
 
-function chooseTvStream(candidates, eventType) {
+function chooseTvStream(candidates) {
   if (!Array.isArray(candidates) || !candidates.length) return null;
-  if (eventType === 'live') return candidates.find(item => item.status === 'live') || candidates[0];
-  return candidates.slice().sort((a, b) => {
+  const live = candidates.find(item => item.status === 'live');
+  if (live) return live;
+
+  /* Ein verzögerter Start bleibt bis zu sechs Stunden als angekündigt
+     sichtbar. Deutlich ältere, nie gestartete Ankündigungen werden ignoriert. */
+  const upcomingThreshold = Date.now() - 6 * 60 * 60 * 1000;
+  const upcoming = candidates.filter(item => (
+    item.status === 'upcoming' &&
+    (Date.parse(item.scheduledStartAt || '') || 0) >= upcomingThreshold
+  )).sort((a, b) => {
     const aTime = Date.parse(a.scheduledStartAt || '') || Number.MAX_SAFE_INTEGER;
     const bTime = Date.parse(b.scheduledStartAt || '') || Number.MAX_SAFE_INTEGER;
     return aTime - bTime;
+  })[0];
+  if (upcoming) return upcoming;
+
+  return candidates.filter(item => item.status === 'replay').sort((a, b) => {
+    const aTime = Date.parse(a.actualEndAt || a.actualStartAt || a.scheduledStartAt || '') || 0;
+    const bTime = Date.parse(b.actualEndAt || b.actualStartAt || b.scheduledStartAt || '') || 0;
+    return bTime - aTime;
   })[0] || null;
 }
 
@@ -7229,11 +7253,14 @@ async function resolveTvStream(env, config, options = {}) {
   const checkedAt = new Date().toISOString();
   try {
     const resolvedChannelId = await youtubeChannelIdFromReference(env.YOUTUBE_API_KEY, config.channelId);
-    let stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, resolvedChannelId, 'live'), 'live');
-    if (!stream) stream = chooseTvStream(await youtubeEventCandidates(env.YOUTUBE_API_KEY, resolvedChannelId, 'upcoming'), 'upcoming');
-    const message = stream
-      ? (stream.status === 'live' ? 'Der laufende Stream wurde automatisch gefunden.' : 'Der nächste angekündigte Stream wurde automatisch gefunden.')
-      : 'Der Kanal hat momentan keinen laufenden oder angekündigten Livestream.';
+    const stream = chooseTvStream(await youtubeBroadcastCandidates(env.YOUTUBE_API_KEY, resolvedChannelId));
+    const message = !stream
+      ? 'Der Kanal hat momentan keinen Livestream und keine abrufbare letzte Übertragung.'
+      : stream.status === 'live'
+        ? 'Der laufende Stream wurde automatisch gefunden.'
+        : stream.status === 'upcoming'
+          ? 'Der nächste angekündigte Stream wurde automatisch gefunden.'
+          : 'Die zuletzt beendete Übertragung wurde automatisch gefunden.';
     const nextCache = {
       slotId:config.slotId,
       channelReference:config.channelId,
