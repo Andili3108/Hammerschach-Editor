@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-PREMIUM-BOARD-20260730-1 -->
+<!-- BUILD: GAMER-RESPONSIVE-LOBBY-20260802-1 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -170,7 +170,7 @@
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
   html.hammerschach-room-view #toolsMenu,html.hammerschach-room-view #tournamentsOpenBtn{display:none!important;}
-  html.visitor-start-view #newGameMenu,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
+  html.visitor-start-view #newGameMenu,html.visitor-start-view #newGameOpenBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-start-view .match-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
@@ -934,14 +934,24 @@
   html.member-lobby-view .top-layout{display:none!important;}
   .member-lobby{display:flex;flex-direction:column;gap:14px;width:100%;}
   .member-lobby[hidden]{display:none!important;}
-  .member-lobby-section{padding:16px 18px;}
-  .member-lobby-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:13px;}
-  .member-lobby-heading h2{margin:0;font-size:22px;line-height:1.15;color:#222;}
-  .member-lobby-heading p{margin:4px 0 0;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
+  .new-game-open-btn{background:linear-gradient(135deg,#843f46,#9d4a53)!important;color:#fff!important;border-color:rgba(132,63,70,.68)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 7px 16px rgba(132,63,70,.24)!important;}
+  .new-game-open-btn:hover:not(:disabled){filter:brightness(1.06);}
+  html.new-game-dialog-open,html.new-game-dialog-open body{overflow:hidden;}
+  .new-game-backdrop{z-index:3420;}
+  .new-game-modal{width:min(1040px,100%);max-height:92vh;max-height:92dvh;background:#fff;border-radius:20px;box-shadow:0 22px 58px rgba(0,0,0,.34);box-sizing:border-box;border:1px solid rgba(132,63,70,.20);display:flex;flex-direction:column;overflow:hidden;}
+  .new-game-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px 13px;border-bottom:1px solid rgba(132,63,70,.13);background:linear-gradient(135deg,rgba(255,255,255,.99),rgba(246,238,240,.97));}
+  .new-game-modal-head h3{margin:0;font-size:25px;line-height:1.15;color:#222;}
+  .new-game-modal-intro{margin:5px 0 0;font-size:14px;font-weight:800;color:#666;line-height:1.35;}
+  .new-game-modal-close{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:0!important;border-radius:999px!important;font-size:18px!important;line-height:1!important;flex:0 0 auto;}
+  .new-game-modal-body{min-height:0;overflow:auto;padding:16px 18px;overscroll-behavior:contain;}
   .member-lobby-setup-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex:0 0 auto;}
   .member-lobby-setup-action{min-height:42px!important;border-radius:13px!important;padding:8px 14px!important;white-space:nowrap;font-size:14px!important;}
   .member-lobby-invite-action{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.58)!important;}
   .member-lobby-offer-action{background:linear-gradient(180deg,#fff 0%,#f0edef 100%)!important;color:#843f46!important;border-color:rgba(132,63,70,.24)!important;}
+  .new-game-cancel-action{margin-right:auto;}
+  .new-game-dialog-status{min-height:18px;padding:0 20px 3px;font-size:13px;font-weight:900;color:#9A2D33;line-height:1.3;text-align:right;}
+  .new-game-dialog-status:empty{display:none;}
+  .new-game-modal-actions{padding:12px 18px 16px;border-top:1px solid rgba(132,63,70,.13);background:#fbfbfc;}
   .member-lobby-settings-mount{min-width:0;}
   .member-lobby-settings-mount #preRoomSetupPanel{display:grid!important;grid-template-columns:minmax(225px,.95fr) minmax(245px,1.08fr) minmax(345px,1.55fr) minmax(225px,1fr);gap:12px;overflow:visible;min-height:0;align-items:stretch;}
   .member-lobby-settings-mount #preRoomSetupPanel>.player-time-setup{height:auto;box-sizing:border-box;}
@@ -1223,6 +1233,12 @@
   html.dark-mode :is(.admin-ticker-panel h4,.admin-ticker-card-title){color:#f1c4c9;}
   html.dark-mode :is(.admin-ticker-field label,.admin-ticker-inline label,.admin-ticker-card-text,.admin-ticker-card-meta,.admin-ticker-status){color:#c5c9d0;}
   html.dark-mode .member-lobby-offer-action{background:linear-gradient(180deg,#3a3f47 0%,#292d33 100%)!important;color:#f0b8be!important;border-color:rgba(255,255,255,.14)!important;}
+  html.dark-mode .new-game-modal{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 22px 58px rgba(0,0,0,.58);}
+  html.dark-mode .new-game-modal-head{background:linear-gradient(135deg,#252930,#272126);border-color:rgba(255,255,255,.08);}
+  html.dark-mode .new-game-modal-head h3{color:#f3f4f6;}
+  html.dark-mode .new-game-modal-intro{color:#b8bdc6;}
+  html.dark-mode .new-game-modal-actions{background:#20242a;border-color:rgba(255,255,255,.08);}
+  html.dark-mode .new-game-dialog-status{color:#efb5bc;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.online-item,.auth-rating-card,.global-chat-member,.admin-inline-stat,.admin-event-row,.admin-database-item,.chat-message,.global-chat-message){box-shadow:none;}
   html.dark-mode .player-clock-card.active{background:#2d3239;box-shadow:inset 0 0 0 2px rgba(226,151,160,.34);}
   html.dark-mode .rematch-bar{background:#252930;border-color:rgba(255,255,255,.09);}
@@ -1259,7 +1275,7 @@
   html.dark-mode .variation-move-cell.current{background:rgba(180,83,9,.28);outline-color:rgba(238,153,61,.42);}
   html.dark-mode .variation-moves-empty{color:#b8bdc6;}
   html.dark-mode .resign-warning{background:#252930;border-color:rgba(255,255,255,.09);color:#b8bdc6;}
-  html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.members-modal h3,.member-lobby-heading h2,.board-color-popup-title){color:#f3f4f6!important;}
+  html.dark-mode :is(.brand-title,.visitor-board-title,.clock-title,.player-clock-name,.moves-title,.chat-title,.global-chat-title,.member-search-head,.daily-game-title,.open-offer-title,.public-game-title,.auth-account-name,.auth-ratings-title,.auth-email-notifications-title,.admin-overview-modal h3,.admin-section h4,.info-modal h3,.info-scroll h4,.identity-modal h3,.daily-games-modal h3,.open-offers-modal h3,.public-games-modal h3,.members-modal h3,.new-game-modal-head h3,.board-color-popup-title){color:#f3f4f6!important;}
   html.dark-mode :is(.game-archive-modal h3,.game-archive-title){color:#f3f4f6!important;}
   html.dark-mode :is(.game-archive-intro,.game-archive-meta,.game-archive-status){color:#b8bdc6!important;}
   html.dark-mode :is(.game-archive-card,.game-archive-empty){background:#252930;border-color:rgba(255,255,255,.09);}
@@ -1270,7 +1286,7 @@
   html.dark-mode :is(.member-result-card,.daily-games-empty,.open-offers-empty,.public-games-empty,.auth-email-option,.auth-email-state-badge,.admin-message-audience,.admin-message-confirm,.player-rating-line,.privacy-storage-list dt){background:#252930;border-color:rgba(255,255,255,.09);}
   html.dark-mode .admin-message-recipient-box{background:rgba(62,154,88,.12);border-color:rgba(92,190,119,.24);}
   html.dark-mode .admin-message-recipient-hint{color:#b8c9bd;}
-  html.dark-mode :is(.brand-origin-line,.member-lobby-heading p,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
+  html.dark-mode :is(.brand-origin-line,.new-game-modal-intro,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
   html.dark-mode :is(.online-value,.chat-message-text,.global-chat-message-text,.admin-message-preview-body,.admin-backup-text,.admin-event-main,.member-result-name,.daily-game-title,.open-offer-title,.public-game-title){color:#eef0f2!important;}
   html.dark-mode .admin-delete-name{color:#eef0f2!important;}
   html.dark-mode .admin-delete-meta{color:#b8bdc6!important;}
@@ -1687,6 +1703,36 @@
   @media (max-width:520px){.auth-ratings-grid,.admin-summary-grid,.admin-inline-stats,.admin-database-grid,.member-profile-meta-grid{grid-template-columns:1fr}.privacy-storage-list{grid-template-columns:1fr}.privacy-storage-list dd{margin-bottom:4px}.member-profile-head{flex-direction:column}.member-profile-presence{align-self:flex-start}.account-avatar-box{grid-template-columns:1fr}.account-avatar-box>.profile-avatar{justify-self:center}.account-avatar-note{grid-column:1}.member-profile-identity{align-items:flex-start}.profile-avatar-large{width:78px;height:78px;font-size:31px}}
   @media (max-width:760px){.tournament-modal-head{flex-direction:column;padding:15px}.tournament-selection-tabs,.tournament-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-selection-content,.tournament-content{padding:14px 14px 3px;min-height:280px}.tournament-list-grid,.tournament-overview-grid,.tournament-form-grid,.tournament-podium,.tournament-group-tables{grid-template-columns:1fr}.tournament-type-picker{grid-template-columns:1fr}.tournament-type-option{min-height:62px!important}.tournament-field-wide,.tournament-theme-card{grid-column:1}.tournament-modal-actions{padding:12px 14px 15px}.tournament-create-btn{width:100%;margin-right:0}.tournament-modal-actions button{flex:1 1 auto}.tournament-detail-toolbar{align-items:flex-start;flex-direction:column}.tournament-detail-identity{width:100%;justify-content:space-between}.tournament-detail-name{max-width:70vw}.tournament-list-card-foot{align-items:flex-start;flex-direction:column}.tournament-list-actions{width:100%}.tournament-list-actions button{flex:1 1 auto}.theme-picker-search-row,.theme-picker-layout{grid-template-columns:1fr}.theme-picker-layout{overflow:auto}.theme-picker-list{max-height:35vh}.theme-picker-preview{overflow:visible}.tournament-theme-selected{grid-template-columns:1fr}.tournament-theme-choose{width:100%}}
   @media (max-width:860px){.tv-admin-grid{grid-template-columns:1fr}.tv-field-wide{grid-column:1}.tv-admin-actions{display:grid;grid-template-columns:1fr}.tv-admin-actions button{width:100%}}
+  @media (max-width:760px){
+    .new-game-backdrop{padding:0;align-items:stretch;}
+    .new-game-modal{width:100%;max-width:none;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border:0;border-radius:0;}
+    .new-game-modal-head{padding:14px 14px 11px;align-items:center;}
+    .new-game-modal-head h3{font-size:22px;}
+    .new-game-modal-intro{font-size:12px;margin-top:3px;}
+    .new-game-modal-close{width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;}
+    .new-game-modal-body{padding:12px;}
+    .new-game-dialog-status{padding:0 13px 4px;text-align:left;}
+    .new-game-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px max(12px,env(safe-area-inset-bottom));}
+    .new-game-modal-actions .member-lobby-setup-action{width:100%;min-height:52px!important;padding:8px 9px!important;white-space:normal;font-size:13px!important;line-height:1.15!important;}
+    .new-game-cancel-action{grid-column:1 / -1;order:3;margin-right:0;min-height:44px!important;}
+    .member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr!important;gap:10px;}
+    .new-game-modal .player-time-setup{padding:10px;gap:8px;}
+    .member-lobby-settings-mount #inviteColorBox .invite-color-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;}
+    .member-lobby-settings-mount #inviteColorBox .invite-color-option{min-height:46px;padding:8px 5px;font-size:14px;}
+    .member-lobby-settings-mount .variant-options,.member-lobby-settings-mount .rating-options{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .member-lobby-settings-mount .time-kind-options{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .match-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #newGameOpenBtn{grid-column:1;}
+    #gamesMenu{grid-column:2;}
+    #tournamentsOpenBtn{grid-column:1;}
+    #playerMenu{grid-column:2;}
+    #authOpenBtn,#toolsMenu{grid-column:1 / -1;}
+    #gamesMenu .header-menu-popup,#playerMenu .header-menu-popup{left:auto;right:0;transform:none;width:calc(200% + 8px);}
+    html.visitor-start-view #gamesMenu{grid-column:1;}
+    html.visitor-start-view #tournamentsOpenBtn{grid-column:2;}
+    html.visitor-start-view #gamesMenu .header-menu-popup{left:0;right:auto;}
+    .global-chat-messages{height:min(330px,45dvh);}
+  }
 </style>
 </head>
 <body>
@@ -1734,6 +1780,7 @@
           </div>
         </div>
         <div class="actions match-actions" aria-label="Hauptnavigation">
+          <button id="newGameOpenBtn" class="name-action-btn new-game-open-btn" type="button" aria-haspopup="dialog" aria-controls="newGameBackdrop" hidden>♟️ Neue Partie</button>
           <button id="roomLobbyBtn" class="button-flat name-action-btn" type="button" hidden>↩️ Zur Lobby</button>
           <div id="gamesMenu" class="header-menu">
             <button id="gamesMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gamesMenuPopup">
@@ -1920,20 +1967,6 @@
         <button id="lobbyTickerNextBtn" class="lobby-ticker-nav" type="button" title="Nächste Meldung">›</button>
         <button id="lobbyTickerCloseBtn" class="lobby-ticker-close" type="button" title="Diese Meldung ausblenden">×</button>
       </div>
-      <div class="box member-lobby-section">
-        <div class="member-lobby-heading">
-          <div>
-            <h2>Neue Partie</h2>
-            <p>Einstellungen wählen und die Partie anschließend offen anbieten oder ein Mitglied einladen.</p>
-          </div>
-          <div class="member-lobby-setup-actions" aria-label="Vorbereitete Partie verwenden">
-            <button id="newGameBtn" class="member-lobby-setup-action member-lobby-offer-action" type="button">♟️ Partie anbieten</button>
-            <button id="createOnlineBtn" class="member-lobby-setup-action member-lobby-invite-action" type="button">✉️ Zur Partie einladen</button>
-          </div>
-        </div>
-        <div id="memberLobbySetupMount" class="member-lobby-settings-mount"></div>
-      </div>
-
       <div class="box global-chat-shell" aria-label="Hammerschach Mitglieder-Chat">
         <div class="global-chat-header">
           <div>
@@ -1962,6 +1995,27 @@
       </div>
     </section>
 
+    <div id="newGameBackdrop" class="info-backdrop new-game-backdrop" hidden>
+      <div class="new-game-modal" role="dialog" aria-modal="true" aria-labelledby="newGameDialogTitle" aria-describedby="newGameDialogIntro">
+        <div class="new-game-modal-head">
+          <div>
+            <h3 id="newGameDialogTitle">♟️ Neue Partie</h3>
+            <p id="newGameDialogIntro" class="new-game-modal-intro">Farbe, Spielmodus, Bedenkzeit und Wertung festlegen.</p>
+          </div>
+          <button id="newGameCloseBtn" class="button-flat new-game-modal-close" type="button" aria-label="Partievorbereitung schließen">✕</button>
+        </div>
+        <div class="new-game-modal-body">
+          <div id="memberLobbySetupMount" class="member-lobby-settings-mount"></div>
+        </div>
+        <div id="newGameDialogStatus" class="new-game-dialog-status" aria-live="polite"></div>
+        <div class="member-lobby-setup-actions new-game-modal-actions" aria-label="Vorbereitete Partie verwenden">
+          <button id="newGameCancelBtn" class="button-flat member-lobby-setup-action new-game-cancel-action" type="button">Abbrechen</button>
+          <button id="newGameBtn" class="member-lobby-setup-action member-lobby-offer-action" type="button">♟️ Partie anbieten</button>
+          <button id="createOnlineBtn" class="member-lobby-setup-action member-lobby-invite-action" type="button">✉️ Mitglied einladen</button>
+        </div>
+      </div>
+    </div>
+
     <div id="firstStepsBackdrop" class="info-backdrop" hidden>
       <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="firstStepsTitle" aria-describedby="firstStepsIntro">
         <h3 id="firstStepsTitle">Erste Schritte im Hammerschach-Gamer</h3>
@@ -1977,7 +2031,7 @@
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
 
           <h4>4. Eine Partie beginnen</h4>
-          <p>Im Bereich <strong>„Neue Partie“</strong> wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Zur Partie einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
+          <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
           <p>Unter <strong>„📂 Partien“ → „📋 Meine Partien“</strong> findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
@@ -2009,7 +2063,7 @@
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
-          <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby. Das große Schachbrett wird dort durch den horizontalen Bereich <strong>„Neue Partie“</strong> und den festen <strong>Hammerschach-Mitglieder-Chat</strong> ersetzt. Unter „Neue Partie“ wählst du die Einstellungen und kannst die Partie direkt offen anbieten oder ein Mitglied einladen. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
+          <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby mit dem festen <strong>Hammerschach-Mitglieder-Chat</strong>. Über <strong>„♟️ Neue Partie“</strong> im Header öffnest du die Partievorbereitung als eigenes Fenster. Dadurch bleibt die Lobby auch auf Smartphones kompakt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
           <p>Auf dem Spielbrett kannst du eine Figur entweder wie bisher antippen und anschließend das Zielfeld wählen oder sie direkt mit Maus beziehungsweise Finger dorthin ziehen. Beim Ziehen dient das gesamte Feld der Figur als großzügige Grifffläche. Ein ungültiger Ablageversuch verändert die Stellung nicht; die Figur bleibt ausgewählt und die erlaubten Zielfelder werden weiterhin angezeigt.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
@@ -2141,7 +2195,7 @@
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>22. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby stehen <strong>„♟️ Partie anbieten“</strong> und <strong>„✉️ Zur Partie einladen“</strong> unmittelbar oben rechts im Bereich <strong>„Neue Partie“</strong>. Beide verwenden genau die darunter gewählten Einstellungen; ein zusätzliches Menü im Header ist deshalb nicht nötig. Sobald du dich in einem Spielraum befindest, erscheint im Header <strong>„↩️ Zur Lobby“</strong> und führt zurück zu „Neue Partie“ und zum Mitglieder-Chat. Auch bei geöffnetem Analyzer, Trainer, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche das Werkzeug direkt und stellt die Lobby ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
+          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Analyzer, Trainer, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche das Werkzeug direkt und stellt die Lobby ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
 
           <h4>23. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -5060,6 +5114,11 @@ const tvAdminStatus = document.getElementById('tvAdminStatus');
 const themeColorMeta = document.getElementById('themeColorMeta');
 const matchActionsEl = document.querySelector('.match-actions');
 const memberLobbyEl = document.getElementById('memberLobby');
+const newGameOpenBtn = document.getElementById('newGameOpenBtn');
+const newGameBackdrop = document.getElementById('newGameBackdrop');
+const newGameCloseBtn = document.getElementById('newGameCloseBtn');
+const newGameCancelBtn = document.getElementById('newGameCancelBtn');
+const newGameDialogStatus = document.getElementById('newGameDialogStatus');
 const memberLobbySetupMountEl = document.getElementById('memberLobbySetupMount');
 const preRoomSetupPanelHome = preRoomSetupPanelEl ? {parent:preRoomSetupPanelEl.parentNode, nextSibling:preRoomSetupPanelEl.nextSibling} : null;
 const globalChatMessagesEl = document.getElementById('globalChatMessages');
@@ -7606,6 +7665,50 @@ function sendGlobalChatMessage(){
   const text=cleanChatText(globalChatInputEl.value);if(!text)return;
   globalChatSocket.send(JSON.stringify({type:'send_message',text}));globalChatInputEl.value='';globalChatInputEl.focus();
 }
+let newGameDialogReturnFocus=null;
+function setNewGameDialogStatus(message){
+  if(newGameDialogStatus)newGameDialogStatus.textContent=String(message||'');
+}
+function openNewGameDialog(){
+  if(!newGameBackdrop||!isMemberLobbyView())return;
+  closeGamesMenu();closePlayerMenu();closeToolsMenu();closeInfoMenu();
+  setNewGameDialogStatus('');
+  newGameDialogReturnFocus=document.activeElement;
+  newGameBackdrop.hidden=false;
+  document.documentElement.classList.add('new-game-dialog-open');
+  setTimeout(()=>{try{if(newGameCloseBtn)newGameCloseBtn.focus();}catch(_){}},0);
+}
+function closeNewGameDialog(options){
+  options=options||{};
+  if(!newGameBackdrop||newGameBackdrop.hidden)return;
+  newGameBackdrop.hidden=true;
+  document.documentElement.classList.remove('new-game-dialog-open');
+  setNewGameDialogStatus('');
+  if(options.restoreFocus!==false){
+    const target=newGameDialogReturnFocus&&document.contains(newGameDialogReturnFocus)?newGameDialogReturnFocus:newGameOpenBtn;
+    setTimeout(()=>{try{if(target&&!target.hidden)target.focus();}catch(_){}},0);
+  }
+  newGameDialogReturnFocus=null;
+}
+if(newGameOpenBtn)newGameOpenBtn.addEventListener('click',openNewGameDialog);
+if(newGameCloseBtn)newGameCloseBtn.addEventListener('click',()=>closeNewGameDialog());
+if(newGameCancelBtn)newGameCancelBtn.addEventListener('click',()=>closeNewGameDialog());
+if(newGameBackdrop)newGameBackdrop.addEventListener('click',event=>{if(event.target===newGameBackdrop)closeNewGameDialog();});
+document.addEventListener('keydown',event=>{
+  if(!newGameBackdrop||newGameBackdrop.hidden)return;
+  if(event.key==='Escape'){
+    event.preventDefault();
+    closeNewGameDialog();
+    return;
+  }
+  if(event.key!=='Tab')return;
+  const focusable=Array.from(newGameBackdrop.querySelectorAll('button:not([disabled]):not([hidden]),select:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),[tabindex]:not([tabindex="-1"])')).filter(element=>element.offsetParent!==null);
+  if(!focusable.length)return;
+  const first=focusable[0];
+  const last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+});
 function updateMemberLobbyUi(){
   const active=isMemberLobbyView();
   document.documentElement.classList.toggle('member-lobby-view',active);
@@ -7620,7 +7723,10 @@ function updateMemberLobbyUi(){
   if(active){
     if(statusEl)statusEl.textContent=embeddedToolStatusText()||'Neue Partie einstellen, Gegner finden oder im Mitglieder-Chat austauschen.';
     connectGlobalChat();
-  }else closeGlobalChat(true);
+  }else{
+    closeNewGameDialog({restoreFocus:false});
+    closeGlobalChat(true);
+  }
   hammerschachScheduleHeightReport(false);
 }
 if(globalChatSendBtn)globalChatSendBtn.addEventListener('click',sendGlobalChatMessage);
@@ -11890,6 +11996,12 @@ function updateOnlineActionButtons(){
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   const inRoom = !!onlineRoomId;
   const showLobbyButton = inRoom || embeddedToolActive();
+  if(newGameOpenBtn){
+    newGameOpenBtn.hidden = !loggedIn || showLobbyButton;
+    newGameOpenBtn.disabled = !loggedIn || showLobbyButton;
+    newGameOpenBtn.title = loggedIn ? 'Farbe, Spielmodus, Bedenkzeit und Wertung einstellen.' : 'Zum Erstellen einer Partie bitte einloggen.';
+  }
+  if((!loggedIn || showLobbyButton) && newGameBackdrop && !newGameBackdrop.hidden) closeNewGameDialog({restoreFocus:false});
   if(newGameMenuEl){
     newGameMenuEl.hidden = showLobbyButton;
     if(showLobbyButton) closeNewGameMenu();
@@ -14222,13 +14334,18 @@ async function createNewOnlineRoom(opts){
 async function offerPreparedGame(event){
   if(event && event.isTrusted === false) return;
   if(onlineRoomId){ openNewGameView(); return; }
+  setNewGameDialogStatus('');
   if(!requireAccountForInvitationCreation()) return;
   if(!timeMode || !currentTimeControlPayload()){
-    statusEl.textContent = 'Bitte zuerst eine Bedenkzeit auswählen, bevor du die Partie anbietest.';
+    const message = 'Bitte zuerst eine Bedenkzeit auswählen, bevor du die Partie anbietest.';
+    statusEl.textContent = message;
+    setNewGameDialogStatus(message);
     return;
   }
   if(isDailyTimeControl() && !onlineAuthUser){
-    statusEl.textContent = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
+    const message = 'Daily Chess ist nur nach Registrierung oder Login verfügbar.';
+    statusEl.textContent = message;
+    setNewGameDialogStatus(message);
     openAuthDialog('login');
     return;
   }
@@ -14236,6 +14353,7 @@ async function offerPreparedGame(event){
   try{
     const created = await createNewOnlineRoom({copyLink:false, openOffer:true});
     if(created){
+      closeNewGameDialog({restoreFocus:false});
       onlineLastMessage = 'Partieangebot wird veröffentlicht. Warte auf einen Gegner.';
       statusEl.textContent = onlineLastMessage;
       setTimeout(requestOnlineState, 500);
@@ -14248,9 +14366,11 @@ async function offerPreparedGame(event){
 
 async function inviteToOnlineGame(event){
   if(event && event.isTrusted === false) return;
+  setNewGameDialogStatus('');
   if(createOnlineBtn) createOnlineBtn.disabled = true;
   try{
-    await openInviteDialogForCurrentOrNewRoom();
+    const opened = await openInviteDialogForCurrentOrNewRoom();
+    if(opened) closeNewGameDialog({restoreFocus:false});
   } finally {
     updateOnlineActionButtons();
   }
@@ -16577,6 +16697,7 @@ function setTimeControl(key, label, category){
   syncCurrentTimeControlToOnline();
 }
 timeSelects.forEach(select => select.addEventListener('change', () => {
+  setNewGameDialogStatus('');
   const option = select.selectedOptions && select.selectedOptions[0];
   setTimeControl(select.value, option ? (option.dataset.timeLabel || option.textContent.trim()) : '', select.dataset.category);
 }));
