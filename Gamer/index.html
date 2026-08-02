@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-RESPONSIVE-LOBBY-20260802-2 -->
+<!-- BUILD: GAMER-CHESS960-CASTLING-20260802-1 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -4764,7 +4764,7 @@ function applyGameSetup(setup, options){
     masterHistory = buildThemeHistory(normalized);
     invalidateHistoryStateCache();
     viewIndex = masterHistory.length;
-    lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
+    lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to,meta:masterHistory[masterHistory.length-1].meta || {}} : null;
     renderBoard();
   }
   updateVariantUi();
@@ -13300,7 +13300,7 @@ function commitRemoteMove(found, promotion){
   /* Wer gerade eine ältere Stellung betrachtet, bleibt dort. Nur in der
      Live-Ansicht folgt das Brett automatisch dem neu eingegangenen Zug. */
   viewIndex = wasAtLatestPosition ? masterHistory.length : Math.min(viewIndex, masterHistory.length);
-  lastMove = {from:mv.from, to:mv.to};
+  lastMove = {from:mv.from, to:mv.to, meta:mv.meta || {}};
   selected = null;
   afterMoveClock(before.turn);
   playMoveSound({opponent:true, capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), promotion:!!mv.promotion, check:info.inCheck(info.turn)});
@@ -14195,7 +14195,7 @@ function applyOnlineGameState(game){
     masterHistory = buildThemeHistory(currentGameSetup);
     invalidateHistoryStateCache();
     viewIndex = masterHistory.length;
-    lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
+    lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to,meta:masterHistory[masterHistory.length-1].meta || {}} : null;
     gameEnded = false;
     onlineDrawOffer = null;
     resetClockForNewGame();
@@ -14648,8 +14648,20 @@ function findMatchingLegalMove(legalMoves, moveLike){
   }
 
   const exact = legalMoves.filter(move => sameFrom(move) && sameTo(move));
-  if(exact.length <= 1) return exact[0] || null;
-  return exact.find(move => !castleSideCode(move)) || exact[0];
+  if(exact.length){
+    return exact.find(move => !castleSideCode(move)) || exact[0];
+  }
+
+  /* Komfortable Chess960-Eingabe: Eine Rochade darf auch über das spätere
+     Königsfeld gewählt werden. Ein tatsächlich legaler normaler Königszug
+     auf dieses Feld hat durch die obige Exaktsuche weiterhin Vorrang; in
+     mehrdeutigen Stellungen bleibt König-auf-Turm die Rochade-Eingabe. */
+  const castleByKingTarget = legalMoves.filter(move => {
+    if(!sameFrom(move) || !castleSideCode(move)) return false;
+    const meta = move.meta || {};
+    return Number.isInteger(meta.kingTo) && meta.kingTo === to[0] && move.to[1] === to[1];
+  });
+  return castleByKingTarget.length === 1 ? castleByKingTarget[0] : null;
 }
 
 function currentTheme(){
@@ -14752,7 +14764,7 @@ function premoveSquareName(square){
 }
 function premoveLabel(move){
   if(!move) return '';
-  return premoveSquareName(move.from) + '–' + premoveSquareName(move.to) + (move.promotion ? '=' + String(move.promotion).toUpperCase() : '');
+  return premoveSquareName(move.from) + '–' + premoveSquareName(move.visualTo || move.to) + (move.promotion ? '=' + String(move.promotion).toUpperCase() : '');
 }
 function canQueuePremove(gameState){
   const g = gameState || buildGameFromHistory(masterHistory.length);
@@ -14848,14 +14860,18 @@ function premoveCandidatesFrom(gameState,from){
   return candidates;
 }
 function findPremoveCandidate(gameState,from,to){
-  return premoveCandidatesFrom(gameState,from).find(move => move.to[0] === to[0] && move.to[1] === to[1]) || null;
+  return findMatchingLegalMove(premoveCandidatesFrom(gameState,from),{from,to});
 }
 function highlightPremoveSelection(x,y,gameState){
   clearBoardHighlights();
   markLastMove();
   markQueuedPremove();
   markSquare(x,y,'selected');
-  premoveCandidatesFrom(gameState,[x,y]).forEach(move => markSquare(move.to[0],move.to[1],'premove-legal'));
+  const candidates = premoveCandidatesFrom(gameState,[x,y]);
+  candidates.forEach(move => {
+    const target = legalMoveSelectionTarget(move,candidates);
+    markSquare(target[0],target[1],'premove-legal');
+  });
 }
 function finishQueuePremove(candidate,promotion){
   const g = buildGameFromHistory(masterHistory.length);
@@ -14875,6 +14891,7 @@ function finishQueuePremove(candidate,promotion){
   queuedPremove = {
     from:currentCandidate.from.slice(),
     to:currentCandidate.to.slice(),
+    visualTo:visualKingDestination(currentCandidate).slice(),
     promotion:promotion || null,
     castle:castleSideCode(currentCandidate) || null,
     role:onlineRoleCode,
@@ -15056,27 +15073,50 @@ function renderBoard(){
 function getSquareEl(x,y){ return boardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]'); }
 function markSquare(x,y,cls){ const el = getSquareEl(x,y); if(el) el.classList.add(cls); }
 function clearBoardHighlights(){ boardEl.querySelectorAll('.square.selected,.square.legal,.square.last-move,.square.pending-move,.square.premove-from,.square.premove-to,.square.premove-legal').forEach(el => el.classList.remove('selected','legal','last-move','pending-move','premove-from','premove-to','premove-legal')); }
+function visualKingDestination(move){
+  if(move && move.meta && move.meta.castle && Number.isInteger(move.meta.kingTo) && move.from){
+    return [move.meta.kingTo,move.from[1]];
+  }
+  return move && move.to ? move.to : [0,0];
+}
+function legalMoveSelectionTarget(move,siblingMoves){
+  if(!castleSideCode(move)) return move.to;
+  const kingTarget = visualKingDestination(move);
+  if(kingTarget[0] === move.from[0] && kingTarget[1] === move.from[1]) return move.to;
+  const ordinaryMoveUsesKingTarget = (siblingMoves || []).some(other =>
+    other !== move && !castleSideCode(other) &&
+    other.to[0] === kingTarget[0] && other.to[1] === kingTarget[1]
+  );
+  return ordinaryMoveUsesKingTarget ? move.to : kingTarget;
+}
 function markLastMove(){
   if(!lastMove || viewIndex !== masterHistory.length) return;
   markSquare(lastMove.from[0], lastMove.from[1], 'last-move');
-  markSquare(lastMove.to[0], lastMove.to[1], 'last-move');
+  const visualTo = visualKingDestination(lastMove);
+  markSquare(visualTo[0], visualTo[1], 'last-move');
 }
 function markPendingDailyMove(){
   if(!pendingDailyMove || viewIndex !== masterHistory.length) return;
   markSquare(pendingDailyMove.move.from[0], pendingDailyMove.move.from[1], 'pending-move');
-  markSquare(pendingDailyMove.move.to[0], pendingDailyMove.move.to[1], 'pending-move');
+  const visualTo = visualKingDestination(pendingDailyMove.move);
+  markSquare(visualTo[0], visualTo[1], 'pending-move');
 }
 function markQueuedPremove(){
   if(!queuedPremove || viewIndex !== masterHistory.length) return;
   markSquare(queuedPremove.from[0],queuedPremove.from[1],'premove-from');
-  markSquare(queuedPremove.to[0],queuedPremove.to[1],'premove-to');
+  const visualTo = queuedPremove.visualTo || queuedPremove.to;
+  markSquare(visualTo[0],visualTo[1],'premove-to');
 }
 function highlightSelection(x,y,gameState){
   clearBoardHighlights();
   markLastMove();
   markSquare(x,y,'selected');
   const g = gameState || buildGameFromHistory(masterHistory.length);
-  g.legalMoves().filter(m => m.from[0] === x && m.from[1] === y).forEach(m => markSquare(m.to[0], m.to[1], 'legal'));
+  const legal = g.legalMoves().filter(m => m.from[0] === x && m.from[1] === y);
+  legal.forEach(move => {
+    const target = legalMoveSelectionTarget(move,legal);
+    markSquare(target[0],target[1],'legal');
+  });
 }
 function reapplySelectionHighlight(g){
   if(!selected || viewIndex !== masterHistory.length) return;
@@ -15463,8 +15503,12 @@ function renderVariationBoard(){
       sq.dataset.x = x;
       sq.dataset.y = y;
       if(variationSelected && variationSelected[0] === x && variationSelected[1] === y) sq.classList.add('selected');
-      if(legalFromSelection.some(move => move.to[0] === x && move.to[1] === y)) sq.classList.add('legal');
-      if(last && ((last.from[0] === x && last.from[1] === y) || (last.to[0] === x && last.to[1] === y))) sq.classList.add('last-move');
+      if(legalFromSelection.some(move => {
+        const target = legalMoveSelectionTarget(move,legalFromSelection);
+        return target[0] === x && target[1] === y;
+      })) sq.classList.add('legal');
+      const lastVisualTo = last ? visualKingDestination(last) : null;
+      if(last && ((last.from[0] === x && last.from[1] === y) || (lastVisualTo[0] === x && lastVisualTo[1] === y))) sq.classList.add('last-move');
       const piece = variationGame.at(x,y);
       if(piece !== '.'){
         const img = document.createElement('img');
@@ -15638,10 +15682,11 @@ function highlightVariationDragSelection(x,y){
   variationBoardEl.querySelectorAll('.square.selected,.square.legal').forEach(square => square.classList.remove('selected','legal'));
   const source = getVariationSquareEl(x,y);
   if(source) source.classList.add('selected');
-  variationGame.legalMoves()
-    .filter(move => move.from[0] === x && move.from[1] === y)
-    .forEach(move => {
-      const target = getVariationSquareEl(move.to[0],move.to[1]);
+  const legal = variationGame.legalMoves()
+    .filter(move => move.from[0] === x && move.from[1] === y);
+  legal.forEach(move => {
+      const selectionTarget = legalMoveSelectionTarget(move,legal);
+      const target = getVariationSquareEl(selectionTarget[0],selectionTarget[1]);
       if(target) target.classList.add('legal');
     });
 }
@@ -15852,7 +15897,7 @@ function commitHumanMove(found, promotion){
   invalidateHistoryStateCache();
   cacheAdvancedHistoryState(info,beforeState.positionCounts);
   viewIndex = masterHistory.length;
-  lastMove = {from:mv.from, to:mv.to};
+  lastMove = {from:mv.from, to:mv.to, meta:mv.meta || {}};
   selected = null;
   afterMoveClock(before.turn);
   playMoveSound({capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), promotion:!!mv.promotion, check:info.inCheck(info.turn)});
@@ -16168,7 +16213,7 @@ function newGame(){
   pendingDailyMove = null;
   queuedPremove = null;
   selected = null;
-  lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to} : null;
+  lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to,meta:masterHistory[masterHistory.length-1].meta || {}} : null;
   gameEnded = false;
   resetClockForNewGame();
   renderBoard();
