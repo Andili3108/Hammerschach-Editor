@@ -150,7 +150,7 @@
   button:disabled{opacity:.55;cursor:default;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 3px 8px rgba(0,0,0,.08);}
   .button-flat{border-radius:16px;background:linear-gradient(180deg,#ffffff 0%,#ececef 100%)!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(0,0,0,.04), 0 6px 14px rgba(0,0,0,.10)!important;}
   .top-layout{display:flex;align-items:flex-start;justify-content:center;gap:var(--gap);flex-wrap:nowrap;width:100%;}
-  .board-column{width:var(--board-size);display:flex;flex-direction:column;gap:12px;flex:0 0 var(--board-size);}
+  .board-column{width:var(--board-size);display:flex;flex-direction:column;gap:10px;flex:0 0 var(--board-size);}
   .board-wrapper{position:relative;width:var(--board-size);max-width:100%;aspect-ratio:1/1;}
   #board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--dark-square);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);user-select:none;overflow:hidden;position:relative;transition:opacity .22s ease,filter .22s ease;touch-action:none;}
   #board[hidden],#variationBoard[hidden],#mainSidePanel[hidden],#variationSidePanel[hidden]{display:none!important;}
@@ -262,7 +262,7 @@
   .moves-right{width:var(--right-col);max-width:100%;flex:0 0 var(--right-col);}
   .side-panel{height:var(--board-size);min-height:var(--board-size);padding:12px 14px;display:flex;flex-direction:column;overflow:hidden;}
   .setup-panel{display:flex;flex-direction:column;gap:12px;}
-  .side-toggle-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+  .side-toggle-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px;}
   .side-toggle-row[hidden]{display:none!important;}
   .side-toggle-btn{border-radius:12px;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08);padding:8px 8px;}
   .side-toggle-btn.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important;}
@@ -279,7 +279,27 @@
   .rematch-hint:empty{display:none;}
   .side-content{min-height:0;flex:1;overflow:auto;}
   .side-content[hidden]{display:none!important;}
-  .players-panel{display:flex;flex-direction:column;gap:12px;}
+  .board-player-strip{width:100%;min-width:0;box-sizing:border-box;}
+  .board-player-strip[hidden]{display:none!important;}
+  .board-player-strip .player-clock-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:11px;row-gap:4px;align-items:center;border-radius:14px;padding:8px 12px;background:linear-gradient(180deg,#fff 0%,#f3f3f5 100%);box-shadow:0 5px 13px rgba(0,0,0,.08);}
+  .board-player-strip .player-clock-card.active{box-shadow:inset 0 0 0 2px rgba(132,63,70,.38),0 5px 13px rgba(0,0,0,.10);background:#fff;}
+  .board-player-strip .player-clock-head{grid-column:1;grid-row:1;white-space:nowrap;}
+  .board-player-strip .player-clock-name-row{grid-column:2;grid-row:1;justify-content:flex-start;min-width:0;}
+  .board-player-strip .player-rating-line{grid-column:1;grid-row:2;padding:3px 7px;font-size:11px;}
+  .board-player-strip .head-to-head-line{grid-column:2;grid-row:2;padding:3px 7px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .board-player-strip .player-clock-time{grid-column:3;grid-row:1 / span 2;align-self:center;min-width:112px;font-size:31px;}
+  .board-room-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;min-width:0;}
+  .board-room-controls[hidden]{display:none!important;}
+  .board-room-controls>.room-rating-status{align-self:stretch;display:flex;align-items:center;justify-content:center;padding:7px 10px;font-size:13px;}
+  .board-room-controls>.room-rating-status[hidden]{display:none!important;}
+  .board-room-controls>.next-daily-game-box,.board-room-controls>.public-visibility-box,.board-room-controls>.live-start-box,.board-room-controls>.rematch-bar{margin:0;min-width:0;}
+  .board-room-controls>.next-daily-game-box,.board-room-controls>.rematch-bar{grid-column:1 / -1;}
+  .board-room-controls>.public-visibility-box{padding:8px 10px;}
+  .board-room-controls>.public-visibility-box .clock-title{font-size:14px;}
+  .board-room-controls>.public-visibility-box .public-visibility-label{font-size:12px;}
+  .board-room-controls>.live-start-box{padding:8px 10px;}
+  .board-room-controls>.live-start-box .live-start-btn{min-height:40px;font-size:14px;}
+  .board-room-controls>.live-start-box .live-start-hint{font-size:11px;}
   .live-start-box{border-radius:16px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.16);padding:11px 12px;display:flex;flex-direction:column;gap:8px;align-items:stretch;}
   .live-start-box[hidden]{display:none!important;}
   .live-start-btn{width:100%;min-height:46px;border-radius:13px;background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;font-size:16px;}
@@ -930,7 +950,7 @@
   .game-archive-actions{display:flex;gap:8px;flex-wrap:wrap;}
   @media(max-width:820px){.game-archive-filters{grid-template-columns:1fr 1fr}.game-archive-card{grid-template-columns:1fr}.game-archive-card-actions{justify-content:flex-start;max-width:none}}
   @media(max-width:520px){.game-archive-filters{grid-template-columns:1fr}.game-archive-modal{padding:15px}.game-archive-card-actions button{flex:1}}
-  .side-toggle-row.spectator{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .side-toggle-row.spectator{grid-template-columns:minmax(0,1fr);}
 
   html.member-lobby-view .top-layout{display:none!important;}
   .member-lobby{display:flex;flex-direction:column;gap:14px;width:100%;}
@@ -1755,6 +1775,17 @@
     .match-actions{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:7px;}
     .match-actions>button,.match-actions>.header-menu>.header-menu-button{min-height:42px;font-size:13px;padding:7px 6px;}
   }
+  @media (max-width:760px){
+    .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto;column-gap:7px;padding:7px 9px;border-radius:12px;}
+    .board-player-strip .player-clock-head{font-size:12px;gap:5px;}
+    .board-player-strip .player-clock-name{font-size:14px;}
+    .board-player-strip .player-clock-time{min-width:82px;font-size:24px;}
+    .board-player-strip .player-rating-line{font-size:10px;padding:2px 5px;}
+    .board-player-strip .head-to-head-line{display:none!important;}
+    .board-player-strip .presence-badge{font-size:10px;padding:3px 6px;}
+    .board-room-controls{grid-template-columns:1fr;}
+    .board-room-controls>.next-daily-game-box,.board-room-controls>.rematch-bar{grid-column:auto;}
+  }
 </style>
 </head>
 <body>
@@ -2054,6 +2085,7 @@
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
+          <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
           <p>Unter <strong>„📂 Partien“ → „📋 Meine Partien“</strong> findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
@@ -2122,7 +2154,7 @@
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
-          <p>Der Ersteller kann eine laufende Live- oder Daily-Partie im Bereich <strong>„Spieler &amp; Zeit“</strong> nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
+          <p>Der Ersteller kann eine laufende Live- oder Daily-Partie über die kompakte <strong>„Zuschauerfreigabe“</strong> unter dem Brett nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
           <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
 
@@ -2135,7 +2167,7 @@
 
           <h4>10. Partiebeginn</h4>
           <ul>
-            <li><strong>Live-Partie:</strong> Wenn beide Spieler gleichzeitig verbunden sind, erscheint <strong>„Partie starten“</strong> in der rechten Spalte bei „Spieler &amp; Zeit“. Weiß startet dort die Partie; Schwarz erhält den Hinweis, dass Weiß den Start ausführt. Anschließend läuft die Uhr des Spielers am Zug fortlaufend herunter.</li>
+            <li><strong>Live-Partie:</strong> Wenn beide Spieler gleichzeitig verbunden sind, erscheint <strong>„Partie starten“</strong> kompakt unter dem Brett. Weiß startet dort die Partie; Schwarz erhält den Hinweis, dass Weiß den Start ausführt. Anschließend läuft die Uhr des Spielers am Zug fortlaufend herunter.</li>
             <li><strong>Daily Chess:</strong> Die Partie startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden. Gleichzeitig beginnt die serverseitige Zugfrist für Weiß; eine gleichzeitige Online-Verbindung beider Spieler ist nicht nötig.</li>
           </ul>
 
@@ -2145,7 +2177,7 @@
           <p><strong>So rochierst du im Freestyle:</strong> Klicke zuerst deinen König und danach den Turm an, mit dem du rochieren möchtest. Klicke also nicht auf das spätere Zielfeld des Königs. Der Turm auf der Königsseite löst die kurze Rochade aus, der Turm auf der Damenseite die lange Rochade. Ist die Rochade nach den Regeln erlaubt, werden beide Figuren automatisch auf ihre Zielfelder gesetzt: kurze Rochade mit König auf der g-Linie und Turm auf der f-Linie, lange Rochade mit König auf der c-Linie und Turm auf der d-Linie.</p>
 
           <h4>12. Spieler- und Zeitanzeige</h4>
-          <p>Im Spielraum kannst du die rechte Spalte zwischen <strong>„Spieler &amp; Zeit“</strong>, <strong>„Zugliste“</strong> und <strong>„Chat“</strong> umschalten.</p>
+          <p>Die Spielernamen und Uhren stehen direkt am Brett: Der Gegner wird oberhalb, der eigene Spieler unterhalb angezeigt. Beim Drehen des Bretts wechseln die beiden Leisten automatisch mit der Brettausrichtung. Die rechte Spalte bleibt dadurch ausschließlich für <strong>„Zugliste“</strong> und <strong>„Chat“</strong> frei.</p>
           <ul>
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Bei einer gewerteten Partie erscheint zusätzlich das maßgebliche Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
@@ -2161,7 +2193,7 @@
           <h4>14. Partieaktionen</h4>
           <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. <strong>„Aufgeben“</strong> ist bewusst neutral dargestellt; erst die endgültige Bestätigung im Sicherheitsfenster ist rot. <strong>„Weiterspielen“</strong> bricht den Vorgang ab. Bei einer Daily-Zugvorschau erscheinen zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
           <p>Bei zwei registrierten Mitgliedern steht unter dem Namen des Gegners der <strong>direkte Vergleich</strong> mit Siegen, Remis und Niederlagen. Gezählt wird ausschließlich innerhalb derselben Hammerschach-Kategorie: Daily Classic, Daily Freestyle, Live Classic, Live Rapid, Live Blitz oder Live Freestyle. Normale und Turnierpartien sowie gewertete und ungewertete Partien fließen gemeinsam in die jeweils passende Kategorie ein.</p>
-          <p>Nach dem Ende einer normalen Partie erscheint direkt unter <strong>„Spieler &amp; Zeit | Zugliste | Chat“</strong> die Schaltfläche <strong>„🔁 Revanche anbieten“</strong>. Der Gegner kann annehmen oder ablehnen. Erst bei Annahme wird ein neuer Spielraum mit identischer Bedenkzeit, identischem Spielmodus und identischer Wertung erstellt; die Farben werden automatisch getauscht. Bei Turnierpartien, Zuschauern und Gastspielern wird keine direkte Revanche angeboten.</p>
+          <p>Nach dem Ende einer normalen Partie erscheint unter den Spielerleisten die Schaltfläche <strong>„🔁 Revanche anbieten“</strong>. Der Gegner kann annehmen oder ablehnen. Erst bei Annahme wird ein neuer Spielraum mit identischer Bedenkzeit, identischem Spielmodus und identischer Wertung erstellt; die Farben werden automatisch getauscht. Bei Turnierpartien, Zuschauern und Gastspielern wird keine direkte Revanche angeboten.</p>
 
           <h4>15. Automatische Partieenden</h4>
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
@@ -3252,6 +3284,23 @@
 
     <div class="top-layout">
       <div class="board-column">
+        <div id="boardPlayerTop" class="board-player-strip board-player-strip-top" aria-label="Spieler oberhalb des Brettes" hidden>
+          <div class="player-clock-card" id="clockCardB">
+            <div class="player-clock-head">
+              <span class="dot black"></span>
+              <span class="player-clock-side">Schwarz</span>
+            </div>
+            <div class="player-clock-name-row">
+              <div class="player-clock-name" id="blackPlayerName">—</div>
+              <span id="blackPlayerPresence" class="presence-badge player-presence-badge" hidden>
+                <span class="presence-dot" aria-hidden="true"></span><span class="player-presence-label">Offline</span>
+              </span>
+            </div>
+            <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
+            <div id="blackHeadToHead" class="head-to-head-line" hidden></div>
+            <div class="player-clock-time" id="clockB">--:--</div>
+          </div>
+        </div>
         <div class="board-wrapper">
           <div id="board" aria-label="Schachbrett"></div>
           <div id="variationBoard" class="variation-board" aria-label="Variantenbrett" hidden></div>
@@ -3267,9 +3316,49 @@
           </div>
           <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
         </div>
+        <div id="boardPlayerBottom" class="board-player-strip board-player-strip-bottom" aria-label="Spieler unterhalb des Brettes" hidden>
+          <div class="player-clock-card" id="clockCardW">
+            <div class="player-clock-head">
+              <span class="dot white"></span>
+              <span class="player-clock-side">Weiß</span>
+            </div>
+            <div class="player-clock-name-row">
+              <div class="player-clock-name" id="whitePlayerName">—</div>
+              <span id="whitePlayerPresence" class="presence-badge player-presence-badge" hidden>
+                <span class="presence-dot" aria-hidden="true"></span><span class="player-presence-label">Offline</span>
+              </span>
+            </div>
+            <div id="whitePlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
+            <div id="whiteHeadToHead" class="head-to-head-line" hidden></div>
+            <div class="player-clock-time" id="clockW">--:--</div>
+          </div>
+        </div>
         <div id="premoveNotice" class="premove-notice" role="status" aria-live="polite" hidden>
           <span id="premoveNoticeText">Premove vorgemerkt</span>
           <button id="premoveCancelBtn" class="button-flat premove-cancel" type="button" title="Premove abbrechen" aria-label="Premove abbrechen">×</button>
+        </div>
+        <div id="playersPanel" class="board-room-controls" hidden>
+          <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
+          <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
+            <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
+            <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
+          </div>
+          <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
+            <div class="clock-title">Zuschauerfreigabe</div>
+            <label class="public-visibility-label" for="roomPublicGameCheckbox">
+              <input id="roomPublicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
+              <span>Partie öffentlich anzeigen und Zuschauen erlauben</span>
+            </label>
+          </div>
+          <div id="liveStartBox" class="live-start-box" hidden>
+            <button id="startOnlineBtn" class="live-start-btn" type="button" disabled>Partie starten</button>
+            <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
+          </div>
+          <div id="rematchBar" class="rematch-bar" hidden aria-live="polite">
+            <button id="rematchBtn" class="rematch-btn" type="button">🔁 Revanche anbieten</button>
+            <button id="rematchDeclineBtn" class="button-flat rematch-decline-btn" type="button" hidden>Ablehnen</button>
+            <div id="rematchHint" class="rematch-hint"></div>
+          </div>
         </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
           <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
@@ -3414,66 +3503,8 @@
           </div>
 
           <div id="sideToggleRow" class="side-toggle-row" aria-label="Rechte Spalte umschalten" hidden>
-            <button id="showPlayersPanelBtn" class="side-toggle-btn active" type="button">Spieler & Zeit</button>
-            <button id="showMovesPanelBtn" class="side-toggle-btn" type="button">Zugliste</button>
+            <button id="showMovesPanelBtn" class="side-toggle-btn active" type="button">Zugliste</button>
             <button id="showChatPanelBtn" class="side-toggle-btn" type="button">Chat</button>
-          </div>
-          <div id="rematchBar" class="rematch-bar" hidden aria-live="polite">
-            <button id="rematchBtn" class="rematch-btn" type="button">🔁 Revanche anbieten</button>
-            <button id="rematchDeclineBtn" class="button-flat rematch-decline-btn" type="button" hidden>Ablehnen</button>
-            <div id="rematchHint" class="rematch-hint"></div>
-          </div>
-
-          <div id="playersPanel" class="side-content players-panel" hidden>
-            <div class="player-clock-card" id="clockCardW">
-              <div class="player-clock-head">
-                <span class="dot white"></span>
-                <span class="player-clock-side">Weiß</span>
-              </div>
-              <div class="player-clock-name-row">
-                <div class="player-clock-name" id="whitePlayerName">—</div>
-                <span id="whitePlayerPresence" class="presence-badge player-presence-badge" hidden>
-                  <span class="presence-dot" aria-hidden="true"></span><span class="player-presence-label">Offline</span>
-                </span>
-              </div>
-              <div id="whitePlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
-              <div id="whiteHeadToHead" class="head-to-head-line" hidden></div>
-              <div class="player-clock-time" id="clockW">--:--</div>
-            </div>
-            <div class="player-clock-card" id="clockCardB">
-              <div class="player-clock-head">
-                <span class="dot black"></span>
-                <span class="player-clock-side">Schwarz</span>
-              </div>
-              <div class="player-clock-name-row">
-                <div class="player-clock-name" id="blackPlayerName">—</div>
-                <span id="blackPlayerPresence" class="presence-badge player-presence-badge" hidden>
-                  <span class="presence-dot" aria-hidden="true"></span><span class="player-presence-label">Offline</span>
-                </span>
-              </div>
-              <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
-              <div id="blackHeadToHead" class="head-to-head-line" hidden></div>
-              <div class="player-clock-time" id="clockB">--:--</div>
-            </div>
-            <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
-            <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
-              <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
-              <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
-            </div>
-
-            <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
-              <div class="clock-title">Zuschauerfreigabe</div>
-              <label class="public-visibility-label" for="roomPublicGameCheckbox">
-                <input id="roomPublicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
-                <span>Partie öffentlich anzeigen und Zuschauen erlauben</span>
-              </label>
-              <div id="roomPublicVisibilityHint" class="public-visibility-hint">Nur der Ersteller kann die Zuschauerfreigabe ändern.</div>
-            </div>
-
-            <div id="liveStartBox" class="live-start-box" hidden>
-              <button id="startOnlineBtn" class="live-start-btn" type="button" disabled>Partie starten</button>
-              <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
-            </div>
           </div>
 
           <div id="movesPanel" class="side-content moves-panel" hidden>
@@ -4338,7 +4369,8 @@ const variationMoveListEl = document.getElementById('variationMoveList');
 const variationMovesInfoEl = document.getElementById('variationMovesInfo');
 const movesPanelEl = document.getElementById('movesPanel');
 const chatPanelEl = document.getElementById('chatPanel');
-const showPlayersPanelBtn = document.getElementById('showPlayersPanelBtn');
+const boardPlayerTopEl = document.getElementById('boardPlayerTop');
+const boardPlayerBottomEl = document.getElementById('boardPlayerBottom');
 const showMovesPanelBtn = document.getElementById('showMovesPanelBtn');
 const showChatPanelBtn = document.getElementById('showChatPanelBtn');
 const chatMessagesEl = document.getElementById('chatMessages');
@@ -4362,12 +4394,27 @@ let chatMessages = [];
 let chatMessageIds = new Set();
 let chatLastSentAt = 0;
 let chatUnreadCount = 0;
-let rightPanelMode = 'players';
+let rightPanelMode = 'moves';
+
+function syncBoardPlayerStrips(){
+  if(!boardPlayerTopEl || !boardPlayerBottomEl) return;
+  const whiteCard = document.getElementById('clockCardW');
+  const blackCard = document.getElementById('clockCardB');
+  if(!whiteCard || !blackCard) return;
+  const whiteAtBottom = variationModeActive ? variationOrientationWhite : orientationWhite;
+  const topCard = whiteAtBottom ? blackCard : whiteCard;
+  const bottomCard = whiteAtBottom ? whiteCard : blackCard;
+  if(topCard.parentElement !== boardPlayerTopEl) boardPlayerTopEl.appendChild(topCard);
+  if(bottomCard.parentElement !== boardPlayerBottomEl) boardPlayerBottomEl.appendChild(bottomCard);
+}
 
 function updateSidePanelLayout(){
   const inRoom = (typeof onlineRoomId !== 'undefined') && !!onlineRoomId;
   const spectator = inRoom && onlineRoleCode === 'spectator';
-  if(spectator && rightPanelMode === 'chat') rightPanelMode = 'players';
+  if(spectator && rightPanelMode === 'chat') rightPanelMode = 'moves';
+  syncBoardPlayerStrips();
+  if(boardPlayerTopEl) boardPlayerTopEl.hidden = !inRoom;
+  if(boardPlayerBottomEl) boardPlayerBottomEl.hidden = !inRoom;
   if(preRoomSetupPanelEl) preRoomSetupPanelEl.hidden = inRoom;
   if(sideToggleRowEl){
     sideToggleRowEl.hidden = !inRoom;
@@ -4379,26 +4426,24 @@ function updateSidePanelLayout(){
     if(movesPanelEl) movesPanelEl.hidden = true;
     if(chatPanelEl) chatPanelEl.hidden = true;
   } else {
-    if(playersPanelEl) playersPanelEl.hidden = rightPanelMode !== 'players';
+    if(playersPanelEl) playersPanelEl.hidden = false;
     if(movesPanelEl) movesPanelEl.hidden = rightPanelMode !== 'moves';
     if(chatPanelEl) chatPanelEl.hidden = spectator || rightPanelMode !== 'chat';
   }
-  if(showPlayersPanelBtn) showPlayersPanelBtn.classList.toggle('active', rightPanelMode === 'players');
   if(showMovesPanelBtn) showMovesPanelBtn.classList.toggle('active', rightPanelMode === 'moves');
   if(showChatPanelBtn) showChatPanelBtn.classList.toggle('active', rightPanelMode === 'chat');
   updateDailyMoveConfirmationUi();
 }
 function setRightPanelMode(mode){
-  rightPanelMode = mode === 'moves' ? 'moves' : mode === 'chat' ? 'chat' : 'players';
+  rightPanelMode = mode === 'chat' ? 'chat' : 'moves';
   updateSidePanelLayout();
   if(rightPanelMode === 'chat') clearChatUnreadIndicator();
   if(rightPanelMode === 'chat') renderChatMessages();
   updateChatUnreadIndicator();
 }
-if(showPlayersPanelBtn) showPlayersPanelBtn.addEventListener('click', () => setRightPanelMode('players'));
 if(showMovesPanelBtn) showMovesPanelBtn.addEventListener('click', () => setRightPanelMode('moves'));
 if(showChatPanelBtn) showChatPanelBtn.addEventListener('click', () => setRightPanelMode('chat'));
-setTimeout(() => setRightPanelMode('players'), 0);
+setTimeout(() => setRightPanelMode('moves'), 0);
 
 function cleanChatText(value){
   return String(value || '')
@@ -14127,7 +14172,7 @@ function applyOnlineGameState(game){
   if(onlineGameStarted) onlinePendingStartMessageId = null;
   onlineGameStartedAt = game && game.startedAt ? game.startedAt : null;
   if(onlineGameStarted && !wasStarted){
-    setRightPanelMode('players');
+    setRightPanelMode('moves');
     pendingDailyMove = null;
     queuedPremove = null;
     selected = null;
@@ -14930,6 +14975,7 @@ boardEl.addEventListener('click', event => {
   if(Number.isInteger(x) && Number.isInteger(y)) onSquareClick(x,y);
 });
 function renderBoard(){
+  syncBoardPlayerStrips();
   if(boardRenderFrame !== null){
     cancelAnimationFrame(boardRenderFrame);
     boardRenderFrame = null;
@@ -15072,7 +15118,7 @@ function updateStatus(g){
       } else {
         if(onlineRoleCode === 'w'){
           if(onlineOpenOffer && onlineOpenOfferStatus === 'open' && !onlineAssignedSeats.black) statusEl.textContent = 'Partieangebot ist offen — warte auf einen Gegner.';
-          else statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — starte die Partie rechts bei „Spieler & Zeit“.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
+          else statusEl.textContent = isOnlineSideConnected('b') ? onlineSideName('b') + ' verbunden — starte die Partie direkt unter dem Brett.' : (onlineLastMessage === 'Einladungslink wurde kopiert.' ? 'Einladungslink kopiert — warte auf Schwarz.' : 'Online-Lobby — warte auf Schwarz.');
         }
         else if(onlineRoleCode === 'b') statusEl.textContent = isOnlineSideConnected('w') ? 'Online-Lobby — warte auf Partiestart durch Weiß.' : 'Du spielst Schwarz — warte auf Weiß.';
         else if(onlineRoleCode === 'spectator') statusEl.textContent = 'Zuschaueransicht — warte auf Partiestart.';
@@ -15223,6 +15269,7 @@ function syncVariationModeUi(){
   if(mainSidePanelEl) mainSidePanelEl.hidden = variationModeActive;
   if(variationSidePanelEl) variationSidePanelEl.hidden = !variationModeActive;
   document.documentElement.classList.toggle('variation-mode-active',variationModeActive);
+  syncBoardPlayerStrips();
   if(flipBoardBtn){
     const flipTitle = variationModeActive ? 'Variantenbrett drehen' : 'Brett drehen';
     flipBoardBtn.title = flipTitle;
@@ -15384,6 +15431,7 @@ function getVariationSquareEl(x,y){
   return variationBoardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]');
 }
 function renderVariationBoard(){
+  syncBoardPlayerStrips();
   cancelActivePieceDrag(variationBoardEl);
   if(!variationBoardEl || !variationGame) return;
   variationBoardEl.innerHTML = '';
@@ -16097,7 +16145,7 @@ document.getElementById('copyPgnBtn').addEventListener('click', downloadPgnFile)
 
 function newGame(){
   stopClock();
-  setRightPanelMode('players');
+  setRightPanelMode('moves');
   onlineClockSync = null;
   masterHistory = buildThemeHistory(currentGameSetup);
   invalidateHistoryStateCache();
