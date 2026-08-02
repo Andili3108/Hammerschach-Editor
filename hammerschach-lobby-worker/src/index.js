@@ -1,4 +1,4 @@
-// BUILD: TOURNAMENT-START-MAIL-20260731-1
+// BUILD: GAMER-CHESS960-CASTLING-20260802-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -10438,8 +10438,18 @@ function findMatchingLegalMove(legalMoves, moveLike) {
   }
 
   const exact = legalMoves.filter(move => sameFrom(move) && sameTo(move));
-  if (exact.length <= 1) return exact[0] || null;
-  return exact.find(move => !castleSideCode(move)) || exact[0];
+  if (exact.length) {
+    return exact.find(move => !castleSideCode(move)) || exact[0];
+  }
+
+  // Chess960-Komforteingabe: Ist das spätere Königsfeld kein legaler
+  // normaler Zug, darf es ebenfalls eindeutig die Rochade auswählen.
+  const castleByKingTarget = legalMoves.filter(move => {
+    if (!sameFrom(move) || !castleSideCode(move)) return false;
+    const meta = move.meta || {};
+    return Number.isInteger(meta.kingTo) && meta.kingTo === to[0] && move.to[1] === to[1];
+  });
+  return castleByKingTarget.length === 1 ? castleByKingTarget[0] : null;
 }
 
 function buildGameFromStoredMoves(moves, gameSetup = null) {
