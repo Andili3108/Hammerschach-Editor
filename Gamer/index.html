@@ -294,7 +294,7 @@
   .board-room-controls>.room-rating-status[hidden]{display:none!important;}
   .board-room-controls>.next-daily-game-box,.board-room-controls>.public-visibility-box,.board-room-controls>.live-start-box,.board-room-controls>.rematch-bar{margin:0;min-width:0;}
   .board-room-controls>.next-daily-game-box,.board-room-controls>.rematch-bar{grid-column:1 / -1;}
-  .board-room-controls>.public-visibility-box{padding:8px 10px;}
+  .board-room-controls>.public-visibility-box{grid-column:1 / -1;padding:8px 10px;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;}
   .board-room-controls>.public-visibility-box .clock-title{font-size:14px;}
   .board-room-controls>.public-visibility-box .public-visibility-label{font-size:12px;}
   .board-room-controls>.live-start-box{padding:8px 10px;}
@@ -1786,6 +1786,9 @@
     .board-room-controls{grid-template-columns:1fr;}
     .board-room-controls>.next-daily-game-box,.board-room-controls>.rematch-bar{grid-column:auto;}
   }
+  @media (max-width:520px){
+    .board-room-controls>.public-visibility-box{grid-template-columns:1fr;gap:6px;}
+  }
 </style>
 </head>
 <body>
@@ -2085,7 +2088,7 @@
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
-          <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
+          <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
           <p>Unter <strong>„📂 Partien“ → „📋 Meine Partien“</strong> findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
@@ -2156,7 +2159,7 @@
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie über die kompakte <strong>„Zuschauerfreigabe“</strong> unter dem Brett nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
-          <p>In einem Daily-Spielraum erscheint unter den beiden Spielerkarten die Schaltfläche <strong>„Nächste fällige Partie“</strong>. Sie führt im aktuellen Tab direkt zur nächsten weiteren Daily-Partie, in der du am Zug bist. Maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, bleibt die Schaltfläche deaktiviert.</p>
+          <p>In einem Daily-Spielraum erscheint unter den Brettaktionen die Schaltfläche <strong>„Nächste fällige Partie“</strong>, sobald tatsächlich eine weitere Daily-Partie auf deinen Zug wartet. Sie führt im aktuellen Tab direkt zu dieser Partie; maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, wird der Bereich platzsparend ausgeblendet.</p>
 
           <h4>9. Mitglieder finden, einladen oder eine Partie offen anbieten</h4>
           <p>Über <strong>„👥 Spieler“ → „👥 Mitglieder“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Online-Status der Mitglieder. Im selben Dropdown führt <strong>„👤 Mein Profil“</strong> zur eigenen Accountverwaltung. Über <strong>„Profil“</strong> in der Mitgliederliste öffnest du das Mitgliederprofil mit Profilbild beziehungsweise Buchstaben-Avatar, Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby kannst du ein Mitglied direkt zu der aktuell vorbereiteten Partie einladen; erst mit diesem Klick wird der Spielraum erstellt und die Einladung versendet. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
@@ -2199,7 +2202,7 @@
           <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
 
           <h4>16. Brett und Darstellung</h4>
-          <p>Unter dem Brett führen dich <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> zum Anfang, einen Halbzug zurück, einen Halbzug vor oder zur letzten Stellung. Daneben kannst du das gerade sichtbare Brett drehen, die Brettfarbe und den Figurensatz ändern sowie den Ton ein- oder ausschalten. Beim geöffneten Variantenbrett arbeiten Navigation und Drehschaltfläche automatisch mit der Variante.</p>
+          <p>Direkt unter der unteren Spielerleiste führen dich <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> zum Anfang, einen Halbzug zurück, einen Halbzug vor oder zur letzten Stellung. Daneben kannst du das gerade sichtbare Brett drehen, die Brettfarbe und den Figurensatz ändern sowie den Ton ein- oder ausschalten. Beim geöffneten Variantenbrett arbeiten Navigation und Drehschaltfläche automatisch mit der Variante.</p>
           <p>Über <strong>„🌙 Dunkel“</strong> im Header aktivierst du den Dark Mode für den gesamten Gamer. Die Auswahl wird auf dem Gerät gespeichert und beim nächsten Aufruf automatisch wiederhergestellt. Mit <strong>„☀️ Hell“</strong> wechselst du zurück zur hellen Darstellung.</p>
 
           <h4>17. PGN-Datei</h4>
@@ -3333,33 +3336,6 @@
             <div class="player-clock-time" id="clockW">--:--</div>
           </div>
         </div>
-        <div id="premoveNotice" class="premove-notice" role="status" aria-live="polite" hidden>
-          <span id="premoveNoticeText">Premove vorgemerkt</span>
-          <button id="premoveCancelBtn" class="button-flat premove-cancel" type="button" title="Premove abbrechen" aria-label="Premove abbrechen">×</button>
-        </div>
-        <div id="playersPanel" class="board-room-controls" hidden>
-          <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
-          <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
-            <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
-            <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
-          </div>
-          <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
-            <div class="clock-title">Zuschauerfreigabe</div>
-            <label class="public-visibility-label" for="roomPublicGameCheckbox">
-              <input id="roomPublicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
-              <span>Partie öffentlich anzeigen und Zuschauen erlauben</span>
-            </label>
-          </div>
-          <div id="liveStartBox" class="live-start-box" hidden>
-            <button id="startOnlineBtn" class="live-start-btn" type="button" disabled>Partie starten</button>
-            <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
-          </div>
-          <div id="rematchBar" class="rematch-bar" hidden aria-live="polite">
-            <button id="rematchBtn" class="rematch-btn" type="button">🔁 Revanche anbieten</button>
-            <button id="rematchDeclineBtn" class="button-flat rematch-decline-btn" type="button" hidden>Ablehnen</button>
-            <div id="rematchHint" class="rematch-hint"></div>
-          </div>
-        </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
           <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
             <button id="boardNavStart" class="button-flat gamer-board-nav-btn" type="button" title="Anfang der Partie" aria-label="Anfang der Partie">&laquo;</button>
@@ -3405,6 +3381,33 @@
           <div id="dailyMoveConfirmation" class="board-daily-actions" hidden aria-live="polite">
             <button id="dailyMoveCancelBtn" class="button-flat board-action-btn board-daily-cancel-btn" type="button" title="Zug zurücknehmen" aria-label="Zug zurücknehmen">↩</button>
             <button id="dailyMoveConfirmBtn" class="board-action-btn board-daily-confirm-btn" type="button">✓ Zug bestätigen</button>
+          </div>
+        </div>
+        <div id="premoveNotice" class="premove-notice" role="status" aria-live="polite" hidden>
+          <span id="premoveNoticeText">Premove vorgemerkt</span>
+          <button id="premoveCancelBtn" class="button-flat premove-cancel" type="button" title="Premove abbrechen" aria-label="Premove abbrechen">×</button>
+        </div>
+        <div id="playersPanel" class="board-room-controls" hidden>
+          <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
+          <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
+            <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
+            <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
+          </div>
+          <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
+            <div class="clock-title">Zuschauerfreigabe</div>
+            <label class="public-visibility-label" for="roomPublicGameCheckbox">
+              <input id="roomPublicGameCheckbox" class="public-visibility-checkbox" type="checkbox" />
+              <span>Partie öffentlich anzeigen und Zuschauen erlauben</span>
+            </label>
+          </div>
+          <div id="liveStartBox" class="live-start-box" hidden>
+            <button id="startOnlineBtn" class="live-start-btn" type="button" disabled>Partie starten</button>
+            <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
+          </div>
+          <div id="rematchBar" class="rematch-bar" hidden aria-live="polite">
+            <button id="rematchBtn" class="rematch-btn" type="button">🔁 Revanche anbieten</button>
+            <button id="rematchDeclineBtn" class="button-flat rematch-decline-btn" type="button" hidden>Ablehnen</button>
+            <div id="rematchHint" class="rematch-hint"></div>
           </div>
         </div>
         <footer class="site-footnote" aria-label="Projekt-Hinweis">
@@ -11234,12 +11237,13 @@ async function refreshNextDailyGameButton(options){
     hideNextDailyGameButton();
     return;
   }
-  nextDailyGameBoxEl.hidden = false;
   const userKey = String((onlineAuthUser && (onlineAuthUser.id || onlineAuthUser.userId || onlineAuthUser.username)) || 'user');
   const context = [userKey, onlineRoomId, onlineGameStarted ? 'started' : 'waiting', onlineGameEnded ? 'ended' : 'active', masterHistory.length].join('|');
   const recentlyLoaded = context === nextDailyGameLastContext && (Date.now() - nextDailyGameLastLoadedAt) < 30000;
   if(nextDailyGameLoading || (!options.force && recentlyLoaded)) return;
 
+  nextDailyGameBoxEl.hidden = true;
+  nextDailyGameTarget = null;
   nextDailyGameLoading = true;
   nextDailyGameBtn.disabled = true;
   nextDailyGameBtn.textContent = 'Weitere fällige Partie wird gesucht…';
@@ -11258,6 +11262,7 @@ async function refreshNextDailyGameButton(options){
     nextDailyGameLastContext = context;
     nextDailyGameLastLoadedAt = Date.now();
     if(nextDailyGameTarget){
+      nextDailyGameBoxEl.hidden = false;
       const count = candidates.length;
       nextDailyGameBtn.disabled = false;
       nextDailyGameBtn.textContent = count > 1 ? ('➡ Nächste fällige Partie (' + count + ')') : '➡ Nächste fällige Partie';
@@ -11267,15 +11272,17 @@ async function refreshNextDailyGameButton(options){
         nextDailyGameHintEl.textContent = 'gegen ' + opponent + (deadline ? ' · Zugfrist: ' + deadline : '');
       }
     } else {
+      nextDailyGameBoxEl.hidden = true;
       nextDailyGameBtn.disabled = true;
       nextDailyGameBtn.textContent = 'Keine weitere Partie am Zug';
-      if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = 'In deinen anderen Daily-Partien ist derzeit der Gegner am Zug.';
+      if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = '';
     }
   } catch(err){
     nextDailyGameTarget = null;
+    nextDailyGameBoxEl.hidden = true;
     nextDailyGameBtn.disabled = true;
     nextDailyGameBtn.textContent = 'Daily-Partien nicht abrufbar';
-    if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = err && err.message ? err.message : 'Die Übersicht konnte nicht geladen werden.';
+    if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = '';
   } finally {
     nextDailyGameLoading = false;
   }
