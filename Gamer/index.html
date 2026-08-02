@@ -281,13 +281,14 @@
   .side-content[hidden]{display:none!important;}
   .board-player-strip{width:100%;min-width:0;box-sizing:border-box;}
   .board-player-strip[hidden]{display:none!important;}
-  .board-player-strip .player-clock-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:11px;row-gap:4px;align-items:center;border-radius:14px;padding:8px 12px;background:linear-gradient(180deg,#fff 0%,#f3f3f5 100%);box-shadow:0 5px 13px rgba(0,0,0,.08);}
+  .board-player-strip .player-clock-card{display:grid;grid-template-columns:auto minmax(120px,1fr) auto auto auto;grid-template-rows:auto;column-gap:11px;row-gap:0;align-items:center;border-radius:14px;padding:8px 12px;background:linear-gradient(180deg,#fff 0%,#f3f3f5 100%);box-shadow:0 5px 13px rgba(0,0,0,.08);}
   .board-player-strip .player-clock-card.active{box-shadow:inset 0 0 0 2px rgba(132,63,70,.38),0 5px 13px rgba(0,0,0,.10);background:#fff;}
   .board-player-strip .player-clock-head{grid-column:1;grid-row:1;white-space:nowrap;}
   .board-player-strip .player-clock-name-row{grid-column:2;grid-row:1;justify-content:flex-start;min-width:0;}
-  .board-player-strip .player-rating-line{grid-column:1;grid-row:2;padding:3px 7px;font-size:11px;}
-  .board-player-strip .head-to-head-line{grid-column:2;grid-row:2;padding:3px 7px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .board-player-strip .player-clock-time{grid-column:3;grid-row:1 / span 2;align-self:center;min-width:112px;font-size:31px;}
+  .board-player-strip .player-rating-line{grid-column:3;grid-row:1;padding:3px 7px;font-size:11px;white-space:nowrap;}
+  .board-player-strip .head-to-head-line{grid-column:4;grid-row:1;max-width:260px;padding:3px 7px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .board-player-strip .player-clock-time{grid-column:5;grid-row:1;align-self:center;min-width:112px;font-size:31px;}
+  .board-player-strip .player-clock-time.waiting{min-width:74px;font-size:18px;letter-spacing:0;color:#555;}
   .board-room-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;min-width:0;}
   .board-room-controls[hidden]{display:none!important;}
   .board-room-controls>.room-rating-status{align-self:stretch;display:flex;align-items:center;justify-content:center;padding:7px 10px;font-size:13px;}
@@ -1315,6 +1316,7 @@
   html.dark-mode .auth-email-state-badge.pending{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#e6a3ab;}
   html.dark-mode .player-rating-line.unrated{background:#2d3138;border-color:rgba(255,255,255,.08);color:#aeb3bc;}
   html.dark-mode .player-rating-line.unrated .player-rating-value{color:#aeb3bc!important;}
+  html.dark-mode .board-player-strip .player-clock-time.waiting{color:#b8bdc6;}
   html.dark-mode .admin-message-confirm{background:#302b22;color:#d8c49a!important;}
   html.dark-mode .account-danger-note{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#efb1b8;}
   html.dark-mode .presence-badge{background:#30343b;border-color:rgba(255,255,255,.10);color:#bec3cb;}
@@ -1776,17 +1778,23 @@
     .match-actions>button,.match-actions>.header-menu>.header-menu-button{min-height:42px;font-size:13px;padding:7px 6px;}
   }
   @media (max-width:760px){
-    .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto;column-gap:7px;padding:7px 9px;border-radius:12px;}
+    .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto;column-gap:7px;padding:7px 9px;border-radius:12px;}
     .board-player-strip .player-clock-head{font-size:12px;gap:5px;}
     .board-player-strip .player-clock-name{font-size:14px;}
-    .board-player-strip .player-clock-time{min-width:82px;font-size:24px;}
-    .board-player-strip .player-rating-line{font-size:10px;padding:2px 5px;}
+    .board-player-strip .player-rating-line{grid-column:3;grid-row:1;font-size:10px;padding:2px 5px;}
+    .board-player-strip .player-clock-time{grid-column:4;grid-row:1;min-width:82px;font-size:24px;}
+    .board-player-strip .player-clock-time.waiting{min-width:58px;font-size:15px;}
     .board-player-strip .head-to-head-line{display:none!important;}
     .board-player-strip .presence-badge{font-size:10px;padding:3px 6px;}
     .board-room-controls{grid-template-columns:1fr;}
     .board-room-controls>.next-daily-game-box,.board-room-controls>.rematch-bar{grid-column:auto;}
   }
   @media (max-width:520px){
+    .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;row-gap:5px;}
+    .board-player-strip .player-clock-head{grid-column:1;grid-row:1;}
+    .board-player-strip .player-clock-name-row{grid-column:2;grid-row:1;}
+    .board-player-strip .player-clock-time{grid-column:3;grid-row:1;}
+    .board-player-strip .player-rating-line{grid-column:1 / -1;grid-row:2;width:max-content;max-width:100%;}
     .board-room-controls>.public-visibility-box{grid-template-columns:1fr;gap:6px;}
   }
 </style>
@@ -2088,7 +2096,7 @@
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
-          <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
+          <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Auf größeren Bildschirmen werden die Spielerangaben jeweils kompakt in einer Zeile dargestellt. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
           <p>Unter <strong>„📂 Partien“ → „📋 Meine Partien“</strong> findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
@@ -2180,7 +2188,7 @@
           <p><strong>So rochierst du im Freestyle:</strong> Klicke zuerst deinen König und danach den Turm an, mit dem du rochieren möchtest. Klicke also nicht auf das spätere Zielfeld des Königs. Der Turm auf der Königsseite löst die kurze Rochade aus, der Turm auf der Damenseite die lange Rochade. Ist die Rochade nach den Regeln erlaubt, werden beide Figuren automatisch auf ihre Zielfelder gesetzt: kurze Rochade mit König auf der g-Linie und Turm auf der f-Linie, lange Rochade mit König auf der c-Linie und Turm auf der d-Linie.</p>
 
           <h4>12. Spieler- und Zeitanzeige</h4>
-          <p>Die Spielernamen und Uhren stehen direkt am Brett: Der Gegner wird oberhalb, der eigene Spieler unterhalb angezeigt. Beim Drehen des Bretts wechseln die beiden Leisten automatisch mit der Brettausrichtung. Die rechte Spalte bleibt dadurch ausschließlich für <strong>„Zugliste“</strong> und <strong>„Chat“</strong> frei.</p>
+          <p>Die Spielernamen und Uhren stehen direkt am Brett: Der Gegner wird oberhalb, der eigene Spieler unterhalb angezeigt. Farbe, Name, Online-Status, Rating und Zeitanzeige stehen auf größeren Bildschirmen platzsparend in einer Zeile; nur auf sehr schmalen Smartphones darf das Rating in eine zweite Zeile wechseln. Beim Drehen des Bretts wechseln die beiden Leisten automatisch mit der Brettausrichtung. Die rechte Spalte bleibt dadurch ausschließlich für <strong>„Zugliste“</strong> und <strong>„Chat“</strong> frei.</p>
           <ul>
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Bei einer gewerteten Partie erscheint zusätzlich das maßgebliche Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
@@ -16559,6 +16567,8 @@ function updateClockDisplay(gameState){
     clockWEl.textContent = timeMode ? formatTime(shown.w) : '--:--';
     clockBEl.textContent = timeMode ? formatTime(shown.b) : '--:--';
   }
+  clockWEl.classList.toggle('waiting', timeMode && daily && activeSide !== 'w');
+  clockBEl.classList.toggle('waiting', timeMode && daily && activeSide !== 'b');
   const deadlineText = daily && onlineClockSync ? formatDailyDeadline(onlineClockSync.deadlineAt) : '';
   clockWEl.title = deadlineText && activeSide === 'w' ? ('Zugfrist: ' + deadlineText) : '';
   clockBEl.title = deadlineText && activeSide === 'b' ? ('Zugfrist: ' + deadlineText) : '';
