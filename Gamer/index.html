@@ -281,14 +281,19 @@
   .side-content[hidden]{display:none!important;}
   .board-player-strip{width:100%;min-width:0;box-sizing:border-box;}
   .board-player-strip[hidden]{display:none!important;}
-  .board-player-strip .player-clock-card{display:grid;grid-template-columns:auto minmax(120px,1fr) auto auto auto;grid-template-rows:auto;column-gap:11px;row-gap:0;align-items:center;border-radius:14px;padding:8px 12px;background:linear-gradient(180deg,#fff 0%,#f3f3f5 100%);box-shadow:0 5px 13px rgba(0,0,0,.08);}
+  .board-player-strip .player-clock-card{display:grid;grid-template-columns:auto minmax(220px,1fr) minmax(140px,max-content) auto;grid-template-rows:auto;column-gap:11px;row-gap:0;align-items:center;border-radius:14px;padding:8px 12px;background:linear-gradient(180deg,#fff 0%,#f3f3f5 100%);box-shadow:0 5px 13px rgba(0,0,0,.08);}
   .board-player-strip .player-clock-card.active{box-shadow:inset 0 0 0 2px rgba(132,63,70,.38),0 5px 13px rgba(0,0,0,.10);background:#fff;}
   .board-player-strip .player-clock-head{grid-column:1;grid-row:1;white-space:nowrap;}
   .board-player-strip .player-clock-name-row{grid-column:2;grid-row:1;justify-content:flex-start;min-width:0;}
-  .board-player-strip .player-rating-line{grid-column:3;grid-row:1;padding:3px 7px;font-size:11px;white-space:nowrap;}
-  .board-player-strip .head-to-head-line{grid-column:4;grid-row:1;max-width:260px;padding:3px 7px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .board-player-strip .player-clock-time{grid-column:5;grid-row:1;align-self:center;min-width:112px;font-size:31px;}
-  .board-player-strip .player-clock-time.waiting{min-width:74px;font-size:18px;letter-spacing:0;color:#555;}
+  .board-player-strip .player-info-line{grid-column:3;grid-row:1;min-width:0;max-width:100%;display:flex;align-items:center;gap:5px;overflow:hidden;border-radius:10px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);padding:3px 7px;box-sizing:border-box;font-size:11px;font-weight:900;color:#555;line-height:1.2;white-space:nowrap;}
+  .board-player-strip .player-info-line:not(:has(.player-rating-line:not([hidden]),.head-to-head-line:not([hidden]))){display:none;}
+  .board-player-strip .player-info-line .player-rating-line{display:flex;flex:0 0 auto;align-items:center;justify-content:flex-start;gap:4px;min-width:0;border:0;border-radius:0;background:transparent;padding:0;font-size:inherit;color:inherit;line-height:inherit;white-space:nowrap;}
+  .board-player-strip .player-info-line .player-rating-label::after{content:" ·";}
+  .board-player-strip .player-info-line .player-rating-value::before{content:"Rating ";color:#555;}
+  .board-player-strip .player-info-line .head-to-head-line{min-width:0;max-width:none;overflow:hidden;text-overflow:ellipsis;border:0;border-radius:0;background:transparent;padding:0;color:#4f5864;font-size:inherit;line-height:inherit;text-align:left;white-space:nowrap;}
+  .board-player-strip .player-info-line .head-to-head-line::before{content:"· ";color:#777;}
+  .board-player-strip .player-clock-time{grid-column:4;grid-row:1;align-self:center;min-width:88px;font-size:20px;}
+  .board-player-strip .player-clock-time.waiting{min-width:64px;font-size:18px;letter-spacing:0;color:#555;}
   .board-room-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;min-width:0;}
   .board-room-controls[hidden]{display:none!important;}
   .board-room-controls>.room-rating-status{align-self:stretch;display:flex;align-items:center;justify-content:center;padding:7px 10px;font-size:13px;}
@@ -310,7 +315,7 @@
   .player-clock-head{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:900;color:#555;}
   .player-clock-side{font-weight:900;}
   .player-clock-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;}
-  .player-clock-name{min-width:0;font-size:17px;font-weight:900;color:#222;line-height:1.15;overflow:hidden;text-overflow:ellipsis;}
+  .player-clock-name{min-width:0;font-size:17px;font-weight:900;color:#222;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .player-presence-badge{white-space:nowrap;}
   .player-presence-badge[hidden]{display:none!important;}
   .player-rating-line{display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:10px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);padding:6px 8px;font-size:13px;font-weight:900;color:#555;line-height:1.2;}
@@ -1266,6 +1271,10 @@
   html.dark-mode .rematch-bar{background:#252930;border-color:rgba(255,255,255,.09);}
   html.dark-mode .rematch-hint{color:#b8bdc6;}
   html.dark-mode .head-to-head-line{background:#222d39;border-color:rgba(118,166,219,.19);color:#c8d4e1;}
+  html.dark-mode .board-player-strip .player-info-line{background:#252930;border-color:rgba(255,255,255,.09);color:#c8cdd5;}
+  html.dark-mode .board-player-strip .player-info-line .player-rating-value::before{color:#b8bdc6;}
+  html.dark-mode .board-player-strip .player-info-line .head-to-head-line{background:transparent;border:0;color:#c8d4e1;}
+  html.dark-mode .board-player-strip .player-info-line .head-to-head-line::before{color:#8f98a3;}
   html.dark-mode .daily-game-card.my-turn{background:linear-gradient(135deg,rgba(62,154,88,.20),rgba(62,154,88,.08));border-color:rgba(92,190,119,.34);box-shadow:inset 4px 0 0 rgba(92,190,119,.74),inset 0 0 0 1px rgba(92,190,119,.05),0 5px 15px rgba(0,0,0,.18);}
   html.dark-mode .daily-game-card.my-turn .daily-game-status{background:rgba(62,154,88,.16);border-color:rgba(92,190,119,.30);color:#9bdfad!important;}
   html.dark-mode .daily-game-card.my-turn .daily-game-status::before{background:#69c982;box-shadow:0 0 0 3px rgba(105,201,130,.15);}
@@ -1781,9 +1790,9 @@
     .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto;column-gap:7px;padding:7px 9px;border-radius:12px;}
     .board-player-strip .player-clock-head{font-size:12px;gap:5px;}
     .board-player-strip .player-clock-name{font-size:14px;}
-    .board-player-strip .player-rating-line{grid-column:3;grid-row:1;font-size:10px;padding:2px 5px;}
-    .board-player-strip .player-clock-time{grid-column:4;grid-row:1;min-width:82px;font-size:24px;}
-    .board-player-strip .player-clock-time.waiting{min-width:58px;font-size:15px;}
+    .board-player-strip .player-info-line{grid-column:3;grid-row:1;font-size:10px;padding:2px 5px;}
+    .board-player-strip .player-clock-time{grid-column:4;grid-row:1;min-width:76px;font-size:20px;}
+    .board-player-strip .player-clock-time.waiting{min-width:58px;font-size:18px;}
     .board-player-strip .head-to-head-line{display:none!important;}
     .board-player-strip .presence-badge{font-size:10px;padding:3px 6px;}
     .board-room-controls{grid-template-columns:1fr;}
@@ -1794,7 +1803,7 @@
     .board-player-strip .player-clock-head{grid-column:1;grid-row:1;}
     .board-player-strip .player-clock-name-row{grid-column:2;grid-row:1;}
     .board-player-strip .player-clock-time{grid-column:3;grid-row:1;}
-    .board-player-strip .player-rating-line{grid-column:1 / -1;grid-row:2;width:max-content;max-width:100%;}
+    .board-player-strip .player-info-line{grid-column:1 / -1;grid-row:2;width:max-content;max-width:100%;}
     .board-room-controls>.public-visibility-box{grid-template-columns:1fr;gap:6px;}
   }
 </style>
@@ -2188,7 +2197,7 @@
           <p><strong>So rochierst du im Freestyle:</strong> Klicke zuerst deinen König und danach den Turm an, mit dem du rochieren möchtest. Klicke also nicht auf das spätere Zielfeld des Königs. Der Turm auf der Königsseite löst die kurze Rochade aus, der Turm auf der Damenseite die lange Rochade. Ist die Rochade nach den Regeln erlaubt, werden beide Figuren automatisch auf ihre Zielfelder gesetzt: kurze Rochade mit König auf der g-Linie und Turm auf der f-Linie, lange Rochade mit König auf der c-Linie und Turm auf der d-Linie.</p>
 
           <h4>12. Spieler- und Zeitanzeige</h4>
-          <p>Die Spielernamen und Uhren stehen direkt am Brett: Der Gegner wird oberhalb, der eigene Spieler unterhalb angezeigt. Farbe, Name, Online-Status, Rating und Zeitanzeige stehen auf größeren Bildschirmen platzsparend in einer Zeile; nur auf sehr schmalen Smartphones darf das Rating in eine zweite Zeile wechseln. Beim Drehen des Bretts wechseln die beiden Leisten automatisch mit der Brettausrichtung. Die rechte Spalte bleibt dadurch ausschließlich für <strong>„Zugliste“</strong> und <strong>„Chat“</strong> frei.</p>
+          <p>Die Spielernamen und Uhren stehen direkt am Brett: Der Gegner wird oberhalb, der eigene Spieler unterhalb angezeigt. Farbe, Name, Online-Status, Rating, Direktvergleich und Zeitanzeige stehen auf größeren Bildschirmen platzsparend in einer Zeile. Rating und Direktvergleich sind in einem gemeinsamen Anzeigefeld zusammengefasst, sodass die Schachkategorie nur einmal genannt wird und auch längere Spielernamen mehr Platz erhalten. Nur auf sehr schmalen Smartphones darf dieses Informationsfeld in eine zweite Zeile wechseln. Beim Drehen des Bretts wechseln die beiden Leisten automatisch mit der Brettausrichtung. Die rechte Spalte bleibt dadurch ausschließlich für <strong>„Zugliste“</strong> und <strong>„Chat“</strong> frei.</p>
           <ul>
             <li><strong>Live-Partie:</strong> Beide verbleibenden Gesamtbedenkzeiten werden angezeigt. Bei einer gewerteten Partie erscheint zusätzlich das maßgebliche Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Der Online-Hinweis zeigt, ob der Spieler gerade mit diesem Spielraum verbunden ist.</li>
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
@@ -2269,7 +2278,7 @@
           <h4>24. Ratings für Mitglieder</h4>
           <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
-          <p>In der rechten Spalte wird während der Partie das passende Rating beider Spieler angezeigt. Nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
+          <p>In den Spielerleisten direkt am Brett wird während der Partie das passende Rating beider Spieler angezeigt. Beim Gegner ergänzt der Direktvergleich in derselben Kategorie dieses gemeinsame Informationsfeld. Erst nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
           <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Über <strong>„Mein Profil ansehen“</strong> öffnest du anschließend genau dieselbe Profilansicht, die auch andere Mitglieder sehen, und kannst Darstellung und Vollständigkeit selbst kontrollieren. Von dort führt <strong>„Profil bearbeiten“</strong> direkt zurück zur Bearbeitung. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
           <h4>25. Admin-Funktion und Systemübersicht</h4>
@@ -3307,8 +3316,10 @@
                 <span class="presence-dot" aria-hidden="true"></span><span class="player-presence-label">Offline</span>
               </span>
             </div>
-            <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
-            <div id="blackHeadToHead" class="head-to-head-line" hidden></div>
+            <div class="player-info-line">
+              <div id="blackPlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
+              <div id="blackHeadToHead" class="head-to-head-line" hidden></div>
+            </div>
             <div class="player-clock-time" id="clockB">--:--</div>
           </div>
         </div>
@@ -3339,8 +3350,10 @@
                 <span class="presence-dot" aria-hidden="true"></span><span class="player-presence-label">Offline</span>
               </span>
             </div>
-            <div id="whitePlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
-            <div id="whiteHeadToHead" class="head-to-head-line" hidden></div>
+            <div class="player-info-line">
+              <div id="whitePlayerRating" class="player-rating-line" hidden><span class="player-rating-label">Rating</span><span class="player-rating-value">—</span></div>
+              <div id="whiteHeadToHead" class="head-to-head-line" hidden></div>
+            </div>
             <div class="player-clock-time" id="clockW">--:--</div>
           </div>
         </div>
@@ -12199,6 +12212,8 @@ function updateOnlineUi(){
     onlineConnectionState = 'local';
     whitePlayerNameEl.textContent = '—';
     blackPlayerNameEl.textContent = '—';
+    whitePlayerNameEl.removeAttribute('title');
+    blackPlayerNameEl.removeAttribute('title');
     onlineRatingState = null;
     onlineHeadToHead = null;
     onlineRematchState = null;
@@ -12236,6 +12251,8 @@ function updateOnlineUi(){
     onlineHintEl.textContent = onlineLastMessage || 'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.';
     whitePlayerNameEl.textContent = '—';
     blackPlayerNameEl.textContent = '—';
+    whitePlayerNameEl.removeAttribute('title');
+    blackPlayerNameEl.removeAttribute('title');
     onlineRatingState = null;
     onlineHeadToHead = null;
     onlineRematchState = null;
@@ -12298,8 +12315,12 @@ function updateOnlineUi(){
     setOnlineValueClass(onlineGameStateEl, ended ? 'neutral' : (onlineGameStarted ? 'good' : 'wait'));
   }
 
-  whitePlayerNameEl.textContent = onlineSideText('w');
-  blackPlayerNameEl.textContent = onlineSideText('b');
+  const whitePlayerDisplayName = onlineSideText('w');
+  const blackPlayerDisplayName = onlineSideText('b');
+  whitePlayerNameEl.textContent = whitePlayerDisplayName;
+  blackPlayerNameEl.textContent = blackPlayerDisplayName;
+  whitePlayerNameEl.title = whitePlayerDisplayName;
+  blackPlayerNameEl.title = blackPlayerDisplayName;
   updatePlayerPresenceBadges();
   updateRoomRatingUi();
   updateHeadToHeadUi();
@@ -13455,7 +13476,7 @@ function renderPlayerRatingLine(role, element){
     return;
   }
   let value = player.display || (player.rating !== null ? String(player.rating) + (player.provisional ? '?' : '') : '—');
-  if(player.delta !== null){
+  if(player.delta !== null && (onlineGameEnded || gameEnded || timeLost)){
     value += ' (' + (player.delta > 0 ? '+' : '') + player.delta + ')';
   }
   if(valueEl) valueEl.textContent = value;
@@ -13508,7 +13529,7 @@ function updateHeadToHeadUi(){
   if(!onlineRoomId || !state || !state.available || (onlineRoleCode !== 'w' && onlineRoleCode !== 'b')) return;
   const target = onlineRoleCode === 'w' ? blackHeadToHeadEl : whiteHeadToHeadEl;
   if(!target) return;
-  target.textContent = 'Direkter Vergleich · ' + headToHeadShortLabel(state) + ': S ' + state.wins + ' · R ' + state.draws + ' · N ' + state.losses;
+  target.textContent = 'Direktvergleich: S ' + state.wins + ' · R ' + state.draws + ' · N ' + state.losses;
   target.title = 'Bisherige beendete Partien gegen diesen Gegner in derselben Hammerschach-Kategorie.';
   target.hidden = false;
 }
