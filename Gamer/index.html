@@ -1808,6 +1808,7 @@
   </div>
 </div>
 
+<script src="js/chess-utils.js?v=20260804-1"></script>
 <script>
 'use strict';
 
@@ -1911,7 +1912,6 @@ function hammerschachInitIframeHeightReporting(){
 }
 hammerschachInitIframeHeightReporting();
 
-const files = ['a','b','c','d','e','f','g','h'];
 const PIECE_SET_STORAGE_KEY = 'hammerschachPieceSet';
 const pieceSetPresets = [
   {id:'cburnett', name:'Cburnett · Standard', paths:{P:'assets/pieces/Chess_plt45.svg',R:'assets/pieces/Chess_rlt45.svg',N:'assets/pieces/Chess_nlt45.svg',B:'assets/pieces/Chess_blt45.svg',Q:'assets/pieces/Chess_qlt45.svg',K:'assets/pieces/Chess_klt45.svg',p:'assets/pieces/Chess_pdt45.svg',r:'assets/pieces/Chess_rdt45.svg',n:'assets/pieces/Chess_ndt45.svg',b:'assets/pieces/Chess_bdt45.svg',q:'assets/pieces/Chess_qdt45.svg',k:'assets/pieces/Chess_kdt45.svg'}},
@@ -1935,11 +1935,6 @@ Object.values(pieceImg).forEach(src => {
   preload.src = src;
   if(typeof preload.decode === 'function') preload.decode().catch(() => {});
 });
-function clone(o){ return JSON.parse(JSON.stringify(o)); }
-function coordToAlg(x,y){ return files[x] + (8-y); }
-function pieceColor(ch){ if(!ch || ch === '.') return null; return ch === ch.toUpperCase() ? 'w' : 'b'; }
-function opposite(color){ return color === 'w' ? 'b' : 'w'; }
-
 const GAME_VARIANT_STANDARD = 'standard';
 const GAME_VARIANT_FREESTYLE = 'freestyle960';
 const RATING_TYPE_ORDER = [
