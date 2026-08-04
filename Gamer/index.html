@@ -1816,6 +1816,7 @@
 <script src="js/game-setup.js?v=20260804-1"></script>
 <script src="js/chess-engine.js?v=20260804-1"></script>
 <script src="js/game-history-cache.js?v=20260804-1"></script>
+<script src="js/board-ui-state.js?v=20260804-1"></script>
 <script>
 'use strict';
 
@@ -1828,24 +1829,6 @@ const RATING_TYPE_ORDER = [
   {key:'live_freestyle', label:'Live Freestyle'}
 ];
 const RATING_PROVISIONAL_DEVIATION = 110;
-let viewIndex = 0;
-let selected = null;
-let pendingDailyMove = null;
-let queuedPremove = null;
-let orientationWhite = true;
-let lastMove = null;
-let gameEnded = false;
-let timeLost = false;
-let variationStartGame = null;
-let variationGame = null;
-let variationHistory = [];
-let variationRedo = [];
-let variationSelected = null;
-let variationOrientationWhite = true;
-let variationModeActive = false;
-let activePieceDrag = null;
-let suppressPieceDragClickUntil = 0;
-
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
 const illegalFlashEl = document.getElementById('illegalFlash');
