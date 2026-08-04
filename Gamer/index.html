@@ -1812,6 +1812,7 @@
 <script src="js/embed-layout.js?v=20260804-1"></script>
 <script src="js/piece-assets.js?v=20260804-1"></script>
 <script src="js/chess960-core.js?v=20260804-1"></script>
+<script src="js/board-setup-utils.js?v=20260804-1"></script>
 <script>
 'use strict';
 
@@ -1883,35 +1884,6 @@ function sameGameSetup(a,b){
   const left = normalizeGameSetup(a);
   const right = normalizeGameSetup(b);
   return left.variant === right.variant && left.positionId === right.positionId && left.backRank === right.backRank && themeSignature(left.theme) === themeSignature(right.theme);
-}
-function blackBackRankFromWhite(backRank){ return String(backRank || STANDARD_BACK_RANK).toLowerCase().split('').join(''); }
-function castlingInfoFromBackRank(backRank){
-  backRank = isValidChess960BackRank(backRank) ? backRank : STANDARD_BACK_RANK;
-  const kingFile = backRank.indexOf('K');
-  const rooks = [];
-  for(let i=0;i<8;i++) if(backRank[i] === 'R') rooks.push(i);
-  const qRook = rooks.filter(x => x < kingFile).pop();
-  const kRook = rooks.find(x => x > kingFile);
-  return {
-    w:{kingFile, rank:7, kingside:{key:'K', rookFile:kRook, kingTo:6, rookTo:5}, queenside:{key:'Q', rookFile:qRook, kingTo:2, rookTo:3}},
-    b:{kingFile, rank:0, kingside:{key:'k', rookFile:kRook, kingTo:6, rookTo:5}, queenside:{key:'q', rookFile:qRook, kingTo:2, rookTo:3}}
-  };
-}
-function rangeBetweenInclusive(a,b){
-  const out = [];
-  const step = a <= b ? 1 : -1;
-  for(let x=a;;x+=step){
-    out.push(x);
-    if(x === b) break;
-  }
-  return out;
-}
-function rangeBetweenExclusive(a,b){
-  if(a === b) return [];
-  const out = [];
-  const step = a < b ? 1 : -1;
-  for(let x=a+step; x !== b; x+=step) out.push(x);
-  return out;
 }
 function setupLabel(setup){
   const normalized = normalizeGameSetup(setup || currentGameSetup);
