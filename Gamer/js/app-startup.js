@@ -1,5 +1,12 @@
 'use strict';
 
+function mountDialogBackdropsAtViewportRoot(){
+  document.querySelectorAll('.identity-backdrop,.info-backdrop').forEach(backdrop => {
+    if(backdrop.parentElement !== document.body) document.body.appendChild(backdrop);
+  });
+}
+
+mountDialogBackdropsAtViewportRoot();
 updateVariantUi();
 renderBoard();
 refreshSiteStats(true);
