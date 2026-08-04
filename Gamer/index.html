@@ -36,9 +36,26 @@
       document.documentElement.classList.add('hammerschach-room-view');
     }
   } catch(_){ }
+  try{
+    if(String(navigator.vendor || '').includes('Apple')){
+      document.documentElement.classList.add('hammerschach-webkit');
+      const syncHammerschachViewportHeight = () => {
+        const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        if(Number.isFinite(viewportHeight) && viewportHeight > 0){
+          document.documentElement.style.setProperty('--hammerschach-viewport-height', Math.round(viewportHeight) + 'px');
+        }
+      };
+      syncHammerschachViewportHeight();
+      window.addEventListener('resize', syncHammerschachViewportHeight, {passive:true});
+      if(window.visualViewport){
+        window.visualViewport.addEventListener('resize', syncHammerschachViewportHeight, {passive:true});
+        window.visualViewport.addEventListener('scroll', syncHammerschachViewportHeight, {passive:true});
+      }
+    }
+  } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260804-2" />
+<link rel="stylesheet" href="css/gamer.css?v=20260804-3" />
 </head>
 <body>
 <div class="app" role="main">
