@@ -272,6 +272,14 @@
         <button id="lobbyTickerNextBtn" class="lobby-ticker-nav" type="button" title="Nächste Meldung">›</button>
         <button id="lobbyTickerCloseBtn" class="lobby-ticker-close" type="button" title="Diese Meldung ausblenden">×</button>
       </div>
+      <section id="infoCenterBar" class="info-center-bar" hidden aria-label="Hammerschach Info-Center">
+        <button id="infoCenterOpenBtn" class="info-center-open" type="button">
+          <span class="info-center-bar-icon" aria-hidden="true">ℹ️</span>
+          <span class="info-center-bar-copy"><strong>Info-Center</strong><span id="infoCenterLatestText">Mitteilungen und Neuigkeiten nachlesen</span></span>
+          <span id="infoCenterUnreadBadge" class="info-center-unread-badge" hidden>0 neu</span>
+          <span class="info-center-bar-action">Öffnen ›</span>
+        </button>
+      </section>
       <div class="box global-chat-shell" aria-label="Hammerschach Mitglieder-Chat">
         <div class="global-chat-header">
           <div>
@@ -299,6 +307,22 @@
         </div>
       </div>
     </section>
+
+    <div id="infoCenterBackdrop" class="info-backdrop" hidden>
+      <div class="info-modal info-center-modal" role="dialog" aria-modal="true" aria-labelledby="infoCenterTitle">
+        <div class="info-center-modal-head">
+          <div><div class="info-center-kicker">Hammerschach aktuell</div><h3 id="infoCenterTitle">Info-Center</h3></div>
+          <button id="infoCenterCloseTopBtn" class="button-flat" type="button" aria-label="Info-Center schließen">✕</button>
+        </div>
+        <p class="info-modal-intro">Neuigkeiten, Updates, Veranstaltungen und Servicehinweise – die neueste Mitteilung steht immer oben.</p>
+        <div class="info-center-layout">
+          <div id="infoCenterList" class="info-center-list" aria-label="Mitteilungen"></div>
+          <article id="infoCenterDetail" class="info-center-detail" aria-live="polite"><div class="info-center-detail-empty">Wähle links eine Mitteilung aus.</div></article>
+        </div>
+        <div id="infoCenterStatus" class="info-center-status" aria-live="polite"></div>
+        <div class="info-actions"><button id="infoCenterCloseBtn" class="button-flat" type="button">Schließen</button></div>
+      </div>
+    </div>
 
     <div id="newGameBackdrop" class="info-backdrop new-game-backdrop" hidden>
       <div class="new-game-modal" role="dialog" aria-modal="true" aria-labelledby="newGameDialogTitle" aria-describedby="newGameDialogIntro">
@@ -534,6 +558,9 @@
           <h4>29. Veranstaltungsticker und Mitgliederbegrüßung</h4>
           <p>Ganz oben in der Mitglieder-Lobby zeigt der Veranstaltungsticker aktuelle Hinweise. Neu veröffentlichte und laufende Turniere werden automatisch mit einem direkten Link zur Turnierzentrale übernommen. Mehrere Meldungen wechseln ruhig nacheinander; mit den Pfeilen kannst du selbst blättern und mit <strong>×</strong> die aktuelle Meldung für deine laufende Browsersitzung ausblenden.</p>
           <p>Andili verwaltet zusätzliche Veranstaltungen und Neuigkeiten unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Lobby-Ticker verwalten“</strong>. Dort lassen sich Überschrift, Kurztext, optionaler Link, Priorität sowie Beginn und Ende festlegen. Nach erfolgreicher Bestätigung der Mailadresse wird ein neues Mitglied außerdem automatisch begrüßt. Begrüßungstext, Anzeigedauer und die gesamte Automatik sind im selben Verwaltungsfenster einstellbar.</p>
+          <h4>30. Info-Center</h4>
+          <p>Direkt unter dem Ticker bleibt das Info-Center dauerhaft erreichbar. Dort stehen Neuigkeiten, Gamer-Updates, Veranstaltungen und Servicehinweise chronologisch bereit; die neueste Mitteilung steht immer oben und ungelesene Einträge sind mit <strong>„Neu“</strong> gekennzeichnet. Bilder, PDF- und PGN-Dateien können einer Mitteilung beigefügt werden.</p>
+          <p>Andili verwaltet die Inhalte unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Info-Center verwalten“</strong>. Eine Mitteilung kann als Entwurf gespeichert, veröffentlicht oder archiviert sowie optional zusätzlich im Lobby-Ticker und – nach ausdrücklicher Bestätigung – per E-Mail angekündigt werden.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -894,12 +921,59 @@
         <div id="adminOverviewStatus" class="admin-overview-status" aria-live="polite"></div>
         <div class="admin-overview-actions">
           <button id="adminTickerOpenBtn" class="button-flat admin-ticker-open-btn" type="button">Lobby-Ticker verwalten</button>
+          <button id="adminInfoCenterOpenBtn" class="button-flat admin-info-center-open-btn" type="button">Info-Center verwalten</button>
           <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
           <button id="adminFairplayOpenBtn" class="button-flat" type="button">Fairplay-Prüfung öffnen</button>
           <button id="adminMemberDeleteOpenBtn" class="admin-member-delete-open-btn" type="button">Mitglieder löschen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
         </div>
+      </div>
+    </div>
+
+    <div id="adminInfoCenterBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal admin-info-center-modal" role="dialog" aria-modal="true" aria-labelledby="adminInfoCenterTitle">
+        <h3 id="adminInfoCenterTitle">Info-Center verwalten</h3>
+        <p>Mitteilungen bleiben im Info-Center nachlesbar. Ticker und E-Mail sind optionale zusätzliche Kanäle.</p>
+        <div class="admin-info-center-grid">
+          <section class="admin-info-center-panel">
+            <div class="admin-info-center-form-head"><h4 id="adminInfoCenterFormTitle">Neue Mitteilung</h4><button id="adminInfoCenterResetBtn" class="button-flat" type="button">Neue Mitteilung</button></div>
+            <form id="adminInfoCenterForm" class="admin-info-center-form">
+              <div class="admin-info-center-row">
+                <label>Kategorie<select id="adminInfoCenterCategory"><option value="news">ℹ️ Neuigkeit</option><option value="update">🛠️ Gamer-Update</option><option value="event">📅 Veranstaltung</option><option value="service">⚙️ Servicehinweis</option></select></label>
+                <label>Status<select id="adminInfoCenterStatusSelect"><option value="draft">Entwurf</option><option value="published">Veröffentlicht</option><option value="archived">Archiviert</option></select></label>
+              </div>
+              <label>Überschrift<input id="adminInfoCenterItemTitle" type="text" maxlength="120" required /></label>
+              <label>Kurztext<textarea id="adminInfoCenterSummary" maxlength="280" required></textarea><span id="adminInfoCenterSummaryCount" class="admin-info-center-count">0 / 280</span></label>
+              <label>Nachricht<textarea id="adminInfoCenterBody" class="admin-info-center-body-input" maxlength="12000" required></textarea><span id="adminInfoCenterBodyCount" class="admin-info-center-count">0 / 12000</span></label>
+              <div class="admin-info-center-row">
+                <label>Link · optional<input id="adminInfoCenterLinkUrl" type="url" maxlength="500" placeholder="https://www.andili.de/…" /></label>
+                <label>Schaltflächentext<input id="adminInfoCenterActionLabel" type="text" maxlength="80" placeholder="Mehr erfahren" /></label>
+              </div>
+              <div class="admin-info-center-row">
+                <label>Sichtbar ab<input id="adminInfoCenterStartsAt" type="datetime-local" required /></label>
+                <label>Sichtbar bis · optional<input id="adminInfoCenterEndsAt" type="datetime-local" /></label>
+              </div>
+              <label class="admin-info-center-upload">Bilder, PDF oder PGN · maximal 4 Dateien
+                <input id="adminInfoCenterFiles" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.pgn,image/jpeg,image/png,image/webp,application/pdf,application/x-chess-pgn,text/plain" />
+              </label>
+              <div id="adminInfoCenterFilesList" class="admin-info-center-files"></div>
+              <div class="admin-info-center-options">
+                <label><input id="adminInfoCenterTickerCheckbox" type="checkbox" /> Zusätzlich im Lobby-Ticker anzeigen</label>
+                <label><input id="adminInfoCenterEmailCheckbox" type="checkbox" /> Zusätzlich per E-Mail versenden</label>
+              </div>
+              <div class="admin-info-center-mail-note">E-Mail ist standardmäßig ausgeschaltet und wird nur beim ausdrücklich bestätigten Speichern versendet.</div>
+              <div class="admin-info-center-submit"><button id="adminInfoCenterPreviewBtn" class="button-flat" type="button">Vorschau</button><button id="adminInfoCenterSaveBtn" type="submit">Mitteilung speichern</button></div>
+            </form>
+            <div id="adminInfoCenterStatus" class="admin-info-center-status" aria-live="polite"></div>
+          </section>
+          <section class="admin-info-center-panel">
+            <h4>Gespeicherte Mitteilungen</h4>
+            <div class="auth-ratings-note">Neueste Veröffentlichung zuerst. Entwürfe sind nur hier sichtbar.</div>
+            <div id="adminInfoCenterList" class="admin-info-center-list"><div class="admin-list-empty">Mitteilungen werden geladen…</div></div>
+          </section>
+        </div>
+        <div class="identity-actions"><button id="adminInfoCenterCloseBtn" type="button">Schließen</button></div>
       </div>
     </div>
 
@@ -1833,6 +1907,8 @@
 <script src="js/admin-messaging.js?v=20260804-1"></script>
 <script src="js/online-session.js?v=20260804-1"></script>
 <script src="js/lobby-ticker.js?v=20260804-1"></script>
+<script src="js/info-center.js?v=20260804-1"></script>
+<script src="js/admin-info-center.js?v=20260804-1"></script>
 <script src="js/account-profile.js?v=20260804-1"></script>
 <script src="js/auth-recovery.js?v=20260804-1"></script>
 <script src="js/auth-account.js?v=20260804-1"></script>
