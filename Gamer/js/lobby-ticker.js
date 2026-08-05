@@ -39,10 +39,10 @@ function showLobbyTickerAt(index){
   if(lobbyTickerIcon) lobbyTickerIcon.textContent = item.icon || (item.category === 'event' ? '📅' : item.category === 'welcome' ? '👋' : '📢');
   if(lobbyTickerTitle) lobbyTickerTitle.textContent = item.title || 'Hammerschach aktuell';
   if(lobbyTickerText) lobbyTickerText.textContent = item.message || '';
-  const actionable = ['tournament','profile','link'].includes(String(item.actionKind || '')) && !!String(item.actionValue || '').trim();
+  const actionable = ['tournament','profile','link','info'].includes(String(item.actionKind || '')) && !!String(item.actionValue || '').trim();
   if(lobbyTickerActionBtn){
     lobbyTickerActionBtn.hidden = !actionable;
-    lobbyTickerActionBtn.textContent = item.actionLabel || (item.actionKind === 'tournament' ? 'Turnier ansehen' : item.actionKind === 'profile' ? 'Profil ansehen' : 'Mehr erfahren');
+    lobbyTickerActionBtn.textContent = item.actionLabel || (item.actionKind === 'tournament' ? 'Turnier ansehen' : item.actionKind === 'profile' ? 'Profil ansehen' : item.actionKind === 'info' ? 'Im Info-Center lesen' : 'Mehr erfahren');
   }
   if(lobbyTickerCounter) lobbyTickerCounter.textContent = lobbyTickerItems.length > 1 ? ((lobbyTickerIndex + 1) + '/' + lobbyTickerItems.length) : '';
   if(lobbyTickerPrevBtn) lobbyTickerPrevBtn.hidden = lobbyTickerItems.length < 2;
@@ -75,6 +75,8 @@ function openCurrentLobbyTickerItem(){
     openTournamentDialog(String(item.actionValue || ''));
   } else if(item.actionKind === 'profile'){
     openMemberProfile({id:String(item.actionValue || '')}, 'standalone');
+  } else if(item.actionKind === 'info'){
+    openInfoCenter(String(item.actionValue || ''));
   } else if(item.actionKind === 'link'){
     const raw = String(item.actionValue || '').trim();
     try{
@@ -94,7 +96,6 @@ if(lobbyTicker){
   lobbyTicker.addEventListener('focusin', stopLobbyTickerRotation);
   lobbyTicker.addEventListener('focusout', startLobbyTickerRotation);
 }
-
 
 
 

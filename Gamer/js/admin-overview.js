@@ -78,7 +78,8 @@ const ADMIN_TABLE_LABELS = {
   rated_games:'Gewertete Partien', user_ratings:'Ratingkonten', trainer_progress:'Taktik-Ratings', trainer_attempts:'Taktik-Versuche', auth_security_events:'Sicherheitsereignisse',
   auth_rate_limit_log:'Rate-Limit-Einträge', account_action_tokens:'Aktionslinks', mail_delivery_log:'Mailprotokoll',
   email_notification_log:'Daily-Mailprotokoll', user_onboarding:'Leitbild-Bestätigungen', admin_member_messages:'Mitglieder-Nachrichten', admin_member_message_recipients:'Nachrichten-Empfänger',
-  lobby_ticker_items:'Lobby-Ticker-Meldungen'
+  lobby_ticker_items:'Lobby-Ticker-Meldungen', info_center_items:'Info-Center-Mitteilungen',
+  info_center_attachments:'Info-Center-Dateien', info_center_reads:'Info-Center-Lesestände'
 };
 function renderAdminSecurityEvents(events){
   if(!adminSecurityEvents) return;

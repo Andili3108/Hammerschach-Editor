@@ -426,6 +426,7 @@ function saveAuthState(token, user){
   if(onlineAuthToken && onlineAuthUser){
     loadDailyGames({silent:true}).catch(() => {});
     loadLobbyTicker().catch(() => {});
+    loadInfoCenter().catch(() => {});
     loadTournaments().then(() => {
       if(tournamentAddressHandled) return;
       let requested = '';
@@ -437,6 +438,7 @@ function saveAuthState(token, user){
     tournamentAddressHandled = false;
     updateTournamentNotificationUi();
     clearLobbyTicker();
+    clearInfoCenter();
   }
   if(onlineAuthToken && onlineAuthUser){
     startPresenceHeartbeat();
@@ -468,4 +470,3 @@ async function authApi(path, options){
   }
   return data;
 }
-

@@ -44,6 +44,7 @@ window.setInterval(() => {
   loadTournaments({keepDetail:!!(tournamentBackdrop && !tournamentBackdrop.hidden && tournamentSelectedId)}).catch(() => {});
   loadDailyGames({silent:true}).catch(() => {});
   loadLobbyTicker().catch(() => {});
+  loadInfoCenter().catch(() => {});
 }, 120000);
 tournamentListTabButtons.forEach(button => {
   button.addEventListener('click', () => setTournamentListTab(button.dataset.tournamentListTab, false));
@@ -177,4 +178,3 @@ document.addEventListener('pointermove',movePiecePointer,{passive:false});
 document.addEventListener('pointerup',event => endPiecePointer(event,true),{passive:false});
 document.addEventListener('pointercancel',event => endPiecePointer(event,false),{passive:false});
 window.addEventListener('blur',() => cancelActivePieceDrag());
-
