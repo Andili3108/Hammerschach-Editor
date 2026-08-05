@@ -1768,6 +1768,7 @@
 
   .info-center-bar{margin-top:9px;border:1px solid rgba(132,63,70,.3);border-radius:15px;background:linear-gradient(135deg,#fffafa,#f4e3e7);box-shadow:0 8px 20px rgba(65,39,44,.12);overflow:hidden;}
   .info-center-bar[hidden]{display:none!important;}
+  .info-center-bar:not([hidden]) + .global-chat-shell{margin-top:16px;}
   .info-center-open{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;width:100%!important;min-height:64px!important;padding:10px 14px!important;border:0!important;border-radius:0!important;background:transparent!important;color:#2f2527!important;text-align:left!important;box-shadow:none!important;}
   .info-center-open:hover{background:rgba(132,63,70,.055)!important;transform:none!important;}
   .info-center-bar-icon{font-size:27px;line-height:1;}
