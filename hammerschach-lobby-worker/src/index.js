@@ -6710,7 +6710,8 @@ async function buildAdminOverview(env) {
     'users','sessions','daily_games','public_games','completed_games','game_archive_favorites','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
-    'admin_member_messages','admin_member_message_recipients','lobby_ticker_items'
+    'admin_member_messages','admin_member_message_recipients','lobby_ticker_items',
+    'info_center_items','info_center_attachments','info_center_reads'
   ];
   const rowCounts = {};
   for (const tableName of importantTableNames) {
@@ -7423,7 +7424,7 @@ function lobbyTickerItemDto(row, automatic = false) {
     icon:String(row && row.icon || lobbyTickerIcon(category)).slice(0, 8),
     title:cleanLobbyTickerTitle(row && row.title),
     message:cleanLobbyTickerMessage(row && row.message),
-    actionKind:['tournament', 'profile', 'link'].includes(String(row && row.action_kind || '')) ? String(row.action_kind) : 'none',
+    actionKind:['tournament', 'profile', 'link', 'info'].includes(String(row && row.action_kind || '')) ? String(row.action_kind) : 'none',
     actionValue:String(row && row.action_value || '').slice(0, 500),
     actionLabel:cleanLobbyTickerTitle(row && row.action_label) || '',
     priority:Math.max(0, Math.min(100, Number(row && row.priority || 0))),
@@ -7545,7 +7546,9 @@ async function listLobbyTickerItems(env) {
 async function listAdminLobbyTicker(env) {
   await ensureLobbyTickerTables(env);
   const result = await env.DB.prepare(
-    `SELECT * FROM lobby_ticker_items ORDER BY active DESC, starts_at DESC, created_at DESC LIMIT 150`
+    `SELECT * FROM lobby_ticker_items
+      WHERE source_key IS NULL OR source_key NOT LIKE 'info:%'
+      ORDER BY active DESC, starts_at DESC, created_at DESC LIMIT 150`
   ).all();
   return {
     items:(result && result.results ? result.results : []).map(row => lobbyTickerItemDto(row, false)),
@@ -7593,6 +7596,489 @@ async function saveAdminLobbyTickerItem(env, adminUser, body) {
   }
   const row = await env.DB.prepare(`SELECT * FROM lobby_ticker_items WHERE id = ? LIMIT 1`).bind(itemId).first();
   return {ok:true, item:lobbyTickerItemDto(row, false)};
+}
+
+
+const INFO_CENTER_MAX_ITEMS = 100;
+const INFO_CENTER_MAX_ATTACHMENTS = 4;
+const INFO_CENTER_MAX_FILE_BYTES = 3 * 1024 * 1024;
+const INFO_CENTER_MAX_PGN_BYTES = 2 * 1024 * 1024;
+const INFO_CENTER_MAX_TOTAL_FILE_BYTES = 8 * 1024 * 1024;
+let infoCenterTablesReady = false;
+
+async function ensureInfoCenterTables(env) {
+  if (!env || !env.DB) return false;
+  if (infoCenterTablesReady) return true;
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS info_center_items (
+         id TEXT PRIMARY KEY,
+         category TEXT NOT NULL DEFAULT 'news',
+         title TEXT NOT NULL,
+         summary TEXT NOT NULL,
+         body TEXT NOT NULL,
+         link_url TEXT,
+         action_label TEXT,
+         status TEXT NOT NULL DEFAULT 'draft',
+         published_at TEXT,
+         starts_at TEXT NOT NULL,
+         ends_at TEXT,
+         show_in_ticker INTEGER NOT NULL DEFAULT 0,
+         email_sent_at TEXT,
+         created_by_user_id TEXT NOT NULL,
+         created_at TEXT NOT NULL,
+         updated_at TEXT NOT NULL
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS info_center_attachments (
+         id TEXT PRIMARY KEY,
+         item_id TEXT NOT NULL,
+         file_name TEXT NOT NULL,
+         mime_type TEXT NOT NULL,
+         size_bytes INTEGER NOT NULL,
+         object_key TEXT NOT NULL UNIQUE,
+         file_kind TEXT NOT NULL,
+         caption TEXT NOT NULL DEFAULT '',
+         alt_text TEXT NOT NULL DEFAULT '',
+         sort_order INTEGER NOT NULL DEFAULT 0,
+         created_at TEXT NOT NULL
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS info_center_reads (
+         item_id TEXT NOT NULL,
+         user_id TEXT NOT NULL,
+         read_at TEXT NOT NULL,
+         PRIMARY KEY (item_id, user_id)
+       )`
+    )
+  ]);
+  try { await env.DB.prepare(`ALTER TABLE info_center_attachments ADD COLUMN caption TEXT NOT NULL DEFAULT ''`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE info_center_attachments ADD COLUMN alt_text TEXT NOT NULL DEFAULT ''`).run(); } catch (_) {}
+  await env.DB.batch([
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_info_center_visibility ON info_center_items (status, starts_at, ends_at, published_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_info_center_attachments_item ON info_center_attachments (item_id, sort_order)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_info_center_reads_user ON info_center_reads (user_id, read_at)`)
+  ]);
+  infoCenterTablesReady = true;
+  return true;
+}
+
+function cleanInfoCenterCategory(value) {
+  const category = String(value || '').toLowerCase();
+  return ['news', 'update', 'event', 'service'].includes(category) ? category : 'news';
+}
+
+function infoCenterCategoryLabel(category) {
+  if (category === 'update') return 'Gamer-Update';
+  if (category === 'event') return 'Veranstaltung';
+  if (category === 'service') return 'Servicehinweis';
+  return 'Neuigkeit';
+}
+
+function infoCenterCategoryIcon(category) {
+  if (category === 'update') return '🛠️';
+  if (category === 'event') return '📅';
+  if (category === 'service') return '⚙️';
+  return 'ℹ️';
+}
+
+function cleanInfoCenterTitle(value) {
+  return String(value || '').replace(/[\r\n\t<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+function cleanInfoCenterSummary(value) {
+  return String(value || '').replace(/[\r\n\t<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 280);
+}
+
+function cleanInfoCenterBody(value) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim()
+    .slice(0, 12000);
+}
+
+function cleanInfoCenterStatus(value) {
+  const status = String(value || '').toLowerCase();
+  return ['draft', 'published', 'archived'].includes(status) ? status : 'draft';
+}
+
+function infoCenterAttachmentDto(row) {
+  return {
+    id:String(row && row.id || ''),
+    name:cleanMailAttachmentFilename(row && row.file_name),
+    type:String(row && row.mime_type || '').toLowerCase(),
+    size:Math.max(0, Number(row && row.size_bytes || 0)),
+    kind:String(row && row.file_kind || 'document'),
+    caption:cleanInfoCenterFileDescription(row && row.caption),
+    altText:cleanInfoCenterFileDescription(row && row.alt_text),
+    url:'/api/info-center/attachments/' + encodeURIComponent(String(row && row.id || ''))
+  };
+}
+
+function cleanInfoCenterFileDescription(value) {
+  return String(value || '').replace(/[\r\n\t<>]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 240);
+}
+
+function infoCenterItemDto(row, attachments = [], options = {}) {
+  const category = cleanInfoCenterCategory(row && row.category);
+  return {
+    id:String(row && row.id || ''),
+    category,
+    categoryLabel:infoCenterCategoryLabel(category),
+    icon:infoCenterCategoryIcon(category),
+    title:cleanInfoCenterTitle(row && row.title),
+    summary:cleanInfoCenterSummary(row && row.summary),
+    body:options.includeBody ? cleanInfoCenterBody(row && row.body) : undefined,
+    linkUrl:cleanLobbyTickerLink(row && row.link_url),
+    actionLabel:cleanInfoCenterTitle(row && row.action_label),
+    status:cleanInfoCenterStatus(row && row.status),
+    publishedAt:row && row.published_at || null,
+    startsAt:row && row.starts_at || null,
+    endsAt:row && row.ends_at || null,
+    showInTicker:Number(row && row.show_in_ticker || 0) === 1,
+    emailSentAt:row && row.email_sent_at || null,
+    createdAt:row && row.created_at || null,
+    updatedAt:row && row.updated_at || null,
+    unread:Number(row && row.is_read || 0) !== 1,
+    attachmentCount:Math.max(0, Number(row && row.attachment_count || attachments.length || 0)),
+    attachments:Array.isArray(attachments) ? attachments.map(infoCenterAttachmentDto) : []
+  };
+}
+
+async function infoCenterAttachmentsForItem(env, itemId) {
+  const result = await env.DB.prepare(
+    `SELECT * FROM info_center_attachments WHERE item_id = ? ORDER BY sort_order, created_at`
+  ).bind(String(itemId || '')).all();
+  return result && Array.isArray(result.results) ? result.results : [];
+}
+
+async function listInfoCenterItems(env, userId) {
+  await ensureInfoCenterTables(env);
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(
+    `SELECT i.*,
+            CASE WHEN r.item_id IS NULL THEN 0 ELSE 1 END AS is_read,
+            (SELECT COUNT(*) FROM info_center_attachments a WHERE a.item_id = i.id) AS attachment_count
+       FROM info_center_items i
+       LEFT JOIN info_center_reads r ON r.item_id = i.id AND r.user_id = ?
+      WHERE i.status = 'published' AND i.starts_at <= ? AND (i.ends_at IS NULL OR i.ends_at > ?)
+      ORDER BY i.published_at DESC, i.created_at DESC
+      LIMIT ?`
+  ).bind(String(userId || ''), now, now, INFO_CENTER_MAX_ITEMS).all();
+  const items = (result && Array.isArray(result.results) ? result.results : []).map(row => infoCenterItemDto(row));
+  return {items, unreadCount:items.filter(item => item.unread).length};
+}
+
+async function loadInfoCenterItem(env, user, itemId, options = {}) {
+  await ensureInfoCenterTables(env);
+  const id = String(itemId || '').trim();
+  if (!id) return null;
+  const admin = isAdminUser(user, env);
+  const now = new Date().toISOString();
+  const row = await env.DB.prepare(
+    `SELECT i.*,
+            CASE WHEN r.item_id IS NULL THEN 0 ELSE 1 END AS is_read,
+            (SELECT COUNT(*) FROM info_center_attachments a WHERE a.item_id = i.id) AS attachment_count
+       FROM info_center_items i
+       LEFT JOIN info_center_reads r ON r.item_id = i.id AND r.user_id = ?
+      WHERE i.id = ? LIMIT 1`
+  ).bind(String(user && user.id || ''), id).first();
+  if (!row) return null;
+  const visible = row.status === 'published' && String(row.starts_at || '') <= now && (!row.ends_at || String(row.ends_at) > now);
+  if (!admin && !visible) return null;
+  if (options.markRead !== false) {
+    await env.DB.prepare(
+      `INSERT INTO info_center_reads (item_id, user_id, read_at) VALUES (?, ?, ?)
+       ON CONFLICT(item_id, user_id) DO UPDATE SET read_at = excluded.read_at`
+    ).bind(id, String(user.id || ''), now).run();
+    row.is_read = 1;
+  }
+  const attachments = await infoCenterAttachmentsForItem(env, id);
+  return infoCenterItemDto(row, attachments, {includeBody:true});
+}
+
+async function listAdminInfoCenterItems(env) {
+  await ensureInfoCenterTables(env);
+  const result = await env.DB.prepare(
+    `SELECT i.*, 1 AS is_read,
+            (SELECT COUNT(*) FROM info_center_attachments a WHERE a.item_id = i.id) AS attachment_count
+       FROM info_center_items i
+      ORDER BY COALESCE(i.published_at, i.created_at) DESC, i.created_at DESC
+      LIMIT 200`
+  ).all();
+  const rows = result && Array.isArray(result.results) ? result.results : [];
+  const items = [];
+  for (const row of rows) {
+    const attachments = await infoCenterAttachmentsForItem(env, row.id);
+    items.push(infoCenterItemDto(row, attachments, {includeBody:true}));
+  }
+  return items;
+}
+
+function infoCenterBase64ToBytes(base64) {
+  const binary = atob(String(base64 || ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let offset = 0; offset < binary.length; offset += 65536) {
+    const end = Math.min(binary.length, offset + 65536);
+    for (let index = offset; index < end; index++) bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function normalizeInfoCenterUpload(value) {
+  if (!value) return {ok:false, status:400, code:'INVALID_INFO_FILE', message:'Die Datei ist unvollständig.'};
+  const name = cleanMailAttachmentFilename(value.name || value.filename);
+  const extension = mailAttachmentExtension(name);
+  let type = String(value.type || value.contentType || '').toLowerCase().trim();
+  const base64 = normalizedBase64Content(value.base64 || value.content);
+  const allowedByType = {
+    'application/pdf':['pdf'],
+    'image/jpeg':['jpg', 'jpeg'],
+    'image/png':['png'],
+    'image/webp':['webp']
+  };
+  const pgnMime = ['application/x-chess-pgn', 'application/vnd.chess-pgn', 'text/plain', 'application/octet-stream', ''].includes(type);
+  if (extension === 'pgn' && pgnMime) type = 'application/x-chess-pgn';
+  const allowedExtensions = allowedByType[type] || (type === 'application/x-chess-pgn' ? ['pgn'] : null);
+  if (!name || !allowedExtensions || !allowedExtensions.includes(extension) || !base64) {
+    return {ok:false, status:400, code:'INVALID_INFO_FILE', message:'Erlaubt sind JPG-, PNG-, WebP-, PDF- und PGN-Dateien.'};
+  }
+  const size = decodedBase64ByteLength(base64);
+  const maxBytes = type === 'application/x-chess-pgn' ? INFO_CENTER_MAX_PGN_BYTES : INFO_CENTER_MAX_FILE_BYTES;
+  if (!size || size > maxBytes) {
+    return {ok:false, status:400, code:'INFO_FILE_TOO_LARGE', message:type === 'application/x-chess-pgn' ? 'Eine PGN-Datei darf höchstens 2 MB groß sein.' : 'Eine Datei darf höchstens 3 MB groß sein.'};
+  }
+  let bytes;
+  try { bytes = infoCenterBase64ToBytes(base64); }
+  catch (_) { return {ok:false, status:400, code:'INVALID_INFO_FILE_DATA', message:'Die Datei konnte nicht gelesen werden.'}; }
+  if (type === 'application/x-chess-pgn') {
+    let text = '';
+    try { text = new TextDecoder('utf-8', {fatal:true}).decode(bytes); }
+    catch (_) { return {ok:false, status:400, code:'INVALID_PGN_ENCODING', message:'Die PGN-Datei muss als UTF-8-Text gespeichert sein.'}; }
+    if (text.includes('\u0000') || (!/^\s*\[[A-Za-z0-9_]+\s+"/m.test(text) && !/(^|\s)\d+\.(?:\.\.)?\s*\S+/.test(text))) {
+      return {ok:false, status:400, code:'INVALID_PGN_CONTENT', message:'Der Inhalt wurde nicht als gültige PGN-Partiedatei erkannt.'};
+    }
+  } else if (!attachmentSignatureMatches(type, base64)) {
+    return {ok:false, status:400, code:'INFO_FILE_TYPE_MISMATCH', message:'Dateityp und Dateiinhalt stimmen nicht überein.'};
+  }
+  return {
+    ok:true,
+    file:{
+      name, extension, type, size, bytes,
+      kind:type.startsWith('image/') ? 'image' : type === 'application/x-chess-pgn' ? 'pgn' : 'document',
+      caption:cleanInfoCenterFileDescription(value.caption),
+      altText:type.startsWith('image/') ? cleanInfoCenterFileDescription(value.altText) : ''
+    }
+  };
+}
+
+async function syncInfoCenterTickerItem(env, row) {
+  await ensureLobbyTickerTables(env);
+  const id = String(row && row.id || '');
+  const sourceKey = 'info:' + id;
+  const visibleTicker = !!(id && row.status === 'published' && Number(row.show_in_ticker || 0) === 1);
+  if (!visibleTicker) {
+    await env.DB.prepare(`DELETE FROM lobby_ticker_items WHERE source_key = ?`).bind(sourceKey).run();
+    return;
+  }
+  const now = new Date().toISOString();
+  const category = cleanInfoCenterCategory(row.category);
+  const tickerCategory = category === 'event' ? 'event' : 'news';
+  const startsAt = row.starts_at || now;
+  const endsAt = row.ends_at || '9999-12-31T23:59:59.999Z';
+  await env.DB.prepare(
+    `INSERT INTO lobby_ticker_items
+       (id, source_key, category, title, message, action_kind, action_value, action_label, priority,
+        starts_at, ends_at, active, subject_user_id, created_by_user_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'info', ?, 'Im Info-Center lesen', 75, ?, ?, 1, NULL, ?, ?, ?)
+     ON CONFLICT(source_key) DO UPDATE SET
+       category = excluded.category, title = excluded.title, message = excluded.message,
+       action_kind = excluded.action_kind, action_value = excluded.action_value, action_label = excluded.action_label,
+       starts_at = excluded.starts_at, ends_at = excluded.ends_at, active = 1, updated_at = excluded.updated_at`
+  ).bind('info_' + id, sourceKey, tickerCategory, cleanInfoCenterTitle(row.title).slice(0, 80), cleanInfoCenterSummary(row.summary).slice(0, 220),
+    id, startsAt, endsAt, String(row.created_by_user_id || ''), row.created_at || now, now).run();
+}
+
+async function saveAdminInfoCenterItem(env, adminUser, body) {
+  await ensureInfoCenterTables(env);
+  const requestedId = String(body && body.id || '').trim();
+  const existing = requestedId ? await env.DB.prepare(`SELECT * FROM info_center_items WHERE id = ? LIMIT 1`).bind(requestedId).first() : null;
+  if (requestedId && !existing) return {ok:false, status:404, code:'INFO_ITEM_NOT_FOUND', message:'Die Mitteilung wurde nicht gefunden.'};
+  const category = cleanInfoCenterCategory(body && body.category);
+  const title = cleanInfoCenterTitle(body && body.title);
+  const content = cleanInfoCenterBody(body && body.body);
+  const summary = cleanInfoCenterSummary(body && body.summary) || cleanInfoCenterSummary(content);
+  const status = cleanInfoCenterStatus(body && body.status);
+  if (title.length < 3 || summary.length < 3 || content.length < 3) {
+    return {ok:false, status:400, code:'INVALID_INFO_TEXT', message:'Bitte Überschrift, Kurztext und Nachricht vollständig eingeben.'};
+  }
+  if (body && body.sendEmail === true && status !== 'published') {
+    return {ok:false, status:400, code:'INFO_EMAIL_REQUIRES_PUBLISH', message:'Eine zusätzliche E-Mail kann nur beim Veröffentlichen versendet werden.'};
+  }
+  const startsMs = Date.parse(String(body && body.startsAt || ''));
+  const startsAt = new Date(Number.isFinite(startsMs) ? startsMs : Date.now()).toISOString();
+  const rawEnds = String(body && body.endsAt || '').trim();
+  const endsMs = rawEnds ? Date.parse(rawEnds) : NaN;
+  const endsAt = Number.isFinite(endsMs) ? new Date(endsMs).toISOString() : null;
+  if (rawEnds && !endsAt) return {ok:false, status:400, code:'INVALID_INFO_END', message:'Das optionale Enddatum ist ungültig.'};
+  if (endsAt && Date.parse(endsAt) <= Date.parse(startsAt)) return {ok:false, status:400, code:'INVALID_INFO_PERIOD', message:'Das Enddatum muss nach dem Start liegen.'};
+  const linkUrl = cleanLobbyTickerLink(body && body.linkUrl);
+  if (String(body && body.linkUrl || '').trim() && !linkUrl) return {ok:false, status:400, code:'INVALID_INFO_LINK', message:'Der Link muss mit https:// oder / beginnen.'};
+  const actionLabel = cleanInfoCenterTitle(body && body.actionLabel) || (linkUrl ? 'Mehr erfahren' : '');
+  const itemId = existing ? String(existing.id) : crypto.randomUUID();
+  const currentAttachments = existing ? await infoCenterAttachmentsForItem(env, itemId) : [];
+  const keepIds = new Set((Array.isArray(body && body.keepAttachmentIds) ? body.keepAttachmentIds : []).map(String));
+  const kept = currentAttachments.filter(item => keepIds.has(String(item.id)));
+  const attachmentMeta = new Map((Array.isArray(body && body.attachmentMeta) ? body.attachmentMeta : []).map(item => [String(item && item.id || ''), item || {}]));
+  const rawUploads = Array.isArray(body && body.attachments) ? body.attachments : [];
+  if (kept.length + rawUploads.length > INFO_CENTER_MAX_ATTACHMENTS) {
+    return {ok:false, status:400, code:'TOO_MANY_INFO_FILES', message:'Pro Mitteilung sind höchstens vier Dateien möglich.'};
+  }
+  const uploads = [];
+  let totalBytes = kept.reduce((sum, item) => sum + Math.max(0, Number(item.size_bytes || 0)), 0);
+  for (const raw of rawUploads) {
+    const normalized = normalizeInfoCenterUpload(raw);
+    if (!normalized.ok) return normalized;
+    totalBytes += normalized.file.size;
+    uploads.push(normalized.file);
+  }
+  if (totalBytes > INFO_CENTER_MAX_TOTAL_FILE_BYTES) {
+    return {ok:false, status:400, code:'INFO_FILES_TOTAL_TOO_LARGE', message:'Alle Dateien zusammen dürfen höchstens 8 MB groß sein.'};
+  }
+  if (uploads.length && (!env.AVATARS || typeof env.AVATARS.put !== 'function')) {
+    return {ok:false, status:503, code:'INFO_FILE_STORAGE_UNAVAILABLE', message:'Der Dateispeicher ist derzeit nicht verfügbar.'};
+  }
+
+  const now = new Date().toISOString();
+  const publishedAt = status === 'published'
+    ? (existing && existing.status === 'published' && existing.published_at ? existing.published_at : now)
+    : null;
+  const newObjects = [];
+  try {
+    for (let index = 0; index < uploads.length; index++) {
+      const file = uploads[index];
+      const attachmentId = crypto.randomUUID();
+      const objectKey = `info-center/${itemId}/${attachmentId}.${file.extension}`;
+      await env.AVATARS.put(objectKey, file.bytes, {
+        httpMetadata:{contentType:file.type},
+        customMetadata:{itemId, purpose:'info-center', originalName:file.name}
+      });
+      newObjects.push({...file, id:attachmentId, objectKey, sortOrder:kept.length + index});
+    }
+
+    if (existing) {
+      await env.DB.prepare(
+        `UPDATE info_center_items SET category = ?, title = ?, summary = ?, body = ?, link_url = ?, action_label = ?,
+                status = ?, published_at = ?, starts_at = ?, ends_at = ?, show_in_ticker = ?, updated_at = ? WHERE id = ?`
+      ).bind(category, title, summary, content, linkUrl || null, actionLabel || null, status, publishedAt,
+        startsAt, endsAt, body && body.showInTicker === true ? 1 : 0, now, itemId).run();
+    } else {
+      await env.DB.prepare(
+        `INSERT INTO info_center_items
+           (id, category, title, summary, body, link_url, action_label, status, published_at, starts_at, ends_at,
+            show_in_ticker, email_sent_at, created_by_user_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)`
+      ).bind(itemId, category, title, summary, content, linkUrl || null, actionLabel || null, status, publishedAt,
+        startsAt, endsAt, body && body.showInTicker === true ? 1 : 0, String(adminUser && adminUser.id || ''), now, now).run();
+    }
+
+    for (const file of newObjects) {
+      await env.DB.prepare(
+        `INSERT INTO info_center_attachments
+           (id, item_id, file_name, mime_type, size_bytes, object_key, file_kind, caption, alt_text, sort_order, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(file.id, itemId, file.name, file.type, file.size, file.objectKey, file.kind, file.caption, file.altText, file.sortOrder, now).run();
+    }
+    for (const file of kept) {
+      const meta = attachmentMeta.get(String(file.id)) || {};
+      await env.DB.prepare(`UPDATE info_center_attachments SET caption = ?, alt_text = ? WHERE id = ? AND item_id = ?`)
+        .bind(cleanInfoCenterFileDescription(meta.caption), String(file.file_kind || '') === 'image' ? cleanInfoCenterFileDescription(meta.altText) : '', String(file.id), itemId).run();
+    }
+    const removed = currentAttachments.filter(item => !keepIds.has(String(item.id)));
+    for (const item of removed) {
+      await env.DB.prepare(`DELETE FROM info_center_attachments WHERE id = ? AND item_id = ?`).bind(String(item.id), itemId).run();
+      if (env.AVATARS && item.object_key) {
+        try { await env.AVATARS.delete(String(item.object_key)); } catch (_) {}
+      }
+    }
+  } catch (error) {
+    for (const file of newObjects) {
+      try { await env.AVATARS.delete(file.objectKey); } catch (_) {}
+    }
+    throw error;
+  }
+
+  let row = await env.DB.prepare(`SELECT * FROM info_center_items WHERE id = ? LIMIT 1`).bind(itemId).first();
+  await syncInfoCenterTickerItem(env, row);
+  let mailResult = null;
+  if (body && body.sendEmail === true && row.status === 'published') {
+    const emailText = [row.summary, '', cleanInfoCenterBody(row.body), '', 'Die vollständige Mitteilung findest du im Info-Center des Hammerschach-Gamers.'].join('\n').slice(0, ADMIN_MEMBER_MESSAGE_MAX_LENGTH);
+    try { mailResult = await sendAdminMemberMessage(env, adminUser, {kind:'news', subject:row.title, message:emailText, confirmed:true}); }
+    catch (error) { mailResult = {ok:false, code:'INFO_EMAIL_FAILED', message:error && error.message ? error.message : 'Der optionale Mailversand ist fehlgeschlagen.'}; }
+    const mailComplete = !!(mailResult && mailResult.ok && Number(mailResult.sentCount || 0) > 0 && Number(mailResult.failedCount || 0) === 0);
+    if (mailComplete) {
+      const sentAt = new Date().toISOString();
+      await env.DB.prepare(`UPDATE info_center_items SET email_sent_at = ?, updated_at = ? WHERE id = ?`).bind(sentAt, sentAt, itemId).run();
+      row = await env.DB.prepare(`SELECT * FROM info_center_items WHERE id = ? LIMIT 1`).bind(itemId).first();
+    } else if (mailResult && mailResult.ok) {
+      mailResult = {...mailResult, ok:false, message:mailResult.message || 'Der optionale Mailversand wurde nicht vollständig abgeschlossen.'};
+    }
+  }
+  const attachments = await infoCenterAttachmentsForItem(env, itemId);
+  return {ok:true, item:infoCenterItemDto({...row, is_read:1}, attachments, {includeBody:true}), mailResult};
+}
+
+async function deleteAdminInfoCenterItem(env, itemId) {
+  await ensureInfoCenterTables(env);
+  await ensureLobbyTickerTables(env);
+  const id = String(itemId || '').trim();
+  const row = await env.DB.prepare(`SELECT * FROM info_center_items WHERE id = ? LIMIT 1`).bind(id).first();
+  if (!row) return {ok:false, status:404, code:'INFO_ITEM_NOT_FOUND', message:'Die Mitteilung wurde nicht gefunden.'};
+  const attachments = await infoCenterAttachmentsForItem(env, id);
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM info_center_reads WHERE item_id = ?`).bind(id),
+    env.DB.prepare(`DELETE FROM info_center_attachments WHERE item_id = ?`).bind(id),
+    env.DB.prepare(`DELETE FROM info_center_items WHERE id = ?`).bind(id),
+    env.DB.prepare(`DELETE FROM lobby_ticker_items WHERE source_key = ?`).bind('info:' + id)
+  ]);
+  if (env.AVATARS) {
+    for (const attachment of attachments) {
+      try { await env.AVATARS.delete(String(attachment.object_key || '')); } catch (_) {}
+    }
+  }
+  return {ok:true, message:'Die Info-Center-Mitteilung wurde gelöscht.'};
+}
+
+async function infoCenterAttachmentResponse(request, env, user, attachmentId) {
+  await ensureInfoCenterTables(env);
+  const id = String(attachmentId || '').trim();
+  const now = new Date().toISOString();
+  const row = await env.DB.prepare(
+    `SELECT a.*, i.status, i.starts_at, i.ends_at
+       FROM info_center_attachments a
+       JOIN info_center_items i ON i.id = a.item_id
+      WHERE a.id = ? LIMIT 1`
+  ).bind(id).first();
+  if (!row) return new Response(null, {status:404, headers:{'cache-control':'no-store'}});
+  const visible = row.status === 'published' && String(row.starts_at || '') <= now && (!row.ends_at || String(row.ends_at) > now);
+  if (!isAdminUser(user, env) && !visible) return new Response(null, {status:404, headers:{'cache-control':'no-store'}});
+  if (!env.AVATARS) return new Response(null, {status:503, headers:{'cache-control':'no-store'}});
+  const object = await env.AVATARS.get(String(row.object_key || ''));
+  if (!object) return new Response(null, {status:404, headers:{'cache-control':'no-store'}});
+  const headers = new Headers();
+  if (object.writeHttpMetadata) object.writeHttpMetadata(headers);
+  headers.set('content-type', String(row.mime_type || headers.get('content-type') || 'application/octet-stream'));
+  headers.set('content-length', String(row.size_bytes || object.size || ''));
+  headers.set('x-content-type-options', 'nosniff');
+  headers.set('cache-control', 'private, max-age=300');
+  const disposition = String(row.file_kind || '') === 'pgn' ? 'attachment' : 'inline';
+  const asciiName = cleanMailAttachmentFilename(row.file_name).replace(/[^A-Za-z0-9._-]/g, '_') || 'Datei';
+  const encodedName = encodeURIComponent(cleanMailAttachmentFilename(row.file_name) || 'Datei').replace(/'/g, '%27');
+  headers.set('content-disposition', `${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodedName}`);
+  return new Response(object.body, {status:200, headers});
 }
 
 
@@ -9324,6 +9810,38 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  if (url.pathname === '/api/info-center' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Das Info-Center ist nur für Mitglieder sichtbar.'}, {status:401});
+    try {
+      return json({ok:true, ...(await listInfoCenterItems(env, session.user.id)), serverNow:Date.now()});
+    } catch (error) {
+      console.error('Info center list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'INFO_CENTER_UNAVAILABLE', message:'Das Info-Center konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  const infoCenterAttachmentMatch = url.pathname.match(/^\/api\/info-center\/attachments\/([^/]+)$/);
+  if (infoCenterAttachmentMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Dateien aus dem Info-Center sind nur nach Login verfügbar.'}, {status:401});
+    return await infoCenterAttachmentResponse(request, env, session.user, decodeURIComponent(infoCenterAttachmentMatch[1]));
+  }
+
+  const infoCenterItemMatch = url.pathname.match(/^\/api\/info-center\/([^/]+)$/);
+  if (infoCenterItemMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Das Info-Center ist nur für Mitglieder sichtbar.'}, {status:401});
+    try {
+      const item = await loadInfoCenterItem(env, session.user, decodeURIComponent(infoCenterItemMatch[1]), {markRead:true});
+      if (!item) return json({ok:false, code:'INFO_ITEM_NOT_FOUND', message:'Die Mitteilung wurde nicht gefunden.'}, {status:404});
+      return json({ok:true, item});
+    } catch (error) {
+      console.error('Info center item failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'INFO_ITEM_UNAVAILABLE', message:'Die Mitteilung konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
   if (url.pathname === '/api/admin/users' && request.method === 'GET') {
     const admin = await requireAdminSession(request, env);
     if (!admin.ok) return admin.response;
@@ -9388,6 +9906,45 @@ async function handleAuthApi(request, env, url) {
     catch (error) {
       console.error('Admin lobby ticker list failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'ADMIN_TICKER_UNAVAILABLE', message:'Die Ticker-Verwaltung konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/admin/info-center' && request.method === 'GET') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try { return json({ok:true, items:await listAdminInfoCenterItems(env)}); }
+    catch (error) {
+      console.error('Admin info center list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'ADMIN_INFO_CENTER_UNAVAILABLE', message:'Die Info-Center-Verwaltung konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/admin/info-center' && request.method === 'POST') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    const body = await readJsonBody(request);
+    if (!body) return json({ok:false, code:'BAD_JSON', message:'Die Info-Center-Daten konnten nicht gelesen werden.'}, {status:400});
+    try {
+      const result = await saveAdminInfoCenterItem(env, admin.session.user, body);
+      if (!result.ok) return json(result, {status:result.status || 400});
+      const mailWarning = result.mailResult && !result.mailResult.ok ? result.mailResult.message : '';
+      return json({...result, message:mailWarning ? 'Die Mitteilung wurde gespeichert. Der optionale Mailversand ist fehlgeschlagen: ' + mailWarning : 'Die Info-Center-Mitteilung wurde gespeichert.'});
+    } catch (error) {
+      console.error('Admin info center save failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'ADMIN_INFO_CENTER_SAVE_FAILED', message:'Die Info-Center-Mitteilung konnte nicht gespeichert werden.'}, {status:500});
+    }
+  }
+
+  const adminInfoCenterDeleteMatch = url.pathname.match(/^\/api\/admin\/info-center\/([^/]+)$/);
+  if (adminInfoCenterDeleteMatch && request.method === 'DELETE') {
+    const admin = await requireAdminSession(request, env);
+    if (!admin.ok) return admin.response;
+    try {
+      const result = await deleteAdminInfoCenterItem(env, decodeURIComponent(adminInfoCenterDeleteMatch[1]));
+      return json(result, {status:result.status || (result.ok ? 200 : 400)});
+    } catch (error) {
+      console.error('Admin info center delete failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'ADMIN_INFO_CENTER_DELETE_FAILED', message:'Die Mitteilung konnte nicht gelöscht werden.'}, {status:500});
     }
   }
 
@@ -14218,8 +14775,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   },
