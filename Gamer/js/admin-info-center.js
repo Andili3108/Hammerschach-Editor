@@ -24,6 +24,13 @@ function adminInfoCenterInputDate(value){
   return local.toISOString().slice(0, 16);
 }
 
+function adminInfoCenterOutputDate(value){
+  const raw = String(value || '').trim();
+  if(!raw) return '';
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? raw : date.toISOString();
+}
+
 function adminInfoCenterFileExtension(name){
   const match = String(name || '').toLowerCase().match(/\.([a-z0-9]{1,8})$/);
   return match ? match[1] : '';
@@ -320,8 +327,8 @@ async function saveAdminInfoCenter(event){
       body:String(adminInfoCenterBody && adminInfoCenterBody.value || ''),
       linkUrl:String(adminInfoCenterLinkUrl && adminInfoCenterLinkUrl.value || ''),
       actionLabel:String(adminInfoCenterActionLabel && adminInfoCenterActionLabel.value || ''),
-      startsAt:String(adminInfoCenterStartsAt && adminInfoCenterStartsAt.value || ''),
-      endsAt:String(adminInfoCenterEndsAt && adminInfoCenterEndsAt.value || ''),
+      startsAt:adminInfoCenterOutputDate(adminInfoCenterStartsAt && adminInfoCenterStartsAt.value),
+      endsAt:adminInfoCenterOutputDate(adminInfoCenterEndsAt && adminInfoCenterEndsAt.value),
       showInTicker:!!(adminInfoCenterTickerCheckbox && adminInfoCenterTickerCheckbox.checked),
       sendEmail,
       keepAttachmentIds:adminInfoCenterExistingFiles.map(file => String(file.id || '')).filter(Boolean),
