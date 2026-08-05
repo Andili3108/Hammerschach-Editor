@@ -1,0 +1,302 @@
+'use strict';
+
+function setOnlineValueClass(el, state){
+  if(!el) return;
+  el.classList.remove('good','wait','neutral');
+  el.classList.add(state || 'neutral');
+}
+function refreshHeaderStatusFromState(){
+  if(!statusEl || !boardEl) return;
+  if(variationModeActive){
+    statusEl.textContent = 'Variantenbrett';
+    return;
+  }
+  if(embeddedToolActive()){
+    statusEl.textContent = embeddedToolStatusText();
+    return;
+  }
+  if(isAnonymousVisitorStartView()){
+    statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    return;
+  }
+  if(isMemberLobbyView()){
+    statusEl.textContent = 'Partie starten, Gegner finden oder chatten.';
+    return;
+  }
+  try{ updateStatus(buildGameFromHistory(viewIndex)); } catch(_){}
+}
+function updateOnlineActionButtons(){
+  const live = isOnlineGameLiveForUi();
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
+  const inRoom = !!onlineRoomId;
+  const showLobbyButton = inRoom || embeddedToolActive();
+  if(newGameOpenBtn){
+    newGameOpenBtn.hidden = !loggedIn || showLobbyButton;
+    newGameOpenBtn.disabled = !loggedIn || showLobbyButton;
+    newGameOpenBtn.title = loggedIn ? 'Farbe, Spielmodus, Bedenkzeit und Wertung einstellen.' : 'Zum Erstellen einer Partie bitte einloggen.';
+  }
+  if((!loggedIn || showLobbyButton) && newGameBackdrop && !newGameBackdrop.hidden) closeNewGameDialog({restoreFocus:false});
+  if(newGameMenuEl){
+    newGameMenuEl.hidden = showLobbyButton;
+    if(showLobbyButton) closeNewGameMenu();
+  }
+  if(roomLobbyBtn){
+    roomLobbyBtn.hidden = !showLobbyButton;
+    roomLobbyBtn.title = embeddedToolActive()
+      ? ((openingsToolActive ? 'Eröffnungsschule' : (trainerToolActive ? 'Trainer' : 'Analyzer')) + ' schließen und zur Lobby zurückkehren.')
+      : 'Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.';
+  }
+  if(createOnlineBtn){
+    createOnlineBtn.hidden = inRoom;
+    createOnlineBtn.disabled = inRoom || live || offerOpen;
+    createOnlineBtn.title = inRoom
+      ? ''
+      : (live
+          ? 'Während einer laufenden Online-Partie kann kein neuer Raum erstellt werden.'
+          : (offerOpen
+              ? 'Diese Partie ist bereits unter „Offene Partien“ angeboten.'
+              : (!loggedIn
+                  ? 'Zum Erstellen einer Partie ist ein kostenloser Mitglieder-Account erforderlich. Eingeladene Gäste dürfen Live-Partien weiterhin per Link beitreten.'
+                  : (onlineRoomCancelled ? 'Eine neue Online-Partie erstellen.' : 'Online-Partie erstellen und Einladungs-Popup öffnen.'))));
+  }
+  if(newGameBtn){
+    newGameBtn.disabled = inRoom;
+    newGameBtn.hidden = false;
+    newGameBtn.textContent = '♟️ Partie anbieten';
+    newGameBtn.title = loggedIn ? 'Die gewählten Einstellungen als offene Partie veröffentlichen.' : 'Zum Anbieten einer Partie bitte einloggen.';
+  }
+}
+function updateGameActionButtons(){
+  const live = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
+  if(gameActionsEl) gameActionsEl.hidden = !live;
+  if(!live && resignBackdropEl && !resignBackdropEl.hidden) closeResignDialog({restoreFocus:false});
+  if(!offerDrawBtn || !resignBtn) return;
+  offerDrawBtn.disabled = !live;
+  resignBtn.disabled = !live;
+  if(!live){
+    offerDrawBtn.textContent = '½ Remis';
+    offerDrawBtn.title = 'Remisangebot ist nur während einer laufenden Online-Partie möglich.';
+    resignBtn.title = 'Aufgeben ist nur während einer laufenden Online-Partie möglich.';
+    return;
+  }
+  if(variationModeActive){
+    offerDrawBtn.disabled = true;
+    resignBtn.disabled = true;
+    offerDrawBtn.title = 'Bitte zuerst zum Partiebrett zurückkehren.';
+    resignBtn.title = 'Bitte zuerst zum Partiebrett zurückkehren.';
+    return;
+  }
+  if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode){
+    offerDrawBtn.textContent = '½ Angeboten';
+    offerDrawBtn.disabled = true;
+    offerDrawBtn.title = 'Dein Remisangebot wartet auf Antwort.';
+  } else if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
+    offerDrawBtn.textContent = '½ Annehmen';
+    offerDrawBtn.disabled = false;
+    offerDrawBtn.title = 'Remisangebot des Gegners annehmen.';
+  } else {
+    offerDrawBtn.textContent = '½ Remis';
+    offerDrawBtn.disabled = false;
+    offerDrawBtn.title = 'Dem Gegner Remis anbieten.';
+  }
+  resignBtn.title = onlineRoleCode === 'w' ? 'Als Weiß aufgeben.' : 'Als Schwarz aufgeben.';
+}
+function updateOnlineStartButton(){
+  if(!startOnlineBtn || !liveStartBoxEl) return;
+  const daily = isDailyTimeControl();
+  const roomWaiting = !!(onlineRoomId && !daily && !onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
+  const bothSeats = !!(onlineAssignedSeats.white && onlineAssignedSeats.black);
+  const bothConnected = !!(isOnlineSideConnected('w') && isOnlineSideConnected('b'));
+  const show = roomWaiting && bothSeats && bothConnected && (onlineRoleCode === 'w' || onlineRoleCode === 'b');
+  liveStartBoxEl.hidden = !show;
+  if(!show){
+    startOnlineBtn.hidden = true;
+    startOnlineBtn.disabled = true;
+    if(liveStartHintEl) liveStartHintEl.textContent = 'Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.';
+    return;
+  }
+  if(onlineRoleCode === 'b'){
+    startOnlineBtn.hidden = true;
+    startOnlineBtn.disabled = true;
+    if(liveStartHintEl) liveStartHintEl.textContent = 'Beide Spieler sind verbunden. Weiß startet die Partie.';
+    return;
+  }
+  startOnlineBtn.hidden = false;
+  const canStart = onlineConnected && bothConnected && !!timeMode && !onlinePendingStartMessageId;
+  startOnlineBtn.disabled = !canStart;
+  startOnlineBtn.textContent = onlinePendingStartMessageId ? 'Partiestart wird gesendet…' : 'Partie starten';
+  if(liveStartHintEl){
+    if(!timeMode) liveStartHintEl.textContent = 'Bitte zuerst eine Bedenkzeit auswählen.';
+    else if(onlinePendingStartMessageId) liveStartHintEl.textContent = 'Der Partiestart wartet auf die Bestätigung des Servers.';
+    else liveStartHintEl.textContent = 'Beide Spieler sind verbunden. Du spielst Weiß und kannst die Live-Partie starten.';
+  }
+  startOnlineBtn.title = canStart ? 'Live-Partie mit der gewählten Bedenkzeit starten.' : (timeMode ? 'Partiestart ist noch nicht möglich.' : 'Bitte zuerst eine Bedenkzeit auswählen.');
+}
+function updateOnlineUi(){
+  updateVisitorLandingUi();
+  if(!onlineRoomId){
+    onlineCanSetTimeControl = false;
+    onlinePublicGame = false;
+    onlineOpenOffer = false;
+    onlineOpenOfferStatus = 'none';
+    onlineRatedRequested = !!ratingPreference;
+    onlineCreatedByMe = false;
+    onlinePendingPublicGameMessageId = null;
+    onlineAssignedSeats = {white:false, black:false};
+    onlineStatusEl.textContent = 'Nicht verbunden';
+    onlineRoleEl.textContent = '—';
+    onlineRoomEl.textContent = '—';
+    if(onlineGameStateEl) onlineGameStateEl.textContent = 'Keine Partie';
+    onlineHintEl.textContent = 'Bitte eine Online-Partie erstellen oder einem Einladungslink folgen.';
+    if(copyInviteBtn) copyInviteBtn.disabled = true;
+    onlineConnectionState = 'local';
+    whitePlayerNameEl.textContent = '—';
+    blackPlayerNameEl.textContent = '—';
+    whitePlayerNameEl.removeAttribute('title');
+    blackPlayerNameEl.removeAttribute('title');
+    onlineRatingState = null;
+    onlineHeadToHead = null;
+    onlineRematchState = null;
+    rematchActionBusy = false;
+    rematchAutoOpenWhenReady = false;
+    updateRoomRatingUi();
+    updateHeadToHeadUi();
+    updateRematchUi();
+    setOnlineValueClass(onlineStatusEl, 'neutral');
+    setOnlineValueClass(onlineRoleEl, 'neutral');
+    setOnlineValueClass(onlineRoomEl, 'neutral');
+    setOnlineValueClass(onlineGameStateEl, 'neutral');
+    updateOnlineStartButton();
+    updateOnlineActionButtons();
+    updateGameActionButtons();
+    updateChatControls();
+    updateTimeSetupVisibility();
+    updateVariantUi();
+    updateInviteColorUi();
+    updateRatingPreferenceUi();
+    updatePublicVisibilityUi();
+    updateSidePanelLayout();
+    updatePlayerPresenceBadges();
+    updateVariationLauncherUi();
+    refreshHeaderStatusFromState();
+    refreshNextDailyGameButton();
+    return;
+  }
+
+  if(onlineRoomCancelled){
+    onlineStatusEl.textContent = 'Zurückgezogen';
+    onlineRoleEl.textContent = '—';
+    onlineRoomEl.textContent = onlineRoomId || '—';
+    if(onlineGameStateEl) onlineGameStateEl.textContent = 'Nicht verfügbar';
+    onlineHintEl.textContent = onlineLastMessage || 'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.';
+    whitePlayerNameEl.textContent = '—';
+    blackPlayerNameEl.textContent = '—';
+    whitePlayerNameEl.removeAttribute('title');
+    blackPlayerNameEl.removeAttribute('title');
+    onlineRatingState = null;
+    onlineHeadToHead = null;
+    onlineRematchState = null;
+    rematchActionBusy = false;
+    rematchAutoOpenWhenReady = false;
+    updateRoomRatingUi();
+    updateHeadToHeadUi();
+    updateRematchUi();
+    setOnlineValueClass(onlineStatusEl, 'wait');
+    setOnlineValueClass(onlineRoleEl, 'neutral');
+    setOnlineValueClass(onlineRoomEl, 'neutral');
+    setOnlineValueClass(onlineGameStateEl, 'neutral');
+    if(copyInviteBtn) copyInviteBtn.disabled = true;
+    updateOnlineStartButton();
+    updateOnlineActionButtons();
+    updateGameActionButtons();
+    updateChatControls();
+    updatePublicVisibilityUi();
+    updateSidePanelLayout();
+    updatePlayerPresenceBadges();
+    updateVariationLauncherUi();
+    refreshHeaderStatusFromState();
+    refreshNextDailyGameButton();
+    return;
+  }
+
+  const bothConnected = !!(isOnlineSideConnected('w') && isOnlineSideConnected('b'));
+  if(onlineConnectionState === 'error'){
+    onlineStatusEl.textContent = 'Online-Fehler';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(onlineConnectionState === 'closed'){
+    onlineStatusEl.textContent = 'Getrennt';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(!onlineConnected){
+    onlineStatusEl.textContent = 'Verbinde...';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  } else if(onlineRoleCode === 'spectator'){
+    onlineStatusEl.textContent = 'Zuschauen';
+    setOnlineValueClass(onlineStatusEl, 'good');
+  } else if(isDailyTimeControl() && onlineGameStarted){
+    onlineStatusEl.textContent = 'Daily aktiv';
+    setOnlineValueClass(onlineStatusEl, 'good');
+  } else if(bothConnected){
+    onlineStatusEl.textContent = 'Verbunden';
+    setOnlineValueClass(onlineStatusEl, 'good');
+  } else {
+    onlineStatusEl.textContent = 'Warte auf Gegner';
+    setOnlineValueClass(onlineStatusEl, 'wait');
+  }
+
+  onlineRoleEl.textContent = roleLabel(onlineRoleCode);
+  onlineRoomEl.textContent = onlineSpectatorOnly ? 'Öffentlich' : onlineRoomId;
+  if(copyInviteBtn) copyInviteBtn.disabled = onlineRoleCode === 'spectator';
+  setOnlineValueClass(onlineRoleEl, onlineRoleCode === 'spectator' ? 'wait' : 'good');
+  setOnlineValueClass(onlineRoomEl, 'neutral');
+
+  if(onlineGameStateEl){
+    const ended = onlineGameEnded || gameEnded || timeLost;
+    onlineGameStateEl.textContent = ended ? 'Beendet' : (onlineGameStarted ? 'Gestartet' : 'Lobby');
+    setOnlineValueClass(onlineGameStateEl, ended ? 'neutral' : (onlineGameStarted ? 'good' : 'wait'));
+  }
+
+  const whitePlayerDisplayName = onlineSideText('w');
+  const blackPlayerDisplayName = onlineSideText('b');
+  whitePlayerNameEl.textContent = whitePlayerDisplayName;
+  blackPlayerNameEl.textContent = blackPlayerDisplayName;
+  whitePlayerNameEl.title = whitePlayerDisplayName;
+  blackPlayerNameEl.title = blackPlayerDisplayName;
+  updatePlayerPresenceBadges();
+  updateRoomRatingUi();
+  updateHeadToHeadUi();
+  updateRematchUi();
+
+  let syncNote;
+  if(onlineRoleCode === 'spectator'){
+    syncNote = 'Zuschauermodus: Du kannst Brett, Zugliste und Zeiten verfolgen. Spielerplätze, Züge und der private Partie-Chat bleiben gesperrt.';
+  } else if(onlineGameEnded || gameEnded || timeLost){
+    syncNote = 'Partie beendet. Für eine neue Partie bitte einen neuen Online-Raum erstellen.';
+  } else if(isDailyTimeControl()){
+    syncNote = onlineGameStarted
+      ? 'Daily-Partie läuft. Der Gegner muss nicht gleichzeitig online sein; Züge und Zugfristen werden serverseitig gespeichert.'
+      : 'Daily Chess startet automatisch, sobald beide registrierten Spielerplätze angenommen wurden.';
+  } else {
+    syncNote = onlineGameStarted
+      ? 'Partie gestartet. Züge werden synchronisiert und serverseitig geprüft.'
+      : 'Weiß startet die Partie. Die Bedenkzeit wählt Weiß oder der Einladende. Züge werden synchronisiert und serverseitig geprüft.';
+  }
+  if(onlineRoomTimeControl && onlineRoomTimeControl.label){
+    syncNote = 'Raum-Bedenkzeit: ' + onlineRoomTimeControl.label + '. ' + syncNote;
+  }
+  onlineHintEl.textContent = onlineLastMessage ? (onlineLastMessage + ' ' + syncNote) : syncNote;
+  updateOnlineStartButton();
+  updateOnlineActionButtons();
+  updateGameActionButtons();
+  updateChatControls();
+  updateTimeControlsLock();
+  updateTimeSetupVisibility();
+  updateVariantUi();
+  updateInviteColorUi();
+  updateRatingPreferenceUi();
+  updatePublicVisibilityUi();
+  updateSidePanelLayout();
+  updateVariationLauncherUi();
+  refreshHeaderStatusFromState();
+  refreshNextDailyGameButton();
+}

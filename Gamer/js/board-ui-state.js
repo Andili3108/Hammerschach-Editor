@@ -1,0 +1,19 @@
+'use strict';
+
+let viewIndex = 0;
+let selected = null;
+let pendingDailyMove = null;
+let queuedPremove = null;
+let orientationWhite = true;
+let lastMove = null;
+let gameEnded = false;
+let timeLost = false;
+let variationStartGame = null;
+let variationGame = null;
+let variationHistory = [];
+let variationRedo = [];
+let variationSelected = null;
+let variationOrientationWhite = true;
+let variationModeActive = false;
+let activePieceDrag = null;
+let suppressPieceDragClickUntil = 0;
