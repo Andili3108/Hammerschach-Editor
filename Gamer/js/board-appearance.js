@@ -5,6 +5,35 @@ const boardColorWrap = document.getElementById('boardColorWrap');
 const btnBoardColor = document.getElementById('btnBoardColor');
 const boardColorPopup = document.getElementById('boardColorPopup');
 const boardColorCurrent = document.getElementById('boardColorCurrent');
+
+/* Premium-Endauswahl unabhängig vom bisherigen HTML-Stand freischalten.
+   Dadurch funktioniert die Auswahl auch dann, wenn in einer älteren index.html
+   noch die ehemaligen Admin-Attribute/hidden-Flags vorhanden sind. */
+const premiumWarmBoardOption = document.querySelector('.board-color-option[data-board-color="onyx-elegance"]');
+if(premiumWarmBoardOption){
+  premiumWarmBoardOption.hidden = false;
+  premiumWarmBoardOption.classList.remove('admin-premium-option');
+  const label = premiumWarmBoardOption.querySelector('span:first-child');
+  if(label) label.textContent = 'Premium · Warm';
+  const swatches = premiumWarmBoardOption.querySelectorAll('.board-color-swatch span');
+  if(swatches[0]) swatches[0].style.background = '#f2e7d2';
+  if(swatches[1]) swatches[1].style.background = '#545a61';
+}
+const obsoleteMetalBoardOption = document.querySelector('.board-color-option[data-board-color="metal-prestige"]');
+if(obsoleteMetalBoardOption) obsoleteMetalBoardOption.remove();
+
+const premiumMetalPieceOption = document.querySelector('.piece-set-option[data-piece-set="metal-prestige"]');
+if(premiumMetalPieceOption){
+  premiumMetalPieceOption.hidden = false;
+  premiumMetalPieceOption.classList.remove('admin-premium-option');
+  const label = premiumMetalPieceOption.querySelector('span:first-child');
+  if(label) label.textContent = 'Metal Prestige · Premium';
+  const preview = premiumMetalPieceOption.querySelector('.piece-set-preview');
+  if(preview) preview.src = 'assets/pieces/metal-prestige/wn.png?v=20260807-7';
+}
+const obsoleteOnyxPieceOption = document.querySelector('.piece-set-option[data-piece-set="onyx-elegance"]');
+if(obsoleteOnyxPieceOption) obsoleteOnyxPieceOption.remove();
+
 const boardColorOptions = document.querySelectorAll('.board-color-option[data-board-color]');
 const pieceSetWrap = document.getElementById('pieceSetWrap');
 const btnPieceSet = document.getElementById('btnPieceSet');
