@@ -22,6 +22,18 @@ if(premiumWarmBoardOption){
 const obsoleteMetalBoardOption = document.querySelector('.board-color-option[data-board-color="metal-prestige"]');
 if(obsoleteMetalBoardOption) obsoleteMetalBoardOption.remove();
 
+
+const royalWalnutBoardOption = document.querySelector('.board-color-option[data-board-color="royal-walnut"]');
+if(royalWalnutBoardOption){
+  royalWalnutBoardOption.hidden = false;
+  royalWalnutBoardOption.classList.remove('admin-premium-option');
+  const label = royalWalnutBoardOption.querySelector('span:first-child');
+  if(label) label.textContent = 'Royal Walnut · Holz';
+  const swatches = royalWalnutBoardOption.querySelectorAll('.board-color-swatch span');
+  if(swatches[0]) swatches[0].style.background = '#d9c29e';
+  if(swatches[1]) swatches[1].style.background = '#8a6845';
+}
+
 const premiumMetalPieceOption = document.querySelector('.piece-set-option[data-piece-set="metal-prestige"]');
 if(premiumMetalPieceOption){
   premiumMetalPieceOption.hidden = false;
@@ -29,10 +41,21 @@ if(premiumMetalPieceOption){
   const label = premiumMetalPieceOption.querySelector('span:first-child');
   if(label) label.textContent = 'Metal Prestige · Premium';
   const preview = premiumMetalPieceOption.querySelector('.piece-set-preview');
-  if(preview) preview.src = 'assets/pieces/metal-prestige/wn.png?v=20260807-7';
+  if(preview) preview.src = 'assets/pieces/metal-prestige/wn.png?v=20260807-9';
 }
 const obsoleteOnyxPieceOption = document.querySelector('.piece-set-option[data-piece-set="onyx-elegance"]');
 if(obsoleteOnyxPieceOption) obsoleteOnyxPieceOption.remove();
+
+
+const royalWalnutPieceOption = document.querySelector('.piece-set-option[data-piece-set="royal-walnut"]');
+if(royalWalnutPieceOption){
+  royalWalnutPieceOption.hidden = false;
+  royalWalnutPieceOption.classList.remove('admin-premium-option');
+  const label = royalWalnutPieceOption.querySelector('span:first-child');
+  if(label) label.textContent = 'Royal Walnut · Holz';
+  const preview = royalWalnutPieceOption.querySelector('.piece-set-preview');
+  if(preview) preview.src = 'assets/pieces/royal-walnut/wn.png?v=20260808-1';
+}
 
 const boardColorOptions = document.querySelectorAll('.board-color-option[data-board-color]');
 const pieceSetWrap = document.getElementById('pieceSetWrap');
@@ -47,6 +70,18 @@ const boardColorPresets = [
   {id:'braun', name:'Walnuss', light:'#f3ddb7', dark:'#b4875e', material:'classic'},
   {id:'grau', name:'Schiefer', light:'#eeeeee', dark:'#9b9b9b', material:'classic'},
   {id:'gruen', name:'Turniergrün', light:'#eeeed2', dark:'#769656', material:'classic'},
+  {
+    id:'royal-walnut',
+    name:'Royal Walnut · Holz',
+    light:'#d9c29e',
+    dark:'#8a6845',
+    material:'royal-walnut',
+    frameDark:'#5e4228',
+    frameMid:'#8b6945',
+    frameLight:'#c89c66',
+    coordLight:'#fff3df',
+    coordDark:'#1b1008'
+  },
   {
     id:'onyx-elegance',
     name:'Premium · Warm',
