@@ -53,8 +53,8 @@ const boardColorPresets = [
     light:'#f2e7d2f0',
     dark:'#7f8389d0',
     material:'onyx-elegance',
-    frameDark:'#08090a',
-    frameMid:'#181a1d',
+    frameDark:'#2a2f34',
+    frameMid:'#50555c',
     frameLight:'#b58a43',
     coordLight:'#fff1d4',
     coordDark:'#0d0e10'
