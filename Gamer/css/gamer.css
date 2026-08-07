@@ -1897,56 +1897,69 @@
   html[data-board-material="metal-prestige"] .square.light{
     background-color:var(--light-square);
     background-image:
-      linear-gradient(112deg,transparent 0 28%,rgba(112,120,128,.15) 29%,transparent 31% 58%,rgba(255,255,255,.28) 59%,transparent 61%),
-      linear-gradient(22deg,transparent 0 43%,rgba(103,111,119,.10) 44%,transparent 46%),
-      radial-gradient(circle at 22% 14%,rgba(255,255,255,.54),rgba(255,255,255,0) 48%),
-      repeating-linear-gradient(0deg,rgba(255,255,255,.045) 0 1px,rgba(0,0,0,.022) 1px 3px);
+      linear-gradient(112deg,transparent 0 29%,rgba(112,120,128,.10) 30%,transparent 32% 58%,rgba(255,255,255,.19) 59%,transparent 61%),
+      linear-gradient(22deg,transparent 0 45%,rgba(103,111,119,.06) 46%,transparent 48%),
+      radial-gradient(circle at 22% 14%,rgba(255,255,255,.36),rgba(255,255,255,0) 48%),
+      repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,rgba(0,0,0,.012) 1px 3px);
   }
   html[data-board-material="metal-prestige"] .square.dark{
     background-color:var(--dark-square);
     background-image:
-      linear-gradient(118deg,transparent 0 31%,rgba(216,222,227,.12) 32%,transparent 34% 61%,rgba(20,24,28,.24) 62%,transparent 64%),
-      radial-gradient(circle at 23% 14%,rgba(255,255,255,.22),rgba(255,255,255,0) 50%),
-      repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,rgba(0,0,0,.035) 1px 3px);
+      linear-gradient(118deg,transparent 0 32%,rgba(216,222,227,.08) 33%,transparent 35% 61%,rgba(20,24,28,.15) 62%,transparent 64%),
+      radial-gradient(circle at 23% 14%,rgba(255,255,255,.14),rgba(255,255,255,0) 50%),
+      repeating-linear-gradient(0deg,rgba(255,255,255,.016) 0 1px,rgba(0,0,0,.022) 1px 3px);
   }
   /* Onyx Elegance: Elfenbein, tiefes Onyx und eine sehr feine warme Metallnote. */
   html[data-board-material="onyx-elegance"] .square.light{
     background-color:var(--light-square);
     background-image:
-      linear-gradient(116deg,transparent 0 34%,rgba(167,137,91,.13) 35%,transparent 37% 68%,rgba(255,255,255,.24) 69%,transparent 71%),
-      linear-gradient(26deg,transparent 0 54%,rgba(118,94,61,.08) 55%,transparent 57%),
-      radial-gradient(circle at 22% 14%,rgba(255,255,255,.36),rgba(255,255,255,0) 50%);
+      linear-gradient(116deg,transparent 0 35%,rgba(167,137,91,.09) 36%,transparent 38% 68%,rgba(255,255,255,.17) 69%,transparent 71%),
+      linear-gradient(26deg,transparent 0 56%,rgba(118,94,61,.05) 57%,transparent 59%),
+      radial-gradient(circle at 22% 14%,rgba(255,255,255,.26),rgba(255,255,255,0) 50%);
   }
   html[data-board-material="onyx-elegance"] .square.dark{
     background-color:var(--dark-square);
     background-image:
-      linear-gradient(113deg,transparent 0 30%,rgba(181,138,67,.095) 31%,transparent 33% 63%,rgba(255,255,255,.055) 64%,transparent 66%),
-      linear-gradient(24deg,transparent 0 47%,rgba(0,0,0,.26) 48%,transparent 50%),
-      radial-gradient(circle at 24% 15%,rgba(255,255,255,.11),rgba(255,255,255,0) 49%);
+      linear-gradient(113deg,transparent 0 31%,rgba(181,138,67,.070) 32%,transparent 34% 63%,rgba(255,255,255,.040) 64%,transparent 66%),
+      linear-gradient(24deg,transparent 0 49%,rgba(0,0,0,.18) 50%,transparent 52%),
+      radial-gradient(circle at 24% 15%,rgba(255,255,255,.08),rgba(255,255,255,0) 49%);
   }
   html[data-board-material="onyx-elegance"] #board{
     border-color:var(--board-frame-mid);
     outline-color:var(--board-frame-dark);
     box-shadow:
-      inset 0 0 0 1px rgba(181,138,67,.42),
-      inset 0 1px 0 rgba(255,255,255,.24),
-      inset 0 -2px 0 rgba(0,0,0,.56),
-      0 2px 3px rgba(0,0,0,.34),
-      0 10px 20px rgba(0,0,0,.28),
-      0 28px 58px rgba(0,0,0,.34);
+      inset 0 0 0 1px rgba(181,138,67,.34),
+      inset 0 1px 0 rgba(255,255,255,.20),
+      inset 0 -2px 0 rgba(0,0,0,.42),
+      0 2px 3px rgba(0,0,0,.24),
+      0 10px 20px rgba(0,0,0,.20),
+      0 24px 48px rgba(0,0,0,.24);
   }
   html[data-board-material="onyx-elegance"] .variation-board{
     border-color:var(--board-frame-mid);
     outline-color:var(--board-frame-dark);
     box-shadow:
       inset 0 0 0 3px var(--variation-orange),
-      inset 0 0 0 4px rgba(181,138,67,.42),
-      inset 0 1px 0 rgba(255,255,255,.24),
-      inset 0 -2px 0 rgba(0,0,0,.56),
-      0 2px 3px rgba(0,0,0,.34),
-      0 10px 20px rgba(0,0,0,.28),
-      0 28px 58px rgba(0,0,0,.34),
-      0 0 0 2px rgba(180,83,9,.20);
+      inset 0 0 0 4px rgba(181,138,67,.34),
+      inset 0 1px 0 rgba(255,255,255,.20),
+      inset 0 -2px 0 rgba(0,0,0,.42),
+      0 2px 3px rgba(0,0,0,.24),
+      0 10px 20px rgba(0,0,0,.20),
+      0 24px 48px rgba(0,0,0,.24),
+      0 0 0 2px rgba(180,83,9,.16);
+  }
+
+
+  /* Premium-Figurensätze etwas größer und präsenter rendern. */
+  html[data-piece-set="metal-prestige"] .piece-img,
+  html[data-piece-set="onyx-elegance"] .piece-img{
+    width:86%;
+    height:86%;
+    transform:translateY(-2.3%);
+  }
+  html[data-piece-set="metal-prestige"] .piece-drag-ghost,
+  html[data-piece-set="onyx-elegance"] .piece-drag-ghost{
+    transform:translateY(-2.3%);
   }
 
 
