@@ -31,8 +31,8 @@ const boardColorPresets = [
   {
     id:'metal-prestige',
     name:'Metal Prestige · Premium',
-    light:'#e6e8ea',
-    dark:'#48515a',
+    light:'#eef1f4ee',
+    dark:'#5e6872d6',
     material:'metal-prestige',
     frameDark:'#15191d',
     frameMid:'#343a40',
@@ -43,8 +43,8 @@ const boardColorPresets = [
   {
     id:'onyx-elegance',
     name:'Onyx Elegance · Premium',
-    light:'#ead9bb',
-    dark:'#3b4046',
+    light:'#f2e7d2f0',
+    dark:'#545a61d0',
     material:'onyx-elegance',
     frameDark:'#08090a',
     frameMid:'#181a1d',
@@ -99,6 +99,7 @@ function applyPieceSetPreset(id, closeAfter = false, persist = true, rerender = 
   const normalizedId = id === 'rhosgfx' ? 'merida' : id;
   const preset = pieceSetPresets.find(p => p.id === normalizedId) || pieceSetPresets[0];
   activePieceSetId = preset.id;
+  document.documentElement.dataset.pieceSet = preset.id;
   Object.assign(pieceImg, preset.paths);
   pieceSetCurrent.textContent = preset.name;
   pieceSetOptions.forEach(btn => btn.classList.toggle('active', btn.dataset.pieceSet === preset.id));
