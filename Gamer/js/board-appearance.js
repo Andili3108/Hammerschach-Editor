@@ -11,13 +11,47 @@ const btnPieceSet = document.getElementById('btnPieceSet');
 const pieceSetPopup = document.getElementById('pieceSetPopup');
 const pieceSetCurrent = document.getElementById('pieceSetCurrent');
 const pieceSetOptions = document.querySelectorAll('.piece-set-option[data-piece-set]');
+const adminPremiumOptions = document.querySelectorAll('.admin-premium-option');
+const adminOverviewOpenBtnForPremium = document.getElementById('adminOverviewOpenBtn');
+function syncAdminPremiumOptionVisibility(){
+  const isAdmin = Boolean(adminOverviewOpenBtnForPremium && !adminOverviewOpenBtnForPremium.hidden);
+  adminPremiumOptions.forEach(option => { option.hidden = !isAdmin; });
+}
+syncAdminPremiumOptionVisibility();
+if(adminOverviewOpenBtnForPremium){
+  new MutationObserver(syncAdminPremiumOptionVisibility).observe(adminOverviewOpenBtnForPremium,{attributes:true,attributeFilter:['hidden']});
+}
 const BOARD_COLOR_STORAGE_KEY = 'hammerschachBoardColor';
 const LEGACY_BOARD_COLOR_STORAGE_KEY = 'hammerschachGamerBoardColor';
 const boardColorPresets = [
-  {id:'basis', name:'Hammerschach Rubin', light:'#f0d9b5', dark:'#843f46'},
-  {id:'braun', name:'Walnuss', light:'#f3ddb7', dark:'#b4875e'},
-  {id:'grau', name:'Schiefer', light:'#eeeeee', dark:'#9b9b9b'},
-  {id:'gruen', name:'Turniergrün', light:'#eeeed2', dark:'#769656'}
+  {id:'basis', name:'Hammerschach Rubin', light:'#f0d9b5', dark:'#843f46', material:'classic'},
+  {id:'braun', name:'Walnuss', light:'#f3ddb7', dark:'#b4875e', material:'classic'},
+  {id:'grau', name:'Schiefer', light:'#eeeeee', dark:'#9b9b9b', material:'classic'},
+  {id:'gruen', name:'Turniergrün', light:'#eeeed2', dark:'#769656', material:'classic'},
+  {
+    id:'metal-prestige',
+    name:'Metal Prestige · Premium',
+    light:'#e6e8ea',
+    dark:'#48515a',
+    material:'metal-prestige',
+    frameDark:'#15191d',
+    frameMid:'#343a40',
+    frameLight:'#8b939a',
+    coordLight:'#f7f9fa',
+    coordDark:'#171b1f'
+  },
+  {
+    id:'onyx-elegance',
+    name:'Onyx Elegance · Premium',
+    light:'#ead9bb',
+    dark:'#222428',
+    material:'onyx-elegance',
+    frameDark:'#08090a',
+    frameMid:'#181a1d',
+    frameLight:'#b58a43',
+    coordLight:'#fff1d4',
+    coordDark:'#0d0e10'
+  }
 ];
 function boardRgbFromHex(value){
   const normalized = String(value || '').trim().replace(/^#/,'');
@@ -40,11 +74,12 @@ function mixBoardHex(base,overlay,amount){
 }
 function applyBoardMaterialVariables(preset){
   const root = document.documentElement.style;
-  root.setProperty('--board-frame-dark',mixBoardHex(preset.dark,'#000000',.62));
-  root.setProperty('--board-frame-mid',mixBoardHex(preset.dark,'#000000',.31));
-  root.setProperty('--board-frame-light',mixBoardHex(preset.dark,'#ffffff',.24));
-  root.setProperty('--board-coord-dark',mixBoardHex(preset.dark,'#000000',.58));
-  root.setProperty('--board-coord-light',mixBoardHex(preset.light,'#ffffff',.56));
+  root.setProperty('--board-frame-dark',preset.frameDark || mixBoardHex(preset.dark,'#000000',.62));
+  root.setProperty('--board-frame-mid',preset.frameMid || mixBoardHex(preset.dark,'#000000',.31));
+  root.setProperty('--board-frame-light',preset.frameLight || mixBoardHex(preset.dark,'#ffffff',.24));
+  root.setProperty('--board-coord-dark',preset.coordDark || mixBoardHex(preset.dark,'#000000',.58));
+  root.setProperty('--board-coord-light',preset.coordLight || mixBoardHex(preset.light,'#ffffff',.56));
+  document.documentElement.dataset.boardMaterial = preset.material || 'classic';
 }
 function closeBoardColorPopup(){ boardColorPopup.hidden = true; btnBoardColor.setAttribute('aria-expanded','false'); }
 function openBoardColorPopup(){ closePieceSetPopup(); boardColorPopup.hidden = false; btnBoardColor.setAttribute('aria-expanded','true'); }
