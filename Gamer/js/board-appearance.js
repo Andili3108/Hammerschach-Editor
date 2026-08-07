@@ -44,7 +44,7 @@ const boardColorPresets = [
     id:'onyx-elegance',
     name:'Onyx Elegance · Premium',
     light:'#ead9bb',
-    dark:'#222428',
+    dark:'#3b4046',
     material:'onyx-elegance',
     frameDark:'#08090a',
     frameMid:'#181a1d',
