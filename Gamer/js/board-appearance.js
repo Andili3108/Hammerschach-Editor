@@ -11,16 +11,6 @@ const btnPieceSet = document.getElementById('btnPieceSet');
 const pieceSetPopup = document.getElementById('pieceSetPopup');
 const pieceSetCurrent = document.getElementById('pieceSetCurrent');
 const pieceSetOptions = document.querySelectorAll('.piece-set-option[data-piece-set]');
-const adminPremiumOptions = document.querySelectorAll('.admin-premium-option');
-const adminOverviewOpenBtnForPremium = document.getElementById('adminOverviewOpenBtn');
-function syncAdminPremiumOptionVisibility(){
-  const isAdmin = Boolean(adminOverviewOpenBtnForPremium && !adminOverviewOpenBtnForPremium.hidden);
-  adminPremiumOptions.forEach(option => { option.hidden = !isAdmin; });
-}
-syncAdminPremiumOptionVisibility();
-if(adminOverviewOpenBtnForPremium){
-  new MutationObserver(syncAdminPremiumOptionVisibility).observe(adminOverviewOpenBtnForPremium,{attributes:true,attributeFilter:['hidden']});
-}
 const BOARD_COLOR_STORAGE_KEY = 'hammerschachBoardColor';
 const LEGACY_BOARD_COLOR_STORAGE_KEY = 'hammerschachGamerBoardColor';
 const boardColorPresets = [
@@ -29,20 +19,8 @@ const boardColorPresets = [
   {id:'grau', name:'Schiefer', light:'#eeeeee', dark:'#9b9b9b', material:'classic'},
   {id:'gruen', name:'Turniergrün', light:'#eeeed2', dark:'#769656', material:'classic'},
   {
-    id:'metal-prestige',
-    name:'Metal Prestige · Premium',
-    light:'#eef1f4ee',
-    dark:'#5e6872d6',
-    material:'metal-prestige',
-    frameDark:'#15191d',
-    frameMid:'#343a40',
-    frameLight:'#8b939a',
-    coordLight:'#f7f9fa',
-    coordDark:'#171b1f'
-  },
-  {
     id:'onyx-elegance',
-    name:'Onyx Elegance · Premium',
+    name:'Premium · Warm',
     light:'#f2e7d2f0',
     dark:'#545a61d0',
     material:'onyx-elegance',
@@ -122,12 +100,13 @@ document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeBoard
 let savedBoardColorPreset = 'basis';
 try{
   savedBoardColorPreset = localStorage.getItem(BOARD_COLOR_STORAGE_KEY) || localStorage.getItem(LEGACY_BOARD_COLOR_STORAGE_KEY) || 'basis';
+  if(savedBoardColorPreset === 'metal-prestige') savedBoardColorPreset = 'onyx-elegance';
   localStorage.setItem(BOARD_COLOR_STORAGE_KEY, savedBoardColorPreset);
   localStorage.removeItem(LEGACY_BOARD_COLOR_STORAGE_KEY);
 }catch(_){}
 applyBoardColorPreset(savedBoardColorPreset, false, false);
 applyPieceSetPreset(activePieceSetId, false, false, false);
 window.addEventListener('storage', ev => {
-  if(ev.key === BOARD_COLOR_STORAGE_KEY && ev.newValue) applyBoardColorPreset(ev.newValue, false, false);
+  if(ev.key === BOARD_COLOR_STORAGE_KEY && ev.newValue) applyBoardColorPreset(ev.newValue === 'metal-prestige' ? 'onyx-elegance' : ev.newValue, false, false);
   if(ev.key === PIECE_SET_STORAGE_KEY && ev.newValue) applyPieceSetPreset(ev.newValue, false, false, true);
 });
