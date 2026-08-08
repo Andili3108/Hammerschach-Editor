@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260808-1" />
+<link rel="stylesheet" href="css/gamer.css?v=20260808-2" />
 </head>
 <body>
 <div class="app" role="main">
@@ -85,18 +85,17 @@
           </div>
         </div>
         <div class="actions match-actions" aria-label="Hauptnavigation">
+          <button id="openOffersOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="openOffersBackdrop">🔎 Angebote</button>
           <button id="newGameOpenBtn" class="name-action-btn new-game-open-btn" type="button" aria-haspopup="dialog" aria-controls="newGameBackdrop" hidden>♟️ Neue Partie</button>
           <button id="roomLobbyBtn" class="button-flat name-action-btn" type="button" hidden>↩️ Zur Lobby</button>
+          <button id="dailyGamesOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="dailyGamesBackdrop">📋 Meine Partien <span id="dailyGamesTurnCount" class="header-menu-count daily-games-turn-count" hidden>0</span></button>
           <div id="gamesMenu" class="header-menu">
             <button id="gamesMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gamesMenuPopup">
-              <span>📂 Partien</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+              <span>☰ Mehr</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
             </button>
-            <div id="gamesMenuPopup" class="header-menu-popup" role="menu" aria-label="Partieübersichten" hidden>
-              <button id="openOffersOpenBtn" class="header-menu-item" type="button" role="menuitem">🔎 Offene Partien</button>
-              <button id="dailyGamesOpenBtn" class="header-menu-item" type="button" role="menuitem">📋 Meine Partien <span id="dailyGamesTurnCount" class="header-menu-count daily-games-turn-count" hidden>0</span></button>
-              <button id="tournamentGamesOpenBtn" class="header-menu-item" type="button" role="menuitem">🏆 Meine Turnierpartien <span id="tournamentGamesCount" class="header-menu-count" hidden>0</span></button>
-              <button id="publicGamesOpenBtn" class="header-menu-item" type="button" role="menuitem">👁️ Laufende Partien</button>
-              <button id="gameArchiveOpenBtn" class="header-menu-item" type="button" role="menuitem">📚 Partienarchiv</button>
+            <div id="gamesMenuPopup" class="header-menu-popup" role="menu" aria-label="Weitere Partieübersichten" hidden>
+              <button id="publicGamesOpenBtn" class="header-menu-item" type="button" role="menuitem">👁️ Laufende</button>
+              <button id="gameArchiveOpenBtn" class="header-menu-item" type="button" role="menuitem">📚 Archiv</button>
             </div>
           </div>
           <button id="tournamentsOpenBtn" class="button-flat name-action-btn tournaments-open-btn" type="button" aria-disabled="true">🏆 Turniere <span id="tournamentsNewBadge" class="tournaments-new-badge" hidden>NEU</span></button>
@@ -360,11 +359,11 @@
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
 
           <h4>4. Eine Partie beginnen</h4>
-          <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du unter <strong>„📂 Partien“ → „🔎 Offene Partien“</strong>.</p>
+          <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header.</p>
           <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Auf größeren Bildschirmen werden die Spielerangaben jeweils kompakt in einer Zeile dargestellt. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
-          <p>Unter <strong>„📂 Partien“ → „📋 Meine Partien“</strong> findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
+          <p>Über <strong>„📋 Meine Partien“</strong> im Header findest du deine Einladungen sowie laufende und beendete Daily-Partien. Links in Gamer-Mails führen dich direkt zum jeweiligen Spielraum. Sollte zuvor ein Login nötig sein, bleibt das Ziel erhalten und wird anschließend geöffnet.</p>
 
           <h4>6. Was bedeutet eine Verbindungsmeldung?</h4>
           <p>Bei einer kurzen Unterbrechung versucht der Gamer automatisch, die Verbindung und den aktuellen Raumzustand wiederherzustellen. Eine solche Meldung bedeutet daher <strong>nicht automatisch, dass die Partie verloren oder der Spielstand verschwunden ist</strong>. Warte zunächst einen Moment. Bleibt die Verbindung aus, lade die Seite neu oder öffne die Partie erneut über <strong>„Meine Partien“</strong> beziehungsweise den Einladungslink.</p>
@@ -425,8 +424,8 @@
           <p>Sobald beide registrierten Spielerplätze angenommen wurden, startet die Partie <strong>automatisch</strong>. Eine zusätzliche Betätigung von <strong>„Partie starten“</strong> ist bei Daily Chess nicht erforderlich. Bei einer persönlichen Einladung erhält Weiß – sofern aktiviert – die erste „Du bist am Zug“-Mail. Wurde eine offene Daily-Partie angenommen, erhält der Anbieter stattdessen eine Annahmebestätigung; spielt er Weiß, enthält dieselbe Nachricht zugleich den Hinweis, dass er am Zug ist. Schwarz darf anschließend offline gehen und später über <strong>„Meine Partien“</strong> zurückkehren.</p>
 
           <h4>8. Meine Daily-Partien</h4>
-          <p>Die drei Übersichten sind im Header platzsparend unter <strong>„📂 Partien“</strong> gebündelt: <strong>„🔎 Offene Partien“</strong>, <strong>„📋 Meine Partien“</strong> und <strong>„👁️ Laufende Partien“</strong>.</p>
-          <p>Über <strong>„📂 Partien“ → „📋 Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
+          <p>Die wichtigsten Partieübersichten sind direkt erreichbar: <strong>„🔎 Angebote“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„☰ Mehr“</strong> findest du <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>.</p>
+          <p>Über <strong>„📋 Meine Partien“</strong> öffnest du die Übersicht deiner Daily-Partien. Sie ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt.</p>
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
@@ -554,7 +553,7 @@
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
           <h4>28. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
-          <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und können zusätzlich über <strong>„Meine Turnierpartien“</strong> gefiltert werden.</p>
+          <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und sind dort gold markiert.</p>
           <h4>29. Veranstaltungsticker und Mitgliederbegrüßung</h4>
           <p>Ganz oben in der Mitglieder-Lobby zeigt der Veranstaltungsticker aktuelle Hinweise. Neu veröffentlichte und laufende Turniere werden automatisch mit einem direkten Link zur Turnierzentrale übernommen. Mehrere Meldungen wechseln ruhig nacheinander; mit den Pfeilen kannst du selbst blättern und mit <strong>×</strong> die aktuelle Meldung für deine laufende Browsersitzung ausblenden.</p>
           <p>Andili verwaltet zusätzliche Veranstaltungen und Neuigkeiten unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Lobby-Ticker verwalten“</strong>. Dort lassen sich Überschrift, Kurztext, optionaler Link, Priorität sowie Beginn und Ende festlegen. Nach erfolgreicher Bestätigung der Mailadresse wird ein neues Mitglied außerdem automatisch begrüßt. Begrüßungstext, Anzeigedauer und die gesamte Automatik sind im selben Verwaltungsfenster einstellbar.</p>
@@ -1930,7 +1929,7 @@
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
-<script src="js/online-ui-state.js?v=20260804-1"></script>
+<script src="js/online-ui-state.js?v=20260808-2"></script>
 <script src="js/member-directory.js?v=20260804-1"></script>
 <script src="js/game-invitations.js?v=20260804-1"></script>
 <script src="js/online-sync-state.js?v=20260804-1"></script>
