@@ -126,6 +126,7 @@ const themePickerApplyBtn = document.getElementById('themePickerApplyBtn');
 const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
 const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
+const dailyGamesTurnCount = document.getElementById('dailyGamesTurnCount');
 const tournamentGamesOpenBtn = document.getElementById('tournamentGamesOpenBtn');
 const tournamentGamesCount = document.getElementById('tournamentGamesCount');
 const openOffersOpenBtn = document.getElementById('openOffersOpenBtn');

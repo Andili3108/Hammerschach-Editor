@@ -383,6 +383,12 @@ async function loadDailyGames(options){
     const data = await authApi('/api/daily-games');
     const games = data.games || [];
     dailyGamesCache = games;
+    const myTurnCount = games.filter(game => !game.ended && !!game.started && !!game.isMyTurn).length;
+    if(dailyGamesTurnCount){
+      dailyGamesTurnCount.hidden = myTurnCount < 1;
+      dailyGamesTurnCount.textContent = String(myTurnCount);
+      dailyGamesTurnCount.setAttribute('aria-label', myTurnCount === 1 ? '1 Daily-Partie: Du bist am Zug' : myTurnCount + ' Daily-Partien: Du bist am Zug');
+    }
     const runningTournamentCount = games.filter(game => game.isTournamentGame && !game.ended).length;
     if(tournamentGamesCount){
       tournamentGamesCount.hidden = runningTournamentCount < 1;
@@ -394,6 +400,7 @@ async function loadDailyGames(options){
     const completedCount = visibleGames.filter(game => !!game.ended).length;
     if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = activeCount + ' laufend/offen · ' + completedCount + ' beendet.';
   } catch(err){
+    if(dailyGamesTurnCount){ dailyGamesTurnCount.hidden = true; dailyGamesTurnCount.textContent = '0'; }
     if(!silent){
       renderDailyGames([]);
       if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Daily-Partien konnten nicht geladen werden.';

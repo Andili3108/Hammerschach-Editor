@@ -208,6 +208,7 @@ function updateAuthUi(){
     tournamentGamesOpenBtn.disabled = !loggedIn;
     tournamentGamesOpenBtn.title = loggedIn ? 'Eigene Turnierpartien filtern.' : 'Für Turnierpartien bitte einloggen.';
   }
+  if(!loggedIn && dailyGamesTurnCount){ dailyGamesTurnCount.hidden = true; dailyGamesTurnCount.textContent = '0'; }
   if(!loggedIn && tournamentGamesCount) tournamentGamesCount.hidden = true;
   if(authIntro){
     authIntro.textContent = loggedIn ? 'Hier kannst du deine Accountdaten verwalten oder dich ausloggen.' : 'Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.';

@@ -360,6 +360,9 @@ function connectOnlineRoom(roomId, opts){
     }
     if(orientationChanged) renderBoard();
     updateOnlineUi();
+    if(onlineAuthToken && onlineAuthUser && isDailyTimeControl() && ['game_started','move','move_ack','move_applied','game_finished','resignation'].includes(msg.type)){
+      setTimeout(() => loadDailyGames({silent:true}).catch(() => {}), 250);
+    }
     if(msg.type === 'hello' && restoringInterruptedConnection && !msg.seatDenied && statusEl){
       statusEl.textContent = 'Verbindung wiederhergestellt.';
       setTimeout(refreshHeaderStatusFromState, 2500);
