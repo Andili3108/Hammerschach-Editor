@@ -31,6 +31,10 @@ function updateOnlineActionButtons(){
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   const inRoom = !!onlineRoomId;
   const showLobbyButton = inRoom || embeddedToolActive();
+  if(openOffersOpenBtn){
+    openOffersOpenBtn.hidden = showLobbyButton;
+    openOffersOpenBtn.title = 'Offene Partieangebote anzeigen.';
+  }
   if(newGameOpenBtn){
     newGameOpenBtn.hidden = !loggedIn || showLobbyButton;
     newGameOpenBtn.disabled = !loggedIn || showLobbyButton;
