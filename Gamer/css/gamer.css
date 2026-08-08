@@ -64,9 +64,11 @@
   .dot.black{background:#111;}
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
-  .match-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;justify-content:stretch;align-items:stretch;}
-  .match-actions>button,.match-actions>.header-menu>.header-menu-button{width:100%;min-width:0;font-size:14px;padding:8px 7px;min-height:44px;line-height:1.10;white-space:normal;overflow-wrap:normal;border-radius:16px;}
+  .match-actions{display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;justify-content:center;align-items:stretch;}
+  .match-actions>button,.match-actions>.header-menu>.header-menu-button{width:auto;min-width:0;font-size:13px;padding:8px 10px;min-height:42px;line-height:1.10;white-space:nowrap;overflow-wrap:normal;border-radius:14px;}
+  .match-actions>button,.match-actions>.header-menu{flex:0 0 auto;}
   .match-actions .name-action-btn{min-width:0;}
+  .header-direct-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;}
   .header-menu{position:relative;min-width:0;display:flex;}
   .header-menu[hidden]{display:none!important;}
   .header-menu-button{display:flex!important;align-items:center;justify-content:center;gap:6px;}
@@ -129,7 +131,7 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.hammerschach-room-view #toolsMenu,html.hammerschach-room-view #tournamentsOpenBtn{display:none!important;}
+  html.hammerschach-room-view #toolsMenu{display:none!important;}
   html.visitor-start-view #newGameMenu,html.visitor-start-view #newGameOpenBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
@@ -921,7 +923,7 @@
   html.member-lobby-view .top-layout{display:none!important;}
   .member-lobby{display:flex;flex-direction:column;gap:14px;width:100%;}
   .member-lobby[hidden]{display:none!important;}
-  .new-game-open-btn{background:linear-gradient(135deg,#843f46,#9d4a53)!important;color:#fff!important;border-color:rgba(132,63,70,.68)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 7px 16px rgba(132,63,70,.24)!important;}
+  .new-game-open-btn{background:linear-gradient(135deg,#a86f16,#c58b24)!important;color:#fff!important;border-color:rgba(168,111,22,.72)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 7px 16px rgba(168,111,22,.22)!important;}
   .new-game-open-btn:hover:not(:disabled){filter:brightness(1.06);}
   html.new-game-dialog-open,html.new-game-dialog-open body{overflow:hidden;}
   .new-game-backdrop{z-index:3420;}
@@ -1712,13 +1714,20 @@
     .member-lobby-settings-mount #inviteColorBox .invite-color-option{min-height:46px;padding:8px 5px;font-size:14px;}
     .member-lobby-settings-mount .variant-options,.member-lobby-settings-mount .rating-options{grid-template-columns:repeat(2,minmax(0,1fr));}
     .member-lobby-settings-mount .time-kind-options{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .match-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
-    #newGameOpenBtn{grid-column:1;}
-    #gamesMenu{grid-column:2;}
-    #tournamentsOpenBtn{grid-column:1;}
-    #playerMenu{grid-column:2;}
-    #authOpenBtn,#toolsMenu{grid-column:1 / -1;}
-    #gamesMenu .header-menu-popup,#playerMenu .header-menu-popup{left:auto;right:0;transform:none;width:calc(200% + 8px);}
+    .match-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+    .match-actions>button,.match-actions>.header-menu{width:100%;}
+    .match-actions>.header-menu>.header-menu-button{width:100%;}
+    #openOffersOpenBtn{grid-column:1;}
+    #newGameOpenBtn{grid-column:2;}
+    #roomLobbyBtn{grid-column:1;}
+    #dailyGamesOpenBtn{grid-column:2;}
+    #gamesMenu{grid-column:1;}
+    #tournamentsOpenBtn{grid-column:2;}
+    #playerMenu{grid-column:1;}
+    #toolsMenu{grid-column:2;}
+    #authOpenBtn{grid-column:1 / -1;}
+    #gamesMenu .header-menu-popup,#playerMenu .header-menu-popup{left:0;right:auto;transform:none;width:calc(200% + 8px);}
+    #playerMenu .header-menu-popup{left:auto;right:0;}
     html.visitor-start-view #gamesMenu{grid-column:1;}
     html.visitor-start-view #tournamentsOpenBtn{grid-column:2;}
     html.visitor-start-view #gamesMenu .header-menu-popup{left:0;right:auto;}
@@ -1743,8 +1752,8 @@
     .header-utility-actions{gap:6px;}
     .theme-toggle-btn{width:108px!important;min-width:108px!important;}
     .info-open-btn{width:104px!important;min-width:104px!important;padding-inline:13px!important;}
-    .match-actions{grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:7px;}
-    .match-actions>button,.match-actions>.header-menu>.header-menu-button{min-height:42px;font-size:13px;padding:7px 6px;}
+    .match-actions{gap:5px;}
+    .match-actions>button,.match-actions>.header-menu>.header-menu-button{min-height:40px;font-size:12px;padding:7px 7px;}
   }
   @media (max-width:760px){
     .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto;column-gap:7px;padding:7px 9px;border-radius:12px;}
