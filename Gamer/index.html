@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Hammerschach-Gamer</title>
 <link rel="icon" type="image/png" href="Gamer-Logo.png" />
 <link rel="shortcut icon" type="image/png" href="Gamer-Logo.png" />
@@ -38,73 +38,11 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260808-4" />
+<link rel="stylesheet" href="css/gamer.css?v=20260808-3" />
 </head>
 <body>
 <div class="app" role="main">
   <div class="shell">
-    <header id="mobileAppHeader" class="mobile-app-header" aria-label="Mobile Hammerschach-Navigation">
-      <a class="mobile-app-brand" href="https://www.andili.de" target="hammerschach-andili" rel="opener" aria-label="Zur Hammerschach-Startseite">
-        <img src="Gamer-Logo.png" alt="" />
-        <span class="mobile-app-brand-copy">
-          <strong>Hammerschach</strong>
-          <span id="mobileAppContext">Lobby</span>
-        </span>
-      </a>
-      <div id="mobileAppStatus" class="mobile-app-status" aria-live="polite">Bereit</div>
-      <button id="mobileMenuOpenBtn" class="mobile-menu-open-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileMenuBackdrop" aria-label="Hammerschach-Menü öffnen">
-        <span aria-hidden="true">☰</span>
-      </button>
-    </header>
-
-    <div id="mobileMenuBackdrop" class="mobile-menu-backdrop" hidden>
-      <aside id="mobileMenuDrawer" class="mobile-menu-drawer" role="dialog" aria-modal="true" aria-labelledby="mobileMenuTitle">
-        <div class="mobile-menu-head">
-          <div class="mobile-menu-identity">
-            <img src="Gamer-Logo.png" alt="" />
-            <div><strong id="mobileMenuTitle">Hammerschach</strong><span>Gamer-Menü</span></div>
-          </div>
-          <button id="mobileMenuCloseBtn" class="mobile-menu-close-btn" type="button" aria-label="Menü schließen">×</button>
-        </div>
-
-        <nav class="mobile-menu-content" aria-label="Hammerschach-Bereiche">
-          <div class="mobile-menu-group">
-            <div class="mobile-menu-group-title">Spielen</div>
-            <button class="mobile-menu-item mobile-menu-item-primary" type="button" data-mobile-target="newGameOpenBtn">♟️ <span>Neue Partie</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="roomLobbyBtn">↩️ <span>Zur Lobby</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="openOffersOpenBtn">🔎 <span>Angebote</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="dailyGamesOpenBtn">📋 <span>Meine Partien</span><span id="mobileDailyGamesCount" class="mobile-menu-count" hidden>0</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="publicGamesOpenBtn">👁️ <span>Laufende Partien</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="gameArchiveOpenBtn">📚 <span>Archiv</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="tournamentsOpenBtn">🏆 <span>Turniere</span><span id="mobileTournamentsBadge" class="mobile-menu-badge" hidden>NEU</span></button>
-          </div>
-
-          <div class="mobile-menu-group" data-mobile-source-group="playerMenu">
-            <div class="mobile-menu-group-title">Spieler</div>
-            <button class="mobile-menu-item" type="button" data-mobile-target="membersOpenBtn">👥 <span>Mitglieder</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="profileOpenBtn">👤 <span>Mein Profil</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="authOpenBtn">🔐 <span>Registrierung / Login</span></button>
-          </div>
-
-          <div class="mobile-menu-group" data-mobile-source-group="toolsMenu">
-            <div class="mobile-menu-group-title">Tools</div>
-            <button class="mobile-menu-item" type="button" data-mobile-target="analyzerToolBtn">🧠 <span>Analyzer</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="trainerToolBtn">🎯 <span>Trainer</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="openingsToolBtn">📘 <span>Eröffnungen</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="tvToolBtn">📺 <span>Hammerschach TV</span></button>
-          </div>
-
-          <div class="mobile-menu-group">
-            <div class="mobile-menu-group-title">Information und Darstellung</div>
-            <button class="mobile-menu-item" type="button" data-mobile-target="firstStepsOpenBtn">🚀 <span>Erste Schritte</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="infoGuideOpenBtn">📖 <span>Handbuch</span></button>
-            <button class="mobile-menu-item" type="button" data-mobile-target="leitbildOpenBtn">🤝 <span>Unser Leitbild</span></button>
-            <button id="mobileThemeToggleBtn" class="mobile-menu-item" type="button" data-mobile-target="themeToggleBtn" data-mobile-sync-label="true">🌙 <span>Dunkel</span></button>
-          </div>
-        </nav>
-      </aside>
-    </div>
-
     <header class="box header">
       <div class="header-brand">
         <a class="brand-link" href="https://www.andili.de" target="hammerschach-andili" rel="opener" aria-label="Zum bereits geöffneten Andili-Tab wechseln" title="Zur Hammerschach-Startseite">
@@ -2017,6 +1955,5 @@
 <script src="js/sound-system.js?v=20260804-1"></script>
 <script src="js/time-controls.js?v=20260804-1"></script>
 <script src="js/app-startup.js?v=20260804-2"></script>
-<script src="js/mobile-navigation.js?v=20260808-1"></script>
 </body>
 </html>
