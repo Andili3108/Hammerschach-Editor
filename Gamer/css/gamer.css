@@ -64,11 +64,12 @@
   .dot.black{background:#111;}
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
-  .match-actions{display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;justify-content:center;align-items:stretch;}
+  .match-actions{display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;justify-content:flex-start;align-items:stretch;}
   .match-actions>button,.match-actions>.header-menu>.header-menu-button{width:auto;min-width:0;font-size:13px;padding:8px 10px;min-height:42px;line-height:1.10;white-space:nowrap;overflow-wrap:normal;border-radius:14px;}
   .match-actions>button,.match-actions>.header-menu{flex:0 0 auto;}
   .match-actions .name-action-btn{min-width:0;}
   .header-direct-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;}
+  .header-direct-action[hidden]{display:none!important;}
   .header-menu{position:relative;min-width:0;display:flex;}
   .header-menu[hidden]{display:none!important;}
   .header-menu-button{display:flex!important;align-items:center;justify-content:center;gap:6px;}
