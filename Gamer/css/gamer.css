@@ -2104,9 +2104,21 @@ html.dark-mode .mobile-nav-test-disable{color:#efb5bc!important;}
 @media (orientation:landscape) and (max-height:600px) and (max-width:950px){
   html.mobile-nav-test-active .app{padding-top:5px;}
   html.mobile-nav-test-active .shell{gap:7px;}
+  html.mobile-nav-test-active .top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap;}
+  html.mobile-nav-test-active .board-column,
+  html.mobile-nav-test-active .moves-right{width:var(--board-size);flex:0 1 auto;}
+  html.mobile-nav-test-active .side-panel{height:auto;min-height:0;}
   .mobile-nav-test-header{position:relative;min-height:54px;}
   .mobile-nav-test-brand{min-height:42px!important;}
   .mobile-nav-test-brand img{width:42px;height:42px;}
   .mobile-nav-test-open{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;}
-  html.mobile-nav-test-active.mobile-nav-test-room{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 142px));}
+  html.mobile-nav-test-active.mobile-nav-test-room{--board-size:min(var(--board-max),calc(100vw - 24px),clamp(340px,48vw,430px));}
+  html.mobile-nav-test-active .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:7px;row-gap:5px;padding:7px 9px;border-radius:12px;}
+  html.mobile-nav-test-active .board-player-strip .player-clock-head{grid-column:1;grid-row:1;font-size:12px;gap:5px;}
+  html.mobile-nav-test-active .board-player-strip .player-clock-name-row{grid-column:2;grid-row:1;min-width:0;}
+  html.mobile-nav-test-active .board-player-strip .player-clock-name{font-size:14px;}
+  html.mobile-nav-test-active .board-player-strip .player-clock-time{grid-column:3;grid-row:1;min-width:58px;font-size:18px;}
+  html.mobile-nav-test-active .board-player-strip .player-info-line{grid-column:1 / -1;grid-row:2;width:max-content;max-width:100%;font-size:10px;padding:2px 5px;}
+  html.mobile-nav-test-active .board-player-strip .head-to-head-line{display:none!important;}
+  html.mobile-nav-test-active .board-player-strip .presence-badge{font-size:10px;padding:3px 6px;}
 }
