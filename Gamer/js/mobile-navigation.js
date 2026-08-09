@@ -86,11 +86,11 @@
   }
 
   function tabletViewport(){
-    return window.matchMedia('(min-width: 761px) and (max-width: 1180px)').matches;
+    return window.matchMedia('(min-width: 761px) and (max-width: 1400px)').matches;
   }
 
   function roomContext(){
-    return root.classList.contains('hammerschach-room-view');
+    return root.classList.contains('hammerschach-room-view') || !!(roomLobbyButton && !roomLobbyButton.hidden);
   }
 
   function currentDevice(){
@@ -197,6 +197,7 @@
       if(tabletToggle) tabletToggle.title = forcedClassic ? 'Der Notausgang ?nav=classic ist aktiv.' : 'Neue Tablet-Navigation auf diesem Gerät testen.';
 
       root.classList.toggle('mobile-nav-test-active', active);
+      root.classList.toggle('mobile-nav-test-room', active && roomContext());
       if(testHeader) testHeader.hidden = !active;
       if(!active) closeDrawer(false);
       syncControls();
@@ -212,6 +213,7 @@
 
   if(!classicHeader || !testGroup || !phoneToggle || !tabletToggle || !testHeader || !openButton || !backdrop || !drawer){
     root.classList.remove('mobile-nav-test-active');
+    root.classList.remove('mobile-nav-test-room');
     return;
   }
 
@@ -260,6 +262,7 @@
   window.addEventListener('error', event => {
     if(String(event.filename || '').includes('mobile-navigation.js')){
       root.classList.remove('mobile-nav-test-active');
+      root.classList.remove('mobile-nav-test-room');
       testHeader.hidden = true;
       closeDrawer(false);
     }
