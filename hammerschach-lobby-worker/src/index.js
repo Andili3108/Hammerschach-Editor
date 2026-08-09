@@ -12254,7 +12254,37 @@ export class GameRoom {
     return { ok:true, status:200, rolledBack:true };
   }
 
-  async respondToDailyInvitation(requestingUserId, action) {
+  async recoverIndexedDailyInvitation(requestingUserId, roomHint = '') {
+    const userId = String(requestingUserId || '').trim();
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || roomHint);
+    if (!userId || !roomId || !this.env || !this.env.DB || !(await ensureDailyGamesTable(this.env))) return false;
+    try {
+      const indexed = await this.env.DB.prepare(
+        `SELECT invited_user_id, invited_name, invitation_status, updated_at
+           FROM daily_games
+          WHERE room_id = ?
+          LIMIT 1`
+      ).bind(roomId).first();
+      const indexedUserId = String(indexed && indexed.invited_user_id || '');
+      const indexedStatus = String(indexed && indexed.invitation_status || 'pending');
+      const storedUserId = String((await this.state.storage.get('invitedUserId')) || '');
+      if (!indexed || indexedUserId !== userId || indexedStatus !== 'pending') return false;
+      if (storedUserId && storedUserId !== indexedUserId) return false;
+      await this.state.storage.put({
+        invitedUserId:indexedUserId,
+        invitedName:cleanDisplayName(indexed.invited_name) || 'Mitglied',
+        invitationStatus:'pending',
+        invitationId:String((await this.state.storage.get('invitationId')) || ('legacy_' + roomId)).slice(0, 120),
+        invitationSentAt:(await this.state.storage.get('invitationSentAt')) || indexed.updated_at || new Date().toISOString(),
+        invitationRespondedAt:null
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async respondToDailyInvitation(requestingUserId, action, roomHint = '') {
     const userId = String(requestingUserId || '').trim();
     const responseAction = String(action || '').toLowerCase();
     if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
@@ -12262,8 +12292,15 @@ export class GameRoom {
       return { ok:false, status:400, code:'INVALID_INVITATION_RESPONSE', message:'Bitte wähle Annehmen oder Ablehnen.' };
     }
 
-    const invitedUserId = String((await this.state.storage.get('invitedUserId')) || '');
-    const invitationStatus = String((await this.state.storage.get('invitationStatus')) || '');
+    let invitedUserId = String((await this.state.storage.get('invitedUserId')) || '');
+    let invitationStatus = String((await this.state.storage.get('invitationStatus')) || '');
+    if (!invitationStatus) {
+      const recovered = await this.recoverIndexedDailyInvitation(userId, roomHint);
+      if (recovered) {
+        invitedUserId = String((await this.state.storage.get('invitedUserId')) || '');
+        invitationStatus = String((await this.state.storage.get('invitationStatus')) || '');
+      }
+    }
     if (!invitedUserId || invitedUserId !== userId) {
       return { ok:false, status:403, code:'INVITATION_RECIPIENT_REQUIRED', message:'Nur das eingeladene Mitglied kann diese Einladung beantworten.' };
     }
@@ -12843,7 +12880,8 @@ export class GameRoom {
       const body = await readJsonBody(request);
       const result = await this.respondToDailyInvitation(
         request.headers.get('x-hammerschach-user-id') || '',
-        body && body.action
+        body && body.action,
+        url.searchParams.get('room') || ''
       );
       if (result.ok) await this.broadcastRoomState('invitation_state');
       return json(result, { status:result.status || (result.ok ? 200 : 400) });
