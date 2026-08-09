@@ -12304,6 +12304,37 @@ export class GameRoom {
     if (!invitedUserId || invitedUserId !== userId) {
       return { ok:false, status:403, code:'INVITATION_RECIPIENT_REQUIRED', message:'Nur das eingeladene Mitglied kann diese Einladung beantworten.' };
     }
+    if (invitationStatus === 'accepted') {
+      const acceptedPlayers = await this.getSecurePlayers();
+      const acceptedRole = this.playerRoleForUser(acceptedPlayers, userId);
+      if (!acceptedRole) {
+        return { ok:false, status:409, code:'INVITATION_ACCEPTANCE_INCOMPLETE', message:'Die gespeicherte Annahme konnte keinem Spielerplatz zugeordnet werden.' };
+      }
+      let acceptedGame = (await this.state.storage.get('game')) || {started:false, ended:false, result:'*'};
+      let startWarning = '';
+      if (!acceptedGame.started && !acceptedGame.ended) {
+        try {
+          const startResult = await this.autoStartDailyGameIfReady(acceptedRole);
+          startWarning = startResult && !startResult.started ? String(startResult.reason || '') : '';
+          acceptedGame = (await this.state.storage.get('game')) || acceptedGame;
+        } catch (error) {
+          startWarning = error && error.message ? String(error.message).slice(0, 180) : 'start_retry_required';
+          console.error('Accepted Daily invitation start retry deferred', startWarning);
+        }
+      }
+      await this.syncGameIndexes();
+      return {
+        ok:true,
+        status:200,
+        accepted:true,
+        alreadyAccepted:true,
+        roomId:cleanRoomId((await this.state.storage.get('roomId')) || roomHint),
+        started:!!acceptedGame.started,
+        startPending:!acceptedGame.started,
+        message:acceptedGame.started ? 'Einladung angenommen. Die Daily-Partie wird geöffnet.' : 'Einladung angenommen. Die Daily-Partie wird beim Öffnen fertig gestartet.',
+        warning:startWarning
+      };
+    }
     if (invitationStatus !== 'pending') {
       return { ok:false, status:409, code:'INVITATION_NOT_PENDING', message:'Diese Einladung wurde bereits beantwortet oder ist nicht mehr offen.' };
     }
@@ -12883,7 +12914,10 @@ export class GameRoom {
         body && body.action,
         url.searchParams.get('room') || ''
       );
-      if (result.ok) await this.broadcastRoomState('invitation_state');
+      if (result.ok) {
+        try { await this.broadcastRoomState('invitation_state'); }
+        catch (error) { console.error('Daily invitation broadcast deferred', error && error.message ? error.message : String(error || 'unknown')); }
+      }
       return json(result, { status:result.status || (result.ok ? 200 : 400) });
     }
 
