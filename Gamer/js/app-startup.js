@@ -34,6 +34,10 @@ try{
   freshGameRequested = initialUrl.searchParams.get('fresh') === '1';
   initialFirstStepsRequested = String(initialUrl.searchParams.get('info') || '').trim().toLowerCase() === 'erste-schritte';
   if(freshGameRequested){
+    /* „Zur Lobby“ ist eine bewusste Abkehr vom zuletzt geöffneten Raum.
+       Nur den automatischen Wiederaufnahme-Merker löschen; gespeicherte
+       Spielerplatz-Zugangsdaten und die Partie selbst bleiben erhalten. */
+    try{ sessionStorage.removeItem(ONLINE_LAST_ROOM_STORAGE_KEY); } catch(_){ }
     initialUrl.searchParams.delete('fresh');
     initialUrl.searchParams.delete('watch');
     initialSpectatorOnly = false;
