@@ -2089,10 +2089,10 @@ html.dark-mode .mobile-nav-test-device-toggle[aria-pressed="true"]{border-color:
 html.dark-mode .mobile-nav-test-disable{color:#efb5bc!important;}
 
 @media (max-width:980px){
-  html.mobile-nav-test-active.hammerschach-room-view{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 150px));}
+  html.mobile-nav-test-active.mobile-nav-test-room{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 150px));}
 }
-@media (min-width:981px) and (max-width:1180px){
-  html.mobile-nav-test-active.hammerschach-room-view{--board-size:min(var(--board-max),calc(100vw - var(--right-col) - var(--gap)),calc(100dvh - 150px));}
+@media (min-width:981px) and (max-width:1400px){
+  html.mobile-nav-test-active.mobile-nav-test-room{--board-size:min(var(--board-max),calc(100vw - var(--right-col) - var(--gap)),calc(100dvh - 150px));}
 }
 @media (max-width:520px){
   .mobile-nav-test-header{grid-template-columns:minmax(0,auto) minmax(0,1fr) 46px;gap:7px;min-height:60px;padding:6px;}
@@ -2108,5 +2108,5 @@ html.dark-mode .mobile-nav-test-disable{color:#efb5bc!important;}
   .mobile-nav-test-brand{min-height:42px!important;}
   .mobile-nav-test-brand img{width:42px;height:42px;}
   .mobile-nav-test-open{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;}
-  html.mobile-nav-test-active.hammerschach-room-view{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 142px));}
+  html.mobile-nav-test-active.mobile-nav-test-room{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 142px));}
 }
