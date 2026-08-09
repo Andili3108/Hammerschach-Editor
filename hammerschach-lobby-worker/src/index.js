@@ -10007,18 +10007,15 @@ async function handleAuthApi(request, env, url) {
       personalMessage:personalMessageResult.message
     });
     if (!mail.ok) {
-      if (dailyRegistration && (dailyRegistration.newlyRegistered || dailyRegistration.messageUpdated) && dailyRegistration.invitationId) {
-        try {
-          await roomStub.fetch(new Request('https://game-room.internal/rollback-daily-invitation?room=' + encodeURIComponent(roomId), {
-            method:'POST',
-            headers:{'content-type':'application/json'},
-            body:JSON.stringify({
-              invitationId:dailyRegistration.invitationId,
-              restoreMessage:!!dailyRegistration.messageUpdated,
-              previousInvitationMessage:dailyRegistration.previousInvitationMessage || ''
-            })
-          }));
-        } catch (_) {}
+      if (isDailyInvitation && dailyRegistration && dailyRegistration.invitationId) {
+        return json({
+          ok:true,
+          emailSent:false,
+          invitationStored:true,
+          recipient:{ id:recipient.id, username:recipient.username },
+          message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde in „Meine Partien“ zugestellt. Die zusätzliche E-Mail konnte nicht versendet werden.',
+          mailWarning:mail.message || 'Die zusätzliche E-Mail konnte nicht versendet werden.'
+        });
       }
       return json({ ok:false, code:mail.code, message:mail.message }, { status:mail.status || 502 });
     }
@@ -10026,6 +10023,8 @@ async function handleAuthApi(request, env, url) {
     try { await recordInvitationEmail(env, String(session.user.id), recipientUserId, roomId, mail.messageId); } catch (_) {}
     return json({
       ok:true,
+      emailSent:true,
+      invitationStored:isDailyInvitation,
       recipient:{ id:recipient.id, username:recipient.username },
       message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde versendet.'
     });
