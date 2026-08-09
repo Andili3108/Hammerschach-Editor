@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260809-8" />
+<link rel="stylesheet" href="css/gamer.css?v=20260809-9" />
 </head>
 <body>
 <div class="app" role="main">
@@ -90,7 +90,7 @@
           </div>
         </div>
         <div class="actions match-actions" aria-label="Hauptnavigation">
-          <button id="openOffersOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="openOffersBackdrop">🔎 Angebote</button>
+          <button id="openOffersOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="openOffersBackdrop">🔎 Angebote <span id="openOffersCount" class="header-menu-count open-offers-count" hidden>0</span></button>
           <button id="newGameOpenBtn" class="name-action-btn new-game-open-btn" type="button" aria-haspopup="dialog" aria-controls="newGameBackdrop" hidden>♟️ Neue Partie</button>
           <button id="roomLobbyBtn" class="button-flat name-action-btn" type="button" hidden>↩️ Zur Lobby</button>
           <button id="dailyGamesOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="dailyGamesBackdrop">📋 Meine Partien <span id="dailyGamesTurnCount" class="header-menu-count daily-games-turn-count" hidden>0</span></button>
@@ -148,7 +148,7 @@
           <section>
             <h2>Spielen</h2>
             <button id="mobileNavTestPrimary" class="mobile-nav-test-item primary" type="button"><span>♟️</span><strong>Neue Partie</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="openOffersOpenBtn"><span>🔎</span><strong>Angebote</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="openOffersOpenBtn"><span>🔎</span><strong>Angebote</strong><b id="mobileNavTestOffersCount" class="open-offers-count" hidden>0</b></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="dailyGamesOpenBtn"><span>📋</span><strong>Meine Partien</strong><b id="mobileNavTestTurnCount" hidden>0</b></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="publicGamesOpenBtn"><span>👁️</span><strong>Laufende Partien</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="gameArchiveOpenBtn"><span>📚</span><strong>Archiv</strong></button>
@@ -411,7 +411,7 @@
           <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„☰ Mehr“</strong> liegen <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>. <strong>„🏆 Turniere“</strong>, <strong>„👥 Spieler“</strong> und <strong>„🛠️ Tools“</strong> führen zu den weiteren Mitgliederbereichen. Über <strong>„ℹ️ Info“</strong> bleiben Erste Schritte, Handbuch und Leitbild erreichbar; <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselt die Darstellung.</p>
 
           <h4>4. Eine Partie beginnen</h4>
-          <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header.</p>
+          <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
           <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Unter dem jeweiligen Namen erscheinen die geschlagenen gegnerischen Figuren und – falls vorhanden – der Materialvorteil als <strong>„+…“</strong>. Auf größeren Bildschirmen werden die Spielerangaben kompakt dargestellt. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
@@ -477,7 +477,7 @@
           <p>Sobald beide registrierten Spielerplätze angenommen wurden, startet die Partie <strong>automatisch</strong>. Eine zusätzliche Betätigung von <strong>„Partie starten“</strong> ist bei Daily Chess nicht erforderlich. Bei einer persönlichen Einladung erhält Weiß – sofern aktiviert – die erste „Du bist am Zug“-Mail. Wurde eine offene Daily-Partie angenommen, erhält der Anbieter stattdessen eine Annahmebestätigung; spielt er Weiß, enthält dieselbe Nachricht zugleich den Hinweis, dass er am Zug ist. Schwarz darf anschließend offline gehen und später über <strong>„Meine Partien“</strong> zurückkehren.</p>
 
           <h4>8. Partieübersichten im Header</h4>
-          <p>Die wichtigsten Partieübersichten sind direkt erreichbar: <strong>„🔎 Angebote“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„☰ Mehr“</strong> findest du <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>.</p>
+          <p>Die wichtigsten Partieübersichten sind direkt erreichbar: <strong>„🔎 Angebote“</strong> und <strong>„📋 Meine Partien“</strong>. Die goldene Zahl bei <strong>„Angebote“</strong> nennt die derzeit annehmbaren Angebote anderer Mitglieder; eigene Angebote werden nicht mitgezählt und bei null bleibt die Zahl ausgeblendet. Unter <strong>„☰ Mehr“</strong> findest du <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>.</p>
           <p>Über <strong>„📋 Meine Partien“</strong> öffnest du die Übersicht deiner Daily- und Turnierpartien. Eingegangene Daily-Einladungen zeigen dort auch die persönliche Nachricht des Einladenden und erscheinen mit den getrennten Schaltflächen <strong>„Annehmen“</strong> und <strong>„Ablehnen“</strong>. Bei beiden Entscheidungen öffnet sich grundsätzlich ein Antwortfenster; der freie Antworttext ist optional und auf 300 Zeichen begrenzt. Die Übersicht ist in <strong>„Laufende Partien und Einladungen“</strong> sowie <strong>„Beendete Partien“</strong> unterteilt; Turnierpartien sind zusätzlich golden gekennzeichnet.</p>
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
@@ -1982,7 +1982,7 @@
 <script src="js/board-ui-elements.js?v=20260804-1"></script>
 <script src="js/game-chat.js?v=20260804-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260808-1"></script>
+<script src="js/online-ui-elements.js?v=20260809-9"></script>
 <script src="js/header-ui.js?v=20260804-1"></script>
 <script src="js/dialog-ui-state.js?v=20260809-8"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
@@ -1993,7 +1993,7 @@
 <script src="js/admin-ticker.js?v=20260804-1"></script>
 <script src="js/admin-member-delete.js?v=20260804-1"></script>
 <script src="js/admin-messaging.js?v=20260804-1"></script>
-<script src="js/online-session.js?v=20260809-4"></script>
+<script src="js/online-session.js?v=20260809-9"></script>
 <script src="js/lobby-ticker.js?v=20260804-1"></script>
 <script src="js/info-center.js?v=20260804-1"></script>
 <script src="js/admin-info-center.js?v=20260804-1"></script>
@@ -2008,7 +2008,7 @@
 <script src="js/tournament-management.js?v=20260804-1"></script>
 <script src="js/tournament-actions.js?v=20260804-1"></script>
   <script src="js/daily-games.js?v=20260809-6"></script>
-<script src="js/open-offers.js?v=20260804-1"></script>
+<script src="js/open-offers.js?v=20260809-9"></script>
 <script src="js/public-games.js?v=20260804-1"></script>
 <script src="js/game-archive.js?v=20260804-1"></script>
 <script src="js/info-dialogs.js?v=20260804-1"></script>
@@ -2031,7 +2031,7 @@
 <script src="js/board-input.js?v=20260804-1"></script>
 <script src="js/piece-drag-helpers.js?v=20260804-1"></script>
 <script src="js/move-commit.js?v=20260809-8"></script>
-<script src="js/app-event-bindings.js?v=20260809-6"></script>
+<script src="js/app-event-bindings.js?v=20260809-9"></script>
 <script src="js/move-history-navigation.js?v=20260804-1"></script>
 <script src="js/pgn-export.js?v=20260804-1"></script>
 <script src="js/new-game-board-ui.js?v=20260804-1"></script>
@@ -2039,6 +2039,6 @@
 <script src="js/sound-system.js?v=20260804-1"></script>
 <script src="js/time-controls.js?v=20260804-1"></script>
 <script src="js/app-startup.js?v=20260809-4"></script>
-<script src="js/mobile-navigation.js?v=20260809-3"></script>
+<script src="js/mobile-navigation.js?v=20260809-9"></script>
 </body>
 </html>
