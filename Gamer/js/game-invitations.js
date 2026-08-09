@@ -1,4 +1,41 @@
 'use strict';
+function updateInvitationMessageCount(){
+  if(!invitationMessageCount) return;
+  const length = invitationMessageInput ? invitationMessageInput.value.length : 0;
+  invitationMessageCount.textContent = Math.min(length, INVITATION_PERSONAL_MESSAGE_MAX_LENGTH) + '/' + INVITATION_PERSONAL_MESSAGE_MAX_LENGTH;
+}
+function closeInvitationMessageDialog(force){
+  if(invitationSendBusy && !force) return;
+  if(invitationMessageBackdrop) invitationMessageBackdrop.hidden = true;
+  pendingInvitationMember = null;
+  pendingInvitationSourceButton = null;
+  if(invitationMessageStatus) invitationMessageStatus.textContent = '';
+}
+function openInvitationMessageDialog(member, sourceButton){
+  if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Mitglieder per Mail einzuladen.', true); return; }
+  if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
+  pendingInvitationMember = member;
+  pendingInvitationSourceButton = sourceButton || null;
+  const recipientName = cleanDisplayName(member.username) || 'das Mitglied';
+  if(invitationMessageTitle) invitationMessageTitle.textContent = 'Einladung an ' + recipientName;
+  if(invitationMessageIntro) invitationMessageIntro.textContent = 'Schreibe eine persönliche Nachricht – oder versende die Einladung ohne zusätzlichen Text.';
+  if(invitationMessageInput) invitationMessageInput.value = '';
+  if(invitationMessageStatus) invitationMessageStatus.textContent = '';
+  updateInvitationMessageCount();
+  if(invitationMessageBackdrop) invitationMessageBackdrop.hidden = false;
+  setTimeout(() => { try{ if(invitationMessageInput) invitationMessageInput.focus(); } catch(_){} }, 0);
+}
+async function submitInvitationMessage(){
+  if(invitationSendBusy) return;
+  const member = pendingInvitationMember;
+  if(!member){ closeInvitationMessageDialog(true); return; }
+  const personalMessage = normalizedInvitationPersonalMessage(invitationMessageInput && invitationMessageInput.value);
+  if(personalMessage.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH){
+    if(invitationMessageStatus) invitationMessageStatus.textContent = 'Die persönliche Nachricht darf höchstens 300 Zeichen lang sein.';
+    return;
+  }
+  await sendEmailInvitationToMember(member, invitationMessageSendBtn, personalMessage, pendingInvitationSourceButton);
+}
 
 function closeInviteDialog(){
   if(inviteBackdrop) inviteBackdrop.hidden = true;
@@ -76,7 +113,6 @@ function buildInvitationText(member){
   if(setup) details.push('Spielmodus: ' + (setup.variant === GAME_VARIANT_FREESTYLE ? ('Freestyle · Stellung #' + setup.positionId) : 'Klassisch'));
   if(timeControl && timeControl.label) details.push('Bedenkzeit: ' + timeControl.label);
   details.push('Wertung: ' + (effectiveRatedPreference() ? 'Gewertet' : 'Ungewertet'));
-  if(timeControl && timeControl.mode === 'daily') details.push('Hinweis: Daily Chess erfordert auf beiden Seiten einen registrierten und eingeloggten Account.');
   const detailText = details.length ? ('\n\n' + details.join('\n')) : '';
   return greeting + '\n\n' +
     'du wurdest von ' + (senderName || 'Gast') + ' zu einer Schachpartie auf Hammerschach eingeladen.' + detailText + '\n\n' +
@@ -102,25 +138,33 @@ async function copyInvitationText(member){
   updateOnlineUi();
 }
 
-async function sendEmailInvitationToMember(member, button){
+async function sendEmailInvitationToMember(member, button, personalMessage, sourceButton){
   const link = onlineRoomId ? getInviteUrl() : '';
   if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Mitglieder per Mail einzuladen.', true); return; }
   if(!link || !onlineRoomId){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
   if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
   if(invitationSendBusy){ setInviteCopyStatus('Eine Einladung wird bereits versendet.', true); return; }
 
+  const normalizedPersonalMessage = normalizedInvitationPersonalMessage(personalMessage);
+  if(normalizedPersonalMessage.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH){
+    if(invitationMessageStatus) invitationMessageStatus.textContent = 'Die persönliche Nachricht darf höchstens 300 Zeichen lang sein.';
+    return;
+  }
+
   inviteSelectedMember = member;
   invitationSendBusy = true;
   const recipientName = member.username || 'Mitglied';
   const oldText = button ? button.textContent : '';
   if(button){ button.disabled = true; button.textContent = 'Wird gesendet…'; }
+  if(sourceButton) sourceButton.disabled = true;
   setInviteCopyStatus('Einladung an ' + recipientName + ' wird versendet…', false);
+  if(invitationMessageStatus) invitationMessageStatus.textContent = 'Einladung wird sicher versendet…';
   if(memberSearchStatus) memberSearchStatus.textContent = 'Der Hammerschach-Gamer übergibt die Einladung sicher an den Mailserver…';
 
   try{
     const data = await authApi('/api/invitations/email', {
       method:'POST',
-      body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id})
+      body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id, personalMessage:normalizedPersonalMessage})
     });
     const baseMessage = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde versendet.');
     const message = baseMessage + ' Falls sie nicht im Posteingang erscheint, bitte auch den Spamordner prüfen.';
@@ -128,13 +172,16 @@ async function sendEmailInvitationToMember(member, button){
     if(memberSearchStatus) memberSearchStatus.textContent = 'Automatischer Mailversand erfolgreich. Bitte gegebenenfalls auch den Spamordner kontrollieren.';
     onlineLastMessage = message;
     statusEl.textContent = message;
+    closeInvitationMessageDialog(true);
   } catch(err){
     const message = err && err.message ? err.message : 'Die Einladung konnte nicht versendet werden. Bitte den Einladungslink kopieren.';
     setInviteCopyStatus(message, true);
+    if(invitationMessageStatus) invitationMessageStatus.textContent = message;
     if(memberSearchStatus) memberSearchStatus.textContent = 'Versand fehlgeschlagen. Link und Einladungstext können weiterhin kopiert werden.';
   } finally {
     invitationSendBusy = false;
     if(button){ button.disabled = false; button.textContent = oldText || 'Einladung senden'; }
+    if(sourceButton) sourceButton.disabled = false;
     updateOnlineUi();
   }
 }
@@ -205,7 +252,7 @@ function renderMemberSearchResults(users, options){
     btn.className = 'button-flat';
     btn.textContent = 'Einladung senden';
     btn.title = 'Partieeinladung automatisch an ' + (user.username || 'dieses Mitglied') + ' senden';
-    btn.addEventListener('click', ev => { ev.stopPropagation(); sendEmailInvitationToMember(user, btn); });
+    btn.addEventListener('click', ev => { ev.stopPropagation(); openInvitationMessageDialog(user, btn); });
     actions.appendChild(btn);
 
     main.appendChild(avatar);

@@ -235,12 +235,27 @@ const rematchBtn = document.getElementById('rematchBtn');
 const rematchDeclineBtn = document.getElementById('rematchDeclineBtn');
 const rematchHintEl = document.getElementById('rematchHint');
 const dailyGamesBackdrop = document.getElementById('dailyGamesBackdrop');
+const INVITATION_PERSONAL_MESSAGE_MAX_LENGTH = 300;
+function normalizedInvitationPersonalMessage(value){
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim();
+}
 const dailyGamesTitle = document.getElementById('dailyGamesTitle');
 const dailyGamesIntro = dailyGamesBackdrop ? dailyGamesBackdrop.querySelector('.daily-games-intro') : null;
 const dailyGamesListEl = document.getElementById('dailyGamesList');
 const dailyGamesStatusEl = document.getElementById('dailyGamesStatus');
 const dailyGamesRefreshBtn = document.getElementById('dailyGamesRefreshBtn');
 const dailyGamesCloseBtn = document.getElementById('dailyGamesCloseBtn');
+const dailyInvitationResponseBackdrop = document.getElementById('dailyInvitationResponseBackdrop');
+const dailyInvitationResponseTitle = document.getElementById('dailyInvitationResponseTitle');
+const dailyInvitationResponseIntro = document.getElementById('dailyInvitationResponseIntro');
+const dailyInvitationResponseInput = document.getElementById('dailyInvitationResponseInput');
+const dailyInvitationResponseCount = document.getElementById('dailyInvitationResponseCount');
+const dailyInvitationResponseStatus = document.getElementById('dailyInvitationResponseStatus');
+const dailyInvitationResponseCancelBtn = document.getElementById('dailyInvitationResponseCancelBtn');
+const dailyInvitationResponseConfirmBtn = document.getElementById('dailyInvitationResponseConfirmBtn');
 const nextDailyGameBoxEl = document.getElementById('nextDailyGameBox');
 const nextDailyGameBtn = document.getElementById('nextDailyGameBtn');
 const nextDailyGameHintEl = document.getElementById('nextDailyGameHint');
@@ -326,7 +341,17 @@ const memberSearchHint = document.getElementById('memberSearchHint');
 const memberSearchStatus = document.getElementById('memberSearchStatus');
 const memberSearchResults = document.getElementById('memberSearchResults');
 const memberListBtn = document.getElementById('memberListBtn');
+const invitationMessageBackdrop = document.getElementById('invitationMessageBackdrop');
+const invitationMessageTitle = document.getElementById('invitationMessageTitle');
+const invitationMessageIntro = document.getElementById('invitationMessageIntro');
+const invitationMessageInput = document.getElementById('invitationMessageInput');
+const invitationMessageCount = document.getElementById('invitationMessageCount');
+const invitationMessageStatus = document.getElementById('invitationMessageStatus');
+const invitationMessageCancelBtn = document.getElementById('invitationMessageCancelBtn');
+const invitationMessageSendBtn = document.getElementById('invitationMessageSendBtn');
 let inviteSelectedMember = null;
+let pendingInvitationMember = null;
+let pendingInvitationSourceButton = null;
 let memberSearchTimer = null;
 let memberSearchRequestId = 0;
 let invitationSendBusy = false;

@@ -144,44 +144,125 @@ async function removeDailyGameFromHistory(game, button){
     if(button){ button.disabled = false; button.textContent = oldText || 'Aus Verlauf entfernen'; }
   }
 }
-async function respondDailyInvitation(game, action, button){
+let pendingDailyInvitationResponse = null;
+let dailyInvitationResponseBusy = false;
+function updateDailyInvitationResponseCount(){
+  if(!dailyInvitationResponseCount) return;
+  const length = dailyInvitationResponseInput ? dailyInvitationResponseInput.value.length : 0;
+  dailyInvitationResponseCount.textContent = Math.min(length, INVITATION_PERSONAL_MESSAGE_MAX_LENGTH) + '/' + INVITATION_PERSONAL_MESSAGE_MAX_LENGTH;
+}
+function closeDailyInvitationResponseDialog(force){
+  if(dailyInvitationResponseBusy && !force) return;
+  if(dailyInvitationResponseBackdrop) dailyInvitationResponseBackdrop.hidden = true;
+  pendingDailyInvitationResponse = null;
+  if(dailyInvitationResponseStatus) dailyInvitationResponseStatus.textContent = '';
+}
+function respondDailyInvitation(game, action, button){
   const roomId = cleanRoomId(game && game.roomId);
   const accepted = action === 'accept';
   if(!roomId || (action !== 'accept' && action !== 'decline')){
     if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Die Einladung ist ungültig.';
     return;
   }
-  if(!accepted && !window.confirm('Diese Daily-Einladung wirklich ablehnen?')) return;
+  pendingDailyInvitationResponse = {game, action, button};
+  const senderName = cleanDisplayName(game && game.opponentName) || 'das einladende Mitglied';
+  if(dailyInvitationResponseTitle) dailyInvitationResponseTitle.textContent = accepted ? 'Einladung annehmen' : 'Einladung ablehnen';
+  if(dailyInvitationResponseIntro) dailyInvitationResponseIntro.textContent = accepted
+    ? 'Du nimmst die Einladung von ' + senderName + ' an. Möchtest du noch etwas Persönliches schreiben?'
+    : 'Du lehnst die Einladung von ' + senderName + ' ab. Möchtest du deine Entscheidung kurz persönlich erklären?';
+  if(dailyInvitationResponseInput){
+    dailyInvitationResponseInput.value = '';
+    dailyInvitationResponseInput.placeholder = accepted
+      ? 'z. B. Sehr gerne – ich freue mich auf die Partie! 😊'
+      : 'z. B. Diese Woche schaffe ich es leider nicht. Frag mich gern später noch einmal.';
+  }
+  if(dailyInvitationResponseConfirmBtn) dailyInvitationResponseConfirmBtn.textContent = accepted ? 'Einladung annehmen' : 'Ablehnung bestätigen';
+  if(dailyInvitationResponseStatus) dailyInvitationResponseStatus.textContent = '';
+  updateDailyInvitationResponseCount();
+  if(dailyInvitationResponseBackdrop) dailyInvitationResponseBackdrop.hidden = false;
+  setTimeout(() => { try{ if(dailyInvitationResponseInput) dailyInvitationResponseInput.focus(); } catch(_){} }, 0);
+}
+async function submitDailyInvitationResponse(){
+  if(dailyInvitationResponseBusy || !pendingDailyInvitationResponse) return;
+  const {game, action, button} = pendingDailyInvitationResponse;
+  const roomId = cleanRoomId(game && game.roomId);
+  const accepted = action === 'accept';
+  const responseMessage = normalizedInvitationPersonalMessage(dailyInvitationResponseInput && dailyInvitationResponseInput.value);
+  if(responseMessage.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH){
+    if(dailyInvitationResponseStatus) dailyInvitationResponseStatus.textContent = 'Die Antwort darf höchstens 300 Zeichen lang sein.';
+    return;
+  }
   const card = button && button.closest ? button.closest('.daily-game-card') : null;
   const cardStatus = card ? card.querySelector('.daily-game-status') : null;
   const buttons = card ? Array.from(card.querySelectorAll('button,a')) : [];
+  dailyInvitationResponseBusy = true;
   buttons.forEach(control => { control.dataset.invitationWasDisabled = control.disabled ? 'yes' : 'no'; control.disabled = true; });
   const oldText = button ? button.textContent : '';
+  if(dailyInvitationResponseConfirmBtn){ dailyInvitationResponseConfirmBtn.disabled = true; dailyInvitationResponseConfirmBtn.textContent = accepted ? 'Wird angenommen…' : 'Wird abgelehnt…'; }
+  if(dailyInvitationResponseCancelBtn) dailyInvitationResponseCancelBtn.disabled = true;
   if(button) button.textContent = accepted ? 'Wird angenommen…' : 'Wird abgelehnt…';
   if(cardStatus) cardStatus.textContent = accepted ? 'Einladung wird angenommen…' : 'Einladung wird abgelehnt…';
   if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = accepted ? 'Einladung wird angenommen…' : 'Einladung wird abgelehnt…';
+  if(dailyInvitationResponseStatus) dailyInvitationResponseStatus.textContent = accepted ? 'Einladung wird angenommen…' : 'Einladung wird abgelehnt…';
   try{
     const data = await authApi('/api/daily-games/' + encodeURIComponent(roomId) + '/invitation', {
       method:'POST',
-      body:JSON.stringify({action})
+      body:JSON.stringify({action, responseMessage})
     });
     if(accepted){
       if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = data.message || 'Einladung angenommen. Die Daily-Partie wird geöffnet…';
       const targetUrl = dailyGameRoomUrl({roomId:data.roomId || roomId});
       if(!targetUrl) throw new Error('Der neue Spielraum konnte nicht geöffnet werden.');
+      closeDailyInvitationResponseDialog(true);
       window.location.assign(targetUrl);
       return;
     }
     removeDailyInvitationAddress(roomId);
     if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = data.message || 'Einladung wurde abgelehnt.';
+    closeDailyInvitationResponseDialog(true);
     await loadDailyGames();
   } catch(err){
     const message = err && err.message ? err.message : 'Die Einladung konnte nicht beantwortet werden.';
     if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = message;
+    if(dailyInvitationResponseStatus) dailyInvitationResponseStatus.textContent = message;
     if(cardStatus) cardStatus.textContent = message;
     buttons.forEach(control => { control.disabled = control.dataset.invitationWasDisabled === 'yes'; delete control.dataset.invitationWasDisabled; });
     if(button) button.textContent = oldText || (accepted ? 'Annehmen' : 'Ablehnen');
+  } finally {
+    dailyInvitationResponseBusy = false;
+    if(dailyInvitationResponseConfirmBtn){ dailyInvitationResponseConfirmBtn.disabled = false; dailyInvitationResponseConfirmBtn.textContent = accepted ? 'Einladung annehmen' : 'Ablehnung bestätigen'; }
+    if(dailyInvitationResponseCancelBtn) dailyInvitationResponseCancelBtn.disabled = false;
   }
+}
+function createDailyInvitationMessageBox(label, message, response){
+  const normalized = normalizedInvitationPersonalMessage(message);
+  if(!normalized) return null;
+  const box = document.createElement('div');
+  box.className = 'daily-invitation-message' + (response ? ' response' : '');
+  const heading = document.createElement('div');
+  heading.className = 'daily-invitation-message-label';
+  heading.textContent = label;
+  const text = document.createElement('div');
+  text.className = 'daily-invitation-message-text';
+  text.textContent = normalized;
+  box.appendChild(heading);
+  box.appendChild(text);
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'daily-invitation-message-toggle';
+  toggle.textContent = 'Mehr anzeigen';
+  toggle.hidden = !(normalized.length > 180 || normalized.split('\n').length > 4);
+  toggle.addEventListener('click', () => {
+    const expanded = text.classList.toggle('expanded');
+    toggle.textContent = expanded ? 'Weniger anzeigen' : 'Mehr anzeigen';
+  });
+  box.appendChild(toggle);
+  requestAnimationFrame(() => {
+    if(!text.classList.contains('expanded') && text.clientHeight > 0){
+      toggle.hidden = text.scrollHeight <= text.clientHeight + 1;
+    }
+  });
+  return box;
 }
 function createDailyGameCard(game){
   const card = document.createElement('div');
@@ -213,6 +294,9 @@ function createDailyGameCard(game){
   else if(game.invitationDeclined) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
     ? pendingOpponentName + ' hat die Einladung abgelehnt'
     : 'Die Einladung wurde abgelehnt';
+  else if(game.pendingInvitation && game.invitationStatus === 'accepted') status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
+    ? pendingOpponentName + ' hat die Einladung angenommen · Spielerplatz wird vorbereitet'
+    : 'Einladung angenommen · Spielerplatz wird vorbereitet';
   else if(game.pendingInvitation) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
     ? pendingOpponentName + ' hat die Einladung noch nicht angenommen'
     : 'Wartet auf Annahme durch den Gegner';
@@ -239,6 +323,18 @@ function createDailyGameCard(game){
   }
   content.appendChild(status);
   content.appendChild(meta);
+  if((game.incomingInvitation || game.pendingInvitation || game.invitationDeclined) && game.invitationMessage){
+    const invitationLabel = game.incomingInvitation
+      ? 'Persönliche Nachricht von ' + (cleanDisplayName(game.opponentName) || 'dem Einladenden')
+      : 'Deine persönliche Einladungsnachricht';
+    const invitationBox = createDailyInvitationMessageBox(invitationLabel, game.invitationMessage, false);
+    if(invitationBox) content.appendChild(invitationBox);
+  }
+  if(game.isInvitationCreator && game.invitationResponseMessage){
+    const responseLabel = 'Antwort von ' + (cleanDisplayName(game.invitedOpponentName || game.opponentName) || 'dem eingeladenen Mitglied');
+    const responseBox = createDailyInvitationMessageBox(responseLabel, game.invitationResponseMessage, true);
+    if(responseBox) content.appendChild(responseBox);
+  }
 
   const actions = document.createElement('div');
   actions.className = 'daily-game-actions';
@@ -538,4 +634,12 @@ if(tournamentGamesOpenBtn) tournamentGamesOpenBtn.addEventListener('click', () =
 if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDailyGames);
 if(dailyGamesCloseBtn) dailyGamesCloseBtn.addEventListener('click', closeDailyGamesDialog);
 if(dailyGamesBackdrop) dailyGamesBackdrop.addEventListener('click', ev => { if(ev.target === dailyGamesBackdrop) closeDailyGamesDialog(); });
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && dailyGamesBackdrop && !dailyGamesBackdrop.hidden) closeDailyGamesDialog(); });
+if(dailyInvitationResponseInput) dailyInvitationResponseInput.addEventListener('input', updateDailyInvitationResponseCount);
+if(dailyInvitationResponseCancelBtn) dailyInvitationResponseCancelBtn.addEventListener('click', () => closeDailyInvitationResponseDialog(false));
+if(dailyInvitationResponseConfirmBtn) dailyInvitationResponseConfirmBtn.addEventListener('click', submitDailyInvitationResponse);
+if(dailyInvitationResponseBackdrop) dailyInvitationResponseBackdrop.addEventListener('click', ev => { if(ev.target === dailyInvitationResponseBackdrop) closeDailyInvitationResponseDialog(false); });
+document.addEventListener('keydown', ev => {
+  if(ev.key !== 'Escape') return;
+  if(dailyInvitationResponseBackdrop && !dailyInvitationResponseBackdrop.hidden) closeDailyInvitationResponseDialog(false);
+  else if(dailyGamesBackdrop && !dailyGamesBackdrop.hidden) closeDailyGamesDialog();
+});

@@ -173,7 +173,7 @@ async function inviteFromMemberProfile(){
   const context = memberProfileContext;
   if(!target) return;
   closeMemberProfileDialog();
-  if(context === 'invite') await sendEmailInvitationToMember(target, null);
+  if(context === 'invite') openInvitationMessageDialog(target, null);
   else await inviteMemberFromStandaloneList(target, null);
 }
 if(memberProfileCloseBtn) memberProfileCloseBtn.addEventListener('click', closeMemberProfileDialog);
@@ -325,7 +325,7 @@ async function inviteMemberFromStandaloneList(member, button){
     closeMembersDialog();
     updateInviteDialog();
     if(inviteBackdrop) inviteBackdrop.hidden = false;
-    await sendEmailInvitationToMember(member, button);
+    openInvitationMessageDialog(member, button);
   } catch(err){
     const message = err && err.message ? err.message : 'Die Einladung konnte nicht vorbereitet werden.';
     if(onlineRoomId){
@@ -341,4 +341,3 @@ async function inviteMemberFromStandaloneList(member, button){
     updateOnlineActionButtons();
   }
 }
-

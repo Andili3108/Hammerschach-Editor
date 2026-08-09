@@ -139,6 +139,10 @@ if(inviteCopyLinkBtn) inviteCopyLinkBtn.addEventListener('click', copyInviteLink
 if(inviteCopyTextBtn) inviteCopyTextBtn.addEventListener('click', () => copyInvitationText(inviteSelectedMember || null));
 if(inviteCloseBtn) inviteCloseBtn.addEventListener('click', closeInviteDialog);
 if(inviteBackdrop) inviteBackdrop.addEventListener('click', ev => { if(ev.target === inviteBackdrop) closeInviteDialog(); });
+if(invitationMessageInput) invitationMessageInput.addEventListener('input', updateInvitationMessageCount);
+if(invitationMessageCancelBtn) invitationMessageCancelBtn.addEventListener('click', () => closeInvitationMessageDialog(false));
+if(invitationMessageSendBtn) invitationMessageSendBtn.addEventListener('click', submitInvitationMessage);
+if(invitationMessageBackdrop) invitationMessageBackdrop.addEventListener('click', ev => { if(ev.target === invitationMessageBackdrop) closeInvitationMessageDialog(false); });
 if(memberSearchInput) memberSearchInput.addEventListener('input', scheduleMemberSearch);
 if(memberListBtn) memberListBtn.addEventListener('click', loadMemberList);
 if(membersSearchInput) membersSearchInput.addEventListener('input', scheduleStandaloneMemberSearch);
@@ -147,7 +151,8 @@ if(membersCloseBtn) membersCloseBtn.addEventListener('click', closeMembersDialog
 if(membersBackdrop) membersBackdrop.addEventListener('click', ev => { if(ev.target === membersBackdrop) closeMembersDialog(); });
 document.addEventListener('keydown', ev => {
   if(ev.key !== 'Escape') return;
-  if(membersBackdrop && !membersBackdrop.hidden) closeMembersDialog();
+  if(invitationMessageBackdrop && !invitationMessageBackdrop.hidden) closeInvitationMessageDialog(false);
+  else if(membersBackdrop && !membersBackdrop.hidden) closeMembersDialog();
   else if(inviteBackdrop && !inviteBackdrop.hidden) closeInviteDialog();
 });
 startOnlineBtn.addEventListener('click', startOnlineGame);
