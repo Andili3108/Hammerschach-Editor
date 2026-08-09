@@ -166,10 +166,15 @@ async function sendEmailInvitationToMember(member, button, personalMessage, sour
       method:'POST',
       body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id, personalMessage:normalizedPersonalMessage})
     });
+    const emailSent = !(data && data.emailSent === false);
     const baseMessage = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde versendet.');
-    const message = baseMessage + ' Falls sie nicht im Posteingang erscheint, bitte auch den Spamordner prüfen.';
+    const message = emailSent
+      ? baseMessage + ' Falls sie nicht im Posteingang erscheint, bitte auch den Spamordner prüfen.'
+      : baseMessage;
     setInviteCopyStatus(message, false);
-    if(memberSearchStatus) memberSearchStatus.textContent = 'Automatischer Mailversand erfolgreich. Bitte gegebenenfalls auch den Spamordner kontrollieren.';
+    if(memberSearchStatus) memberSearchStatus.textContent = emailSent
+      ? 'Automatischer Mailversand erfolgreich. Bitte gegebenenfalls auch den Spamordner kontrollieren.'
+      : 'Die digitale Einladung wurde erfolgreich zugestellt; nur die zusätzliche E-Mail ist fehlgeschlagen.';
     onlineLastMessage = message;
     statusEl.textContent = message;
     closeInvitationMessageDialog(true);
