@@ -424,6 +424,7 @@ function saveAuthState(token, user){
   }
   updateAuthUi();
   updateOnlineUi();
+  if(typeof refreshOpenOffersBadge === 'function') refreshOpenOffersBadge().catch(() => {});
   if(onlineAuthToken && onlineAuthUser){
     loadDailyGames({silent:true}).catch(() => {});
     setTimeout(() => {

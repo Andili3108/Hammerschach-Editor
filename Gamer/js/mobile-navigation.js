@@ -25,9 +25,11 @@
   const tabletDrawerToggle = document.getElementById('mobileNavTabletDrawerToggle');
   const disableButton = document.getElementById('mobileNavTestDisable');
   const turnCount = document.getElementById('mobileNavTestTurnCount');
+  const offersCount = document.getElementById('mobileNavTestOffersCount');
   const sourceStatus = document.getElementById('status');
   const sourceTheme = document.getElementById('themeToggleBtn');
   const sourceTurnCount = document.getElementById('dailyGamesTurnCount');
+  const sourceOffersCount = document.getElementById('openOffersCount');
   const roomLobbyButton = document.getElementById('roomLobbyBtn');
   const newGameButton = document.getElementById('newGameOpenBtn');
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
@@ -170,10 +172,21 @@
     turnCount.hidden = sourceTurnCount.hidden || !count || count === '0';
   }
 
+  function syncOffersCount(){
+    if(!offersCount || !sourceOffersCount) return;
+    const count = String(sourceOffersCount.textContent || '').trim();
+    offersCount.textContent = count || '0';
+    offersCount.hidden = sourceOffersCount.hidden || !count || count === '0';
+    const label = sourceOffersCount.getAttribute('aria-label');
+    if(label) offersCount.setAttribute('aria-label',label);
+    else offersCount.removeAttribute('aria-label');
+  }
+
   function syncControls(){
     syncStatus();
     syncTheme();
     syncTurnCount();
+    syncOffersCount();
     syncPrimaryButton();
     targetButtons.forEach(syncTargetButton);
     const forcedClassic = classicForced();
@@ -249,7 +262,7 @@
 
   const rootObserver = new MutationObserver(refresh);
   rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
-  [sourceStatus, sourceTheme, sourceTurnCount].filter(Boolean).forEach(element => {
+  [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount].filter(Boolean).forEach(element => {
     const observer = new MutationObserver(refresh);
     observer.observe(element, {attributes:true, childList:true, characterData:true, subtree:true});
   });

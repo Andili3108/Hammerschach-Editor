@@ -43,6 +43,7 @@ window.setInterval(() => {
   if(!onlineAuthToken || !onlineAuthUser) return;
   loadTournaments({keepDetail:!!(tournamentBackdrop && !tournamentBackdrop.hidden && tournamentSelectedId)}).catch(() => {});
   loadDailyGames({silent:true}).catch(() => {});
+  refreshOpenOffersBadge().catch(() => {});
   loadLobbyTicker().catch(() => {});
   loadInfoCenter().catch(() => {});
 }, 120000);

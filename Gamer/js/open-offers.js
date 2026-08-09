@@ -17,6 +17,40 @@ function openOfferVariantLabel(offer){
   return 'Klassisch';
 }
 function openOfferRoleLabel(role){ return role === 'b' ? 'Schwarz' : 'Weiß'; }
+let openOffersRequestPromise = null;
+function requestOpenOffers(){
+  if(openOffersRequestPromise) return openOffersRequestPromise;
+  openOffersRequestPromise = authApi('/api/open-offers').finally(() => { openOffersRequestPromise = null; });
+  return openOffersRequestPromise;
+}
+function availableOpenOffersCount(offers){
+  return (Array.isArray(offers) ? offers : []).filter(offer => offer && offer.mine !== true).length;
+}
+function updateOpenOffersBadge(offers){
+  if(!openOffersCount) return;
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  const count = loggedIn ? availableOpenOffersCount(offers) : 0;
+  openOffersCount.textContent = count > 99 ? '99+' : String(count);
+  openOffersCount.hidden = count < 1;
+  if(count > 0){
+    const label = count === 1 ? '1 annehmbares Partieangebot' : count + ' annehmbare Partieangebote';
+    openOffersCount.setAttribute('aria-label',label);
+    openOffersCount.title = label;
+  } else {
+    openOffersCount.removeAttribute('aria-label');
+    openOffersCount.removeAttribute('title');
+  }
+}
+async function refreshOpenOffersBadge(){
+  if(!onlineAuthToken || !onlineAuthUser){
+    updateOpenOffersBadge([]);
+    return [];
+  }
+  const data = await requestOpenOffers();
+  const offers = data.offers || [];
+  updateOpenOffersBadge(offers);
+  return offers;
+}
 function createOpenOfferCard(offer){
   const card = document.createElement('div');
   card.className = 'open-offer-card' + (offer.mine ? ' mine' : '');
@@ -74,8 +108,9 @@ async function loadOpenOffers(options){
   if(!silent && openOffersStatusEl) openOffersStatusEl.textContent = 'Offene Partien werden geladen…';
   if(!silent && openOffersRefreshBtn) openOffersRefreshBtn.disabled = true;
   try{
-    const data = await authApi('/api/open-offers');
+    const data = await requestOpenOffers();
     const offers = data.offers || [];
+    updateOpenOffersBadge(offers);
     renderOpenOffers(offers);
     if(!silent && openOffersStatusEl) openOffersStatusEl.textContent = offers.length === 1 ? '1 offene Partie verfügbar.' : offers.length + ' offene Partien verfügbar.';
   } catch(err){
@@ -143,4 +178,3 @@ if(openOffersRefreshBtn) openOffersRefreshBtn.addEventListener('click', () => lo
 if(openOffersCloseBtn) openOffersCloseBtn.addEventListener('click', closeOpenOffersDialog);
 if(openOffersBackdrop) openOffersBackdrop.addEventListener('click', ev => { if(ev.target === openOffersBackdrop) closeOpenOffersDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && openOffersBackdrop && !openOffersBackdrop.hidden) closeOpenOffersDialog(); });
-
