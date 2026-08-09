@@ -1156,7 +1156,28 @@ const INVITATION_EMAIL_MIN_INTERVAL_MS = 20 * 1000;
 const INVITATION_EMAIL_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
 const INVITATION_EMAIL_SENDER_HOURLY_LIMIT = 20;
 const INVITATION_EMAIL_RECIPIENT_HOURLY_LIMIT = 12;
+const INVITATION_PERSONAL_MESSAGE_MAX_LENGTH = 300;
 let invitationEmailLogTableReady = false;
+
+function normalizeInvitationPersonalMessage(value) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim();
+}
+
+function validateInvitationPersonalMessage(value, label = 'Die persönliche Nachricht') {
+  const message = normalizeInvitationPersonalMessage(value);
+  if (message.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH) {
+    return {
+      ok:false,
+      status:400,
+      code:'INVITATION_MESSAGE_TOO_LONG',
+      message:`${label} darf höchstens ${INVITATION_PERSONAL_MESSAGE_MAX_LENGTH} Zeichen lang sein.`
+    };
+  }
+  return { ok:true, message };
+}
 
 async function ensureInvitationEmailLogTable(env) {
   if (!env || !env.DB) return false;
@@ -1472,6 +1493,9 @@ function prepareInvitationEmail(payload) {
   const timeLabel = String(payload && payload.timeLabel || '').slice(0, 120);
   const daily = !!(payload && payload.daily);
   const rated = !(payload && payload.rated === false);
+  const personalMessageResult = validateInvitationPersonalMessage(payload && payload.personalMessage, 'Die persönliche Nachricht');
+  if (!personalMessageResult.ok) return personalMessageResult;
+  const personalMessage = personalMessageResult.message;
   if (!recipientEmail || !inviteUrl) {
     return { ok:false, status:400, code:'INVALID_INVITATION_MAIL', message:'Die Einladungsmail konnte nicht vorbereitet werden.' };
   }
@@ -1483,20 +1507,23 @@ function prepareInvitationEmail(payload) {
   if (variantLabel) detailLines.push(`Spielmodus: ${variantLabel}`);
   if (timeLabel) detailLines.push(`Bedenkzeit: ${timeLabel}`);
   detailLines.push(`Wertung: ${rated ? 'Gewertet' : 'Ungewertet'}`);
-  if (daily) detailLines.push('Hinweis: Daily Chess erfordert auf beiden Seiten einen registrierten und eingeloggten Account.');
   const detailText = detailLines.length ? `\n\n${detailLines.join('\n')}` : '';
+  const personalText = personalMessage ? `\n\nPersönliche Nachricht von ${senderName}:\n${personalMessage}` : '';
   const decisionText = daily
     ? '\n\nDie Partie wurde noch nicht gestartet. Öffne die Einladung, um sie im Hammerschach-Gamer anzunehmen oder abzulehnen. Erst nach deiner Annahme wird die Daily-Partie automatisch gestartet.'
     : '';
-  const textPart = `Hallo ${recipientName},\n\n${senderName} lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} auf Hammerschach ein.${detailText}${decisionText}\n\n${daily ? 'Einladung ansehen' : 'Partie öffnen'}:\n${inviteUrl}\n\nDiese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\n${senderName} lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} auf Hammerschach ein.${personalText}${detailText}${decisionText}\n\n${daily ? 'Einladung ansehen' : 'Partie öffnen'}:\n${inviteUrl}\n\nDiese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.\n\nViele Grüße\nHammerschach-Gamer`;
 
   const detailHtml = detailLines.length
     ? `<div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailLines.map(line => escapeEmailHtml(line)).join('<br>')}</div>`
     : '';
+  const personalHtml = personalMessage
+    ? `<div style="margin:18px 0;padding:14px 16px;background:#fff9e9;border:1px solid #e8cf96;border-radius:12px;line-height:1.55;"><div style="font-size:12px;font-weight:bold;color:#843f46;margin-bottom:5px;">Persönliche Nachricht von ${escapeEmailHtml(senderName)}</div><div style="white-space:pre-wrap;word-break:break-word;">${escapeEmailHtml(personalMessage)}</div></div>`
+    : '';
   const decisionHtml = daily
     ? '<p><strong>Die Partie wurde noch nicht gestartet.</strong> Öffne die Einladung, um sie im Hammerschach-Gamer anzunehmen oder abzulehnen. Erst nach deiner Annahme wird die Daily-Partie automatisch gestartet.</p>'
     : '';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} auf Hammerschach ein.</p>${detailHtml}${decisionHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${daily ? 'Einladung ansehen' : 'Partie öffnen'}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} auf Hammerschach ein.</p>${personalHtml}${detailHtml}${decisionHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${daily ? 'Einladung ansehen' : 'Partie öffnen'}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
 
   return { ok:true, mailType:'invitation', recipientEmail, recipientName, senderName, subject, textPart, htmlPart };
 }
@@ -2687,6 +2714,35 @@ function prepareDailyOpenOfferAcceptedEmail(payload) {
   return { ok:true, mailType:'daily_offer_accepted', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
+function prepareDailyInvitationResponseEmail(payload) {
+  const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
+  const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
+  const responderName = cleanDisplayName(payload && payload.responderName) || 'Das eingeladene Mitglied';
+  const accepted = payload && payload.action === 'accept';
+  const responseMessageResult = validateInvitationPersonalMessage(payload && payload.responseMessage, 'Die persönliche Antwort');
+  if (!responseMessageResult.ok) return responseMessageResult;
+  const responseMessage = responseMessageResult.message;
+  const inviteUrl = String(payload && payload.inviteUrl || '').trim();
+  if (!recipientEmail || !inviteUrl) {
+    return { ok:false, status:400, code:'INVALID_DAILY_INVITATION_RESPONSE_MAIL', message:'Die Antwortbenachrichtigung konnte nicht vorbereitet werden.' };
+  }
+  const actionLabel = accepted ? 'angenommen' : 'abgelehnt';
+  const subject = `${responderName} hat deine Daily-Einladung ${actionLabel}`;
+  const responseText = responseMessage ? `\n\nPersönliche Antwort von ${responderName}:\n${responseMessage}` : '';
+  const nextText = accepted
+    ? '\n\nDie Partie wird vorbereitet und kann anschließend über „Meine Partien“ geöffnet werden.'
+    : '\n\nDie Einladung ist damit beendet. Die persönliche Antwort bleibt für dich unter „Meine Partien“ sichtbar.';
+  const textPart = `Hallo ${recipientName},\n\n${responderName} hat deine Daily-Einladung ${actionLabel}.${responseText}${nextText}\n\nHammerschach-Gamer öffnen:\n${inviteUrl}\n\nViele Grüße\nHammerschach-Gamer`;
+  const responseHtml = responseMessage
+    ? `<div style="margin:18px 0;padding:14px 16px;background:#fff9e9;border:1px solid #e8cf96;border-radius:12px;line-height:1.55;"><div style="font-size:12px;font-weight:bold;color:#843f46;margin-bottom:5px;">Persönliche Antwort von ${escapeEmailHtml(responderName)}</div><div style="white-space:pre-wrap;word-break:break-word;">${escapeEmailHtml(responseMessage)}</div></div>`
+    : '';
+  const nextHtml = accepted
+    ? '<p>Die Partie wird vorbereitet und kann anschließend über <strong>„Meine Partien“</strong> geöffnet werden.</p>'
+    : '<p>Die Einladung ist damit beendet. Die persönliche Antwort bleibt für dich unter <strong>„Meine Partien“</strong> sichtbar.</p>';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Einladung ${accepted ? 'angenommen' : 'abgelehnt'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(responderName)}</strong> hat deine Daily-Einladung ${actionLabel}.</p>${responseHtml}${nextHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Hammerschach-Gamer öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  return { ok:true, mailType:'daily_invitation_response', recipientEmail, recipientName, subject, textPart, htmlPart };
+}
+
 function prepareDailyResultEmail(payload) {
   const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
   const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
@@ -2783,6 +2839,22 @@ async function sendDailyOpenOfferAcceptedEmailNotification(env, payload) {
   return result;
 }
 
+async function sendDailyInvitationResponseEmailNotification(env, payload) {
+  const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, null);
+  if (!recipient.ok) return { ok:true, skipped:true, reason:recipient.reason };
+  const claim = await claimEmailNotification(env, payload.notificationKey, 'daily_invitation_response', recipient.user.id, payload.roomId);
+  if (!claim.claimed) return { ok:true, skipped:true, reason:claim.reason };
+  let result;
+  try {
+    const mail = prepareDailyInvitationResponseEmail({ ...payload, recipientEmail:recipient.email, recipientName:recipient.user.username });
+    result = await sendPreparedTransactionalEmail(env, mail);
+  } catch (error) {
+    result = { ok:false, code:'DAILY_INVITATION_RESPONSE_MAIL_FAILED', message:error && error.message ? error.message : 'Antwortbenachrichtigung fehlgeschlagen.' };
+  }
+  try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
+  return result;
+}
+
 async function sendDailyResultEmailNotification(env, payload) {
   const recipient = await loadEmailNotificationRecipient(env, payload && payload.recipientUserId, 'dailyResultEnabled');
   if (!recipient.ok) return { ok:true, skipped:true, reason:recipient.reason };
@@ -2834,6 +2906,8 @@ async function ensureDailyGamesTable(env) {
        invited_name TEXT,
        invitation_status TEXT,
        invitation_responded_at TEXT,
+       invitation_message TEXT,
+       invitation_response_message TEXT,
        time_label TEXT,
        days_per_move INTEGER,
        variant TEXT,
@@ -2853,6 +2927,8 @@ async function ensureDailyGamesTable(env) {
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invited_name TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_status TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_responded_at TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_message TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_response_message TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
@@ -2893,6 +2969,7 @@ async function listDailyGames(env, sessionUser) {
               )
             ) AS invited_name,
             daily_games.invited_user_id, daily_games.invitation_status, daily_games.invitation_responded_at,
+            daily_games.invitation_message, daily_games.invitation_response_message,
             daily_games.time_label, daily_games.days_per_move, daily_games.variant, daily_games.started,
             daily_games.started_at, daily_games.updated_at, daily_games.turn,
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
@@ -2957,6 +3034,7 @@ async function listDailyGames(env, sessionUser) {
       : role === 'b' ? row.white_name : (row.white_user_id ? row.white_name : row.black_name);
     const invitedOpponentName = cleanDisplayName(row.invited_name || '');
     const invitationStatus = String(row.invitation_status || (row.invited_user_id ? 'pending' : ''));
+    const isInvitationRecipient = !!row.invited_user_id && String(row.invited_user_id || '') === sessionUserId;
     return {
       roomId: row.room_id,
       role,
@@ -2966,10 +3044,14 @@ async function listDailyGames(env, sessionUser) {
       invitationStatus,
       invitationDeclined: !!role && invitationStatus === 'declined',
       invitationRespondedAt:row.invitation_responded_at || null,
+      invitationMessage:normalizeInvitationPersonalMessage(row.invitation_message || ''),
+      invitationResponseMessage:normalizeInvitationPersonalMessage(row.invitation_response_message || ''),
+      isInvitationRecipient,
+      isInvitationCreator:!!role && !!row.invited_user_id && !isInvitationRecipient,
       opponentJoined,
       opponentOnline: opponentJoined && !row.ended && Number(row.opponent_online || 0) === 1,
       pendingInvitation: !incomingInvitation && !row.started && !row.ended && !opponentJoined,
-      canDeleteInvitation: !!role && !row.started && !row.ended && !opponentJoined,
+      canDeleteInvitation: !!role && !row.started && !row.ended && !opponentJoined && invitationStatus !== 'accepted',
       canRespondInvitation:incomingInvitation,
       timeLabel: row.time_label || ((row.days_per_move || 1) + ' Tag(e) pro Zug'),
       daysPerMove: Math.max(1, Number(row.days_per_move || 1)),
@@ -9301,6 +9383,10 @@ async function handleAuthApi(request, env, url) {
     if (action !== 'accept' && action !== 'decline') {
       return json({ ok:false, code:'INVALID_INVITATION_RESPONSE', message:'Bitte wähle Annehmen oder Ablehnen.' }, { status:400 });
     }
+    const responseMessageResult = validateInvitationPersonalMessage(body && body.responseMessage, 'Die persönliche Antwort');
+    if (!responseMessageResult.ok) {
+      return json({ ok:false, code:responseMessageResult.code, message:responseMessageResult.message }, { status:responseMessageResult.status });
+    }
     if (!env.GAME_ROOM) return json({ ok:false, code:'ROOM_SERVICE_UNAVAILABLE', message:'Der Spielraum-Dienst ist momentan nicht verfügbar.' }, { status:503 });
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
@@ -9311,7 +9397,7 @@ async function handleAuthApi(request, env, url) {
           'content-type':'application/json',
           'x-hammerschach-user-id':String(session.user.id || '')
         },
-        body:JSON.stringify({action})
+        body:JSON.stringify({action, responseMessage:responseMessageResult.message})
       }));
       let result = null;
       try { result = await response.json(); } catch (_) { result = null; }
@@ -9815,6 +9901,11 @@ async function handleAuthApi(request, env, url) {
     const body = await readJsonBody(request);
     if (!body) return json({ ok:false, code:'BAD_JSON', message:'Die Einladung konnte nicht gelesen werden.' }, { status:400 });
 
+    const personalMessageResult = validateInvitationPersonalMessage(body.personalMessage, 'Die persönliche Nachricht');
+    if (!personalMessageResult.ok) {
+      return json({ ok:false, code:personalMessageResult.code, message:personalMessageResult.message }, { status:personalMessageResult.status });
+    }
+
     const roomId = cleanRoomId(body.roomId || body.room);
     const recipientUserId = cleanInvitationRecipientUserId(body.recipientUserId || body.memberId || body.userId);
     if (!roomId) return json({ ok:false, code:'INVALID_ROOM', message:'Der Spielraum ist ungültig.' }, { status:400 });
@@ -9870,7 +9961,7 @@ async function handleAuthApi(request, env, url) {
             'content-type':'application/json',
             'x-hammerschach-user-id':String(session.user.id || '')
           },
-          body:JSON.stringify({ recipientUserId, recipientName:recipient.username })
+          body:JSON.stringify({ recipientUserId, recipientName:recipient.username, personalMessage:personalMessageResult.message })
         }));
         try { dailyRegistration = await registrationResponse.json(); } catch (_) { dailyRegistration = null; }
         if (!registrationResponse.ok || !dailyRegistration || !dailyRegistration.ok) {
@@ -9887,12 +9978,16 @@ async function handleAuthApi(request, env, url) {
 
     const inviteUrl = isDailyInvitation ? gamerDailyInvitationUrl(env, roomId) : gamerInvitationUrl(env, roomId);
     if (!inviteUrl) {
-      if (dailyRegistration && dailyRegistration.newlyRegistered && dailyRegistration.invitationId) {
+      if (dailyRegistration && (dailyRegistration.newlyRegistered || dailyRegistration.messageUpdated) && dailyRegistration.invitationId) {
         try {
           await roomStub.fetch(new Request('https://game-room.internal/rollback-daily-invitation?room=' + encodeURIComponent(roomId), {
             method:'POST',
             headers:{'content-type':'application/json'},
-            body:JSON.stringify({invitationId:dailyRegistration.invitationId})
+            body:JSON.stringify({
+              invitationId:dailyRegistration.invitationId,
+              restoreMessage:!!dailyRegistration.messageUpdated,
+              previousInvitationMessage:dailyRegistration.previousInvitationMessage || ''
+            })
           }));
         } catch (_) {}
       }
@@ -9908,15 +10003,20 @@ async function handleAuthApi(request, env, url) {
       variantLabel:invitationVariantLabel(access.gameSetup),
       timeLabel:invitationTimeLabel(access.timeControl),
       rated:access.ratedRequested !== false,
-      daily:isDailyInvitation
+      daily:isDailyInvitation,
+      personalMessage:personalMessageResult.message
     });
     if (!mail.ok) {
-      if (dailyRegistration && dailyRegistration.newlyRegistered && dailyRegistration.invitationId) {
+      if (dailyRegistration && (dailyRegistration.newlyRegistered || dailyRegistration.messageUpdated) && dailyRegistration.invitationId) {
         try {
           await roomStub.fetch(new Request('https://game-room.internal/rollback-daily-invitation?room=' + encodeURIComponent(roomId), {
             method:'POST',
             headers:{'content-type':'application/json'},
-            body:JSON.stringify({invitationId:dailyRegistration.invitationId})
+            body:JSON.stringify({
+              invitationId:dailyRegistration.invitationId,
+              restoreMessage:!!dailyRegistration.messageUpdated,
+              previousInvitationMessage:dailyRegistration.previousInvitationMessage || ''
+            })
           }));
         } catch (_) {}
       }
@@ -12212,7 +12312,7 @@ export class GameRoom {
     };
   }
 
-  async registerDailyInvitationRecipient(requestingUserId, recipientUserId, recipientName) {
+  async registerDailyInvitationRecipient(requestingUserId, recipientUserId, recipientName, personalMessage = '') {
     const context = await this.invitationEmailContext(requestingUserId);
     if (!context.ok) return context;
     if (!context.timeControl || context.timeControl.mode !== 'daily') {
@@ -12222,6 +12322,8 @@ export class GameRoom {
     if (!targetUserId || targetUserId === String(requestingUserId || '')) {
       return { ok:false, status:400, code:'INVALID_INVITATION_RECIPIENT', message:'Das eingeladene Mitglied ist ungültig.' };
     }
+    const personalMessageResult = validateInvitationPersonalMessage(personalMessage, 'Die persönliche Nachricht');
+    if (!personalMessageResult.ok) return personalMessageResult;
 
     const existingUserId = String((await this.state.storage.get('invitedUserId')) || '');
     const existingStatus = String((await this.state.storage.get('invitationStatus')) || '');
@@ -12230,7 +12332,13 @@ export class GameRoom {
       return { ok:false, status:409, code:'INVITATION_ALREADY_TARGETED', message:'Für diesen Spielraum besteht bereits eine offene Einladung an ein anderes Mitglied.' };
     }
     if (existingUserId === targetUserId && existingStatus === 'pending' && existingId) {
-      return { ok:true, status:200, invitationId:existingId, newlyRegistered:false };
+      const previousInvitationMessage = normalizeInvitationPersonalMessage((await this.state.storage.get('invitationMessage')) || '');
+      const messageUpdated = previousInvitationMessage !== personalMessageResult.message;
+      if (messageUpdated) {
+        await this.state.storage.put({ invitationMessage:personalMessageResult.message, invitationResponseMessage:'' });
+        await this.syncDailyGameIndex();
+      }
+      return { ok:true, status:200, invitationId:existingId, newlyRegistered:false, messageUpdated, previousInvitationMessage };
     }
 
     const invitationId = 'di_' + randomBase64Url(14);
@@ -12240,21 +12348,30 @@ export class GameRoom {
       invitedName:cleanDisplayName(recipientName) || 'Mitglied',
       invitationStatus:'pending',
       invitationSentAt:new Date().toISOString(),
-      invitationRespondedAt:null
+      invitationRespondedAt:null,
+      invitationMessage:personalMessageResult.message,
+      invitationResponseMessage:''
     });
     await this.syncDailyGameIndex();
     return { ok:true, status:200, invitationId, newlyRegistered:true };
   }
 
-  async rollbackDailyInvitationRecipient(invitationId) {
+  async rollbackDailyInvitationRecipient(invitationId, options = {}) {
     const currentId = String((await this.state.storage.get('invitationId')) || '');
     const currentStatus = String((await this.state.storage.get('invitationStatus')) || '');
     if (!currentId || currentId !== String(invitationId || '') || currentStatus !== 'pending') {
       return { ok:true, status:200, rolledBack:false };
     }
+    if (options && options.restoreMessage === true) {
+      const previousResult = validateInvitationPersonalMessage(options.previousInvitationMessage, 'Die vorherige persönliche Nachricht');
+      if (!previousResult.ok) return previousResult;
+      await this.state.storage.put('invitationMessage', previousResult.message);
+      await this.syncDailyGameIndex();
+      return { ok:true, status:200, rolledBack:false, messageRestored:true };
+    }
     await this.state.storage.delete([
       'invitationId', 'invitedUserId', 'invitedName', 'invitationStatus',
-      'invitationSentAt', 'invitationRespondedAt'
+      'invitationSentAt', 'invitationRespondedAt', 'invitationMessage', 'invitationResponseMessage'
     ]);
     await this.syncDailyGameIndex();
     return { ok:true, status:200, rolledBack:true };
@@ -12266,7 +12383,7 @@ export class GameRoom {
     if (!userId || !roomId || !this.env || !this.env.DB || !(await ensureDailyGamesTable(this.env))) return false;
     try {
       const indexed = await this.env.DB.prepare(
-        `SELECT invited_user_id, invited_name, invitation_status, updated_at
+        `SELECT invited_user_id, invited_name, invitation_status, invitation_message, invitation_response_message, updated_at
            FROM daily_games
           WHERE room_id = ?
           LIMIT 1`
@@ -12282,7 +12399,9 @@ export class GameRoom {
         invitationStatus:'pending',
         invitationId:String((await this.state.storage.get('invitationId')) || ('legacy_' + roomId)).slice(0, 120),
         invitationSentAt:(await this.state.storage.get('invitationSentAt')) || indexed.updated_at || new Date().toISOString(),
-        invitationRespondedAt:null
+        invitationRespondedAt:null,
+        invitationMessage:normalizeInvitationPersonalMessage(indexed.invitation_message || ''),
+        invitationResponseMessage:normalizeInvitationPersonalMessage(indexed.invitation_response_message || '')
       });
       return true;
     } catch (_) {
@@ -12290,13 +12409,16 @@ export class GameRoom {
     }
   }
 
-  async respondToDailyInvitation(requestingUserId, action, roomHint = '') {
+  async respondToDailyInvitation(requestingUserId, action, roomHint = '', responseMessageValue = '') {
     const userId = String(requestingUserId || '').trim();
     const responseAction = String(action || '').toLowerCase();
     if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
     if (responseAction !== 'accept' && responseAction !== 'decline') {
       return { ok:false, status:400, code:'INVALID_INVITATION_RESPONSE', message:'Bitte wähle Annehmen oder Ablehnen.' };
     }
+    const responseMessageResult = validateInvitationPersonalMessage(responseMessageValue, 'Die persönliche Antwort');
+    if (!responseMessageResult.ok) return responseMessageResult;
+    const responseMessage = responseMessageResult.message;
 
     let invitedUserId = String((await this.state.storage.get('invitedUserId')) || '');
     let invitationStatus = String((await this.state.storage.get('invitationStatus')) || '');
@@ -12337,16 +12459,39 @@ export class GameRoom {
     }
 
     const respondedAt = new Date().toISOString();
+    const responseRoomId = cleanRoomId((await this.state.storage.get('roomId')) || roomHint);
+    const creatorUserId = String((await this.state.storage.get('createdByUserId')) || '').trim();
+    const responderName = cleanDisplayName((await this.state.storage.get('invitedName')) || '') || 'Das eingeladene Mitglied';
+    const notifyCreator = () => {
+      if (!creatorUserId || creatorUserId === userId || !responseRoomId) return;
+      const inviteUrl = responseAction === 'accept'
+        ? gamerInvitationUrl(this.env, responseRoomId)
+        : configuredGamerPublicUrl(this.env);
+      if (!inviteUrl) return;
+      this.runBackgroundTask(sendDailyInvitationResponseEmailNotification(this.env, {
+        recipientUserId:creatorUserId,
+        roomId:responseRoomId,
+        responderName,
+        action:responseAction,
+        responseMessage,
+        inviteUrl,
+        notificationKey:`daily-invitation-response:${responseRoomId}:${responseAction}:${respondedAt}`
+      }), 'Daily-Einladungsantwort konnte nicht per Mail versendet werden');
+    };
     if (responseAction === 'decline') {
-      await this.state.storage.put({ invitationStatus:'declined', invitationRespondedAt:respondedAt });
+      await this.state.storage.put({ invitationStatus:'declined', invitationRespondedAt:respondedAt, invitationResponseMessage:responseMessage });
       await this.syncDailyGameIndex();
+      notifyCreator();
       return { ok:true, status:200, accepted:false, declined:true, message:'Die Einladung wurde abgelehnt.' };
     }
 
     await this.state.storage.put({
       invitationStatus:'accepted',
-      invitationRespondedAt:respondedAt
+      invitationRespondedAt:respondedAt,
+      invitationResponseMessage:responseMessage
     });
+    await this.syncDailyGameIndex();
+    notifyCreator();
     return {
       ok:true,
       status:200,
@@ -12367,7 +12512,7 @@ export class GameRoom {
     try {
       if (roomId && await ensureDailyGamesTable(this.env)) {
         indexedGame = await this.env.DB.prepare(
-          `SELECT room_id, white_user_id, black_user_id, started, ended
+          `SELECT room_id, white_user_id, black_user_id, invitation_status, started, ended
              FROM daily_games
             WHERE room_id = ?
             LIMIT 1`
@@ -12403,6 +12548,10 @@ export class GameRoom {
     const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
     if (game.started || game.ended || (indexedGame && (indexedGame.started || indexedGame.ended))) {
       return { ok:false, status:409, code:'INVITATION_ALREADY_ACCEPTED', message:'Die Einladung kann nicht mehr gelöscht werden, weil die Partie bereits angenommen oder gestartet wurde.' };
+    }
+    const invitationStatus = String((await this.state.storage.get('invitationStatus')) || (indexedGame && indexedGame.invitation_status) || '');
+    if (invitationStatus === 'accepted') {
+      return { ok:false, status:409, code:'INVITATION_ALREADY_ACCEPTED', message:'Die Einladung kann nicht mehr gelöscht werden, weil sie bereits angenommen wurde.' };
     }
 
     const players = await this.getSecurePlayers();
@@ -12824,14 +12973,18 @@ export class GameRoom {
       const result = await this.registerDailyInvitationRecipient(
         request.headers.get('x-hammerschach-user-id') || '',
         body && body.recipientUserId,
-        body && body.recipientName
+        body && body.recipientName,
+        body && body.personalMessage
       );
       return json(result, { status:result.status || (result.ok ? 200 : 400) });
     }
 
     if (request.method === 'POST' && url.pathname === '/rollback-daily-invitation') {
       const body = await readJsonBody(request);
-      const result = await this.rollbackDailyInvitationRecipient(body && body.invitationId);
+      const result = await this.rollbackDailyInvitationRecipient(body && body.invitationId, {
+        restoreMessage:body && body.restoreMessage === true,
+        previousInvitationMessage:body && body.previousInvitationMessage
+      });
       return json(result, { status:result.status || (result.ok ? 200 : 400) });
     }
 
@@ -12843,7 +12996,8 @@ export class GameRoom {
         const result = await this.respondToDailyInvitation(
           request.headers.get('x-hammerschach-user-id') || '',
           action,
-          roomId
+          roomId,
+          body && body.responseMessage
         );
         if (result.ok) {
           try { await this.broadcastRoomState('invitation_state'); }
@@ -13390,6 +13544,8 @@ export class GameRoom {
       const invitedName = cleanDisplayName((await this.state.storage.get('invitedName')) || '');
       const invitationStatus = String((await this.state.storage.get('invitationStatus')) || (invitedUserId ? 'pending' : ''));
       const invitationRespondedAt = (await this.state.storage.get('invitationRespondedAt')) || null;
+      const invitationMessage = normalizeInvitationPersonalMessage((await this.state.storage.get('invitationMessage')) || '');
+      const invitationResponseMessage = normalizeInvitationPersonalMessage((await this.state.storage.get('invitationResponseMessage')) || '');
 
       // Offene Daily-Einladungen bleiben für den Ersteller unter „Meine Partien“
       // sichtbar, damit er sie löschen kann. Ein Raum ohne registrierten Ersteller
@@ -13421,9 +13577,10 @@ export class GameRoom {
         `INSERT INTO daily_games (
            room_id, white_user_id, black_user_id, white_name, black_name,
            invited_user_id, invited_name, invitation_status, invitation_responded_at,
+           invitation_message, invitation_response_message,
            time_label, days_per_move, variant, started, started_at, updated_at,
            turn, deadline_at, ended, ended_at, result, end_reason, rated
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
@@ -13433,6 +13590,8 @@ export class GameRoom {
            invited_name = excluded.invited_name,
            invitation_status = excluded.invitation_status,
            invitation_responded_at = excluded.invitation_responded_at,
+           invitation_message = excluded.invitation_message,
+           invitation_response_message = excluded.invitation_response_message,
            time_label = excluded.time_label,
            days_per_move = excluded.days_per_move,
            variant = excluded.variant,
@@ -13449,6 +13608,7 @@ export class GameRoom {
       ).bind(
         roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
         invitedUserId || null, invitedName || null, invitationStatus || null, invitationRespondedAt,
+        invitationMessage || null, invitationResponseMessage || null,
         timeControl.label, timeControl.daysPerMove, setup.variant,
         game.started ? 1 : 0, game.startedAt || null, new Date(now).toISOString(),
         clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : null, deadlineAt,
@@ -15196,7 +15356,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   },
