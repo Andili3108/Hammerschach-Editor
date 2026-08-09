@@ -1,4 +1,4 @@
-// BUILD: GAMER-CHESS960-CASTLING-20260802-1
+// BUILD: GAMER-GLOBAL-PRESENCE-20260809-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -667,6 +667,22 @@ async function setUserPresence(env, userId, online) {
      ON CONFLICT(user_id) DO UPDATE SET last_seen_at = excluded.last_seen_at`
   ).bind(String(userId), nowIso).run();
   return true;
+}
+
+async function listOnlinePresenceMembers(env) {
+  if (!(await ensureUserPresenceTable(env)) || !env || !env.DB) return [];
+  const result = await env.DB.prepare(
+    `SELECT users.id, users.username
+      FROM user_presence presence
+       JOIN users ON users.id = presence.user_id
+      WHERE presence.last_seen_at >= ?
+      ORDER BY users.username_lc ASC`
+  ).bind(presenceOnlineSinceIso()).all();
+  return (result && result.results ? result.results : []).map(row => ({
+    userId:String(row.id || ''),
+    name:cleanDisplayName(row.username) || 'Mitglied',
+    isAdmin:isAdminUser(row, env)
+  })).filter(member => !!member.userId);
 }
 
 async function searchMembers(env, sessionUser, query) {
@@ -1750,68 +1766,158 @@ function dotStuffSmtpData(value) {
   return String(value || '').replace(/(^|\r\n)\./g, '$1..');
 }
 
-async function sendSmtpInvitation(env, payload) {
-  const host = String((env && env.SMTP_HOST) || '').trim();
-  const port = Number((env && env.SMTP_PORT) || 465);
-  const username = String((env && env.SMTP_USERNAME) || '').trim();
-  const password = String((env && env.SMTP_PASSWORD) || '');
-  const fromEmail = normalizeEmail((env && env.SMTP_FROM_EMAIL) || username);
-  const fromName = cleanDisplayName((env && env.SMTP_FROM_NAME) || '') || 'Hammerschach-Gamer';
-  if (!host || !Number.isInteger(port) || port < 1 || port > 65535 || !username || !password || !fromEmail) {
-    return { ok:false, status:503, code:'SMTP_NOT_CONFIGURED', message:'Der SMTP-Mailversand ist noch nicht vollständig konfiguriert.' };
-  }
-  if (port !== 465) {
-    return { ok:false, status:503, code:'SMTP_PORT_UNSUPPORTED', message:'Für den aktuellen SMTP-Versand muss Port 465 mit SSL/TLS verwendet werden.' };
-  }
+function smtpHeloName(env) {
+  let heloName = 'hammerschach-gamer';
+  try {
+    const publicUrl = configuredGamerPublicUrl(env);
+    if (publicUrl) heloName = new URL(publicUrl).hostname.replace(/[^A-Za-z0-9.-]/g, '') || heloName;
+  } catch (_) {}
+  return heloName;
+}
 
-  const mail = preparedMailFromPayload(payload, env);
-  if (!mail.ok) return mail;
-
+async function deliverSmtpMail(env, mail, settings, port) {
   let socket = null;
   let reader = null;
   let writer = null;
+  let stage = 'connect';
   try {
-    socket = connect({ hostname:host, port }, { secureTransport:'on', allowHalfOpen:false });
+    const usesStartTls = port === 587;
+    socket = connect(
+      { hostname:settings.host, port },
+      { secureTransport:usesStartTls ? 'starttls' : 'on', allowHalfOpen:false }
+    );
     await withTimeout(socket.opened, 12000, 'SMTP-Verbindung konnte nicht rechtzeitig aufgebaut werden.');
     reader = socket.readable.getReader();
     writer = socket.writable.getWriter();
-    const state = { buffer:'', decoder:new TextDecoder() };
+    let state = { buffer:'', decoder:new TextDecoder() };
 
+    stage = 'greeting';
     await smtpCommand(writer, reader, state, null, 220);
-    let heloName = 'hammerschach-gamer';
-    try {
-      const publicUrl = configuredGamerPublicUrl(env);
-      if (publicUrl) heloName = new URL(publicUrl).hostname.replace(/[^A-Za-z0-9.-]/g, '') || heloName;
-    } catch (_) {}
-    await smtpCommand(writer, reader, state, `EHLO ${heloName}`, 250);
+    stage = 'ehlo';
+    await smtpCommand(writer, reader, state, `EHLO ${smtpHeloName(env)}`, 250);
+
+    if (usesStartTls) {
+      stage = 'starttls';
+      await smtpCommand(writer, reader, state, 'STARTTLS', 220);
+      try { writer.releaseLock(); } catch (_) {}
+      try { reader.releaseLock(); } catch (_) {}
+      writer = null;
+      reader = null;
+      socket = socket.startTls();
+      stage = 'tls-upgrade';
+      await withTimeout(socket.opened, 12000, 'Die sichere SMTP-Verbindung konnte nicht aufgebaut werden.');
+      reader = socket.readable.getReader();
+      writer = socket.writable.getWriter();
+      state = { buffer:'', decoder:new TextDecoder() };
+      stage = 'ehlo-secure';
+      await smtpCommand(writer, reader, state, `EHLO ${smtpHeloName(env)}`, 250);
+    }
+
+    stage = 'auth-start';
     await smtpCommand(writer, reader, state, 'AUTH LOGIN', 334);
-    await smtpCommand(writer, reader, state, utf8ToBase64(username), 334, { sensitive:true });
-    await smtpCommand(writer, reader, state, utf8ToBase64(password), 235, { sensitive:true });
-    await smtpCommand(writer, reader, state, `MAIL FROM:<${fromEmail}>`, 250);
+    stage = 'auth-username';
+    await smtpCommand(writer, reader, state, utf8ToBase64(settings.username), 334, { sensitive:true });
+    stage = 'auth-password';
+    await smtpCommand(writer, reader, state, utf8ToBase64(settings.password), 235, { sensitive:true });
+    stage = 'envelope-from';
+    await smtpCommand(writer, reader, state, `MAIL FROM:<${settings.fromEmail}>`, 250);
+    stage = 'recipient';
     await smtpCommand(writer, reader, state, `RCPT TO:<${mail.recipientEmail}>`, [250, 251]);
+    stage = 'data-command';
     await smtpCommand(writer, reader, state, 'DATA', 354);
 
-    const mime = buildSmtpMimeMessage(mail, fromEmail, fromName);
+    const mime = buildSmtpMimeMessage(mail, settings.fromEmail, settings.fromName);
     const smtpData = dotStuffSmtpData(mime.raw) + '\r\n.';
+    stage = 'data-body';
     await smtpCommand(writer, reader, state, smtpData, 250, { sensitive:true, timeoutMs:mail.attachments && mail.attachments.length ? 60000 : 20000 });
+    stage = 'quit';
     try { await smtpCommand(writer, reader, state, 'QUIT', 221, { timeoutMs:5000 }); } catch (_) {}
 
-    return { ok:true, status:200, provider:'smtp', messageId:mime.messageId };
+    return { ok:true, status:200, provider:'smtp', messageId:mime.messageId, transportPort:port };
   } catch (error) {
-    console.error('SMTP invitation failed', error && error.message ? error.message : String(error || 'unknown'), error && error.smtpResponse ? error.smtpResponse : '');
-    const code = error && error.smtpCode;
-    if (code === 535 || code === 534) {
-      return { ok:false, status:502, code:'SMTP_AUTH_FAILED', message:'Die Anmeldung am 1&1-Postfach ist fehlgeschlagen. Bitte Benutzername und Postfachkennwort prüfen.' };
-    }
-    if (code === 550 || code === 551 || code === 553) {
-      return { ok:false, status:502, code:'SMTP_RECIPIENT_REJECTED', message:'Der 1&1-Mailserver hat die Empfängeradresse abgelehnt.' };
-    }
-    return { ok:false, status:502, code:'SMTP_SEND_FAILED', message:'Die E-Mail konnte über das 1&1-Postfach nicht versendet werden.' };
+    try { error.smtpStage = stage; } catch (_) {}
+    throw error;
   } finally {
     try { if (writer) writer.releaseLock(); } catch (_) {}
     try { if (reader) reader.releaseLock(); } catch (_) {}
     try { if (socket) await socket.close(); } catch (_) {}
   }
+}
+
+function shouldTrySmtpStartTlsFallback(error, port) {
+  if (port !== 465 || error && error.smtpCode) return false;
+  return ['connect', 'greeting', 'ehlo'].includes(String(error && error.smtpStage || ''));
+}
+
+function smtpFailureResult(error) {
+  const code = String(error && error.smtpCode || '');
+  const stage = String(error && error.smtpStage || '');
+  const detail = String(error && error.message || '');
+  if (code === '535' || code === '534' || stage.startsWith('auth-')) {
+    return { ok:false, status:502, code:'SMTP_AUTH_FAILED', message:'Die Anmeldung am IONOS-Postfach ist fehlgeschlagen. Bitte Benutzername und Postfachkennwort prüfen.' };
+  }
+  if (['550', '551', '553'].includes(code) && stage === 'recipient') {
+    return { ok:false, status:502, code:'SMTP_RECIPIENT_REJECTED', message:'Der IONOS-Mailserver hat die Empfängeradresse abgelehnt.' };
+  }
+  if (['550', '551', '553'].includes(code) && stage === 'envelope-from') {
+    return { ok:false, status:502, code:'SMTP_SENDER_REJECTED', message:'Der IONOS-Mailserver hat die konfigurierte Absenderadresse abgelehnt.' };
+  }
+  if (code === '552') {
+    return { ok:false, status:502, code:'SMTP_MESSAGE_TOO_LARGE', message:'Der IONOS-Mailserver hat die E-Mail wegen ihrer Größe abgelehnt.' };
+  }
+  if (stage === 'data-body' && code) {
+    return { ok:false, status:502, code:'SMTP_MESSAGE_REJECTED', message:'Der IONOS-Mailserver hat den Inhalt der E-Mail abgelehnt.' };
+  }
+  if (code.startsWith('4')) {
+    return { ok:false, status:502, code:'SMTP_TEMPORARY_FAILURE', message:'Der IONOS-Mailserver ist vorübergehend nicht verfügbar. Die E-Mail kann später erneut versucht werden.' };
+  }
+  if (/Zeitüberschreitung|zu lange|nicht rechtzeitig/i.test(detail)) {
+    return { ok:false, status:502, code:'SMTP_TIMEOUT', message:'Der IONOS-Mailserver hat nicht rechtzeitig geantwortet.' };
+  }
+  if (['connect', 'greeting', 'ehlo', 'starttls', 'tls-upgrade', 'ehlo-secure'].includes(stage)) {
+    return { ok:false, status:502, code:'SMTP_CONNECTION_FAILED', message:'Die sichere Verbindung zum IONOS-Mailserver konnte nicht aufgebaut werden.' };
+  }
+  return { ok:false, status:502, code:'SMTP_SEND_FAILED', message:'Die E-Mail konnte über das IONOS-Postfach nicht versendet werden.' };
+}
+
+async function sendSmtpInvitation(env, payload) {
+  const settings = {
+    host:String((env && env.SMTP_HOST) || '').trim(),
+    port:Number((env && env.SMTP_PORT) || 465),
+    username:String((env && env.SMTP_USERNAME) || '').trim(),
+    password:String((env && env.SMTP_PASSWORD) || ''),
+    fromEmail:'',
+    fromName:cleanDisplayName((env && env.SMTP_FROM_NAME) || '') || 'Hammerschach-Gamer'
+  };
+  settings.fromEmail = normalizeEmail((env && env.SMTP_FROM_EMAIL) || settings.username);
+  if (!settings.host || !Number.isInteger(settings.port) || !settings.username || !settings.password || !settings.fromEmail) {
+    return { ok:false, status:503, code:'SMTP_NOT_CONFIGURED', message:'Der SMTP-Mailversand ist noch nicht vollständig konfiguriert.' };
+  }
+  if (![465, 587].includes(settings.port)) {
+    return { ok:false, status:503, code:'SMTP_PORT_UNSUPPORTED', message:'Der SMTP-Versand unterstützt Port 465 mit SSL/TLS und Port 587 mit STARTTLS.' };
+  }
+
+  const mail = preparedMailFromPayload(payload, env);
+  if (!mail.ok) return mail;
+
+  const ports = settings.port === 465 ? [465, 587] : [587];
+  let lastError = null;
+  for (const attemptPort of ports) {
+    try {
+      return await deliverSmtpMail(env, mail, settings, attemptPort);
+    } catch (error) {
+      lastError = error;
+      console.error(
+        'SMTP invitation failed',
+        `port=${attemptPort}`,
+        `stage=${String(error && error.smtpStage || 'unknown')}`,
+        error && error.message ? error.message : String(error || 'unknown'),
+        error && error.smtpResponse ? error.smtpResponse : ''
+      );
+      if (!shouldTrySmtpStartTlsFallback(error, attemptPort)) break;
+    }
+  }
+  return smtpFailureResult(lastError);
 }
 
 let mailDeliveryLogTableReady = false;
@@ -11512,6 +11618,8 @@ export class GlobalChat {
   constructor(state, env) {
     this.state = state;
     this.env = env;
+    this.lastPresenceBroadcastAt = 0;
+    this.presenceBroadcastPromise = null;
   }
 
   attachment(ws) {
@@ -11535,12 +11643,26 @@ export class GlobalChat {
     });
   }
 
-  presencePayload() {
+  async presencePayload() {
     const members = new Map();
+    try {
+      const gamerMembers = await listOnlinePresenceMembers(this.env);
+      for (const member of gamerMembers) {
+        if (!member.userId) continue;
+        members.set(member.userId, {
+          name:member.name,
+          senderKey:'',
+          isAdmin:member.isAdmin === true
+        });
+      }
+    } catch (_) {
+      /* Bei einem vorübergehenden D1-Fehler bleibt mindestens die aktuell
+         verbundene Lobby-Chat-Gemeinschaft sichtbar. */
+    }
     for (const ws of this.authenticatedSockets()) {
       const info = this.attachment(ws);
       const userId = String(info.userId || '');
-      if (!userId || members.has(userId)) continue;
+      if (!userId) continue;
       members.set(userId, {
         name:cleanDisplayName(info.username) || 'Mitglied',
         senderKey:String(info.senderKey || ''),
@@ -11554,9 +11676,17 @@ export class GlobalChat {
     return {type:'global_chat_presence', onlineCount:onlineMembers.length, onlineMembers, serverNow:Date.now()};
   }
 
-  broadcastPresence() {
-    const payload = this.presencePayload();
-    for (const ws of this.authenticatedSockets()) safeSend(ws, payload);
+  async broadcastPresence(force = false) {
+    const now = Date.now();
+    if (!force && now - this.lastPresenceBroadcastAt < 20000) return;
+    if (this.presenceBroadcastPromise) return this.presenceBroadcastPromise;
+    this.lastPresenceBroadcastAt = now;
+    this.presenceBroadcastPromise = (async () => {
+      const payload = await this.presencePayload();
+      for (const ws of this.authenticatedSockets()) safeSend(ws, payload);
+    })();
+    try { await this.presenceBroadcastPromise; }
+    finally { this.presenceBroadcastPromise = null; }
   }
 
   broadcastMessage(message) {
@@ -11581,6 +11711,7 @@ export class GlobalChat {
       return;
     }
     const senderKey = await globalChatSenderKey(session.user.id);
+    try { await setUserPresence(this.env, session.user.id, true); } catch (_) {}
     const info = this.attachment(ws);
     ws.serializeAttachment(Object.assign({}, info, {
       authenticated:true,
@@ -11600,7 +11731,7 @@ export class GlobalChat {
       isAdmin:isAdminUser(session.user, this.env),
       serverNow:Date.now()
     });
-    this.broadcastPresence();
+    await this.broadcastPresence(true);
   }
 
   async sendMessage(ws, data) {
@@ -11691,7 +11822,7 @@ export class GlobalChat {
         safeSend(ws, {type:'global_chat_error',code:'ACCOUNT_DELETED',message:'Der Account wurde gelöscht.'});
         try { ws.close(4003, 'Account gelöscht'); } catch (_) {}
       }
-      this.broadcastPresence();
+      await this.broadcastPresence(true);
       return json({ok:true,removedMessages:messages.length-filtered.length});
     }
 
@@ -11710,7 +11841,7 @@ export class GlobalChat {
           safeSend(ws, {type:'global_chat_moderation',chatBlocked:body && body.chatBlocked === true,serverNow:Date.now()});
         }
       }
-      this.broadcastPresence();
+      await this.broadcastPresence(true);
       return json({ok:true});
     }
     if (request.headers.get('Upgrade') !== 'websocket') return new Response('Expected WebSocket upgrade', {status:426});
@@ -11733,16 +11864,20 @@ export class GlobalChat {
     if (data.type === 'authenticate') return this.authenticate(ws, data.authToken);
     if (data.type === 'send_message') return this.sendMessage(ws, data);
     if (data.type === 'delete_message') return this.deleteMessage(ws, data);
-    if (data.type === 'ping') return safeSend(ws, {type:'pong',serverNow:Date.now()});
+    if (data.type === 'ping') {
+      safeSend(ws, {type:'pong',serverNow:Date.now()});
+      await this.broadcastPresence(false);
+      return;
+    }
     safeSend(ws, {type:'global_chat_error',code:'UNKNOWN_MESSAGE_TYPE',message:'Unbekannte Global-Chat-Anfrage.'});
   }
 
   async webSocketClose() {
-    this.broadcastPresence();
+    await this.broadcastPresence(true);
   }
 
   async webSocketError() {
-    this.broadcastPresence();
+    await this.broadcastPresence(true);
   }
 }
 
