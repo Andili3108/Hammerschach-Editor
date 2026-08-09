@@ -2036,3 +2036,77 @@
 
 /* Premium-Test: zusätzliche Brett- und Figurenauswahlen nur für den Administrator sichtbar. */
 .admin-premium-option[hidden]{display:none!important;}
+
+
+/* Mitglieder-Test: fehlertolerante Mobil-/Tablet-Navigation. Der bisherige Header
+   wird ausschließlich bei vollständig aktivierter Testklasse ausgeblendet. */
+.mobile-nav-test-group{display:grid;gap:6px;width:100%;margin-top:3px;padding-top:8px;border-top:1px solid rgba(132,63,70,.16);}
+.mobile-nav-test-group[hidden],.mobile-nav-test-header[hidden],.mobile-nav-test-backdrop[hidden],.mobile-nav-test-item[hidden]{display:none!important;}
+.mobile-nav-test-label{padding:0 5px;color:#777;font:900 10px Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;}
+.mobile-nav-test-switch{white-space:normal!important;color:#843f46!important;}
+.mobile-nav-test-switch[aria-pressed="true"]{border-color:rgba(168,111,22,.42)!important;background:linear-gradient(135deg,#fff8e8,#f2d99f)!important;color:#6d4510!important;}
+.mobile-nav-test-header{display:none;position:sticky;z-index:2500;top:max(6px,env(safe-area-inset-top));grid-template-columns:minmax(0,auto) minmax(0,1fr) 48px;align-items:center;gap:9px;min-height:64px;padding:6px 8px;border-radius:16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+html.mobile-nav-test-active .header{display:none!important;}
+html.mobile-nav-test-active .mobile-nav-test-header{display:grid;}
+.mobile-nav-test-brand{min-width:0;min-height:48px!important;display:flex;align-items:center;gap:7px;padding:0 4px!important;border:0!important;border-radius:12px!important;background:transparent!important;box-shadow:none!important;color:inherit!important;}
+.mobile-nav-test-brand:hover{transform:none!important;filter:none!important;box-shadow:none!important;}
+.mobile-nav-test-brand img{display:block;width:48px;height:48px;object-fit:contain;border-radius:10px;background:#fff;}
+.mobile-nav-test-brand>span{min-width:0;display:flex;flex-direction:column;text-align:left;}
+.mobile-nav-test-brand strong{overflow:hidden;color:#843f46;font-size:15px;text-overflow:ellipsis;white-space:nowrap;}
+.mobile-nav-test-brand small{margin-top:3px;color:#665d60;font:900 10px Arial,sans-serif;}
+.mobile-nav-test-status{min-width:0;overflow:hidden;padding:9px 10px;border:1px solid rgba(132,63,70,.16);border-radius:12px;background:linear-gradient(135deg,#fff,rgba(132,63,70,.07));font-size:14px;font-weight:900;text-align:center;text-overflow:ellipsis;white-space:nowrap;}
+.mobile-nav-test-open{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;display:grid!important;place-items:center;padding:0!important;border-radius:13px!important;background:linear-gradient(135deg,#843f46,#a96970)!important;border-color:rgba(91,35,41,.48)!important;color:#fff!important;font:900 24px/1 Arial,sans-serif!important;}
+.mobile-nav-test-backdrop{position:fixed;z-index:5000;inset:0;display:flex;justify-content:flex-end;background:rgba(20,15,17,.50);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.mobile-nav-test-drawer{width:min(390px,92vw);height:100vh;height:100dvh;display:flex;flex-direction:column;box-sizing:border-box;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) 10px;border-left:1px solid rgba(132,63,70,.17);background:linear-gradient(180deg,rgba(255,255,255,.99),#f3f1f2);box-shadow:-18px 0 44px rgba(0,0,0,.30);}
+.mobile-nav-test-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 2px 11px;border-bottom:1px solid rgba(132,63,70,.16);}
+.mobile-nav-test-drawer-brand{min-width:0;display:flex;align-items:center;gap:9px;}
+.mobile-nav-test-drawer-brand img{width:48px;height:48px;object-fit:contain;border-radius:11px;background:#fff;}
+.mobile-nav-test-drawer-brand span{min-width:0;display:flex;flex-direction:column;}
+.mobile-nav-test-drawer-brand strong{overflow:hidden;color:#843f46;font-size:19px;text-overflow:ellipsis;white-space:nowrap;}
+.mobile-nav-test-drawer-brand small{margin-top:3px;color:#665d60;font:900 11px Arial,sans-serif;}
+.mobile-nav-test-close{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:13px!important;font-size:25px!important;}
+.mobile-nav-test-list{min-height:0;overflow:auto;padding:10px 2px;overscroll-behavior:contain;}
+.mobile-nav-test-list section{display:grid;gap:6px;margin-bottom:14px;}
+.mobile-nav-test-list h2{margin:0;padding:0 5px;color:#6c6265;font:900 10px Arial,sans-serif;letter-spacing:.09em;text-transform:uppercase;}
+.mobile-nav-test-item{width:100%!important;min-height:46px!important;display:grid!important;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 11px!important;border-radius:12px!important;text-align:left!important;}
+.mobile-nav-test-item>span{text-align:center;}
+.mobile-nav-test-item>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mobile-nav-test-item>b{display:grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:#2b9a4b;color:#fff;font:900 10px Arial,sans-serif;}
+.mobile-nav-test-item.primary{background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;}
+.mobile-nav-test-device-toggle[aria-pressed="true"]{border-color:rgba(168,111,22,.42)!important;background:linear-gradient(135deg,#fff8e8,#f2d99f)!important;color:#6d4510!important;}
+.mobile-nav-test-disable{margin-top:3px;border-color:rgba(132,63,70,.27)!important;color:#843f46!important;}
+html.mobile-nav-test-drawer-open,body.mobile-nav-test-drawer-open{overflow:hidden!important;}
+html.dark-mode .mobile-nav-test-group{border-color:rgba(255,255,255,.11);}
+html.dark-mode .mobile-nav-test-label{color:#aeb3ba;}
+html.dark-mode .mobile-nav-test-header{background:rgba(27,30,35,.97);border-color:rgba(255,255,255,.11);}
+html.dark-mode .mobile-nav-test-brand strong,html.dark-mode .mobile-nav-test-drawer-brand strong{color:#e5a5ad;}
+html.dark-mode .mobile-nav-test-brand small,html.dark-mode .mobile-nav-test-drawer-brand small{color:#b9bec6;}
+html.dark-mode .mobile-nav-test-status{border-color:rgba(255,255,255,.10);background:linear-gradient(135deg,#252930,#30272a);color:#f3f4f6;}
+html.dark-mode .mobile-nav-test-drawer{border-color:rgba(255,255,255,.10);background:linear-gradient(180deg,#202329,#292d33);}
+html.dark-mode .mobile-nav-test-drawer-head{border-color:rgba(255,255,255,.10);}
+html.dark-mode .mobile-nav-test-list h2{color:#adb2ba;}
+html.dark-mode .mobile-nav-test-device-toggle[aria-pressed="true"]{border-color:rgba(216,164,65,.45)!important;background:linear-gradient(135deg,#4a3820,#5b4320)!important;color:#ffe0a0!important;}
+html.dark-mode .mobile-nav-test-disable{color:#efb5bc!important;}
+
+@media (max-width:980px){
+  html.mobile-nav-test-active.hammerschach-room-view{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 150px));}
+}
+@media (min-width:981px) and (max-width:1180px){
+  html.mobile-nav-test-active.hammerschach-room-view{--board-size:min(var(--board-max),calc(100vw - var(--right-col) - var(--gap)),calc(100dvh - 150px));}
+}
+@media (max-width:520px){
+  .mobile-nav-test-header{grid-template-columns:minmax(0,auto) minmax(0,1fr) 46px;gap:7px;min-height:60px;padding:6px;}
+  .mobile-nav-test-brand img{width:44px;height:44px;}
+  .mobile-nav-test-brand strong{font-size:14px;}
+  .mobile-nav-test-status{padding-inline:7px;font-size:12px;}
+  .mobile-nav-test-open{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:950px){
+  html.mobile-nav-test-active .app{padding-top:5px;}
+  html.mobile-nav-test-active .shell{gap:7px;}
+  .mobile-nav-test-header{position:relative;min-height:54px;}
+  .mobile-nav-test-brand{min-height:42px!important;}
+  .mobile-nav-test-brand img{width:42px;height:42px;}
+  .mobile-nav-test-open{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;}
+  html.mobile-nav-test-active.hammerschach-room-view{--board-size:min(var(--board-max),calc(100vw - 24px),calc(100dvh - 142px));}
+}
