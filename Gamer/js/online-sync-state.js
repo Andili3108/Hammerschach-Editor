@@ -322,7 +322,7 @@ function commitRemoteMove(found, promotion){
   mv.san = moveToSan(before, mv, info);
   masterHistory.push(mv);
   invalidateHistoryStateCache();
-  cacheAdvancedHistoryState(info,beforeState.positionCounts);
+  cacheAdvancedHistoryState(info,beforeState.positionCounts,beforeState.captures,before.turn,applied.taken);
   /* Wer gerade eine ältere Stellung betrachtet, bleibt dort. Nur in der
      Live-Ansicht folgt das Brett automatisch dem neu eingegangenen Zug. */
   viewIndex = wasAtLatestPosition ? masterHistory.length : Math.min(viewIndex, masterHistory.length);

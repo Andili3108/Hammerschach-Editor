@@ -40,6 +40,7 @@ function buildHistoryState(n){
   if(cached && cached.revision === masterHistoryRevision) return cached;
   const g = new Game();
   const counts = new Map();
+  const captures = {w:[],b:[]};
   const addCurrent = () => {
     const key = g.repetitionKey();
     counts.set(key, (counts.get(key) || 0) + 1);
@@ -50,14 +51,17 @@ function buildHistoryState(n){
     const legal = g.legalMoves();
     const found = findMatchingLegalMove(legal, h);
     const mv = found ? {from:found.from, to:found.to, meta:found.meta || {}, promotion:h.promotion || null} : {from:h.from, to:h.to, meta:h.meta || {}, promotion:h.promotion || null};
-    g.makeMove(mv, true);
+    const movedSide = g.turn;
+    const applied = g.makeMove(mv, true);
+    if(applied.taken && applied.taken !== '.') captures[movedSide].push(applied.taken);
     addCurrent();
   }
   const state = {
     revision:masterHistoryRevision,
     game:g,
     positionCounts:counts,
-    repetitionCount:counts.get(g.repetitionKey()) || 1
+    repetitionCount:counts.get(g.repetitionKey()) || 1,
+    captures
   };
   historyStateCache.set(safeN,state);
   return state;
@@ -67,6 +71,9 @@ function buildGameFromHistory(n){
 }
 function repetitionCountForHistory(n){
   return buildHistoryState(n).repetitionCount;
+}
+function capturedPiecesForHistory(n){
+  return clonedCapturedPieces(buildHistoryState(n).captures);
 }
 function gameOverForHistory(n, gameState){
   const g = gameState || buildGameFromHistory(n);

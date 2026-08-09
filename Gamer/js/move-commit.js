@@ -46,7 +46,7 @@ function commitHumanMove(found, promotion){
   mv.san = moveToSan(before, mv, info);
   masterHistory.push(mv);
   invalidateHistoryStateCache();
-  cacheAdvancedHistoryState(info,beforeState.positionCounts);
+  cacheAdvancedHistoryState(info,beforeState.positionCounts,beforeState.captures,before.turn,applied.taken);
   viewIndex = masterHistory.length;
   lastMove = {from:mv.from, to:mv.to, meta:mv.meta || {}};
   selected = null;

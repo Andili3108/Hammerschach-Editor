@@ -29,6 +29,87 @@ boardEl.addEventListener('click', event => {
   const y = Number(target.dataset.y);
   if(Number.isInteger(x) && Number.isInteger(y)) onSquareClick(x,y);
 });
+const MATERIAL_PIECE_VALUES = {p:1,n:3,b:3,r:5,q:9};
+const MATERIAL_DISPLAY_ORDER = {p:0,b:1,n:2,r:3,q:4};
+function materialScores(gameState){
+  const scores = {w:0,b:0};
+  for(const row of gameState.board){
+    for(const piece of row){
+      const value = MATERIAL_PIECE_VALUES[String(piece).toLowerCase()] || 0;
+      const color = pieceColor(piece);
+      if(value && color) scores[color] += value;
+    }
+  }
+  return scores;
+}
+function sortedCapturedPieces(pieces){
+  return (pieces || [])
+    .filter(piece => Object.prototype.hasOwnProperty.call(MATERIAL_PIECE_VALUES,String(piece).toLowerCase()))
+    .slice()
+    .sort((left,right) => MATERIAL_DISPLAY_ORDER[String(left).toLowerCase()] - MATERIAL_DISPLAY_ORDER[String(right).toLowerCase()]);
+}
+function capturedPieceSummary(pieces){
+  const names = {
+    p:['Bauer','Bauern'],
+    n:['Springer','Springer'],
+    b:['Läufer','Läufer'],
+    r:['Turm','Türme'],
+    q:['Dame','Damen']
+  };
+  const counts = {};
+  pieces.forEach(piece => {
+    const type = String(piece).toLowerCase();
+    counts[type] = (counts[type] || 0) + 1;
+  });
+  return Object.keys(MATERIAL_DISPLAY_ORDER)
+    .sort((left,right) => MATERIAL_DISPLAY_ORDER[left] - MATERIAL_DISPLAY_ORDER[right])
+    .filter(type => counts[type])
+    .map(type => counts[type] + ' ' + names[type][counts[type] === 1 ? 0 : 1])
+    .join(', ');
+}
+function renderPlayerMaterial(container,pieces,advantage){
+  if(!container) return;
+  const sortedPieces = sortedCapturedPieces(pieces);
+  const visible = sortedPieces.length > 0 || advantage > 0;
+  container.replaceChildren();
+  container.hidden = !visible;
+  if(!visible){
+    container.removeAttribute('aria-label');
+    container.removeAttribute('title');
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  sortedPieces.forEach(piece => {
+    const img = document.createElement('img');
+    img.className = 'player-material-piece';
+    img.src = pieceImg[piece];
+    img.alt = '';
+    img.setAttribute('aria-hidden','true');
+    img.draggable = false;
+    fragment.appendChild(img);
+  });
+  if(advantage > 0){
+    const score = document.createElement('span');
+    score.className = 'player-material-advantage';
+    score.textContent = '+' + advantage;
+    fragment.appendChild(score);
+  }
+  container.appendChild(fragment);
+  const summary = sortedPieces.length ? 'Geschlagen: ' + capturedPieceSummary(sortedPieces) + '.' : 'Keine geschlagenen Figuren.';
+  const accessibleText = summary + (advantage > 0 ? ' Materialvorteil +' + advantage + '.' : '');
+  container.setAttribute('aria-label',accessibleText);
+  container.title = accessibleText;
+}
+function renderCapturedMaterial(gameState,historyIndex){
+  const captures = capturedPiecesForHistory(historyIndex);
+  if(pendingDailyMove && historyIndex === masterHistory.length){
+    const capturedPiece = pendingDailyMove.move && pendingDailyMove.move.taken;
+    if(capturedPiece && capturedPiece !== '.' && captures[pendingDailyMove.movedSide]) captures[pendingDailyMove.movedSide].push(capturedPiece);
+  }
+  const scores = materialScores(gameState);
+  renderPlayerMaterial(whiteCapturedMaterialEl,captures.w,Math.max(0,scores.w - scores.b));
+  renderPlayerMaterial(blackCapturedMaterialEl,captures.b,Math.max(0,scores.b - scores.w));
+}
 function renderBoard(){
   syncBoardPlayerStrips();
   if(boardRenderFrame !== null){
@@ -78,6 +159,7 @@ function renderBoard(){
       if(rank) rank.textContent = 8 - y;
     }
   }
+  renderCapturedMaterial(displayGame,viewIndex);
   markLastMove();
   markPendingDailyMove();
   markQueuedPremove();
@@ -317,4 +399,3 @@ function handleChosenHumanMove(found, promotion){
 }
 if(dailyMoveCancelBtn) dailyMoveCancelBtn.addEventListener('click', cancelPendingDailyMove);
 if(dailyMoveConfirmBtn) dailyMoveConfirmBtn.addEventListener('click', confirmPendingDailyMove);
-
