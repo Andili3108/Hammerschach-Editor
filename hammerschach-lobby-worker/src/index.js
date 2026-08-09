@@ -12304,19 +12304,6 @@ export class GameRoom {
     if (!invitedUserId || invitedUserId !== userId) {
       return { ok:false, status:403, code:'INVITATION_RECIPIENT_REQUIRED', message:'Nur das eingeladene Mitglied kann diese Einladung beantworten.' };
     }
-    if (invitationStatus === 'accepted') {
-      const acceptedGame = (await this.state.storage.get('game')) || {started:false, ended:false, result:'*'};
-      return {
-        ok:true,
-        status:200,
-        accepted:true,
-        alreadyAccepted:true,
-        roomId:cleanRoomId((await this.state.storage.get('roomId')) || roomHint),
-        started:!!acceptedGame.started,
-        startPending:!acceptedGame.started,
-        message:'Einladung angenommen. Der Spielraum wird geöffnet.'
-      };
-    }
     if (invitationStatus !== 'pending') {
       return { ok:false, status:409, code:'INVITATION_NOT_PENDING', message:'Diese Einladung wurde bereits beantwortet oder ist nicht mehr offen.' };
     }
@@ -12337,18 +12324,78 @@ export class GameRoom {
       return { ok:true, status:200, accepted:false, declined:true, message:'Die Einladung wurde abgelehnt.' };
     }
 
+    const players = await this.getSecurePlayers();
+    let creatorRole = (await this.state.storage.get('createdByRole')) || '';
+    if (creatorRole !== 'w' && creatorRole !== 'b') {
+      if (players.white && !players.black) creatorRole = 'w';
+      else if (players.black && !players.white) creatorRole = 'b';
+    }
+    if (creatorRole !== 'w' && creatorRole !== 'b') {
+      return { ok:false, status:409, code:'INVITATION_CREATOR_MISSING', message:'Der Einladende konnte nicht mehr eindeutig zugeordnet werden.' };
+    }
+    const targetRole = opposite(creatorRole);
+    const targetSlot = targetRole === 'b' ? players.black : players.white;
+    if (targetSlot) {
+      return { ok:false, status:409, code:'INVITATION_SEAT_TAKEN', message:'Der gegnerische Spielerplatz ist bereits belegt.' };
+    }
+
+    const account = await this.env.DB.prepare(
+      `SELECT id, username, disabled, deleted_at FROM users WHERE id = ? LIMIT 1`
+    ).bind(userId).first();
+    if (!account || account.disabled || account.deleted_at) {
+      return { ok:false, status:409, code:'INVITATION_ACCOUNT_UNAVAILABLE', message:'Der eingeladene Account ist nicht mehr verfügbar.' };
+    }
+
+    const roleName = targetRole === 'b' ? 'black' : 'white';
+    const playerId = 'invite_' + userId.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 48) + '_' + targetRole;
+    const now = Date.now();
+    players[roleName] = {
+      playerId,
+      userId,
+      seatTokenHash:await sha256Hex(randomBase64Url(32)),
+      assignedAt:now,
+      updatedAt:now
+    };
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const username = cleanDisplayName(account.username) || cleanDisplayName((await this.state.storage.get('invitedName')) || '') || (targetRole === 'w' ? 'Weiß' : 'Schwarz');
+    profiles[playerId] = {
+      playerId,
+      displayName:username,
+      name:username,
+      guest:false,
+      userId,
+      username,
+      role:targetRole,
+      updatedAt:now
+    };
     await this.state.storage.put({
+      players,
+      playerProfiles:profiles,
       invitationStatus:'accepted',
       invitationRespondedAt:respondedAt
     });
+    await this.syncAccountRoomIndex(players);
+
+    let started = false;
+    let startWarning = '';
+    try {
+      const startResult = await this.autoStartDailyGameIfReady(targetRole);
+      started = !!(startResult && (startResult.started || startResult.reason === 'already_started'));
+      if (!started) startWarning = String(startResult && startResult.reason || 'start_pending');
+    } catch (error) {
+      startWarning = error && error.message ? String(error.message).slice(0, 180) : 'start_retry_required';
+      console.error('Daily invitation auto-start deferred', startWarning);
+    }
+    await this.syncGameIndexes();
     return {
       ok:true,
       status:200,
       accepted:true,
       roomId:cleanRoomId((await this.state.storage.get('roomId')) || ''),
-      started:false,
-      startPending:true,
-      message:'Einladung angenommen. Der Spielraum wird geöffnet.'
+      started,
+      startPending:!started,
+      message:started ? 'Einladung angenommen. Die Daily-Partie wurde gestartet.' : 'Einladung angenommen. Die Daily-Partie wird beim Öffnen fertig gestartet.',
+      warning:startWarning
     };
   }
 
@@ -12836,10 +12883,7 @@ export class GameRoom {
         body && body.action,
         url.searchParams.get('room') || ''
       );
-      if (result.ok) {
-        try { await this.broadcastRoomState('invitation_state'); }
-        catch (error) { console.error('Daily invitation broadcast deferred', error && error.message ? error.message : String(error || 'unknown')); }
-      }
+      if (result.ok) await this.broadcastRoomState('invitation_state');
       return json(result, { status:result.status || (result.ok ? 200 : 400) });
     }
 
@@ -13135,18 +13179,6 @@ export class GameRoom {
         code:'INVITATION_DECLINED',
         message:'Diese Daily-Einladung wurde abgelehnt. Der Einladende kann eine neue Einladung versenden.'
       };
-    }
-    if (invitedUserId && invitationStatus === 'accepted') {
-      const authenticatedUserId = String(authUser && authUser.id || '');
-      if (authenticatedUserId !== invitedUserId) {
-        return {
-          role:'spectator',
-          seatToken:'',
-          denied:true,
-          code:'INVITATION_TARGETED',
-          message:'Dieser Spielerplatz ist für das eingeladene Mitglied reserviert.'
-        };
-      }
     }
 
     const assign = async role => {
