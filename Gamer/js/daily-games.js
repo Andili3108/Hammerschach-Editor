@@ -153,10 +153,12 @@ async function respondDailyInvitation(game, action, button){
   }
   if(!accepted && !window.confirm('Diese Daily-Einladung wirklich ablehnen?')) return;
   const card = button && button.closest ? button.closest('.daily-game-card') : null;
+  const cardStatus = card ? card.querySelector('.daily-game-status') : null;
   const buttons = card ? Array.from(card.querySelectorAll('button,a')) : [];
   buttons.forEach(control => { control.dataset.invitationWasDisabled = control.disabled ? 'yes' : 'no'; control.disabled = true; });
   const oldText = button ? button.textContent : '';
   if(button) button.textContent = accepted ? 'Wird angenommen…' : 'Wird abgelehnt…';
+  if(cardStatus) cardStatus.textContent = accepted ? 'Einladung wird angenommen…' : 'Einladung wird abgelehnt…';
   if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = accepted ? 'Einladung wird angenommen…' : 'Einladung wird abgelehnt…';
   try{
     const data = await authApi('/api/daily-games/' + encodeURIComponent(roomId) + '/invitation', {
@@ -174,7 +176,9 @@ async function respondDailyInvitation(game, action, button){
     if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = data.message || 'Einladung wurde abgelehnt.';
     await loadDailyGames();
   } catch(err){
-    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Die Einladung konnte nicht beantwortet werden.';
+    const message = err && err.message ? err.message : 'Die Einladung konnte nicht beantwortet werden.';
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = message;
+    if(cardStatus) cardStatus.textContent = message;
     buttons.forEach(control => { control.disabled = control.dataset.invitationWasDisabled === 'yes'; delete control.dataset.invitationWasDisabled; });
     if(button) button.textContent = oldText || (accepted ? 'Annehmen' : 'Ablehnen');
   }
