@@ -35,6 +35,7 @@ function connectOnlineRoom(roomId, opts){
   onlineRematchState = null;
   rematchActionBusy = false;
   rematchAutoOpenWhenReady = false;
+  rematchLastError = '';
   onlinePendingGameSetupMessageId = null;
   onlineCanSetTimeControl = false;
   onlineCreatedByMe = false;
@@ -160,6 +161,7 @@ function connectOnlineRoom(roomId, opts){
       if(String(msg.code || '').indexOf('REMATCH_') === 0){
         rematchActionBusy = false;
         rematchAutoOpenWhenReady = false;
+        rematchLastError = msg.message || 'Die Revanche konnte nicht verarbeitet werden.';
         updateRematchUi();
       }
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
@@ -258,6 +260,7 @@ function connectOnlineRoom(roomId, opts){
     if(Object.prototype.hasOwnProperty.call(msg, 'rematch')){
       onlineRematchState = normalizeRematchState(msg.rematch);
       rematchActionBusy = false;
+      rematchLastError = '';
       shouldAutoOpenRematch = !!(rematchAutoOpenWhenReady && onlineRematchState && onlineRematchState.status === 'ready' && onlineRematchState.roomId);
       handled = true;
     }
@@ -377,6 +380,13 @@ function connectOnlineRoom(roomId, opts){
       if(statusEl) statusEl.textContent = msg.message || 'Zum Erstellen einer Partie ist ein Mitglieder-Account erforderlich.';
       setTimeout(() => openAuthDialog('login'), 120);
     }
+    if(msg.type === 'hello' && msg.seatCode === 'INVITATION_ACCEPTANCE_REQUIRED'){
+      if(statusEl) statusEl.textContent = msg.message || 'Bitte beantworte die Daily-Einladung unter „Meine Partien“.';
+      setTimeout(() => {
+        if(onlineAuthToken && onlineAuthUser) openDailyGamesDialog(false);
+        else openAuthDialog('login');
+      }, 120);
+    }
   });
   onlineSocket.addEventListener('close', event => {
     onlineConnected = false;
@@ -415,4 +425,3 @@ function connectOnlineRoom(roomId, opts){
     renderBoard();
   });
 }
-

@@ -97,6 +97,7 @@ let onlineHeadToHead = null;
 let onlineRematchState = null;
 let rematchActionBusy = false;
 let rematchAutoOpenWhenReady = false;
+let rematchLastError = '';
 const onlineMoveTimings = new Map();
 const onlinePerformanceState = {
   roundTripMs:null,
@@ -425,6 +426,9 @@ function saveAuthState(token, user){
   updateOnlineUi();
   if(onlineAuthToken && onlineAuthUser){
     loadDailyGames({silent:true}).catch(() => {});
+    setTimeout(() => {
+      try{ maybeOpenDailyInvitationFromAddress(); } catch(_){ }
+    }, 80);
     loadLobbyTicker().catch(() => {});
     loadInfoCenter().catch(() => {});
     loadTournaments().then(() => {

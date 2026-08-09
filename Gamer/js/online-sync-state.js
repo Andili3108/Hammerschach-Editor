@@ -589,6 +589,7 @@ function updateRematchUi(){
     rematchBtn.textContent = rematchActionBusy ? 'Revanche wird angefragt…' : '🔁 Revanche anbieten';
     if(rematchHintEl) rematchHintEl.textContent = 'Gleiche Einstellungen, vertauschte Farben.';
   }
+  if(rematchLastError && rematchHintEl) rematchHintEl.textContent = '⚠️ ' + rematchLastError;
 }
 function openReadyRematchRoom(){
   const roomId = cleanRoomId(onlineRematchState && onlineRematchState.roomId || '');
@@ -610,6 +611,7 @@ function handleRematchButtonClick(){
     return;
   }
   if(state.status === 'incoming'){
+    rematchLastError = '';
     rematchActionBusy = true;
     rematchAutoOpenWhenReady = true;
     updateRematchUi();
@@ -621,6 +623,7 @@ function handleRematchButtonClick(){
     return;
   }
   if(state.status !== 'available') return;
+  rematchLastError = '';
   rematchActionBusy = true;
   updateRematchUi();
   if(!sendOnlineMessage({type:'request_rematch'})){
@@ -631,6 +634,7 @@ function handleRematchButtonClick(){
 function handleRematchDeclineClick(){
   const state = onlineRematchState;
   if(!state || state.status !== 'incoming' || rematchActionBusy) return;
+  rematchLastError = '';
   rematchActionBusy = true;
   rematchAutoOpenWhenReady = false;
   updateRematchUi();

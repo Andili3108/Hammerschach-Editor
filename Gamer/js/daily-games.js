@@ -1,5 +1,31 @@
 'use strict';
 
+let dailyInvitationAddressHandled = false;
+function dailyInvitationRoomFromAddress(){
+  try{ return cleanRoomId(new URL(window.location.href).searchParams.get('dailyInvite')); }
+  catch(_){ return ''; }
+}
+function removeDailyInvitationAddress(roomId){
+  try{
+    const url = new URL(window.location.href);
+    const addressedRoom = cleanRoomId(url.searchParams.get('dailyInvite'));
+    if(!addressedRoom || (roomId && addressedRoom !== cleanRoomId(roomId))) return;
+    url.searchParams.delete('dailyInvite');
+    history.replaceState(null, '', url.toString());
+  } catch(_){ }
+}
+function maybeOpenDailyInvitationFromAddress(){
+  const roomId = dailyInvitationRoomFromAddress();
+  if(!roomId || dailyInvitationAddressHandled) return false;
+  if(!onlineAuthToken || !onlineAuthUser){
+    openAuthDialog('login');
+    return false;
+  }
+  dailyInvitationAddressHandled = true;
+  openDailyGamesDialog(false);
+  return true;
+}
+
 function formatDailyGameDeadline(value){
   if(!value) return '';
   const date = new Date(value);
@@ -52,6 +78,7 @@ function dailyGameRoomUrl(game){
     url.searchParams.delete('role');
     url.searchParams.delete('player');
     url.searchParams.delete('tournament');
+    url.searchParams.delete('dailyInvite');
     return url.toString();
   } catch(_){
     return '';
@@ -117,10 +144,47 @@ async function removeDailyGameFromHistory(game, button){
     if(button){ button.disabled = false; button.textContent = oldText || 'Aus Verlauf entfernen'; }
   }
 }
+async function respondDailyInvitation(game, action, button){
+  const roomId = cleanRoomId(game && game.roomId);
+  const accepted = action === 'accept';
+  if(!roomId || (action !== 'accept' && action !== 'decline')){
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Die Einladung ist ungültig.';
+    return;
+  }
+  if(!accepted && !window.confirm('Diese Daily-Einladung wirklich ablehnen?')) return;
+  const card = button && button.closest ? button.closest('.daily-game-card') : null;
+  const buttons = card ? Array.from(card.querySelectorAll('button,a')) : [];
+  buttons.forEach(control => { control.dataset.invitationWasDisabled = control.disabled ? 'yes' : 'no'; control.disabled = true; });
+  const oldText = button ? button.textContent : '';
+  if(button) button.textContent = accepted ? 'Wird angenommen…' : 'Wird abgelehnt…';
+  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = accepted ? 'Einladung wird angenommen…' : 'Einladung wird abgelehnt…';
+  try{
+    const data = await authApi('/api/daily-games/' + encodeURIComponent(roomId) + '/invitation', {
+      method:'POST',
+      body:JSON.stringify({action})
+    });
+    if(accepted){
+      if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = data.message || 'Einladung angenommen. Die Daily-Partie wird geöffnet…';
+      const targetUrl = dailyGameRoomUrl({roomId:data.roomId || roomId});
+      if(!targetUrl) throw new Error('Der neue Spielraum konnte nicht geöffnet werden.');
+      window.location.assign(targetUrl);
+      return;
+    }
+    removeDailyInvitationAddress(roomId);
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = data.message || 'Einladung wurde abgelehnt.';
+    await loadDailyGames();
+  } catch(err){
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Die Einladung konnte nicht beantwortet werden.';
+    buttons.forEach(control => { control.disabled = control.dataset.invitationWasDisabled === 'yes'; delete control.dataset.invitationWasDisabled; });
+    if(button) button.textContent = oldText || (accepted ? 'Annehmen' : 'Ablehnen');
+  }
+}
 function createDailyGameCard(game){
   const card = document.createElement('div');
   const isActiveMyTurn = !!(game.isMyTurn && !game.ended);
-  card.className = 'daily-game-card' + (isActiveMyTurn ? ' my-turn' : '') + (game.ended ? ' completed' : '') + (game.isTournamentGame ? ' tournament-game' : '');
+  const addressedInvitation = !!(game.incomingInvitation && cleanRoomId(game.roomId) === dailyInvitationRoomFromAddress());
+  card.className = 'daily-game-card' + (isActiveMyTurn ? ' my-turn' : '') + (game.ended ? ' completed' : '') + (game.isTournamentGame ? ' tournament-game' : '') + (game.incomingInvitation ? ' incoming-invitation' : '') + (addressedInvitation ? ' addressed-invitation' : '');
+  if(game.incomingInvitation) card.dataset.invitationRoomId = cleanRoomId(game.roomId);
   if(isActiveMyTurn) card.setAttribute('aria-label', 'Du bist am Zug');
   const content = document.createElement('div');
   const title = document.createElement('div');
@@ -128,7 +192,9 @@ function createDailyGameCard(game){
   const titleText = document.createElement('span');
   titleText.className = 'daily-game-title-text';
   const pendingOpponentName = cleanDisplayName(game.invitedOpponentName || game.opponentName || '');
-  titleText.textContent = game.pendingInvitation
+  titleText.textContent = game.incomingInvitation
+    ? 'Einladung von ' + (cleanDisplayName(game.opponentName) || 'einem Mitglied')
+    : game.pendingInvitation
     ? (pendingOpponentName && pendingOpponentName !== 'noch offen' ? 'Einladung an ' + pendingOpponentName : 'Offene Daily-Einladung')
     : 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
   title.appendChild(titleText);
@@ -139,7 +205,11 @@ function createDailyGameCard(game){
     const outcome = dailyOutcomeForUser(game);
     status.textContent = outcome.label + ' · ' + dailyResultLabel(game.result);
     if(outcome.className) status.classList.add(outcome.className);
-  } else if(game.pendingInvitation) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
+  } else if(game.incomingInvitation) status.textContent = 'Bitte annehmen oder ablehnen';
+  else if(game.invitationDeclined) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
+    ? pendingOpponentName + ' hat die Einladung abgelehnt'
+    : 'Die Einladung wurde abgelehnt';
+  else if(game.pendingInvitation) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
     ? pendingOpponentName + ' hat die Einladung noch nicht angenommen'
     : 'Wartet auf Annahme durch den Gegner';
   else if(!game.started) status.textContent = 'Annahme wird verarbeitet';
@@ -168,19 +238,34 @@ function createDailyGameCard(game){
 
   const actions = document.createElement('div');
   actions.className = 'daily-game-actions';
-  const openLink = document.createElement('a');
   const roomUrl = dailyGameRoomUrl(game);
-  openLink.className = 'daily-game-open-btn';
-  openLink.href = roomUrl || '#';
-  openLink.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : 'Partie öffnen');
-  openLink.title = 'Partie im aktuellen Tab öffnen';
-  if(!roomUrl){
-    openLink.addEventListener('click', event => {
-      event.preventDefault();
-      if(statusEl) statusEl.textContent = 'Partielink konnte nicht geöffnet werden.';
-    });
+  if(game.incomingInvitation){
+    const acceptBtn = document.createElement('button');
+    acceptBtn.type = 'button';
+    acceptBtn.className = 'daily-invitation-accept-btn';
+    acceptBtn.textContent = '✓ Annehmen';
+    acceptBtn.addEventListener('click', () => respondDailyInvitation(game, 'accept', acceptBtn));
+    const declineBtn = document.createElement('button');
+    declineBtn.type = 'button';
+    declineBtn.className = 'daily-invitation-decline-btn';
+    declineBtn.textContent = 'Ablehnen';
+    declineBtn.addEventListener('click', () => respondDailyInvitation(game, 'decline', declineBtn));
+    actions.appendChild(acceptBtn);
+    actions.appendChild(declineBtn);
+  } else {
+    const openLink = document.createElement('a');
+    openLink.className = 'daily-game-open-btn';
+    openLink.href = roomUrl || '#';
+    openLink.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : 'Partie öffnen');
+    openLink.title = 'Partie im aktuellen Tab öffnen';
+    if(!roomUrl){
+      openLink.addEventListener('click', event => {
+        event.preventDefault();
+        if(statusEl) statusEl.textContent = 'Partielink konnte nicht geöffnet werden.';
+      });
+    }
+    actions.appendChild(openLink);
   }
-  actions.appendChild(openLink);
 
   if(game.ended){
     const pgnBtn = document.createElement('button');
@@ -384,10 +469,15 @@ async function loadDailyGames(options){
     const games = data.games || [];
     dailyGamesCache = games;
     const myTurnCount = games.filter(game => !game.ended && !!game.started && !!game.isMyTurn).length;
+    const incomingInvitationCount = games.filter(game => !!game.incomingInvitation).length;
+    const attentionCount = myTurnCount + incomingInvitationCount;
     if(dailyGamesTurnCount){
-      dailyGamesTurnCount.hidden = myTurnCount < 1;
-      dailyGamesTurnCount.textContent = String(myTurnCount);
-      dailyGamesTurnCount.setAttribute('aria-label', myTurnCount === 1 ? '1 Daily-Partie: Du bist am Zug' : myTurnCount + ' Daily-Partien: Du bist am Zug');
+      dailyGamesTurnCount.hidden = attentionCount < 1;
+      dailyGamesTurnCount.textContent = String(attentionCount);
+      const labels = [];
+      if(myTurnCount) labels.push(myTurnCount === 1 ? '1 Daily-Partie: Du bist am Zug' : myTurnCount + ' Daily-Partien: Du bist am Zug');
+      if(incomingInvitationCount) labels.push(incomingInvitationCount === 1 ? '1 offene Einladung' : incomingInvitationCount + ' offene Einladungen');
+      dailyGamesTurnCount.setAttribute('aria-label', labels.join(' · '));
     }
     const runningTournamentCount = games.filter(game => game.isTournamentGame && !game.ended).length;
     if(tournamentGamesCount){
@@ -398,7 +488,13 @@ async function loadDailyGames(options){
     const visibleGames = dailyGamesTournamentOnly ? games.filter(game => game.isTournamentGame) : games;
     const activeCount = visibleGames.filter(game => !game.ended).length;
     const completedCount = visibleGames.filter(game => !!game.ended).length;
-    if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = activeCount + ' laufend/offen · ' + completedCount + ' beendet.';
+    const addressedRoom = dailyInvitationRoomFromAddress();
+    const addressedInvitationFound = !!(addressedRoom && games.some(game => game.incomingInvitation && cleanRoomId(game.roomId) === addressedRoom));
+    if(!silent && dailyGamesStatusEl){
+      dailyGamesStatusEl.textContent = addressedRoom && !addressedInvitationFound
+        ? 'Für diesen Account liegt unter dem Mail-Link keine offene Einladung mehr vor.'
+        : activeCount + ' laufend/offen · ' + completedCount + ' beendet.';
+    }
   } catch(err){
     if(dailyGamesTurnCount){ dailyGamesTurnCount.hidden = true; dailyGamesTurnCount.textContent = '0'; }
     if(!silent){
@@ -439,4 +535,3 @@ if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDail
 if(dailyGamesCloseBtn) dailyGamesCloseBtn.addEventListener('click', closeDailyGamesDialog);
 if(dailyGamesBackdrop) dailyGamesBackdrop.addEventListener('click', ev => { if(ev.target === dailyGamesBackdrop) closeDailyGamesDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && dailyGamesBackdrop && !dailyGamesBackdrop.hidden) closeDailyGamesDialog(); });
-

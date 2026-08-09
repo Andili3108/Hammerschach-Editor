@@ -164,6 +164,7 @@ function updateOnlineUi(){
     onlineRematchState = null;
     rematchActionBusy = false;
     rematchAutoOpenWhenReady = false;
+    rematchLastError = '';
     updateRoomRatingUi();
     updateHeadToHeadUi();
     updateRematchUi();
@@ -203,6 +204,7 @@ function updateOnlineUi(){
     onlineRematchState = null;
     rematchActionBusy = false;
     rematchAutoOpenWhenReady = false;
+    rematchLastError = '';
     updateRoomRatingUi();
     updateHeadToHeadUi();
     updateRematchUi();

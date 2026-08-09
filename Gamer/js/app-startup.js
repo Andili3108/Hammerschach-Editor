@@ -17,6 +17,7 @@ let freshGameRequested = false;
 let initialVerifyEmailToken = '';
 let initialResetPasswordToken = '';
 let initialFirstStepsRequested = false;
+let initialDailyInvitationRoomId = '';
 try{
   const initialUrl = new URL(window.location.href);
   initialVerifyEmailToken = String(initialUrl.searchParams.get('verifyEmail') || '').trim();
@@ -28,6 +29,7 @@ try{
   }
   initialRoomId = cleanRoomId(initialUrl.searchParams.get('room'));
   initialPublicWatchId = cleanPublicWatchId(initialUrl.searchParams.get('watch'));
+  initialDailyInvitationRoomId = cleanRoomId(initialUrl.searchParams.get('dailyInvite'));
   initialSpectatorOnly = !!initialPublicWatchId;
   freshGameRequested = initialUrl.searchParams.get('fresh') === '1';
   initialFirstStepsRequested = String(initialUrl.searchParams.get('info') || '').trim().toLowerCase() === 'erste-schritte';
@@ -39,7 +41,7 @@ try{
     history.replaceState(null, '', initialUrl.toString());
   }
 } catch(_){}
-if(!initialRoomId && !initialPublicWatchId && !freshGameRequested){
+if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !freshGameRequested){
   initialRoomId = getRememberedRoomForReload();
   initialSpectatorOnly = false;
   initialPublicWatchId = '';
@@ -47,7 +49,12 @@ if(!initialRoomId && !initialPublicWatchId && !freshGameRequested){
 initialAuthRefreshPromise.finally(() => {
   if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
   else if(initialResetPasswordToken) openAuthRecoveryDialog('password-reset', initialResetPasswordToken);
-  if(initialPublicWatchId){
+  if(initialDailyInvitationRoomId){
+    onlineSpectatorOnly = false;
+    onlinePublicWatchId = '';
+    updateOnlineUi();
+    setTimeout(maybeOpenDailyInvitationFromAddress, 80);
+  } else if(initialPublicWatchId){
     onlineSpectatorOnly = true;
     onlinePublicWatchId = initialPublicWatchId;
     onlinePreferredRoleForNextConnect = '';
