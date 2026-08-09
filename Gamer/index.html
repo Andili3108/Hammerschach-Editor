@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260808-3" />
+<link rel="stylesheet" href="css/gamer.css?v=20260809-1" />
 </head>
 <body>
 <div class="app" role="main">
@@ -80,6 +80,11 @@
                 <button id="firstStepsOpenBtn" class="header-menu-item" type="button" role="menuitem">🚀 Erste Schritte</button>
                 <button id="infoGuideOpenBtn" class="header-menu-item" type="button" role="menuitem">📖 Handbuch</button>
                 <button id="leitbildOpenBtn" class="header-menu-item" type="button" role="menuitem">🤝 Unser Leitbild</button>
+                <div id="mobileNavTestGroup" class="mobile-nav-test-group" hidden>
+                  <div class="mobile-nav-test-label">Testfunktionen</div>
+                  <button id="mobileNavPhoneToggle" class="header-menu-item mobile-nav-test-switch" type="button" role="menuitem" aria-pressed="false">📱 Smartphone</button>
+                  <button id="mobileNavTabletToggle" class="header-menu-item mobile-nav-test-switch" type="button" role="menuitem" aria-pressed="false">▣ Tablet</button>
+                </div>
               </div>
             </div>
           </div>
@@ -123,6 +128,53 @@
         </div>
       </div>
     </header>
+
+    <header id="mobileNavTestHeader" class="box mobile-nav-test-header" hidden>
+      <button id="mobileNavTestBrand" class="mobile-nav-test-brand" type="button" aria-label="Zur Lobby">
+        <img src="Gamer-Logo.png" alt="" />
+        <span><strong>Hammerschach</strong><small id="mobileNavTestContext">Gamer</small></span>
+      </button>
+      <div id="mobileNavTestStatus" class="mobile-nav-test-status" aria-live="polite">Hammerschach-Gamer</div>
+      <button id="mobileNavTestOpen" class="mobile-nav-test-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileNavTestBackdrop" aria-label="Hammerschach-Menü öffnen">☰</button>
+    </header>
+
+    <div id="mobileNavTestBackdrop" class="mobile-nav-test-backdrop" hidden>
+      <aside id="mobileNavTestDrawer" class="mobile-nav-test-drawer" role="dialog" aria-modal="true" aria-label="Hammerschach-Menü">
+        <div class="mobile-nav-test-drawer-head">
+          <div class="mobile-nav-test-drawer-brand"><img src="Gamer-Logo.png" alt="" /><span><strong>Hammerschach</strong><small>Gamer-Menü · Test</small></span></div>
+          <button id="mobileNavTestClose" class="mobile-nav-test-close" type="button" aria-label="Menü schließen">×</button>
+        </div>
+        <nav class="mobile-nav-test-list" aria-label="Mobile Gamer-Navigation">
+          <section>
+            <h2>Spielen</h2>
+            <button id="mobileNavTestPrimary" class="mobile-nav-test-item primary" type="button"><span>♟️</span><strong>Neue Partie</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="openOffersOpenBtn"><span>🔎</span><strong>Angebote</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="dailyGamesOpenBtn"><span>📋</span><strong>Meine Partien</strong><b id="mobileNavTestTurnCount" hidden>0</b></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="publicGamesOpenBtn"><span>👁️</span><strong>Laufende Partien</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="gameArchiveOpenBtn"><span>📚</span><strong>Archiv</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="tournamentsOpenBtn"><span>🏆</span><strong>Turniere</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="membersOpenBtn"><span>👥</span><strong>Mitglieder</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="profileOpenBtn"><span>👤</span><strong>Mein Profil</strong></button>
+          </section>
+          <section>
+            <h2>Werkzeuge</h2>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="analyzerToolBtn"><span>🧠</span><strong>Analyzer</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerToolBtn"><span>🎯</span><strong>Trainer</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="openingsToolBtn"><span>📘</span><strong>Eröffnungen</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="tvToolBtn"><span>📺</span><strong>Hammerschach TV</strong></button>
+          </section>
+          <section>
+            <h2>Information</h2>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="firstStepsOpenBtn"><span>🚀</span><strong>Erste Schritte</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="infoGuideOpenBtn"><span>📖</span><strong>Handbuch</strong></button>
+            <button id="mobileNavTestTheme" class="mobile-nav-test-item" type="button"><span>🌙</span><strong>Dunkle Darstellung</strong></button>
+            <button id="mobileNavPhoneDrawerToggle" class="mobile-nav-test-item mobile-nav-test-device-toggle" type="button" aria-pressed="false"><span>📱</span><strong>Smartphone</strong></button>
+            <button id="mobileNavTabletDrawerToggle" class="mobile-nav-test-item mobile-nav-test-device-toggle" type="button" aria-pressed="false"><span>▣</span><strong>Tablet</strong></button>
+            <button id="mobileNavTestDisable" class="mobile-nav-test-item mobile-nav-test-disable" type="button"><span>↩️</span><strong>Altes Menü verwenden</strong></button>
+          </section>
+        </nav>
+      </aside>
+    </div>
 
     <section id="analyzerToolView" class="analyzer-tool-view" hidden aria-label="Hammerschach-Analyzer">
       <iframe id="analyzerToolFrame" class="analyzer-tool-frame" title="Hammerschach-Analyzer" data-src="./Analyzer/" loading="lazy"></iframe>
@@ -1955,5 +2007,6 @@
 <script src="js/sound-system.js?v=20260804-1"></script>
 <script src="js/time-controls.js?v=20260804-1"></script>
 <script src="js/app-startup.js?v=20260804-2"></script>
+<script src="js/mobile-navigation.js?v=20260809-1"></script>
 </body>
 </html>
