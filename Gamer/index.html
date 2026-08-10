@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260810-3" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260810-4" />
 </head>
 <body>
 <div class="app" role="main">
@@ -520,6 +520,7 @@
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
             <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz; die neuesten stehen oben. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
+            <li><strong>Fairer Abschluss:</strong> Nach Partieende können sich zwei registrierte Gegner mit „Danke für die Partie“, „Stark gespielt“ oder „Spannende Partie“ eine private Reaktion senden. Pro Spieler und Partie ist genau eine Reaktion aktiv; sie kann geändert oder entfernt werden. Die Auswahl ist außerdem bei beendeten Partien unter „Meine Partien“ und im eigenen Partienarchiv erreichbar.</li>
           </ul>
 
           <h4>13. Mitglieder-Chat</h4>
@@ -673,7 +674,7 @@
           <p>Bestätigungslinks für neue Accounts und Mailadressänderungen sind 24 Stunden gültig; Links zum Zurücksetzen des Kennworts 30 Minuten. Abgelaufene beziehungsweise verwendete Aktionstoken werden regelmäßig bereinigt.</p>
 
           <h4>4. Partien, Taktiktraining und Ratings</h4>
-          <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen, die jeweilige Zugfrist sowie freiwillige persönliche Einladungs- und Antworttexte gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt und die Einladung nachvollziehbar beantwortet werden kann.</p>
+          <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen, die jeweilige Zugfrist sowie freiwillige persönliche Einladungs- und Antworttexte gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt und die Einladung nachvollziehbar beantwortet werden kann. Nach Partieende können registrierte Gegner außerdem eine von drei vorgegebenen Reaktionen speichern. Dabei werden Raumkennung, Account-Zuordnung, Reaktionsart und Zeitpunkte verarbeitet; sichtbar ist die Reaktion nur für die beiden beteiligten Mitglieder.</p>
           <p>Für die administrative Fairplay-Prüfung werden bei beendeten Partien außerdem die serverseitigen Zugannahme-Zeitpunkte, daraus ermittelte Bedenkzeiten und – bei neu gespielten Partien – die Uhrstände unmittelbar vor und nach einem Zug archiviert. Zugriff auf diese Rohdaten hat ausschließlich der Administrator. Die Stockfish-Auswertung läuft lokal im Browser des Administrators; ihre Ergebnisse werden nicht an einen externen Analysedienst übertragen. Die computergestützte Auswertung dient nur als Prüfhinweis und trifft keine automatische Feststellung über ein mögliches Schummeln.</p>
           <p>Gewertete Partien zwischen registrierten Mitgliedern verändern die getrennten Ratings. Dazu werden Ratingwerte, Unsicherheitswerte, Partiezahlen und Ergebnisse gespeichert. Besucherzähler und die Zahl gespielter Partien werden nur als allgemeine Summen geführt und nicht einem persönlichen Nutzerprofil zugeordnet.</p>
           <p>Beim Taktiktraining werden nur im ausdrücklich ausgewählten Modus <strong>„Mit Rating“</strong> die Account-Zuordnung, Aufgabenkennung, Aufgabenrating, Erfolg oder Fehlversuch, Ratingänderung und Zeitpunkt gespeichert. Wiederholungen, Aufgaben nach Lösungsanzeige und der Modus <strong>„Ohne Rating“</strong> erzeugen keinen gewerteten Taktikversuch.</p>
@@ -714,7 +715,7 @@
           <p>Die erforderliche Verarbeitung für Account, Partie, Rating und angeforderte Benachrichtigungen dient der Bereitstellung des vom Nutzer gewünschten Online-Schachdienstes. Sicherheitsmaßnahmen und die Abwehr von Missbrauch dienen dem berechtigten Interesse an einem sicheren und zuverlässigen Betrieb. Freiwillige Neuigkeiten werden nur nach aktiver Auswahl versendet und können jederzeit deaktiviert werden.</p>
 
           <h4>11. Accountlöschung und weitere Löschung</h4>
-          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben einschließlich des in R2 gespeicherten Profilbilds, Sitzungen, Anwesenheitsstatus, Lieblingsmitglieder-Markierungen, persönliche Partie- und Taktik-Ratings, gespeicherte Taktikversuche, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen; Anmeldungen für noch nicht gestartete Turniere werden aufgegeben und Wartelisten entsprechend nachgezogen.</p>
+          <p>Ein normaler Account kann in der Accountverwaltung gelöscht werden, sofern keine laufende Live- oder Daily-Partie besteht. Dabei werden insbesondere Account-Stammdaten, freiwillige Profilangaben einschließlich des in R2 gespeicherten Profilbilds, Sitzungen, Anwesenheitsstatus, Lieblingsmitglieder-Markierungen, gesendete Partie-Reaktionen, persönliche Partie- und Taktik-Ratings, gespeicherte Taktikversuche, E-Mail-Einstellungen, Aktionstoken und direkt zugeordnete Mailprotokolle gelöscht. Offene, noch nicht angenommene Daily-Einladungen werden zurückgezogen; Anmeldungen für noch nicht gestartete Turniere werden aufgegeben und Wartelisten entsprechend nachgezogen.</p>
           <p>Bereits beendete Partien und Zuglisten bleiben als gemeinsame Partiedokumentation erhalten. Die Verbindung zum gelöschten Account wird dabei entfernt: Der Spielername und gespeicherte Partie-Chat-Absender werden als „Gelöschter Benutzer“ angezeigt, Account- und Sitzplatzkennungen werden ersetzt oder entfernt, und öffentliche Zuschauerfreigaben werden beendet. Eigene Nachrichten im Mitglieder-Chat werden bei der Accountlöschung vollständig entfernt. Bereits erfolgte Ratingänderungen anderer Spieler werden nicht rückwirkend neu berechnet.</p>
 
           <h4>12. Deine Rechte und Kontakt</h4>
@@ -1239,7 +1240,7 @@
     <div id="dailyGamesBackdrop" class="identity-backdrop" hidden>
       <div class="daily-games-modal" role="dialog" aria-modal="true" aria-labelledby="dailyGamesTitle">
         <h3 id="dailyGamesTitle">Meine Daily-Partien</h3>
-        <p class="daily-games-intro">Laufende Partien, offene Einladungen und dein Verlauf beendeter Daily-Partien. Bei laufenden Partien siehst du außerdem, ob der Gegner aktuell im Hammerschach-Gamer aktiv ist.</p>
+        <p class="daily-games-intro">Laufende Partien, offene Einladungen und dein Verlauf beendeter Daily-Partien. Bei laufenden Partien siehst du außerdem, ob der Gegner aktuell im Hammerschach-Gamer aktiv ist. Nach Partieende kannst du deinem Gegner eine private Reaktion senden.</p>
         <div id="dailyGamesList" class="daily-games-list" aria-live="polite"><div class="daily-games-empty">Noch keine Partien geladen.</div></div>
         <div id="dailyGamesStatus" class="daily-games-status" aria-live="polite"></div>
         <div class="daily-games-actions">
@@ -1848,6 +1849,19 @@
             <button id="startOnlineBtn" class="live-start-btn" type="button" disabled>Partie starten</button>
             <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
           </div>
+          <div id="gameReactionBar" class="game-reaction-bar" hidden aria-live="polite">
+            <div class="game-reaction-bar-head">
+              <strong>Fairer Abschluss</strong>
+              <span id="gameReactionReceived" class="game-reaction-received" hidden></span>
+            </div>
+            <div class="game-reaction-choices" aria-label="Reaktion an den Gegner senden">
+              <button class="game-reaction-choice" type="button" data-game-reaction="thanks" aria-pressed="false">🤝 Danke für die Partie</button>
+              <button class="game-reaction-choice" type="button" data-game-reaction="well_played" aria-pressed="false">👏 Stark gespielt</button>
+              <button class="game-reaction-choice" type="button" data-game-reaction="exciting" aria-pressed="false">🔥 Spannende Partie</button>
+            </div>
+            <div id="gameReactionHint" class="game-reaction-hint"></div>
+            <button id="gameReactionClearBtn" class="game-reaction-clear" type="button" hidden>Reaktion entfernen</button>
+          </div>
           <div id="rematchBar" class="rematch-bar" hidden aria-live="polite">
             <button id="rematchBtn" class="rematch-btn" type="button">🔁 Revanche anbieten</button>
             <button id="rematchDeclineBtn" class="button-flat rematch-decline-btn" type="button" hidden>Ablehnen</button>
@@ -2023,6 +2037,7 @@
 <script src="js/admin-member-delete.js?v=20260804-1"></script>
 <script src="js/admin-messaging.js?v=20260804-1"></script>
 <script src="js/online-session.js?v=20260809-9"></script>
+<script src="js/game-reactions.js?v=20260810-1"></script>
 <script src="js/lobby-ticker.js?v=20260804-1"></script>
 <script src="js/info-center.js?v=20260804-1"></script>
 <script src="js/admin-info-center.js?v=20260804-1"></script>
@@ -2036,18 +2051,18 @@
 <script src="js/tournament-detail.js?v=20260804-1"></script>
 <script src="js/tournament-management.js?v=20260804-1"></script>
 <script src="js/tournament-actions.js?v=20260804-1"></script>
-  <script src="js/daily-games.js?v=20260809-6"></script>
+  <script src="js/daily-games.js?v=20260810-1"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
 <script src="js/public-games.js?v=20260804-1"></script>
-<script src="js/game-archive.js?v=20260804-1"></script>
+<script src="js/game-archive.js?v=20260810-1"></script>
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
-<script src="js/online-ui-state.js?v=20260810-1"></script>
+<script src="js/online-ui-state.js?v=20260810-2"></script>
 <script src="js/member-directory.js?v=20260810-4"></script>
 <script src="js/game-invitations.js?v=20260810-3"></script>
 <script src="js/online-sync-state.js?v=20260809-8"></script>
-<script src="js/online-connection.js?v=20260809-4"></script>
+<script src="js/online-connection.js?v=20260810-1"></script>
 <script src="js/online-game-setup-sync.js?v=20260804-1"></script>
 <script src="js/online-game-lifecycle.js?v=20260804-1"></script>
 <script src="js/online-room-creation.js?v=20260804-1"></script>
