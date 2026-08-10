@@ -2249,13 +2249,16 @@ html.dark-mode .mobile-nav-test-disable{color:#efb5bc!important;}
 .game-opening-bar,.recognized-opening-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(99,67,31,.22);border-radius:14px;background:linear-gradient(135deg,rgba(255,250,225,.96),rgba(244,236,205,.94));padding:12px 14px;color:#3e3023}
 .game-opening-bar[hidden]{display:none!important}
 .game-opening-copy,.recognized-opening-text{display:flex;flex-direction:column;gap:2px;min-width:0}
-.game-opening-copy strong,.recognized-opening-text strong{font-size:1rem;line-height:1.25;overflow-wrap:anywhere}
+.game-opening-copy strong,.recognized-opening-text strong{font-size:1rem;line-height:1.25;overflow-wrap:break-word;word-break:normal}
 .game-opening-eco,.recognized-opening-label{font-size:.76rem;font-weight:800;letter-spacing:.035em;text-transform:uppercase;color:#7d2a37}
 .game-opening-school-btn,.recognized-opening-school-btn{flex:0 0 auto;border:1px solid rgba(125,42,55,.28);border-radius:999px;background:#fff;color:#7d2a37;font:inherit;font-size:.84rem;font-weight:800;padding:8px 12px;cursor:pointer}
 .game-opening-school-btn:hover,.recognized-opening-school-btn:hover{background:#7d2a37;color:#fff}
-.recognized-opening-panel{margin-top:10px;padding:10px 12px;background:rgba(248,242,216,.72)}
+.daily-game-card>div:first-child,.game-archive-card>div:first-child{min-width:0}
+.recognized-opening-panel{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;justify-content:initial;margin-top:10px;padding:10px 12px;background:rgba(248,242,216,.72)}
+.recognized-opening-text{width:100%}
+.recognized-opening-school-btn{width:fit-content;max-width:100%;white-space:normal;text-align:center}
 html.dark-mode .game-opening-bar,html.dark-mode .recognized-opening-panel{border-color:rgba(222,188,126,.3);background:linear-gradient(135deg,rgba(66,54,39,.96),rgba(47,42,35,.96));color:#f4ead7}
 html.dark-mode .game-opening-eco,html.dark-mode .recognized-opening-label{color:#e7bd78}
 html.dark-mode .game-opening-school-btn,html.dark-mode .recognized-opening-school-btn{border-color:rgba(231,189,120,.42);background:#302b25;color:#f3d7a5}
 html.dark-mode .game-opening-school-btn:hover,html.dark-mode .recognized-opening-school-btn:hover{background:#e7bd78;color:#2d241b}
-@media(max-width:680px){.game-opening-bar,.recognized-opening-panel{align-items:stretch;flex-direction:column}.game-opening-school-btn,.recognized-opening-school-btn{width:100%}}
+@media(max-width:680px){.game-opening-bar{align-items:stretch;flex-direction:column}.game-opening-school-btn,.recognized-opening-school-btn{width:100%}}
