@@ -1,4 +1,4 @@
-// BUILD: GAMER-MEMBER-ACTIVITY-20260810-1
+// BUILD: GAMER-MEMBER-FAVORITES-20260810-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -698,6 +698,58 @@ function normalizeMemberSort(value) {
   return String(value || '').trim().toLowerCase() === 'name' ? 'name' : 'activity';
 }
 
+let memberFavoritesTableReady = false;
+
+async function ensureMemberFavoritesTable(env) {
+  if (!env || !env.DB) return false;
+  if (memberFavoritesTableReady) return true;
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS member_favorites (
+         owner_user_id TEXT NOT NULL,
+         favorite_user_id TEXT NOT NULL,
+         created_at TEXT NOT NULL,
+         PRIMARY KEY (owner_user_id, favorite_user_id)
+       )`
+    ),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_member_favorites_target ON member_favorites (favorite_user_id)`)
+  ]);
+  memberFavoritesTableReady = true;
+  return true;
+}
+
+function normalizeMemberFavoritesOnly(value) {
+  return value === true || ['1', 'true', 'yes'].includes(String(value || '').trim().toLowerCase());
+}
+
+async function setMemberFavorite(env, ownerUserId, targetUserId, favorite) {
+  const ownerId = cleanPublicProfileUserId(ownerUserId);
+  const targetId = cleanPublicProfileUserId(targetUserId);
+  if (!ownerId || !targetId) {
+    return {ok:false, status:400, code:'INVALID_USER_ID', message:'Das Lieblingsmitglied konnte nicht eindeutig zugeordnet werden.'};
+  }
+  if (ownerId === targetId) {
+    return {ok:false, status:400, code:'CANNOT_FAVORITE_SELF', message:'Das eigene Profil muss nicht als Lieblingsmitglied markiert werden.'};
+  }
+  if (!(await ensureMemberFavoritesTable(env))) {
+    return {ok:false, status:503, code:'DB_NOT_CONFIGURED', message:'Die Lieblingsmitglieder sind momentan nicht verfügbar.'};
+  }
+  const target = await env.DB.prepare(`SELECT id, username FROM users WHERE id = ? LIMIT 1`).bind(targetId).first();
+  if (!target) return {ok:false, status:404, code:'USER_NOT_FOUND', message:'Das Mitglied wurde nicht gefunden.'};
+  if (favorite) {
+    await env.DB.prepare(
+      `INSERT INTO member_favorites (owner_user_id, favorite_user_id, created_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(owner_user_id, favorite_user_id) DO UPDATE SET created_at = excluded.created_at`
+    ).bind(ownerId, targetId, new Date().toISOString()).run();
+  } else {
+    await env.DB.prepare(
+      `DELETE FROM member_favorites WHERE owner_user_id = ? AND favorite_user_id = ?`
+    ).bind(ownerId, targetId).run();
+  }
+  return {ok:true, member:{id:String(target.id || targetId), username:target.username || ''}, favorite:!!favorite};
+}
+
 function memberActivityFilterSql(filter, publicProfileAlias = 'public_profile', presenceAlias = 'presence') {
   const visible = `COALESCE(${publicProfileAlias}.show_activity_status, 1) = 1`;
   const online = `COALESCE(${presenceAlias}.is_online, 1) = 1`;
@@ -721,6 +773,7 @@ async function searchMembers(env, sessionUser, query, options = {}) {
   if (!env || !env.DB || !sessionUser || cleaned.length < 2) return [];
   await ensureUserPresenceTable(env);
   await ensureUserPublicProfilesTable(env);
+  await ensureMemberFavoritesTable(env);
 
   const escaped = escapeSqlLike(cleaned);
   const contains = '%' + escaped + '%';
@@ -728,10 +781,11 @@ async function searchMembers(env, sessionUser, query, options = {}) {
   const onlineSince = presenceOnlineSinceIso();
   const activityFilter = normalizeMemberActivityFilter(options.activity);
   const memberSort = normalizeMemberSort(options.sort);
+  const favoritesOnly = normalizeMemberFavoritesOnly(options.favoritesOnly);
   const activityWhere = memberActivityFilterSql(activityFilter);
   const orderSql = memberSort === 'name'
-    ? `CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`
-    : `is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`;
+    ? `is_favorite DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`
+    : `is_favorite DESC, is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`;
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
@@ -740,16 +794,20 @@ async function searchMembers(env, sessionUser, query, options = {}) {
             COALESCE(public_profile.show_activity_status, 1) AS activity_visible,
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
             CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
-            public_profile.avatar_updated_at
+            public_profile.avatar_updated_at,
+            CASE WHEN member_favorite.favorite_user_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
+       LEFT JOIN member_favorites member_favorite
+         ON member_favorite.owner_user_id = ? AND member_favorite.favorite_user_id = users.id
       WHERE users.id <> ?
         AND (users.username_lc LIKE ? ESCAPE '\\' OR users.email_lc LIKE ? ESCAPE '\\')
+        ${favoritesOnly ? 'AND member_favorite.favorite_user_id IS NOT NULL' : ''}
         ${activityWhere.sql}
       ORDER BY ${orderSql}
       LIMIT 8`
-  ).bind(onlineSince, sessionUser.id, contains, contains, ...(activityWhere.since ? [activityWhere.since] : []), cleaned, prefix).all();
+  ).bind(onlineSince, sessionUser.id, sessionUser.id, contains, contains, ...(activityWhere.since ? [activityWhere.since] : []), cleaned, prefix).all();
 
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
@@ -757,7 +815,8 @@ async function searchMembers(env, sessionUser, query, options = {}) {
     createdAt: row.created_at || null,
     ...publicMemberActivityFields(row),
     hasAvatar: Number(row.has_avatar || 0) === 1,
-    avatarUpdatedAt: row.avatar_updated_at || null
+    avatarUpdatedAt: row.avatar_updated_at || null,
+    favorite:Number(row.is_favorite || 0) === 1
   }));
 }
 
@@ -767,14 +826,16 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
   if (!env || !env.DB || !sessionUser) return [];
   await ensureUserPresenceTable(env);
   await ensureUserPublicProfilesTable(env);
+  await ensureMemberFavoritesTable(env);
   const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
   const onlineSince = presenceOnlineSinceIso();
   const activityFilter = normalizeMemberActivityFilter(options.activity);
   const memberSort = normalizeMemberSort(options.sort);
+  const favoritesOnly = normalizeMemberFavoritesOnly(options.favoritesOnly);
   const activityWhere = memberActivityFilterSql(activityFilter);
   const orderSql = memberSort === 'name'
-    ? 'users.username_lc ASC'
-    : 'is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, users.username_lc ASC';
+    ? 'is_favorite DESC, users.username_lc ASC'
+    : 'is_favorite DESC, is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, users.username_lc ASC';
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
@@ -783,15 +844,19 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
             COALESCE(public_profile.show_activity_status, 1) AS activity_visible,
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
             CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
-            public_profile.avatar_updated_at
+            public_profile.avatar_updated_at,
+            CASE WHEN member_favorite.favorite_user_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
+       LEFT JOIN member_favorites member_favorite
+         ON member_favorite.owner_user_id = ? AND member_favorite.favorite_user_id = users.id
       WHERE users.id <> ?
+        ${favoritesOnly ? 'AND member_favorite.favorite_user_id IS NOT NULL' : ''}
         ${activityWhere.sql}
       ORDER BY ${orderSql}
       LIMIT ?`
-  ).bind(onlineSince, sessionUser.id, ...(activityWhere.since ? [activityWhere.since] : []), safeLimit).all();
+  ).bind(onlineSince, sessionUser.id, sessionUser.id, ...(activityWhere.since ? [activityWhere.since] : []), safeLimit).all();
 
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
@@ -799,7 +864,8 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
     createdAt: row.created_at || null,
     ...publicMemberActivityFields(row),
     hasAvatar: Number(row.has_avatar || 0) === 1,
-    avatarUpdatedAt: row.avatar_updated_at || null
+    avatarUpdatedAt: row.avatar_updated_at || null,
+    favorite:Number(row.is_favorite || 0) === 1
   }));
 }
 
@@ -6537,6 +6603,11 @@ async function deleteUserAccount(env, target, options = {}) {
 
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(target.id).run();
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try {
+    if (await ensureMemberFavoritesTable(env)) {
+      await env.DB.prepare(`DELETE FROM member_favorites WHERE owner_user_id = ? OR favorite_user_id = ?`).bind(target.id, target.id).run();
+    }
+  } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM trainer_attempts WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
@@ -7065,7 +7136,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','completed_games','game_archive_favorites','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles',
+    'users','sessions','daily_games','public_games','completed_games','game_archive_favorites','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles','member_favorites',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients','lobby_ticker_items',
@@ -10259,6 +10330,25 @@ async function handleAuthApi(request, env, url) {
     return json({ ok:true, member });
   }
 
+  const memberFavoriteMatch = url.pathname.match(/^\/api\/members\/([^/]+)\/favorite$/);
+  if (memberFavoriteMatch && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Lieblingsmitglieder sind nur nach Login verfügbar.'}, {status:401});
+    const targetId = cleanPublicProfileUserId(decodeURIComponent(memberFavoriteMatch[1]));
+    const body = await readJsonBody(request);
+    if (!targetId || !body || typeof body.favorite !== 'boolean') {
+      return json({ok:false, code:'BAD_REQUEST', message:'Die Favoritenmarkierung konnte nicht gelesen werden.'}, {status:400});
+    }
+    try {
+      const result = await setMemberFavorite(env, session.user.id, targetId, body.favorite);
+      if (!result.ok) return json(result, {status:result.status || 400});
+      return json(result);
+    } catch (error) {
+      console.error('Member favorite update failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'MEMBER_FAVORITE_FAILED', message:'Das Lieblingsmitglied konnte nicht gespeichert werden.'}, {status:500});
+    }
+  }
+
   if (url.pathname === '/api/members/search' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Mitgliedersuche ist nur nach Login verfügbar.' }, { status: 401 });
@@ -10266,8 +10356,9 @@ async function handleAuthApi(request, env, url) {
     const query = cleanMemberSearchQuery(url.searchParams.get('q') || url.searchParams.get('query') || '');
     const activity = normalizeMemberActivityFilter(url.searchParams.get('activity'));
     const sort = normalizeMemberSort(url.searchParams.get('sort'));
-    const users = await searchMembers(env, session.user, query, {activity, sort});
-    return json({ ok: true, query, users, activity, sort, serverNow:Date.now(), isAdmin: isAdminUser(session.user, env) });
+    const favoritesOnly = normalizeMemberFavoritesOnly(url.searchParams.get('favorites'));
+    const users = await searchMembers(env, session.user, query, {activity, sort, favoritesOnly});
+    return json({ ok:true, query, users, activity, sort, favoritesOnly, serverNow:Date.now(), isAdmin:isAdminUser(session.user, env) });
   }
 
   if (url.pathname === '/api/members/list' && request.method === 'GET') {
@@ -10277,8 +10368,9 @@ async function handleAuthApi(request, env, url) {
     const limit = url.searchParams.get('limit') || 50;
     const activity = normalizeMemberActivityFilter(url.searchParams.get('activity'));
     const sort = normalizeMemberSort(url.searchParams.get('sort'));
-    const users = await listMembers(env, session.user, limit, {activity, sort});
-    return json({ ok: true, users, activity, sort, serverNow:Date.now(), isAdmin: isAdminUser(session.user, env) });
+    const favoritesOnly = normalizeMemberFavoritesOnly(url.searchParams.get('favorites'));
+    const users = await listMembers(env, session.user, limit, {activity, sort, favoritesOnly});
+    return json({ ok:true, users, activity, sort, favoritesOnly, serverNow:Date.now(), isAdmin:isAdminUser(session.user, env) });
   }
 
   if (url.pathname === '/api/lobby-ticker' && request.method === 'GET') {
@@ -15635,8 +15727,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   },
