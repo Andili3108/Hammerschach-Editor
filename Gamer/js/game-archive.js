@@ -80,6 +80,7 @@ function createArchiveGameCard(game){
   if(game.publicGame){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='🌍 öffentlich';badges.appendChild(badge);}
   if(game.favorite){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='⭐ dauerhaft';badges.appendChild(badge);}
   if(badges.childNodes.length)content.appendChild(badges);
+  const openingPanel=createRecognizedOpeningPanel({...game,ended:true});if(openingPanel)content.appendChild(openingPanel);
   if(gameArchiveScope==='mine'&&game.isParticipant){
     const opponentName=game.participantRole==='w'?game.blackName:game.whiteName;
     const reactionPanel=createGameReactionPanel(game,{opponentName,statusElement:gameArchiveStatusEl,onChange:renderGameArchive});

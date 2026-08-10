@@ -176,6 +176,7 @@ function updateOnlineUi(){
     updateRoomRatingUi();
     updateHeadToHeadUi();
     updateRematchUi();
+    updateOnlineGameOpeningUi();
     updateOnlineGameReactionUi();
     setOnlineValueClass(onlineStatusEl, 'neutral');
     setOnlineValueClass(onlineRoleEl, 'neutral');
@@ -217,6 +218,7 @@ function updateOnlineUi(){
     updateRoomRatingUi();
     updateHeadToHeadUi();
     updateRematchUi();
+    updateOnlineGameOpeningUi();
     updateOnlineGameReactionUi();
     setOnlineValueClass(onlineStatusEl, 'wait');
     setOnlineValueClass(onlineRoleEl, 'neutral');
@@ -282,6 +284,7 @@ function updateOnlineUi(){
   updateRoomRatingUi();
   updateHeadToHeadUi();
   updateRematchUi();
+  updateOnlineGameOpeningUi();
   updateOnlineGameReactionUi();
 
   let syncNote;

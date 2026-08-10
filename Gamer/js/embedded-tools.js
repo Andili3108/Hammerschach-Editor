@@ -15,8 +15,10 @@ let openingsToolLastOpenAt = 0;
 let fairplayToolLastOpenAt = 0;
 let tvToolLastOpenAt = 0;
 let analyzerToolReady = false;
+let openingsToolReady = false;
 let pendingAnalyzerOpeningPgn = '';
 let pendingAnalyzerArchivePgn = '';
+let pendingOpeningSchoolSelection = null;
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -174,6 +176,24 @@ function setOpeningsToolActive(active){setEmbeddedToolActive(active?'openings':'
 function setFairplayToolActive(active){setEmbeddedToolActive(active?'fairplay':'');}
 function setTvToolActive(active){setEmbeddedToolActive(active?'tv':'');}
 function closeEmbeddedTools(){setEmbeddedToolActive('');}
+function openOpeningInSchool(opening){
+  if(!opening || typeof opening !== 'object' || !String(opening.id || '').trim()) return;
+  const selection={
+    id:String(opening.id || '').slice(0,160),
+    eco:String(opening.eco || '').slice(0,8),
+    name:String(opening.name || '').slice(0,160)
+  };
+  if(!embeddedToolsAvailable()){
+    const params=new URLSearchParams({opening:selection.id,eco:selection.eco,name:selection.name});
+    window.open('./Openings/?'+params.toString(),'hammerschach-opening-school','noopener,noreferrer');
+    return;
+  }
+  pendingOpeningSchoolSelection=selection;
+  if(typeof closeGameArchiveDialog==='function') closeGameArchiveDialog();
+  if(typeof closeDailyGamesDialog==='function') closeDailyGamesDialog();
+  setOpeningsToolActive(true);
+  if(openingsToolReady) postOpeningsToolMessage({type:'hammerschach-openings-select',opening:pendingOpeningSchoolSelection});
+}
 function openAnalyzerToolDebounced(){
   const now=Date.now();
   if(now-analyzerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
@@ -282,8 +302,10 @@ window.addEventListener('message',async event=>{
   }
   if(fromOpenings){
     if(message.type==='hammerschach-openings-ready'){
+      openingsToolReady=true;
       postOpeningsToolContext();
       postOpeningsToolMessage({type:'hammerschach-openings-visibility',visible:openingsToolActive});
+      if(pendingOpeningSchoolSelection) postOpeningsToolMessage({type:'hammerschach-openings-select',opening:pendingOpeningSchoolSelection});
       return;
     }
     if(message.type==='hammerschach-openings-height'){
