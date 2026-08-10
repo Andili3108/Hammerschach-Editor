@@ -147,7 +147,9 @@ if(invitationMessageBackdrop) invitationMessageBackdrop.addEventListener('click'
 if(memberSearchInput) memberSearchInput.addEventListener('input', scheduleMemberSearch);
 if(memberListBtn) memberListBtn.addEventListener('click', loadMemberList);
 if(membersSearchInput) membersSearchInput.addEventListener('input', scheduleStandaloneMemberSearch);
-if(membersRefreshBtn) membersRefreshBtn.addEventListener('click', () => loadStandaloneMemberList());
+membersActivityFilterButtons.forEach(button => button.addEventListener('click', () => setMembersActivityFilter(button.dataset.membersActivity)));
+if(membersSortSelect) membersSortSelect.addEventListener('change', () => setMembersSort(membersSortSelect.value));
+if(membersRefreshBtn) membersRefreshBtn.addEventListener('click', refreshStandaloneMemberDirectory);
 if(membersCloseBtn) membersCloseBtn.addEventListener('click', closeMembersDialog);
 if(membersBackdrop) membersBackdrop.addEventListener('click', ev => { if(ev.target === membersBackdrop) closeMembersDialog(); });
 document.addEventListener('keydown', ev => {

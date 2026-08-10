@@ -197,7 +197,7 @@ function updateAuthUi(){
   if(membersOpenBtn){
     membersOpenBtn.hidden = !loggedIn;
     membersOpenBtn.disabled = !loggedIn;
-    membersOpenBtn.title = loggedIn ? 'Registrierte Mitglieder und Online-Status anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
+    membersOpenBtn.title = loggedIn ? 'Mitgliederliste mit Profilen und Aktivitätsstatus anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
   }
   if(!loggedIn && membersBackdrop && !membersBackdrop.hidden) closeMembersDialog();
   if(dailyGamesOpenBtn){

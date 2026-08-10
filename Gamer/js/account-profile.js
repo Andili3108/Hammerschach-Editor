@@ -79,6 +79,7 @@ function openAccountEditDialog(mode){
   const storedProfileDwz = publicProfile.dwz !== null && publicProfile.dwz !== undefined && String(publicProfile.dwz).trim() !== '' ? Number(publicProfile.dwz) : null;
   if(accountProfileDwzInput) accountProfileDwzInput.value = Number.isInteger(storedProfileDwz) ? String(storedProfileDwz) : '';
   if(accountProfileAboutInput) accountProfileAboutInput.value = String(publicProfile.about || '');
+  if(accountProfileActivityCheckbox) accountProfileActivityCheckbox.checked = publicProfile.showActivityStatus !== false;
   updateAccountProfileAboutCount();
   if(accountUsernameInput) accountUsernameInput.value = onlineAuthUser.username || '';
   if(accountEmailInput) accountEmailInput.value = onlineAuthUser.email || '';
@@ -87,7 +88,7 @@ function openAccountEditDialog(mode){
     accountEditSubmitBtn.classList.toggle('account-edit-submit-danger', accountEditMode === 'delete');
   }
   const config = {
-    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Profilbild, echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Andere eingeloggte Mitglieder können diese Angaben in deinem Profil sehen.', submit:'Profil speichern', focus:accountProfileRealNameInput},
+    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Profilbild, echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Hier bestimmst du außerdem, ob dein Aktivitätsstatus in der Mitgliederliste und in Mitgliederprofilen sichtbar ist.', submit:'Profil speichern', focus:accountProfileRealNameInput},
     username:{title:'Benutzernamen ändern', intro:'Der neue Benutzername muss eindeutig sein. Deine interne Benutzer-ID und deine Partien bleiben unverändert.', submit:'Benutzername speichern', focus:accountUsernameInput},
     email:{title:'Mailadresse ändern', intro:'Die neue Mailadresse darf noch keinem anderen Account zugeordnet sein. Sie wird erst nach Klick auf den zugesandten Bestätigungslink übernommen.', submit:'Mailadresse speichern', focus:accountEmailInput},
     password:{title:'Kennwort ändern', intro:'Nach der Änderung werden alle anderen Anmeldungen dieses Accounts beendet.', submit:'Kennwort speichern', focus:accountCurrentPasswordInput},
@@ -118,6 +119,7 @@ async function submitAccountEdit(){
       const clubName = String(accountProfileClubInput ? accountProfileClubInput.value : '').trim();
       const dwzText = String(accountProfileDwzInput ? accountProfileDwzInput.value : '').trim();
       const about = String(accountProfileAboutInput ? accountProfileAboutInput.value : '').trim();
+      const showActivityStatus = !accountProfileActivityCheckbox || accountProfileActivityCheckbox.checked;
       if(realName.length > 60) throw new Error('Der echte Name darf höchstens 60 Zeichen enthalten.');
       if(clubName.length > 80) throw new Error('Der Vereinsname darf höchstens 80 Zeichen enthalten.');
       if(about.length > 400) throw new Error('Der Text „Über mich“ darf höchstens 400 Zeichen enthalten.');
@@ -126,7 +128,7 @@ async function submitAccountEdit(){
         if(!Number.isInteger(dwz) || dwz < 100 || dwz > 3500) throw new Error('Die DWZ muss eine ganze Zahl zwischen 100 und 3500 sein.');
       }
       const selectedAvatarFile = accountProfileAvatarInput && accountProfileAvatarInput.files ? accountProfileAvatarInput.files[0] : null;
-      data = await authApi('/api/account/profile', {method:'POST', body:JSON.stringify({realName, clubName, dwz:dwzText || null, about})});
+      data = await authApi('/api/account/profile', {method:'POST', body:JSON.stringify({realName, clubName, dwz:dwzText || null, about, showActivityStatus})});
       saveAuthState(onlineAuthToken, data.user);
       if(selectedAvatarFile){
         setAccountEditStatus('Profilangaben sind gespeichert. Profilbild wird jetzt zugeschnitten und hochgeladen…', '');
@@ -199,4 +201,3 @@ async function submitAccountEdit(){
     if(accountEditSubmitBtn) accountEditSubmitBtn.disabled = false;
   }
 }
-

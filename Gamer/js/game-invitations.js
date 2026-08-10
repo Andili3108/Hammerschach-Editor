@@ -19,7 +19,7 @@ function renderDirectInvitationRecipient(member){
   name.textContent = cleanDisplayName(member.username) || 'Mitglied';
   const meta = document.createElement('div');
   meta.className = 'direct-invitation-recipient-meta';
-  meta.appendChild(createPresenceBadge(!!member.isOnline));
+  meta.appendChild(createMemberActivityBadge(member));
   const note = document.createElement('span');
   note.textContent = 'Die folgenden Einstellungen gelten nur für diese Einladung.';
   meta.appendChild(note);
@@ -242,7 +242,7 @@ function updateInviteDialog(){
   }
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.'
+      ? 'Suche nach Benutzername oder öffne die Mitgliederliste. Online- und zuletzt aktive Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.'
       : 'Mitgliedersuche und Mitgliederliste sind nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -400,6 +400,46 @@ function createPresenceBadge(isOnline){
   return badge;
 }
 
+function memberActivityView(member, serverNow){
+  if(member && member.activityVisible === false){
+    return {label:'Status verborgen', title:'Dieses Mitglied zeigt seinen Aktivitätsstatus in der Mitgliederliste nicht an.', className:' hidden-status'};
+  }
+  if(member && member.isOnline){
+    return {label:'Online', title:'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv.', className:' online'};
+  }
+  const lastActiveMs = Date.parse(member && member.lastActiveAt || '');
+  if(!Number.isFinite(lastActiveMs)){
+    return {label:'Noch keine Aktivität', title:'Für dieses Mitglied liegt noch kein Aktivitätszeitpunkt vor.', className:''};
+  }
+  const referenceMs = Number.isFinite(Number(serverNow)) ? Number(serverNow) : Date.now();
+  const elapsedMs = Math.max(0, referenceMs - lastActiveMs);
+  const minutes = Math.floor(elapsedMs / 60000);
+  const hours = Math.floor(elapsedMs / 3600000);
+  const days = Math.floor(elapsedMs / 86400000);
+  let label = 'Länger her';
+  if(minutes < 1) label = 'Gerade eben';
+  else if(minutes < 60) label = 'vor ' + minutes + ' Min.';
+  else if(hours < 24) label = 'vor ' + hours + ' Std.';
+  else if(hours < 48) label = 'Gestern';
+  else if(days < 7) label = 'vor ' + days + ' Tagen';
+  return {label, title:'Zuletzt aktiv: ' + label + '.', className:elapsedMs < 7 * 86400000 ? ' recent' : ''};
+}
+
+function createMemberActivityBadge(member, serverNow){
+  const view = memberActivityView(member || {}, serverNow);
+  const badge = document.createElement('span');
+  badge.className = 'presence-badge member-activity-badge' + view.className;
+  badge.title = view.title;
+  const dot = document.createElement('span');
+  dot.className = 'presence-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  const label = document.createElement('span');
+  label.textContent = view.label;
+  badge.appendChild(dot);
+  badge.appendChild(label);
+  return badge;
+}
+
 function renderMemberSearchResults(users, options){
   options = options || {};
   if(!memberSearchResults) return;
@@ -427,10 +467,10 @@ function renderMemberSearchResults(users, options){
     nameText.className = 'member-result-name-text';
     nameText.textContent = user.username || 'Mitglied';
     name.appendChild(nameText);
-    name.appendChild(createPresenceBadge(!!user.isOnline));
+    name.appendChild(createMemberActivityBadge(user, options.serverNow));
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = 'Profil, Ratings und aktueller Gamer-Online-Status';
+    meta.textContent = 'Profil, Ratings und freigegebener Aktivitätsstatus';
     info.appendChild(name);
     info.appendChild(meta);
 
@@ -467,7 +507,7 @@ async function loadMemberList(){
   if(memberListBtn) memberListBtn.disabled = true;
   try{
     const data = await authApi('/api/members/list?limit=50');
-    renderMemberSearchResults(data.users || [], {source:'list'});
+    renderMemberSearchResults(data.users || [], {source:'list', serverNow:data.serverNow});
     const count = (data.users || []).length;
     if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Profil ansehen oder Einladung senden.') : 'Keine weiteren Mitglieder gefunden.';
   } catch(err){
@@ -481,7 +521,7 @@ async function performMemberSearch(query, requestId){
   try{
     const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
     if(requestId !== memberSearchRequestId) return;
-    renderMemberSearchResults(data.users || [], {source:'search'});
+    renderMemberSearchResults(data.users || [], {source:'search', serverNow:data.serverNow});
     if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um die Einladung automatisch zu senden.' : 'Keine Treffer.';
   } catch(err){
     if(requestId !== memberSearchRequestId) return;

@@ -20,6 +20,52 @@ function setMembersStatus(message, kind){
   membersStatus.classList.toggle('error', kind === 'error');
   membersStatus.classList.toggle('success', kind === 'success');
 }
+function memberDirectoryParams(includeLimit){
+  const params = new URLSearchParams();
+  if(includeLimit) params.set('limit', '100');
+  params.set('activity', membersActivityFilter || 'all');
+  params.set('sort', membersSort || 'activity');
+  return params;
+}
+function updateMemberDirectoryControls(){
+  membersActivityFilterButtons.forEach(button => {
+    const active = button.dataset.membersActivity === membersActivityFilter;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  if(membersSortSelect) membersSortSelect.value = membersSort;
+}
+function currentMemberFilterLabel(){
+  return {online:'Online', '24h':'letzte 24 Stunden', '7d':'letzte 7 Tage'}[membersActivityFilter] || 'alle';
+}
+function refreshStandaloneMemberDirectory(){
+  if(membersSearchTimer){ clearTimeout(membersSearchTimer); membersSearchTimer = null; }
+  const query = membersSearchInput ? membersSearchInput.value.trim() : '';
+  membersSearchRequestId++;
+  if(!query){ loadStandaloneMemberList(); return; }
+  if(query.length < 2){
+    if(membersResults) membersResults.innerHTML = '<div class="member-empty">Mindestens 2 Zeichen eingeben.</div>';
+    setMembersStatus('Mindestens 2 Zeichen eingeben.', '');
+    return;
+  }
+  const requestId = membersSearchRequestId;
+  setMembersStatus('Suche läuft…', '');
+  performStandaloneMemberSearch(query, requestId);
+}
+function setMembersActivityFilter(value){
+  const normalized = ['online','24h','7d'].includes(String(value || '')) ? String(value) : 'all';
+  if(membersActivityFilter === normalized) return;
+  membersActivityFilter = normalized;
+  updateMemberDirectoryControls();
+  refreshStandaloneMemberDirectory();
+}
+function setMembersSort(value){
+  const normalized = String(value || '') === 'name' ? 'name' : 'activity';
+  if(membersSort === normalized) return;
+  membersSort = normalized;
+  updateMemberDirectoryControls();
+  refreshStandaloneMemberDirectory();
+}
 function closeMembersDialog(){
   if(membersBackdrop) membersBackdrop.hidden = true;
   if(membersSearchTimer){ clearTimeout(membersSearchTimer); membersSearchTimer = null; }
@@ -130,7 +176,7 @@ async function openMemberProfile(user, context){
   if(memberProfileAvatar) applyAvatarToElement(memberProfileAvatar, user || {});
   if(memberProfileUsername) memberProfileUsername.textContent = user && user.username ? user.username : 'Mitgliederprofil';
   if(memberProfileRealName){ memberProfileRealName.textContent = ''; memberProfileRealName.hidden = true; }
-  if(memberProfilePresence){ memberProfilePresence.innerHTML = ''; memberProfilePresence.appendChild(createPresenceBadge(!!(user && user.isOnline))); }
+  if(memberProfilePresence){ memberProfilePresence.innerHTML = ''; memberProfilePresence.appendChild(createMemberActivityBadge(user || {})); }
   if(memberProfileSince) memberProfileSince.textContent = formatMemberProfileSince(user && user.createdAt);
   if(memberProfileSinceCard) memberProfileSinceCard.style.gridColumn = '1 / -1';
   if(memberProfileDwzCard) memberProfileDwzCard.hidden = true;
@@ -156,7 +202,7 @@ async function openMemberProfile(user, context){
     }
     if(memberProfilePresence){
       memberProfilePresence.innerHTML = '';
-      memberProfilePresence.appendChild(createPresenceBadge(!!member.isOnline));
+      memberProfilePresence.appendChild(createMemberActivityBadge(member));
     }
     if(memberProfileSince) memberProfileSince.textContent = formatMemberProfileSince(member.createdAt);
     const dwz = Number(profile.dwz);
@@ -203,7 +249,9 @@ function renderStandaloneMemberResults(users, options){
   if(!users || users.length === 0){
     const empty = document.createElement('div');
     empty.className = 'member-empty';
-    empty.textContent = options.source === 'search' ? 'Kein passendes Mitglied gefunden.' : 'Keine registrierten Mitglieder gefunden.';
+    empty.textContent = options.source === 'search'
+      ? 'Kein passendes Mitglied für Suche und Filter gefunden.'
+      : (membersActivityFilter === 'all' ? 'Keine registrierten Mitglieder gefunden.' : 'Keine Mitglieder für diesen Aktivitätsfilter gefunden.');
     membersResults.appendChild(empty);
     return;
   }
@@ -223,7 +271,7 @@ function renderStandaloneMemberResults(users, options){
     nameText.className = 'member-result-name-text';
     nameText.textContent = user.username || 'Mitglied';
     name.appendChild(nameText);
-    name.appendChild(createPresenceBadge(!!user.isOnline));
+    name.appendChild(createMemberActivityBadge(user, options.serverNow));
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
     meta.textContent = canInvite
@@ -263,14 +311,18 @@ function renderStandaloneMemberResults(users, options){
 async function loadStandaloneMemberList(options){
   options = options || {};
   if(!onlineAuthToken || !onlineAuthUser){ closeMembersDialog(); openAuthDialog('login'); return; }
+  const requestId = ++membersSearchRequestId;
   if(membersRefreshBtn) membersRefreshBtn.disabled = true;
   if(!options.silent) setMembersStatus('Mitgliederliste wird geladen…', '');
   try{
-    const data = await authApi('/api/members/list?limit=50');
+    const data = await authApi('/api/members/list?' + memberDirectoryParams(true).toString());
+    if(requestId !== membersSearchRequestId) return;
     const users = data.users || [];
-    renderStandaloneMemberResults(users, {source:'list'});
-    setMembersStatus(users.length ? (users.length + ' Mitglied' + (users.length === 1 ? '' : 'er') + ' geladen.') : 'Keine weiteren Mitglieder gefunden.', users.length ? 'success' : '');
+    renderStandaloneMemberResults(users, {source:'list', serverNow:data.serverNow});
+    const sortLabel = membersSort === 'name' ? 'Name A–Z' : 'zuletzt aktiv';
+    setMembersStatus(users.length ? (users.length + ' Mitglied' + (users.length === 1 ? '' : 'er') + ' · Filter: ' + currentMemberFilterLabel() + ' · Sortierung: ' + sortLabel + '.') : 'Keine Mitglieder für diese Auswahl gefunden.', users.length ? 'success' : '');
   } catch(err){
+    if(requestId !== membersSearchRequestId) return;
     renderStandaloneMemberResults([], {source:'list'});
     setMembersStatus(err && err.message ? err.message : 'Mitgliederliste konnte nicht geladen werden.', 'error');
   } finally {
@@ -279,10 +331,12 @@ async function loadStandaloneMemberList(options){
 }
 async function performStandaloneMemberSearch(query, requestId){
   try{
-    const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
+    const params = memberDirectoryParams(false);
+    params.set('q', query);
+    const data = await authApi('/api/members/search?' + params.toString());
     if(requestId !== membersSearchRequestId) return;
     const users = data.users || [];
-    renderStandaloneMemberResults(users, {source:'search'});
+    renderStandaloneMemberResults(users, {source:'search', serverNow:data.serverNow});
     setMembersStatus(users.length ? (users.length + ' Treffer gefunden.') : 'Keine Treffer.', users.length ? 'success' : '');
   } catch(err){
     if(requestId !== membersSearchRequestId) return;
@@ -307,10 +361,11 @@ function scheduleStandaloneMemberSearch(){
 async function openMembersDialog(){
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   if(membersSearchInput) membersSearchInput.value = '';
+  updateMemberDirectoryControls();
   if(membersSearchHint){
     membersSearchHint.textContent = standaloneInvitationAvailable()
       ? 'Wähle ein Mitglied aus. Danach legst du die Partieeinstellungen und eine optionale persönliche Nachricht fest. Noch wird kein Spielraum erstellt.'
-      : 'Du kannst die Mitglieder und ihren Online-Status ansehen. Für eine neue Einladung kehrst du anschließend zur Mitglieder-Lobby zurück.';
+      : 'Du kannst die Mitglieder und ihren freigegebenen Aktivitätsstatus ansehen. Für eine neue Einladung kehrst du anschließend zur Mitglieder-Lobby zurück.';
   }
   if(membersBackdrop) membersBackdrop.hidden = false;
   await loadStandaloneMemberList();
