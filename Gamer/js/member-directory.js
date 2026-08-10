@@ -35,7 +35,7 @@ async function waitForInvitationRoomReady(timeoutMs){
     if(onlineRoomId && onlineConnected && onlineCreatedByMe && (onlineRoleCode === 'w' || onlineRoleCode === 'b')) return true;
     await new Promise(resolve => setTimeout(resolve, 120));
   }
-  throw new Error('Der Spielraum wurde erstellt, aber vom Server noch nicht vollständig bestätigt. Bitte die Einladung über das geöffnete Einladungsfenster erneut senden.');
+  throw new Error('Der Spielraum wurde erstellt, aber vom Server noch nicht vollständig bestätigt. Bitte erneut senden oder mit „Abbrechen“ vollständig verwerfen.');
 }
 function formatMemberProfileSince(value){
   if(!value) return '—';
@@ -105,7 +105,7 @@ function updateMemberProfileInviteButton(){
     memberProfileInviteBtn.textContent = '✉️ Zur Partie einladen';
     memberProfileInviteBtn.disabled = !canInvite;
     memberProfileInviteBtn.title = canInvite
-      ? 'Spielraum mit den aktuell vorbereiteten Einstellungen erstellen und Einladung senden.'
+      ? 'Partieeinstellungen und persönliche Nachricht für dieses Mitglied vorbereiten.'
       : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
   }
 }
@@ -216,7 +216,7 @@ function renderStandaloneMemberResults(users, options){
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
     meta.textContent = canInvite
-      ? 'Profil ansehen oder direkt zur vorbereiteten Partie einladen'
+      ? 'Profil ansehen oder Einladung mit eigenen Partieeinstellungen vorbereiten'
       : 'Profil ansehen · für eine neue Einladung bitte zur Lobby zurückkehren';
     info.appendChild(name);
     info.appendChild(meta);
@@ -237,7 +237,7 @@ function renderStandaloneMemberResults(users, options){
       inviteBtn.textContent = 'Zur Partie einladen';
       inviteBtn.disabled = !canInvite;
       inviteBtn.title = canInvite
-        ? 'Spielraum mit den aktuellen Einstellungen erstellen und Einladung senden.'
+        ? 'Partieeinstellungen und persönliche Nachricht für dieses Mitglied öffnen.'
         : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
       inviteBtn.addEventListener('click', ev => { ev.stopPropagation(); inviteMemberFromStandaloneList(user, inviteBtn); });
       actions.appendChild(inviteBtn);
@@ -298,7 +298,7 @@ async function openMembersDialog(){
   if(membersSearchInput) membersSearchInput.value = '';
   if(membersSearchHint){
     membersSearchHint.textContent = standaloneInvitationAvailable()
-      ? 'Wähle ein Mitglied aus. Der Spielraum wird erst beim Klick auf „Zur Partie einladen“ mit deinen aktuellen Einstellungen erstellt.'
+      ? 'Wähle ein Mitglied aus. Danach legst du die Partieeinstellungen und eine optionale persönliche Nachricht fest. Noch wird kein Spielraum erstellt.'
       : 'Du kannst die Mitglieder und ihren Online-Status ansehen. Für eine neue Einladung kehrst du anschließend zur Mitglieder-Lobby zurück.';
   }
   if(membersBackdrop) membersBackdrop.hidden = false;
@@ -310,34 +310,5 @@ async function inviteMemberFromStandaloneList(member, button){
     setMembersStatus('Bitte zuerst über „Zur Lobby“ in die Mitglieder-Lobby zurückkehren und dort die neue Partie vorbereiten.', 'error');
     return;
   }
-  if(!timeMode || !currentTimeControlPayload()){
-    setMembersStatus('Bitte zuerst eine Bedenkzeit für die Einladung auswählen.', 'error');
-    return;
-  }
-  const oldText = button ? button.textContent : '';
-  if(button){ button.disabled = true; button.textContent = 'Raum wird erstellt…'; }
-  setMembersStatus('Spielraum wird mit den vorbereiteten Einstellungen erstellt…', '');
-  try{
-    const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
-    if(!created){ setMembersStatus('Der Spielraum konnte nicht erstellt werden.', 'error'); return; }
-    setMembersStatus('Spielraum wird vom Server bestätigt…', '');
-    await waitForInvitationRoomReady(7000);
-    closeMembersDialog();
-    updateInviteDialog();
-    if(inviteBackdrop) inviteBackdrop.hidden = false;
-    openInvitationMessageDialog(member, button);
-  } catch(err){
-    const message = err && err.message ? err.message : 'Die Einladung konnte nicht vorbereitet werden.';
-    if(onlineRoomId){
-      closeMembersDialog();
-      updateInviteDialog();
-      if(inviteBackdrop) inviteBackdrop.hidden = false;
-      setInviteCopyStatus(message, true);
-    } else {
-      setMembersStatus(message, 'error');
-    }
-  } finally {
-    if(button){ button.disabled = false; button.textContent = oldText || 'Zur Partie einladen'; }
-    updateOnlineActionButtons();
-  }
+  openDirectInvitationSetup(member, button || null);
 }

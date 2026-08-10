@@ -211,40 +211,51 @@ let newGameDialogReturnFocus=null;
 function setNewGameDialogStatus(message){
   if(newGameDialogStatus)newGameDialogStatus.textContent=String(message||'');
 }
-function openNewGameDialog(){
+function openNewGameDialog(options){
+  options=options&&options.directInvitation===true?options:{};
   if(!newGameBackdrop||!isMemberLobbyView())return;
+  if(!options.directInvitation&&typeof resetDirectInvitationSetup==='function')resetDirectInvitationSetup();
   closeGamesMenu();closePlayerMenu();closeToolsMenu();closeInfoMenu();
   setNewGameDialogStatus('');
-  newGameDialogReturnFocus=document.activeElement;
+  newGameDialogReturnFocus=options.returnFocus||document.activeElement;
   newGameBackdrop.hidden=false;
   document.documentElement.classList.add('new-game-dialog-open');
   setTimeout(()=>{try{if(newGameCloseBtn)newGameCloseBtn.focus();}catch(_){}},0);
 }
 function closeNewGameDialog(options){
   options=options||{};
+  if(directInvitationSendBusy&&options.force!==true)return;
   if(!newGameBackdrop||newGameBackdrop.hidden)return;
   newGameBackdrop.hidden=true;
   document.documentElement.classList.remove('new-game-dialog-open');
   setNewGameDialogStatus('');
+  if(options.preserveDirectInvitation!==true&&typeof resetDirectInvitationSetup==='function')resetDirectInvitationSetup();
   if(options.restoreFocus!==false){
     const target=newGameDialogReturnFocus&&document.contains(newGameDialogReturnFocus)?newGameDialogReturnFocus:newGameOpenBtn;
     setTimeout(()=>{try{if(target&&!target.hidden)target.focus();}catch(_){}},0);
   }
   newGameDialogReturnFocus=null;
 }
+function requestCloseNewGameDialog(){
+  if(directInvitationSetupMember&&typeof cancelDirectInvitationSetup==='function'){
+    cancelDirectInvitationSetup();
+    return;
+  }
+  closeNewGameDialog();
+}
 if(newGameOpenBtn)newGameOpenBtn.addEventListener('click',openNewGameDialog);
-if(newGameCloseBtn)newGameCloseBtn.addEventListener('click',()=>closeNewGameDialog());
-if(newGameCancelBtn)newGameCancelBtn.addEventListener('click',()=>closeNewGameDialog());
-if(newGameBackdrop)newGameBackdrop.addEventListener('click',event=>{if(event.target===newGameBackdrop)closeNewGameDialog();});
+if(newGameCloseBtn)newGameCloseBtn.addEventListener('click',requestCloseNewGameDialog);
+if(newGameCancelBtn)newGameCancelBtn.addEventListener('click',requestCloseNewGameDialog);
+if(newGameBackdrop)newGameBackdrop.addEventListener('click',event=>{if(event.target===newGameBackdrop)requestCloseNewGameDialog();});
 document.addEventListener('keydown',event=>{
   if(!newGameBackdrop||newGameBackdrop.hidden)return;
   if(event.key==='Escape'){
     event.preventDefault();
-    closeNewGameDialog();
+    requestCloseNewGameDialog();
     return;
   }
   if(event.key!=='Tab')return;
-  const focusable=Array.from(newGameBackdrop.querySelectorAll('button:not([disabled]):not([hidden]),select:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),[tabindex]:not([tabindex="-1"])')).filter(element=>element.offsetParent!==null);
+  const focusable=Array.from(newGameBackdrop.querySelectorAll('button:not([disabled]):not([hidden]),select:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),textarea:not([disabled]):not([hidden]),[tabindex]:not([tabindex="-1"])')).filter(element=>element.offsetParent!==null);
   if(!focusable.length)return;
   const first=focusable[0];
   const last=focusable[focusable.length-1];

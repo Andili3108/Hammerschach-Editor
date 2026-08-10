@@ -1,4 +1,184 @@
 'use strict';
+function updateDirectInvitationMessageCount(){
+  if(!directInvitationMessageCount) return;
+  const length = directInvitationMessageInput ? directInvitationMessageInput.value.length : 0;
+  directInvitationMessageCount.textContent = Math.min(length, INVITATION_PERSONAL_MESSAGE_MAX_LENGTH) + '/' + INVITATION_PERSONAL_MESSAGE_MAX_LENGTH;
+}
+function renderDirectInvitationRecipient(member){
+  if(!directInvitationRecipient) return;
+  directInvitationRecipient.innerHTML = '';
+  if(!member){ directInvitationRecipient.hidden = true; return; }
+  directInvitationRecipient.appendChild(createMemberAvatarElement(member, 'profile-avatar-small'));
+  const copy = document.createElement('div');
+  copy.className = 'direct-invitation-recipient-copy';
+  const kicker = document.createElement('div');
+  kicker.className = 'direct-invitation-recipient-kicker';
+  kicker.textContent = 'Ausgewählter Empfänger';
+  const name = document.createElement('div');
+  name.className = 'direct-invitation-recipient-name';
+  name.textContent = cleanDisplayName(member.username) || 'Mitglied';
+  const meta = document.createElement('div');
+  meta.className = 'direct-invitation-recipient-meta';
+  meta.appendChild(createPresenceBadge(!!member.isOnline));
+  const note = document.createElement('span');
+  note.textContent = 'Die folgenden Einstellungen gelten nur für diese Einladung.';
+  meta.appendChild(note);
+  copy.appendChild(kicker);
+  copy.appendChild(name);
+  copy.appendChild(meta);
+  directInvitationRecipient.appendChild(copy);
+  directInvitationRecipient.hidden = false;
+}
+function resetDirectInvitationSetup(){
+  directInvitationSetupMember = null;
+  directInvitationSourceButton = null;
+  directInvitationCreatedRoomId = '';
+  directInvitationSendBusy = false;
+  const modal = newGameBackdrop ? newGameBackdrop.querySelector('.new-game-modal') : null;
+  if(modal) modal.classList.remove('direct-invitation-mode');
+  if(newGameDialogTitle) newGameDialogTitle.textContent = '♟️ Neue Partie';
+  if(newGameDialogIntro) newGameDialogIntro.textContent = 'Farbe, Spielmodus, Bedenkzeit und Wertung festlegen.';
+  if(newGameCloseBtn) newGameCloseBtn.setAttribute('aria-label', 'Partievorbereitung schließen');
+  if(directInvitationRecipient){ directInvitationRecipient.hidden = true; directInvitationRecipient.innerHTML = ''; }
+  if(directInvitationMessageBox) directInvitationMessageBox.hidden = true;
+  if(directInvitationMessageInput) directInvitationMessageInput.value = '';
+  updateDirectInvitationMessageCount();
+  if(directInvitationSendBtn){ directInvitationSendBtn.hidden = true; directInvitationSendBtn.disabled = false; directInvitationSendBtn.textContent = '✉️ Einladung senden'; }
+  if(newGameBtn) newGameBtn.hidden = false;
+  if(createOnlineBtn) createOnlineBtn.hidden = !!onlineRoomId;
+  if(newGameCancelBtn) newGameCancelBtn.textContent = 'Abbrechen';
+  if(typeof updateOnlineActionButtons === 'function') updateOnlineActionButtons();
+}
+function openDirectInvitationSetup(member, sourceButton){
+  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
+  if(!member || !member.id){ setMembersStatus('Bitte ein Mitglied auswählen.', 'error'); return; }
+  if(onlineAuthUser && String(member.id) === String(onlineAuthUser.id)){
+    setMembersStatus('Du kannst deinen eigenen Account nicht einladen.', 'error');
+    return;
+  }
+  if(!standaloneInvitationAvailable()){
+    setMembersStatus('Eine neue Einladung kann nur aus der Mitglieder-Lobby vorbereitet werden.', 'error');
+    return;
+  }
+  directInvitationSetupMember = Object.assign({}, member);
+  directInvitationSourceButton = sourceButton || null;
+  directInvitationCreatedRoomId = '';
+  const recipientName = cleanDisplayName(member.username) || 'Mitglied';
+  const modal = newGameBackdrop ? newGameBackdrop.querySelector('.new-game-modal') : null;
+  if(modal) modal.classList.add('direct-invitation-mode');
+  if(newGameDialogTitle) newGameDialogTitle.textContent = '✉️ Einladung an ' + recipientName;
+  if(newGameDialogIntro) newGameDialogIntro.textContent = 'Partie einstellen, persönliche Nachricht ergänzen und anschließend endgültig senden.';
+  if(newGameCloseBtn) newGameCloseBtn.setAttribute('aria-label', 'Einladungsvorbereitung abbrechen');
+  renderDirectInvitationRecipient(member);
+  if(directInvitationMessageBox) directInvitationMessageBox.hidden = false;
+  if(directInvitationMessageInput) directInvitationMessageInput.value = '';
+  updateDirectInvitationMessageCount();
+  if(newGameBtn) newGameBtn.hidden = true;
+  if(createOnlineBtn) createOnlineBtn.hidden = true;
+  if(directInvitationSendBtn){ directInvitationSendBtn.hidden = false; directInvitationSendBtn.disabled = false; directInvitationSendBtn.textContent = '✉️ Einladung senden'; }
+  if(newGameCancelBtn) newGameCancelBtn.textContent = 'Abbrechen';
+  closeMemberProfileDialog();
+  closeMembersDialog();
+  openNewGameDialog({directInvitation:true, returnFocus:sourceButton || null});
+}
+function setDirectInvitationSetupBusy(busy){
+  directInvitationSendBusy = !!busy;
+  if(!newGameBackdrop) return;
+  const controls = Array.from(newGameBackdrop.querySelectorAll('button,input,select,textarea'));
+  controls.forEach(control => {
+    if(busy){
+      control.dataset.directInvitationWasDisabled = control.disabled ? 'yes' : 'no';
+      control.disabled = true;
+    } else {
+      control.disabled = control.dataset.directInvitationWasDisabled === 'yes';
+      delete control.dataset.directInvitationWasDisabled;
+    }
+  });
+  if(!busy){
+    updateTimeControlsLock();
+    updateVariantUi();
+    updateInviteColorUi();
+    updateRatingPreferenceUi();
+    updatePublicVisibilityUi();
+  }
+}
+async function cancelPreparedInvitationRoom(roomId){
+  roomId = cleanRoomId(roomId);
+  if(!roomId) return {ok:true};
+  return await authApi('/api/invitations/' + encodeURIComponent(roomId) + '/prepared', {method:'DELETE'});
+}
+async function cancelDirectInvitationSetup(){
+  if(directInvitationSendBusy) return;
+  const roomId = cleanRoomId(directInvitationCreatedRoomId || '');
+  if(!roomId){ closeNewGameDialog({force:true}); return; }
+  setDirectInvitationSetupBusy(true);
+  if(directInvitationSendBtn) directInvitationSendBtn.textContent = 'Wird zurückgenommen…';
+  setNewGameDialogStatus('Der vorbereitete Spielraum wird vollständig entfernt…');
+  try{
+    await cancelPreparedInvitationRoom(roomId);
+    setDirectInvitationSetupBusy(false);
+    if(roomId === onlineRoomId) applyRoomCancelled('Die nicht versendete Einladung wurde verworfen.');
+    closeNewGameDialog({force:true, restoreFocus:false});
+    openNewGameView();
+  } catch(err){
+    const message = err && err.message ? err.message : 'Der vorbereitete Spielraum konnte nicht entfernt werden.';
+    setNewGameDialogStatus(message + ' Bitte erneut auf „Abbrechen“ klicken.');
+    setDirectInvitationSetupBusy(false);
+    if(directInvitationSendBtn) directInvitationSendBtn.textContent = '✉️ Einladung erneut senden';
+  }
+}
+async function submitDirectInvitationSetup(){
+  if(directInvitationSendBusy) return;
+  const member = directInvitationSetupMember;
+  if(!member || !member.id){ setNewGameDialogStatus('Bitte ein gültiges Mitglied auswählen.'); return; }
+  if(!timeMode || !currentTimeControlPayload()){
+    setNewGameDialogStatus('Bitte zuerst eine Bedenkzeit auswählen.');
+    return;
+  }
+  if(isDailyTimeControl() && !onlineAuthUser){
+    setNewGameDialogStatus('Daily Chess ist nur nach Registrierung oder Login verfügbar.');
+    return;
+  }
+  const personalMessage = normalizedInvitationPersonalMessage(directInvitationMessageInput && directInvitationMessageInput.value);
+  if(personalMessage.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH){
+    setNewGameDialogStatus('Die persönliche Nachricht darf höchstens 300 Zeichen lang sein.');
+    return;
+  }
+  setDirectInvitationSetupBusy(true);
+  if(directInvitationSendBtn) directInvitationSendBtn.textContent = directInvitationCreatedRoomId ? 'Wird erneut gesendet…' : 'Spielraum wird erstellt…';
+  setNewGameDialogStatus(directInvitationCreatedRoomId ? 'Einladung wird erneut versendet…' : 'Spielraum wird jetzt erstellt und anschließend versendet…');
+  try{
+    if(!directInvitationCreatedRoomId){
+      const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
+      if(!created || !onlineRoomId) throw new Error('Der Spielraum konnte nicht erstellt werden.');
+      directInvitationCreatedRoomId = cleanRoomId(onlineRoomId);
+      await waitForInvitationRoomReady(7000);
+    } else if(cleanRoomId(onlineRoomId) !== cleanRoomId(directInvitationCreatedRoomId)){
+      throw new Error('Der vorbereitete Spielraum ist nicht mehr geöffnet.');
+    }
+    if(directInvitationSendBtn) directInvitationSendBtn.textContent = 'Einladung wird gesendet…';
+    setNewGameDialogStatus('Spielraum bestätigt – Einladung wird sicher versendet…');
+    const result = await sendEmailInvitationToMember(member, null, personalMessage, directInvitationSourceButton);
+    if(!result || !result.ok) throw new Error(result && result.message ? result.message : 'Die Einladung konnte nicht versendet werden.');
+    setNewGameDialogStatus('Einladung wurde versendet.');
+    setDirectInvitationSetupBusy(false);
+    closeNewGameDialog({force:true, restoreFocus:false});
+  } catch(err){
+    const message = err && err.message ? err.message : 'Die Einladung konnte nicht versendet werden.';
+    setNewGameDialogStatus(message + (directInvitationCreatedRoomId ? ' Du kannst erneut senden oder den vorbereiteten Raum mit „Abbrechen“ vollständig entfernen.' : ''));
+  } finally {
+    if(newGameBackdrop && !newGameBackdrop.hidden){
+      setDirectInvitationSetupBusy(false);
+      if(directInvitationSendBtn) directInvitationSendBtn.textContent = directInvitationCreatedRoomId ? '✉️ Einladung erneut senden' : '✉️ Einladung senden';
+    } else {
+      directInvitationSendBusy = false;
+    }
+    updateOnlineUi();
+  }
+}
+if(directInvitationMessageInput) directInvitationMessageInput.addEventListener('input', updateDirectInvitationMessageCount);
+if(directInvitationSendBtn) directInvitationSendBtn.addEventListener('click', submitDirectInvitationSetup);
+
 function updateInvitationMessageCount(){
   if(!invitationMessageCount) return;
   const length = invitationMessageInput ? invitationMessageInput.value.length : 0;
@@ -140,15 +320,16 @@ async function copyInvitationText(member){
 
 async function sendEmailInvitationToMember(member, button, personalMessage, sourceButton){
   const link = onlineRoomId ? getInviteUrl() : '';
-  if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Mitglieder per Mail einzuladen.', true); return; }
-  if(!link || !onlineRoomId){ setInviteCopyStatus('Noch kein Einladungslink vorhanden.', true); return; }
-  if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
-  if(invitationSendBusy){ setInviteCopyStatus('Eine Einladung wird bereits versendet.', true); return; }
+  if(!onlineAuthToken || !onlineAuthUser){ const message='Bitte einloggen, um Mitglieder per Mail einzuladen.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
+  if(!link || !onlineRoomId){ const message='Noch kein Einladungslink vorhanden.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
+  if(!member || !member.id){ const message='Bitte ein Mitglied auswählen.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
+  if(invitationSendBusy){ const message='Eine Einladung wird bereits versendet.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
 
   const normalizedPersonalMessage = normalizedInvitationPersonalMessage(personalMessage);
   if(normalizedPersonalMessage.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH){
-    if(invitationMessageStatus) invitationMessageStatus.textContent = 'Die persönliche Nachricht darf höchstens 300 Zeichen lang sein.';
-    return;
+    const message = 'Die persönliche Nachricht darf höchstens 300 Zeichen lang sein.';
+    if(invitationMessageStatus) invitationMessageStatus.textContent = message;
+    return {ok:false,message};
   }
 
   inviteSelectedMember = member;
@@ -178,11 +359,13 @@ async function sendEmailInvitationToMember(member, button, personalMessage, sour
     onlineLastMessage = message;
     statusEl.textContent = message;
     closeInvitationMessageDialog(true);
+    return {ok:true,data,message};
   } catch(err){
     const message = err && err.message ? err.message : 'Die Einladung konnte nicht versendet werden. Bitte den Einladungslink kopieren.';
     setInviteCopyStatus(message, true);
     if(invitationMessageStatus) invitationMessageStatus.textContent = message;
     if(memberSearchStatus) memberSearchStatus.textContent = 'Versand fehlgeschlagen. Link und Einladungstext können weiterhin kopiert werden.';
+    return {ok:false,message};
   } finally {
     invitationSendBusy = false;
     if(button){ button.disabled = false; button.textContent = oldText || 'Einladung senden'; }

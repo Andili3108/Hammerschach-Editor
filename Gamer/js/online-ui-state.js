@@ -30,6 +30,7 @@ function updateOnlineActionButtons(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   const inRoom = !!onlineRoomId;
+  const directInvitationMode = !!directInvitationSetupMember;
   const showLobbyButton = inRoom || embeddedToolActive();
   if(openOffersOpenBtn){
     openOffersOpenBtn.hidden = showLobbyButton;
@@ -40,7 +41,7 @@ function updateOnlineActionButtons(){
     newGameOpenBtn.disabled = !loggedIn || showLobbyButton;
     newGameOpenBtn.title = loggedIn ? 'Farbe, Spielmodus, Bedenkzeit und Wertung einstellen.' : 'Zum Erstellen einer Partie bitte einloggen.';
   }
-  if((!loggedIn || showLobbyButton) && newGameBackdrop && !newGameBackdrop.hidden) closeNewGameDialog({restoreFocus:false});
+  if((!loggedIn || showLobbyButton) && !directInvitationMode && newGameBackdrop && !newGameBackdrop.hidden) closeNewGameDialog({restoreFocus:false});
   if(newGameMenuEl){
     newGameMenuEl.hidden = showLobbyButton;
     if(showLobbyButton) closeNewGameMenu();
@@ -52,7 +53,7 @@ function updateOnlineActionButtons(){
       : 'Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.';
   }
   if(createOnlineBtn){
-    createOnlineBtn.hidden = inRoom;
+    createOnlineBtn.hidden = inRoom || directInvitationMode;
     createOnlineBtn.disabled = inRoom || live || offerOpen;
     createOnlineBtn.title = inRoom
       ? ''
@@ -66,9 +67,16 @@ function updateOnlineActionButtons(){
   }
   if(newGameBtn){
     newGameBtn.disabled = inRoom;
-    newGameBtn.hidden = false;
+    newGameBtn.hidden = directInvitationMode;
     newGameBtn.textContent = '♟️ Partie anbieten';
     newGameBtn.title = loggedIn ? 'Die gewählten Einstellungen als offene Partie veröffentlichen.' : 'Zum Anbieten einer Partie bitte einloggen.';
+  }
+  if(directInvitationSendBtn){
+    directInvitationSendBtn.hidden = !directInvitationMode;
+    directInvitationSendBtn.disabled = !directInvitationMode || directInvitationSendBusy;
+    directInvitationSendBtn.title = directInvitationMode
+      ? 'Spielraum mit diesen Einstellungen erstellen und Einladung endgültig senden.'
+      : '';
   }
 }
 function updateGameActionButtons(){

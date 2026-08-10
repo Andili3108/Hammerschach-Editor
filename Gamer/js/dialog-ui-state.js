@@ -357,3 +357,7 @@ let pendingInvitationSourceButton = null;
 let memberSearchTimer = null;
 let memberSearchRequestId = 0;
 let invitationSendBusy = false;
+let directInvitationSetupMember = null;
+let directInvitationSourceButton = null;
+let directInvitationCreatedRoomId = '';
+let directInvitationSendBusy = false;
