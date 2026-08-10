@@ -176,6 +176,7 @@ function updateOnlineUi(){
     updateRoomRatingUi();
     updateHeadToHeadUi();
     updateRematchUi();
+    updateOnlineGameReactionUi();
     setOnlineValueClass(onlineStatusEl, 'neutral');
     setOnlineValueClass(onlineRoleEl, 'neutral');
     setOnlineValueClass(onlineRoomEl, 'neutral');
@@ -216,6 +217,7 @@ function updateOnlineUi(){
     updateRoomRatingUi();
     updateHeadToHeadUi();
     updateRematchUi();
+    updateOnlineGameReactionUi();
     setOnlineValueClass(onlineStatusEl, 'wait');
     setOnlineValueClass(onlineRoleEl, 'neutral');
     setOnlineValueClass(onlineRoomEl, 'neutral');
@@ -280,6 +282,7 @@ function updateOnlineUi(){
   updateRoomRatingUi();
   updateHeadToHeadUi();
   updateRematchUi();
+  updateOnlineGameReactionUi();
 
   let syncNote;
   if(onlineRoleCode === 'spectator'){

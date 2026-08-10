@@ -33,6 +33,7 @@ function connectOnlineRoom(roomId, opts){
   onlineRatingState = null;
   onlineHeadToHead = null;
   onlineRematchState = null;
+  resetOnlineGameReactionState();
   rematchActionBusy = false;
   rematchAutoOpenWhenReady = false;
   rematchLastError = '';
@@ -264,6 +265,10 @@ function connectOnlineRoom(roomId, opts){
       shouldAutoOpenRematch = !!(rematchAutoOpenWhenReady && onlineRematchState && onlineRematchState.status === 'ready' && onlineRematchState.roomId);
       handled = true;
     }
+    if(Object.prototype.hasOwnProperty.call(msg, 'gameReactions')){
+      applyOnlineGameReactionState(msg.gameReactions);
+      handled = true;
+    }
 
     const incomingDrawOffer = extractOnlineDrawOffer(msg);
     if(incomingDrawOffer){
@@ -325,7 +330,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','game_reaction_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -338,6 +343,7 @@ function connectOnlineRoom(roomId, opts){
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
     else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
     else if(msg.type === 'rematch_state') onlineLastMessage = 'Revanche-Status wurde aktualisiert.';
+    else if(msg.type === 'game_reaction_state') onlineLastMessage = 'Partie-Reaktion wurde aktualisiert.';
     else if(msg.type === 'game_finished' || msg.type === 'resignation') onlineLastMessage = 'Online-Partie beendet.';
     else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
     else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){

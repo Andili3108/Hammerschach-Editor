@@ -335,6 +335,14 @@ function createDailyGameCard(game){
     const responseBox = createDailyInvitationMessageBox(responseLabel, game.invitationResponseMessage, true);
     if(responseBox) content.appendChild(responseBox);
   }
+  if(game.ended){
+    const reactionPanel = createGameReactionPanel(game, {
+      opponentName:game.opponentName,
+      statusElement:dailyGamesStatusEl,
+      onChange:() => renderDailyGames(dailyGamesCache)
+    });
+    if(reactionPanel) content.appendChild(reactionPanel);
+  }
 
   const actions = document.createElement('div');
   actions.className = 'daily-game-actions';

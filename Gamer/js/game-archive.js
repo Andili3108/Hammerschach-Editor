@@ -80,6 +80,11 @@ function createArchiveGameCard(game){
   if(game.publicGame){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='🌍 öffentlich';badges.appendChild(badge);}
   if(game.favorite){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='⭐ dauerhaft';badges.appendChild(badge);}
   if(badges.childNodes.length)content.appendChild(badges);
+  if(gameArchiveScope==='mine'&&game.isParticipant){
+    const opponentName=game.participantRole==='w'?game.blackName:game.whiteName;
+    const reactionPanel=createGameReactionPanel(game,{opponentName,statusElement:gameArchiveStatusEl,onChange:renderGameArchive});
+    if(reactionPanel)content.appendChild(reactionPanel);
+  }
   const actions=document.createElement('div');actions.className='game-archive-card-actions';
   const view=document.createElement('button');view.type='button';view.className='button-flat';view.textContent='Partie ansehen';view.addEventListener('click',()=>viewArchiveGame(game,view));actions.appendChild(view);
   const analyzer=document.createElement('button');analyzer.type='button';analyzer.className='button-flat';analyzer.textContent='Im Analyzer öffnen';analyzer.addEventListener('click',()=>openArchiveInAnalyzer(game,analyzer));actions.appendChild(analyzer);
@@ -124,4 +129,3 @@ if(gameArchiveRefreshBtn)gameArchiveRefreshBtn.addEventListener('click',()=>load
 if(gameArchiveCloseBtn)gameArchiveCloseBtn.addEventListener('click',closeGameArchiveDialog);
 if(gameArchiveBackdrop)gameArchiveBackdrop.addEventListener('click',event=>{if(event.target===gameArchiveBackdrop)closeGameArchiveDialog();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&gameArchiveBackdrop&&!gameArchiveBackdrop.hidden)closeGameArchiveDialog();});
-
