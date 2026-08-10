@@ -33,7 +33,6 @@ function connectOnlineRoom(roomId, opts){
   onlineRatingState = null;
   onlineHeadToHead = null;
   onlineRematchState = null;
-  resetOnlineGameOpening();
   resetOnlineGameReactionState();
   rematchActionBusy = false;
   rematchAutoOpenWhenReady = false;
@@ -268,10 +267,6 @@ function connectOnlineRoom(roomId, opts){
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'gameReactions')){
       applyOnlineGameReactionState(msg.gameReactions);
-      handled = true;
-    }
-    if(Object.prototype.hasOwnProperty.call(msg, 'opening')){
-      applyOnlineGameOpening(msg.opening);
       handled = true;
     }
 

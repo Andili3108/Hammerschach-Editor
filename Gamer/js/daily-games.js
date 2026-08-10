@@ -323,7 +323,7 @@ function createDailyGameCard(game){
   }
   content.appendChild(status);
   content.appendChild(meta);
-  if(game.ended){const openingPanel=createRecognizedOpeningPanel(game);if(openingPanel)content.appendChild(openingPanel);}
+  if(game.ended){const startSummary=createGameStartSummaryPanel(game);if(startSummary)content.appendChild(startSummary);}
   if((game.incomingInvitation || game.pendingInvitation || game.invitationDeclined) && game.invitationMessage){
     const invitationLabel = game.incomingInvitation
       ? 'Persönliche Nachricht von ' + (cleanDisplayName(game.opponentName) || 'dem Einladenden')
