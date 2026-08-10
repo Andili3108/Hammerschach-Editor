@@ -2245,20 +2245,11 @@ html.dark-mode .mobile-nav-test-disable{color:#efb5bc!important;}
   html.mobile-nav-test-active .board-player-strip .presence-badge{font-size:10px;padding:3px 6px;}
 }
 
-/* Eröffnungserkennung nach Partieende */
-.game-opening-bar,.recognized-opening-panel{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid rgba(99,67,31,.22);border-radius:14px;background:linear-gradient(135deg,rgba(255,250,225,.96),rgba(244,236,205,.94));padding:12px 14px;color:#3e3023}
-.game-opening-bar[hidden]{display:none!important}
-.game-opening-copy,.recognized-opening-text{display:flex;flex-direction:column;gap:2px;min-width:0}
-.game-opening-copy strong,.recognized-opening-text strong{font-size:1rem;line-height:1.25;overflow-wrap:break-word;word-break:normal}
-.game-opening-eco,.recognized-opening-label{font-size:.76rem;font-weight:800;letter-spacing:.035em;text-transform:uppercase;color:#7d2a37}
-.game-opening-school-btn,.recognized-opening-school-btn{flex:0 0 auto;border:1px solid rgba(125,42,55,.28);border-radius:999px;background:#fff;color:#7d2a37;font:inherit;font-size:.84rem;font-weight:800;padding:8px 12px;cursor:pointer}
-.game-opening-school-btn:hover,.recognized-opening-school-btn:hover{background:#7d2a37;color:#fff}
-.daily-game-card>div:first-child,.game-archive-card>div:first-child{min-width:0}
-.recognized-opening-panel{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;justify-content:initial;margin-top:10px;padding:10px 12px;background:rgba(248,242,216,.72)}
-.recognized-opening-text{width:100%}
-.recognized-opening-school-btn{width:fit-content;max-width:100%;white-space:normal;text-align:center}
-html.dark-mode .game-opening-bar,html.dark-mode .recognized-opening-panel{border-color:rgba(222,188,126,.3);background:linear-gradient(135deg,rgba(66,54,39,.96),rgba(47,42,35,.96));color:#f4ead7}
-html.dark-mode .game-opening-eco,html.dark-mode .recognized-opening-label{color:#e7bd78}
-html.dark-mode .game-opening-school-btn,html.dark-mode .recognized-opening-school-btn{border-color:rgba(231,189,120,.42);background:#302b25;color:#f3d7a5}
-html.dark-mode .game-opening-school-btn:hover,html.dark-mode .recognized-opening-school-btn:hover{background:#e7bd78;color:#2d241b}
-@media(max-width:680px){.game-opening-bar{align-items:stretch;flex-direction:column}.game-opening-school-btn,.recognized-opening-school-btn{width:100%}}
+/* Kompakter Partiebeginn unter „Meine Partien“ */
+.daily-game-card>div:first-child{min-width:0}
+.game-start-summary{margin-top:9px;padding:9px 11px;border-left:3px solid rgba(125,42,55,.62);border-radius:9px;background:rgba(125,42,55,.055)}
+.game-start-summary-heading{color:#7d2a37;font-size:.84rem;font-weight:900;line-height:1.25}
+.game-start-summary-moves{margin-top:4px;color:#4a4546;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;font-weight:650;line-height:1.55;overflow-wrap:break-word;word-break:normal}
+html.dark-mode .game-start-summary{border-left-color:#e7bd78;background:rgba(231,189,120,.08)}
+html.dark-mode .game-start-summary-heading{color:#f0ca8e}
+html.dark-mode .game-start-summary-moves{color:#e2e4e7}
