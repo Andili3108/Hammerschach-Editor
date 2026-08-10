@@ -1,4 +1,4 @@
-// BUILD: GAMER-GLOBAL-PRESENCE-20260809-1
+// BUILD: GAMER-DIRECT-MEMBER-INVITATION-20260810-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -10001,6 +10001,36 @@ async function handleAuthApi(request, env, url) {
     return json({ ok: true, sessionToken: token, user: publicAccount });
   }
 
+  const preparedInvitationCancelMatch = url.pathname.match(/^\/api\/invitations\/([^/]+)\/prepared$/);
+  if (preparedInvitationCancelMatch && request.method === 'DELETE') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
+    const roomId = cleanRoomId(decodeURIComponent(preparedInvitationCancelMatch[1]));
+    if (!roomId) return json({ ok:false, code:'INVALID_ROOM', message:'Der Spielraum ist ungültig.' }, { status:400 });
+    if (!env.GAME_ROOM) return json({ ok:false, code:'ROOM_SERVICE_UNAVAILABLE', message:'Der Spielraum-Dienst ist momentan nicht verfügbar.' }, { status:503 });
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = gameRoomStub(env, id);
+      const response = await stub.fetch(new Request('https://game-room.internal/cancel-prepared-invitation?room=' + encodeURIComponent(roomId), {
+        method:'DELETE',
+        headers:{'x-hammerschach-user-id':String(session.user.id || '')}
+      }));
+      let result = null;
+      try { result = await response.json(); } catch (_) { result = null; }
+      if (!response.ok || !result || !result.ok) {
+        return json({
+          ok:false,
+          code:result && result.code ? result.code : 'INVITATION_CANCEL_FAILED',
+          message:result && result.message ? result.message : 'Der vorbereitete Spielraum konnte nicht entfernt werden.'
+        }, { status:response.status || 400 });
+      }
+      try { await env.DB.prepare(`DELETE FROM daily_games WHERE room_id = ?`).bind(roomId).run(); } catch (_) {}
+      return json({ok:true, roomId, cancelledAt:result.cancelledAt || new Date().toISOString(), message:'Der vorbereitete Spielraum wurde entfernt.'});
+    } catch (_) {
+      return json({ok:false, code:'INVITATION_CANCEL_FAILED', message:'Der vorbereitete Spielraum konnte nicht entfernt werden.'}, {status:500});
+    }
+  }
+
   if (url.pathname === '/api/invitations/email' && request.method === 'POST') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
@@ -12637,9 +12667,10 @@ export class GameRoom {
     };
   }
 
-  async cancelDailyInvitation(requestingUserId) {
+  async cancelDailyInvitation(requestingUserId, options = {}) {
     const userId = String(requestingUserId || '').trim();
     if (!userId) return { ok:false, status:401, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' };
+    const allowLiveInvitation = options && options.allowLiveInvitation === true;
 
     const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
     let indexedGame = null;
@@ -12672,10 +12703,10 @@ export class GameRoom {
       : '';
 
     const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
-    if (timeControl && timeControl.mode !== 'daily') {
+    if (timeControl && timeControl.mode !== 'daily' && !allowLiveInvitation) {
       return { ok:false, status:400, code:'NOT_DAILY_INVITATION', message:'Dieser Raum ist keine offene Daily-Einladung.' };
     }
-    if (!timeControl && !indexedCreatorRole) {
+    if (!timeControl && !indexedCreatorRole && !allowLiveInvitation) {
       return { ok:false, status:400, code:'NOT_DAILY_INVITATION', message:'Dieser Raum ist keine offene Daily-Einladung.' };
     }
 
@@ -12689,6 +12720,10 @@ export class GameRoom {
     }
 
     const players = await this.getSecurePlayers();
+    const openOffer = (await this.state.storage.get('openOffer')) === true;
+    if (openOffer) {
+      return { ok:false, status:409, code:'OPEN_OFFER_REQUIRES_WITHDRAWAL', message:'Ein öffentliches Partieangebot muss über „Angebot zurückziehen“ beendet werden.' };
+    }
     let creatorRole = (await this.state.storage.get('createdByRole')) || '';
     if (creatorRole !== 'w' && creatorRole !== 'b') {
       if (players.white && !players.black) creatorRole = 'w';
@@ -12707,12 +12742,17 @@ export class GameRoom {
     }
 
     const cancelledAt = new Date().toISOString();
+    const cancellationCode = 'INVITATION_CANCELLED';
+    const cancellationMessage = 'Diese Einladung wurde vom Ersteller zurückgezogen. Der Spielraum ist nicht mehr verfügbar.';
     const cancellation = {
       cancelled:true,
       cancelledAt,
       cancelledByUserId:userId,
       creatorRole,
-      roomId
+      roomId,
+      kind:'invitation',
+      code:cancellationCode,
+      message:cancellationMessage
     };
     await this.state.storage.put('cancelled', cancellation);
     await this.state.storage.delete('chatMessages');
@@ -13188,6 +13228,11 @@ export class GameRoom {
 
     if (request.method === 'DELETE' && url.pathname === '/cancel-invitation') {
       const result = await this.cancelDailyInvitation(request.headers.get('x-hammerschach-user-id') || '');
+      return json({ ok:result.ok, code:result.code || '', message:result.message || '', roomId:result.roomId || room, cancelledAt:result.cancelledAt || null }, { status:result.status || (result.ok ? 200 : 400) });
+    }
+
+    if (request.method === 'DELETE' && url.pathname === '/cancel-prepared-invitation') {
+      const result = await this.cancelDailyInvitation(request.headers.get('x-hammerschach-user-id') || '', {allowLiveInvitation:true});
       return json({ ok:result.ok, code:result.code || '', message:result.message || '', roomId:result.roomId || room, cancelledAt:result.cancelledAt || null }, { status:result.status || (result.ok ? 200 : 400) });
     }
 
