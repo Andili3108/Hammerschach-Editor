@@ -1,4 +1,4 @@
-// BUILD: GAMER-DIRECT-MEMBER-INVITATION-20260810-1
+// BUILD: GAMER-DIRECT-MEMBER-INVITATION-20260810-2
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -10044,6 +10044,7 @@ async function handleAuthApi(request, env, url) {
 
     const roomId = cleanRoomId(body.roomId || body.room);
     const recipientUserId = cleanInvitationRecipientUserId(body.recipientUserId || body.memberId || body.userId);
+    const expectedMode = body.expectedMode === 'daily' ? 'daily' : body.expectedMode === 'live' ? 'live' : '';
     if (!roomId) return json({ ok:false, code:'INVALID_ROOM', message:'Der Spielraum ist ungültig.' }, { status:400 });
     if (!recipientUserId) return json({ ok:false, code:'INVALID_RECIPIENT', message:'Bitte ein gültiges Mitglied auswählen.' }, { status:400 });
     if (String(recipientUserId) === String(session.user.id)) {
@@ -10070,6 +10071,14 @@ async function handleAuthApi(request, env, url) {
       }
     } catch (_) {
       return json({ ok:false, code:'ROOM_ACCESS_FAILED', message:'Der Spielraum konnte nicht geprüft werden.' }, { status:503 });
+    }
+
+    if (expectedMode && (!access.timeControl || access.timeControl.mode !== expectedMode)) {
+      return json({
+        ok:false,
+        code:'INVITATION_ROOM_MODE_MISMATCH',
+        message:'Die gewählte Bedenkzeit wurde im Spielraum noch nicht vollständig bestätigt. Bitte die Einladung erneut senden.'
+      }, { status:409 });
     }
 
     const recipient = await env.DB.prepare(
@@ -12454,6 +12463,7 @@ export class GameRoom {
 
     const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
     if (game.ended) return { ok:false, status:409, code:'GAME_ENDED', message:'Diese Partie ist bereits beendet.' };
+    if (game.started) return { ok:false, status:409, code:'GAME_ALREADY_STARTED', message:'Diese Partie wurde bereits gestartet.' };
     const opponentSlot = creatorRole === 'b' ? players.white : players.black;
     if (opponentSlot) {
       return { ok:false, status:409, code:'OPPONENT_ALREADY_JOINED', message:'Der gegnerische Spielerplatz ist bereits belegt.' };
@@ -12463,6 +12473,14 @@ export class GameRoom {
     const rawGameSetup = (await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null;
     const timeControl = cleanTimeControl(rawTimeControl);
     const gameSetup = rawGameSetup ? cleanGameSetup(rawGameSetup) : null;
+    if (!timeControl || !gameSetup) {
+      return {
+        ok:false,
+        status:409,
+        code:'INVITATION_ROOM_NOT_READY',
+        message:'Bedenkzeit und Spielmodus wurden im Spielraum noch nicht vollständig bestätigt. Bitte die Einladung erneut senden.'
+      };
+    }
     const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
     return {
       ok:true,
@@ -14169,6 +14187,21 @@ export class GameRoom {
     const whiteRegistered = !!(players.white && players.white.userId);
     const blackRegistered = !!(players.black && players.black.userId);
     if (!whiteRegistered || !blackRegistered) return { started:false, reason:'accounts_missing' };
+
+    // Eine gezielte Daily-Einladung darf nie allein durch das Öffnen eines
+    // Raumlinks starten. Erst die ausdrückliche Annahme unter „Meine Partien“
+    // gibt den automatischen Partiestart frei.
+    if (timeControl.mode === 'daily') {
+      const invitedUserId = String((await this.state.storage.get('invitedUserId')) || '');
+      const invitationStatus = String((await this.state.storage.get('invitationStatus')) || '');
+      if (invitedUserId && invitationStatus !== 'accepted') {
+        return { started:false, reason:'invitation_not_accepted' };
+      }
+      if (invitedUserId) {
+        const seatedUserIds = [players.white && players.white.userId, players.black && players.black.userId].map(value => String(value || ''));
+        if (!seatedUserIds.includes(invitedUserId)) return { started:false, reason:'invited_account_missing' };
+      }
+    }
 
     const now = Date.now();
     const gameSetup = cleanGameSetup(storedGameSetup);
