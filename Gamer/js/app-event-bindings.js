@@ -148,6 +148,7 @@ if(memberSearchInput) memberSearchInput.addEventListener('input', scheduleMember
 if(memberListBtn) memberListBtn.addEventListener('click', loadMemberList);
 if(membersSearchInput) membersSearchInput.addEventListener('input', scheduleStandaloneMemberSearch);
 membersActivityFilterButtons.forEach(button => button.addEventListener('click', () => setMembersActivityFilter(button.dataset.membersActivity)));
+if(membersFavoritesFilterBtn) membersFavoritesFilterBtn.addEventListener('click', toggleMembersFavoritesFilter);
 if(membersSortSelect) membersSortSelect.addEventListener('change', () => setMembersSort(membersSortSelect.value));
 if(membersRefreshBtn) membersRefreshBtn.addEventListener('click', refreshStandaloneMemberDirectory);
 if(membersCloseBtn) membersCloseBtn.addEventListener('click', closeMembersDialog);

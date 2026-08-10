@@ -309,10 +309,12 @@ const membersResults = document.getElementById('membersResults');
 const membersRefreshBtn = document.getElementById('membersRefreshBtn');
 const membersCloseBtn = document.getElementById('membersCloseBtn');
 const membersActivityFilterButtons = Array.from(document.querySelectorAll('[data-members-activity]'));
+const membersFavoritesFilterBtn = document.getElementById('membersFavoritesFilterBtn');
 const membersSortSelect = document.getElementById('membersSortSelect');
 let membersSearchTimer = null;
 let membersSearchRequestId = 0;
 let membersActivityFilter = 'all';
+let membersFavoritesOnly = false;
 let membersSort = 'activity';
 
 const memberProfileBackdrop = document.getElementById('memberProfileBackdrop');

@@ -25,6 +25,7 @@ function memberDirectoryParams(includeLimit){
   if(includeLimit) params.set('limit', '100');
   params.set('activity', membersActivityFilter || 'all');
   params.set('sort', membersSort || 'activity');
+  if(membersFavoritesOnly) params.set('favorites', '1');
   return params;
 }
 function updateMemberDirectoryControls(){
@@ -33,16 +34,22 @@ function updateMemberDirectoryControls(){
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
+  if(membersFavoritesFilterBtn){
+    membersFavoritesFilterBtn.classList.toggle('active', membersFavoritesOnly);
+    membersFavoritesFilterBtn.setAttribute('aria-pressed', membersFavoritesOnly ? 'true' : 'false');
+    membersFavoritesFilterBtn.textContent = membersFavoritesOnly ? '★ Favoriten' : '☆ Favoriten';
+  }
   if(membersSortSelect) membersSortSelect.value = membersSort;
 }
 function currentMemberFilterLabel(){
-  return {online:'Online', '24h':'letzte 24 Stunden', '7d':'letzte 7 Tage'}[membersActivityFilter] || 'alle';
+  const activityLabel = {online:'Online', '24h':'letzte 24 Stunden', '7d':'letzte 7 Tage'}[membersActivityFilter] || 'alle';
+  return membersFavoritesOnly ? 'Favoriten · ' + activityLabel : activityLabel;
 }
 function refreshStandaloneMemberDirectory(){
   if(membersSearchTimer){ clearTimeout(membersSearchTimer); membersSearchTimer = null; }
   const query = membersSearchInput ? membersSearchInput.value.trim() : '';
   membersSearchRequestId++;
-  if(!query){ loadStandaloneMemberList(); return; }
+  if(!query) return loadStandaloneMemberList();
   if(query.length < 2){
     if(membersResults) membersResults.innerHTML = '<div class="member-empty">Mindestens 2 Zeichen eingeben.</div>';
     setMembersStatus('Mindestens 2 Zeichen eingeben.', '');
@@ -50,7 +57,12 @@ function refreshStandaloneMemberDirectory(){
   }
   const requestId = membersSearchRequestId;
   setMembersStatus('Suche läuft…', '');
-  performStandaloneMemberSearch(query, requestId);
+  return performStandaloneMemberSearch(query, requestId);
+}
+function toggleMembersFavoritesFilter(){
+  membersFavoritesOnly = !membersFavoritesOnly;
+  updateMemberDirectoryControls();
+  refreshStandaloneMemberDirectory();
 }
 function setMembersActivityFilter(value){
   const normalized = ['online','24h','7d'].includes(String(value || '')) ? String(value) : 'all';
@@ -251,14 +263,16 @@ function renderStandaloneMemberResults(users, options){
     empty.className = 'member-empty';
     empty.textContent = options.source === 'search'
       ? 'Kein passendes Mitglied für Suche und Filter gefunden.'
-      : (membersActivityFilter === 'all' ? 'Keine registrierten Mitglieder gefunden.' : 'Keine Mitglieder für diesen Aktivitätsfilter gefunden.');
+      : (membersFavoritesOnly
+          ? 'Noch kein Lieblingsmitglied für diese Auswahl vorhanden.'
+          : (membersActivityFilter === 'all' ? 'Keine registrierten Mitglieder gefunden.' : 'Keine Mitglieder für diesen Aktivitätsfilter gefunden.'));
     membersResults.appendChild(empty);
     return;
   }
   const canInvite = standaloneInvitationAvailable();
   users.forEach(user => {
     const card = document.createElement('div');
-    card.className = 'member-result-card';
+    card.className = 'member-result-card' + (user.favorite ? ' favorite' : '');
 
     const main = document.createElement('div');
     main.className = 'member-result-main';
@@ -272,6 +286,17 @@ function renderStandaloneMemberResults(users, options){
     nameText.textContent = user.username || 'Mitglied';
     name.appendChild(nameText);
     name.appendChild(createMemberActivityBadge(user, options.serverNow));
+    if(onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
+      const favoriteBtn = document.createElement('button');
+      favoriteBtn.type = 'button';
+      favoriteBtn.className = 'member-favorite-btn';
+      updateMemberFavoriteButton(favoriteBtn, user);
+      favoriteBtn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        toggleStandaloneMemberFavorite(user, favoriteBtn);
+      });
+      name.appendChild(favoriteBtn);
+    }
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
     meta.textContent = canInvite
@@ -307,6 +332,41 @@ function renderStandaloneMemberResults(users, options){
     card.appendChild(actions);
     membersResults.appendChild(card);
   });
+}
+function updateMemberFavoriteButton(button, user){
+  if(!button) return;
+  const favorite = !!(user && user.favorite);
+  const username = String(user && user.username || 'dieses Mitglied');
+  button.textContent = favorite ? '★' : '☆';
+  button.classList.toggle('active', favorite);
+  button.setAttribute('aria-pressed', favorite ? 'true' : 'false');
+  button.setAttribute('aria-label', favorite ? username + ' aus den Favoriten entfernen' : username + ' als Favorit markieren');
+  button.title = favorite ? 'Aus den Lieblingsmitgliedern entfernen' : 'Als Lieblingsmitglied markieren';
+}
+async function toggleStandaloneMemberFavorite(user, button){
+  const targetId = String(user && user.id || '').trim();
+  if(!onlineAuthToken || !onlineAuthUser || !targetId || targetId === onlineAuthUser.id) return;
+  const desired = !user.favorite;
+  if(button) button.disabled = true;
+  try{
+    const data = await authApi('/api/members/' + encodeURIComponent(targetId) + '/favorite', {
+      method:'POST',
+      body:JSON.stringify({favorite:desired})
+    });
+    user.favorite = !!data.favorite;
+    updateMemberFavoriteButton(button, user);
+    const card = button && button.closest ? button.closest('.member-result-card') : null;
+    if(card) card.classList.toggle('favorite', user.favorite);
+    await refreshStandaloneMemberDirectory();
+    setMembersStatus(
+      (user.username || 'Das Mitglied') + (user.favorite ? ' wurde zu deinen Lieblingsmitgliedern hinzugefügt.' : ' wurde aus deinen Lieblingsmitgliedern entfernt.'),
+      'success'
+    );
+  } catch(err){
+    setMembersStatus(err && err.message ? err.message : 'Das Lieblingsmitglied konnte nicht gespeichert werden.', 'error');
+  } finally {
+    if(button) button.disabled = false;
+  }
 }
 async function loadStandaloneMemberList(options){
   options = options || {};
