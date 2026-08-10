@@ -433,15 +433,59 @@ function appendDailyGamesSection(titleText, games, emptyText){
 }
 let dailyGamesTournamentOnly = false;
 let dailyGamesCache = [];
+let dailyGamesActiveTab = 'running';
+function dailyGamesGroups(games){
+  const sourceGames = Array.isArray(games) ? games : [];
+  const allGames = dailyGamesTournamentOnly ? sourceGames.filter(game => game.isTournamentGame) : sourceGames;
+  const runningGames = allGames.filter(game => !game.ended && !!game.started);
+  const openGames = allGames.filter(game => !game.ended && !game.started);
+  const completedGames = allGames.filter(game => !!game.ended);
+  return {allGames, runningGames, openGames, completedGames};
+}
+function updateDailyGamesTabCounts(groups){
+  if(dailyGamesRunningCount) dailyGamesRunningCount.textContent = String(groups.runningGames.length);
+  if(dailyGamesOpenCount) dailyGamesOpenCount.textContent = String(groups.openGames.length);
+  if(dailyGamesCompletedCount) dailyGamesCompletedCount.textContent = String(groups.completedGames.length);
+}
+function setDailyGamesActiveTab(tab, options){
+  const validTabs = ['running','open','completed'];
+  dailyGamesActiveTab = validTabs.includes(tab) ? tab : 'running';
+  dailyGamesTabButtons.forEach(button => {
+    const active = button.dataset.dailyGamesTab === dailyGamesActiveTab;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+    button.tabIndex = active ? 0 : -1;
+    if(active && dailyGamesListEl) dailyGamesListEl.setAttribute('aria-labelledby', button.id || 'dailyGamesRunningTab');
+  });
+  if(!options || options.render !== false) renderDailyGames(dailyGamesCache);
+}
+function appendDailyGameCards(games, emptyText){
+  if(games.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'daily-games-empty';
+    empty.textContent = emptyText;
+    dailyGamesListEl.appendChild(empty);
+    return;
+  }
+  games.forEach(game => dailyGamesListEl.appendChild(createDailyGameCard(game)));
+}
 function renderDailyGames(games){
   if(!dailyGamesListEl) return;
   dailyGamesListEl.innerHTML = '';
-  const sourceGames = Array.isArray(games) ? games : [];
-  const allGames = dailyGamesTournamentOnly ? sourceGames.filter(game => game.isTournamentGame) : sourceGames;
-  const activeGames = allGames.filter(game => !game.ended);
-  const completedGames = allGames.filter(game => !!game.ended);
-  appendDailyGamesSection('Laufende Partien und Einladungen', activeGames, 'Du hast derzeit keine laufende Daily-Partie oder offene Einladung.');
-  appendDailyGamesSection('Beendete Partien', completedGames, 'Noch keine beendeten Daily-Partien im Verlauf.');
+  const groups = dailyGamesGroups(games);
+  updateDailyGamesTabCounts(groups);
+  if(dailyGamesActiveTab === 'open'){
+    const incomingGames = groups.openGames.filter(game => !!game.incomingInvitation);
+    const ownOpenGames = groups.openGames.filter(game => !game.incomingInvitation);
+    appendDailyGamesSection('Einladungen', incomingGames, 'Du hast derzeit keine offene Einladung.');
+    appendDailyGamesSection('Eigene Angebote', ownOpenGames, 'Du hast derzeit kein eigenes offenes Angebot.');
+    return;
+  }
+  if(dailyGamesActiveTab === 'completed'){
+    appendDailyGameCards(groups.completedGames, 'Noch keine beendeten Daily-Partien im Verlauf.');
+    return;
+  }
+  appendDailyGameCards(groups.runningGames, 'Du hast derzeit keine laufende Daily-Partie.');
 }
 let nextDailyGameTarget = null;
 let nextDailyGameLoading = false;
@@ -578,15 +622,10 @@ async function loadDailyGames(options){
     const games = data.games || [];
     dailyGamesCache = games;
     const myTurnCount = games.filter(game => !game.ended && !!game.started && !!game.isMyTurn).length;
-    const incomingInvitationCount = games.filter(game => !!game.incomingInvitation).length;
-    const attentionCount = myTurnCount + incomingInvitationCount;
     if(dailyGamesTurnCount){
-      dailyGamesTurnCount.hidden = attentionCount < 1;
-      dailyGamesTurnCount.textContent = String(attentionCount);
-      const labels = [];
-      if(myTurnCount) labels.push(myTurnCount === 1 ? '1 Daily-Partie: Du bist am Zug' : myTurnCount + ' Daily-Partien: Du bist am Zug');
-      if(incomingInvitationCount) labels.push(incomingInvitationCount === 1 ? '1 offene Einladung' : incomingInvitationCount + ' offene Einladungen');
-      dailyGamesTurnCount.setAttribute('aria-label', labels.join(' · '));
+      dailyGamesTurnCount.hidden = myTurnCount < 1;
+      dailyGamesTurnCount.textContent = String(myTurnCount);
+      dailyGamesTurnCount.setAttribute('aria-label', myTurnCount === 1 ? '1 Daily-Partie: Du bist am Zug' : myTurnCount + ' Daily-Partien: Du bist am Zug');
     }
     const runningTournamentCount = games.filter(game => game.isTournamentGame && !game.ended).length;
     if(tournamentGamesCount){
@@ -595,14 +634,15 @@ async function loadDailyGames(options){
     }
     renderDailyGames(games);
     const visibleGames = dailyGamesTournamentOnly ? games.filter(game => game.isTournamentGame) : games;
-    const activeCount = visibleGames.filter(game => !game.ended).length;
+    const runningCount = visibleGames.filter(game => !game.ended && !!game.started).length;
+    const openCount = visibleGames.filter(game => !game.ended && !game.started).length;
     const completedCount = visibleGames.filter(game => !!game.ended).length;
     const addressedRoom = dailyInvitationRoomFromAddress();
     const addressedInvitationFound = !!(addressedRoom && games.some(game => game.incomingInvitation && cleanRoomId(game.roomId) === addressedRoom));
     if(!silent && dailyGamesStatusEl){
       dailyGamesStatusEl.textContent = addressedRoom && !addressedInvitationFound
         ? 'Für diesen Account liegt unter dem Mail-Link keine offene Einladung mehr vor.'
-        : activeCount + ' laufend/offen · ' + completedCount + ' beendet.';
+        : runningCount + ' laufend · ' + openCount + ' offen · ' + completedCount + ' beendet.';
     }
   } catch(err){
     if(dailyGamesTurnCount){ dailyGamesTurnCount.hidden = true; dailyGamesTurnCount.textContent = '0'; }
@@ -626,10 +666,12 @@ function stopDailyGamesPresenceRefresh(){
 function openDailyGamesDialog(tournamentOnly){
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   dailyGamesTournamentOnly = tournamentOnly === true;
+  const invitationFromAddress = !!dailyInvitationRoomFromAddress();
+  setDailyGamesActiveTab(invitationFromAddress ? 'open' : 'running', {render:false});
   if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Daily-Partien';
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
-    ? 'Alle laufenden und beendeten Partien aus deinen Hammerschach-Turnieren. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
-    : 'Laufende Partien, offene Einladungen und dein Verlauf beendeter Daily-Partien. Turnierpartien bleiben hier vollständig enthalten und sind zusätzlich golden markiert.';
+    ? 'Deine Turnierpartien nach Status: laufend, offen und beendet. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
+    : 'Deine Daily-Partien nach Status: laufend, offen und beendet. Laufende Partien werden beim Öffnen standardmäßig zuerst angezeigt.';
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
   loadDailyGames();
   startDailyGamesPresenceRefresh();
@@ -638,6 +680,7 @@ function closeDailyGamesDialog(){
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = true;
   stopDailyGamesPresenceRefresh();
 }
+dailyGamesTabButtons.forEach(button => button.addEventListener('click', () => setDailyGamesActiveTab(button.dataset.dailyGamesTab)));
 if(dailyGamesOpenBtn) dailyGamesOpenBtn.addEventListener('click', () => openDailyGamesDialog(false));
 if(tournamentGamesOpenBtn) tournamentGamesOpenBtn.addEventListener('click', () => openDailyGamesDialog(true));
 if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDailyGames);

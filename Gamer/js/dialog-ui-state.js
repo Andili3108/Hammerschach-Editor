@@ -247,6 +247,11 @@ function normalizedInvitationPersonalMessage(value){
 }
 const dailyGamesTitle = document.getElementById('dailyGamesTitle');
 const dailyGamesIntro = dailyGamesBackdrop ? dailyGamesBackdrop.querySelector('.daily-games-intro') : null;
+const dailyGamesTabsEl = document.getElementById('dailyGamesTabs');
+const dailyGamesTabButtons = dailyGamesTabsEl ? Array.from(dailyGamesTabsEl.querySelectorAll('[data-daily-games-tab]')) : [];
+const dailyGamesRunningCount = document.getElementById('dailyGamesRunningCount');
+const dailyGamesOpenCount = document.getElementById('dailyGamesOpenCount');
+const dailyGamesCompletedCount = document.getElementById('dailyGamesCompletedCount');
 const dailyGamesListEl = document.getElementById('dailyGamesList');
 const dailyGamesStatusEl = document.getElementById('dailyGamesStatus');
 const dailyGamesRefreshBtn = document.getElementById('dailyGamesRefreshBtn');
