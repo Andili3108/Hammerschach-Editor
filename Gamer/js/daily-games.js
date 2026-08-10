@@ -84,6 +84,169 @@ function dailyGameRoomUrl(game){
     return '';
   }
 }
+function myGamesVariantLabel(game){
+  if(game && game.variant === GAME_VARIANT_FREESTYLE){
+    return Number.isFinite(Number(game.positionId)) ? ('Freestyle #' + Number(game.positionId)) : 'Freestyle';
+  }
+  return 'Klassisch';
+}
+function myGamesEndReasonLabel(reason){
+  const labels = {
+    time:'Zeitüberschreitung', timeout:'Zeitüberschreitung', resignation:'Aufgabe',
+    draw_agreed:'Remis vereinbart', draw_agreement:'Remis vereinbart', checkmate:'Schachmatt',
+    stalemate:'Patt', insufficient_material:'Unzureichendes Mattmaterial',
+    fifty_move_rule:'50-Züge-Regel', threefold_repetition:'Dreifache Stellungswiederholung'
+  };
+  return labels[String(reason || '')] || 'Partie beendet';
+}
+function createMyLiveRunningCard(game){
+  const card = document.createElement('div');
+  card.className = 'daily-game-card' + (game && game.isMyTurn ? ' my-turn' : '') + (game && game.isTournamentGame ? ' tournament-game' : '');
+  const content = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'daily-game-title';
+  const titleText = document.createElement('span');
+  titleText.className = 'daily-game-title-text';
+  titleText.textContent = 'gegen ' + (cleanDisplayName(game && game.opponentName) || 'Gegner');
+  title.appendChild(titleText);
+  const status = document.createElement('div');
+  status.className = 'daily-game-status';
+  status.textContent = game && game.isMyTurn ? 'Du bist am Zug' : 'Gegner ist am Zug';
+  const meta = document.createElement('div');
+  meta.className = 'daily-game-meta';
+  const parts = ['Live-Partie', game && game.timeLabel || '', myGamesVariantLabel(game), game && game.rated === false ? 'Ungewertet' : 'Gewertet', game && game.publicGame ? 'Öffentlich' : 'Privat'];
+  if(game && game.lastMoveSan) parts.push('letzter Zug: ' + game.lastMoveSan);
+  meta.textContent = parts.filter(Boolean).join(' · ');
+  content.appendChild(title);
+  if(game && game.isTournamentGame){
+    const tournamentBadge = document.createElement('div');
+    tournamentBadge.className = 'daily-tournament-badge';
+    tournamentBadge.textContent = '🏆 ' + (game.tournamentName || 'Turnier') + (game.tournamentRoundLabel ? ' · ' + game.tournamentRoundLabel : '');
+    content.appendChild(tournamentBadge);
+  }
+  content.appendChild(status);
+  content.appendChild(meta);
+  const actions = document.createElement('div');
+  actions.className = 'daily-game-actions';
+  const openLink = document.createElement('a');
+  openLink.className = 'daily-game-open-btn';
+  openLink.href = dailyGameRoomUrl(game) || '#';
+  openLink.textContent = 'Partie öffnen';
+  openLink.title = 'Live-Partie im aktuellen Tab öffnen';
+  actions.appendChild(openLink);
+  card.appendChild(content);
+  card.appendChild(actions);
+  return card;
+}
+async function withdrawMyLiveOffer(offer, button){
+  const roomId = cleanRoomId(offer && offer.roomId);
+  if(!roomId) return;
+  if(!window.confirm('Dieses Live-Partieangebot wirklich zurückziehen?')) return;
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Wird zurückgezogen…'; }
+  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Live-Partieangebot wird zurückgezogen…';
+  try{
+    const data = await authApi('/api/open-offers/' + encodeURIComponent(roomId), {method:'DELETE'});
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = data.message || 'Live-Partieangebot wurde zurückgezogen.';
+    await loadDailyGames({silent:true});
+  }catch(err){
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Das Live-Partieangebot konnte nicht zurückgezogen werden.';
+    if(button){ button.disabled = false; button.textContent = oldText || 'Angebot zurückziehen'; }
+  }
+}
+function createMyLiveOpenOfferCard(offer){
+  const card = document.createElement('div');
+  card.className = 'daily-game-card';
+  const content = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'daily-game-title';
+  title.textContent = 'Offenes Live-Angebot';
+  const status = document.createElement('div');
+  status.className = 'daily-game-status';
+  status.textContent = 'Wartet auf Mitspieler';
+  const meta = document.createElement('div');
+  meta.className = 'daily-game-meta';
+  const ownRole = offer && offer.creatorRole === 'b' ? 'Schwarz' : 'Weiß';
+  meta.textContent = ['Live-Partie', offer && offer.timeLabel || '', myGamesVariantLabel(offer), offer && offer.rated === false ? 'Ungewertet' : 'Gewertet', 'Du spielst ' + ownRole].filter(Boolean).join(' · ');
+  content.appendChild(title);
+  content.appendChild(status);
+  content.appendChild(meta);
+  const actions = document.createElement('div');
+  actions.className = 'daily-game-actions';
+  const withdrawBtn = document.createElement('button');
+  withdrawBtn.type = 'button';
+  withdrawBtn.className = 'daily-game-delete-btn';
+  withdrawBtn.textContent = 'Angebot zurückziehen';
+  withdrawBtn.addEventListener('click', () => withdrawMyLiveOffer(offer, withdrawBtn));
+  actions.appendChild(withdrawBtn);
+  card.appendChild(content);
+  card.appendChild(actions);
+  return card;
+}
+function createMyLiveCompletedCard(game){
+  const role = game && game.participantRole === 'b' ? 'b' : 'w';
+  const opponentName = role === 'w' ? game && game.blackName : game && game.whiteName;
+  const outcome = dailyOutcomeForUser({result:game && game.result, role});
+  const card = document.createElement('div');
+  card.className = 'daily-game-card completed' + (game && game.tournamentId ? ' tournament-game' : '');
+  const content = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'daily-game-title';
+  title.textContent = 'gegen ' + (cleanDisplayName(opponentName) || 'Gegner');
+  const status = document.createElement('div');
+  status.className = 'daily-game-status';
+  status.textContent = outcome.label + ' · ' + dailyResultLabel(game && game.result);
+  if(outcome.className) status.classList.add(outcome.className);
+  const meta = document.createElement('div');
+  meta.className = 'daily-game-meta';
+  const endedAt = game && game.endedAt ? ('beendet: ' + formatDailyGameDeadline(game.endedAt)) : '';
+  meta.textContent = ['Live-Partie', game && game.timeLabel || '', myGamesVariantLabel(game), game && game.rated === false ? 'Ungewertet' : 'Gewertet', myGamesEndReasonLabel(game && game.endReason), endedAt].filter(Boolean).join(' · ');
+  content.appendChild(title);
+  if(game && game.tournamentId){
+    const tournamentBadge = document.createElement('div');
+    tournamentBadge.className = 'daily-tournament-badge';
+    tournamentBadge.textContent = '🏆 ' + (game.tournamentName || 'Turnier') + (game.tournamentRoundLabel ? ' · ' + game.tournamentRoundLabel : '');
+    content.appendChild(tournamentBadge);
+  }
+  content.appendChild(status);
+  content.appendChild(meta);
+  const startSummary = createGameStartSummaryPanel(game);
+  if(startSummary) content.appendChild(startSummary);
+  const reactionPanel = createGameReactionPanel(game, {
+    opponentName,
+    statusElement:dailyGamesStatusEl,
+    onChange:() => renderDailyGames(dailyGamesCache)
+  });
+  if(reactionPanel) content.appendChild(reactionPanel);
+  const actions = document.createElement('div');
+  actions.className = 'daily-game-actions';
+  const openLink = document.createElement('a');
+  openLink.className = 'daily-game-open-btn';
+  openLink.href = dailyGameRoomUrl(game) || '#';
+  openLink.textContent = 'Partie ansehen';
+  openLink.title = 'Beendete Live-Partie im aktuellen Tab öffnen';
+  actions.appendChild(openLink);
+  const analyzerBtn = document.createElement('button');
+  analyzerBtn.type = 'button';
+  analyzerBtn.className = 'daily-game-pgn-btn';
+  analyzerBtn.textContent = 'Analyzer';
+  analyzerBtn.addEventListener('click', () => {
+    if(typeof openArchiveInAnalyzer === 'function') openArchiveInAnalyzer(game, analyzerBtn);
+  });
+  actions.appendChild(analyzerBtn);
+  const pgnBtn = document.createElement('button');
+  pgnBtn.type = 'button';
+  pgnBtn.className = 'daily-game-pgn-btn';
+  pgnBtn.textContent = 'PGN';
+  pgnBtn.addEventListener('click', () => {
+    if(typeof downloadArchivePgn === 'function') downloadArchivePgn(game, pgnBtn);
+  });
+  actions.appendChild(pgnBtn);
+  card.appendChild(content);
+  card.appendChild(actions);
+  return card;
+}
+
 function dailyPgnFilenameFromDisposition(value, game){
   const match = String(value || '').match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);
   if(match && match[1]){
@@ -408,7 +571,7 @@ function createDailyGameCard(game){
   card.appendChild(actions);
   return card;
 }
-function appendDailyGamesSection(titleText, games, emptyText){
+function appendDailyGamesSection(titleText, games, emptyText, renderer){
   const section = document.createElement('section');
   section.className = 'daily-games-section';
   const heading = document.createElement('div');
@@ -427,25 +590,33 @@ function appendDailyGamesSection(titleText, games, emptyText){
     empty.textContent = emptyText;
     section.appendChild(empty);
   } else {
-    games.forEach(game => section.appendChild(createDailyGameCard(game)));
+    const renderCard = typeof renderer === 'function' ? renderer : createDailyGameCard;
+    games.forEach(game => section.appendChild(renderCard(game)));
   }
   dailyGamesListEl.appendChild(section);
 }
 let dailyGamesTournamentOnly = false;
 let dailyGamesCache = [];
+let myLiveRunningGamesCache = [];
+let myLiveOpenOffersCache = [];
+let myLiveCompletedGamesCache = [];
+let myLiveCompletedTotal = 0;
 let dailyGamesActiveTab = 'running';
 function dailyGamesGroups(games){
   const sourceGames = Array.isArray(games) ? games : [];
-  const allGames = dailyGamesTournamentOnly ? sourceGames.filter(game => game.isTournamentGame) : sourceGames;
-  const runningGames = allGames.filter(game => !game.ended && !!game.started);
-  const openGames = allGames.filter(game => !game.ended && !game.started);
-  const completedGames = allGames.filter(game => !!game.ended);
-  return {allGames, runningGames, openGames, completedGames};
+  const allDailyGames = dailyGamesTournamentOnly ? sourceGames.filter(game => game.isTournamentGame) : sourceGames;
+  const runningDaily = allDailyGames.filter(game => !game.ended && !!game.started);
+  const openDaily = allDailyGames.filter(game => !game.ended && !game.started);
+  const completedDaily = allDailyGames.filter(game => !!game.ended);
+  const runningLive = dailyGamesTournamentOnly ? myLiveRunningGamesCache.filter(game => game.isTournamentGame) : myLiveRunningGamesCache;
+  const openLive = dailyGamesTournamentOnly ? [] : myLiveOpenOffersCache;
+  const completedLive = dailyGamesTournamentOnly ? myLiveCompletedGamesCache.filter(game => !!game.tournamentId) : myLiveCompletedGamesCache;
+  return {allDailyGames, runningDaily, openDaily, completedDaily, runningLive, openLive, completedLive};
 }
 function updateDailyGamesTabCounts(groups){
-  if(dailyGamesRunningCount) dailyGamesRunningCount.textContent = String(groups.runningGames.length);
-  if(dailyGamesOpenCount) dailyGamesOpenCount.textContent = String(groups.openGames.length);
-  if(dailyGamesCompletedCount) dailyGamesCompletedCount.textContent = String(groups.completedGames.length);
+  if(dailyGamesRunningCount) dailyGamesRunningCount.textContent = String(groups.runningDaily.length + groups.runningLive.length);
+  if(dailyGamesOpenCount) dailyGamesOpenCount.textContent = String(groups.openDaily.length + groups.openLive.length);
+  if(dailyGamesCompletedCount) dailyGamesCompletedCount.textContent = String(groups.completedDaily.length + groups.completedLive.length);
 }
 function setDailyGamesActiveTab(tab, options){
   const validTabs = ['running','open','completed'];
@@ -459,7 +630,7 @@ function setDailyGamesActiveTab(tab, options){
   });
   if(!options || options.render !== false) renderDailyGames(dailyGamesCache);
 }
-function appendDailyGameCards(games, emptyText){
+function appendDailyGameCards(games, emptyText, renderer){
   if(games.length === 0){
     const empty = document.createElement('div');
     empty.className = 'daily-games-empty';
@@ -467,7 +638,31 @@ function appendDailyGameCards(games, emptyText){
     dailyGamesListEl.appendChild(empty);
     return;
   }
-  games.forEach(game => dailyGamesListEl.appendChild(createDailyGameCard(game)));
+  const renderCard = typeof renderer === 'function' ? renderer : createDailyGameCard;
+  games.forEach(game => dailyGamesListEl.appendChild(renderCard(game)));
+}
+function sortMyGamesByDateAndTurn(items){
+  return items.sort((a,b) => {
+    if(!!a.myTurn !== !!b.myTurn) return a.myTurn ? -1 : 1;
+    const aTime = Date.parse(a.date || 0) || 0;
+    const bTime = Date.parse(b.date || 0) || 0;
+    return bTime - aTime;
+  });
+}
+function appendMixedGameCards(items, emptyText){
+  if(!items.length){
+    const empty = document.createElement('div');
+    empty.className = 'daily-games-empty';
+    empty.textContent = emptyText;
+    dailyGamesListEl.appendChild(empty);
+    return;
+  }
+  items.forEach(item => {
+    if(item.kind === 'live-running') dailyGamesListEl.appendChild(createMyLiveRunningCard(item.game));
+    else if(item.kind === 'live-offer') dailyGamesListEl.appendChild(createMyLiveOpenOfferCard(item.game));
+    else if(item.kind === 'live-completed') dailyGamesListEl.appendChild(createMyLiveCompletedCard(item.game));
+    else dailyGamesListEl.appendChild(createDailyGameCard(item.game));
+  });
 }
 function renderDailyGames(games){
   if(!dailyGamesListEl) return;
@@ -475,17 +670,50 @@ function renderDailyGames(games){
   const groups = dailyGamesGroups(games);
   updateDailyGamesTabCounts(groups);
   if(dailyGamesActiveTab === 'open'){
-    const incomingGames = groups.openGames.filter(game => !!game.incomingInvitation);
-    const ownOpenGames = groups.openGames.filter(game => !game.incomingInvitation);
+    const incomingGames = groups.openDaily.filter(game => !!game.incomingInvitation);
+    const ownDailyOpenGames = groups.openDaily.filter(game => !game.incomingInvitation);
     appendDailyGamesSection('Einladungen', incomingGames, 'Du hast derzeit keine offene Einladung.');
-    appendDailyGamesSection('Eigene Angebote', ownOpenGames, 'Du hast derzeit kein eigenes offenes Angebot.');
+    const ownOffers = [
+      ...ownDailyOpenGames.map(game => ({kind:'daily', game})),
+      ...groups.openLive.map(game => ({kind:'live-offer', game}))
+    ];
+    const offerSection = document.createElement('section');
+    offerSection.className = 'daily-games-section';
+    const heading = document.createElement('div');
+    heading.className = 'daily-games-section-title';
+    const title = document.createElement('span');
+    title.textContent = 'Eigene Angebote';
+    const count = document.createElement('span');
+    count.className = 'daily-games-section-count';
+    count.textContent = String(ownOffers.length);
+    heading.appendChild(title); heading.appendChild(count); offerSection.appendChild(heading);
+    if(!ownOffers.length){
+      const empty = document.createElement('div'); empty.className = 'daily-games-empty'; empty.textContent = 'Du hast derzeit kein eigenes offenes Angebot.'; offerSection.appendChild(empty);
+    } else {
+      ownOffers.forEach(item => offerSection.appendChild(item.kind === 'live-offer' ? createMyLiveOpenOfferCard(item.game) : createDailyGameCard(item.game)));
+    }
+    dailyGamesListEl.appendChild(offerSection);
     return;
   }
   if(dailyGamesActiveTab === 'completed'){
-    appendDailyGameCards(groups.completedGames, 'Noch keine beendeten Daily-Partien im Verlauf.');
+    const items = sortMyGamesByDateAndTurn([
+      ...groups.completedDaily.map(game => ({kind:'daily', game, date:game.endedAt || game.updatedAt || ''})),
+      ...groups.completedLive.map(game => ({kind:'live-completed', game, date:game.endedAt || ''}))
+    ]);
+    appendMixedGameCards(items, dailyGamesTournamentOnly ? 'Noch keine beendete Turnierpartie im Verlauf.' : 'Noch keine beendete Partie im Verlauf.');
+    if(!dailyGamesTournamentOnly && myLiveCompletedTotal > myLiveCompletedGamesCache.length){
+      const note = document.createElement('div');
+      note.className = 'daily-games-empty';
+      note.textContent = 'Weitere ältere Live-Partien findest du im Partienarchiv.';
+      dailyGamesListEl.appendChild(note);
+    }
     return;
   }
-  appendDailyGameCards(groups.runningGames, 'Du hast derzeit keine laufende Daily-Partie.');
+  const runningItems = sortMyGamesByDateAndTurn([
+    ...groups.runningDaily.map(game => ({kind:'daily', game, myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''})),
+    ...groups.runningLive.map(game => ({kind:'live-running', game, myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''}))
+  ]);
+  appendMixedGameCards(runningItems, dailyGamesTournamentOnly ? 'Du hast derzeit keine laufende Turnierpartie.' : 'Du hast derzeit keine laufende Partie.');
 }
 let nextDailyGameTarget = null;
 let nextDailyGameLoading = false;
@@ -615,40 +843,64 @@ async function loadDailyGames(options){
     if(!silent) openAuthDialog('login');
     return;
   }
-  if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Partien werden geladen...';
+  if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Partien werden geladen…';
   if(!silent && dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = true;
   try{
-    const data = await authApi('/api/daily-games');
-    const games = data.games || [];
+    const requests = [authApi('/api/daily-games'), authApi('/api/my-live-games'), authApi('/api/game-archive?scope=mine&mode=live&page=1&limit=50')];
+    if(!dailyGamesTournamentOnly) requests.push(authApi('/api/open-offers'));
+    const results = await Promise.allSettled(requests);
+    const dailyResult = results[0];
+    const liveResult = results[1];
+    const archiveResult = results[2];
+    const offersResult = dailyGamesTournamentOnly ? null : results[3];
+    if(dailyResult.status !== 'fulfilled' && liveResult.status !== 'fulfilled' && archiveResult.status !== 'fulfilled'){
+      throw (dailyResult.reason || liveResult.reason || archiveResult.reason || new Error('Partien konnten nicht geladen werden.'));
+    }
+    const games = dailyResult.status === 'fulfilled' && Array.isArray(dailyResult.value.games) ? dailyResult.value.games : [];
     dailyGamesCache = games;
-    const myTurnCount = games.filter(game => !game.ended && !!game.started && !!game.isMyTurn).length;
+    myLiveRunningGamesCache = liveResult.status === 'fulfilled' && Array.isArray(liveResult.value.games) ? liveResult.value.games : [];
+    const liveArchiveData = archiveResult.status === 'fulfilled' ? archiveResult.value : {};
+    myLiveCompletedGamesCache = Array.isArray(liveArchiveData.games) ? liveArchiveData.games : [];
+    myLiveCompletedTotal = Math.max(myLiveCompletedGamesCache.length, Number(liveArchiveData.total || 0));
+    const offers = offersResult && offersResult.status === 'fulfilled' && Array.isArray(offersResult.value.offers) ? offersResult.value.offers : [];
+    myLiveOpenOffersCache = offers.filter(offer => offer && offer.mine === true && offer.mode !== 'daily');
+
+    const dailyMyTurnCount = games.filter(game => !game.ended && !!game.started && !!game.isMyTurn).length;
+    const liveMyTurnCount = myLiveRunningGamesCache.filter(game => !!game.isMyTurn).length;
+    const myTurnCount = dailyMyTurnCount + liveMyTurnCount;
     if(dailyGamesTurnCount){
       dailyGamesTurnCount.hidden = myTurnCount < 1;
       dailyGamesTurnCount.textContent = String(myTurnCount);
-      dailyGamesTurnCount.setAttribute('aria-label', myTurnCount === 1 ? '1 Daily-Partie: Du bist am Zug' : myTurnCount + ' Daily-Partien: Du bist am Zug');
+      dailyGamesTurnCount.setAttribute('aria-label', myTurnCount === 1 ? '1 Partie: Du bist am Zug' : myTurnCount + ' Partien: Du bist am Zug');
     }
-    const runningTournamentCount = games.filter(game => game.isTournamentGame && !game.ended).length;
+    const runningTournamentCount = games.filter(game => game.isTournamentGame && !game.ended).length + myLiveRunningGamesCache.filter(game => game.isTournamentGame).length;
     if(tournamentGamesCount){
       tournamentGamesCount.hidden = runningTournamentCount < 1;
       tournamentGamesCount.textContent = String(runningTournamentCount);
     }
     renderDailyGames(games);
-    const visibleGames = dailyGamesTournamentOnly ? games.filter(game => game.isTournamentGame) : games;
-    const runningCount = visibleGames.filter(game => !game.ended && !!game.started).length;
-    const openCount = visibleGames.filter(game => !game.ended && !game.started).length;
-    const completedCount = visibleGames.filter(game => !!game.ended).length;
+    const groups = dailyGamesGroups(games);
+    const runningCount = groups.runningDaily.length + groups.runningLive.length;
+    const openCount = groups.openDaily.length + groups.openLive.length;
+    const completedCount = groups.completedDaily.length + groups.completedLive.length;
     const addressedRoom = dailyInvitationRoomFromAddress();
     const addressedInvitationFound = !!(addressedRoom && games.some(game => game.incomingInvitation && cleanRoomId(game.roomId) === addressedRoom));
+    const partial = [dailyResult, liveResult, archiveResult, offersResult].filter(result => result && result.status === 'rejected').length > 0;
     if(!silent && dailyGamesStatusEl){
       dailyGamesStatusEl.textContent = addressedRoom && !addressedInvitationFound
         ? 'Für diesen Account liegt unter dem Mail-Link keine offene Einladung mehr vor.'
-        : runningCount + ' laufend · ' + openCount + ' offen · ' + completedCount + ' beendet.';
+        : runningCount + ' laufend · ' + openCount + ' offen · ' + completedCount + ' beendet.' + (partial ? ' Einige Live-Daten konnten momentan nicht geladen werden.' : '');
     }
   } catch(err){
     if(dailyGamesTurnCount){ dailyGamesTurnCount.hidden = true; dailyGamesTurnCount.textContent = '0'; }
     if(!silent){
+      dailyGamesCache = [];
+      myLiveRunningGamesCache = [];
+      myLiveOpenOffersCache = [];
+      myLiveCompletedGamesCache = [];
+      myLiveCompletedTotal = 0;
       renderDailyGames([]);
-      if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Daily-Partien konnten nicht geladen werden.';
+      if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Partien konnten nicht geladen werden.';
     }
   } finally {
     if(!silent && dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = false;
@@ -668,10 +920,10 @@ function openDailyGamesDialog(tournamentOnly){
   dailyGamesTournamentOnly = tournamentOnly === true;
   const invitationFromAddress = !!dailyInvitationRoomFromAddress();
   setDailyGamesActiveTab(invitationFromAddress ? 'open' : 'running', {render:false});
-  if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Daily-Partien';
+  if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Partien';
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
-    ? 'Deine Turnierpartien nach Status: laufend, offen und beendet. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
-    : 'Deine Daily-Partien nach Status: laufend, offen und beendet. Laufende Partien werden beim Öffnen standardmäßig zuerst angezeigt.';
+    ? 'Deine Daily- und Live-Turnierpartien nach Status. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
+    : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Laufende Partien werden beim Öffnen standardmäßig zuerst angezeigt.';
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
   loadDailyGames();
   startDailyGamesPresenceRefresh();
