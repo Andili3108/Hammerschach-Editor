@@ -5171,7 +5171,8 @@ function archiveGameDto(row, currentUserId) {
     participantRole,
     reactionAvailable:!!participantRole && !!whiteUserId && !!blackUserId && whiteUserId !== blackUserId,
     myReaction:participantRole ? cleanGameReaction(row && row.my_reaction) : '',
-    opponentReaction:participantRole ? cleanGameReaction(row && row.opponent_reaction) : ''
+    opponentReaction:participantRole ? cleanGameReaction(row && row.opponent_reaction) : '',
+    startSummary:gameStartSummaryFromPgn(row && row.pgn, row && row.variant)
   };
 }
 
@@ -6535,6 +6536,54 @@ async function collectAccountRoomIds(env, userId) {
     } catch (_) {}
   }
   return Array.from(ids);
+}
+
+async function listMyRunningLiveGames(env, sessionUser) {
+  const userId = String(sessionUser && sessionUser.id || '').trim();
+  if (!env || !env.DB || !env.GAME_ROOM || !userId) return [];
+  await ensureAccountGameRoomIndex(env);
+  await ensureCompletedGamesTable(env);
+  await ensureDailyGamesTable(env);
+  const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+  const result = await env.DB.prepare(
+    `SELECT rooms.room_id, rooms.role, rooms.last_seen_at
+       FROM account_game_rooms rooms
+      WHERE rooms.user_id = ?
+        AND rooms.last_seen_at >= ?
+        AND NOT EXISTS (SELECT 1 FROM completed_games completed WHERE completed.room_id = rooms.room_id)
+        AND NOT EXISTS (SELECT 1 FROM daily_games daily WHERE daily.room_id = rooms.room_id)
+      ORDER BY rooms.last_seen_at DESC
+      LIMIT 40`
+  ).bind(userId, recentCutoff).all();
+  const candidates = (result && result.results ? result.results : [])
+    .map(row => cleanRoomId(row.room_id))
+    .filter(Boolean);
+  if (!candidates.length) return [];
+
+  const summaries = await Promise.all(candidates.map(async roomId => {
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = gameRoomStub(env, id);
+      const response = await stub.fetch(new Request('https://game-room.internal/account-game-summary?room=' + encodeURIComponent(roomId), {
+        method:'POST',
+        headers:{
+          'content-type':'application/json',
+          'x-hammerschach-user-id':userId
+        },
+        body:JSON.stringify({userId})
+      }));
+      if (!response.ok) return null;
+      const summary = await response.json();
+      if (!summary || !summary.ok || !summary.started || summary.ended || summary.mode !== 'live') return null;
+      return summary;
+    } catch (_) {
+      return null;
+    }
+  }));
+  return summaries.filter(Boolean).sort((a, b) => {
+    if (!!a.isMyTurn !== !!b.isMyTurn) return a.isMyTurn ? -1 : 1;
+    return Date.parse(b.updatedAt || b.startedAt || 0) - Date.parse(a.updatedAt || a.startedAt || 0);
+  });
 }
 
 async function callAccountRoomAction(env, roomId, action, userId, anonymizedId = '') {
@@ -9537,6 +9586,18 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: true, online, onlineWindowSeconds: Math.floor(USER_PRESENCE_ONLINE_WINDOW_MS / 1000) });
     } catch (_) {
       return json({ ok: false, code: 'PRESENCE_UNAVAILABLE', message: 'Online-Status konnte nicht aktualisiert werden.' }, { status: 500 });
+    }
+  }
+
+  if (url.pathname === '/api/my-live-games' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    try {
+      const games = await listMyRunningLiveGames(env, session.user);
+      return json({ok:true, games, serverNow:Date.now()});
+    } catch (error) {
+      console.error('My live games list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'MY_LIVE_GAMES_UNAVAILABLE', message:'Deine laufenden Live-Partien konnten nicht geladen werden.'}, {status:500});
     }
   }
 
@@ -13628,6 +13689,11 @@ export class GameRoom {
       return json({ok:true,reportedUserId:target.userId||'',reportedName:profile.displayName||profile.name||(reportedRole==='w'?'Weiß':'Schwarz'),chatSnapshot:(Array.isArray(chats)?chats.slice(-30):[]).map(c=>({senderName:c.senderName||c.name||'',role:c.role||'',text:c.text||'',sentAt:c.sentAt||''})),gameSnapshot:{started:!!game.started,ended:!!game.ended,result:game.result||'*',timeControl,gameSetup}});
     }
 
+    if (request.method === 'POST' && url.pathname === '/account-game-summary') {
+      const result = await this.accountGameSummary(request.headers.get('x-hammerschach-user-id') || '');
+      return json(result, {status:result.status || (result.ok ? 200 : 400)});
+    }
+
     if (request.method === 'POST' && url.pathname === '/prepare-account-deletion') {
       const body = await readJsonBody(request);
       const result = await this.prepareAccountDeletion(body && body.userId);
@@ -13750,6 +13816,69 @@ export class GameRoom {
       // Der Raumindex unterstützt die spätere Account-Anonymisierung, darf aber niemals den Spielbeitritt blockieren.
       return false;
     }
+  }
+
+  async accountGameSummary(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return {ok:false, status:400, code:'USER_ID_REQUIRED', message:'Benutzer-ID fehlt.'};
+    const cancellation = await this.state.storage.get('cancelled');
+    if (cancellation && cancellation.cancelled) return {ok:true, status:200, started:false, ended:true, cancelled:true};
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    if (!timeControl || timeControl.mode !== 'live') return {ok:true, status:200, started:false, ended:false, mode:timeControl && timeControl.mode || ''};
+    const players = await this.getSecurePlayers();
+    const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
+    const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
+    const role = userId === whiteUserId ? 'w' : userId === blackUserId ? 'b' : '';
+    if (!role) return {ok:false, status:403, code:'NOT_A_PLAYER', message:'Diese Partie gehört nicht zu deinem Account.'};
+
+    const timed = await this.refreshTimedGameState(Date.now());
+    const game = timed.game || {started:false, ended:false, result:'*'};
+    const clock = timed.clock || (await this.state.storage.get('clock')) || null;
+    if (!game.started || game.ended) {
+      return {ok:true, status:200, roomId:cleanRoomId((await this.state.storage.get('roomId')) || ''), mode:'live', started:!!game.started, ended:!!game.ended};
+    }
+
+    const profiles = (await this.state.storage.get('playerProfiles')) || {};
+    const whitePlayerId = playerIdFromSlot(players.white);
+    const blackPlayerId = playerIdFromSlot(players.black);
+    const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
+    const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
+    const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
+    const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    const moves = (await this.state.storage.get('moves')) || [];
+    const lastMove = moves.length ? moves[moves.length - 1] : null;
+    const turn = clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : (moves.length % 2 ? 'b' : 'w');
+    const tournamentMeta = (await this.state.storage.get('tournamentMeta')) || null;
+    const publicGame = (await this.state.storage.get('publicGame')) === true;
+    const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    return {
+      ok:true,
+      status:200,
+      roomId,
+      mode:'live',
+      role,
+      whiteName,
+      blackName,
+      opponentName:role === 'w' ? blackName : whiteName,
+      timeLabel:timeControl.label || 'Live',
+      variant:setup.variant,
+      positionId:setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
+      started:true,
+      startedAt:game.startedAt || null,
+      updatedAt:new Date().toISOString(),
+      ended:false,
+      turn,
+      isMyTurn:turn === role,
+      movesCount:moves.length,
+      lastMoveSan:lastMove && lastMove.san ? String(lastMove.san).slice(0,24) : '',
+      rated,
+      publicGame,
+      tournamentId:tournamentMeta && tournamentMeta.tournamentId ? String(tournamentMeta.tournamentId).slice(0,128) : '',
+      tournamentName:tournamentMeta && tournamentMeta.tournamentName ? cleanTournamentName(tournamentMeta.tournamentName) : '',
+      tournamentRoundLabel:tournamentMeta && tournamentMeta.roundLabel ? String(tournamentMeta.roundLabel).slice(0,80) : '',
+      isTournamentGame:!!(tournamentMeta && tournamentMeta.tournamentId)
+    };
   }
 
   async prepareAccountDeletion(userId) {
@@ -15993,7 +16122,7 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/my-live-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
       features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
