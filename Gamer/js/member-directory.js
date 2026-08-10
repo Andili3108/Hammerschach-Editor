@@ -27,15 +27,26 @@ function closeMembersDialog(){
 function standaloneInvitationAvailable(){
   return isMemberLobbyView() && !onlineRoomId;
 }
-async function waitForInvitationRoomReady(timeoutMs){
+async function waitForInvitationRoomReady(timeoutMs, expectedTimeControl, expectedGameSetup){
   const startedAt = Date.now();
   const maximum = Math.max(1000, Number(timeoutMs || 7000));
+  let lastSyncAt = 0;
   while(Date.now() - startedAt < maximum){
     if(onlineRoomCancelled) throw new Error('Der neu erstellte Spielraum wurde zurückgezogen.');
-    if(onlineRoomId && onlineConnected && onlineCreatedByMe && (onlineRoleCode === 'w' || onlineRoleCode === 'b')) return true;
+    if(onlineGameStarted) throw new Error('Der neu erstellte Spielraum wurde unerwartet bereits gestartet.');
+    const creatorReady = !!(onlineRoomId && onlineConnected && onlineCreatedByMe && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
+    const timeReady = !!(expectedTimeControl && sameTimeControl(onlineRoomTimeControl, expectedTimeControl));
+    const setupReady = !!(expectedGameSetup && sameGameSetup(onlineRoomGameSetup, expectedGameSetup));
+    if(creatorReady && timeReady && setupReady) return true;
+    if(creatorReady && Date.now() - lastSyncAt >= 700){
+      lastSyncAt = Date.now();
+      if(!setupReady) syncCurrentGameSetupToOnline();
+      if(!timeReady) syncCurrentTimeControlToOnline();
+      requestOnlineState();
+    }
     await new Promise(resolve => setTimeout(resolve, 120));
   }
-  throw new Error('Der Spielraum wurde erstellt, aber vom Server noch nicht vollständig bestätigt. Bitte erneut senden oder mit „Abbrechen“ vollständig verwerfen.');
+  throw new Error('Der Spielraum wurde erstellt, aber Bedenkzeit und Spielmodus wurden vom Server noch nicht vollständig bestätigt. Bitte erneut senden oder mit „Abbrechen“ vollständig verwerfen.');
 }
 function formatMemberProfileSince(value){
   if(!value) return '—';

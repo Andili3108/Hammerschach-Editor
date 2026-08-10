@@ -131,7 +131,8 @@ async function submitDirectInvitationSetup(){
   if(directInvitationSendBusy) return;
   const member = directInvitationSetupMember;
   if(!member || !member.id){ setNewGameDialogStatus('Bitte ein gültiges Mitglied auswählen.'); return; }
-  if(!timeMode || !currentTimeControlPayload()){
+  const expectedTimeControl = currentTimeControlPayload();
+  if(!timeMode || !expectedTimeControl){
     setNewGameDialogStatus('Bitte zuerst eine Bedenkzeit auswählen.');
     return;
   }
@@ -152,7 +153,6 @@ async function submitDirectInvitationSetup(){
       const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
       if(!created || !onlineRoomId) throw new Error('Der Spielraum konnte nicht erstellt werden.');
       directInvitationCreatedRoomId = cleanRoomId(onlineRoomId);
-      await waitForInvitationRoomReady(7000);
     } else if(cleanRoomId(onlineRoomId) !== cleanRoomId(directInvitationCreatedRoomId)){
       throw new Error('Der vorbereitete Spielraum ist nicht mehr geöffnet.');
     }
@@ -326,6 +326,14 @@ async function sendEmailInvitationToMember(member, button, personalMessage, sour
   if(invitationSendBusy){ const message='Eine Einladung wird bereits versendet.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
 
   const normalizedPersonalMessage = normalizedInvitationPersonalMessage(personalMessage);
+  const expectedTimeControl = currentTimeControlPayload();
+  const expectedGameSetup = currentGameSetupPayload();
+  if(!expectedTimeControl || !expectedGameSetup){
+    const message = 'Bitte zuerst Bedenkzeit und Spielmodus vollständig auswählen.';
+    if(invitationMessageStatus) invitationMessageStatus.textContent = message;
+    return {ok:false,message};
+  }
+  const expectedMode = expectedTimeControl.mode === 'daily' ? 'daily' : 'live';
   if(normalizedPersonalMessage.length > INVITATION_PERSONAL_MESSAGE_MAX_LENGTH){
     const message = 'Die persönliche Nachricht darf höchstens 300 Zeichen lang sein.';
     if(invitationMessageStatus) invitationMessageStatus.textContent = message;
@@ -343,9 +351,11 @@ async function sendEmailInvitationToMember(member, button, personalMessage, sour
   if(memberSearchStatus) memberSearchStatus.textContent = 'Der Hammerschach-Gamer übergibt die Einladung sicher an den Mailserver…';
 
   try{
+    if(invitationMessageStatus) invitationMessageStatus.textContent = 'Bedenkzeit und Spielmodus werden vom Server bestätigt…';
+    await waitForInvitationRoomReady(10000, expectedTimeControl, expectedGameSetup);
     const data = await authApi('/api/invitations/email', {
       method:'POST',
-      body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id, personalMessage:normalizedPersonalMessage})
+      body:JSON.stringify({roomId:onlineRoomId, recipientUserId:member.id, personalMessage:normalizedPersonalMessage, expectedMode})
     });
     const emailSent = !(data && data.emailSent === false);
     const baseMessage = data && data.message ? data.message : ('Einladung an ' + recipientName + ' wurde versendet.');
