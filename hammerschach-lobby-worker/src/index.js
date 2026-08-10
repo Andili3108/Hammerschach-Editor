@@ -1,4 +1,4 @@
-// BUILD: GAMER-DIRECT-MEMBER-INVITATION-20260810-2
+// BUILD: GAMER-MEMBER-ACTIVITY-20260810-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -642,9 +642,14 @@ async function ensureUserPresenceTable(env) {
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS user_presence (
        user_id TEXT PRIMARY KEY,
-       last_seen_at TEXT NOT NULL
+       last_seen_at TEXT NOT NULL,
+       is_online INTEGER NOT NULL DEFAULT 1
      )`
   ).run();
+  try { await env.DB.prepare(`ALTER TABLE user_presence ADD COLUMN is_online INTEGER NOT NULL DEFAULT 1`).run(); } catch (err) {
+    const message = String(err && err.message || err || '').toLowerCase();
+    if (!message.includes('duplicate column')) throw err;
+  }
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_user_presence_last_seen ON user_presence (last_seen_at)`).run();
   userPresenceTableReady = true;
   return true;
@@ -656,16 +661,14 @@ function presenceOnlineSinceIso() {
 
 async function setUserPresence(env, userId, online) {
   if (!(await ensureUserPresenceTable(env)) || !userId) return false;
-  if (!online) {
-    await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(String(userId)).run();
-    return true;
-  }
   const nowIso = new Date().toISOString();
   await env.DB.prepare(
-    `INSERT INTO user_presence (user_id, last_seen_at)
-     VALUES (?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET last_seen_at = excluded.last_seen_at`
-  ).bind(String(userId), nowIso).run();
+    `INSERT INTO user_presence (user_id, last_seen_at, is_online)
+     VALUES (?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       last_seen_at = excluded.last_seen_at,
+       is_online = excluded.is_online`
+  ).bind(String(userId), nowIso, online ? 1 : 0).run();
   return true;
 }
 
@@ -675,7 +678,8 @@ async function listOnlinePresenceMembers(env) {
     `SELECT users.id, users.username
       FROM user_presence presence
        JOIN users ON users.id = presence.user_id
-      WHERE presence.last_seen_at >= ?
+      WHERE COALESCE(presence.is_online, 1) = 1
+        AND presence.last_seen_at >= ?
       ORDER BY users.username_lc ASC`
   ).bind(presenceOnlineSinceIso()).all();
   return (result && result.results ? result.results : []).map(row => ({
@@ -685,7 +689,34 @@ async function listOnlinePresenceMembers(env) {
   })).filter(member => !!member.userId);
 }
 
-async function searchMembers(env, sessionUser, query) {
+function normalizeMemberActivityFilter(value) {
+  const filter = String(value || '').trim().toLowerCase();
+  return ['online', '24h', '7d'].includes(filter) ? filter : 'all';
+}
+
+function normalizeMemberSort(value) {
+  return String(value || '').trim().toLowerCase() === 'name' ? 'name' : 'activity';
+}
+
+function memberActivityFilterSql(filter, publicProfileAlias = 'public_profile', presenceAlias = 'presence') {
+  const visible = `COALESCE(${publicProfileAlias}.show_activity_status, 1) = 1`;
+  const online = `COALESCE(${presenceAlias}.is_online, 1) = 1`;
+  if (filter === 'online') return { sql:`AND ${visible} AND ${online} AND ${presenceAlias}.last_seen_at >= ?`, since:presenceOnlineSinceIso() };
+  if (filter === '24h') return { sql:`AND ${visible} AND ${presenceAlias}.last_seen_at >= ?`, since:new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() };
+  if (filter === '7d') return { sql:`AND ${visible} AND ${presenceAlias}.last_seen_at >= ?`, since:new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() };
+  return { sql:'', since:null };
+}
+
+function publicMemberActivityFields(row) {
+  const activityVisible = !row || row.activity_visible === undefined || Number(row.activity_visible) === 1;
+  return {
+    isOnline:activityVisible && Number(row && row.is_online || 0) === 1,
+    activityVisible,
+    lastActiveAt:activityVisible && row && row.last_active_at ? row.last_active_at : null
+  };
+}
+
+async function searchMembers(env, sessionUser, query, options = {}) {
   const cleaned = cleanMemberSearchQuery(query);
   if (!env || !env.DB || !sessionUser || cleaned.length < 2) return [];
   await ensureUserPresenceTable(env);
@@ -695,9 +726,19 @@ async function searchMembers(env, sessionUser, query) {
   const contains = '%' + escaped + '%';
   const prefix = escaped + '%';
   const onlineSince = presenceOnlineSinceIso();
+  const activityFilter = normalizeMemberActivityFilter(options.activity);
+  const memberSort = normalizeMemberSort(options.sort);
+  const activityWhere = memberActivityFilterSql(activityFilter);
+  const orderSql = memberSort === 'name'
+    ? `CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`
+    : `is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`;
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
-            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
+                       AND COALESCE(presence.is_online, 1) = 1
+                       AND presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            COALESCE(public_profile.show_activity_status, 1) AS activity_visible,
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
             CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
             public_profile.avatar_updated_at
        FROM users
@@ -705,22 +746,16 @@ async function searchMembers(env, sessionUser, query) {
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
       WHERE users.id <> ?
         AND (users.username_lc LIKE ? ESCAPE '\\' OR users.email_lc LIKE ? ESCAPE '\\')
-      ORDER BY
-        is_online DESC,
-        CASE
-          WHEN users.username_lc = ? THEN 0
-          WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1
-          ELSE 2
-        END,
-        users.username_lc ASC
+        ${activityWhere.sql}
+      ORDER BY ${orderSql}
       LIMIT 8`
-  ).bind(onlineSince, sessionUser.id, contains, contains, cleaned, prefix).all();
+  ).bind(onlineSince, sessionUser.id, contains, contains, ...(activityWhere.since ? [activityWhere.since] : []), cleaned, prefix).all();
 
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
     username: row.username,
     createdAt: row.created_at || null,
-    isOnline: Number(row.is_online || 0) === 1,
+    ...publicMemberActivityFields(row),
     hasAvatar: Number(row.has_avatar || 0) === 1,
     avatarUpdatedAt: row.avatar_updated_at || null
   }));
@@ -728,30 +763,41 @@ async function searchMembers(env, sessionUser, query) {
 
 
 
-async function listMembers(env, sessionUser, limit = 50) {
+async function listMembers(env, sessionUser, limit = 50, options = {}) {
   if (!env || !env.DB || !sessionUser) return [];
   await ensureUserPresenceTable(env);
   await ensureUserPublicProfilesTable(env);
   const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
   const onlineSince = presenceOnlineSinceIso();
+  const activityFilter = normalizeMemberActivityFilter(options.activity);
+  const memberSort = normalizeMemberSort(options.sort);
+  const activityWhere = memberActivityFilterSql(activityFilter);
+  const orderSql = memberSort === 'name'
+    ? 'users.username_lc ASC'
+    : 'is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, users.username_lc ASC';
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
-            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
+                       AND COALESCE(presence.is_online, 1) = 1
+                       AND presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            COALESCE(public_profile.show_activity_status, 1) AS activity_visible,
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
             CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
             public_profile.avatar_updated_at
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
       WHERE users.id <> ?
-      ORDER BY is_online DESC, users.username_lc ASC
+        ${activityWhere.sql}
+      ORDER BY ${orderSql}
       LIMIT ?`
-  ).bind(onlineSince, sessionUser.id, safeLimit).all();
+  ).bind(onlineSince, sessionUser.id, ...(activityWhere.since ? [activityWhere.since] : []), safeLimit).all();
 
   return (result && result.results ? result.results : []).map(row => ({
     id: row.id,
     username: row.username,
     createdAt: row.created_at || null,
-    isOnline: Number(row.is_online || 0) === 1,
+    ...publicMemberActivityFields(row),
     hasAvatar: Number(row.has_avatar || 0) === 1,
     avatarUpdatedAt: row.avatar_updated_at || null
   }));
@@ -782,6 +828,7 @@ async function ensureUserPublicProfilesTable(env) {
        avatar_key TEXT NOT NULL DEFAULT '',
        avatar_mime TEXT NOT NULL DEFAULT '',
        avatar_updated_at TEXT,
+       show_activity_status INTEGER NOT NULL DEFAULT 1,
        updated_at TEXT NOT NULL
      )`
   ).run();
@@ -792,7 +839,8 @@ async function ensureUserPublicProfilesTable(env) {
     ['club_name', `ALTER TABLE user_public_profiles ADD COLUMN club_name TEXT NOT NULL DEFAULT ''`],
     ['avatar_key', `ALTER TABLE user_public_profiles ADD COLUMN avatar_key TEXT NOT NULL DEFAULT ''`],
     ['avatar_mime', `ALTER TABLE user_public_profiles ADD COLUMN avatar_mime TEXT NOT NULL DEFAULT ''`],
-    ['avatar_updated_at', `ALTER TABLE user_public_profiles ADD COLUMN avatar_updated_at TEXT`]
+    ['avatar_updated_at', `ALTER TABLE user_public_profiles ADD COLUMN avatar_updated_at TEXT`],
+    ['show_activity_status', `ALTER TABLE user_public_profiles ADD COLUMN show_activity_status INTEGER NOT NULL DEFAULT 1`]
   ];
   for (const [columnName, sql] of additions) {
     if (columnNames.has(columnName)) continue;
@@ -860,7 +908,8 @@ function normalizePublicProfileInput(body) {
     }
     dwz = parsed;
   }
-  return { ok:true, profile:{ realName, clubName, dwz, about } };
+  const showActivityStatus = !(body && body.showActivityStatus === false);
+  return { ok:true, profile:{ realName, clubName, dwz, about, showActivityStatus } };
 }
 
 function publicAvatarFields(row) {
@@ -874,10 +923,10 @@ function publicAvatarFields(row) {
 async function getUserPublicProfile(env, userId) {
   const id = cleanPublicProfileUserId(userId);
   if (!id || !(await ensureUserPublicProfilesTable(env))) {
-    return { realName:'', clubName:'', dwz:null, about:'', hasAvatar:false, avatarUpdatedAt:null, updatedAt:null };
+    return { realName:'', clubName:'', dwz:null, about:'', showActivityStatus:true, hasAvatar:false, avatarUpdatedAt:null, updatedAt:null };
   }
   const row = await env.DB.prepare(
-    `SELECT real_name, club_name, dwz, about, avatar_key, avatar_updated_at, updated_at
+    `SELECT real_name, club_name, dwz, about, avatar_key, avatar_updated_at, show_activity_status, updated_at
        FROM user_public_profiles
       WHERE user_id = ?
       LIMIT 1`
@@ -888,6 +937,7 @@ async function getUserPublicProfile(env, userId) {
     clubName:cleanPublicProfileClub(row && row.club_name),
     dwz:Number.isInteger(storedDwz) ? storedDwz : null,
     about:cleanPublicProfileAbout(row && row.about),
+    showActivityStatus:!row || Number(row.show_activity_status) !== 0,
     ...publicAvatarFields(row),
     updatedAt:row && row.updated_at ? row.updated_at : null
   };
@@ -915,22 +965,27 @@ async function saveUserPublicProfile(env, userId, input) {
   const normalized = normalizePublicProfileInput(input);
   if (!normalized.ok) return normalized;
   const profile = normalized.profile;
+  if (!input || typeof input.showActivityStatus !== 'boolean') {
+    const currentProfile = await getUserPublicProfile(env, id);
+    profile.showActivityStatus = currentProfile.showActivityStatus !== false;
+  }
   const avatar = await getUserAvatarRecord(env, id);
-  if (!profile.realName && !profile.clubName && profile.dwz === null && !profile.about && !avatar.key) {
+  if (!profile.realName && !profile.clubName && profile.dwz === null && !profile.about && !avatar.key && profile.showActivityStatus) {
     await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(id).run();
-    return { ok:true, profile:{ realName:'', clubName:'', dwz:null, about:'', hasAvatar:false, avatarUpdatedAt:null, updatedAt:null } };
+    return { ok:true, profile:{ realName:'', clubName:'', dwz:null, about:'', showActivityStatus:true, hasAvatar:false, avatarUpdatedAt:null, updatedAt:null } };
   }
   const updatedAt = new Date().toISOString();
   await env.DB.prepare(
-    `INSERT INTO user_public_profiles (user_id, real_name, club_name, dwz, about, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO user_public_profiles (user_id, real_name, club_name, dwz, about, show_activity_status, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        real_name = excluded.real_name,
        club_name = excluded.club_name,
        dwz = excluded.dwz,
        about = excluded.about,
+       show_activity_status = excluded.show_activity_status,
        updated_at = excluded.updated_at`
-  ).bind(id, profile.realName, profile.clubName, profile.dwz, profile.about, updatedAt).run();
+  ).bind(id, profile.realName, profile.clubName, profile.dwz, profile.about, profile.showActivityStatus ? 1 : 0, updatedAt).run();
   return { ok:true, profile:{ ...profile, hasAvatar:!!avatar.key, avatarUpdatedAt:avatar.updatedAt, updatedAt } };
 }
 
@@ -1070,7 +1125,7 @@ async function deleteUserAvatar(env, userId, options = {}) {
   if (!id) return { ok:false, status:400, code:'INVALID_USER_ID', message:'Der Account konnte nicht zugeordnet werden.' };
   await ensureUserPublicProfilesTable(env);
   const profileRow = await env.DB.prepare(
-    `SELECT real_name, club_name, dwz, about, avatar_key
+    `SELECT real_name, club_name, dwz, about, avatar_key, show_activity_status
        FROM user_public_profiles
       WHERE user_id = ?
       LIMIT 1`
@@ -1084,13 +1139,14 @@ async function deleteUserAvatar(env, userId, options = {}) {
     return { ok:false, status:503, code:'AVATAR_STORAGE_NOT_CONFIGURED', message:'Der Avatar-Speicher ist noch nicht mit dem Worker verbunden.' };
   }
   if (!profileRow) return { ok:true, hasAvatar:false, avatarUpdatedAt:null };
-  const hasTextProfile = !!(
+  const hasProfileData = !!(
     cleanPublicProfileRealName(profileRow.real_name) ||
     cleanPublicProfileClub(profileRow.club_name) ||
     (profileRow.dwz !== null && profileRow.dwz !== undefined && String(profileRow.dwz).trim() !== '') ||
-    cleanPublicProfileAbout(profileRow.about)
+    cleanPublicProfileAbout(profileRow.about) ||
+    Number(profileRow.show_activity_status) === 0
   );
-  if (hasTextProfile) {
+  if (hasProfileData) {
     const updatedAt = new Date().toISOString();
     await env.DB.prepare(
       `UPDATE user_public_profiles
@@ -1146,12 +1202,18 @@ async function loadMemberPublicProfile(env, targetUserId) {
   const id = cleanPublicProfileUserId(targetUserId);
   if (!id) return null;
   await ensureUserPresenceTable(env);
+  await ensureUserPublicProfilesTable(env);
   const onlineSince = presenceOnlineSinceIso();
   const row = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
-            CASE WHEN presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
+                       AND COALESCE(presence.is_online, 1) = 1
+                       AND presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
+            COALESCE(public_profile.show_activity_status, 1) AS activity_visible,
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
+       LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
       WHERE users.id = ?
       LIMIT 1`
   ).bind(onlineSince, id).first();
@@ -1160,7 +1222,7 @@ async function loadMemberPublicProfile(env, targetUserId) {
     id:row.id,
     username:row.username,
     createdAt:row.created_at || null,
-    isOnline:Number(row.is_online || 0) === 1,
+    ...publicMemberActivityFields(row),
     profile:await getUserPublicProfile(env, row.id),
     ratings:publicMemberRatingsPayload(await getUserRatings(env, row.id))
   };
@@ -3085,7 +3147,7 @@ async function listDailyGames(env, sessionUser) {
             tournament.name AS tournament_name, tournament.mode AS tournament_mode,
             tournament_round.position_id AS tournament_position_id, tournament_round.stage AS tournament_round_stage,
             tournament_round.label AS tournament_round_label,
-            CASE WHEN opponent_presence.last_seen_at >= ? THEN 1 ELSE 0 END AS opponent_online
+            CASE WHEN COALESCE(opponent_presence.is_online, 1) = 1 AND opponent_presence.last_seen_at >= ? THEN 1 ELSE 0 END AS opponent_online
        FROM daily_games
        LEFT JOIN users white_account ON white_account.id = daily_games.white_user_id
        LEFT JOIN users black_account ON black_account.id = daily_games.black_user_id
@@ -4281,7 +4343,9 @@ async function pairArenaPlayers(env, tournamentId) {
             COALESCE(account.username, 'Mitglied') AS username
        FROM tournament_participants participant
        JOIN users account ON account.id = participant.user_id
-       JOIN user_presence presence ON presence.user_id = participant.user_id AND presence.last_seen_at >= ?
+       JOIN user_presence presence ON presence.user_id = participant.user_id
+        AND COALESCE(presence.is_online, 1) = 1
+        AND presence.last_seen_at >= ?
       WHERE participant.tournament_id = ? AND participant.status = 'confirmed' AND participant.arena_active = 1
         AND (participant.arena_pairing_not_before IS NULL OR participant.arena_pairing_not_before <= ?)
         AND NOT EXISTS (
@@ -10200,8 +10264,10 @@ async function handleAuthApi(request, env, url) {
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Mitgliedersuche ist nur nach Login verfügbar.' }, { status: 401 });
 
     const query = cleanMemberSearchQuery(url.searchParams.get('q') || url.searchParams.get('query') || '');
-    const users = await searchMembers(env, session.user, query);
-    return json({ ok: true, query, users, isAdmin: isAdminUser(session.user, env) });
+    const activity = normalizeMemberActivityFilter(url.searchParams.get('activity'));
+    const sort = normalizeMemberSort(url.searchParams.get('sort'));
+    const users = await searchMembers(env, session.user, query, {activity, sort});
+    return json({ ok: true, query, users, activity, sort, serverNow:Date.now(), isAdmin: isAdminUser(session.user, env) });
   }
 
   if (url.pathname === '/api/members/list' && request.method === 'GET') {
@@ -10209,8 +10275,10 @@ async function handleAuthApi(request, env, url) {
     if (!session) return json({ ok: false, code: 'NOT_AUTHENTICATED', message: 'Mitgliederliste ist nur nach Login verfügbar.' }, { status: 401 });
 
     const limit = url.searchParams.get('limit') || 50;
-    const users = await listMembers(env, session.user, limit);
-    return json({ ok: true, users, isAdmin: isAdminUser(session.user, env) });
+    const activity = normalizeMemberActivityFilter(url.searchParams.get('activity'));
+    const sort = normalizeMemberSort(url.searchParams.get('sort'));
+    const users = await listMembers(env, session.user, limit, {activity, sort});
+    return json({ ok: true, users, activity, sort, serverNow:Date.now(), isAdmin: isAdminUser(session.user, env) });
   }
 
   if (url.pathname === '/api/lobby-ticker' && request.method === 'GET') {
@@ -13651,13 +13719,13 @@ export class GameRoom {
       await ensureUserPresenceTable(this.env);
       const placeholders = ids.map(() => '?').join(',');
       const result = await this.env.DB.prepare(
-        `SELECT user_id, last_seen_at FROM user_presence WHERE user_id IN (${placeholders})`
+        `SELECT user_id, last_seen_at, is_online FROM user_presence WHERE user_id IN (${placeholders})`
       ).bind(...ids).all();
       const onlineSince = Date.now() - USER_PRESENCE_ONLINE_WINDOW_MS;
       for(const row of (result && result.results ? result.results : [])){
         const userId = String(row.user_id || '');
         const lastSeen = Date.parse(row.last_seen_at || '');
-        if(userId && Number.isFinite(lastSeen)) values[userId] = lastSeen >= onlineSince;
+        if(userId && Number.isFinite(lastSeen)) values[userId] = Number(row.is_online === undefined ? 1 : row.is_online) === 1 && lastSeen >= onlineSince;
       }
     } catch (_) {
       // Der allgemeine Anwesenheitsstatus darf die Partie niemals beeinträchtigen.
@@ -15568,7 +15636,7 @@ export default {
       ok: true,
       service: 'hammerschach-gamer-lobby',
       endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   },
