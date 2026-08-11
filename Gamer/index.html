@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260811-2" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260811-3" />
 </head>
 <body>
 <div class="app" role="main">
@@ -70,7 +70,8 @@
             </a>
           </div>
           <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
-          <div class="header-utility-actions" aria-label="Darstellung und Hilfe">
+          <div class="header-utility-actions" aria-label="Darstellung, Nachrichten und Hilfe">
+            <button id="privateMessagesOpenBtn" class="button-flat name-action-btn private-messages-header-btn" type="button" aria-haspopup="dialog" aria-controls="privateMessagesBackdrop" aria-label="Persönliche Nachrichten öffnen" title="Persönliche Nachrichten" hidden><span aria-hidden="true">✉️</span><span id="privateMessagesUnreadCount" class="private-messages-badge" hidden>0</span></button>
             <button id="themeToggleBtn" class="button-flat name-action-btn theme-toggle-btn" type="button" aria-pressed="false">🌙 Dunkel</button>
             <div id="infoMenu" class="header-menu info-menu">
               <button id="infoMenuBtn" class="button-flat name-action-btn info-open-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="infoMenuPopup">
@@ -130,6 +131,7 @@
         <span><strong>Hammerschach</strong><small id="mobileNavTestContext">Gamer</small></span>
       </button>
       <div id="mobileNavTestStatus" class="mobile-nav-test-status" aria-live="polite">Hammerschach-Gamer</div>
+      <button id="mobilePrivateMessagesOpenBtn" class="mobile-private-messages-open" type="button" aria-haspopup="dialog" aria-controls="privateMessagesBackdrop" aria-label="Persönliche Nachrichten öffnen" title="Persönliche Nachrichten" hidden><span aria-hidden="true">✉️</span><b id="mobilePrivateMessagesUnreadCount" class="mobile-private-messages-badge" hidden>0</b></button>
       <button id="mobileNavTestOpen" class="mobile-nav-test-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileNavTestBackdrop" aria-label="Hammerschach-Menü öffnen">☰</button>
     </header>
 
@@ -149,6 +151,7 @@
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="gameArchiveOpenBtn"><span>📚</span><strong>Archiv</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="tournamentsOpenBtn"><span>🏆</span><strong>Turniere</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="membersOpenBtn"><span>👥</span><strong>Mitglieder</strong></button>
+            <button id="mobileNavMessagesItem" class="mobile-nav-test-item" type="button" data-mobile-nav-target="privateMessagesOpenBtn" hidden><span>✉️</span><strong>Nachrichten</strong><b id="mobileNavMessagesCount" hidden>0</b></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="profileOpenBtn"><span>👤</span><strong>Mein Profil</strong></button>
           </section>
           <section>
@@ -404,7 +407,7 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„☰ Mehr“</strong> liegen <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>. <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„🛠️ Tools“</strong> führen zu den weiteren Mitgliederbereichen. Über <strong>„ℹ️ Info“</strong> bleiben Erste Schritte, Handbuch und Leitbild erreichbar; <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselt die Darstellung.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„☰ Mehr“</strong> liegen <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>. <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„🛠️ Tools“</strong> führen zu den weiteren Mitgliederbereichen. Der kleine <strong>Briefumschlag ✉️</strong> oben rechts öffnet deine persönlichen Nachrichten; eine grüne Zahl zeigt ungelesene Nachrichten an. Im Nachrichtenfenster kannst du Nachrichten lesen, direkt antworten oder unter <strong>„Neue Nachricht“</strong> eine oder mehrere Personen gleichzeitig anschreiben. Über <strong>„ℹ️ Info“</strong> bleiben Erste Schritte, Handbuch und Leitbild erreichbar; <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselt die Darstellung.</p>
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
@@ -1340,6 +1343,51 @@
       </div>
     </div>
 
+    <div id="privateMessagesBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal private-messages-modal" role="dialog" aria-modal="true" aria-labelledby="privateMessagesTitle">
+        <div class="private-messages-title-row">
+          <h3 id="privateMessagesTitle">Persönliche Nachrichten</h3>
+          <button id="privateMessagesCloseIconBtn" class="private-messages-close-icon button-flat" type="button" aria-label="Nachrichten schließen">×</button>
+        </div>
+        <div class="private-messages-tabs" role="tablist" aria-label="Persönliche Nachrichten">
+          <button id="privateMessagesInboxTab" class="private-messages-tab active" type="button" role="tab" aria-selected="true" aria-controls="privateMessagesInboxPanel">Empfang <span id="privateMessagesInboxTabCount" class="private-messages-tab-count" hidden>0</span></button>
+          <button id="privateMessagesComposeTab" class="private-messages-tab" type="button" role="tab" aria-selected="false" aria-controls="privateMessagesComposePanel">Neue Nachricht</button>
+        </div>
+
+        <section id="privateMessagesInboxPanel" class="private-messages-panel" role="tabpanel" aria-labelledby="privateMessagesInboxTab">
+          <div class="private-messages-inbox-layout">
+            <div id="privateMessagesList" class="private-messages-list" aria-live="polite"><div class="private-messages-empty">Nachrichten werden geladen…</div></div>
+            <div id="privateMessagesReader" class="private-messages-reader">
+              <div class="private-messages-empty">Wähle links eine Nachricht aus.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="privateMessagesComposePanel" class="private-messages-panel" role="tabpanel" aria-labelledby="privateMessagesComposeTab" hidden>
+          <div class="private-messages-compose">
+            <label class="identity-label" for="privateMessagesMemberSearch">Empfänger auswählen</label>
+            <input id="privateMessagesMemberSearch" class="identity-input" type="search" autocomplete="off" placeholder="Mitglied suchen…" />
+            <div id="privateMessagesSelectedRecipients" class="private-messages-selected" aria-live="polite"></div>
+            <div id="privateMessagesMembers" class="private-messages-members" aria-label="Empfänger auswählen"><div class="private-messages-empty">Mitglieder werden geladen…</div></div>
+            <label class="identity-label private-messages-text-label" for="privateMessagesText">Nachricht</label>
+            <textarea id="privateMessagesText" class="private-messages-text" maxlength="1500" rows="6" placeholder="Deine persönliche Nachricht…"></textarea>
+            <div class="private-messages-compose-meta"><span id="privateMessagesComposeHint">Du kannst eine oder mehrere Personen auswählen.</span><span id="privateMessagesTextCount">0 / 1500</span></div>
+            <div id="privateMessagesComposeStatus" class="private-messages-status" aria-live="polite"></div>
+            <div class="private-messages-compose-actions">
+              <button id="privateMessagesClearBtn" class="button-flat" type="button">Leeren</button>
+              <button id="privateMessagesSendBtn" type="button">Senden</button>
+            </div>
+          </div>
+        </section>
+
+        <div class="private-messages-footer">
+          <div id="privateMessagesStatus" class="private-messages-status" aria-live="polite"></div>
+          <button id="privateMessagesRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
+          <button id="privateMessagesCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
     <div id="memberProfileBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal member-profile-modal" role="dialog" aria-modal="true" aria-labelledby="memberProfileUsername">
         <div class="member-profile-head">
@@ -1382,6 +1430,7 @@
         <div id="memberProfileStatus" class="member-profile-status" aria-live="polite"></div>
         <div class="identity-actions">
           <button id="memberProfileEditBtn" class="button-flat" type="button" hidden>✏️ Profil bearbeiten</button>
+          <button id="memberProfileMessageBtn" class="button-flat" type="button" hidden>✉️ Nachricht</button>
           <button id="memberProfileInviteBtn" class="button-flat" type="button" hidden>Zur Partie einladen</button>
           <button id="memberProfileCloseBtn" type="button">Schließen</button>
         </div>
@@ -2009,7 +2058,7 @@
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260810-1"></script>
 <script src="js/header-ui.js?v=20260810-1"></script>
-<script src="js/dialog-ui-state.js?v=20260810-4"></script>
+<script src="js/dialog-ui-state.js?v=20260811-1"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
 <script src="js/embedded-tools.js?v=20260810-3"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
@@ -2042,7 +2091,8 @@
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
 <script src="js/online-ui-state.js?v=20260810-4"></script>
-<script src="js/member-directory.js?v=20260811-2"></script>
+<script src="js/member-directory.js?v=20260811-3"></script>
+<script src="js/direct-messages.js?v=20260811-1"></script>
 <script src="js/game-invitations.js?v=20260810-3"></script>
 <script src="js/online-sync-state.js?v=20260809-8"></script>
 <script src="js/online-connection.js?v=20260810-3"></script>
