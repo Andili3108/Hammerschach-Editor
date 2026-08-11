@@ -730,6 +730,9 @@ let privateMessagesTablesReady = false;
 async function ensurePrivateMessagesTables(env) {
   if (!env || !env.DB) return false;
   if (privateMessagesTablesReady) return true;
+  // D1: Zuerst die Tabellen anlegen und erst danach die Indizes.
+  // So kann die erstmalige Initialisierung nicht daran scheitern, dass ein
+  // Index-Statement vorbereitet wird, bevor seine Tabelle verfügbar ist.
   await env.DB.batch([
     env.DB.prepare(
       `CREATE TABLE IF NOT EXISTS private_messages (
@@ -747,7 +750,9 @@ async function ensurePrivateMessagesTables(env) {
          created_at TEXT NOT NULL,
          PRIMARY KEY (message_id, recipient_user_id)
        )`
-    ),
+    )
+  ]);
+  await env.DB.batch([
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_private_messages_sender_created ON private_messages (sender_user_id, created_at DESC)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_private_message_recipients_user_created ON private_message_recipients (recipient_user_id, created_at DESC)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_private_message_recipients_unread ON private_message_recipients (recipient_user_id, read_at, created_at DESC)`)
