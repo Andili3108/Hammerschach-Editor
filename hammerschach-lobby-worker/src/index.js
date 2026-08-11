@@ -723,6 +723,202 @@ function normalizeMemberFavoritesOnly(value) {
   return value === true || ['1', 'true', 'yes'].includes(String(value || '').trim().toLowerCase());
 }
 
+const PRIVATE_MESSAGE_MAX_LENGTH = 1500;
+const PRIVATE_MESSAGE_MAX_RECIPIENTS = 25;
+let privateMessagesTablesReady = false;
+
+async function ensurePrivateMessagesTables(env) {
+  if (!env || !env.DB) return false;
+  if (privateMessagesTablesReady) return true;
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS private_messages (
+         id TEXT PRIMARY KEY,
+         sender_user_id TEXT NOT NULL,
+         text TEXT NOT NULL,
+         created_at TEXT NOT NULL
+       )`
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS private_message_recipients (
+         message_id TEXT NOT NULL,
+         recipient_user_id TEXT NOT NULL,
+         read_at TEXT,
+         created_at TEXT NOT NULL,
+         PRIMARY KEY (message_id, recipient_user_id)
+       )`
+    ),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_private_messages_sender_created ON private_messages (sender_user_id, created_at DESC)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_private_message_recipients_user_created ON private_message_recipients (recipient_user_id, created_at DESC)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_private_message_recipients_unread ON private_message_recipients (recipient_user_id, read_at, created_at DESC)`)
+  ]);
+  privateMessagesTablesReady = true;
+  return true;
+}
+
+function cleanPrivateMessageText(value) {
+  return String(value || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .trim()
+    .slice(0, PRIVATE_MESSAGE_MAX_LENGTH);
+}
+
+function cleanPrivateMessageRecipientIds(value, senderUserId) {
+  const source = Array.isArray(value) ? value : (value ? [value] : []);
+  const senderId = String(senderUserId || '').trim();
+  const seen = new Set();
+  const result = [];
+  for (const item of source) {
+    const id = cleanPublicProfileUserId(item);
+    if (!id || id === senderId || seen.has(id)) continue;
+    seen.add(id);
+    result.push(id);
+    if (result.length >= PRIVATE_MESSAGE_MAX_RECIPIENTS) break;
+  }
+  return result;
+}
+
+async function privateMessageUnreadCount(env, userId) {
+  if (!(await ensurePrivateMessagesTables(env))) return 0;
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS count FROM private_message_recipients WHERE recipient_user_id = ? AND read_at IS NULL`
+  ).bind(String(userId)).first();
+  return Math.max(0, Number(row && row.count || 0));
+}
+
+async function listPrivateMessages(env, userId, limit = 100) {
+  if (!(await ensurePrivateMessagesTables(env))) return {messages:[], unreadCount:0};
+  const safeLimit = Math.max(1, Math.min(200, Math.floor(Number(limit || 100))));
+  const result = await env.DB.prepare(
+    `SELECT message.id, message.text, message.created_at,
+            message.sender_user_id, sender.username AS sender_username,
+            recipient.read_at
+       FROM private_message_recipients recipient
+       JOIN private_messages message ON message.id = recipient.message_id
+       LEFT JOIN users sender ON sender.id = message.sender_user_id
+      WHERE recipient.recipient_user_id = ?
+      ORDER BY message.created_at DESC
+      LIMIT ?`
+  ).bind(String(userId), safeLimit).all();
+  const messages = (result && Array.isArray(result.results) ? result.results : []).map(row => ({
+    id:String(row.id || ''),
+    sender:{id:String(row.sender_user_id || ''), username:cleanDisplayName(row.sender_username) || 'Gelöschter Benutzer'},
+    text:String(row.text || ''),
+    createdAt:row.created_at || null,
+    readAt:row.read_at || null
+  }));
+  return {messages, unreadCount:await privateMessageUnreadCount(env, userId)};
+}
+
+async function sendPrivateMessage(env, senderUser, recipientIds, text) {
+  if (!(await ensurePrivateMessagesTables(env))) {
+    return {ok:false, status:503, code:'PRIVATE_MESSAGES_UNAVAILABLE', message:'Persönliche Nachrichten sind momentan nicht verfügbar.'};
+  }
+  const messageText = cleanPrivateMessageText(text);
+  if (!messageText) return {ok:false, status:400, code:'EMPTY_PRIVATE_MESSAGE', message:'Bitte eine Nachricht eingeben.'};
+  const requestedIds = cleanPrivateMessageRecipientIds(recipientIds, senderUser && senderUser.id);
+  if (!requestedIds.length) return {ok:false, status:400, code:'PRIVATE_MESSAGE_RECIPIENT_REQUIRED', message:'Bitte mindestens ein Mitglied auswählen.'};
+  const senderId = String(senderUser && senderUser.id || '');
+  const minuteSince = new Date(Date.now() - 60 * 1000).toISOString();
+  const daySince = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const [minuteRow, dayRow] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM private_messages WHERE sender_user_id = ? AND created_at >= ?`).bind(senderId, minuteSince).first(),
+    env.DB.prepare(`SELECT COUNT(*) AS count FROM private_messages WHERE sender_user_id = ? AND created_at >= ?`).bind(senderId, daySince).first()
+  ]);
+  if (Number(minuteRow && minuteRow.count || 0) >= 12) return {ok:false, status:429, code:'PRIVATE_MESSAGE_RATE_LIMIT', message:'Bitte warte kurz, bevor du weitere Nachrichten sendest.'};
+  if (Number(dayRow && dayRow.count || 0) >= 200) return {ok:false, status:429, code:'PRIVATE_MESSAGE_DAILY_LIMIT', message:'Das Nachrichtenlimit für heute ist erreicht.'};
+  const placeholders = requestedIds.map(() => '?').join(',');
+  const rows = await env.DB.prepare(
+    `SELECT id, username FROM users WHERE id IN (${placeholders}) AND COALESCE(disabled, 0) = 0 AND deleted_at IS NULL`
+  ).bind(...requestedIds).all();
+  const recipients = (rows && Array.isArray(rows.results) ? rows.results : []).map(row => ({id:String(row.id || ''), username:cleanDisplayName(row.username) || 'Mitglied'}));
+  const found = new Set(recipients.map(item => item.id));
+  const missingCount = requestedIds.filter(id => !found.has(id)).length;
+  if (!recipients.length) return {ok:false, status:404, code:'PRIVATE_MESSAGE_RECIPIENTS_NOT_FOUND', message:'Die ausgewählten Mitglieder wurden nicht gefunden.'};
+  const messageId = crypto.randomUUID();
+  const nowIso = new Date().toISOString();
+  const statements = [
+    env.DB.prepare(`INSERT INTO private_messages (id, sender_user_id, text, created_at) VALUES (?, ?, ?, ?)`)
+      .bind(messageId, String(senderUser.id), messageText, nowIso)
+  ];
+  for (const recipient of recipients) {
+    statements.push(
+      env.DB.prepare(`INSERT INTO private_message_recipients (message_id, recipient_user_id, read_at, created_at) VALUES (?, ?, NULL, ?)`)
+        .bind(messageId, recipient.id, nowIso)
+    );
+  }
+  await env.DB.batch(statements);
+  return {
+    ok:true,
+    messageId,
+    recipients,
+    sentCount:recipients.length,
+    skippedCount:missingCount,
+    createdAt:nowIso,
+    message:recipients.length === 1
+      ? `Nachricht an ${recipients[0].username} wurde gesendet.`
+      : `Nachricht wurde an ${recipients.length} Mitglieder gesendet.`
+  };
+}
+
+async function privateMessageConversation(env, userId, otherUserId, limit = 200) {
+  if (!(await ensurePrivateMessagesTables(env))) return {messages:[]};
+  const me = cleanPublicProfileUserId(userId);
+  const other = cleanPublicProfileUserId(otherUserId);
+  if (!me || !other || me === other) return {messages:[]};
+  const safeLimit = Math.max(1, Math.min(300, Math.floor(Number(limit || 200))));
+  const result = await env.DB.prepare(
+    `SELECT message.id, message.text, message.created_at, message.sender_user_id,
+            recipient.recipient_user_id, recipient.read_at,
+            sender.username AS sender_username
+       FROM private_messages message
+       JOIN private_message_recipients recipient ON recipient.message_id = message.id
+       LEFT JOIN users sender ON sender.id = message.sender_user_id
+      WHERE (message.sender_user_id = ? AND recipient.recipient_user_id = ?)
+         OR (message.sender_user_id = ? AND recipient.recipient_user_id = ?)
+      ORDER BY message.created_at ASC
+      LIMIT ?`
+  ).bind(me, other, other, me, safeLimit).all();
+  const messages = (result && Array.isArray(result.results) ? result.results : []).map(row => ({
+    id:String(row.id || ''),
+    direction:String(row.sender_user_id || '') === me ? 'outgoing' : 'incoming',
+    sender:{id:String(row.sender_user_id || ''), username:cleanDisplayName(row.sender_username) || (String(row.sender_user_id || '') === me ? 'Du' : 'Gelöschter Benutzer')},
+    text:String(row.text || ''),
+    createdAt:row.created_at || null,
+    readAt:row.read_at || null
+  }));
+  return {messages};
+}
+
+async function markPrivateConversationRead(env, userId, otherUserId) {
+  if (!(await ensurePrivateMessagesTables(env))) return {ok:false, status:503, code:'PRIVATE_MESSAGES_UNAVAILABLE', message:'Persönliche Nachrichten sind momentan nicht verfügbar.'};
+  const me = cleanPublicProfileUserId(userId);
+  const other = cleanPublicProfileUserId(otherUserId);
+  if (!me || !other || me === other) return {ok:false, status:400, code:'INVALID_PRIVATE_CONVERSATION', message:'Der Nachrichtenverlauf konnte nicht zugeordnet werden.'};
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE private_message_recipients
+        SET read_at = COALESCE(read_at, ?)
+      WHERE recipient_user_id = ?
+        AND message_id IN (SELECT id FROM private_messages WHERE sender_user_id = ?)`
+  ).bind(nowIso, me, other).run();
+  return {ok:true, readAt:nowIso, unreadCount:await privateMessageUnreadCount(env, me)};
+}
+
+async function markPrivateMessageRead(env, userId, messageId) {
+  if (!(await ensurePrivateMessagesTables(env))) return {ok:false, status:503, code:'PRIVATE_MESSAGES_UNAVAILABLE', message:'Persönliche Nachrichten sind momentan nicht verfügbar.'};
+  const cleanId = String(messageId || '').trim();
+  if (!cleanId) return {ok:false, status:400, code:'INVALID_PRIVATE_MESSAGE', message:'Die Nachricht konnte nicht zugeordnet werden.'};
+  const nowIso = new Date().toISOString();
+  const result = await env.DB.prepare(
+    `UPDATE private_message_recipients SET read_at = COALESCE(read_at, ?) WHERE message_id = ? AND recipient_user_id = ?`
+  ).bind(nowIso, cleanId, String(userId)).run();
+  const changes = Number(result && result.meta && result.meta.changes || 0);
+  if (!changes) return {ok:false, status:404, code:'PRIVATE_MESSAGE_NOT_FOUND', message:'Die Nachricht wurde nicht gefunden.'};
+  return {ok:true, readAt:nowIso, unreadCount:await privateMessageUnreadCount(env, userId)};
+}
+
 async function setMemberFavorite(env, ownerUserId, targetUserId, favorite) {
   const ownerId = cleanPublicProfileUserId(ownerUserId);
   const targetId = cleanPublicProfileUserId(targetUserId);
@@ -6751,6 +6947,16 @@ async function deleteUserAccount(env, target, options = {}) {
     }
   } catch (_) {}
 
+  try {
+    if (await ensurePrivateMessagesTables(env)) {
+      await env.DB.prepare(`DELETE FROM private_message_recipients WHERE recipient_user_id = ?`).bind(target.id).run();
+      const sentRows = await env.DB.prepare(`SELECT id FROM private_messages WHERE sender_user_id = ?`).bind(target.id).all();
+      const sentIds = sentRows && Array.isArray(sentRows.results) ? sentRows.results.map(row => String(row.id || '')).filter(Boolean) : [];
+      for (const messageId of sentIds) await env.DB.prepare(`DELETE FROM private_message_recipients WHERE message_id = ?`).bind(messageId).run();
+      await env.DB.prepare(`DELETE FROM private_messages WHERE sender_user_id = ?`).bind(target.id).run();
+      await env.DB.prepare(`DELETE FROM private_messages WHERE id NOT IN (SELECT DISTINCT message_id FROM private_message_recipients)`).run();
+    }
+  } catch (_) {}
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(target.id).run();
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try {
@@ -10536,6 +10742,77 @@ async function handleAuthApi(request, env, url) {
       recipient:{ id:recipient.id, username:recipient.username },
       message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde versendet.'
     });
+  }
+
+  if (url.pathname === '/api/private-messages' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Persönliche Nachrichten sind nur nach Login verfügbar.'}, {status:401});
+    try {
+      const summaryOnly = ['1','true','yes'].includes(String(url.searchParams.get('summary') || '').toLowerCase());
+      if (summaryOnly) return json({ok:true, unreadCount:await privateMessageUnreadCount(env, session.user.id), serverNow:Date.now()});
+      const inbox = await listPrivateMessages(env, session.user.id, url.searchParams.get('limit') || 100);
+      return json({ok:true, ...inbox, serverNow:Date.now()});
+    } catch (error) {
+      console.error('Private messages list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'PRIVATE_MESSAGES_UNAVAILABLE', message:'Persönliche Nachrichten konnten nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/private-messages' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Persönliche Nachrichten sind nur nach Login verfügbar.'}, {status:401});
+    const moderation = await moderationStateForUser(env, session.user.id);
+    if (moderation.chatBlocked) return json({ok:false, code:'MESSAGING_BLOCKED', message:'Deine Nachrichtenfunktion ist derzeit gesperrt.'}, {status:403});
+    const body = await readJsonBody(request);
+    if (!body) return json({ok:false, code:'BAD_JSON', message:'Die Nachricht konnte nicht gelesen werden.'}, {status:400});
+    try {
+      const sent = await sendPrivateMessage(env, session.user, body.recipientUserIds || body.recipientUserId, body.text);
+      return json(sent, {status:sent.status || 200});
+    } catch (error) {
+      console.error('Private message send failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'PRIVATE_MESSAGE_SEND_FAILED', message:'Die Nachricht konnte nicht gesendet werden.'}, {status:500});
+    }
+  }
+
+  const privateConversationMatch = url.pathname.match(/^\/api\/private-messages\/conversation\/([^/]+)$/);
+  if (privateConversationMatch && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Persönliche Nachrichten sind nur nach Login verfügbar.'}, {status:401});
+    const otherUserId = cleanPublicProfileUserId(decodeURIComponent(privateConversationMatch[1]));
+    if (!otherUserId || otherUserId === String(session.user.id)) return json({ok:false, code:'INVALID_PRIVATE_CONVERSATION', message:'Der Nachrichtenverlauf konnte nicht zugeordnet werden.'}, {status:400});
+    try {
+      const conversation = await privateMessageConversation(env, session.user.id, otherUserId, url.searchParams.get('limit') || 200);
+      return json({ok:true, ...conversation, otherUserId, serverNow:Date.now()});
+    } catch (error) {
+      console.error('Private conversation load failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'PRIVATE_CONVERSATION_UNAVAILABLE', message:'Der Nachrichtenverlauf konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  const privateConversationReadMatch = url.pathname.match(/^\/api\/private-messages\/conversation\/([^/]+)\/read$/);
+  if (privateConversationReadMatch && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Persönliche Nachrichten sind nur nach Login verfügbar.'}, {status:401});
+    try {
+      const result = await markPrivateConversationRead(env, session.user.id, decodeURIComponent(privateConversationReadMatch[1]));
+      return json(result, {status:result.status || 200});
+    } catch (error) {
+      console.error('Private conversation mark read failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'PRIVATE_CONVERSATION_READ_FAILED', message:'Der Nachrichtenverlauf konnte nicht als gelesen markiert werden.'}, {status:500});
+    }
+  }
+
+  const privateMessageReadMatch = url.pathname.match(/^\/api\/private-messages\/([^/]+)\/read$/);
+  if (privateMessageReadMatch && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Persönliche Nachrichten sind nur nach Login verfügbar.'}, {status:401});
+    try {
+      const result = await markPrivateMessageRead(env, session.user.id, decodeURIComponent(privateMessageReadMatch[1]));
+      return json(result, {status:result.status || 200});
+    } catch (error) {
+      console.error('Private message mark read failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'PRIVATE_MESSAGE_READ_FAILED', message:'Die Nachricht konnte nicht als gelesen markiert werden.'}, {status:500});
+    }
   }
 
   const memberAvatarMatch = url.pathname.match(/^\/api\/members\/([^/]+)\/avatar$/);
@@ -16124,7 +16401,7 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/my-live-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/my-live-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
       features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
