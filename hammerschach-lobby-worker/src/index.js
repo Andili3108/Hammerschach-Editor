@@ -835,7 +835,7 @@ async function sendPrivateMessage(env, senderUser, recipientIds, text) {
   if (Number(dayRow && dayRow.count || 0) >= 200) return {ok:false, status:429, code:'PRIVATE_MESSAGE_DAILY_LIMIT', message:'Das Nachrichtenlimit für heute ist erreicht.'};
   const placeholders = requestedIds.map(() => '?').join(',');
   const rows = await env.DB.prepare(
-    `SELECT id, username FROM users WHERE id IN (${placeholders}) AND COALESCE(disabled, 0) = 0 AND deleted_at IS NULL`
+    `SELECT id, username FROM users WHERE id IN (${placeholders})`
   ).bind(...requestedIds).all();
   const recipients = (rows && Array.isArray(rows.results) ? rows.results : []).map(row => ({id:String(row.id || ''), username:cleanDisplayName(row.username) || 'Mitglied'}));
   const found = new Set(recipients.map(item => item.id));
