@@ -78,7 +78,24 @@ function renderGlobalChatMembers(){
   globalChatOnlineMembers.forEach(member=>{
     const row=document.createElement('div');row.className='global-chat-member'+(member.isAdmin?' admin':'');
     const dot=document.createElement('span');dot.className='presence-dot';
-    const name=document.createElement('span');name.className='global-chat-member-name';name.textContent=(member.isAdmin?'♛ ':'')+(cleanDisplayName(member.name)||'Mitglied');
+    const displayName=cleanDisplayName(member.name)||'Mitglied';
+    const name=document.createElement('span');name.className='global-chat-member-name';name.textContent=(member.isAdmin?'♛ ':'')+displayName;
+    const memberId=String(member.id||member.userId||'').trim();
+    if(memberId){
+      row.classList.add('clickable');
+      row.setAttribute('role','button');
+      row.tabIndex=0;
+      row.title='Mitgliederprofil von '+displayName+' öffnen';
+      const openProfile=()=>{
+        if(typeof openMemberProfile!=='function') return;
+        const context=onlineAuthUser&&String(onlineAuthUser.id||'')===memberId?'self':'standalone';
+        openMemberProfile({id:memberId,username:displayName,isOnline:true,activityVisible:true},context);
+      };
+      row.addEventListener('click',openProfile);
+      row.addEventListener('keydown',event=>{
+        if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfile();}
+      });
+    }
     row.append(dot,name);frag.appendChild(row);
   });
   globalChatMembersListEl.appendChild(frag);

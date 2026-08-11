@@ -88,7 +88,7 @@ function openAccountEditDialog(mode){
     accountEditSubmitBtn.classList.toggle('account-edit-submit-danger', accountEditMode === 'delete');
   }
   const config = {
-    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Profilbild, echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Hier bestimmst du außerdem, ob dein Aktivitätsstatus in der Mitgliederliste und in Mitgliederprofilen sichtbar ist.', submit:'Profil speichern', focus:accountProfileRealNameInput},
+    profile:{title:'Mein Mitgliederprofil bearbeiten', intro:'Profilbild, echter Name, Schachverein, DWZ und „Über mich“ sind freiwillig. Andere eingeloggte Mitglieder können diese Angaben in deinem Profil sehen.', submit:'Profil speichern', focus:accountProfileRealNameInput},
     username:{title:'Benutzernamen ändern', intro:'Der neue Benutzername muss eindeutig sein. Deine interne Benutzer-ID und deine Partien bleiben unverändert.', submit:'Benutzername speichern', focus:accountUsernameInput},
     email:{title:'Mailadresse ändern', intro:'Die neue Mailadresse darf noch keinem anderen Account zugeordnet sein. Sie wird erst nach Klick auf den zugesandten Bestätigungslink übernommen.', submit:'Mailadresse speichern', focus:accountEmailInput},
     password:{title:'Kennwort ändern', intro:'Nach der Änderung werden alle anderen Anmeldungen dieses Accounts beendet.', submit:'Kennwort speichern', focus:accountCurrentPasswordInput},
@@ -201,3 +201,4 @@ async function submitAccountEdit(){
     if(accountEditSubmitBtn) accountEditSubmitBtn.disabled = false;
   }
 }
+

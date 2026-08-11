@@ -114,6 +114,60 @@ function formatMemberProfileSince(value){
     return date.toLocaleDateString('de-DE', {month:'long', year:'numeric'});
   } catch(_){ return '—'; }
 }
+function formatMemberActivityAge(value, serverNow){
+  const activityAt = Date.parse(value || '');
+  if(!Number.isFinite(activityAt)) return '';
+  const suppliedNow = Number(serverNow);
+  const now = Number.isFinite(suppliedNow) && suppliedNow > 0 ? suppliedNow : Date.now();
+  const elapsed = Math.max(0, now - activityAt);
+  if(elapsed < 60 * 1000) return 'gerade aktiv';
+  if(elapsed < 60 * 60 * 1000){
+    const minutes = Math.max(1, Math.floor(elapsed / (60 * 1000)));
+    return 'vor ' + minutes + ' Min.';
+  }
+  if(elapsed < 24 * 60 * 60 * 1000){
+    const hours = Math.max(1, Math.floor(elapsed / (60 * 60 * 1000)));
+    return 'vor ' + hours + ' Std.';
+  }
+  const days = Math.max(1, Math.floor(elapsed / (24 * 60 * 60 * 1000)));
+  if(days === 1) return 'gestern';
+  if(days < 7) return 'vor ' + days + ' Tagen';
+  try{ return new Date(activityAt).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}); }
+  catch(_){ return ''; }
+}
+function createMemberActivityBadge(user, serverNow){
+  const source = user && typeof user === 'object' ? user : {};
+  const badge = document.createElement('span');
+  badge.className = 'presence-badge';
+  const dot = document.createElement('span');
+  dot.className = 'presence-dot';
+  dot.setAttribute('aria-hidden', 'true');
+  const label = document.createElement('span');
+
+  if(source.activityVisible === false){
+    badge.classList.add('hidden-status');
+    label.textContent = 'Privat';
+    badge.title = 'Dieses Mitglied zeigt seinen Aktivitätsstatus nicht an.';
+  } else if(source.isOnline === true){
+    badge.classList.add('online');
+    label.textContent = 'Online';
+    badge.title = 'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv.';
+  } else {
+    const age = formatMemberActivityAge(source.lastActiveAt, serverNow);
+    if(age){
+      badge.classList.add('recent');
+      label.textContent = age;
+      try{
+        badge.title = 'Zuletzt aktiv: ' + new Date(source.lastActiveAt).toLocaleString('de-DE', {dateStyle:'medium', timeStyle:'short'});
+      } catch(_){ badge.title = 'Zuletzt im Hammerschach-Gamer aktiv.'; }
+    } else {
+      label.textContent = 'Offline';
+      badge.title = 'Derzeit keine aktuelle Aktivität im Hammerschach-Gamer erkannt.';
+    }
+  }
+  badge.append(dot, label);
+  return badge;
+}
 function setMemberProfileStatus(message, kind){
   if(!memberProfileStatus) return;
   memberProfileStatus.textContent = message || '';
