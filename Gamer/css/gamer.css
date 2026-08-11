@@ -1067,6 +1067,9 @@
   .global-chat-members-title{font-size:14px;font-weight:900;color:#444;margin-bottom:9px;}
   .global-chat-members-list{display:flex;flex-direction:column;gap:6px;max-height:410px;overflow:auto;}
   .global-chat-member{display:flex;align-items:center;gap:7px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.07);padding:7px 8px;font-size:12px;font-weight:900;color:#444;min-width:0;}
+  .global-chat-member.clickable{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;}
+  .global-chat-member.clickable:hover{transform:translateY(-1px);box-shadow:0 5px 13px rgba(0,0,0,.08);border-color:rgba(59,110,167,.24);}
+  .global-chat-member.clickable:focus-visible{outline:2px solid currentColor;outline-offset:2px;}
   .global-chat-member-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .global-chat-member.admin{color:#365f88;background:rgba(59,110,167,.06);border-color:rgba(59,110,167,.15);}
   .global-chat-note{font-size:11px;font-weight:800;color:#777;line-height:1.35;text-align:center;}
