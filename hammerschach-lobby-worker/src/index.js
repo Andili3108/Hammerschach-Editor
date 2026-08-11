@@ -12149,6 +12149,7 @@ export class GlobalChat {
       for (const member of gamerMembers) {
         if (!member.userId) continue;
         members.set(member.userId, {
+          id:String(member.userId || ''),
           name:member.name,
           senderKey:'',
           isAdmin:member.isAdmin === true
@@ -12163,6 +12164,7 @@ export class GlobalChat {
       const userId = String(info.userId || '');
       if (!userId) continue;
       members.set(userId, {
+        id:userId,
         name:cleanDisplayName(info.username) || 'Mitglied',
         senderKey:String(info.senderKey || ''),
         isAdmin:info.isAdmin === true
