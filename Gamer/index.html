@@ -288,11 +288,10 @@
     </section>
 
     <div id="tvPlaylistBackdrop" class="info-backdrop tv-playlist-backdrop" hidden>
-      <div class="info-modal tv-playlist-modal" role="dialog" aria-modal="true" aria-labelledby="tvPlaylistModalTitle" aria-describedby="tvPlaylistModalSubtitle">
+      <div class="info-modal tv-playlist-modal" role="dialog" aria-modal="true" aria-labelledby="tvPlaylistModalTitle">
         <div class="tv-playlist-modal-head">
           <div>
             <h3 id="tvPlaylistModalTitle">Videos dieser Playlist</h3>
-            <p id="tvPlaylistModalSubtitle" class="tv-playlist-modal-subtitle">Wähle eine Übertragung aus. Das Video wird anschließend direkt in Hammerschach TV geöffnet.</p>
           </div>
           <button id="tvPlaylistTopCloseBtn" class="button-flat tv-playlist-modal-close" type="button" aria-label="Videoliste schließen">✕</button>
         </div>
@@ -356,7 +355,6 @@
           <div><div class="info-center-kicker">Hammerschach aktuell</div><h3 id="infoCenterTitle">Info-Center</h3></div>
           <button id="infoCenterCloseTopBtn" class="button-flat" type="button" aria-label="Info-Center schließen">✕</button>
         </div>
-        <p class="info-modal-intro">Neuigkeiten, Updates, Veranstaltungen und Servicehinweise – die neueste Mitteilung steht immer oben.</p>
         <div class="info-center-layout">
           <div id="infoCenterList" class="info-center-list" aria-label="Mitteilungen"></div>
           <article id="infoCenterDetail" class="info-center-detail" aria-live="polite"><div class="info-center-detail-empty">Wähle links eine Mitteilung aus.</div></article>
@@ -367,11 +365,10 @@
     </div>
 
     <div id="newGameBackdrop" class="info-backdrop new-game-backdrop" hidden>
-      <div class="new-game-modal" role="dialog" aria-modal="true" aria-labelledby="newGameDialogTitle" aria-describedby="newGameDialogIntro">
+      <div class="new-game-modal" role="dialog" aria-modal="true" aria-labelledby="newGameDialogTitle">
         <div class="new-game-modal-head">
           <div>
             <h3 id="newGameDialogTitle">♟️ Neue Partie</h3>
-            <p id="newGameDialogIntro" class="new-game-modal-intro">Farbe, Spielmodus, Bedenkzeit und Wertung festlegen.</p>
           </div>
           <button id="newGameCloseBtn" class="button-flat new-game-modal-close" type="button" aria-label="Partievorbereitung schließen">✕</button>
         </div>
@@ -396,9 +393,8 @@
     </div>
 
     <div id="firstStepsBackdrop" class="info-backdrop" hidden>
-      <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="firstStepsTitle" aria-describedby="firstStepsIntro">
+      <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="firstStepsTitle">
         <h3 id="firstStepsTitle">Erste Schritte im Hammerschach-Gamer</h3>
-        <p id="firstStepsIntro" class="info-modal-intro">Vom ersten Besuch bis zur ersten Partie – kurz und verständlich erklärt.</p>
         <div class="info-scroll" id="firstStepsScroll" tabindex="0">
           <h4>1. Registrieren</h4>
           <p>Klicke oben auf <strong>„👤 Registrierung / Login“</strong> und wähle im geöffneten Fenster den Reiter <strong>„Registrierung“</strong>. Trage deinen gewünschten Benutzernamen, deine Mailadresse und zweimal dasselbe Kennwort ein. Das Kennwort muss mindestens acht Zeichen lang sein. Schließe den Vorgang mit <strong>„Registrieren“</strong> ab.</p>
@@ -434,7 +430,6 @@
     <div id="infoBackdrop" class="info-backdrop" hidden>
       <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
         <h3 id="infoTitle">Hammerschach-Gamer – Handbuch</h3>
-        <p class="info-modal-intro">Alle Gamer-Funktionen einschließlich der integrierten Werkzeuge ausführlich erklärt. Das Handbuch kann gescrollt werden.</p>
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
@@ -939,7 +934,6 @@
     <div id="adminOverviewBackdrop" class="identity-backdrop" hidden>
       <div class="admin-overview-modal" role="dialog" aria-modal="true" aria-labelledby="adminOverviewTitle">
         <h3 id="adminOverviewTitle">Admin-Systemübersicht</h3>
-        <p class="admin-overview-intro">Kompakter Systemstatus ohne Kennwörter, Token, Mailadressen oder vollständige IP-Adressen.</p>
         <div id="adminOverviewGenerated" class="admin-overview-generated"></div>
         <div class="admin-overview-scroll">
           <div id="adminOverviewSummary" class="admin-summary-grid" aria-live="polite"></div>
@@ -1079,7 +1073,6 @@
     <div id="adminDeleteMembersBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal admin-delete-members-modal" role="dialog" aria-modal="true" aria-labelledby="adminDeleteMembersTitle">
         <h3 id="adminDeleteMembersTitle">Mitglieder löschen</h3>
-        <p>Dieser separate Verwaltungsbereich ist ausschließlich für die endgültige Löschung eines Mitgliedskontos vorgesehen.</p>
         <div class="account-danger-note">Eine Löschung ist endgültig. Laufende Live- und Daily-Partien des Mitglieds müssen vorher beendet sein. Nach der Auswahl wird zur Sicherheit dein aktuelles Admin-Kennwort abgefragt.</div>
         <div class="admin-delete-search-row">
           <input id="adminDeleteSearchInput" class="admin-delete-search" type="search" maxlength="80" autocomplete="off" placeholder="Mitglied suchen…" aria-label="Mitglied in der Löschverwaltung suchen" />
@@ -1232,7 +1225,6 @@
     <div id="dailyGamesBackdrop" class="identity-backdrop" hidden>
       <div class="daily-games-modal" role="dialog" aria-modal="true" aria-labelledby="dailyGamesTitle">
         <h3 id="dailyGamesTitle">Meine Partien</h3>
-        <p class="daily-games-intro">Deine Live- und Daily-Partien sind nach Status sortiert. Laufende Partien öffnen sich standardmäßig zuerst; offene Einladungen und eigene Angebote sowie beendete Partien findest du in eigenen Karteien.</p>
         <div id="dailyGamesTabs" class="daily-games-tabs" role="tablist" aria-label="Partiestatus">
           <button id="dailyGamesRunningTab" class="daily-games-tab active" type="button" role="tab" aria-selected="true" aria-controls="dailyGamesList" data-daily-games-tab="running">Laufend <span id="dailyGamesRunningCount" class="daily-games-tab-count">0</span></button>
           <button id="dailyGamesOpenTab" class="daily-games-tab" type="button" role="tab" aria-selected="false" aria-controls="dailyGamesList" data-daily-games-tab="open">Offen <span id="dailyGamesOpenCount" class="daily-games-tab-count">0</span></button>
@@ -1265,7 +1257,6 @@
     <div id="openOffersBackdrop" class="identity-backdrop" hidden>
       <div class="open-offers-modal" role="dialog" aria-modal="true" aria-labelledby="openOffersTitle">
         <h3 id="openOffersTitle">Offene Partien</h3>
-        <p class="open-offers-intro">Hier bieten Mitglieder vorbereitete Live- oder Daily-Partien offen an. Dein eigenes Angebot wird ebenfalls angezeigt und kann zurückgezogen werden, solange es noch niemand angenommen hat.</p>
         <div id="openOffersList" class="open-offers-list" aria-live="polite"><div class="open-offers-empty">Noch keine Partieangebote geladen.</div></div>
         <div id="openOffersStatus" class="open-offers-status" aria-live="polite"></div>
         <div class="open-offers-actions">
@@ -1290,7 +1281,6 @@
     <div id="gameArchiveBackdrop" class="identity-backdrop" hidden>
       <div class="game-archive-modal" role="dialog" aria-modal="true" aria-labelledby="gameArchiveTitle">
         <h3 id="gameArchiveTitle">📚 Partienarchiv</h3>
-        <p class="game-archive-intro">Beendete eigene Partien und öffentlich freigegebene Partien der Hammerschach-Mitglieder. Private Partien anderer Mitglieder bleiben unsichtbar.</p>
         <div class="game-archive-tabs" role="tablist" aria-label="Archivbereich">
           <button id="gameArchiveMineTab" class="game-archive-tab active" type="button" role="tab" aria-selected="true">Meine Partien</button>
           <button id="gameArchivePublicTab" class="game-archive-tab" type="button" role="tab" aria-selected="false">Öffentliche Partien</button>
@@ -1320,7 +1310,6 @@
     <div id="membersBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal members-modal" role="dialog" aria-modal="true" aria-labelledby="membersTitle">
         <h3 id="membersTitle">Hammerschach-Mitglieder</h3>
-        <p class="members-intro">Geschützter Mitgliederbereich: Hier siehst du Profile, Ratings sowie den freigegebenen Online- und „Zuletzt aktiv“-Status. Beim Öffnen der Liste wird noch kein Spielraum erzeugt.</p>
         <div class="member-search-box members-search-box">
           <div class="member-search-head">Mitglied suchen</div>
           <p id="membersSearchHint" class="member-search-hint">In der Mitglieder-Lobby kannst du ein Mitglied direkt zu deiner vorbereiteten Partie einladen.</p>
@@ -1404,7 +1393,6 @@
         <div class="tournament-modal-head">
           <div>
             <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
-            <div class="tournament-modal-subtitle">Turnierzentrale für aktuelle, eigene und abgeschlossene Daily- und Live-Turniere</div>
           </div>
           <div id="tournamentTestBadge" class="tournament-test-badge">🏆 Mitgliederbereich</div>
         </div>
@@ -1420,7 +1408,6 @@
             <div class="tournament-selection-heading">
               <div>
                 <h3 id="tournamentListHeading">Aktuelle Turniere</h3>
-                <div id="tournamentListNote" class="tournament-selection-note">Turniere mit offener Anmeldung und bereits laufende Wettbewerbe.</div>
               </div>
             </div>
             <div id="tournamentListGrid" class="tournament-list-grid" aria-live="polite"></div>
@@ -1660,7 +1647,6 @@
     <div id="inviteBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
         <h3 id="inviteTitle">Zur Partie einladen</h3>
-        <p id="inviteIntro">Kopiere den Einladungslink oder suche ein registriertes Mitglied und versende die Einladung automatisch per E-Mail.</p>
         <div id="inviteColorSummary" class="invite-color-summary" hidden></div>
         <div id="inviteRatingSummary" class="invite-color-summary" hidden></div>
 
@@ -1691,9 +1677,8 @@
     </div>
 
     <div id="invitationMessageBackdrop" class="identity-backdrop" hidden>
-      <div class="identity-modal invitation-message-modal" role="dialog" aria-modal="true" aria-labelledby="invitationMessageTitle" aria-describedby="invitationMessageIntro">
+      <div class="identity-modal invitation-message-modal" role="dialog" aria-modal="true" aria-labelledby="invitationMessageTitle">
         <h3 id="invitationMessageTitle">Persönliche Einladung</h3>
-        <p id="invitationMessageIntro">Schreibe eine persönliche Nachricht – oder versende die Einladung ohne zusätzlichen Text.</p>
         <label class="identity-label" for="invitationMessageInput">Deine Nachricht (optional)</label>
         <textarea id="invitationMessageInput" class="invitation-message-input" maxlength="300" rows="5" placeholder="z. B. Ne Runde zocken, Alter? 🤣"></textarea>
         <div class="invitation-message-meta"><span>Die Nachricht erscheint in der Mail und bei Daily Chess unter „Meine Partien“.</span><span id="invitationMessageCount">0/300</span></div>
