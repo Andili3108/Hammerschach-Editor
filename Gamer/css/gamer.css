@@ -2298,12 +2298,13 @@ html.dark-mode .game-start-summary-moves{color:#e2e4e7}
 .private-messages-selected{display:flex;flex-wrap:wrap;gap:6px;min-height:6px;margin:8px 0;}
 .private-message-recipient-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:rgba(132,63,70,.09);border:1px solid rgba(132,63,70,.18);padding:5px 8px 5px 10px;color:#6f3038;font-size:12px;font-weight:900;}
 .private-message-recipient-chip button{width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;padding:0!important;border-radius:50%!important;background:transparent!important;border:0!important;box-shadow:none!important;color:inherit!important;font-size:15px!important;line-height:1!important;}
-.private-messages-members{max-height:220px;padding:6px;}
-.private-message-member-row{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:900;color:#333;}
-.private-message-member-row:hover{background:rgba(132,63,70,.06);}
-.private-message-member-row.selected{background:rgba(43,154,75,.08);}
-.private-message-member-row input{width:18px;height:18px;margin:0;accent-color:#843f46;}
+.private-messages-members{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-content:start;max-height:158px;padding:8px;overscroll-behavior:contain;}
+.private-message-member-row{display:flex;align-items:center;gap:9px;min-height:44px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:900;color:#333;background:#fff;border:1px solid rgba(0,0,0,.08);box-sizing:border-box;}
+.private-message-member-row:hover{background:#fbf7f3;}
+.private-message-member-row.selected{background:rgba(43,154,75,.08);border-color:rgba(43,154,75,.24);}
+.private-message-member-row input{width:18px;height:18px;margin:0;accent-color:#843f46;flex:0 0 auto;}
 .private-message-member-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.private-messages-members .private-messages-empty{grid-column:1 / -1;}
 .private-messages-text-label{margin-top:12px;}
 .private-messages-text{width:100%;min-height:120px;resize:vertical;box-sizing:border-box;border:1px solid rgba(132,63,70,.24);border-radius:12px;background:#f7f7f9;color:#222;padding:10px 12px;font:700 15px/1.45 Arial,sans-serif;outline:none;}
 .private-messages-text:focus{box-shadow:0 0 0 3px rgba(132,63,70,.14);background:#fff;}
@@ -2332,11 +2333,15 @@ html.dark-mode .private-message-reader-head,html.dark-mode .private-messages-foo
 html.dark-mode .private-messages-text{background:#252930;color:#f3f4f6;border-color:rgba(255,255,255,.12);}
 html.dark-mode .private-message-recipient-chip{background:rgba(229,165,173,.10);border-color:rgba(229,165,173,.20);color:#efb5bc;}
 html.dark-mode .mobile-private-messages-open{background:linear-gradient(135deg,#353039,#2b2f35)!important;border-color:rgba(255,255,255,.12)!important;color:#f3d59a!important;}
+@media (max-width:900px){
+  .private-messages-members{grid-template-columns:repeat(2,minmax(0,1fr));max-height:152px;}
+}
 @media (max-width:700px){
   .private-messages-modal{width:100%;max-height:92vh;padding:14px;}
   .private-messages-inbox-layout{grid-template-columns:1fr;min-height:0;max-height:none;}
   .private-messages-list{max-height:210px;}
   .private-messages-reader{min-height:220px;max-height:37vh;}
+  .private-messages-members{grid-template-columns:1fr;max-height:160px;}
   html.mobile-nav-test-active .mobile-nav-test-header{grid-template-columns:minmax(0,auto) minmax(0,1fr) 42px 46px;}
   .mobile-private-messages-open{width:42px!important;height:42px!important;min-width:42px!important;min-height:42px!important;}
 }
