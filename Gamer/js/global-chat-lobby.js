@@ -70,14 +70,12 @@ function renderGlobalChatMembers(){
   globalChatMembersListEl.innerHTML = '';
   if(!globalChatOnlineMembers.length){
     const empty = document.createElement('div'); empty.className='global-chat-member';
-    const dot=document.createElement('span');dot.className='presence-dot';
     const name=document.createElement('span');name.className='global-chat-member-name';name.textContent='Noch niemand verbunden';
-    empty.append(dot,name);globalChatMembersListEl.appendChild(empty);return;
+    empty.append(name);globalChatMembersListEl.appendChild(empty);return;
   }
   const frag=document.createDocumentFragment();
   globalChatOnlineMembers.forEach(member=>{
     const row=document.createElement('div');row.className='global-chat-member'+(member.isAdmin?' admin':'');
-    const dot=document.createElement('span');dot.className='presence-dot';
     const displayName=cleanDisplayName(member.name)||'Mitglied';
     const name=document.createElement('span');name.className='global-chat-member-name';name.textContent=(member.isAdmin?'♛ ':'')+displayName;
     const memberId=String(member.id||member.userId||'').trim();
@@ -96,7 +94,7 @@ function renderGlobalChatMembers(){
         if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfile();}
       });
     }
-    row.append(dot,name);frag.appendChild(row);
+    row.append(name);frag.appendChild(row);
   });
   globalChatMembersListEl.appendChild(frag);
 }
