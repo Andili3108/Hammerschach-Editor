@@ -1,16 +1,14 @@
 'use strict';
 
 /*
- * Sicherer Testschalter für die neue Mobil-/Tablet-Navigation.
- * Ohne bestätigten Mitglieder-Account und ohne aktivierten Geräteschalter
- * bleibt der bisherige Header sichtbar. ?nav=classic erzwingt den Altzustand.
+ * Automatische Mobil-/Tablet-Navigation.
+ * Smartphone: kompakte Navigation in Smartphone-Viewports.
+ * Tablet: kompakte Navigation im Spielraum in Tablet-Viewports.
+ * Desktop bleibt unverändert.
  */
-(function initialiseMobileNavigationTest(){
+(function initialiseMobileNavigation(){
   const root = document.documentElement;
   const classicHeader = document.querySelector('.header');
-  const testGroup = document.getElementById('mobileNavTestGroup');
-  const phoneToggle = document.getElementById('mobileNavPhoneToggle');
-  const tabletToggle = document.getElementById('mobileNavTabletToggle');
   const testHeader = document.getElementById('mobileNavTestHeader');
   const testBrand = document.getElementById('mobileNavTestBrand');
   const testContext = document.getElementById('mobileNavTestContext');
@@ -21,9 +19,6 @@
   const closeButton = document.getElementById('mobileNavTestClose');
   const primaryButton = document.getElementById('mobileNavTestPrimary');
   const themeButton = document.getElementById('mobileNavTestTheme');
-  const phoneDrawerToggle = document.getElementById('mobileNavPhoneDrawerToggle');
-  const tabletDrawerToggle = document.getElementById('mobileNavTabletDrawerToggle');
-  const disableButton = document.getElementById('mobileNavTestDisable');
   const turnCount = document.getElementById('mobileNavTestTurnCount');
   const offersCount = document.getElementById('mobileNavTestOffersCount');
   const sourceStatus = document.getElementById('status');
@@ -33,7 +28,6 @@
   const roomLobbyButton = document.getElementById('roomLobbyBtn');
   const newGameButton = document.getElementById('newGameOpenBtn');
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
-  const storagePrefix = 'hammerschachMobileNavMemberTest';
   let refreshFrame = 0;
   let lastFocus = null;
 
@@ -45,42 +39,6 @@
     } catch(_){
       return null;
     }
-  }
-
-  function storageKey(device){
-    const user = memberUser();
-    return user && (device === 'phone' || device === 'tablet') ? storagePrefix + ':' + String(user.id) + ':' + device : '';
-  }
-
-  function classicForced(){
-    try{
-      return String(new URLSearchParams(window.location.search || '').get('nav') || '').trim().toLowerCase() === 'classic';
-    } catch(_){
-      return false;
-    }
-  }
-
-  function featureEnabled(device){
-    const key = storageKey(device);
-    if(!key) return false;
-    try{ return localStorage.getItem(key) === 'on'; } catch(_){ return false; }
-  }
-
-  function removeClassicOverride(){
-    try{
-      const url = new URL(window.location.href);
-      if(String(url.searchParams.get('nav') || '').trim().toLowerCase() !== 'classic') return;
-      url.searchParams.delete('nav');
-      history.replaceState(history.state, '', url.pathname + url.search + url.hash);
-    } catch(_){ }
-  }
-
-  function setFeatureEnabled(device, enabled){
-    const key = storageKey(device);
-    if(!key) return;
-    try{ localStorage.setItem(key, enabled ? 'on' : 'off'); } catch(_){ }
-    if(enabled) removeClassicOverride();
-    refresh();
   }
 
   function phoneViewport(){
@@ -95,16 +53,10 @@
     return root.classList.contains('hammerschach-room-view') || !!(roomLobbyButton && !roomLobbyButton.hidden);
   }
 
-  function currentDevice(){
-    if(phoneViewport()) return 'phone';
-    if(tabletViewport()) return 'tablet';
-    return '';
-  }
-
   function compactNavigationWanted(){
-    if(!memberUser() || classicForced()) return false;
-    if(phoneViewport()) return featureEnabled('phone');
-    return tabletViewport() && roomContext() && featureEnabled('tablet');
+    if(!memberUser()) return false;
+    if(phoneViewport()) return true;
+    return tabletViewport() && roomContext();
   }
 
   function closeDrawer(restoreFocus){
@@ -189,11 +141,6 @@
     syncOffersCount();
     syncPrimaryButton();
     targetButtons.forEach(syncTargetButton);
-    const forcedClassic = classicForced();
-    const phoneEnabled = featureEnabled('phone') && !forcedClassic;
-    const tabletEnabled = featureEnabled('tablet') && !forcedClassic;
-    [phoneToggle, phoneDrawerToggle].filter(Boolean).forEach(button => button.setAttribute('aria-pressed', phoneEnabled ? 'true' : 'false'));
-    [tabletToggle, tabletDrawerToggle].filter(Boolean).forEach(button => button.setAttribute('aria-pressed', tabletEnabled ? 'true' : 'false'));
   }
 
   function refresh(){
@@ -201,13 +148,7 @@
     refreshFrame = requestAnimationFrame(() => {
       refreshFrame = 0;
       const member = !!memberUser();
-      const forcedClassic = classicForced();
-      const active = !!(classicHeader && testHeader && openButton && backdrop && member && !forcedClassic && compactNavigationWanted());
-
-      if(testGroup) testGroup.hidden = !member;
-      [phoneToggle, tabletToggle].filter(Boolean).forEach(button => { button.hidden = !member; });
-      if(phoneToggle) phoneToggle.title = forcedClassic ? 'Der Notausgang ?nav=classic ist aktiv.' : 'Neue Smartphone-Navigation auf diesem Gerät testen.';
-      if(tabletToggle) tabletToggle.title = forcedClassic ? 'Der Notausgang ?nav=classic ist aktiv.' : 'Neue Tablet-Navigation auf diesem Gerät testen.';
+      const active = !!(classicHeader && testHeader && openButton && backdrop && member && compactNavigationWanted());
 
       root.classList.toggle('mobile-nav-test-active', active);
       root.classList.toggle('mobile-nav-test-room', active && roomContext());
@@ -224,22 +165,14 @@
     requestAnimationFrame(() => source.click());
   }
 
-  if(!classicHeader || !testGroup || !phoneToggle || !tabletToggle || !testHeader || !openButton || !backdrop || !drawer){
+  if(!classicHeader || !testHeader || !openButton || !backdrop || !drawer){
     root.classList.remove('mobile-nav-test-active');
     root.classList.remove('mobile-nav-test-room');
     return;
   }
 
-  phoneToggle.addEventListener('click', () => setFeatureEnabled('phone', !(featureEnabled('phone') && !classicForced())));
-  tabletToggle.addEventListener('click', () => setFeatureEnabled('tablet', !(featureEnabled('tablet') && !classicForced())));
-  if(phoneDrawerToggle) phoneDrawerToggle.addEventListener('click', () => setFeatureEnabled('phone', !featureEnabled('phone')));
-  if(tabletDrawerToggle) tabletDrawerToggle.addEventListener('click', () => setFeatureEnabled('tablet', !featureEnabled('tablet')));
   openButton.addEventListener('click', openDrawer);
   closeButton.addEventListener('click', () => closeDrawer(true));
-  disableButton.addEventListener('click', () => {
-    const device = currentDevice();
-    if(device) setFeatureEnabled(device, false);
-  });
   themeButton.addEventListener('click', () => runSourceAction(sourceTheme));
   primaryButton.addEventListener('click', () => runSourceAction(roomLobbyButton && !roomLobbyButton.hidden ? roomLobbyButton : newGameButton));
   testBrand.addEventListener('click', () => {
