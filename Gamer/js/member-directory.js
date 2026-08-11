@@ -215,8 +215,12 @@ function updateMemberProfileInviteButton(){
     memberProfileEditBtn.disabled = !isOwnProfile;
     memberProfileEditBtn.title = isOwnProfile ? 'Eigenes Mitgliederprofil bearbeiten.' : '';
   }
-  if(!memberProfileInviteBtn) return;
   const hasTarget = !!(memberProfileTarget && memberProfileTarget.id && onlineAuthUser && memberProfileTarget.id !== onlineAuthUser.id);
+  if(memberProfileMessageBtn){
+    memberProfileMessageBtn.hidden = !hasTarget;
+    memberProfileMessageBtn.disabled = !hasTarget;
+  }
+  if(!memberProfileInviteBtn) return;
   memberProfileInviteBtn.hidden = !hasTarget;
   if(!hasTarget) return;
   if(memberProfileContext === 'invite'){
@@ -304,6 +308,12 @@ if(memberProfileEditBtn) memberProfileEditBtn.addEventListener('click', () => {
   closeMemberProfileDialog();
   openAccountEditDialog('profile');
 });
+if(memberProfileMessageBtn) memberProfileMessageBtn.addEventListener('click', () => {
+  const target = memberProfileTarget;
+  if(!target) return;
+  closeMemberProfileDialog();
+  if(typeof openPrivateMessagesCompose === 'function') openPrivateMessagesCompose(target);
+});
 if(memberProfileInviteBtn) memberProfileInviteBtn.addEventListener('click', inviteFromMemberProfile);
 if(memberProfileBackdrop) memberProfileBackdrop.addEventListener('click', ev => { if(ev.target === memberProfileBackdrop) closeMemberProfileDialog(); });
 document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && memberProfileBackdrop && !memberProfileBackdrop.hidden) closeMemberProfileDialog(); });
@@ -369,6 +379,17 @@ function renderStandaloneMemberResults(users, options){
     profileBtn.addEventListener('click', ev => { ev.stopPropagation(); openMemberProfile(user, 'standalone'); });
     actions.appendChild(profileBtn);
     if(onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
+      const messageBtn = document.createElement('button');
+      messageBtn.type = 'button';
+      messageBtn.className = 'button-flat';
+      messageBtn.textContent = '✉️ Nachricht';
+      messageBtn.title = 'Persönliche Nachricht schreiben';
+      messageBtn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        closeMembersDialog();
+        if(typeof openPrivateMessagesCompose === 'function') openPrivateMessagesCompose(user);
+      });
+      actions.appendChild(messageBtn);
       const inviteBtn = document.createElement('button');
       inviteBtn.type = 'button';
       inviteBtn.className = 'button-flat';

@@ -338,6 +338,7 @@ const memberProfileAboutText = document.getElementById('memberProfileAboutText')
 const memberProfileRatingsGrid = document.getElementById('memberProfileRatingsGrid');
 const memberProfileStatus = document.getElementById('memberProfileStatus');
 const memberProfileEditBtn = document.getElementById('memberProfileEditBtn');
+const memberProfileMessageBtn = document.getElementById('memberProfileMessageBtn');
 const memberProfileInviteBtn = document.getElementById('memberProfileInviteBtn');
 const memberProfileCloseBtn = document.getElementById('memberProfileCloseBtn');
 let memberProfileContext = '';

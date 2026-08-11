@@ -393,6 +393,7 @@ function loadAuthState(){
     startPresenceHeartbeat();
     startLiveTournamentPolling();
   }
+  if(typeof updatePrivateMessagesAuthState === 'function') updatePrivateMessagesAuthState();
 }
 function saveAuthState(token, user){
   const previousUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
@@ -424,6 +425,7 @@ function saveAuthState(token, user){
   }
   updateAuthUi();
   updateOnlineUi();
+  if(typeof updatePrivateMessagesAuthState === 'function') updatePrivateMessagesAuthState();
   if(typeof refreshOpenOffersBadge === 'function') refreshOpenOffersBadge().catch(() => {});
   if(onlineAuthToken && onlineAuthUser){
     loadDailyGames({silent:true}).catch(() => {});
