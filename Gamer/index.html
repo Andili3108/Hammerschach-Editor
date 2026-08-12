@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260811-3" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260812-1" />
 </head>
 <body>
 <div class="app" role="main">
@@ -131,6 +131,7 @@
         <span><strong>Hammerschach</strong><small id="mobileNavTestContext">Gamer</small></span>
       </button>
       <div id="mobileNavTestStatus" class="mobile-nav-test-status" aria-live="polite">Hammerschach-Gamer</div>
+      <button id="compactBoardSizeBtn" class="compact-board-size-btn" type="button" aria-haspopup="dialog" aria-controls="boardSizePopup" aria-expanded="false" aria-label="Brettgröße ändern" title="Brettgröße ändern" hidden><span aria-hidden="true">↔</span></button>
       <button id="mobilePrivateMessagesOpenBtn" class="mobile-private-messages-open" type="button" aria-haspopup="dialog" aria-controls="privateMessagesBackdrop" aria-label="Persönliche Nachrichten öffnen" title="Persönliche Nachrichten" hidden><span aria-hidden="true">✉️</span><b id="mobilePrivateMessagesUnreadCount" class="mobile-private-messages-badge" hidden>0</b></button>
       <button id="mobileNavTestOpen" class="mobile-nav-test-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobileNavTestBackdrop" aria-label="Hammerschach-Menü öffnen">☰</button>
     </header>
@@ -528,6 +529,8 @@
 
           <h4>16. Brett und Darstellung</h4>
           <p>Direkt unter der unteren Spielerleiste führen dich <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> zum Anfang, einen Halbzug zurück, einen Halbzug vor oder zur letzten Stellung. Daneben kannst du das gerade sichtbare Brett drehen, die Brettfarbe und den Figurensatz ändern sowie den Ton ein- oder ausschalten. Beim geöffneten Variantenbrett arbeiten Navigation und Drehschaltfläche automatisch mit der Variante.</p>
+          <p>Auf ausreichend großen Desktopbildschirmen erscheint in einer geöffneten Partie zusätzlich die Schaltfläche <strong>„↔“</strong>. Sie öffnet die Auswahl für ein größeres Schachbrett. Du kannst zwischen Standard, Groß und Sehr groß wählen oder die gewünschte Größe mit dem Regler und den Tasten <strong>−</strong> und <strong>+</strong> fein einstellen. Die Standardgröße beträgt 760 Pixel; <strong>„Standard wiederherstellen“</strong> setzt sie jederzeit zurück. Der Größenwunsch wird nur auf dem jeweiligen Gerät gespeichert und beim nächsten Öffnen einer Partie wieder verwendet. In der Lobby gilt weiterhin die gewohnte, höchstens 1100 Pixel breite Grundansicht.</p>
+          <p>Bei einem großen Brett wechselt der Gamer automatisch in eine kompakte Spielkopfzeile. Dort bleibt <strong>„↔“</strong> sichtbar, damit das Brett auch dann jederzeit wieder verkleinert werden kann. Nach dem Verlassen der Partie erscheint wieder der vollständige Header. Reicht der verfügbare Platz eines Fensters nicht für die gespeicherte Wunschgröße, begrenzt der Gamer das Brett vorübergehend; auf einem größeren Bildschirm wird die Wunschgröße wieder genutzt. Auf Smartphones, Tablets, kleinen Desktopfenstern und Geräten ohne präzise Mausbedienung wird die Schaltfläche nicht angeboten – dort passt sich das Brett weiterhin automatisch an.</p>
           <p>Über <strong>„🌙 Dunkel“</strong> im Header aktivierst du den Dark Mode für den gesamten Gamer. Die Auswahl wird auf dem Gerät gespeichert und beim nächsten Aufruf automatisch wiederhergestellt. Mit <strong>„☀️ Hell“</strong> wechselst du zurück zur hellen Darstellung.</p>
 
           <h4>17. PGN-Datei</h4>
@@ -1847,6 +1850,28 @@
             </div>
           </div>
           <button id="soundToggleBtn" class="button-flat icon-btn" type="button" aria-pressed="true" title="Ton an/aus" aria-label="Ton an"><span class="icon-label">🔊</span></button>
+          <div id="boardSizeWrap" class="board-size-wrap" hidden>
+            <button id="boardSizeBtn" class="button-flat icon-btn board-size-btn" type="button" aria-haspopup="dialog" aria-controls="boardSizePopup" aria-expanded="false" title="Brettgröße ändern" aria-label="Brettgröße ändern"><span class="icon-label" aria-hidden="true">↔</span></button>
+            <div id="boardSizePopup" class="board-size-popup" role="dialog" aria-modal="false" aria-labelledby="boardSizePopupTitle" hidden>
+              <div class="board-size-popup-head">
+                <strong id="boardSizePopupTitle">Brettgröße</strong>
+                <button id="boardSizeCloseBtn" class="board-size-close-btn" type="button" aria-label="Brettgrößen-Auswahl schließen">×</button>
+              </div>
+              <div class="board-size-presets" aria-label="Voreingestellte Brettgrößen">
+                <button type="button" class="board-size-preset" data-board-size="760">Standard</button>
+                <button type="button" class="board-size-preset" data-board-size="860">Groß</button>
+                <button type="button" class="board-size-preset" data-board-size="1000">Sehr groß</button>
+              </div>
+              <div class="board-size-slider-row">
+                <button id="boardSizeMinusBtn" class="board-size-step-btn" type="button" aria-label="Brett verkleinern">−</button>
+                <input id="boardSizeRange" type="range" min="760" max="1000" step="10" value="760" aria-label="Gewünschte Brettgröße" aria-describedby="boardSizeHint" />
+                <button id="boardSizePlusBtn" class="board-size-step-btn" type="button" aria-label="Brett vergrößern">+</button>
+              </div>
+              <div class="board-size-reading"><span>Gewählt: <strong id="boardSizeValue">760 px</strong></span><span id="boardSizeEffective" hidden></span></div>
+              <p id="boardSizeHint" class="board-size-hint">Die Größe gilt für Partien auf diesem Gerät. Bei wenig Platz wird das Brett automatisch begrenzt.</p>
+              <button id="boardSizeResetBtn" class="button-flat board-size-reset-btn" type="button">Standard wiederherstellen</button>
+            </div>
+          </div>
           <div id="variationLauncher" class="variation-launcher" hidden>
             <button id="variationOpenBtn" class="button-flat board-action-btn variation-open-btn" type="button" aria-pressed="false">♟ Variante</button>
           </div>
@@ -2116,6 +2141,7 @@
 <script src="js/sound-system.js?v=20260804-1"></script>
 <script src="js/time-controls.js?v=20260804-1"></script>
 <script src="js/app-startup.js?v=20260809-4"></script>
-<script src="js/mobile-navigation.js?v=20260811-1"></script>
+<script src="js/board-size-control.js?v=20260812-2"></script>
+<script src="js/mobile-navigation.js?v=20260812-1"></script>
 </body>
 </html>
