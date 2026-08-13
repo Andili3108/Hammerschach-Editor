@@ -1,9 +1,11 @@
 'use strict';
 
 /*
- * Kompakte Navigation ausschließlich für ein bewusst vergrößertes Desktopbrett.
- * Smartphone und Tablet behalten ihre bewährte responsive Standardansicht und
- * werden von der Desktop-Brettgrößenfunktion nicht umgeschaltet.
+ * Automatische Mobil-/Tablet-Navigation.
+ * Smartphone: kompakte Navigation in Smartphone-Viewports.
+ * Tablet: kompakte Navigation im Spielraum in Tablet-Viewports.
+ * Desktop bleibt unverändert, solange nicht bewusst ein großes Brett gewählt
+ * wurde. Dann wird dieselbe kompakte Kopfzeile ohne mobile Layoutregeln genutzt.
  */
 (function initialiseMobileNavigation(){
   const root = document.documentElement;
@@ -30,8 +32,32 @@
   let refreshFrame = 0;
   let lastFocus = null;
 
+  function memberUser(){
+    try{
+      if(!onlineAuthToken || !onlineAuthUser) return null;
+      if(!onlineAuthUser.id) return null;
+      return onlineAuthUser;
+    } catch(_){
+      return null;
+    }
+  }
+
+  function phoneViewport(){
+    return window.matchMedia('(max-width: 760px), (orientation: landscape) and (max-height: 600px) and (max-width: 950px)').matches;
+  }
+
+  function tabletViewport(){
+    return window.matchMedia('(min-width: 761px) and (max-width: 1400px)').matches;
+  }
+
   function roomContext(){
     return root.classList.contains('hammerschach-room-view') || !!(roomLobbyButton && !roomLobbyButton.hidden);
+  }
+
+  function compactNavigationWanted(){
+    if(!memberUser()) return false;
+    if(phoneViewport()) return true;
+    return tabletViewport() && roomContext();
   }
 
   function desktopBoardCompactWanted(){
@@ -126,8 +152,9 @@
     if(refreshFrame) cancelAnimationFrame(refreshFrame);
     refreshFrame = requestAnimationFrame(() => {
       refreshFrame = 0;
+      const member = !!memberUser();
       const active = !!(classicHeader && testHeader && openButton && backdrop
-        && desktopBoardCompactWanted());
+        && ((member && compactNavigationWanted()) || desktopBoardCompactWanted()));
 
       root.classList.toggle('mobile-nav-test-active', active);
       root.classList.toggle('mobile-nav-test-room', active && roomContext());
