@@ -224,10 +224,19 @@
   window.addEventListener('orientationchange',() => scheduleApply(true),{passive:true});
   window.addEventListener('popstate',() => scheduleApply(true));
 
-  const rootObserver = new MutationObserver(() => scheduleApply(true));
+  let observedRoomContext = roomContext();
+  const rootObserver = new MutationObserver(() => {
+    const nextRoomContext = roomContext();
+    if(nextRoomContext === observedRoomContext) return;
+    observedRoomContext = nextRoomContext;
+    scheduleApply(true);
+  });
   rootObserver.observe(root,{attributes:true,attributeFilter:['class']});
   if(roomLobbyButton){
-    const roomButtonObserver = new MutationObserver(() => scheduleApply(true));
+    const roomButtonObserver = new MutationObserver(() => {
+      observedRoomContext = roomContext();
+      scheduleApply(true);
+    });
     roomButtonObserver.observe(roomLobbyButton,{attributes:true,attributeFilter:['hidden']});
   }
 

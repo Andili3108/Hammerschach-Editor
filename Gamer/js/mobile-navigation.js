@@ -4,7 +4,8 @@
  * Automatische Mobil-/Tablet-Navigation.
  * Smartphone: kompakte Navigation in Smartphone-Viewports.
  * Tablet: kompakte Navigation im Spielraum in Tablet-Viewports.
- * Desktop bleibt unverändert.
+ * Große Desktopbretter verwenden einen getrennten Kompaktmodus, ohne die
+ * mobilen Layoutklassen zu aktivieren.
  */
 (function initialiseMobileNavigation(){
   const root = document.documentElement;
@@ -41,6 +42,10 @@
     }
   }
 
+  function memberContext(){
+    return !!memberUser() || root.classList.contains('member-lobby-view');
+  }
+
   function phoneViewport(){
     return window.matchMedia('(max-width: 760px), (orientation: landscape) and (max-height: 600px) and (max-width: 950px)').matches;
   }
@@ -54,9 +59,22 @@
   }
 
   function compactNavigationWanted(){
-    if(!memberUser()) return false;
     if(phoneViewport()) return true;
     return tabletViewport() && roomContext();
+  }
+
+  function desktopBoardCompactWanted(){
+    return root.classList.contains('desktop-board-compact')
+      && roomContext()
+      && window.matchMedia('(min-width: 1101px) and (min-height: 720px) and (hover: hover) and (pointer: fine)').matches;
+  }
+
+  function compactHeaderActive(){
+    return root.classList.contains('mobile-nav-test-active') || root.classList.contains('desktop-board-header-active');
+  }
+
+  function setRootClass(name,active){
+    if(root.classList.contains(name) !== active) root.classList.toggle(name,active);
   }
 
   function closeDrawer(restoreFocus){
@@ -70,7 +88,7 @@
   }
 
   function openDrawer(){
-    if(!backdrop || !drawer || !root.classList.contains('mobile-nav-test-active')) return;
+    if(!backdrop || !drawer || !compactHeaderActive()) return;
     lastFocus = document.activeElement;
     syncControls();
     backdrop.hidden = false;
@@ -147,11 +165,14 @@
     if(refreshFrame) cancelAnimationFrame(refreshFrame);
     refreshFrame = requestAnimationFrame(() => {
       refreshFrame = 0;
-      const member = !!memberUser();
-      const active = !!(classicHeader && testHeader && openButton && backdrop && member && compactNavigationWanted());
+      const controlsReady = !!(classicHeader && testHeader && openButton && backdrop);
+      const mobileActive = controlsReady && memberContext() && compactNavigationWanted();
+      const desktopActive = controlsReady && !mobileActive && desktopBoardCompactWanted();
+      const active = mobileActive || desktopActive;
 
-      root.classList.toggle('mobile-nav-test-active', active);
-      root.classList.toggle('mobile-nav-test-room', active && roomContext());
+      setRootClass('mobile-nav-test-active',mobileActive);
+      setRootClass('mobile-nav-test-room',mobileActive && roomContext());
+      setRootClass('desktop-board-header-active',desktopActive);
       if(testHeader) testHeader.hidden = !active;
       if(!active) closeDrawer(false);
       syncControls();
@@ -168,6 +189,7 @@
   if(!classicHeader || !testHeader || !openButton || !backdrop || !drawer){
     root.classList.remove('mobile-nav-test-active');
     root.classList.remove('mobile-nav-test-room');
+    root.classList.remove('desktop-board-header-active');
     return;
   }
 
@@ -209,6 +231,7 @@
     if(String(event.filename || '').includes('mobile-navigation.js')){
       root.classList.remove('mobile-nav-test-active');
       root.classList.remove('mobile-nav-test-room');
+      root.classList.remove('desktop-board-header-active');
       testHeader.hidden = true;
       closeDrawer(false);
     }
