@@ -174,6 +174,7 @@ function renderBoard(){
   updateGameActionButtons();
   updateDailyMoveConfirmationUi();
   updateVariationLauncherUi();
+  if(typeof updateConditionalMoveUi === 'function') updateConditionalMoveUi();
 }
 function getSquareEl(x,y){ return boardEl.querySelector('.square[data-x="' + x + '"][data-y="' + y + '"]'); }
 function markSquare(x,y,cls){ const el = getSquareEl(x,y); if(el) el.classList.add(cls); }

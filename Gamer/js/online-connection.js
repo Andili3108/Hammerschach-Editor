@@ -28,6 +28,10 @@ function connectOnlineRoom(roomId, opts){
   onlineGameEndReason = null;
   onlineGameWinner = null;
   onlineDrawOffer = null;
+  onlineConditionalMove = null;
+  conditionalMoveBusy = false;
+  conditionalMoveCloseAfterAck = false;
+  if(variationModeActive && variationPurpose === 'conditional') closeVariationBoard();
   onlineRoomTimeControl = null;
   onlineRoomGameSetup = null;
   onlineRatingState = null;
@@ -165,6 +169,7 @@ function connectOnlineRoom(roomId, opts){
         rematchLastError = msg.message || 'Die Revanche konnte nicht verarbeitet werden.';
         updateRematchUi();
       }
+      if(String(msg.code || '').indexOf('CONDITIONAL_') === 0) handleConditionalMoveError(onlineLastMessage);
       if(msg.code === 'start_requires_time_control') onlinePendingStartMessageId = null;
       if(String(msg.code || '').indexOf('PUBLIC_GAME_') === 0 || msg.code === 'ONLY_CREATOR_CAN_SET_PUBLIC_GAME' || msg.code === 'GAME_ALREADY_ENDED') onlinePendingPublicGameMessageId = null;
       updateOnlineUi();
@@ -269,6 +274,13 @@ function connectOnlineRoom(roomId, opts){
       applyOnlineGameReactionState(msg.gameReactions);
       handled = true;
     }
+    if(msg.type === 'conditional_move_ack'){
+      handleConditionalMoveAck(msg);
+      handled = true;
+    } else if(Object.prototype.hasOwnProperty.call(msg, 'conditionalMove')){
+      applyOnlineConditionalMoveState(msg.conditionalMove);
+      handled = true;
+    }
 
     const incomingDrawOffer = extractOnlineDrawOffer(msg);
     if(incomingDrawOffer){
@@ -330,7 +342,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','game_reaction_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','game_reaction_state','conditional_move_ack','conditional_move_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -338,7 +350,13 @@ function connectOnlineRoom(roomId, opts){
 
     if(msg.type === 'hello' && msg.seatDenied && msg.message) onlineLastMessage = msg.message;
     else if(premoveExecuted) onlineLastMessage = 'Premove wurde sofort ausgeführt und übertragen.';
+    else if(appliedSingleMove && incomingMove && incomingMove.conditional) onlineLastMessage = 'Bedingter Zug wurde automatisch ausgeführt.';
     else if(appliedMoveCount || appliedSingleMove) onlineLastMessage = 'Online-Zug wurde übernommen.';
+    else if(msg.type === 'conditional_move_state' && msg.triggered) onlineLastMessage = msg.message || 'Bedingter Zug wurde automatisch ausgeführt.';
+    else if(msg.type === 'conditional_move_state' && msg.expired) onlineLastMessage = msg.message || 'Der Gegner hat anders gezogen; die Bedingung ist verfallen.';
+    else if(msg.type === 'conditional_move_state' && msg.saved) onlineLastMessage = 'Bedingter Zug wurde auf einem verbundenen Gerät gespeichert.';
+    else if(msg.type === 'conditional_move_state' && msg.cleared) onlineLastMessage = 'Bedingter Zug wurde auf einem verbundenen Gerät gelöscht.';
+    else if(msg.type === 'conditional_move_ack') onlineLastMessage = msg.cleared ? 'Bedingter Zug wurde gelöscht.' : 'Bedingter Zug wurde gespeichert.';
     else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
     else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
@@ -396,6 +414,9 @@ function connectOnlineRoom(roomId, opts){
   });
   onlineSocket.addEventListener('close', event => {
     onlineConnected = false;
+    conditionalMoveBusy = false;
+    conditionalMoveCloseAfterAck = false;
+    if(variationModeActive && variationPurpose === 'conditional') closeVariationBoard();
     queuedPremove = null;
     selected = null;
     updatePremoveUi();
@@ -422,6 +443,9 @@ function connectOnlineRoom(roomId, opts){
   });
   onlineSocket.addEventListener('error', () => {
     onlineConnected = false;
+    conditionalMoveBusy = false;
+    conditionalMoveCloseAfterAck = false;
+    if(variationModeActive && variationPurpose === 'conditional') closeVariationBoard();
     queuedPremove = null;
     selected = null;
     updatePremoveUi();

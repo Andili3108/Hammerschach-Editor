@@ -282,7 +282,9 @@ function normalizeIncomingMove(candidate){
     promotion: promotionRaw && ['Q','R','B','N'].includes(promotionRaw) ? promotionRaw : null,
     castle: castleSideCode(candidate),
     san: candidate.san || '',
-    messageId: candidate.messageId || candidate.message_id || ''
+    messageId: candidate.messageId || candidate.message_id || '',
+    automatic: candidate.automatic === true,
+    conditional: candidate.conditional === true
   };
 }
 function extractOnlineMove(msg){

@@ -65,7 +65,9 @@ function updateBoardNavControls(){
     current = variationHistory.length;
     total = completeVariationLine().length;
     locked = false;
-    labels = ['Ausgangsstellung der Variante','Einen Variantenzug zurück','Einen Variantenzug vor','Letzte Variantenstellung'];
+    labels = variationPurpose === 'conditional'
+      ? ['Ausgangsstellung der Bedingung','Einen vorbereiteten Zug zurück','Einen vorbereiteten Zug vor','Letzte vorbereitete Stellung']
+      : ['Ausgangsstellung der Variante','Einen Variantenzug zurück','Einen Variantenzug vor','Letzte Variantenstellung'];
   }
   const buttons = [boardNavStartBtn,boardNavBackBtn,boardNavForwardBtn,boardNavEndBtn];
   buttons.forEach((button,index) => {

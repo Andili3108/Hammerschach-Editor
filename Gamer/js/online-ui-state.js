@@ -8,7 +8,7 @@ function setOnlineValueClass(el, state){
 function refreshHeaderStatusFromState(){
   if(!statusEl || !boardEl) return;
   if(variationModeActive){
-    statusEl.textContent = 'Variantenbrett';
+    statusEl.textContent = variationPurpose === 'conditional' ? 'Bedingte Züge' : 'Variantenbrett';
     return;
   }
   if(embeddedToolActive()){
@@ -193,6 +193,7 @@ function updateOnlineUi(){
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
     updateVariationLauncherUi();
+    if(typeof updateConditionalMoveUi === 'function') updateConditionalMoveUi();
     refreshHeaderStatusFromState();
     refreshNextDailyGameButton();
     return;
@@ -231,6 +232,7 @@ function updateOnlineUi(){
     updateSidePanelLayout();
     updatePlayerPresenceBadges();
     updateVariationLauncherUi();
+    if(typeof updateConditionalMoveUi === 'function') updateConditionalMoveUi();
     refreshHeaderStatusFromState();
     refreshNextDailyGameButton();
     return;
@@ -314,6 +316,7 @@ function updateOnlineUi(){
   updatePublicVisibilityUi();
   updateSidePanelLayout();
   updateVariationLauncherUi();
+  if(typeof updateConditionalMoveUi === 'function') updateConditionalMoveUi();
   refreshHeaderStatusFromState();
   refreshNextDailyGameButton();
 }

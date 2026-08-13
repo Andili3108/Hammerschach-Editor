@@ -13,7 +13,7 @@ function updateVariationLauncherUi(){
   if(variationModeActive && (!available || pendingDailyMove)){
     closeVariationBoard({skipLauncherUpdate:true});
   }
-  variationLauncherEl.hidden = !available;
+  variationLauncherEl.hidden = !available || (variationModeActive && variationPurpose === 'conditional');
   variationOpenBtn.disabled = !available || !!pendingDailyMove;
   variationOpenBtn.classList.toggle('active',variationModeActive);
   variationOpenBtn.setAttribute('aria-pressed',variationModeActive ? 'true' : 'false');
@@ -28,10 +28,16 @@ function syncVariationModeUi(){
   if(variationBoardBadgeEl) variationBoardBadgeEl.hidden = !variationModeActive;
   if(mainSidePanelEl) mainSidePanelEl.hidden = variationModeActive;
   if(variationSidePanelEl) variationSidePanelEl.hidden = !variationModeActive;
+  if(variationAnalysisPanelEl) variationAnalysisPanelEl.hidden = variationPurpose === 'conditional';
+  if(conditionalMovePanelEl) conditionalMovePanelEl.hidden = variationPurpose !== 'conditional';
+  if(variationBoardBadgeEl) variationBoardBadgeEl.textContent = variationPurpose === 'conditional' ? 'BEDINGTE ZÜGE' : 'VARIANTENBRETT';
   document.documentElement.classList.toggle('variation-mode-active',variationModeActive);
+  document.documentElement.classList.toggle('conditional-move-mode-active',variationModeActive && variationPurpose === 'conditional');
   syncBoardPlayerStrips();
   if(flipBoardBtn){
-    const flipTitle = variationModeActive ? 'Variantenbrett drehen' : 'Brett drehen';
+    const flipTitle = variationModeActive
+      ? (variationPurpose === 'conditional' ? 'Brett für bedingte Züge drehen' : 'Variantenbrett drehen')
+      : 'Brett drehen';
     flipBoardBtn.title = flipTitle;
     flipBoardBtn.setAttribute('aria-label',flipTitle);
   }
@@ -47,6 +53,7 @@ function openVariationBoard(){
     return;
   }
   if(!variationBoardAvailable() || pendingDailyMove || !variationBoardEl || !variationSidePanelEl) return;
+  variationPurpose = 'analysis';
   variationStartGame = buildGameFromHistory(masterHistory.length).clone();
   variationGame = variationStartGame.clone();
   variationHistory = [];
@@ -72,8 +79,11 @@ function closeVariationBoard(options){
   variationHistory = [];
   variationRedo = [];
   variationSelected = null;
+  const closedPurpose = variationPurpose;
+  variationPurpose = 'analysis';
   updateGameActionButtons();
   if(!options.skipLauncherUpdate) updateVariationLauncherUi();
+  if(closedPurpose === 'conditional' && typeof updateConditionalMoveUi === 'function') updateConditionalMoveUi();
   refreshHeaderStatusFromState();
   hammerschachScheduleHeightReport(true);
 }
@@ -102,6 +112,10 @@ function variationGameOverText(go){
 }
 function updateVariationStatus(){
   if(!variationStatusEl || !variationGame) return;
+  if(variationPurpose === 'conditional'){
+    if(typeof updateConditionalMoveEditorUi === 'function') updateConditionalMoveEditorUi();
+    return;
+  }
   const go = variationGame.gameOver();
   if(go){
     variationStatusEl.textContent = variationGameOverText(go);
@@ -124,6 +138,10 @@ function setVariationViewIndex(targetIndex){
   renderVariationBoard();
 }
 function renderVariationMoveList(){
+  if(variationPurpose === 'conditional'){
+    if(typeof updateConditionalMoveEditorUi === 'function') updateConditionalMoveEditorUi();
+    return;
+  }
   if(!variationMoveListEl) return;
   variationMoveListEl.innerHTML = '';
   const line = completeVariationLine();
@@ -244,6 +262,7 @@ function renderVariationBoard(){
 }
 function commitVariationMove(found, promotion){
   if(!variationGame) return;
+  if(variationPurpose === 'conditional' && variationHistory.length >= 2) return;
   const before = variationGame.clone();
   const entry = {
     from:found.from.slice(),
@@ -268,9 +287,11 @@ function commitVariationMove(found, promotion){
     check:variationGame.inCheck(variationGame.turn)
   });
   renderVariationBoard();
+  if(variationPurpose === 'conditional' && typeof updateConditionalMoveEditorUi === 'function') updateConditionalMoveEditorUi();
 }
 function onVariationSquareClick(x,y){
   if(!variationGame || variationGame.gameOver()) return;
+  if(variationPurpose === 'conditional' && variationHistory.length >= 2) return;
   const piece = variationGame.at(x,y);
   if(!variationSelected){
     if(piece === '.' || pieceColor(piece) !== variationGame.turn) return;
@@ -310,6 +331,8 @@ function onVariationSquareClick(x,y){
 }
 if(variationOpenBtn) variationOpenBtn.addEventListener('click', openVariationBoard);
 document.addEventListener('keydown', event => {
-  if(event.key === 'Escape' && variationModeActive && !document.getElementById('promotionBackdrop')) closeVariationBoard();
+  if(event.key === 'Escape' && variationModeActive && !document.getElementById('promotionBackdrop')){
+    if(variationPurpose === 'conditional' && typeof closeConditionalMoveBoard === 'function') closeConditionalMoveBoard();
+    else closeVariationBoard();
+  }
 });
-
