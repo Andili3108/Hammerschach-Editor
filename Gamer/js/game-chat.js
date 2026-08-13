@@ -47,7 +47,7 @@ function updateSidePanelLayout(){
   }
   if(showMovesPanelBtn) showMovesPanelBtn.classList.toggle('active', rightPanelMode === 'moves');
   if(showChatPanelBtn) showChatPanelBtn.classList.toggle('active', rightPanelMode === 'chat');
-  updateDailyMoveConfirmationUi();
+  if(typeof updateDailyMoveConfirmationUi === 'function') updateDailyMoveConfirmationUi();
 }
 function setRightPanelMode(mode){
   rightPanelMode = mode === 'chat' ? 'chat' : 'moves';
@@ -58,7 +58,11 @@ function setRightPanelMode(mode){
 }
 if(showMovesPanelBtn) showMovesPanelBtn.addEventListener('click', () => setRightPanelMode('moves'));
 if(showChatPanelBtn) showChatPanelBtn.addEventListener('click', () => setRightPanelMode('chat'));
-setTimeout(() => setRightPanelMode('moves'), 0);
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', () => setRightPanelMode('moves'), {once:true});
+} else {
+  setRightPanelMode('moves');
+}
 
 function cleanChatText(value){
   return String(value || '')
