@@ -4,8 +4,7 @@
  * Automatische Mobil-/Tablet-Navigation.
  * Smartphone: kompakte Navigation in Smartphone-Viewports.
  * Tablet: kompakte Navigation im Spielraum in Tablet-Viewports.
- * Desktop bleibt unverändert, solange nicht bewusst ein großes Brett gewählt
- * wurde. Dann wird dieselbe kompakte Kopfzeile ohne mobile Layoutregeln genutzt.
+ * Desktop bleibt unverändert.
  */
 (function initialiseMobileNavigation(){
   const root = document.documentElement;
@@ -58,10 +57,6 @@
     if(!memberUser()) return false;
     if(phoneViewport()) return true;
     return tabletViewport() && roomContext();
-  }
-
-  function desktopBoardCompactWanted(){
-    return root.classList.contains('desktop-board-compact') && roomContext();
   }
 
   function closeDrawer(restoreFocus){
@@ -153,8 +148,7 @@
     refreshFrame = requestAnimationFrame(() => {
       refreshFrame = 0;
       const member = !!memberUser();
-      const active = !!(classicHeader && testHeader && openButton && backdrop
-        && ((member && compactNavigationWanted()) || desktopBoardCompactWanted()));
+      const active = !!(classicHeader && testHeader && openButton && backdrop && member && compactNavigationWanted());
 
       root.classList.toggle('mobile-nav-test-active', active);
       root.classList.toggle('mobile-nav-test-room', active && roomContext());
@@ -198,7 +192,6 @@
   window.addEventListener('resize', refresh, {passive:true});
   window.addEventListener('orientationchange', refresh, {passive:true});
   window.addEventListener('popstate', refresh);
-  window.addEventListener('hammerschach:board-size-change', refresh);
 
   const rootObserver = new MutationObserver(refresh);
   rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
