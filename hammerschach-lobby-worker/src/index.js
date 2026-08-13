@@ -1,4 +1,4 @@
-// BUILD: GAMER-DAILY-GAME-START-SUMMARY-20260810-1
+// BUILD: GAMER-CONDITIONAL-MOVES-20260813-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -11282,6 +11282,41 @@ function safeMoveForClient(value) {
   return out;
 }
 
+function conditionalStoredMove(value) {
+  if (!value || typeof value !== 'object' || !value.from || !value.to) return null;
+  return {
+    from:[Number(value.from[0]), Number(value.from[1])],
+    to:[Number(value.to[0]), Number(value.to[1])],
+    promotion:value.promotion || null,
+    castle:castleSideCode(value) || null,
+    san:String(value.san || '').slice(0, 40)
+  };
+}
+
+function safeConditionalMoveForClient(value) {
+  if (!value || typeof value !== 'object') return null;
+  const expectedMove = conditionalStoredMove(value.expectedMove || value.expected_move || value.expected);
+  const replyMove = conditionalStoredMove(value.replyMove || value.reply_move || value.reply);
+  const basePly = Math.max(0, Math.floor(Number(value.basePly ?? value.base_ply ?? 0) || 0));
+  if (!expectedMove || !replyMove) return null;
+  return {
+    basePly,
+    expectedMove,
+    replyMove,
+    updatedAt:value.updatedAt || value.updated_at || null
+  };
+}
+
+function sameConditionalMove(left, right) {
+  const a = conditionalStoredMove(left);
+  const b = conditionalStoredMove(right);
+  if (!a || !b) return false;
+  return a.from[0] === b.from[0] && a.from[1] === b.from[1] &&
+    a.to[0] === b.to[0] && a.to[1] === b.to[1] &&
+    String(a.promotion || '') === String(b.promotion || '') &&
+    String(a.castle || '') === String(b.castle || '');
+}
+
 function safeDrawOfferForClient(value) {
   if (!value || typeof value !== 'object' || !value.byRole) return null;
   return {
@@ -14965,6 +15000,7 @@ export class GameRoom {
       game = finishGameState(game, 'time', clock.winner, now);
       await this.state.storage.put({game,clock});
       await this.state.storage.delete('drawOffer');
+      await this.state.storage.delete('conditionalMoves');
       justEnded = true;
       await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
@@ -15052,6 +15088,7 @@ export class GameRoom {
     await this.state.storage.put('moves', []);
     await this.state.storage.put('clock', clock);
     await this.state.storage.delete('drawOffer');
+    await this.state.storage.delete('conditionalMoves');
     await this.scheduleClockAlarm(clock, now);
     await this.syncGameIndexes();
 
@@ -15135,6 +15172,10 @@ export class GameRoom {
       : !!(createdByRole && info.role === createdByRole);
     const storedMoves = (await this.state.storage.get('moves')) || [];
     const moves = storedMoves.map(safeMoveForClient);
+    const storedConditionalMoves = (await this.state.storage.get('conditionalMoves')) || {};
+    const conditionalMove = info.role === 'w' || info.role === 'b'
+      ? safeConditionalMoveForClient(storedConditionalMoves[info.role])
+      : null;
     const drawOffer = safeDrawOfferForClient((await this.state.storage.get('drawOffer')) || null);
     const storedChatValue = await this.state.storage.get('chatMessages');
     const storedChatMessages = Array.isArray(storedChatValue) ? storedChatValue : [];
@@ -15193,6 +15234,7 @@ export class GameRoom {
       rematch,
       gameReactions,
       moves,
+      conditionalMove,
       drawOffer,
       chatMessages,
       clock: clockPayload(timed.clock, now),
@@ -15249,6 +15291,21 @@ export class GameRoom {
         serverProcessingMs,
         serverNow: now
       });
+    }
+  }
+
+  sendConditionalMoveState(role, conditionalMove = null, extra = {}, excludeWs = null) {
+    if (role !== 'w' && role !== 'b') return;
+    for (const ws of this.state.getWebSockets()) {
+      if (excludeWs && ws === excludeWs) continue;
+      const info = ws.deserializeAttachment() || {};
+      if (info.role !== role) continue;
+      safeSend(ws, Object.assign({
+        type:'conditional_move_state',
+        ok:true,
+        conditionalMove:safeConditionalMoveForClient(conditionalMove),
+        serverNow:Date.now()
+      }, extra || {}));
     }
   }
 
@@ -15721,6 +15778,7 @@ export class GameRoom {
       await this.state.storage.put('gameSetup', gameSetup);
       await this.state.storage.put('moves', []);
       await this.state.storage.delete('clock');
+      await this.state.storage.delete('conditionalMoves');
       const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
       if (!dailyAutoStart.started) await this.syncGameIndexes();
 
@@ -15767,6 +15825,7 @@ export class GameRoom {
       timeControl.updatedByRole = role;
       await this.state.storage.put('timeControl', timeControl);
       await this.state.storage.delete('clock');
+      await this.state.storage.delete('conditionalMoves');
       const dailyAutoStart = await this.autoStartDailyGameIfReady(role);
       if (!dailyAutoStart.started) await this.syncGameIndexes();
 
@@ -15861,6 +15920,7 @@ export class GameRoom {
       await this.state.storage.put('moves', []);
       await this.state.storage.put('clock', clock);
       await this.state.storage.delete('drawOffer');
+      await this.state.storage.delete('conditionalMoves');
       await this.scheduleClockAlarm(clock, now);
       await this.syncGameIndexes();
 
@@ -15974,6 +16034,7 @@ export class GameRoom {
         game.result = '1/2-1/2';
         await this.state.storage.put('game', game);
         await this.state.storage.delete('drawOffer');
+        await this.state.storage.delete('conditionalMoves');
         try { await this.state.storage.deleteAlarm(); } catch (_) {}
         await this.finalizeRatingIfNeeded(game);
         await this.syncGameIndexes();
@@ -16035,12 +16096,119 @@ export class GameRoom {
       game = finishGameState(game, 'resignation', winner, now);
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
+      await this.state.storage.delete('conditionalMoves');
       try { await this.state.storage.deleteAlarm(); } catch (_) {}
       await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
       this.queueDailyResultNotifications(game);
       safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
+      return;
+    }
+
+    if (data.type === 'set_conditional_move') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_PLAYERS_ONLY', message:'Nur die beiden Spieler können bedingte Züge vorbereiten.'});
+        return;
+      }
+      const state = await this.state.storage.get(['game','clock','timeControl','moves','gameSetup','conditionalMoves']);
+      const timed = await this.refreshTimedGameState(Date.now(), {stored:state});
+      const game = timed.game || {started:false,ended:false};
+      const timeControl = cleanTimeControl(state.get('timeControl') || null);
+      const moves = state.get('moves') || [];
+      if (!game.started || game.ended) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_GAME_UNAVAILABLE', message:'Bedingte Züge sind nur während einer laufenden Partie möglich.'});
+        return;
+      }
+      if (!timeControl || timeControl.mode !== 'daily') {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_DAILY_ONLY', message:'Bedingte Züge stehen ausschließlich in Daily-Partien zur Verfügung.'});
+        return;
+      }
+      if (!timed.clock || timed.clock.timeLost || timed.clock.turn === role) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_OPPONENT_TURN_REQUIRED', message:'Eine Bedingung kann nur vorbereitet werden, während der Gegner am Zug ist.'});
+        return;
+      }
+      const requestedBasePlyRaw = Number(data.basePly ?? data.base_ply);
+      const requestedBasePly = Number.isFinite(requestedBasePlyRaw) && requestedBasePlyRaw >= 0
+        ? Math.floor(requestedBasePlyRaw)
+        : -1;
+      if (requestedBasePly !== moves.length) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_POSITION_CHANGED', message:'Die Partie hat sich inzwischen verändert. Bitte die Bedingung neu vorbereiten.'});
+        await this.sendRoomState(ws,'room_state');
+        return;
+      }
+      const expectedIncoming = cleanMove(data.expectedMove || data.expected_move || data.expected);
+      const replyIncoming = cleanMove(data.replyMove || data.reply_move || data.reply);
+      if (!expectedIncoming || !replyIncoming) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_INVALID_LINE', message:'Gegnerzug und eigene Antwort müssen vollständig angegeben sein.'});
+        return;
+      }
+      const gameSetup = cleanGameSetup(state.get('gameSetup') || (game && game.gameSetup) || null);
+      let expectedValidation;
+      let replyValidation;
+      try {
+        expectedValidation = validateMoveOnServer(moves, expectedIncoming, gameSetup, this.validationGameFor(moves,gameSetup));
+        if (!expectedValidation.ok) {
+          safeSend(ws, {type:'error', code:'CONDITIONAL_EXPECTED_' + expectedValidation.code, message:'Der erwartete Gegnerzug ist nicht legal.'});
+          return;
+        }
+        if (expectedValidation.before.turn !== opposite(role)) {
+          safeSend(ws, {type:'error', code:'CONDITIONAL_WRONG_EXPECTED_SIDE', message:'Zuerst muss ein Zug des Gegners vorbereitet werden.'});
+          return;
+        }
+        if (expectedValidation.gameOver) {
+          safeSend(ws, {type:'error', code:'CONDITIONAL_EXPECTED_ENDS_GAME', message:'Nach diesem Gegnerzug wäre die Partie bereits beendet; eine Antwort ist nicht möglich.'});
+          return;
+        }
+        replyValidation = validateMoveOnServer([], replyIncoming, gameSetup, expectedValidation.after);
+      } catch (error) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_VALIDATION_FAILED', message:error && error.message ? error.message : 'Die vorbereitete Zugfolge konnte nicht geprüft werden.'});
+        return;
+      }
+      if (!replyValidation.ok || replyValidation.before.turn !== role) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_REPLY_ILLEGAL', message:'Die vorbereitete eigene Antwort ist in dieser Stellung nicht legal.'});
+        return;
+      }
+      const conditionalMove = {
+        basePly:moves.length,
+        expectedMove:conditionalStoredMove(expectedValidation.move),
+        replyMove:conditionalStoredMove(replyValidation.move),
+        updatedAt:new Date().toISOString()
+      };
+      const conditionalMoves = state.get('conditionalMoves') && typeof state.get('conditionalMoves') === 'object'
+        ? Object.assign({},state.get('conditionalMoves'))
+        : {};
+      conditionalMoves[role] = conditionalMove;
+      await this.state.storage.put('conditionalMoves',conditionalMoves);
+      safeSend(ws, {
+        type:'conditional_move_ack',
+        ok:true,
+        messageId:data.messageId || null,
+        conditionalMove:safeConditionalMoveForClient(conditionalMove),
+        serverNow:Date.now()
+      });
+      this.sendConditionalMoveState(role, conditionalMove, {saved:true}, ws);
+      return;
+    }
+
+    if (data.type === 'clear_conditional_move') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_PLAYERS_ONLY', message:'Nur die beiden Spieler können bedingte Züge löschen.'});
+        return;
+      }
+      const stored = (await this.state.storage.get('conditionalMoves')) || {};
+      const conditionalMoves = stored && typeof stored === 'object' ? Object.assign({},stored) : {};
+      delete conditionalMoves[role];
+      await this.state.storage.put('conditionalMoves',conditionalMoves);
+      safeSend(ws, {
+        type:'conditional_move_ack',
+        ok:true,
+        cleared:true,
+        messageId:data.messageId || null,
+        conditionalMove:null,
+        serverNow:Date.now()
+      });
+      this.sendConditionalMoveState(role, null, {cleared:true}, ws);
       return;
     }
 
@@ -16051,7 +16219,7 @@ export class GameRoom {
         return;
       }
 
-      const moveState = await this.state.storage.get(['game','clock','timeControl','moves','gameSetup','drawOffer']);
+      const moveState = await this.state.storage.get(['game','clock','timeControl','moves','gameSetup','drawOffer','conditionalMoves']);
       const timedState = await this.refreshTimedGameState(Date.now(), {
         rescheduleAlarm:false,
         persistClock:false,
@@ -16225,13 +16393,109 @@ export class GameRoom {
       }
 
       moves.push(move);
+      const humanClock = Object.assign({},clock);
+      const humanGame = Object.assign({},game);
+      const humanDrawOffer = outgoingDrawOffer;
+      const conditionalMoves = moveState.get('conditionalMoves') && typeof moveState.get('conditionalMoves') === 'object'
+        ? Object.assign({},moveState.get('conditionalMoves'))
+        : {};
+      const conditionalOwner = opposite(role);
+      const storedConditionalMove = conditionalMoves[conditionalOwner] || null;
+      let automaticMove = null;
+      let conditionalMoveConsumed = false;
+      let finalValidationGame = validation.after;
+
+      /*
+        Eine Bedingung gehört immer dem Spieler, der nach dem gerade
+        eingegangenen Zug am Zug wäre. Sie wird bei jeder Antwort des Gegners
+        genau einmal verbraucht – passend bedeutet automatische Ausführung,
+        abweichend bedeutet stilles Verfallen.
+      */
+      if (storedConditionalMove && timeControl.mode === 'daily') {
+        conditionalMoveConsumed = true;
+        delete conditionalMoves[conditionalOwner];
+        const basePly = Math.max(0, Math.floor(Number(storedConditionalMove.basePly) || 0));
+        const exactExpectedMove = basePly === ply - 1 && sameConditionalMove(storedConditionalMove.expectedMove, move);
+        if (exactExpectedMove && !game.ended && clock.turn === conditionalOwner) {
+          let automaticValidation = null;
+          try {
+            automaticValidation = validateMoveOnServer([], storedConditionalMove.replyMove, gameSetup, validation.after);
+          } catch (_) {
+            automaticValidation = null;
+          }
+          if (automaticValidation && automaticValidation.ok && automaticValidation.before.turn === conditionalOwner) {
+            const automaticNow = Date.now();
+            clock = advanceClock(clock, automaticNow);
+            if (clock && !clock.timeLost && clock.turn === conditionalOwner) {
+              automaticMove = {
+                ply:ply + 1,
+                side:conditionalOwner,
+                from:automaticValidation.move.from,
+                to:automaticValidation.move.to,
+                promotion:automaticValidation.move.promotion || null,
+                castle:castleSideCode(automaticValidation.move) || null,
+                san:automaticValidation.move.san,
+                piece:automaticValidation.move.piece,
+                taken:automaticValidation.move.taken,
+                messageId:'conditional_' + String(ply + 1) + '_' + String(automaticNow),
+                receivedAt:new Date(automaticNow).toISOString(),
+                serverNow:automaticNow,
+                automatic:true,
+                conditional:true,
+                _fairplay:{
+                  version:FAIRPLAY_RAW_DATA_VERSION,
+                  thinkTimeMs:0,
+                  conditionalMove:true,
+                  moverClockBeforeMs:Math.max(0, Math.floor(Number(clock[conditionalOwner + 'Ms'] || 0))),
+                  whiteClockBeforeMs:Math.max(0, Math.floor(Number(clock.wMs || 0))),
+                  blackClockBeforeMs:Math.max(0, Math.floor(Number(clock.bMs || 0))),
+                  moverClockAfterMs:null,
+                  whiteClockAfterMs:null,
+                  blackClockAfterMs:null
+                }
+              };
+
+              if (automaticValidation.gameOver) {
+                clock.running = false;
+                clock.timeLost = false;
+                clock.loser = null;
+                clock.winner = automaticValidation.gameOver.winner || null;
+                game = finishGameState(game, automaticValidation.gameOver.type, automaticValidation.gameOver.winner || null, automaticNow);
+                game.result = resultFromGameOver(automaticValidation.gameOver);
+              } else {
+                clock[role + 'Ms'] = Math.max(0, Math.floor(Number(timeControl.baseSeconds || 0) * 1000));
+                clock.turn = role;
+                clock.running = true;
+                clock.timeLost = false;
+                clock.loser = null;
+                clock.winner = null;
+              }
+              clock.lastTs = automaticNow;
+              clock.updatedAt = automaticNow;
+              automaticMove._fairplay.moverClockAfterMs = Math.max(0, Math.floor(Number(clock[conditionalOwner + 'Ms'] || 0)));
+              automaticMove._fairplay.whiteClockAfterMs = Math.max(0, Math.floor(Number(clock.wMs || 0)));
+              automaticMove._fairplay.blackClockAfterMs = Math.max(0, Math.floor(Number(clock.bMs || 0)));
+              if (automaticValidation.gameOver || (outgoingDrawOffer && outgoingDrawOffer.byRole && outgoingDrawOffer.byRole !== conditionalOwner)) {
+                outgoingDrawOffer = null;
+              }
+              moves.push(automaticMove);
+              finalValidationGame = automaticValidation.after;
+            }
+          }
+        }
+      }
+
+      if (game.ended) {
+        for (const owner of Object.keys(conditionalMoves)) delete conditionalMoves[owner];
+      }
       await this.state.storage.put({
         moves,
         clock,
         game,
-        drawOffer:outgoingDrawOffer
+        drawOffer:outgoingDrawOffer,
+        conditionalMoves
       });
-      this.rememberValidationGame(moves, gameSetup, validation.after);
+      this.rememberValidationGame(moves, gameSetup, finalValidationGame);
 
       const updateClockAlarm = async () => {
         if (game.ended) {
@@ -16248,14 +16512,22 @@ export class GameRoom {
         ok: true,
         messageId: data.messageId || incoming.clientMessageId || null,
         move: safeMoveForClient(move),
-        game: safeGameForClient(game),
-        drawOffer: safeDrawOfferForClient(outgoingDrawOffer),
-        movesCount: moves.length,
-        clock: clockPayload(clock, now),
+        game: safeGameForClient(humanGame),
+        drawOffer: safeDrawOfferForClient(humanDrawOffer),
+        movesCount: ply,
+        clock: clockPayload(humanClock, now),
         serverProcessingMs,
         serverNow: now
       });
-      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, clock, game, outgoingDrawOffer, ws, serverProcessingMs);
+      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, humanClock, humanGame, humanDrawOffer, ws, serverProcessingMs);
+      if (automaticMove) {
+        this.broadcastMove(automaticMove, automaticMove.messageId, clock, game, outgoingDrawOffer, null, 0);
+      }
+      if (conditionalMoveConsumed) {
+        this.sendConditionalMoveState(conditionalOwner, null, automaticMove
+          ? {triggered:true, message:'Dein bedingter Zug wurde automatisch ausgeführt.'}
+          : {expired:true, message:'Der Gegner hat anders gezogen; die Bedingung ist verfallen.'});
+      }
       if (timeControl.mode !== 'daily') {
         this.runBackgroundTask(updateClockAlarm(), 'Uhrenalarm nach Live-Zug fehlgeschlagen');
       }
@@ -16276,7 +16548,7 @@ export class GameRoom {
       })(), 'Nacharbeiten nach Live-Zug fehlgeschlagen');
 
       if (game.ended) this.queueDailyResultNotifications(game);
-      else if (timeControl.mode === 'daily') this.queueDailyTurnNotification(clock.turn, move, clock);
+      else if (timeControl.mode === 'daily') this.queueDailyTurnNotification(clock.turn, automaticMove || move, clock);
       return;
     }
 
