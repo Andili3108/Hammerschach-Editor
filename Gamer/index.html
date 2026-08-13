@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-RESPONSIVE-DESKTOP-SEPARATED-20260813-1 -->
+<!-- BUILD: GAMER-CONDITIONAL-MOVES-RESPONSIVE-SEPARATED-20260813-7 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260813-2" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260813-3" />
 </head>
 <body>
 <div class="app" role="main">
@@ -471,6 +471,7 @@
           <p>Sobald der zweite registrierte Spieler die Einladung angenommen hat, startet die Daily-Partie automatisch und die erste Frist für Weiß beginnt. Läuft eine Zugfrist ab, verliert der Spieler am Zug auf Zeit. Die Frist wird serverseitig überwacht und läuft deshalb auch weiter, wenn ein Browser geschlossen oder die Internetverbindung unterbrochen ist.</p>
           <p>Nach dem Start müssen die Spieler nicht gleichzeitig online bleiben. Öffne die Partie später erneut, führe deinen Zug aus und schließe die Seite anschließend wieder, wenn du möchtest.</p>
           <p>Ein gewählter Daily-Zug wird zunächst nur als Vorschau angezeigt. Erst über <strong>„Zug bestätigen“</strong> ganz rechts in der Werkzeugleiste unter dem Brett wird er ausgeführt und an den Server übertragen. Mit <strong>„Zug zurücknehmen“</strong> direkt davor kannst du die Vorschau verwerfen und einen anderen Zug wählen. Nach jedem bestätigten Zug erhält der nun ziehende Spieler automatisch eine E-Mail mit Gegner, Zugfrist, Fristende und direktem Partielink, sofern diese Benachrichtigung in seiner Accountverwaltung aktiviert ist.</p>
+          <p>Während der Gegner am Zug ist, erscheint unter der Zugliste das <strong>Verzweigungssymbol für bedingte Züge</strong>. Es öffnet ein vollständig bedienbares Brett: Ziehe dort zuerst den erwarteten Gegnerzug und anschließend deine gewünschte Antwort. Nach dem Speichern führt der Server deine Antwort automatisch aus, sobald der Gegner genau den vorbereiteten Zug spielt. Zieht er anders, verfällt die Bedingung. Pro aktueller Stellung kann eine Bedingung gespeichert, geändert oder gelöscht werden.</p>
 
           <h4>7. Daily Chess vorbereiten und annehmen</h4>
           <p>Der Einladende muss vor der Auswahl von Daily Chess eingeloggt sein. Auch der eingeladene Spieler öffnet den Link und meldet sich mit seinem Account an. Gäste können einem Daily-Raum nur als Zuschauer beitreten.</p>
@@ -2035,6 +2036,10 @@
                 <button class="nav-btn" id="navForward" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">›</button>
                 <button class="nav-btn" id="navEnd" title="Letzte Stellung" aria-label="Letzte Stellung">»</button>
               </div>
+              <button id="conditionalMoveBtn" class="button-flat conditional-move-btn" type="button" title="Bedingte Züge vorbereiten" aria-label="Bedingte Züge vorbereiten" aria-pressed="false" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h3.2c2.1 0 3.8 1.7 3.8 3.8v6.4c0 2.1 1.7 3.8 3.8 3.8H19m-3-3 3 3-3 3M12 9.5c.4-2.5 1.9-4.5 4.3-4.5H19m-3-3 3 3-3 3"/></svg>
+                <span id="conditionalMoveSavedMark" class="conditional-move-saved-mark" aria-hidden="true" hidden></span>
+              </button>
               <button id="copyPgnBtn" class="button-flat copy-pgn-btn" type="button" title="PGN-Datei herunterladen" aria-label="PGN-Datei herunterladen">PGN</button>
             </div>
           </div>
@@ -2060,9 +2065,30 @@
 
         </div>
         <div id="variationSidePanel" class="side-panel box variation-panel" hidden>
-          <div id="variationStatus" class="variation-status" aria-live="polite">—</div>
-          <div class="variation-moves-title"><span>Zugliste – Variante</span><span id="variationMovesInfo">0/0</span></div>
-          <div id="variationMoveList" class="variation-moves" aria-label="Zugliste der ausprobierten Variante"></div>
+          <div id="variationAnalysisPanel" class="variation-analysis-panel">
+            <div id="variationStatus" class="variation-status" aria-live="polite">—</div>
+            <div class="variation-moves-title"><span>Zugliste – Variante</span><span id="variationMovesInfo">0/0</span></div>
+            <div id="variationMoveList" class="variation-moves" aria-label="Zugliste der ausprobierten Variante"></div>
+          </div>
+          <div id="conditionalMovePanel" class="conditional-move-panel" hidden>
+            <div class="conditional-move-panel-head">
+              <div><span class="conditional-move-kicker">Daily Chess</span><h3>Bedingte Züge</h3></div>
+              <button id="conditionalMoveCloseBtn" class="button-flat conditional-move-close-btn" type="button" aria-label="Bedingte Züge schließen">×</button>
+            </div>
+            <div id="conditionalMoveInstruction" class="conditional-move-instruction" aria-live="polite">Ziehe auf dem Brett den erwarteten Zug deines Gegners.</div>
+            <div class="conditional-move-sequence" aria-label="Vorbereitete Zugbedingung">
+              <div><span>Wenn der Gegner</span><strong id="conditionalMoveExpectedText">noch nicht gewählt</strong></div>
+              <div><span>Dann spiele ich</span><strong id="conditionalMoveReplyText">noch nicht gewählt</strong></div>
+            </div>
+            <div id="conditionalMoveStatus" class="conditional-move-status" aria-live="polite"></div>
+            <div class="conditional-move-actions">
+              <button id="conditionalMoveUndoBtn" class="button-flat" type="button">↩ Zurück</button>
+              <button id="conditionalMoveResetBtn" class="button-flat" type="button">Neu beginnen</button>
+              <button id="conditionalMoveDeleteBtn" class="button-flat conditional-move-delete-btn" type="button" hidden>Bedingung löschen</button>
+              <button id="conditionalMoveSaveBtn" class="conditional-move-save-btn" type="button" disabled>Speichern &amp; beenden</button>
+            </div>
+            <p class="conditional-move-note">Die Antwort wird nur ausgeführt, wenn der Gegner genau den vorbereiteten Zug spielt. Andernfalls verfällt die Bedingung.</p>
+          </div>
         </div>
       </aside>
     </div>
@@ -2077,8 +2103,8 @@
 <script src="js/game-setup.js?v=20260804-1"></script>
 <script src="js/chess-engine.js?v=20260804-1"></script>
 <script src="js/game-history-cache.js?v=20260809-8"></script>
-<script src="js/board-ui-state.js?v=20260804-1"></script>
-<script src="js/board-ui-elements.js?v=20260804-1"></script>
+<script src="js/board-ui-state.js?v=20260813-1"></script>
+<script src="js/board-ui-elements.js?v=20260813-1"></script>
 <script src="js/game-chat.js?v=20260813-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260810-1"></script>
@@ -2115,12 +2141,12 @@
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
-<script src="js/online-ui-state.js?v=20260810-4"></script>
+<script src="js/online-ui-state.js?v=20260813-1"></script>
 <script src="js/member-directory.js?v=20260811-3"></script>
 <script src="js/direct-messages.js?v=20260811-1"></script>
 <script src="js/game-invitations.js?v=20260810-3"></script>
-<script src="js/online-sync-state.js?v=20260809-8"></script>
-<script src="js/online-connection.js?v=20260810-3"></script>
+<script src="js/online-sync-state.js?v=20260813-1"></script>
+<script src="js/online-connection.js?v=20260813-1"></script>
 <script src="js/online-game-setup-sync.js?v=20260804-1"></script>
 <script src="js/online-game-lifecycle.js?v=20260804-1"></script>
 <script src="js/online-room-creation.js?v=20260804-1"></script>
@@ -2128,13 +2154,14 @@
 <script src="js/move-matching-utils.js?v=20260804-1"></script>
 <script src="js/game-history-state.js?v=20260809-8"></script>
 <script src="js/premove.js?v=20260804-1"></script>
-<script src="js/board-render-status.js?v=20260809-8"></script>
-<script src="js/variation-board.js?v=20260804-1"></script>
+<script src="js/board-render-status.js?v=20260813-1"></script>
+<script src="js/variation-board.js?v=20260813-1"></script>
+<script src="js/conditional-moves.js?v=20260813-1"></script>
 <script src="js/board-input.js?v=20260804-1"></script>
-<script src="js/piece-drag-helpers.js?v=20260804-1"></script>
+<script src="js/piece-drag-helpers.js?v=20260813-1"></script>
 <script src="js/move-commit.js?v=20260809-8"></script>
 <script src="js/app-event-bindings.js?v=20260810-2"></script>
-<script src="js/move-history-navigation.js?v=20260804-1"></script>
+<script src="js/move-history-navigation.js?v=20260813-1"></script>
 <script src="js/pgn-export.js?v=20260804-1"></script>
 <script src="js/new-game-board-ui.js?v=20260804-1"></script>
 <script src="js/board-appearance.js?v=20260807-3"></script>
