@@ -542,7 +542,7 @@ function updateHeadToHeadUi(){
 }
 function normalizeRematchState(value){
   if(!value || typeof value !== 'object' || value.available !== true) return null;
-  const status = ['available','requested','incoming','creating','ready','declined'].includes(String(value.status || ''))
+  const status = ['available','requested','incoming','creating','ready','declined','withdrawn'].includes(String(value.status || ''))
     ? String(value.status)
     : 'available';
   return {
@@ -587,6 +587,10 @@ function updateRematchUi(){
     rematchBtn.textContent = 'Revanche abgelehnt';
     rematchBtn.disabled = true;
     if(rematchHintEl) rematchHintEl.textContent = 'Für diese beendete Partie wird keine Revanche gestartet.';
+  } else if(state.status === 'withdrawn'){
+    rematchBtn.textContent = 'Revanche zurückgezogen';
+    rematchBtn.disabled = true;
+    if(rematchHintEl) rematchHintEl.textContent = 'Die Revanche-Anfrage wurde vom Absender zurückgezogen.';
   } else {
     rematchBtn.textContent = rematchActionBusy ? 'Revanche wird angefragt…' : '🔁 Revanche anbieten';
     if(rematchHintEl) rematchHintEl.textContent = 'Gleiche Einstellungen, vertauschte Farben.';

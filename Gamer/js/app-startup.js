@@ -18,6 +18,7 @@ let initialVerifyEmailToken = '';
 let initialResetPasswordToken = '';
 let initialFirstStepsRequested = false;
 let initialDailyInvitationRoomId = '';
+let initialRematchOfferId = '';
 try{
   const initialUrl = new URL(window.location.href);
   initialVerifyEmailToken = String(initialUrl.searchParams.get('verifyEmail') || '').trim();
@@ -30,6 +31,7 @@ try{
   initialRoomId = cleanRoomId(initialUrl.searchParams.get('room'));
   initialPublicWatchId = cleanPublicWatchId(initialUrl.searchParams.get('watch'));
   initialDailyInvitationRoomId = cleanRoomId(initialUrl.searchParams.get('dailyInvite'));
+  initialRematchOfferId = cleanListedRematchOfferId(initialUrl.searchParams.get('rematch'));
   initialSpectatorOnly = !!initialPublicWatchId;
   freshGameRequested = initialUrl.searchParams.get('fresh') === '1';
   initialFirstStepsRequested = String(initialUrl.searchParams.get('info') || '').trim().toLowerCase() === 'erste-schritte';
@@ -45,7 +47,7 @@ try{
     history.replaceState(null, '', initialUrl.toString());
   }
 } catch(_){}
-if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !freshGameRequested){
+if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !initialRematchOfferId && !freshGameRequested){
   initialRoomId = getRememberedRoomForReload();
   initialSpectatorOnly = false;
   initialPublicWatchId = '';
@@ -53,7 +55,12 @@ if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !
 initialAuthRefreshPromise.finally(() => {
   if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
   else if(initialResetPasswordToken) openAuthRecoveryDialog('password-reset', initialResetPasswordToken);
-  if(initialDailyInvitationRoomId){
+  if(initialRematchOfferId){
+    onlineSpectatorOnly = false;
+    onlinePublicWatchId = '';
+    updateOnlineUi();
+    setTimeout(maybeOpenRematchInvitationFromAddress, 80);
+  } else if(initialDailyInvitationRoomId){
     onlineSpectatorOnly = false;
     onlinePublicWatchId = '';
     updateOnlineUi();

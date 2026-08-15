@@ -1,6 +1,35 @@
 'use strict';
 
 let dailyInvitationAddressHandled = false;
+let rematchInvitationAddressHandled = false;
+function cleanListedRematchOfferId(value){
+  const id = String(value || '').trim();
+  return /^rm_[A-Za-z0-9_-]{8,80}$/.test(id) ? id : '';
+}
+function rematchInvitationFromAddress(){
+  try{ return cleanListedRematchOfferId(new URL(window.location.href).searchParams.get('rematch')); }
+  catch(_){ return ''; }
+}
+function removeRematchInvitationAddress(offerId){
+  try{
+    const url = new URL(window.location.href);
+    const addressedOffer = cleanListedRematchOfferId(url.searchParams.get('rematch'));
+    if(!addressedOffer || (offerId && addressedOffer !== cleanListedRematchOfferId(offerId))) return;
+    url.searchParams.delete('rematch');
+    history.replaceState(null, '', url.toString());
+  } catch(_){ }
+}
+function maybeOpenRematchInvitationFromAddress(){
+  const offerId = rematchInvitationFromAddress();
+  if(!offerId || rematchInvitationAddressHandled) return false;
+  if(!onlineAuthToken || !onlineAuthUser){
+    openAuthDialog('login');
+    return false;
+  }
+  rematchInvitationAddressHandled = true;
+  openDailyGamesDialog(false);
+  return true;
+}
 function dailyInvitationRoomFromAddress(){
   try{ return cleanRoomId(new URL(window.location.href).searchParams.get('dailyInvite')); }
   catch(_){ return ''; }
@@ -79,6 +108,7 @@ function dailyGameRoomUrl(game){
     url.searchParams.delete('player');
     url.searchParams.delete('tournament');
     url.searchParams.delete('dailyInvite');
+    url.searchParams.delete('rematch');
     return url.toString();
   } catch(_){
     return '';
@@ -181,6 +211,87 @@ function createMyLiveOpenOfferCard(offer){
   actions.appendChild(withdrawBtn);
   card.appendChild(content);
   card.appendChild(actions);
+  return card;
+}
+async function respondToListedRematch(offer, action, card){
+  const offerId = cleanListedRematchOfferId(offer && offer.offerId);
+  if(!offerId || !['accept','decline','withdraw'].includes(action)) return;
+  if(action === 'withdraw' && !window.confirm('Diese Revanche-Anfrage wirklich zurückziehen?')) return;
+  const controls = card ? Array.from(card.querySelectorAll('button,a')) : [];
+  if(card) card.classList.add('rematch-loading');
+  controls.forEach(control => {
+    control.dataset.rematchWasDisabled = control.disabled ? 'yes' : 'no';
+    if('disabled' in control) control.disabled = true;
+    control.setAttribute('aria-disabled', 'true');
+  });
+  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = action === 'accept'
+    ? 'Revanche wird angenommen und das neue Brett vorbereitet…'
+    : action === 'decline' ? 'Revanche wird abgelehnt…' : 'Revanche-Anfrage wird zurückgezogen…';
+  try{
+    const data = await authApi('/api/rematches/' + encodeURIComponent(offerId), {method:'POST', body:JSON.stringify({action})});
+    removeRematchInvitationAddress(offerId);
+    if(action === 'accept'){
+      const targetUrl = dailyGameRoomUrl({roomId:data.roomId});
+      if(!targetUrl) throw new Error('Der neue Revanche-Spielraum konnte nicht geöffnet werden.');
+      if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Revanche angenommen. Das neue Brett wird geöffnet…';
+      closeDailyGamesDialog();
+      window.location.assign(targetUrl);
+      return;
+    }
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = action === 'decline' ? 'Revanche wurde abgelehnt.' : 'Revanche-Anfrage wurde zurückgezogen.';
+    await loadDailyGames({silent:true});
+  }catch(err){
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Die Revanche konnte nicht verarbeitet werden.';
+    if(card) card.classList.remove('rematch-loading');
+    controls.forEach(control => {
+      if('disabled' in control) control.disabled = control.dataset.rematchWasDisabled === 'yes';
+      control.removeAttribute('aria-disabled');
+      delete control.dataset.rematchWasDisabled;
+    });
+  }
+}
+function createListedRematchCard(offer){
+  const incoming = offer && offer.direction === 'incoming';
+  const card = document.createElement('div');
+  card.className = 'daily-game-card rematch-invitation' + (cleanListedRematchOfferId(offer && offer.offerId) === rematchInvitationFromAddress() ? ' addressed' : '');
+  card.dataset.rematchOfferId = cleanListedRematchOfferId(offer && offer.offerId);
+  const content = document.createElement('div');
+  const title = document.createElement('div');
+  title.className = 'daily-game-title';
+  title.textContent = incoming
+    ? '🔁 Revanche von ' + (cleanDisplayName(offer && offer.opponentName) || 'deinem Gegner')
+    : '🔁 Revanche an ' + (cleanDisplayName(offer && offer.opponentName) || 'deinen Gegner');
+  const status = document.createElement('div');
+  status.className = 'daily-game-status';
+  status.textContent = offer && offer.status === 'creating'
+    ? 'Das neue Brett wird vorbereitet'
+    : incoming ? 'Bitte annehmen oder ablehnen' : 'Wartet auf Antwort';
+  const meta = document.createElement('div');
+  meta.className = 'daily-game-meta';
+  meta.textContent = [offer && offer.mode === 'daily' ? 'Daily-Revanche' : 'Live-Revanche', offer && offer.timeLabel || '', myGamesVariantLabel(offer), offer && offer.rated === false ? 'Ungewertet' : 'Gewertet', 'Farben werden vertauscht'].filter(Boolean).join(' · ');
+  content.append(title, status, meta);
+  const actions = document.createElement('div');
+  actions.className = 'daily-game-actions';
+  if(incoming && (!offer.status || offer.status === 'pending')){
+    const accept = document.createElement('button');
+    accept.type = 'button'; accept.className = 'daily-game-accept-btn'; accept.textContent = 'Revanche annehmen';
+    accept.addEventListener('click', () => respondToListedRematch(offer, 'accept', card));
+    const decline = document.createElement('button');
+    decline.type = 'button'; decline.className = 'daily-game-decline-btn'; decline.textContent = 'Ablehnen';
+    decline.addEventListener('click', () => respondToListedRematch(offer, 'decline', card));
+    actions.append(accept, decline);
+  } else if(!incoming && (!offer.status || offer.status === 'pending')){
+    const withdraw = document.createElement('button');
+    withdraw.type = 'button'; withdraw.className = 'daily-game-delete-btn'; withdraw.textContent = 'Revanche zurückziehen';
+    withdraw.addEventListener('click', () => respondToListedRematch(offer, 'withdraw', card));
+    actions.appendChild(withdraw);
+  }
+  const source = document.createElement('a');
+  source.className = 'daily-game-open-btn';
+  source.href = dailyGameRoomUrl({roomId:offer && offer.sourceRoomId}) || '#';
+  source.textContent = 'Ausgangspartie ansehen';
+  actions.appendChild(source);
+  card.append(content, actions);
   return card;
 }
 function createMyLiveCompletedCard(game){
@@ -599,6 +710,7 @@ let dailyGamesTournamentOnly = false;
 let dailyGamesCache = [];
 let myLiveRunningGamesCache = [];
 let myLiveOpenOffersCache = [];
+let myRematchOffersCache = [];
 let myLiveCompletedGamesCache = [];
 let myLiveCompletedTotal = 0;
 let dailyGamesActiveTab = 'running';
@@ -610,12 +722,13 @@ function dailyGamesGroups(games){
   const completedDaily = allDailyGames.filter(game => !!game.ended);
   const runningLive = dailyGamesTournamentOnly ? myLiveRunningGamesCache.filter(game => game.isTournamentGame) : myLiveRunningGamesCache;
   const openLive = dailyGamesTournamentOnly ? [] : myLiveOpenOffersCache;
+  const rematches = dailyGamesTournamentOnly ? [] : myRematchOffersCache;
   const completedLive = dailyGamesTournamentOnly ? myLiveCompletedGamesCache.filter(game => !!game.tournamentId) : myLiveCompletedGamesCache;
-  return {allDailyGames, runningDaily, openDaily, completedDaily, runningLive, openLive, completedLive};
+  return {allDailyGames, runningDaily, openDaily, completedDaily, runningLive, openLive, rematches, completedLive};
 }
 function updateDailyGamesTabCounts(groups){
   if(dailyGamesRunningCount) dailyGamesRunningCount.textContent = String(groups.runningDaily.length + groups.runningLive.length);
-  if(dailyGamesOpenCount) dailyGamesOpenCount.textContent = String(groups.openDaily.length + groups.openLive.length);
+  if(dailyGamesOpenCount) dailyGamesOpenCount.textContent = String(groups.openDaily.length + groups.openLive.length + groups.rematches.length);
   if(dailyGamesCompletedCount) dailyGamesCompletedCount.textContent = String(groups.completedDaily.length + groups.completedLive.length);
 }
 function setDailyGamesActiveTab(tab, options){
@@ -670,6 +783,21 @@ function renderDailyGames(games){
   const groups = dailyGamesGroups(games);
   updateDailyGamesTabCounts(groups);
   if(dailyGamesActiveTab === 'open'){
+    const rematchSection = document.createElement('section');
+    rematchSection.className = 'daily-games-section';
+    const rematchHeading = document.createElement('div');
+    rematchHeading.className = 'daily-games-section-title';
+    const rematchTitle = document.createElement('span');
+    rematchTitle.textContent = 'Revanchen';
+    const rematchCount = document.createElement('span');
+    rematchCount.className = 'daily-games-section-count';
+    rematchCount.textContent = String(groups.rematches.length);
+    rematchHeading.append(rematchTitle, rematchCount);
+    rematchSection.appendChild(rematchHeading);
+    if(!groups.rematches.length){
+      const empty = document.createElement('div'); empty.className = 'daily-games-empty'; empty.textContent = 'Du hast derzeit keine offene Revanche.'; rematchSection.appendChild(empty);
+    } else groups.rematches.forEach(offer => rematchSection.appendChild(createListedRematchCard(offer)));
+    dailyGamesListEl.appendChild(rematchSection);
     const incomingGames = groups.openDaily.filter(game => !!game.incomingInvitation);
     const ownDailyOpenGames = groups.openDaily.filter(game => !game.incomingInvitation);
     appendDailyGamesSection('Einladungen', incomingGames, 'Du hast derzeit keine offene Einladung.');
@@ -846,14 +974,15 @@ async function loadDailyGames(options){
   if(!silent && dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Partien werden geladen…';
   if(!silent && dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = true;
   try{
-    const requests = [authApi('/api/daily-games'), authApi('/api/my-live-games'), authApi('/api/game-archive?scope=mine&mode=live&page=1&limit=50')];
+    const requests = [authApi('/api/daily-games'), authApi('/api/my-live-games'), authApi('/api/game-archive?scope=mine&mode=live&page=1&limit=50'), authApi('/api/rematches')];
     if(!dailyGamesTournamentOnly) requests.push(authApi('/api/open-offers'));
     const results = await Promise.allSettled(requests);
     const dailyResult = results[0];
     const liveResult = results[1];
     const archiveResult = results[2];
-    const offersResult = dailyGamesTournamentOnly ? null : results[3];
-    if(dailyResult.status !== 'fulfilled' && liveResult.status !== 'fulfilled' && archiveResult.status !== 'fulfilled'){
+    const rematchResult = results[3];
+    const offersResult = dailyGamesTournamentOnly ? null : results[4];
+    if(dailyResult.status !== 'fulfilled' && liveResult.status !== 'fulfilled' && archiveResult.status !== 'fulfilled' && rematchResult.status !== 'fulfilled'){
       throw (dailyResult.reason || liveResult.reason || archiveResult.reason || new Error('Partien konnten nicht geladen werden.'));
     }
     const games = dailyResult.status === 'fulfilled' && Array.isArray(dailyResult.value.games) ? dailyResult.value.games : [];
@@ -862,6 +991,7 @@ async function loadDailyGames(options){
     const liveArchiveData = archiveResult.status === 'fulfilled' ? archiveResult.value : {};
     myLiveCompletedGamesCache = Array.isArray(liveArchiveData.games) ? liveArchiveData.games : [];
     myLiveCompletedTotal = Math.max(myLiveCompletedGamesCache.length, Number(liveArchiveData.total || 0));
+    myRematchOffersCache = rematchResult.status === 'fulfilled' && Array.isArray(rematchResult.value.offers) ? rematchResult.value.offers : [];
     const offers = offersResult && offersResult.status === 'fulfilled' && Array.isArray(offersResult.value.offers) ? offersResult.value.offers : [];
     myLiveOpenOffersCache = offers.filter(offer => offer && offer.mine === true && offer.mode !== 'daily');
 
@@ -881,15 +1011,23 @@ async function loadDailyGames(options){
     renderDailyGames(games);
     const groups = dailyGamesGroups(games);
     const runningCount = groups.runningDaily.length + groups.runningLive.length;
-    const openCount = groups.openDaily.length + groups.openLive.length;
+    const openCount = groups.openDaily.length + groups.openLive.length + groups.rematches.length;
     const completedCount = groups.completedDaily.length + groups.completedLive.length;
     const addressedRoom = dailyInvitationRoomFromAddress();
     const addressedInvitationFound = !!(addressedRoom && games.some(game => game.incomingInvitation && cleanRoomId(game.roomId) === addressedRoom));
-    const partial = [dailyResult, liveResult, archiveResult, offersResult].filter(result => result && result.status === 'rejected').length > 0;
+    const addressedRematch = rematchInvitationFromAddress();
+    const addressedRematchFound = !!(addressedRematch && myRematchOffersCache.some(offer => cleanListedRematchOfferId(offer.offerId) === addressedRematch));
+    const partial = [dailyResult, liveResult, archiveResult, rematchResult, offersResult].filter(result => result && result.status === 'rejected').length > 0;
     if(!silent && dailyGamesStatusEl){
-      dailyGamesStatusEl.textContent = addressedRoom && !addressedInvitationFound
+      dailyGamesStatusEl.textContent = addressedRematch && !addressedRematchFound
+        ? 'Für diesen Account liegt unter dem Mail-Link keine offene Revanche mehr vor.'
+        : addressedRoom && !addressedInvitationFound
         ? 'Für diesen Account liegt unter dem Mail-Link keine offene Einladung mehr vor.'
         : runningCount + ' laufend · ' + openCount + ' offen · ' + completedCount + ' beendet.' + (partial ? ' Einige Live-Daten konnten momentan nicht geladen werden.' : '');
+    }
+    if(addressedRematchFound){
+      const addressedCard = dailyGamesListEl && dailyGamesListEl.querySelector('[data-rematch-offer-id="' + addressedRematch + '"]');
+      if(addressedCard) setTimeout(() => { try{ addressedCard.scrollIntoView({block:'center', behavior:'smooth'}); } catch(_){} }, 80);
     }
   } catch(err){
     if(dailyGamesTurnCount){ dailyGamesTurnCount.hidden = true; dailyGamesTurnCount.textContent = '0'; }
@@ -897,6 +1035,7 @@ async function loadDailyGames(options){
       dailyGamesCache = [];
       myLiveRunningGamesCache = [];
       myLiveOpenOffersCache = [];
+      myRematchOffersCache = [];
       myLiveCompletedGamesCache = [];
       myLiveCompletedTotal = 0;
       renderDailyGames([]);
@@ -918,12 +1057,12 @@ function stopDailyGamesPresenceRefresh(){
 function openDailyGamesDialog(tournamentOnly){
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   dailyGamesTournamentOnly = tournamentOnly === true;
-  const invitationFromAddress = !!dailyInvitationRoomFromAddress();
+  const invitationFromAddress = !!dailyInvitationRoomFromAddress() || !!rematchInvitationFromAddress();
   setDailyGamesActiveTab(invitationFromAddress ? 'open' : 'running', {render:false});
   if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Partien';
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
     ? 'Deine Daily- und Live-Turnierpartien nach Status. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
-    : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Laufende Partien werden beim Öffnen standardmäßig zuerst angezeigt.';
+    : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Offene Revanchen findest du im Bereich „Offen“.';
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
   loadDailyGames();
   startDailyGamesPresenceRefresh();

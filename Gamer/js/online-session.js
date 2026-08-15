@@ -431,6 +431,7 @@ function saveAuthState(token, user){
     loadDailyGames({silent:true}).catch(() => {});
     setTimeout(() => {
       try{ maybeOpenDailyInvitationFromAddress(); } catch(_){ }
+      try{ maybeOpenRematchInvitationFromAddress(); } catch(_){ }
     }, 80);
     loadLobbyTicker().catch(() => {});
     loadInfoCenter().catch(() => {});
