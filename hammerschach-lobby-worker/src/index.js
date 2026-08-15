@@ -5441,15 +5441,50 @@ async function loadGameMomentState(env, roomId, currentUserId, whiteUserId, blac
   return gameMomentStateDto(row);
 }
 
-async function saveGameMoment(env, roomId, sessionUser, input) {
-  await ensureCompletedGamesTable(env);
-  const userId = String(sessionUser && sessionUser.id || '');
-  const ownGame = await env.DB.prepare(
+async function ownedEndedGameForMoment(env, roomId, userId) {
+  const archivedGame = await env.DB.prepare(
     `SELECT room_id, white_user_id, black_user_id
        FROM completed_games
       WHERE room_id = ? AND (white_user_id = ? OR black_user_id = ?)
       LIMIT 1`
   ).bind(roomId, userId, userId).first();
+  if (archivedGame) return archivedGame;
+
+  await ensureDailyGamesTable(env);
+  const dailyGame = await env.DB.prepare(
+    `SELECT room_id, white_user_id, black_user_id
+       FROM daily_games
+      WHERE room_id = ? AND ended = 1
+        AND (white_user_id = ? OR black_user_id = ?)
+      LIMIT 1`
+  ).bind(roomId, userId, userId).first();
+  if (dailyGame) return dailyGame;
+
+  if (!env.GAME_ROOM) return null;
+  try {
+    const id = env.GAME_ROOM.idFromName(roomId);
+    const stub = gameRoomStub(env, id);
+    const response = await stub.fetch(new Request('https://game-room.internal/game-moment-eligibility?room=' + encodeURIComponent(roomId), {
+      method:'POST',
+      headers:{'x-hammerschach-user-id':userId}
+    }));
+    if (!response.ok) return null;
+    const result = await response.json();
+    if (!result || !result.ok || result.ended !== true) return null;
+    return {
+      room_id:roomId,
+      white_user_id:String(result.whiteUserId || '') || null,
+      black_user_id:String(result.blackUserId || '') || null
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+async function saveGameMoment(env, roomId, sessionUser, input) {
+  await ensureCompletedGamesTable(env);
+  const userId = String(sessionUser && sessionUser.id || '');
+  const ownGame = await ownedEndedGameForMoment(env, roomId, userId);
   if (!ownGame) return {ok:false, status:404, code:'GAME_NOT_FOUND', message:'Nur eigene beendete Partien können als Gamer-Moment gespeichert werden.'};
 
   const marked = input && input.marked === true;
@@ -14387,6 +14422,11 @@ export class GameRoom {
       return json(result, {status:result.status || (result.ok ? 200 : 400)});
     }
 
+    if (request.method === 'POST' && url.pathname === '/game-moment-eligibility') {
+      const result = await this.gameMomentEligibility(request.headers.get('x-hammerschach-user-id') || '');
+      return json(result, {status:result.status || (result.ok ? 200 : 400)});
+    }
+
     if (request.method === 'POST' && url.pathname === '/prepare-account-deletion') {
       const body = await readJsonBody(request);
       const result = await this.prepareAccountDeletion(body && body.userId);
@@ -14572,6 +14612,22 @@ export class GameRoom {
       tournamentRoundLabel:tournamentMeta && tournamentMeta.roundLabel ? String(tournamentMeta.roundLabel).slice(0,80) : '',
       isTournamentGame:!!(tournamentMeta && tournamentMeta.tournamentId)
     };
+  }
+
+  async gameMomentEligibility(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return {ok:false, status:400, code:'USER_ID_REQUIRED', message:'Benutzer-ID fehlt.'};
+    const players = await this.getSecurePlayers();
+    const whiteUserId = String(players.white && players.white.userId || '');
+    const blackUserId = String(players.black && players.black.userId || '');
+    if (userId !== whiteUserId && userId !== blackUserId) {
+      return {ok:false, status:403, code:'NOT_A_PLAYER', message:'Diese Partie gehört nicht zu deinem Account.'};
+    }
+    const game = (await this.state.storage.get('game')) || {started:false, ended:false};
+    if (!game.ended) {
+      return {ok:false, status:409, code:'GAME_NOT_ENDED', message:'Nur beendete Partien können als Gamer-Moment gespeichert werden.'};
+    }
+    return {ok:true, status:200, ended:true, whiteUserId, blackUserId};
   }
 
   async prepareAccountDeletion(userId) {
