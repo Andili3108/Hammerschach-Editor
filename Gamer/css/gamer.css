@@ -908,6 +908,9 @@
   .daily-game-card.incoming-invitation{background:linear-gradient(135deg,#fff9e9,#f7e8bc);border-color:rgba(180,125,30,.38);box-shadow:inset 4px 0 0 #c58b24,0 6px 16px rgba(120,84,12,.10);}
   .daily-game-card.addressed-invitation{outline:3px solid rgba(132,63,70,.20);outline-offset:2px;}
   .daily-game-card.completed{background:#fbfbfc;border-color:rgba(0,0,0,.08);}
+  .daily-game-card.rematch-invitation{border-color:rgba(154,45,51,.25);background:linear-gradient(135deg,#fff8f8,#fbfbfc);box-shadow:inset 4px 0 0 rgba(154,45,51,.58);}
+  .daily-game-card.rematch-invitation.addressed{border-color:#9a2d33;box-shadow:inset 4px 0 0 #9a2d33,0 0 0 3px rgba(154,45,51,.13);}
+  .daily-game-card.rematch-loading .daily-game-actions a{opacity:.58;pointer-events:none;}
   .daily-game-card.tournament-game{border-left:5px solid #c7952d;box-shadow:inset 0 0 0 1px rgba(199,149,45,.05),0 4px 12px rgba(120,84,12,.08);}
   .daily-game-card.tournament-game.my-turn{border-left-color:#d3a338;box-shadow:inset 4px 0 0 rgba(47,122,69,.70),inset 9px 0 0 rgba(211,163,56,.95),0 4px 12px rgba(34,107,54,.07);}
   .daily-tournament-badge{display:inline-flex;align-items:center;width:fit-content;margin-top:6px;border-radius:999px;background:rgba(199,149,45,.13);border:1px solid rgba(199,149,45,.28);color:#805f16;padding:4px 8px;font-size:11px;font-weight:900;}
@@ -1383,6 +1386,8 @@
   html.dark-mode .board-player-strip .player-material-advantage{color:#efb5bc;}
   html.dark-mode .daily-game-card.my-turn{background:linear-gradient(135deg,rgba(62,154,88,.20),rgba(62,154,88,.08));border-color:rgba(92,190,119,.34);box-shadow:inset 4px 0 0 rgba(92,190,119,.74),inset 0 0 0 1px rgba(92,190,119,.05),0 5px 15px rgba(0,0,0,.18);}
   html.dark-mode .daily-game-card.incoming-invitation{background:linear-gradient(135deg,rgba(197,139,36,.24),rgba(197,139,36,.10));border-color:rgba(225,178,82,.40);box-shadow:inset 4px 0 0 #d7a13d,0 5px 15px rgba(0,0,0,.18);}
+  html.dark-mode .daily-game-card.rematch-invitation{background:#30262a;border-color:rgba(226,151,160,.28);box-shadow:inset 4px 0 0 #b64750;}
+  html.dark-mode .daily-game-card.rematch-invitation.addressed{border-color:#e297a0;box-shadow:inset 4px 0 0 #e297a0,0 0 0 3px rgba(226,151,160,.12);}
   html.dark-mode .daily-game-card.my-turn .daily-game-status{background:rgba(62,154,88,.16);border-color:rgba(92,190,119,.30);color:#9bdfad!important;}
   html.dark-mode .daily-game-card.my-turn .daily-game-status::before{background:#69c982;box-shadow:0 0 0 3px rgba(105,201,130,.15);}
   html.dark-mode .open-offer-card.mine,
