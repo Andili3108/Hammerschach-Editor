@@ -4,6 +4,7 @@ const GAME_MOMENT_NOTE_LIMIT = 240;
 
 let onlineGameMomentState = null;
 let onlineGameMomentBusy = false;
+const gameMomentSuccessTimers = new WeakMap();
 
 const onlineGameMomentBarEl = document.getElementById('gameMomentBar');
 const onlineGameMomentToggleBtn = document.getElementById('gameMomentToggleBtn');
@@ -12,6 +13,26 @@ const onlineGameMomentNoteInput = document.getElementById('gameMomentNoteInput')
 const onlineGameMomentNoteCount = document.getElementById('gameMomentNoteCount');
 const onlineGameMomentSaveBtn = document.getElementById('gameMomentSaveBtn');
 const onlineGameMomentStatusEl = document.getElementById('gameMomentStatus');
+if(onlineGameMomentStatusEl) onlineGameMomentStatusEl.setAttribute('aria-live', 'polite');
+
+function clearGameMomentSuccess(element){
+  if(!element) return;
+  const timer = gameMomentSuccessTimers.get(element);
+  if(timer) clearTimeout(timer);
+  gameMomentSuccessTimers.delete(element);
+  element.classList.remove('game-moment-save-success');
+}
+function showGameMomentSuccess(element, message){
+  if(!element) return;
+  clearGameMomentSuccess(element);
+  element.textContent = message || '✓ Gespeichert';
+  element.classList.add('game-moment-save-success');
+  const timer = setTimeout(() => {
+    element.classList.remove('game-moment-save-success');
+    gameMomentSuccessTimers.delete(element);
+  }, 2800);
+  gameMomentSuccessTimers.set(element, timer);
+}
 
 function normalizeGameMomentNote(value){
   return String(value || '')
@@ -96,6 +117,7 @@ async function persistGameMoment(roomId, marked, note){
 async function saveOnlineGameMoment(marked, note){
   const roomId = cleanRoomId(onlineRoomId || '');
   if(!roomId || onlineGameMomentBusy || !onlineGameMomentState || !onlineGameMomentState.available) return;
+  clearGameMomentSuccess(onlineGameMomentStatusEl);
   onlineGameMomentBusy = true;
   updateOnlineGameMomentUi();
   let errorMessage = '';
@@ -108,6 +130,7 @@ async function saveOnlineGameMoment(marked, note){
     onlineGameMomentBusy = false;
     updateOnlineGameMomentUi();
     if(errorMessage && onlineGameMomentStatusEl) onlineGameMomentStatusEl.textContent = errorMessage;
+    else showGameMomentSuccess(onlineGameMomentStatusEl, marked ? '✓ Gespeichert' : '✓ Gamer-Moment entfernt');
   }
 }
 if(onlineGameMomentToggleBtn) onlineGameMomentToggleBtn.addEventListener('click', () => {
@@ -131,17 +154,17 @@ async function saveCardGameMoment(game, marked, note, panel, options){
   if(!roomId || !panel || panel.classList.contains('busy')) return;
   const statusElement = options && options.statusElement;
   setGameMomentPanelBusy(panel, true);
-  if(statusElement) statusElement.textContent = 'Gamer-Moment wird gespeichert…';
+  if(statusElement){ clearGameMomentSuccess(statusElement); statusElement.textContent = 'Gamer-Moment wird gespeichert…'; }
   try{
     const data = await persistGameMoment(roomId, marked, note);
     const state = normalizeGameMomentState(data && data.moment);
     game.favorite = !!(state && state.marked);
     game.momentNote = state ? state.note : '';
     game.momentAt = state ? state.markedAt : null;
-    if(statusElement) statusElement.textContent = game.favorite ? 'Gamer-Moment wurde gespeichert.' : 'Gamer-Moment wurde entfernt.';
+    showGameMomentSuccess(statusElement, game.favorite ? '✓ Gespeichert' : '✓ Gamer-Moment entfernt');
     if(options && typeof options.onChange === 'function') options.onChange(game);
   }catch(err){
-    if(statusElement) statusElement.textContent = err && err.message ? err.message : 'Der Gamer-Moment konnte nicht gespeichert werden.';
+    if(statusElement){ clearGameMomentSuccess(statusElement); statusElement.textContent = err && err.message ? err.message : 'Der Gamer-Moment konnte nicht gespeichert werden.'; }
     setGameMomentPanelBusy(panel, false);
   }
 }
