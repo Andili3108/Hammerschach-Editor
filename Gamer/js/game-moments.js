@@ -4,6 +4,7 @@ const GAME_MOMENT_NOTE_LIMIT = 240;
 
 let onlineGameMomentState = null;
 let onlineGameMomentBusy = false;
+let onlineGameMomentDetailsExpanded = false;
 const gameMomentSuccessTimers = new WeakMap();
 
 const onlineGameMomentBarEl = document.getElementById('gameMomentBar');
@@ -12,6 +13,7 @@ const onlineGameMomentDetailsEl = document.getElementById('gameMomentDetails');
 const onlineGameMomentNoteInput = document.getElementById('gameMomentNoteInput');
 const onlineGameMomentNoteCount = document.getElementById('gameMomentNoteCount');
 const onlineGameMomentSaveBtn = document.getElementById('gameMomentSaveBtn');
+const onlineGameMomentRemoveBtn = document.getElementById('gameMomentRemoveBtn');
 const onlineGameMomentStatusEl = document.getElementById('gameMomentStatus');
 if(onlineGameMomentStatusEl) onlineGameMomentStatusEl.setAttribute('aria-live', 'polite');
 
@@ -61,12 +63,16 @@ function gameMomentStateFromGame(game){
   });
 }
 function applyOnlineGameMomentState(value){
+  const previousMarked = !!(onlineGameMomentState && onlineGameMomentState.marked);
   onlineGameMomentState = normalizeGameMomentState(value);
+  if(!onlineGameMomentState || !onlineGameMomentState.marked) onlineGameMomentDetailsExpanded = false;
+  else if(!previousMarked) onlineGameMomentDetailsExpanded = true;
   updateOnlineGameMomentUi();
 }
 function resetOnlineGameMomentState(){
   onlineGameMomentState = null;
   onlineGameMomentBusy = false;
+  onlineGameMomentDetailsExpanded = false;
   if(onlineGameMomentNoteInput) onlineGameMomentNoteInput.value = '';
   updateOnlineGameMomentUi();
 }
@@ -90,9 +96,12 @@ function updateOnlineGameMomentUi(){
     onlineGameMomentToggleBtn.disabled = onlineGameMomentBusy;
     onlineGameMomentToggleBtn.classList.toggle('selected', state.marked);
     onlineGameMomentToggleBtn.setAttribute('aria-pressed', state.marked ? 'true' : 'false');
-    onlineGameMomentToggleBtn.textContent = state.marked ? '♥ Mein Gamer-Moment' : '♡ Als Gamer-Moment merken';
+    onlineGameMomentToggleBtn.setAttribute('aria-expanded', state.marked && onlineGameMomentDetailsExpanded ? 'true' : 'false');
+    onlineGameMomentToggleBtn.textContent = state.marked
+      ? '♥ Mein Gamer-Moment ' + (onlineGameMomentDetailsExpanded ? '▴' : '▾')
+      : '♡ Als Gamer-Moment merken';
   }
-  if(onlineGameMomentDetailsEl) onlineGameMomentDetailsEl.hidden = !state.marked;
+  if(onlineGameMomentDetailsEl) onlineGameMomentDetailsEl.hidden = !state.marked || !onlineGameMomentDetailsExpanded;
   if(onlineGameMomentNoteInput){
     const focused = document.activeElement === onlineGameMomentNoteInput;
     if(!focused) onlineGameMomentNoteInput.value = state.note;
@@ -100,6 +109,7 @@ function updateOnlineGameMomentUi(){
     updateMomentNoteCount(onlineGameMomentNoteInput, onlineGameMomentNoteCount);
   }
   if(onlineGameMomentSaveBtn) onlineGameMomentSaveBtn.disabled = onlineGameMomentBusy;
+  if(onlineGameMomentRemoveBtn) onlineGameMomentRemoveBtn.disabled = onlineGameMomentBusy;
   if(onlineGameMomentStatusEl){
     if(onlineGameMomentBusy) onlineGameMomentStatusEl.textContent = 'Gamer-Moment wird gespeichert…';
     else if(state.marked) onlineGameMomentStatusEl.textContent = state.note
@@ -124,6 +134,7 @@ async function saveOnlineGameMoment(marked, note){
   try{
     const data = await persistGameMoment(roomId, marked, note);
     onlineGameMomentState = normalizeGameMomentState(data && data.moment) || onlineGameMomentState;
+    onlineGameMomentDetailsExpanded = marked === true;
   }catch(err){
     errorMessage = err && err.message ? err.message : 'Der Gamer-Moment konnte nicht gespeichert werden.';
   }finally{
@@ -136,11 +147,22 @@ async function saveOnlineGameMoment(marked, note){
 if(onlineGameMomentToggleBtn) onlineGameMomentToggleBtn.addEventListener('click', () => {
   const state = onlineGameMomentState;
   if(!state) return;
-  saveOnlineGameMoment(!state.marked, state.marked ? '' : (onlineGameMomentNoteInput && onlineGameMomentNoteInput.value));
+  if(state.marked){
+    onlineGameMomentDetailsExpanded = !onlineGameMomentDetailsExpanded;
+    updateOnlineGameMomentUi();
+    return;
+  }
+  onlineGameMomentDetailsExpanded = true;
+  saveOnlineGameMoment(true, onlineGameMomentNoteInput && onlineGameMomentNoteInput.value);
 });
 if(onlineGameMomentSaveBtn) onlineGameMomentSaveBtn.addEventListener('click', () => {
   if(!onlineGameMomentState || !onlineGameMomentState.marked) return;
   saveOnlineGameMoment(true, onlineGameMomentNoteInput && onlineGameMomentNoteInput.value);
+});
+if(onlineGameMomentRemoveBtn) onlineGameMomentRemoveBtn.addEventListener('click', () => {
+  if(!onlineGameMomentState || !onlineGameMomentState.marked || onlineGameMomentBusy) return;
+  if(!window.confirm('Diesen Gamer-Moment wirklich entfernen?\n\nDie persönliche Erinnerung wird dabei ebenfalls gelöscht.')) return;
+  saveOnlineGameMoment(false, '');
 });
 if(onlineGameMomentNoteInput) onlineGameMomentNoteInput.addEventListener('input', () => updateMomentNoteCount(onlineGameMomentNoteInput, onlineGameMomentNoteCount));
 
@@ -178,11 +200,13 @@ function createGameMomentPanel(game, options){
   toggle.type = 'button';
   toggle.className = 'game-moment-toggle' + (state.marked ? ' selected' : '');
   toggle.setAttribute('aria-pressed', state.marked ? 'true' : 'false');
-  toggle.textContent = state.marked ? '♥ Gamer-Moment' : '♡ Als Gamer-Moment merken';
-  toggle.addEventListener('click', () => saveCardGameMoment(game, !state.marked, '', panel, options || {}));
+  toggle.setAttribute('aria-expanded', state.marked ? 'true' : 'false');
+  toggle.textContent = state.marked ? '♥ Gamer-Moment ▴' : '♡ Als Gamer-Moment merken';
   panel.appendChild(toggle);
 
   if(state.marked){
+    const details = document.createElement('div');
+    details.className = 'game-moment-card-details';
     const noteLabel = document.createElement('label');
     noteLabel.className = 'game-moment-note-label';
     noteLabel.textContent = 'Meine private Erinnerung';
@@ -202,8 +226,27 @@ function createGameMomentPanel(game, options){
     save.className = 'game-moment-note-save';
     save.textContent = 'Erinnerung speichern';
     save.addEventListener('click', () => saveCardGameMoment(game, true, note.value, panel, options || {}));
-    footer.append(count, save);
-    panel.append(noteLabel, note, footer);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'game-moment-remove';
+    remove.textContent = 'Gamer-Moment entfernen';
+    remove.addEventListener('click', () => {
+      if(!window.confirm('Diesen Gamer-Moment wirklich entfernen?\n\nDie persönliche Erinnerung wird dabei ebenfalls gelöscht.')) return;
+      saveCardGameMoment(game, false, '', panel, options || {});
+    });
+    const actions = document.createElement('div');
+    actions.className = 'game-moment-note-actions';
+    actions.append(remove, save);
+    footer.append(count, actions);
+    details.append(noteLabel, note, footer);
+    panel.appendChild(details);
+    toggle.addEventListener('click', () => {
+      details.hidden = !details.hidden;
+      toggle.setAttribute('aria-expanded', details.hidden ? 'false' : 'true');
+      toggle.textContent = details.hidden ? '♥ Gamer-Moment ▾' : '♥ Gamer-Moment ▴';
+    });
+  } else {
+    toggle.addEventListener('click', () => saveCardGameMoment(game, true, '', panel, options || {}));
   }
   return panel;
 }
