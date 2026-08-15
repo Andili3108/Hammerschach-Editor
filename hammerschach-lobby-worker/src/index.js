@@ -1633,6 +1633,22 @@ function gamerDailyInvitationUrl(env, roomId) {
   }
 }
 
+function gamerRematchInvitationUrl(env, offerId) {
+  const configured = configuredGamerPublicUrl(env);
+  const cleanOfferId = cleanRematchOfferId(offerId);
+  if (!configured || !cleanOfferId) return '';
+  try {
+    const url = new URL(configured);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return '';
+    url.hash = '';
+    url.search = '';
+    url.searchParams.set('rematch', cleanOfferId);
+    return url.toString();
+  } catch (_) {
+    return '';
+  }
+}
+
 function invitationVariantLabel(setup) {
   if (!setup || typeof setup !== 'object') return '';
   const normalized = cleanGameSetup(setup);
@@ -3325,6 +3341,108 @@ async function sendRematchRequestEmailNotification(env, payload) {
   }
   try { await completeEmailNotification(env, claim.key, result); } catch (_) {}
   return result;
+}
+
+let rematchOffersTableReady = false;
+function cleanRematchOfferId(value) {
+  const id = String(value || '').trim();
+  return /^rm_[A-Za-z0-9_-]{8,80}$/.test(id) ? id : '';
+}
+async function ensureRematchOffersTable(env) {
+  if (!env || !env.DB) return false;
+  if (rematchOffersTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS rematch_offers (
+       offer_id TEXT PRIMARY KEY,
+       source_room_id TEXT NOT NULL UNIQUE,
+       requester_user_id TEXT NOT NULL,
+       requester_name TEXT NOT NULL,
+       target_user_id TEXT NOT NULL,
+       target_name TEXT NOT NULL,
+       status TEXT NOT NULL DEFAULT 'pending',
+       mode TEXT NOT NULL DEFAULT 'live',
+       time_label TEXT,
+       variant TEXT NOT NULL DEFAULT 'standard',
+       position_id INTEGER,
+       rated INTEGER NOT NULL DEFAULT 1,
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL,
+       responded_at TEXT,
+       new_room_id TEXT
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rematch_offers_requester ON rematch_offers (requester_user_id, status, updated_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_rematch_offers_target ON rematch_offers (target_user_id, status, updated_at)`).run();
+  rematchOffersTableReady = true;
+  return true;
+}
+async function saveRematchOfferIndex(env, sourceRoomId, offer, timeControl, gameSetup, ratedRequested) {
+  const offerId = cleanRematchOfferId(offer && offer.id);
+  const roomId = cleanRoomId(sourceRoomId);
+  if (!offerId || !roomId || !(await ensureRematchOffersTable(env))) return false;
+  const setup = cleanGameSetup(gameSetup || null);
+  const control = cleanTimeControl(timeControl || null);
+  const createdAt = offer.createdAt || new Date().toISOString();
+  const updatedAt = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO rematch_offers
+       (offer_id, source_room_id, requester_user_id, requester_name, target_user_id, target_name,
+        status, mode, time_label, variant, position_id, rated, created_at, updated_at, responded_at, new_room_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(source_room_id) DO UPDATE SET
+       offer_id = excluded.offer_id,
+       requester_user_id = excluded.requester_user_id,
+       requester_name = excluded.requester_name,
+       target_user_id = excluded.target_user_id,
+       target_name = excluded.target_name,
+       status = excluded.status,
+       mode = excluded.mode,
+       time_label = excluded.time_label,
+       variant = excluded.variant,
+       position_id = excluded.position_id,
+       rated = excluded.rated,
+       updated_at = excluded.updated_at,
+       responded_at = excluded.responded_at,
+       new_room_id = excluded.new_room_id`
+  ).bind(
+    offerId, roomId,
+    String(offer.requestedByUserId || ''), cleanDisplayName(offer.requestedByName || '') || 'Mitglied',
+    String(offer.targetUserId || ''), cleanDisplayName(offer.targetName || '') || 'Mitglied',
+    String(offer.status || 'pending'), control && control.mode === 'daily' ? 'daily' : 'live',
+    invitationTimeLabel(control), setup.variant, setup.variant === GAME_VARIANT_FREESTYLE ? Number(setup.positionId) : null,
+    ratedRequested === false ? 0 : 1, createdAt, updatedAt,
+    offer.respondedAt || null, cleanRoomId(offer.roomId) || null
+  ).run();
+  return true;
+}
+function rematchOfferDto(row, userId) {
+  const incoming = String(row && row.target_user_id || '') === String(userId || '');
+  return {
+    offerId:cleanRematchOfferId(row && row.offer_id),
+    sourceRoomId:cleanRoomId(row && row.source_room_id),
+    direction:incoming ? 'incoming' : 'outgoing',
+    opponentName:cleanDisplayName(incoming ? row && row.requester_name : row && row.target_name) || 'Gegner',
+    requestedByName:cleanDisplayName(row && row.requester_name) || 'Mitglied',
+    status:String(row && row.status || 'pending'),
+    mode:row && row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel:String(row && row.time_label || '').slice(0, 120),
+    variant:row && row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    positionId:row && row.position_id != null ? Number(row.position_id) : null,
+    rated:Number(row && row.rated || 0) === 1,
+    createdAt:row && row.created_at || null
+  };
+}
+async function listOpenRematchOffers(env, sessionUser) {
+  if (!(await ensureRematchOffersTable(env))) return [];
+  const userId = String(sessionUser && sessionUser.id || '');
+  const result = await env.DB.prepare(
+    `SELECT * FROM rematch_offers
+      WHERE status IN ('pending', 'creating')
+        AND (requester_user_id = ? OR target_user_id = ?)
+      ORDER BY created_at DESC
+      LIMIT 100`
+  ).bind(userId, userId).all();
+  return (result && Array.isArray(result.results) ? result.results : []).map(row => rematchOfferDto(row, userId));
 }
 
 let dailyGamesTableReady = false;
@@ -5191,11 +5309,13 @@ async function notifyAdminTournamentFull(env, tournamentId) {
 
 async function sendTournamentPublishedEmails(env, tournament) {
   await ensureUserEmailPreferencesTable(env);
-  const usersResult = await env.DB.prepare(`SELECT id, username, email FROM users WHERE disabled = 0 OR disabled IS NULL ORDER BY id`).all();
+  const usersResult = await env.DB.prepare(`SELECT id, username, email FROM users ORDER BY id`).all();
   const users = usersResult && usersResult.results ? usersResult.results : [];
   let sent = 0;
   let failed = 0;
   for (const user of users) {
+    const usable = await requireUsableAccount(env, user);
+    if (!usable.ok) continue;
     const email = normalizeEmail(user && user.email);
     if (!email) continue;
     const preferences = await getUserEmailPreferences(env, user.id);
@@ -6974,6 +7094,7 @@ async function deleteUserAccount(env, target, options = {}) {
       await env.DB.prepare(`DELETE FROM game_reactions WHERE sender_user_id = ?`).bind(target.id).run();
     }
   } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM rematch_offers WHERE requester_user_id = ? OR target_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM daily_game_archives WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_ratings WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM trainer_attempts WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
@@ -7502,7 +7623,7 @@ async function buildAdminOverview(env) {
 
   const tableNames = (tablesResult && tablesResult.results ? tablesResult.results : []).map(row => String(row.name || '')).filter(Boolean);
   const importantTableNames = [
-    'users','sessions','daily_games','public_games','completed_games','game_archive_favorites','game_reactions','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles','member_favorites',
+    'users','sessions','daily_games','public_games','completed_games','game_archive_favorites','game_reactions','rematch_offers','fairplay_game_data','rated_games','user_ratings','trainer_progress','trainer_attempts','user_public_profiles','member_favorites',
     'user_onboarding',
     'auth_security_events','auth_rate_limit_log','account_action_tokens','mail_delivery_log','email_notification_log',
     'admin_member_messages','admin_member_message_recipients','lobby_ticker_items',
@@ -9809,6 +9930,59 @@ async function handleAuthApi(request, env, url) {
     } catch (error) {
       console.error('My live games list failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'MY_LIVE_GAMES_UNAVAILABLE', message:'Deine laufenden Live-Partien konnten nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/rematches' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    try {
+      return json({ok:true, offers:await listOpenRematchOffers(env, session.user), serverNow:Date.now()});
+    } catch (error) {
+      console.error('Rematch list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'REMATCH_LIST_UNAVAILABLE', message:'Offene Revanchen konnten momentan nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  const rematchActionMatch = url.pathname.match(/^\/api\/rematches\/([^/]+)$/);
+  if (rematchActionMatch && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    const offerId = cleanRematchOfferId(decodeURIComponent(rematchActionMatch[1]));
+    const body = await readJsonBody(request);
+    const action = String(body && body.action || '').toLowerCase();
+    if (!offerId || !['accept','decline','withdraw'].includes(action)) {
+      return json({ok:false, code:'REMATCH_ACTION_INVALID', message:'Die Revanche-Antwort konnte nicht gelesen werden.'}, {status:400});
+    }
+    try {
+      await ensureRematchOffersTable(env);
+      const offer = await env.DB.prepare(`SELECT * FROM rematch_offers WHERE offer_id = ? LIMIT 1`).bind(offerId).first();
+      const userId = String(session.user.id || '');
+      if (!offer || String(offer.status || '') !== 'pending') {
+        return json({ok:false, code:'REMATCH_NOT_PENDING', message:'Diese Revanche-Anfrage ist nicht mehr offen.'}, {status:409});
+      }
+      const allowed = action === 'withdraw'
+        ? String(offer.requester_user_id || '') === userId
+        : String(offer.target_user_id || '') === userId;
+      if (!allowed) return json({ok:false, code:'REMATCH_ACTION_NOT_ALLOWED', message:'Diese Revanche-Aktion ist für deinen Account nicht verfügbar.'}, {status:403});
+      const roomId = cleanRoomId(offer.source_room_id);
+      if (!roomId || !env.GAME_ROOM) return json({ok:false, code:'REMATCH_ROOM_UNAVAILABLE', message:'Der Ausgangsraum dieser Revanche ist nicht erreichbar.'}, {status:503});
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const stub = gameRoomStub(env, id);
+      const response = await stub.fetch(new Request('https://game-room.internal/rematch-response?room=' + encodeURIComponent(roomId), {
+        method:'POST',
+        headers:{'content-type':'application/json', 'x-hammerschach-user-id':userId},
+        body:JSON.stringify({offerId, action, userId})
+      }));
+      let result = null;
+      try { result = await response.json(); } catch (_) { result = null; }
+      if (!response.ok || !result || !result.ok) {
+        return json(result || {ok:false, code:'REMATCH_ACTION_FAILED', message:'Die Revanche konnte nicht verarbeitet werden.'}, {status:response.status || 500});
+      }
+      return json(result);
+    } catch (error) {
+      console.error('Rematch action failed', offerId, error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'REMATCH_ACTION_FAILED', message:'Die Revanche konnte momentan nicht verarbeitet werden.'}, {status:500});
     }
   }
 
@@ -12708,6 +12882,7 @@ export class GameRoom {
     this.ratingStateCache = { key:'', expiresAt:0, value:null };
     this.headToHeadCache = new Map();
     this.validationGameCache = { key:'', game:null };
+    this.rematchIndexCache = { offerId:'', status:'' };
   }
 
   validationGameKey(moves, gameSetup) {
@@ -12793,6 +12968,7 @@ export class GameRoom {
     if (!offer) {
       return { available:true, status:'available', opponentName:'' };
     }
+    try { await this.syncRematchOfferIndex(offer); } catch (_) {}
     const requestedByUserId = String(offer.requestedByUserId || '');
     const targetUserId = String(offer.targetUserId || '');
     if (userId !== requestedByUserId && userId !== targetUserId) return null;
@@ -12816,12 +12992,29 @@ export class GameRoom {
     if (offer.status === 'declined') {
       return Object.assign(common, { status:'declined' });
     }
+    if (offer.status === 'withdrawn') {
+      return Object.assign(common, { status:'withdrawn' });
+    }
     return { available:true, status:'available', opponentName:common.opponentName };
+  }
+
+  async syncRematchOfferIndex(offer) {
+    const offerId = cleanRematchOfferId(offer && offer.id);
+    const status = String(offer && offer.status || 'pending');
+    if (!offerId || (this.rematchIndexCache.offerId === offerId && this.rematchIndexCache.status === status)) return false;
+    const sourceRoomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    const game = (await this.state.storage.get('game')) || null;
+    const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
+    await saveRematchOfferIndex(this.env, sourceRoomId, offer, timeControl, gameSetup, ratedRequested);
+    this.rematchIndexCache = {offerId, status};
+    return true;
   }
 
   async sendRematchRequestNotification(offer, timeControl, gameSetup) {
     const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
-    const inviteUrl = gamerInvitationUrl(this.env, roomId);
+    const inviteUrl = gamerRematchInvitationUrl(this.env, offer && offer.id);
     if (!offer || !roomId || !inviteUrl) return { ok:true, skipped:true, reason:'context_missing' };
     return sendRematchRequestEmailNotification(this.env, {
       notificationKey:`rematch_request:${roomId}:${String(offer.id || '')}:${String(offer.targetUserId || '')}`,
@@ -12871,6 +13064,13 @@ export class GameRoom {
     await this.state.storage.put('rematchOffer', offer);
     const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
     const gameSetup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+    try {
+      await this.syncRematchOfferIndex(offer);
+    } catch (error) {
+      await this.state.storage.delete('rematchOffer');
+      this.rematchIndexCache = {offerId:'', status:''};
+      throw error;
+    }
     this.runBackgroundTask(
       this.sendRematchRequestNotification(offer, timeControl, gameSetup),
       'Revanche-Benachrichtigung fehlgeschlagen'
@@ -12884,10 +13084,19 @@ export class GameRoom {
     if (!offer || offer.status !== 'pending') return { ok:false, code:'REMATCH_NOT_PENDING', message:'Es liegt keine offene Revanche-Anfrage vor.' };
     if (!userId || String(offer.targetUserId || '') !== userId) return { ok:false, code:'REMATCH_TARGET_REQUIRED', message:'Nur der eingeladene Gegner kann diese Revanche beantworten.' };
     if (!accepted) {
-      await this.state.storage.put('rematchOffer', Object.assign({}, offer, {
+      const declinedOffer = Object.assign({}, offer, {
         status:'declined',
         respondedAt:new Date().toISOString()
-      }));
+      });
+      await this.state.storage.put('rematchOffer', declinedOffer);
+      this.rematchIndexCache = {offerId:'', status:''};
+      try {
+        await this.syncRematchOfferIndex(declinedOffer);
+      } catch (error) {
+        await this.state.storage.put('rematchOffer', offer);
+        this.rematchIndexCache = {offerId:'', status:''};
+        throw error;
+      }
       return { ok:true, accepted:false };
     }
 
@@ -12914,8 +13123,10 @@ export class GameRoom {
       roomId
     });
     await this.state.storage.put('rematchOffer', creatingOffer);
+    this.rematchIndexCache = {offerId:'', status:''};
 
     try {
+      await this.syncRematchOfferIndex(creatingOffer);
       const id = this.env.GAME_ROOM.idFromName(roomId);
       const stub = gameRoomStub(this.env, id);
       const response = await stub.fetch(new Request('https://game-room.internal/rematch-init?room=' + encodeURIComponent(roomId), {
@@ -12943,14 +13154,43 @@ export class GameRoom {
         status:'pending',
         lastError:error && error.message ? String(error.message).slice(0, 200) : 'Revanche konnte nicht vorbereitet werden.'
       }));
+      this.rematchIndexCache = {offerId:'', status:''};
+      try { await this.syncRematchOfferIndex(offer); } catch (_) {}
       return { ok:false, code:'REMATCH_CREATE_FAILED', message:error && error.message ? error.message : 'Die Revanche konnte nicht vorbereitet werden.' };
     }
 
-    await this.state.storage.put('rematchOffer', Object.assign({}, creatingOffer, {
+    const readyOffer = Object.assign({}, creatingOffer, {
       status:'ready',
       readyAt:new Date().toISOString()
-    }));
+    });
+    await this.state.storage.put('rematchOffer', readyOffer);
+    this.rematchIndexCache = {offerId:'', status:''};
+    try {
+      await this.syncRematchOfferIndex(readyOffer);
+    } catch (error) {
+      console.error('Rematch index finalization deferred', error && error.message ? error.message : String(error || 'unknown'));
+      this.rematchIndexCache = {offerId:'', status:''};
+      this.runBackgroundTask(this.syncRematchOfferIndex(readyOffer), 'Revanche-Übersicht konnte nicht abschließend aktualisiert werden');
+    }
     return { ok:true, accepted:true, roomId };
+  }
+
+  async withdrawRematch(info) {
+    const offer = (await this.state.storage.get('rematchOffer')) || null;
+    const userId = String(info && info.userId || '');
+    if (!offer || offer.status !== 'pending') return {ok:false, code:'REMATCH_NOT_PENDING', message:'Es liegt keine offene Revanche-Anfrage vor.'};
+    if (!userId || String(offer.requestedByUserId || '') !== userId) return {ok:false, code:'REMATCH_REQUESTER_REQUIRED', message:'Nur der Absender kann diese Revanche-Anfrage zurückziehen.'};
+    const withdrawnOffer = Object.assign({}, offer, {status:'withdrawn', respondedAt:new Date().toISOString()});
+    await this.state.storage.put('rematchOffer', withdrawnOffer);
+    this.rematchIndexCache = {offerId:'', status:''};
+    try {
+      await this.syncRematchOfferIndex(withdrawnOffer);
+    } catch (error) {
+      await this.state.storage.put('rematchOffer', offer);
+      this.rematchIndexCache = {offerId:'', status:''};
+      throw error;
+    }
+    return {ok:true, withdrawn:true};
   }
 
   async dailyEmailRoomContext() {
@@ -13762,6 +14002,24 @@ export class GameRoom {
       }
     }
 
+    if (request.method === 'POST' && url.pathname === '/rematch-response') {
+      const body = await readJsonBody(request);
+      const userId = String(request.headers.get('x-hammerschach-user-id') || body && body.userId || '').trim();
+      const offerId = cleanRematchOfferId(body && body.offerId);
+      const action = String(body && body.action || '').toLowerCase();
+      const storedOffer = (await this.state.storage.get('rematchOffer')) || null;
+      if (!userId || !offerId || !storedOffer || cleanRematchOfferId(storedOffer.id) !== offerId) {
+        return json({ok:false, code:'REMATCH_NOT_FOUND', message:'Diese Revanche-Anfrage ist nicht mehr verfügbar.'}, {status:404});
+      }
+      let result;
+      if (action === 'withdraw') result = await this.withdrawRematch({userId});
+      else if (action === 'accept' || action === 'decline') result = await this.respondToRematch({userId}, action === 'accept');
+      else return json({ok:false, code:'REMATCH_ACTION_INVALID', message:'Bitte wähle Annehmen, Ablehnen oder Zurückziehen.'}, {status:400});
+      if (!result.ok) return json(result, {status:result.code === 'REMATCH_NOT_PENDING' ? 409 : 403});
+      await this.broadcastRoomState('rematch_state');
+      return json(result);
+    }
+
     if (request.method === 'POST' && url.pathname === '/tournament-schedule') {
       const body = await readJsonBody(request);
       const tournamentId = String(body && body.tournamentId || '').trim();
@@ -13792,13 +14050,20 @@ export class GameRoom {
       }
 
       const accounts = await this.env.DB.prepare(
-        `SELECT id, username, disabled, deleted_at FROM users WHERE id IN (?, ?)`
+        `SELECT id, username FROM users WHERE id IN (?, ?)`
       ).bind(whiteUserId, blackUserId).all();
       const accountRows = accounts && Array.isArray(accounts.results) ? accounts.results : [];
       const accountMap = new Map(accountRows.map(row => [String(row.id || ''), row]));
       const whiteAccount = accountMap.get(whiteUserId);
       const blackAccount = accountMap.get(blackUserId);
-      if (!whiteAccount || !blackAccount || whiteAccount.disabled || blackAccount.disabled || whiteAccount.deleted_at || blackAccount.deleted_at) {
+      if (!whiteAccount || !blackAccount) {
+        return json({ok:false, code:'REMATCH_ACCOUNT_UNAVAILABLE', message:'Mindestens ein Spieleraccount ist nicht mehr verfügbar.'}, {status:409});
+      }
+      const [whiteAccess, blackAccess] = await Promise.all([
+        requireUsableAccount(this.env, whiteAccount),
+        requireUsableAccount(this.env, blackAccount)
+      ]);
+      if (!whiteAccess.ok || !blackAccess.ok) {
         return json({ok:false, code:'REMATCH_ACCOUNT_UNAVAILABLE', message:'Mindestens ein Spieleraccount ist nicht mehr verfügbar.'}, {status:409});
       }
 
@@ -14283,6 +14548,14 @@ export class GameRoom {
       this.ratingStateCache = { key:'', expiresAt:0, value:null };
     }
     if (chatChanged) await this.state.storage.put('chatMessages', anonymizedChats);
+    const rematchOffer = (await this.state.storage.get('rematchOffer')) || null;
+    const rematchRemoved = !!(rematchOffer && (
+      String(rematchOffer.requestedByUserId || '') === uid || String(rematchOffer.targetUserId || '') === uid
+    ));
+    if (rematchRemoved) {
+      await this.state.storage.delete('rematchOffer');
+      this.rematchIndexCache = {offerId:'', status:''};
+    }
     for (const socket of this.state.getWebSockets()) {
       const info = socket.deserializeAttachment() || {};
       if (!info.userId || String(info.userId) !== uid) continue;
@@ -14290,7 +14563,7 @@ export class GameRoom {
       safeSend(socket, { type:'account_deleted', message:'Der zugehörige Account wurde gelöscht.', serverNow:Date.now() });
       try { socket.close(4003, 'Account gelöscht'); } catch (_) {}
     }
-    return { ok:true, status:200, anonymized:changed || chatChanged };
+    return { ok:true, status:200, anonymized:changed || chatChanged || rematchRemoved };
   }
 
   async seatTokenMatches(slot, rawToken) {
