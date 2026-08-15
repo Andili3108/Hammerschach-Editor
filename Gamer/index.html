@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260815-3" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260815-4" />
 </head>
 <body>
 <div class="app" role="main">
@@ -512,7 +512,7 @@
             <li><strong>Daily Chess:</strong> Beim Spieler am Zug wird die verbleibende Zugfrist angezeigt; beim anderen Spieler steht <strong>„Wartet“</strong>. Bei einer gewerteten Partie erscheint je nach Variante das Daily-Classic- oder Daily-Freestyle-Rating. Bei einer ungewerteten Partie werden die Ratingzahlen ausgeblendet und es steht nur <strong>„Ungewertet“</strong>. Das genaue Fristende ist in der Zeitanzeige hinterlegt. Der Online-Hinweis bedeutet hier, dass der Spieler innerhalb der letzten rund zweieinhalb Minuten irgendwo im Hammerschach-Gamer aktiv war.</li>
             <li><strong>Zugliste:</strong> zeigt die gespielten Züge und ermöglicht nach der Partie den PGN-Download.</li>
             <li><strong>Chat:</strong> enthält die privaten Nachrichten von Weiß und Schwarz; die neuesten stehen oben. Die letzten 80 Nachrichten bleiben in der Partie gespeichert und werden beim erneuten Öffnen wieder angezeigt. Zuschauer können den Chat weder lesen noch verwenden.</li>
-            <li><strong>Gamer-Moment:</strong> Nach Partieende kann jedes registrierte Mitglied die eigene Partie mit ❤️ dauerhaft bewahren und eine private persönliche Erinnerung mit höchstens 240 Zeichen ergänzen. Herz und Erinnerung sind nur für den jeweiligen Account sichtbar; der Gegner wird nicht benachrichtigt.</li>
+            <li><strong>Gamer-Moment:</strong> Nach Partieende kann jedes registrierte Mitglied die eigene Partie mit ❤️ dauerhaft bewahren und eine private persönliche Erinnerung mit höchstens 240 Zeichen ergänzen. Ein Klick auf den roten Gamer-Moment-Kopf klappt die Erinnerung lediglich auf oder zu. Gelöscht wird sie nur über die ausdrücklich beschriftete Schaltfläche „Gamer-Moment entfernen“ und nach einer Sicherheitsabfrage. Herz und Erinnerung sind nur für den jeweiligen Account sichtbar; der Gegner wird nicht benachrichtigt.</li>
             <li><strong>Fairer Abschluss:</strong> Nach Partieende können sich zwei registrierte Gegner mit „Danke für die Partie“, „Stark gespielt“ oder „Spannende Partie“ eine private Reaktion senden. Pro Spieler und Partie ist genau eine Reaktion aktiv; sie kann geändert oder entfernt werden. Die Auswahl ist außerdem bei beendeten Partien unter „Meine Partien“ und im eigenen Partienarchiv erreichbar.</li>
           </ul>
 
@@ -1912,11 +1912,14 @@
             <div id="liveStartHint" class="live-start-hint">Sobald beide Spieler verbunden sind, kann Weiß die Live-Partie starten.</div>
           </div>
           <div id="gameMomentBar" class="game-moment-bar" hidden aria-live="polite">
-            <button id="gameMomentToggleBtn" class="game-moment-room-toggle" type="button" aria-pressed="false">♡ Als Gamer-Moment merken</button>
+            <button id="gameMomentToggleBtn" class="game-moment-room-toggle" type="button" aria-pressed="false" aria-expanded="false" aria-controls="gameMomentDetails">♡ Als Gamer-Moment merken</button>
             <div id="gameMomentDetails" class="game-moment-room-details" hidden>
               <label for="gameMomentNoteInput">Meine private Erinnerung <span id="gameMomentNoteCount">0 / 240</span></label>
               <textarea id="gameMomentNoteInput" maxlength="240" rows="3" placeholder="Warum bleibt dir diese Partie in Erinnerung?"></textarea>
-              <button id="gameMomentSaveBtn" class="button-flat" type="button">Erinnerung speichern</button>
+              <div class="game-moment-room-actions">
+                <button id="gameMomentRemoveBtn" class="game-moment-remove" type="button">Gamer-Moment entfernen</button>
+                <button id="gameMomentSaveBtn" class="button-flat" type="button">Erinnerung speichern</button>
+              </div>
             </div>
             <div id="gameMomentStatus" class="game-moment-status"></div>
           </div>
@@ -2135,7 +2138,7 @@
 <script src="js/online-session.js?v=20260815-1"></script>
 <script src="js/game-openings.js?v=20260810-2"></script>
 <script src="js/game-reactions.js?v=20260810-1"></script>
-<script src="js/game-moments.js?v=20260815-2"></script>
+<script src="js/game-moments.js?v=20260815-3"></script>
 <script src="js/lobby-ticker.js?v=20260804-1"></script>
 <script src="js/info-center.js?v=20260804-1"></script>
 <script src="js/admin-info-center.js?v=20260804-1"></script>
