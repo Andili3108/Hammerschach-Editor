@@ -38,6 +38,7 @@ function connectOnlineRoom(roomId, opts){
   onlineHeadToHead = null;
   onlineRematchState = null;
   resetOnlineGameReactionState();
+  resetOnlineGameMomentState();
   rematchActionBusy = false;
   rematchAutoOpenWhenReady = false;
   rematchLastError = '';
@@ -272,6 +273,10 @@ function connectOnlineRoom(roomId, opts){
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'gameReactions')){
       applyOnlineGameReactionState(msg.gameReactions);
+      handled = true;
+    }
+    if(Object.prototype.hasOwnProperty.call(msg, 'gameMoment')){
+      applyOnlineGameMomentState(msg.gameMoment);
       handled = true;
     }
     if(msg.type === 'conditional_move_ack'){

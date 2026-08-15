@@ -30,6 +30,8 @@ function maybeOpenRematchInvitationFromAddress(){
   openDailyGamesDialog(false);
   return true;
 }
+const dailyGamesCompletedFilters = document.getElementById('dailyGamesCompletedFilters');
+const dailyGamesMomentsOnlyBtn = document.getElementById('dailyGamesMomentsOnlyBtn');
 function dailyInvitationRoomFromAddress(){
   try{ return cleanRoomId(new URL(window.location.href).searchParams.get('dailyInvite')); }
   catch(_){ return ''; }
@@ -323,6 +325,11 @@ function createMyLiveCompletedCard(game){
   content.appendChild(meta);
   const startSummary = createGameStartSummaryPanel(game);
   if(startSummary) content.appendChild(startSummary);
+  const momentPanel = createGameMomentPanel(game, {
+    statusElement:dailyGamesStatusEl,
+    onChange:() => renderDailyGames(dailyGamesCache)
+  });
+  if(momentPanel) content.appendChild(momentPanel);
   const reactionPanel = createGameReactionPanel(game, {
     opponentName,
     statusElement:dailyGamesStatusEl,
@@ -611,6 +618,11 @@ function createDailyGameCard(game){
     if(responseBox) content.appendChild(responseBox);
   }
   if(game.ended){
+    const momentPanel = createGameMomentPanel(game, {
+      statusElement:dailyGamesStatusEl,
+      onChange:() => renderDailyGames(dailyGamesCache)
+    });
+    if(momentPanel) content.appendChild(momentPanel);
     const reactionPanel = createGameReactionPanel(game, {
       opponentName:game.opponentName,
       statusElement:dailyGamesStatusEl,
@@ -714,6 +726,7 @@ let myRematchOffersCache = [];
 let myLiveCompletedGamesCache = [];
 let myLiveCompletedTotal = 0;
 let dailyGamesActiveTab = 'running';
+let dailyGamesMomentsOnly = false;
 function dailyGamesGroups(games){
   const sourceGames = Array.isArray(games) ? games : [];
   const allDailyGames = dailyGamesTournamentOnly ? sourceGames.filter(game => game.isTournamentGame) : sourceGames;
@@ -741,6 +754,7 @@ function setDailyGamesActiveTab(tab, options){
     button.tabIndex = active ? 0 : -1;
     if(active && dailyGamesListEl) dailyGamesListEl.setAttribute('aria-labelledby', button.id || 'dailyGamesRunningTab');
   });
+  if(dailyGamesCompletedFilters) dailyGamesCompletedFilters.hidden = dailyGamesActiveTab !== 'completed';
   if(!options || options.render !== false) renderDailyGames(dailyGamesCache);
 }
 function appendDailyGameCards(games, emptyText, renderer){
@@ -827,8 +841,11 @@ function renderDailyGames(games){
     const items = sortMyGamesByDateAndTurn([
       ...groups.completedDaily.map(game => ({kind:'daily', game, date:game.endedAt || game.updatedAt || ''})),
       ...groups.completedLive.map(game => ({kind:'live-completed', game, date:game.endedAt || ''}))
-    ]);
-    appendMixedGameCards(items, dailyGamesTournamentOnly ? 'Noch keine beendete Turnierpartie im Verlauf.' : 'Noch keine beendete Partie im Verlauf.');
+    ]).filter(item => !dailyGamesMomentsOnly || item.game.favorite === true);
+    const emptyText = dailyGamesMomentsOnly
+      ? 'Noch keine Gamer-Momente in dieser Auswahl.'
+      : (dailyGamesTournamentOnly ? 'Noch keine beendete Turnierpartie im Verlauf.' : 'Noch keine beendete Partie im Verlauf.');
+    appendMixedGameCards(items, emptyText);
     if(!dailyGamesTournamentOnly && myLiveCompletedTotal > myLiveCompletedGamesCache.length){
       const note = document.createElement('div');
       note.className = 'daily-games-empty';
@@ -1072,6 +1089,13 @@ function closeDailyGamesDialog(){
   stopDailyGamesPresenceRefresh();
 }
 dailyGamesTabButtons.forEach(button => button.addEventListener('click', () => setDailyGamesActiveTab(button.dataset.dailyGamesTab)));
+if(dailyGamesMomentsOnlyBtn) dailyGamesMomentsOnlyBtn.addEventListener('click', () => {
+  dailyGamesMomentsOnly = !dailyGamesMomentsOnly;
+  dailyGamesMomentsOnlyBtn.classList.toggle('active', dailyGamesMomentsOnly);
+  dailyGamesMomentsOnlyBtn.setAttribute('aria-pressed', dailyGamesMomentsOnly ? 'true' : 'false');
+  dailyGamesMomentsOnlyBtn.textContent = dailyGamesMomentsOnly ? '♥ Nur Gamer-Momente' : '♡ Nur Gamer-Momente';
+  renderDailyGames(dailyGamesCache);
+});
 if(dailyGamesOpenBtn) dailyGamesOpenBtn.addEventListener('click', () => openDailyGamesDialog(false));
 if(tournamentGamesOpenBtn) tournamentGamesOpenBtn.addEventListener('click', () => openDailyGamesDialog(true));
 if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDailyGames);

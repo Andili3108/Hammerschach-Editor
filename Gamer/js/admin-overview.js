@@ -199,7 +199,7 @@ function renderAdminOverview(data){
     {label:'Öffentlich laufend', value:adminNumber(games.publicRunning)},
     {label:'Archivpartien', value:adminNumber(archive.games)},
     {label:'Öffentlich im Archiv', value:adminNumber(archive.publicVisible)},
-    {label:'Geschützt / Favoriten', value:adminNumber(Number(archive.protectedGames||0)+Number(archive.favoriteGames||0))},
+    {label:'Geschützt / Gamer-Momente', value:adminNumber(Number(archive.protectedGames||0)+Number(archive.favoriteGames||0))},
     {label:'Archivdaten · '+String(archive.status||'green').toUpperCase(), value:formatAvatarFileSize(archive.bytes||0)+' · '+String(archive.percent||0).replace('.',',')+' %', alert:['orange','red'].includes(archive.status)}
   ]);
   if(adminDatabaseRows){

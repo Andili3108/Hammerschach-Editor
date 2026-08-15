@@ -5,6 +5,7 @@ let gameArchivePage = 1;
 let gameArchiveTotal = 0;
 let gameArchiveGames = [];
 let gameArchiveFilterTimer = null;
+const gameArchiveMomentsFilter = document.getElementById('gameArchiveMomentsFilter');
 
 function archiveDateLabel(value){
   const date = new Date(value || '');
@@ -22,6 +23,7 @@ function archiveQuery(page){
   const params=new URLSearchParams({scope:gameArchiveScope,page:String(page||1),limit:'24'});
   const filters=[['member',gameArchiveMemberFilter],['mode',gameArchiveModeFilter],['variant',gameArchiveVariantFilter],['speed',gameArchiveSpeedFilter],['tournament',gameArchiveTournamentFilter],['result',gameArchiveResultFilter],['from',gameArchiveFromFilter],['to',gameArchiveToFilter]];
   filters.forEach(([key,element])=>{const value=element?String(element.value||'').trim():'';if(value)params.set(key,value);});
+  if(gameArchiveScope==='mine'&&gameArchiveMomentsFilter&&gameArchiveMomentsFilter.value==='1')params.set('moments','1');
   return '/api/game-archive?'+params.toString();
 }
 async function fetchArchivePgn(game){
@@ -60,14 +62,9 @@ function viewArchiveGame(game,button){
   if(target){window.open(target,'_blank','noopener,noreferrer');return;}
   openArchiveInAnalyzer(game,button);
 }
-async function toggleArchiveFavorite(game,button){
-  const roomId=cleanRoomId(game&&game.roomId);if(!roomId)return;
-  const desired=!game.favorite;button.disabled=true;
-  try{
-    await authApi('/api/game-archive/'+encodeURIComponent(roomId)+'/favorite',{method:'POST',body:JSON.stringify({favorite:desired})});
-    game.favorite=desired;renderGameArchive();
-    if(gameArchiveStatusEl)gameArchiveStatusEl.textContent=desired?'⭐ Diese Partie bleibt dauerhaft geschützt.':'Dauerhafte Speicherung aufgehoben.';
-  }catch(err){if(gameArchiveStatusEl)gameArchiveStatusEl.textContent=err&&err.message?err.message:'Markierung konnte nicht gespeichert werden.';button.disabled=false;}
+function refreshArchiveAfterMomentChange(){
+  if(gameArchiveScope==='mine'&&gameArchiveMomentsFilter&&gameArchiveMomentsFilter.value==='1')loadGameArchive();
+  else renderGameArchive();
 }
 function createArchiveGameCard(game){
   const card=document.createElement('div');card.className='game-archive-card'+(game.favorite?' favorite':'');
@@ -78,10 +75,12 @@ function createArchiveGameCard(game){
   const badges=document.createElement('div');badges.className='game-archive-badges';
   if(game.tournamentId){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='🏆 '+(game.tournamentName||game.tournamentRoundLabel||'Turnierpartie');badges.appendChild(badge);}
   if(game.publicGame){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='🌍 öffentlich';badges.appendChild(badge);}
-  if(game.favorite){const badge=document.createElement('span');badge.className='game-archive-badge';badge.textContent='⭐ dauerhaft';badges.appendChild(badge);}
+  if(game.favorite){const badge=document.createElement('span');badge.className='game-archive-badge moment';badge.textContent='❤️ Gamer-Moment';badges.appendChild(badge);}
   if(badges.childNodes.length)content.appendChild(badges);
   if(gameArchiveScope==='mine'&&game.isParticipant){
     const opponentName=game.participantRole==='w'?game.blackName:game.whiteName;
+    const momentPanel=createGameMomentPanel(game,{statusElement:gameArchiveStatusEl,onChange:refreshArchiveAfterMomentChange});
+    if(momentPanel)content.appendChild(momentPanel);
     const reactionPanel=createGameReactionPanel(game,{opponentName,statusElement:gameArchiveStatusEl,onChange:renderGameArchive});
     if(reactionPanel)content.appendChild(reactionPanel);
   }
@@ -89,12 +88,11 @@ function createArchiveGameCard(game){
   const view=document.createElement('button');view.type='button';view.className='button-flat';view.textContent='Partie ansehen';view.addEventListener('click',()=>viewArchiveGame(game,view));actions.appendChild(view);
   const analyzer=document.createElement('button');analyzer.type='button';analyzer.className='button-flat';analyzer.textContent='Im Analyzer öffnen';analyzer.addEventListener('click',()=>openArchiveInAnalyzer(game,analyzer));actions.appendChild(analyzer);
   const pgn=document.createElement('button');pgn.type='button';pgn.className='button-flat';pgn.textContent='PGN herunterladen';pgn.addEventListener('click',()=>downloadArchivePgn(game,pgn));actions.appendChild(pgn);
-  if(gameArchiveScope==='mine'&&game.isParticipant){const favorite=document.createElement('button');favorite.type='button';favorite.className='button-flat';favorite.textContent=game.favorite?'★ Dauerhaft gespeichert':'☆ Dauerhaft speichern';favorite.addEventListener('click',()=>toggleArchiveFavorite(game,favorite));actions.appendChild(favorite);}
   card.appendChild(content);card.appendChild(actions);return card;
 }
 function renderGameArchive(){
   if(!gameArchiveListEl)return;gameArchiveListEl.innerHTML='';
-  if(!gameArchiveGames.length){const empty=document.createElement('div');empty.className='game-archive-empty';empty.textContent=gameArchiveScope==='mine'?'Noch keine eigene beendete Partie im Archiv.':'Keine passende öffentliche Partie gefunden.';gameArchiveListEl.appendChild(empty);}
+  if(!gameArchiveGames.length){const empty=document.createElement('div');empty.className='game-archive-empty';empty.textContent=gameArchiveScope==='mine'&&gameArchiveMomentsFilter&&gameArchiveMomentsFilter.value==='1'?'Noch keine Gamer-Momente in dieser Auswahl.':(gameArchiveScope==='mine'?'Noch keine eigene beendete Partie im Archiv.':'Keine passende öffentliche Partie gefunden.');gameArchiveListEl.appendChild(empty);}
   else gameArchiveGames.forEach(game=>gameArchiveListEl.appendChild(createArchiveGameCard(game)));
   if(gameArchiveMoreBtn)gameArchiveMoreBtn.hidden=gameArchiveGames.length>=gameArchiveTotal;
 }
@@ -112,6 +110,7 @@ async function loadGameArchive(options){
 function setGameArchiveScope(scope){
   gameArchiveScope=scope==='public'?'public':'mine';
   [gameArchiveMineTab,gameArchivePublicTab].forEach((tab,index)=>{if(!tab)return;const active=(index===0)===(gameArchiveScope==='mine');tab.classList.toggle('active',active);tab.setAttribute('aria-selected',active?'true':'false');});
+  if(gameArchiveMomentsFilter)gameArchiveMomentsFilter.disabled=gameArchiveScope!=='mine';
   loadGameArchive();
 }
 function scheduleGameArchiveFilter(){if(gameArchiveFilterTimer)clearTimeout(gameArchiveFilterTimer);gameArchiveFilterTimer=setTimeout(()=>loadGameArchive(),300);}
@@ -123,7 +122,7 @@ function closeGameArchiveDialog(){if(gameArchiveBackdrop)gameArchiveBackdrop.hid
 if(gameArchiveOpenBtn)gameArchiveOpenBtn.addEventListener('click',openGameArchiveDialog);
 if(gameArchiveMineTab)gameArchiveMineTab.addEventListener('click',()=>setGameArchiveScope('mine'));
 if(gameArchivePublicTab)gameArchivePublicTab.addEventListener('click',()=>setGameArchiveScope('public'));
-[gameArchiveMemberFilter,gameArchiveModeFilter,gameArchiveVariantFilter,gameArchiveSpeedFilter,gameArchiveTournamentFilter,gameArchiveResultFilter,gameArchiveFromFilter,gameArchiveToFilter].forEach(element=>{if(!element)return;element.addEventListener(element.type==='search'?'input':'change',scheduleGameArchiveFilter);});
+[gameArchiveMemberFilter,gameArchiveModeFilter,gameArchiveVariantFilter,gameArchiveSpeedFilter,gameArchiveTournamentFilter,gameArchiveResultFilter,gameArchiveMomentsFilter,gameArchiveFromFilter,gameArchiveToFilter].forEach(element=>{if(!element)return;element.addEventListener(element.type==='search'?'input':'change',scheduleGameArchiveFilter);});
 if(gameArchiveMoreBtn)gameArchiveMoreBtn.addEventListener('click',()=>loadGameArchive({append:true}));
 if(gameArchiveRefreshBtn)gameArchiveRefreshBtn.addEventListener('click',()=>loadGameArchive());
 if(gameArchiveCloseBtn)gameArchiveCloseBtn.addEventListener('click',closeGameArchiveDialog);
