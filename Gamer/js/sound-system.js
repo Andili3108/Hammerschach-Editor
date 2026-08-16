@@ -1,21 +1,23 @@
 'use strict';
 
 /* Sound */
+const HAMMERSCHACH_SOUND_VERSION = '20260816-2';
+const hammerschachSoundUrl = file => 'sounds/' + file + '?v=' + HAMMERSCHACH_SOUND_VERSION;
 const HAMMERSCHACH_SOUND_FILES = Object.freeze({
-  pickup:'sounds/pickup.mp3',
-  moveSelf:'sounds/move-self.mp3',
-  moveOpponent:'sounds/move-opponent.mp3',
-  capture:'sounds/capture.mp3',
-  check:'sounds/check.mp3',
-  castle:'sounds/castle.mp3',
-  promote:'sounds/promote.mp3',
-  illegal:'sounds/illegal.mp3',
-  gameStart:'sounds/game-start.mp3',
-  gameEnd:'sounds/game-end.mp3',
-  victory:'sounds/victory.mp3',
-  defeat:'sounds/defeat.mp3',
-  draw:'sounds/draw.mp3',
-  lowTime:'sounds/low-time.mp3'
+  pickup:hammerschachSoundUrl('pickup.mp3'),
+  moveSelf:hammerschachSoundUrl('move-self.mp3'),
+  moveOpponent:hammerschachSoundUrl('move-opponent.mp3'),
+  capture:hammerschachSoundUrl('capture.mp3'),
+  check:hammerschachSoundUrl('check.mp3'),
+  castle:hammerschachSoundUrl('castle.mp3'),
+  promote:hammerschachSoundUrl('promote.mp3'),
+  illegal:hammerschachSoundUrl('illegal.mp3'),
+  gameStart:hammerschachSoundUrl('game-start.mp3'),
+  gameEnd:hammerschachSoundUrl('game-end.mp3'),
+  victory:hammerschachSoundUrl('victory.mp3'),
+  defeat:hammerschachSoundUrl('defeat.mp3'),
+  draw:hammerschachSoundUrl('draw.mp3'),
+  lowTime:hammerschachSoundUrl('low-time.mp3')
 });
 const soundFallbackPlayers = Object.fromEntries(Object.entries(HAMMERSCHACH_SOUND_FILES).map(([key,url]) => {
   const audio = new Audio(url);
