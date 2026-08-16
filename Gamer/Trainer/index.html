@@ -966,6 +966,50 @@ html.dark-mode #board{
   .guide-modal-actions{padding:10px 14px}
 }
 
+
+
+/* Die zwei Edel-Bretter entsprechen exakt den Material-Presets des Gamers. */
+    html[data-board-material="royal-walnut"] #board .square.light{
+      background-color:var(--light-square);
+      background-image:
+        linear-gradient(115deg,transparent 0 34%,rgba(135,96,52,.08) 35%,transparent 37% 68%,rgba(255,248,232,.20) 69%,transparent 71%),
+        linear-gradient(25deg,transparent 0 53%,rgba(118,92,61,.06) 54%,transparent 56%),
+        repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,rgba(111,76,44,.020) 1px 3px),
+        radial-gradient(circle at 22% 14%,rgba(255,255,255,.25),rgba(255,255,255,0) 50%);
+    }
+    html[data-board-material="royal-walnut"] #board .square.dark{
+      background-color:var(--dark-square);
+      background-image:
+        linear-gradient(115deg,transparent 0 31%,rgba(255,231,193,.07) 32%,transparent 34% 64%,rgba(51,29,12,.13) 65%,transparent 67%),
+        linear-gradient(22deg,transparent 0 49%,rgba(54,32,18,.15) 50%,transparent 52%),
+        repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,rgba(46,29,15,.028) 1px 3px),
+        radial-gradient(circle at 24% 15%,rgba(255,244,221,.08),rgba(255,255,255,0) 49%);
+    }
+    html[data-board-material="royal-walnut"] #board{
+      border-color:var(--board-frame-mid);
+      outline-color:var(--board-frame-dark);
+      box-shadow:inset 0 0 0 1px rgba(200,156,102,.28),inset 0 1px 0 rgba(255,248,236,.18),inset 0 -2px 0 rgba(66,38,17,.34),0 2px 3px rgba(57,35,17,.18),0 10px 20px rgba(57,35,17,.16),0 22px 44px rgba(57,35,17,.20);
+    }
+    html[data-board-material="onyx-elegance"] #board .square.light{
+      background-color:var(--light-square);
+      background-image:
+        linear-gradient(116deg,transparent 0 35%,rgba(167,137,91,.09) 36%,transparent 38% 68%,rgba(255,255,255,.17) 69%,transparent 71%),
+        linear-gradient(26deg,transparent 0 56%,rgba(118,94,61,.05) 57%,transparent 59%),
+        radial-gradient(circle at 22% 14%,rgba(255,255,255,.26),rgba(255,255,255,0) 50%);
+    }
+    html[data-board-material="onyx-elegance"] #board .square.dark{
+      background-color:var(--dark-square);
+      background-image:
+        linear-gradient(113deg,transparent 0 31%,rgba(181,138,67,.070) 32%,transparent 34% 63%,rgba(255,255,255,.040) 64%,transparent 66%),
+        linear-gradient(24deg,transparent 0 49%,rgba(0,0,0,.18) 50%,transparent 52%),
+        radial-gradient(circle at 24% 15%,rgba(255,255,255,.08),rgba(255,255,255,0) 49%);
+    }
+    html[data-board-material="onyx-elegance"] #board{
+      border-color:var(--board-frame-mid);
+      outline-color:var(--board-frame-dark);
+      box-shadow:inset 0 0 0 1px rgba(181,138,67,.34),inset 0 1px 0 rgba(255,255,255,.20),inset 0 -2px 0 rgba(0,0,0,.42),0 2px 3px rgba(0,0,0,.24),0 10px 20px rgba(0,0,0,.20),0 24px 48px rgba(0,0,0,.24);
+    }
+
 </style>
 </head>
 <body>
@@ -1010,6 +1054,8 @@ html.dark-mode #board{
               <button type="button" class="board-color-option" data-board-color="braun"><span>Walnuss</span><span class="board-color-swatch"><span style="background:#f3ddb7"></span><span style="background:#b4875e"></span></span></button>
               <button type="button" class="board-color-option" data-board-color="grau"><span>Schiefer</span><span class="board-color-swatch"><span style="background:#eeeeee"></span><span style="background:#9b9b9b"></span></span></button>
               <button type="button" class="board-color-option" data-board-color="gruen"><span>Turniergrün</span><span class="board-color-swatch"><span style="background:#eeeed2"></span><span style="background:#769656"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="onyx-elegance"><span>Premium · Warm</span><span class="board-color-swatch"><span style="background:#f2e7d2"></span><span style="background:#7f8389"></span></span></button>
+              <button type="button" class="board-color-option" data-board-color="royal-walnut"><span>Royal Walnut · Holz</span><span class="board-color-swatch"><span style="background:#d9c29e"></span><span style="background:#8a6845"></span></span></button>
             </div>
             <div class="board-color-current">Aktuell: <span id="boardColorCurrent">Hammerschach Rubin</span></div>
           </div>
@@ -1023,6 +1069,8 @@ html.dark-mode #board{
               <button type="button" class="board-color-option piece-set-option" data-piece-set="merida"><span>Merida · Klassiker</span><img class="piece-set-preview" src="../assets/pieces/merida/wN.svg" alt=""></button>
               <button type="button" class="board-color-option piece-set-option" data-piece-set="chessnut"><span>Chessnut · Klassisch</span><img class="piece-set-preview" src="../assets/pieces/chessnut/wN.svg" alt=""></button>
               <button type="button" class="board-color-option piece-set-option" data-piece-set="fantasy"><span>Fantasy · Elegant</span><img class="piece-set-preview" src="../assets/pieces/fantasy/wN.svg" alt=""></button>
+              <button type="button" class="board-color-option piece-set-option" data-piece-set="merida-silversteel"><span>Merida Silversteel</span><img class="piece-set-preview" src="../assets/pieces/merida-silversteel/wn.png?v=20260808-1" alt=""></button>
+              <button type="button" class="board-color-option piece-set-option" data-piece-set="merida-royalwood"><span>Merida Royalwood</span><img class="piece-set-preview" src="../assets/pieces/merida-royalwood/wn.png?v=20260808-1" alt=""></button>
             </div>
             <div class="board-color-current">Aktuell: <span id="pieceSetCurrent">Cburnett · Standard</span></div>
           </div>
@@ -1186,6 +1234,7 @@ html.dark-mode #board{
   </section>
 </div>
 
+<script src="../js/tool-sound-system.js?v=20260816-2"></script>
 <script>
 /* ========== Daten & Utility ========== */
 const files = ['a','b','c','d','e','f','g','h'];
@@ -1196,7 +1245,9 @@ const pieceSetPresets=[
   {id:'cburnett',name:'Cburnett · Standard',paths:{P:'../assets/pieces/Chess_plt45.svg',R:'../assets/pieces/Chess_rlt45.svg',N:'../assets/pieces/Chess_nlt45.svg',B:'../assets/pieces/Chess_blt45.svg',Q:'../assets/pieces/Chess_qlt45.svg',K:'../assets/pieces/Chess_klt45.svg',p:'../assets/pieces/Chess_pdt45.svg',r:'../assets/pieces/Chess_rdt45.svg',n:'../assets/pieces/Chess_ndt45.svg',b:'../assets/pieces/Chess_bdt45.svg',q:'../assets/pieces/Chess_qdt45.svg',k:'../assets/pieces/Chess_kdt45.svg'}},
   {id:'merida',name:'Merida · Klassiker',paths:{P:'../assets/pieces/merida/wP.svg',R:'../assets/pieces/merida/wR.svg',N:'../assets/pieces/merida/wN.svg',B:'../assets/pieces/merida/wB.svg',Q:'../assets/pieces/merida/wQ.svg',K:'../assets/pieces/merida/wK.svg',p:'../assets/pieces/merida/bP.svg',r:'../assets/pieces/merida/bR.svg',n:'../assets/pieces/merida/bN.svg',b:'../assets/pieces/merida/bB.svg',q:'../assets/pieces/merida/bQ.svg',k:'../assets/pieces/merida/bK.svg'}},
   {id:'chessnut',name:'Chessnut · Klassisch',paths:{P:'../assets/pieces/chessnut/wP.svg',R:'../assets/pieces/chessnut/wR.svg',N:'../assets/pieces/chessnut/wN.svg',B:'../assets/pieces/chessnut/wB.svg',Q:'../assets/pieces/chessnut/wQ.svg',K:'../assets/pieces/chessnut/wK.svg',p:'../assets/pieces/chessnut/bP.svg',r:'../assets/pieces/chessnut/bR.svg',n:'../assets/pieces/chessnut/bN.svg',b:'../assets/pieces/chessnut/bB.svg',q:'../assets/pieces/chessnut/bQ.svg',k:'../assets/pieces/chessnut/bK.svg'}},
-  {id:'fantasy',name:'Fantasy · Elegant',paths:{P:'../assets/pieces/fantasy/wP.svg',R:'../assets/pieces/fantasy/wR.svg',N:'../assets/pieces/fantasy/wN.svg',B:'../assets/pieces/fantasy/wB.svg',Q:'../assets/pieces/fantasy/wQ.svg',K:'../assets/pieces/fantasy/wK.svg',p:'../assets/pieces/fantasy/bP.svg',r:'../assets/pieces/fantasy/bR.svg',n:'../assets/pieces/fantasy/bN.svg',b:'../assets/pieces/fantasy/bB.svg',q:'../assets/pieces/fantasy/bQ.svg',k:'../assets/pieces/fantasy/bK.svg'}}
+  {id:'fantasy',name:'Fantasy · Elegant',paths:{P:'../assets/pieces/fantasy/wP.svg',R:'../assets/pieces/fantasy/wR.svg',N:'../assets/pieces/fantasy/wN.svg',B:'../assets/pieces/fantasy/wB.svg',Q:'../assets/pieces/fantasy/wQ.svg',K:'../assets/pieces/fantasy/wK.svg',p:'../assets/pieces/fantasy/bP.svg',r:'../assets/pieces/fantasy/bR.svg',n:'../assets/pieces/fantasy/bN.svg',b:'../assets/pieces/fantasy/bB.svg',q:'../assets/pieces/fantasy/bQ.svg',k:'../assets/pieces/fantasy/bK.svg'}},
+  {id:'merida-silversteel',name:'Merida Silversteel',paths:{P:'../assets/pieces/merida-silversteel/wp.png?v=20260808-1',R:'../assets/pieces/merida-silversteel/wr.png?v=20260808-1',N:'../assets/pieces/merida-silversteel/wn.png?v=20260808-1',B:'../assets/pieces/merida-silversteel/wb.png?v=20260808-1',Q:'../assets/pieces/merida-silversteel/wq.png?v=20260808-1',K:'../assets/pieces/merida-silversteel/wk.png?v=20260808-1',p:'../assets/pieces/merida-silversteel/bp.png?v=20260808-1',r:'../assets/pieces/merida-silversteel/br.png?v=20260808-1',n:'../assets/pieces/merida-silversteel/bn.png?v=20260808-1',b:'../assets/pieces/merida-silversteel/bb.png?v=20260808-1',q:'../assets/pieces/merida-silversteel/bq.png?v=20260808-1',k:'../assets/pieces/merida-silversteel/bk.png?v=20260808-1'}},
+  {id:'merida-royalwood',name:'Merida Royalwood',paths:{P:'../assets/pieces/merida-royalwood/wp.png?v=20260808-1',R:'../assets/pieces/merida-royalwood/wr.png?v=20260808-1',N:'../assets/pieces/merida-royalwood/wn.png?v=20260808-1',B:'../assets/pieces/merida-royalwood/wb.png?v=20260808-1',Q:'../assets/pieces/merida-royalwood/wq.png?v=20260808-1',K:'../assets/pieces/merida-royalwood/wk.png?v=20260808-1',p:'../assets/pieces/merida-royalwood/bp.png?v=20260808-1',r:'../assets/pieces/merida-royalwood/br.png?v=20260808-1',n:'../assets/pieces/merida-royalwood/bn.png?v=20260808-1',b:'../assets/pieces/merida-royalwood/bb.png?v=20260808-1',q:'../assets/pieces/merida-royalwood/bq.png?v=20260808-1',k:'../assets/pieces/merida-royalwood/bk.png?v=20260808-1'}}
 ];
 let activePieceSetId='cburnett';
 try{
@@ -1463,6 +1514,28 @@ Game.prototype.gameOver=function(){
   return false;
 };
 
+
+function trainerMoveSoundOptions(g,mv,opponent=false){
+  if(!g||!mv)return{opponent};
+  const meta=mv.meta||{};
+  const target=g.at(mv.to[0],mv.to[1]);
+  const moving=g.at(mv.from[0],mv.from[1]);
+  const promotion=!!mv.promotion||(moving&&moving.toLowerCase()==='p'&&(mv.to[1]===0||mv.to[1]===7));
+  const options={opponent,capture:!!meta.enpassant||target!=='.',castle:!!meta.castle,promotion,check:false};
+  try{const sim=g.clone();sim.makeMove(mv);options.check=sim.inCheck(sim.turn);}catch(_){}
+  return options;
+}
+function trainerSoundOptionsForUCI(g,uci,opponent=true){
+  if(!g||!uci||uci.length<4)return{opponent};
+  const fx=files.indexOf(uci[0]),fy=8-parseInt(uci[1],10),tx=files.indexOf(uci[2]),ty=8-parseInt(uci[3],10);
+  const legal=g.legalMoves();
+  const found=legal.find(m=>m.from[0]===fx&&m.from[1]===fy&&m.to[0]===tx&&m.to[1]===ty);
+  if(!found)return{opponent};
+  const piece=g.at(fx,fy);
+  const promotion=uci.length===5?uci[4].toUpperCase():(piece&&piece.toLowerCase()==='p'&&(ty===0||ty===7)?'Q':null);
+  return trainerMoveSoundOptions(g,{from:found.from,to:found.to,meta:found.meta||{},promotion},opponent);
+}
+
 /* ========== UI & Taktik-Logik ========== */
 const boardEl=document.getElementById('board');
 const statusEl=document.getElementById('status');
@@ -1490,10 +1563,12 @@ const btnGuideClose=document.getElementById('btnGuideClose');
 const BOARD_COLOR_STORAGE_KEY='hammerschachBoardColor';
 const LEGACY_BOARD_COLOR_STORAGE_KEY='hammerschachTrainerBoardColor';
 const boardColorPresets=[
-  {id:'basis',name:'Hammerschach Rubin',light:'#f0d9b5',dark:'#843f46'},
-  {id:'braun',name:'Walnuss',light:'#f3ddb7',dark:'#b4875e'},
-  {id:'grau',name:'Schiefer',light:'#eeeeee',dark:'#9b9b9b'},
-  {id:'gruen',name:'Turniergrün',light:'#eeeed2',dark:'#769656'}
+  {id:'basis',name:'Hammerschach Rubin',light:'#f0d9b5',dark:'#843f46',material:'classic'},
+  {id:'braun',name:'Walnuss',light:'#f3ddb7',dark:'#b4875e',material:'classic'},
+  {id:'grau',name:'Schiefer',light:'#eeeeee',dark:'#9b9b9b',material:'classic'},
+  {id:'gruen',name:'Turniergrün',light:'#eeeed2',dark:'#769656',material:'classic'},
+  {id:'royal-walnut',name:'Royal Walnut · Holz',light:'#d9c29e',dark:'#8a6845',material:'royal-walnut',frameDark:'#5e4228',frameMid:'#8b6945',frameLight:'#c89c66',coordLight:'#fff3df',coordDark:'#1b1008'},
+  {id:'onyx-elegance',name:'Premium · Warm',light:'#f2e7d2f0',dark:'#7f8389d0',material:'onyx-elegance',frameDark:'#2a2f34',frameMid:'#50555c',frameLight:'#b58a43',coordLight:'#fff1d4',coordDark:'#0d0e10'}
 ];
 function boardRgbFromHex(value){
   const normalized=String(value||'').trim().replace(/^#/,'');
@@ -1508,11 +1583,12 @@ function mixBoardHex(base,overlay,amount){
 }
 function applyBoardMaterialVariables(preset){
   const root=document.documentElement.style;
-  root.setProperty('--board-frame-dark',mixBoardHex(preset.dark,'#000000',.62));
-  root.setProperty('--board-frame-mid',mixBoardHex(preset.dark,'#000000',.31));
-  root.setProperty('--board-frame-light',mixBoardHex(preset.dark,'#ffffff',.24));
-  root.setProperty('--board-coord-dark',mixBoardHex(preset.dark,'#000000',.58));
-  root.setProperty('--board-coord-light',mixBoardHex(preset.light,'#ffffff',.56));
+  root.setProperty('--board-frame-dark',preset.frameDark||mixBoardHex(preset.dark,'#000000',.62));
+  root.setProperty('--board-frame-mid',preset.frameMid||mixBoardHex(preset.dark,'#000000',.31));
+  root.setProperty('--board-frame-light',preset.frameLight||mixBoardHex(preset.dark,'#ffffff',.24));
+  root.setProperty('--board-coord-dark',preset.coordDark||mixBoardHex(preset.dark,'#000000',.58));
+  root.setProperty('--board-coord-light',preset.coordLight||mixBoardHex(preset.light,'#ffffff',.56));
+  document.documentElement.dataset.boardMaterial=preset.material||'classic';
 }
 function closeBoardColorPopup(){
   if(!boardColorPopup||!btnBoardColor)return;
@@ -1633,13 +1709,15 @@ document.addEventListener('keydown',ev=>{
 let savedBoardColorPreset='basis';
 try{
   savedBoardColorPreset=localStorage.getItem(BOARD_COLOR_STORAGE_KEY)||localStorage.getItem(LEGACY_BOARD_COLOR_STORAGE_KEY)||'basis';
+  if(savedBoardColorPreset==='metal-prestige')savedBoardColorPreset='onyx-elegance';
+  if(!boardColorPresets.some(p=>p.id===savedBoardColorPreset))savedBoardColorPreset='basis';
   localStorage.setItem(BOARD_COLOR_STORAGE_KEY,savedBoardColorPreset);
   localStorage.removeItem(LEGACY_BOARD_COLOR_STORAGE_KEY);
 }catch(_){}
 applyBoardColorPreset(savedBoardColorPreset,false,false);
 applyPieceSetPreset(activePieceSetId,false,false,false);
 window.addEventListener('storage',ev=>{
-  if(ev.key===BOARD_COLOR_STORAGE_KEY&&ev.newValue)applyBoardColorPreset(ev.newValue,false,false);
+  if(ev.key===BOARD_COLOR_STORAGE_KEY&&ev.newValue)applyBoardColorPreset(ev.newValue==='metal-prestige'?'onyx-elegance':ev.newValue,false,false);
   if(ev.key===PIECE_SET_STORAGE_KEY&&ev.newValue)applyPieceSetPreset(ev.newValue,false,false,true);
 });
 
@@ -1681,6 +1759,7 @@ function flashIllegalMove(){
     setTimeout(()=>illegalFlashEl.classList.remove('active'),420);
   }
   setStatus("Illegaler Zug – nicht erlaubt.", STATUS_RED, true);
+  window.HammerschachToolSound?.play('illegal');
   if(navigator.vibrate)navigator.vibrate(80);
 }
 
@@ -1713,10 +1792,12 @@ function getSquareEl(x,y){
 }
 
 async function animateOpponentMove(uci,duration=OPPONENT_MOVE_ANIMATION_MS){
+  const soundOptions=trainerSoundOptionsForUCI(game,uci,true);
   const move=parseUCI(uci);
   if(!move){
     applyUCIMove(uci);
     renderBoard();
+    window.HammerschachToolSound?.playMove(soundOptions);
     return;
   }
 
@@ -1726,6 +1807,7 @@ async function animateOpponentMove(uci,duration=OPPONENT_MOVE_ANIMATION_MS){
   if(!movingPiece||movingPiece==='.'||!fromEl||!toEl){
     applyUCIMove(uci);
     renderBoard();
+    window.HammerschachToolSound?.playMove(soundOptions);
     return;
   }
 
@@ -1759,6 +1841,7 @@ async function animateOpponentMove(uci,duration=OPPONENT_MOVE_ANIMATION_MS){
 
   applyUCIMove(uci);
   renderBoard();
+  window.HammerschachToolSound?.playMove(soundOptions);
 }
 
 let allPuzzles=[];
@@ -2477,6 +2560,7 @@ function onSquareClick(x,y){
     if(color!==game.turn)return;
     selected=[x,y];
     renderBoard();
+    window.HammerschachToolSound?.playMove({pickup:true});
     return;
   }
   if(selected[0]===x&&selected[1]===y){
@@ -2492,6 +2576,7 @@ function onSquareClick(x,y){
   if(!found&&p!=='.'&&pieceColor(p)===game.turn){
     selected=[x,y];
     renderBoard();
+    window.HammerschachToolSound?.playMove({pickup:true});
     return;
   }
   if(!found){
@@ -2512,6 +2597,7 @@ function onSquareClick(x,y){
       if(uciPlayed!==expected){
         setStatus("Das ist nicht die Lösung dieser Aufgabe.", STATUS_RED, true);
         saveTrainerResult("fail");
+        window.HammerschachToolSound?.play('defeat');
         selected=null;
         renderBoard();
         return;
@@ -2519,14 +2605,17 @@ function onSquareClick(x,y){
       solutionLine.shift();
     }
 
+    const soundOptions=trainerMoveSoundOptions(game,mv,false);
     game.makeMove(mv);
     selected=null;
     renderBoard();
+    window.HammerschachToolSound?.playMove(soundOptions);
 
     if(trainingActive){
       if(solutionLine.length===0){
         setStatus("Ausgezeichnet! Aufgabe vollständig gelöst.", STATUS_GREEN, true);
         saveTrainerResult("success");
+        setTimeout(()=>window.HammerschachToolSound?.play('victory'),140);
       }else{
         const opponentMove=solutionLine[0];
         solutionLine.shift();
@@ -2540,6 +2629,7 @@ function onSquareClick(x,y){
         if(solutionLine.length===0){
           setStatus("Sehr gut! Die Kombination ist abgeschlossen.", STATUS_GREEN, true);
           saveTrainerResult("success");
+          setTimeout(()=>window.HammerschachToolSound?.play('victory'),140);
         }else{
           setStatus("Gut! Suche die nächste Fortsetzung.");
         }
