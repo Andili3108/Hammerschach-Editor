@@ -1,0 +1,11 @@
+Hammerschach Soundset v2
+========================
+
+Basis: echte Schachfiguren-Aufnahmen auf Holzbrett.
+
+CC0-Ausgangsmaterial:
+- Piece Placement.mp3, el_boss, Freesound 546119
+- Piece Capture.mp3, el_boss, Freesound 546120
+
+Beide Quellen sind auf Freesound als Creative Commons 0 (CC0) ausgewiesen.
+Die 15 Gamer-Dateinamen bleiben erhalten; Analyzer und Trainer verwenden denselben Gamer/sounds-Ordner.
