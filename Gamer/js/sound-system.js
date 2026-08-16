@@ -1,7 +1,7 @@
 'use strict';
 
 /* Sound */
-const HAMMERSCHACH_SOUND_VERSION = '20260816-2';
+const HAMMERSCHACH_SOUND_VERSION = '20260816-3';
 const hammerschachSoundUrl = file => 'sounds/' + file + '?v=' + HAMMERSCHACH_SOUND_VERSION;
 const HAMMERSCHACH_SOUND_FILES = Object.freeze({
   pickup:hammerschachSoundUrl('pickup.mp3'),
@@ -98,7 +98,7 @@ function safePlay(key){
       const source = context.createBufferSource();
       const gain = context.createGain();
       source.buffer = buffer;
-      gain.gain.value = 0.92;
+      gain.gain.value = 1.0;
       source.connect(gain);
       gain.connect(context.destination);
       source.start(0);

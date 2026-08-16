@@ -3,7 +3,7 @@
 /* Gemeinsames Soundset für Analyzer und Trainer. */
 (function(){
   const SOUND_STORAGE_KEY = 'hammerschachGamerSoundEnabled';
-  const SOUND_VERSION = '20260816-2';
+  const SOUND_VERSION = '20260816-3';
   const base = '../sounds/';
   const files = Object.freeze({
     pickup:'pickup.mp3',
