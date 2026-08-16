@@ -1,0 +1,21 @@
+Hammerschach Soundset v3 – Echtholz
+=====================================
+
+Klangbasis:
+- „chess pieces“ von simone_ds (Freesound), bereitgestellt über Pixabay
+- Pixabay-ID 60890
+- Quelle: https://pixabay.com/sound-effects/chess-pieces-60890/
+- Verwendung laut Pixabay-Downloadseite unter der Pixabay Content License
+
+Konzept:
+- Die drei Kernklänge Zug, Schlagzug und Schachgebot stammen direkt aus der
+  vom Nutzer ausgewählten Echtholz-Aufnahme.
+- Alle weiteren Ereignisse sind ausschließlich kurze Kombinationen dieser
+  drei Holzklänge. Es wurden keine elektronischen Töne oder fremden Samples
+  zugemischt.
+- Gamer, Analyzer und Trainer verwenden denselben sounds-Ordner.
+
+Dateien:
+pickup.mp3, drop.mp3, move-self.mp3, move-opponent.mp3, capture.mp3,
+check.mp3, castle.mp3, promote.mp3, illegal.mp3, game-start.mp3,
+game-end.mp3, victory.mp3, defeat.mp3, draw.mp3, low-time.mp3
