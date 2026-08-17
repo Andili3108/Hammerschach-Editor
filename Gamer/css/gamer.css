@@ -96,8 +96,16 @@
   .gamer-board-nav-btn{width:36px;height:40px;min-width:36px;min-height:40px;padding:0!important;border-radius:12px!important;font-size:20px!important;line-height:1!important;}
   .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:21px;line-height:1;padding:0;}
   .board-game-actions,.board-daily-actions{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;}
+  .board-daily-draw-btn.active{font-weight:800;box-shadow:0 0 0 2px rgba(255,255,255,.18) inset;}
   .board-game-actions[hidden],.board-daily-actions[hidden]{display:none!important;}
   .board-action-btn{width:auto!important;min-width:0!important;min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
+  .draw-offer-accept-btn{background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 6px 14px rgba(168,111,22,.24)!important;}
+  .draw-offer-decline-btn{border-color:rgba(132,63,70,.34)!important;color:var(--andili-rot)!important;}
+  .daily-game-card.draw-offer-incoming{border-color:rgba(168,111,22,.58)!important;box-shadow:inset 4px 0 0 var(--aktion-gold-hell),0 0 0 2px rgba(197,139,36,.16),0 8px 18px rgba(0,0,0,.08)!important;}
+  .daily-game-card.draw-offer-incoming .daily-game-status{color:#8f5708!important;font-weight:900;}
+  .daily-game-card.draw-offer-outgoing .daily-game-status{color:#725016!important;font-weight:900;}
+  .daily-game-card.draw-claim-available{border-color:rgba(71,130,82,.52)!important;box-shadow:inset 4px 0 0 rgba(71,130,82,.82),0 0 0 2px rgba(71,130,82,.11),0 8px 18px rgba(0,0,0,.08)!important;}
+  .daily-game-card.draw-claim-available .daily-game-status{color:#356d42!important;font-weight:900;}
   .board-daily-cancel-btn{width:40px!important;min-width:40px!important;padding:0!important;font-size:20px!important;}
   .board-daily-confirm-btn{min-width:126px!important;padding-inline:14px!important;background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;}
   @media (min-width:761px){
@@ -1425,6 +1433,11 @@
   html.dark-mode .daily-game-card.rematch-invitation.addressed{border-color:#e297a0;box-shadow:inset 4px 0 0 #e297a0,0 0 0 3px rgba(226,151,160,.12);}
   html.dark-mode .daily-game-card.my-turn .daily-game-status{background:rgba(62,154,88,.16);border-color:rgba(92,190,119,.30);color:#9bdfad!important;}
   html.dark-mode .daily-game-card.my-turn .daily-game-status::before{background:#69c982;box-shadow:0 0 0 3px rgba(105,201,130,.15);}
+  html.dark-mode .daily-game-card.draw-offer-incoming{background:linear-gradient(135deg,rgba(197,139,36,.22),rgba(197,139,36,.08));border-color:rgba(225,178,82,.46)!important;box-shadow:inset 4px 0 0 #d7a13d,0 0 0 2px rgba(215,161,61,.12),0 5px 15px rgba(0,0,0,.18)!important;}
+  html.dark-mode .daily-game-card.draw-offer-incoming .daily-game-status{color:#f0c76a!important;}
+  html.dark-mode .daily-game-card.draw-offer-outgoing .daily-game-status{color:#d7b56d!important;}
+  html.dark-mode .daily-game-card.draw-claim-available{border-color:rgba(105,201,130,.42)!important;box-shadow:inset 4px 0 0 rgba(105,201,130,.74),0 0 0 2px rgba(105,201,130,.10),0 5px 15px rgba(0,0,0,.18)!important;}
+  html.dark-mode .daily-game-card.draw-claim-available .daily-game-status{color:#9bdfad!important;}
   html.dark-mode .open-offer-card.mine,
   html.dark-mode .public-game-card.mine,
   html.dark-mode .chat-message.mine,
