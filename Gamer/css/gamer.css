@@ -91,7 +91,9 @@
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
   .header-menu-item:focus-visible{outline:3px solid rgba(132,63,70,.18);outline-offset:1px;}
-  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0;white-space:nowrap;}
+  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:14px;row-gap:8px;width:100%;min-width:0;}
+  .board-utility-tools{display:flex;align-items:center;justify-content:flex-start;gap:6px;flex:1 1 330px;min-width:0;white-space:nowrap;}
+  .board-primary-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;flex:0 1 auto;min-width:0;margin-left:auto;white-space:nowrap;}
   .gamer-board-nav{display:flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;}
   .gamer-board-nav-btn{width:36px;height:40px;min-width:36px;min-height:40px;padding:0!important;border-radius:12px!important;font-size:20px!important;line-height:1!important;}
   .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:21px;line-height:1;padding:0;}
@@ -108,9 +110,8 @@
   .daily-game-card.draw-claim-available .daily-game-status{color:#356d42!important;font-weight:900;}
   .board-daily-cancel-btn{width:40px!important;min-width:40px!important;padding:0!important;font-size:20px!important;}
   .board-daily-confirm-btn{min-width:126px!important;padding-inline:14px!important;background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;}
-  @media (min-width:761px){
-    .board-tools:has(.board-daily-actions:not([hidden])){justify-content:flex-start;}
-    .board-tools:has(.board-daily-actions:not([hidden])) .board-daily-actions{margin-left:auto;}
+  @media (min-width:761px) and (max-width:1099px){
+    .board-primary-actions{flex:1 1 100%;justify-content:flex-end;}
   }
   .variation-launcher{width:auto;display:flex;justify-content:center;flex:0 0 auto;}
   .variation-launcher[hidden]{display:none!important;}
@@ -1301,11 +1302,11 @@
   html.fairplay-tool-active .top-layout,
   html.tv-tool-active .member-lobby,
   html.tv-tool-active .top-layout{display:none!important;}
-  .next-daily-game-box{border-radius:16px;background:rgba(132,63,70,.07);border:1px solid rgba(132,63,70,.18);padding:11px 12px;display:flex;flex-direction:column;gap:7px;}
+  .next-daily-game-box{border-radius:13px;background:rgba(132,63,70,.045);border:1px solid rgba(132,63,70,.13);padding:7px 10px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;min-height:0;}
   .next-daily-game-box[hidden]{display:none!important;}
-  .next-daily-game-btn{width:100%;min-height:44px;border-radius:13px;background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;white-space:normal;line-height:1.2;}
+  .next-daily-game-btn{width:auto;min-width:0;min-height:38px;padding:7px 16px!important;border-radius:12px;background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;white-space:nowrap;line-height:1.1;font-size:13px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 10px rgba(168,111,22,.18)!important;}
   .next-daily-game-btn:disabled{background:linear-gradient(180deg,#ededee 0%,#d8d8da 100%)!important;color:#777!important;border-color:rgba(0,0,0,.10)!important;}
-  .next-daily-game-hint{min-height:16px;text-align:center;font-size:12px;font-weight:800;color:#666;line-height:1.3;}
+  .next-daily-game-hint{min-height:0;text-align:left;font-size:11px;font-weight:800;color:#666;line-height:1.25;}
 
   html.dark-mode{color-scheme:dark;}
   html.dark-mode,html.dark-mode body{background:#111317!important;color:#f2f3f5;}
@@ -2522,3 +2523,17 @@ html.dark-mode .compact-board-size-btn{background:linear-gradient(135deg,#353039
 @media (max-width:1100px),(max-height:719px),(hover:none),(pointer:coarse){
   .board-size-wrap,.compact-board-size-btn{display:none!important;}
 }
+
+
+  /* 2026-08-17: klare Trennung von Brettwerkzeugen und Partieaktionen */
+  @media (max-width:760px){
+    .board-tools{gap:8px;}
+    .board-utility-tools{flex:1 1 100%;justify-content:center;flex-wrap:wrap;}
+    .board-primary-actions{flex:1 1 100%;justify-content:center;margin-left:0;}
+    .gamer-board-nav{flex:0 0 auto;}
+    .next-daily-game-box{flex-direction:column;gap:4px;padding:7px 8px;}
+    .next-daily-game-hint{text-align:center;}
+  }
+  @media (max-width:520px){
+    .next-daily-game-btn{width:100%;white-space:normal;}
+  }
