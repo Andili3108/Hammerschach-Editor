@@ -1818,7 +1818,8 @@
           </div>
         </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
-          <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
+          <div class="board-utility-tools" aria-label="Brettnavigation und Anzeige">
+            <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
             <button id="boardNavStart" class="button-flat gamer-board-nav-btn" type="button" title="Anfang der Partie" aria-label="Anfang der Partie">&laquo;</button>
             <button id="boardNavBack" class="button-flat gamer-board-nav-btn" type="button" title="Einen Halbzug zurück" aria-label="Einen Halbzug zurück">&lsaquo;</button>
             <button id="boardNavForward" class="button-flat gamer-board-nav-btn" type="button" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">&rsaquo;</button>
@@ -1878,9 +1879,11 @@
               <button id="boardSizeResetBtn" class="button-flat board-size-reset-btn" type="button">Standard wiederherstellen</button>
             </div>
           </div>
-          <div id="variationLauncher" class="variation-launcher" hidden>
-            <button id="variationOpenBtn" class="button-flat board-action-btn variation-open-btn" type="button" aria-pressed="false">♟ Variante</button>
           </div>
+          <div class="board-primary-actions" aria-label="Partieaktionen">
+            <div id="variationLauncher" class="variation-launcher" hidden>
+              <button id="variationOpenBtn" class="button-flat board-action-btn variation-open-btn" type="button" aria-pressed="false">♟ Variante</button>
+            </div>
           <div id="gameActions" class="board-game-actions" aria-label="Partieaktionen" hidden>
             <button id="offerDrawBtn" class="button-flat board-action-btn" type="button">½ Remis</button>
             <button id="declineDrawBtn" class="button-flat board-action-btn draw-offer-decline-btn" type="button" hidden>Ablehnen</button>
@@ -1890,6 +1893,7 @@
             <button id="dailyMoveCancelBtn" class="button-flat board-action-btn board-daily-cancel-btn" type="button" title="Zug zurücknehmen" aria-label="Zug zurücknehmen">↩</button>
             <button id="dailyMoveDrawBtn" class="button-flat board-action-btn board-daily-draw-btn" type="button" aria-pressed="false" title="Remis zusammen mit diesem Zug anbieten">½ Remis</button>
             <button id="dailyMoveConfirmBtn" class="board-action-btn board-daily-confirm-btn" type="button">✓ Zug bestätigen</button>
+          </div>
           </div>
         </div>
         <div id="premoveNotice" class="premove-notice" role="status" aria-live="polite" hidden>
