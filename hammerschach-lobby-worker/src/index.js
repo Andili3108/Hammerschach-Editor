@@ -16643,6 +16643,16 @@ export class GameRoom {
         });
         return;
       }
+      const drawClock = timedState.clock || (await this.state.storage.get('clock')) || null;
+      if (!drawClock || drawClock.turn === role) {
+        safeSend(ws, {
+          type:'error',
+          code:'LIVE_DRAW_OFFER_AFTER_MOVE_ONLY',
+          message:'Bei Live-Partien kannst du Remis direkt nach deinem Zug anbieten, solange der Gegner am Zug ist.'
+        });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
 
       const existingOffer = (await this.state.storage.get('drawOffer')) || null;
       if (existingOffer && existingOffer.byRole === role) {
