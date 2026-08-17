@@ -173,6 +173,36 @@ function applyOnlineDrawOffer(drawOffer){
   updateGameActionButtons();
   return true;
 }
+function normalizeIncomingDrawClaims(candidate){
+  if(!candidate || typeof candidate !== 'object') return null;
+  const threefold = !!(candidate.threefold || candidate.threefoldRepetition || candidate.threefold_repetition);
+  const fiftyMove = !!(candidate.fiftyMove || candidate.fifty_move || candidate.fiftyMoveRule || candidate.fifty_move_rule);
+  const claimantRoleRaw = candidate.claimantRole || candidate.claimant_role || candidate.turn || '';
+  return {
+    threefold,
+    fiftyMove,
+    claimantRole:claimantRoleRaw === 'w' || claimantRoleRaw === 'b' ? claimantRoleRaw : '',
+    repetitionCount:Math.max(0, Math.floor(Number(candidate.repetitionCount ?? candidate.repetition_count ?? 0) || 0)),
+    halfmove:Math.max(0, Math.floor(Number(candidate.halfmove ?? candidate.halfmoveClock ?? candidate.halfmove_clock ?? 0) || 0))
+  };
+}
+function extractOnlineDrawClaims(msg){
+  if(!msg || !Object.prototype.hasOwnProperty.call(msg, 'drawClaims')) return null;
+  return normalizeIncomingDrawClaims(msg.drawClaims) || {threefold:false,fiftyMove:false,claimantRole:'',repetitionCount:0,halfmove:0};
+}
+function applyOnlineDrawClaims(claims){
+  if(!claims) return false;
+  onlineDrawClaims = claims;
+  updateGameActionButtons();
+  return true;
+}
+function onlineDrawClaimLabel(claims){
+  if(!claims) return '';
+  if(claims.threefold && claims.fiftyMove) return 'dreifache Stellungswiederholung oder 50-Züge-Regel';
+  if(claims.threefold) return 'dreifache Stellungswiederholung';
+  if(claims.fiftyMove) return '50-Züge-Regel';
+  return '';
+}
 function formatOnlineEndMessage(game){
   if(!game) return 'Online-Partie beendet';
   const winnerName = game.winner === 'w' ? 'Weiß' : game.winner === 'b' ? 'Schwarz' : '';
@@ -181,6 +211,10 @@ function formatOnlineEndMessage(game){
   if(game.endReason === 'insufficient_material') return 'Remis — unzureichendes Mattmaterial.';
   if(game.endReason === 'fifty_move_rule') return 'Remis — 50-Züge-Regel.';
   if(game.endReason === 'threefold_repetition') return 'Remis — dreifache Stellungswiederholung.';
+  if(game.endReason === 'fivefold_repetition') return 'Remis — fünffache Stellungswiederholung.';
+  if(game.endReason === 'seventy_five_move_rule') return 'Remis — 75-Züge-Regel.';
+  if(game.endReason === 'time_insufficient_material') return 'Remis — Zeit abgelaufen, aber Matt war nicht mehr möglich.';
+  if(game.endReason === 'resignation_insufficient_material') return 'Remis — Aufgabe, aber Matt war für den Gegner nicht mehr möglich.';
   if(game.endReason === 'checkmate') return 'Schachmatt — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
   if(game.endReason === 'stalemate') return 'Patt — Unentschieden';
   if(game.endReason === 'time') return 'Zeit abgelaufen — ' + (winnerName ? winnerName + ' gewinnt' : 'Partie beendet');
@@ -301,6 +335,63 @@ function extractOnlineMoves(msg){
     (msg.roomState && (msg.roomState.moves || msg.roomState.moveHistory));
   if(!Array.isArray(list)) return [];
   return list.map(normalizeIncomingMove).filter(Boolean);
+}
+function hasAuthoritativeOnlineMoveList(msg){
+  if(!msg || typeof msg !== 'object') return false;
+  const list = msg.moves || msg.moveHistory || msg.history ||
+    (msg.game && (msg.game.moves || msg.game.moveHistory)) ||
+    (msg.state && (msg.state.moves || msg.state.moveHistory)) ||
+    (msg.roomState && (msg.roomState.moves || msg.roomState.moveHistory));
+  if(!Array.isArray(list)) return false;
+  return ['room_state','hello_state','state','sync','game_state','start_game_ack'].includes(String(msg.type || ''));
+}
+function rebuildOnlineHistoryFromServer(moves,messageReceivedAt){
+  if(!Array.isArray(moves)) return false;
+  const ordered = moves.slice().map(normalizeIncomingMove).filter(Boolean).sort((a,b) => {
+    const ap = Number(a.ply || 0), bp = Number(b.ply || 0);
+    if(ap && bp) return ap - bp;
+    return 0;
+  });
+  const freshHistory = buildThemeHistory(currentGameSetup);
+  const g = new Game();
+  for(const preset of freshHistory){
+    const found = findMatchingLegalMove(g.legalMoves(), preset);
+    if(!found) return false;
+    g.makeMove({from:found.from,to:found.to,meta:found.meta || {},promotion:preset.promotion || null},false);
+  }
+  for(let index=0; index<ordered.length; index++){
+    const incoming = ordered[index];
+    if(incoming.ply && incoming.ply !== index + 1) return false;
+    if(incoming.side && incoming.side !== g.turn) return false;
+    const found = findMatchingLegalMove(g.legalMoves(), incoming);
+    if(!found) return false;
+    const before = g.clone();
+    const mv = {from:found.from.slice(),to:found.to.slice(),meta:clone(found.meta || {}),promotion:incoming.promotion || null};
+    const applied = g.makeMove(mv,false);
+    mv.piece = applied.piece;
+    mv.taken = applied.taken;
+    mv.san = incoming.san || moveToSan(before,mv,g);
+    freshHistory.push(mv);
+  }
+  const localMoves = masterHistory.slice(currentThemePly());
+  const sameLength = localMoves.length === ordered.length;
+  const sameHistory = sameLength && ordered.every((move,index) => sameMoveCoords(localMoves[index],move));
+  if(sameHistory) return false;
+  masterHistory = freshHistory;
+  invalidateHistoryStateCache();
+  viewIndex = masterHistory.length;
+  lastMove = masterHistory.length ? {
+    from:masterHistory[masterHistory.length - 1].from,
+    to:masterHistory[masterHistory.length - 1].to,
+    meta:masterHistory[masterHistory.length - 1].meta || {}
+  } : null;
+  pendingDailyMove = null;
+  queuedPremove = null;
+  selected = null;
+  updatePremoveUi();
+  scheduleBoardRender(messageReceivedAt);
+  onlineLastMessage = 'Lokale Zugliste wurde mit dem Serverstand abgeglichen.';
+  return true;
 }
 function sameMoveCoords(a,b){
   if(!(a && b && a.from && b.from && a.to && b.to)) return false;

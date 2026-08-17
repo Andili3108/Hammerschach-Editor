@@ -86,7 +86,11 @@ function dailyEndReasonLabel(reason){
     stalemate:'Patt',
     insufficient_material:'Unzureichendes Mattmaterial',
     fifty_move_rule:'50-Züge-Regel',
-    threefold_repetition:'Dreifache Stellungswiederholung'
+    threefold_repetition:'Dreifache Stellungswiederholung',
+    fivefold_repetition:'Fünffache Stellungswiederholung',
+    seventy_five_move_rule:'75-Züge-Regel',
+    time_insufficient_material:'Zeitüberschreitung · Matt unmöglich',
+    resignation_insufficient_material:'Aufgabe · Matt unmöglich'
   };
   return labels[String(reason || '')] || 'Partie beendet';
 }
@@ -127,7 +131,9 @@ function myGamesEndReasonLabel(reason){
     time:'Zeitüberschreitung', timeout:'Zeitüberschreitung', resignation:'Aufgabe',
     draw_agreed:'Remis vereinbart', draw_agreement:'Remis vereinbart', checkmate:'Schachmatt',
     stalemate:'Patt', insufficient_material:'Unzureichendes Mattmaterial',
-    fifty_move_rule:'50-Züge-Regel', threefold_repetition:'Dreifache Stellungswiederholung'
+    fifty_move_rule:'50-Züge-Regel', threefold_repetition:'Dreifache Stellungswiederholung',
+    fivefold_repetition:'Fünffache Stellungswiederholung', seventy_five_move_rule:'75-Züge-Regel',
+    time_insufficient_material:'Zeitüberschreitung · Matt unmöglich', resignation_insufficient_material:'Aufgabe · Matt unmöglich'
   };
   return labels[String(reason || '')] || 'Partie beendet';
 }
@@ -549,7 +555,7 @@ function createDailyGameCard(game){
   const card = document.createElement('div');
   const isActiveMyTurn = !!(game.isMyTurn && !game.ended);
   const addressedInvitation = !!(game.incomingInvitation && cleanRoomId(game.roomId) === dailyInvitationRoomFromAddress());
-  card.className = 'daily-game-card' + (isActiveMyTurn ? ' my-turn' : '') + (game.ended ? ' completed' : '') + (game.isTournamentGame ? ' tournament-game' : '') + (game.incomingInvitation ? ' incoming-invitation' : '') + (addressedInvitation ? ' addressed-invitation' : '');
+  card.className = 'daily-game-card' + (isActiveMyTurn ? ' my-turn' : '') + (game.ended ? ' completed' : '') + (game.isTournamentGame ? ' tournament-game' : '') + (game.incomingInvitation ? ' incoming-invitation' : '') + (addressedInvitation ? ' addressed-invitation' : '') + (game.incomingDrawOffer ? ' draw-offer-incoming' : '') + (game.outgoingDrawOffer ? ' draw-offer-outgoing' : '') + (game.drawClaimAvailable ? ' draw-claim-available' : '');
   if(game.incomingInvitation) card.dataset.invitationRoomId = cleanRoomId(game.roomId);
   if(isActiveMyTurn) card.setAttribute('aria-label', 'Du bist am Zug');
   const content = document.createElement('div');
@@ -572,6 +578,14 @@ function createDailyGameCard(game){
     status.textContent = outcome.label + ' · ' + dailyResultLabel(game.result);
     if(outcome.className) status.classList.add(outcome.className);
   } else if(game.incomingInvitation) status.textContent = 'Bitte annehmen oder ablehnen';
+  else if(game.incomingDrawOffer) status.textContent = '🤝 ' + (cleanDisplayName(game.opponentName) || 'Gegner') + ' bietet Remis an';
+  else if(game.outgoingDrawOffer) status.textContent = '½ Remis angeboten · wartet auf Antwort';
+  else if(game.drawClaimAvailable){
+    const claimReasons = [];
+    if(game.drawClaimThreefold) claimReasons.push('3× Stellungswiederholung');
+    if(game.drawClaimFiftyMove) claimReasons.push('50-Züge-Regel');
+    status.textContent = '½ Remis reklamierbar' + (claimReasons.length ? ' · ' + claimReasons.join(' / ') : '');
+  }
   else if(game.invitationDeclined) status.textContent = pendingOpponentName && pendingOpponentName !== 'noch offen'
     ? pendingOpponentName + ' hat die Einladung abgelehnt'
     : 'Die Einladung wurde abgelehnt';
@@ -651,7 +665,7 @@ function createDailyGameCard(game){
     const openLink = document.createElement('a');
     openLink.className = 'daily-game-open-btn';
     openLink.href = roomUrl || '#';
-    openLink.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : 'Partie öffnen');
+    openLink.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : (game.incomingDrawOffer ? 'Remisangebot öffnen' : (game.drawClaimAvailable ? 'Remis reklamieren' : 'Partie öffnen')));
     openLink.title = 'Partie im aktuellen Tab öffnen';
     if(!roomUrl){
       openLink.addEventListener('click', event => {
@@ -770,6 +784,7 @@ function appendDailyGameCards(games, emptyText, renderer){
 }
 function sortMyGamesByDateAndTurn(items){
   return items.sort((a,b) => {
+    if(!!a.attention !== !!b.attention) return a.attention ? -1 : 1;
     if(!!a.myTurn !== !!b.myTurn) return a.myTurn ? -1 : 1;
     const aTime = Date.parse(a.date || 0) || 0;
     const bTime = Date.parse(b.date || 0) || 0;
@@ -855,7 +870,7 @@ function renderDailyGames(games){
     return;
   }
   const runningItems = sortMyGamesByDateAndTurn([
-    ...groups.runningDaily.map(game => ({kind:'daily', game, myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''})),
+    ...groups.runningDaily.map(game => ({kind:'daily', game, attention:!!(game.incomingDrawOffer || game.drawClaimAvailable), myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''})),
     ...groups.runningLive.map(game => ({kind:'live-running', game, myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''}))
   ]);
   appendMixedGameCards(runningItems, dailyGamesTournamentOnly ? 'Du hast derzeit keine laufende Turnierpartie.' : 'Du hast derzeit keine laufende Partie.');

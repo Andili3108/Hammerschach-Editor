@@ -54,6 +54,7 @@ let onlineGameResult = '*';
 let onlineGameEndReason = null;
 let onlineGameWinner = null;
 let onlineDrawOffer = null;
+let onlineDrawClaims = null;
 let onlineRoomTimeControl = null;
 let onlineRoomGameSetup = null;
 let onlineDesiredGameSetupForNewRoom = null;

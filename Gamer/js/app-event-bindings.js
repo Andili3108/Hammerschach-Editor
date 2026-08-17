@@ -161,6 +161,7 @@ document.addEventListener('keydown', ev => {
 });
 startOnlineBtn.addEventListener('click', startOnlineGame);
 if(offerDrawBtn) offerDrawBtn.addEventListener('click', handleDrawButtonClick);
+if(declineDrawBtn) declineDrawBtn.addEventListener('click', handleDeclineDrawButtonClick);
 if(resignBtn) resignBtn.addEventListener('click', handleResignButtonClick);
 if(resignCancelBtn) resignCancelBtn.addEventListener('click', () => closeResignDialog());
 if(resignConfirmBtn) resignConfirmBtn.addEventListener('click', confirmResignation);

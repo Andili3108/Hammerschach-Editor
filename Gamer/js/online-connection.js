@@ -28,6 +28,7 @@ function connectOnlineRoom(roomId, opts){
   onlineGameEndReason = null;
   onlineGameWinner = null;
   onlineDrawOffer = null;
+  onlineDrawClaims = null;
   onlineConditionalMove = null;
   conditionalMoveBusy = false;
   conditionalMoveCloseAfterAck = false;
@@ -293,9 +294,17 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
+    const incomingDrawClaims = extractOnlineDrawClaims(msg);
+    if(incomingDrawClaims){
+      applyOnlineDrawClaims(incomingDrawClaims);
+      handled = true;
+    }
+
     const incomingMoves = extractOnlineMoves(msg);
-    const appliedMoveCount = applyOnlineMoveList(incomingMoves, messageReceivedAt);
-    if(incomingMoves.length) handled = true;
+    const authoritativeMoves = hasAuthoritativeOnlineMoveList(msg);
+    const historyRebuilt = authoritativeMoves ? rebuildOnlineHistoryFromServer(incomingMoves, messageReceivedAt) : false;
+    const appliedMoveCount = historyRebuilt ? 0 : applyOnlineMoveList(incomingMoves, messageReceivedAt);
+    if(authoritativeMoves || incomingMoves.length) handled = true;
 
     const incomingMove = extractOnlineMove(msg);
     const appliedSingleMove = incomingMove ? applyOnlineMove(incomingMove, messageReceivedAt) : false;
@@ -347,7 +356,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
 
-    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','game_finished','resignation','rematch_state','game_reaction_state','conditional_move_ack','conditional_move_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
+    const knownStateTypes = ['seat_challenge','seat_replaced','hello','hello_state','lobby','room_state','state','sync','game_setup','game_setup_ack','time_control','time_control_set','time_control_ack','game_started','game_state','start_game_ack','move','move_ack','move_applied','clock','clock_sync','draw_offer','draw_response','draw_claim','game_finished','resignation','rematch_state','game_reaction_state','conditional_move_ack','conditional_move_state','player_name','public_game_ack','chat_message','chat_ack','pong'];
     if(!handled && !knownStateTypes.includes(msg.type)) return;
 
     onlineConnected = true;
@@ -365,6 +374,7 @@ function connectOnlineRoom(roomId, opts){
     else if(msg.type === 'move_ack') onlineLastMessage = 'Zug vom Server bestätigt.';
     else if(msg.type === 'draw_offer') onlineLastMessage = 'Remisangebot wurde aktualisiert.';
     else if(msg.type === 'draw_response') onlineLastMessage = 'Remisangebot wurde beantwortet.';
+    else if(msg.type === 'draw_claim') onlineLastMessage = 'Remisreklamation wurde vom Server bestätigt.';
     else if(msg.type === 'rematch_state') onlineLastMessage = 'Revanche-Status wurde aktualisiert.';
     else if(msg.type === 'game_reaction_state') onlineLastMessage = 'Partie-Reaktion wurde aktualisiert.';
     else if(msg.type === 'game_finished' || msg.type === 'resignation') onlineLastMessage = 'Online-Partie beendet.';

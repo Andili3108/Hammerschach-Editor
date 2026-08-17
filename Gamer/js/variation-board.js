@@ -108,6 +108,8 @@ function variationGameOverText(go){
   if(go.type === 'insufficient_material') return 'Remis in der Variante — unzureichendes Material.';
   if(go.type === 'fifty_move_rule') return 'Remis in der Variante — 50-Züge-Regel.';
   if(go.type === 'threefold_repetition') return 'Remis in der Variante — dreifache Wiederholung.';
+  if(go.type === 'fivefold_repetition') return 'Remis in der Variante — fünffache Wiederholung.';
+  if(go.type === 'seventy_five_move_rule') return 'Remis in der Variante — 75-Züge-Regel.';
   return 'Die Variante ist beendet.';
 }
 function updateVariationStatus(){

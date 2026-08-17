@@ -13,7 +13,7 @@ function archiveDateLabel(value){
   return new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short'}).format(date);
 }
 function archiveEndReasonLabel(reason){
-  const labels={checkmate:'Matt',resignation:'Aufgabe',timeout:'Zeitüberschreitung',draw_agreement:'Remisvereinbarung',stalemate:'Patt',insufficient_material:'Unzureichendes Material',threefold_repetition:'Dreifache Stellungswiederholung',fifty_move_rule:'50-Züge-Regel'};
+  const labels={checkmate:'Matt',resignation:'Aufgabe',timeout:'Zeitüberschreitung',time:'Zeitüberschreitung',draw_agreed:'Remisvereinbarung',draw_agreement:'Remisvereinbarung',stalemate:'Patt',insufficient_material:'Unzureichendes Material',threefold_repetition:'Dreifache Stellungswiederholung',fivefold_repetition:'Fünffache Stellungswiederholung',fifty_move_rule:'50-Züge-Regel',seventy_five_move_rule:'75-Züge-Regel',time_insufficient_material:'Zeitüberschreitung · Matt unmöglich',resignation_insufficient_material:'Aufgabe · Matt unmöglich'};
   return labels[String(reason||'')] || String(reason||'').replace(/_/g,' ');
 }
 function archiveVariantLabel(game){

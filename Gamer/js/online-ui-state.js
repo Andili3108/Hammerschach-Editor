@@ -84,6 +84,18 @@ function updateGameActionButtons(){
   if(gameActionsEl) gameActionsEl.hidden = !live;
   if(!live && resignBackdropEl && !resignBackdropEl.hidden) closeResignDialog({restoreFocus:false});
   if(!offerDrawBtn || !resignBtn) return;
+  const incomingDrawOffer = !!(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode);
+  const outgoingDrawOffer = !!(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode);
+  const daily = isDailyTimeControl();
+  const drawAgreementAvailable = actualMoveCount() >= 2;
+  const dailyClaimAvailable = !!(daily && onlineDrawClaims && onlineDrawClaims.claimantRole === onlineRoleCode && (onlineDrawClaims.threefold || onlineDrawClaims.fiftyMove));
+  offerDrawBtn.hidden = !!(live && daily && !incomingDrawOffer && !outgoingDrawOffer && !dailyClaimAvailable);
+  offerDrawBtn.classList.toggle('draw-offer-accept-btn', incomingDrawOffer || dailyClaimAvailable);
+  if(declineDrawBtn){
+    declineDrawBtn.hidden = !incomingDrawOffer;
+    declineDrawBtn.disabled = !live || variationModeActive || !incomingDrawOffer;
+    declineDrawBtn.title = incomingDrawOffer ? 'Remisangebot ablehnen und die Partie fortsetzen.' : '';
+  }
   offerDrawBtn.disabled = !live;
   resignBtn.disabled = !live;
   if(!live){
@@ -99,18 +111,26 @@ function updateGameActionButtons(){
     resignBtn.title = 'Bitte zuerst zum Partiebrett zurückkehren.';
     return;
   }
-  if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode){
-    offerDrawBtn.textContent = '½ Angeboten';
+  if(outgoingDrawOffer){
+    offerDrawBtn.textContent = '½ Angebot offen';
     offerDrawBtn.disabled = true;
     offerDrawBtn.title = 'Dein Remisangebot wartet auf Antwort.';
-  } else if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
-    offerDrawBtn.textContent = '½ Annehmen';
+  } else if(incomingDrawOffer){
+    offerDrawBtn.textContent = '🤝 Remis annehmen';
     offerDrawBtn.disabled = false;
     offerDrawBtn.title = 'Remisangebot des Gegners annehmen.';
+  } else if(dailyClaimAvailable){
+    offerDrawBtn.textContent = '½ Remis reklamieren';
+    offerDrawBtn.disabled = false;
+    offerDrawBtn.title = 'Remis reklamieren: ' + onlineDrawClaimLabel(onlineDrawClaims) + '.';
   } else {
     offerDrawBtn.textContent = '½ Remis';
-    offerDrawBtn.disabled = false;
-    offerDrawBtn.title = 'Dem Gegner Remis anbieten.';
+    offerDrawBtn.disabled = daily || !drawAgreementAvailable;
+    offerDrawBtn.title = daily
+      ? 'Bei Daily Chess wird das Remisangebot nach der Zugauswahl zusammen mit „Zug bestätigen“ gesendet.'
+      : drawAgreementAvailable
+        ? 'Dem Gegner Remis anbieten.'
+        : 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.';
   }
   resignBtn.title = onlineRoleCode === 'w' ? 'Als Weiß aufgeben.' : 'Als Schwarz aufgeben.';
 }

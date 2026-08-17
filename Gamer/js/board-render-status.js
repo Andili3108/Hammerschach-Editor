@@ -165,7 +165,17 @@ function renderBoard(){
   markQueuedPremove();
   reapplySelectionHighlight(g);
   updateStatus(g);
-  if(pendingDailyMove) statusEl.textContent = 'Zugvorschau — rechts „Zug bestätigen“ oder „Zug zurücknehmen“ wählen.';
+  if(pendingDailyMove){
+    if(pendingDailyMove.claimDraw){
+      statusEl.textContent = 'Zugvorschau — mit „Zug bestätigen + Remis reklamieren“ wird der Zug serverseitig geprüft und bei gültigem Anspruch sofort als Remis beendet.';
+    } else if(pendingDailyMove.offerDraw){
+      statusEl.textContent = 'Zugvorschau — mit „Zug bestätigen + Remis“ wird das Remisangebot gemeinsam mit dem Zug gesendet.';
+    } else if(pendingDailyMove.claimDrawReason){
+      statusEl.textContent = 'Zugvorschau — dieser Zug ermöglicht eine Remisreklamation (' + (pendingDailyMove.claimDrawReason === 'threefold_repetition' ? 'dreifache Stellungswiederholung' : '50-Züge-Regel') + ').';
+    } else {
+      statusEl.textContent = 'Zugvorschau — rechts „Zug bestätigen“, optional „½ Remis“, oder „Zug zurücknehmen“ wählen.';
+    }
+  }
   updatePremoveUi();
   renderMoveList();
   updateNavControls();
@@ -242,7 +252,7 @@ function updateStatus(g){
     statusEl.textContent = embeddedToolStatusText();
     return;
   }
-  const go = gameOverForHistory(viewIndex, g);
+  const go = onlineRoomId ? false : gameOverForHistory(viewIndex, g);
   gameEnded = !!go;
   if(go){
     stopClock();
@@ -299,6 +309,10 @@ function updateStatus(g){
       }
       return;
     }
+    if(isDailyTimeControl() && onlineDrawClaims && onlineDrawClaims.claimantRole === onlineRoleCode && (onlineDrawClaims.threefold || onlineDrawClaims.fiftyMove)){
+      statusEl.textContent = 'Remis reklamierbar — ' + onlineDrawClaimLabel(onlineDrawClaims) + '.';
+      return;
+    }
   }
   let text = (g.turn === 'w' ? 'Weiß' : 'Schwarz') + ' am Zug';
   if(onlineRoomId && onlineGameStarted){
@@ -347,10 +361,40 @@ function updateDailyMoveConfirmationUi(){
   );
   dailyMoveConfirmationEl.hidden = !visible;
   if(dailyMoveCancelBtn) dailyMoveCancelBtn.disabled = !visible;
-  if(dailyMoveConfirmBtn) dailyMoveConfirmBtn.disabled = !visible;
+  if(dailyMoveDrawBtn){
+    const offerWithMove = !!(visible && pendingDailyMove && pendingDailyMove.offerDraw);
+    const claimWithMove = !!(visible && pendingDailyMove && pendingDailyMove.claimDraw);
+    const claimAvailable = !!(visible && pendingDailyMove && pendingDailyMove.claimDrawReason);
+    const agreementAvailable = !!(visible && pendingDailyMove && pendingDailyMove.drawAgreementAvailable);
+    const activeDrawAction = offerWithMove || claimWithMove;
+    dailyMoveDrawBtn.disabled = !visible || (!claimAvailable && !agreementAvailable);
+    dailyMoveDrawBtn.classList.toggle('active', activeDrawAction);
+    dailyMoveDrawBtn.setAttribute('aria-pressed', activeDrawAction ? 'true' : 'false');
+    dailyMoveDrawBtn.textContent = claimAvailable
+      ? (claimWithMove ? '½ Reklamation ✓' : '½ Remis reklamieren')
+      : (offerWithMove ? '½ Remis ✓' : '½ Remis');
+    dailyMoveDrawBtn.title = claimAvailable
+      ? (claimWithMove
+          ? 'Remisreklamation ist für diesen Zug vorgemerkt. Noch einmal klicken zum Abwählen.'
+          : 'Diesen Zug als angekündigten Zug für eine Remisreklamation verwenden.')
+      : (!agreementAvailable
+          ? 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.'
+          : (offerWithMove
+              ? 'Remisangebot ist für diesen Zug vorgemerkt. Noch einmal klicken zum Abwählen.'
+              : 'Remis zusammen mit diesem Zug anbieten.'));
+  }
+  if(dailyMoveConfirmBtn){
+    dailyMoveConfirmBtn.disabled = !visible;
+    dailyMoveConfirmBtn.textContent = visible && pendingDailyMove && pendingDailyMove.claimDraw
+      ? '✓ Zug bestätigen + Remis reklamieren'
+      : (visible && pendingDailyMove && pendingDailyMove.offerDraw
+          ? '✓ Zug bestätigen + Remis'
+          : '✓ Zug bestätigen');
+  }
 }
 function stageDailyMove(found, promotion){
-  const before = buildGameFromHistory(masterHistory.length);
+  const beforeState = buildHistoryState(masterHistory.length);
+  const before = beforeState.game;
   if(!isDailyMoveConfirmationMode(before)){
     commitHumanMove(found, promotion);
     return;
@@ -361,7 +405,21 @@ function stageDailyMove(found, promotion){
   mv.piece = applied.piece;
   mv.taken = applied.taken;
   mv.san = moveToSan(before, mv, preview);
-  pendingDailyMove = {move:mv, movedSide:before.turn};
+  const previewKey = preview.repetitionKey();
+  const previewRepetitionCount = (beforeState.positionCounts.get(previewKey) || 0) + 1;
+  const claimDrawReason = previewRepetitionCount >= 3
+    ? 'threefold_repetition'
+    : (preview.halfmove >= 100 ? 'fifty_move_rule' : null);
+  pendingDailyMove = {
+    move:mv,
+    movedSide:before.turn,
+    offerDraw:false,
+    claimDraw:false,
+    claimDrawReason,
+    drawAgreementAvailable:actualMoveCount() + 1 >= 2,
+    previewRepetitionCount,
+    previewHalfmove:preview.halfmove
+  };
   selected = null;
   renderBoard();
 }
@@ -369,6 +427,18 @@ function cancelPendingDailyMove(){
   if(!pendingDailyMove) return;
   pendingDailyMove = null;
   selected = null;
+  renderBoard();
+}
+function togglePendingDailyDrawOffer(){
+  if(!pendingDailyMove) return;
+  if(pendingDailyMove.claimDrawReason){
+    pendingDailyMove.claimDraw = !pendingDailyMove.claimDraw;
+    pendingDailyMove.offerDraw = false;
+  } else {
+    if(!pendingDailyMove.drawAgreementAvailable) return;
+    pendingDailyMove.offerDraw = !pendingDailyMove.offerDraw;
+    pendingDailyMove.claimDraw = false;
+  }
   renderBoard();
 }
 function confirmPendingDailyMove(){
@@ -391,7 +461,7 @@ function confirmPendingDailyMove(){
     return;
   }
   pendingDailyMove = null;
-  commitHumanMove(found, pending.move.promotion || null);
+  commitHumanMove(found, pending.move.promotion || null, {offerDraw:!!pending.offerDraw, claimDraw:!!pending.claimDraw, claimDrawReason:pending.claimDrawReason || null});
 }
 function handleChosenHumanMove(found, promotion){
   const g = buildGameFromHistory(masterHistory.length);
@@ -399,4 +469,5 @@ function handleChosenHumanMove(found, promotion){
   else commitHumanMove(found, promotion);
 }
 if(dailyMoveCancelBtn) dailyMoveCancelBtn.addEventListener('click', cancelPendingDailyMove);
+if(dailyMoveDrawBtn) dailyMoveDrawBtn.addEventListener('click', togglePendingDailyDrawOffer);
 if(dailyMoveConfirmBtn) dailyMoveConfirmBtn.addEventListener('click', confirmPendingDailyMove);

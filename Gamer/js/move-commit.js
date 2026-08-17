@@ -1,6 +1,7 @@
 'use strict';
 
-function syncMoveToOnline(mv, movedSide){
+function syncMoveToOnline(mv, movedSide, options){
+  options = options || {};
   if(applyingRemoteMove) return;
   if(!onlineRoomId || !onlineGameStarted || !onlineConnected) return;
   if(onlineRoleCode !== movedSide) return;
@@ -16,7 +17,14 @@ function syncMoveToOnline(mv, movedSide){
     messageId
   };
   onlineLastMoveMessageId = messageId;
-  if(sendOnlineMessage({type:'move', move, messageId})){
+  const payload = {type:'move', move, messageId};
+  if(options.claimDraw === true && isDailyTimeControl()){
+    payload.claimDraw = true;
+    if(options.claimDrawReason) payload.claimDrawReason = options.claimDrawReason;
+  } else if(options.offerDraw === true && isDailyTimeControl()){
+    payload.offerDraw = true;
+  }
+  if(sendOnlineMessage(payload)){
     onlineMoveTimings.set(messageId,{sentAt:performance.now()});
     if(onlineMoveTimings.size > 12) onlineMoveTimings.delete(onlineMoveTimings.keys().next().value);
     onlineLastMessage = 'Zug wird übertragen...';
@@ -31,7 +39,7 @@ function syncMoveToOnline(mv, movedSide){
     updateOnlineUi();
   }
 }
-function commitHumanMove(found, promotion){
+function commitHumanMove(found, promotion, options){
   if(viewIndex < masterHistory.length){
     masterHistory.splice(viewIndex);
     invalidateHistoryStateCache();
@@ -52,7 +60,7 @@ function commitHumanMove(found, promotion){
   selected = null;
   afterMoveClock(before.turn);
   playMoveSound({capture:mv.taken !== '.', castle:!!(mv.meta && mv.meta.castle), promotion:!!mv.promotion, check:info.inCheck(info.turn)});
-  syncMoveToOnline(mv, before.turn);
+  syncMoveToOnline(mv, before.turn, options);
   scheduleBoardRender();
 }
 function showPromotionOverlay(color){

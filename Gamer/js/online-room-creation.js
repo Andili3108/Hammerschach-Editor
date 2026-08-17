@@ -51,6 +51,7 @@ async function createNewOnlineRoom(opts){
     onlineGameEndReason = null;
     onlineGameWinner = null;
     onlineDrawOffer = null;
+    onlineDrawClaims = null;
     onlineRoomTimeControl = null;
     onlineRoomGameSetup = null;
   onlineRatingState = null;

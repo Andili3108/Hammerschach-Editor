@@ -39,6 +39,7 @@ const inviteColorButtons = document.querySelectorAll('.invite-color-option');
 const playersPanelEl = document.getElementById('playersPanel');
 const dailyMoveConfirmationEl = document.getElementById('dailyMoveConfirmation');
 const dailyMoveCancelBtn = document.getElementById('dailyMoveCancelBtn');
+const dailyMoveDrawBtn = document.getElementById('dailyMoveDrawBtn');
 const dailyMoveConfirmBtn = document.getElementById('dailyMoveConfirmBtn');
 const variationLauncherEl = document.getElementById('variationLauncher');
 const variationOpenBtn = document.getElementById('variationOpenBtn');

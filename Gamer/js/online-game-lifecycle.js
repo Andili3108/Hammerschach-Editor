@@ -22,6 +22,7 @@ function applyOnlineGameState(game){
     lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to,meta:masterHistory[masterHistory.length-1].meta || {}} : null;
     gameEnded = false;
     onlineDrawOffer = null;
+    onlineDrawClaims = null;
     resetClockForNewGame();
     onlineClockSync = null;
     onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
@@ -36,6 +37,7 @@ function applyOnlineGameState(game){
     selected = null;
     updatePremoveUi();
     onlineDrawOffer = null;
+    onlineDrawClaims = null;
     statusEl.textContent = formatOnlineEndMessage(game);
     playGameResultSound(onlineGameResult, onlineGameWinner);
     updateGameActionButtons();
@@ -88,23 +90,47 @@ function startOnlineGame(){
 function isPlayerAllowedForGameAction(){
   return !!(onlineRoomId && onlineConnected && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
 }
+function respondToOnlineDrawOffer(action){
+  if(!isPlayerAllowedForGameAction()){ updateGameActionButtons(); return; }
+  if(!onlineDrawOffer || onlineDrawOffer.byRole === onlineRoleCode){ updateGameActionButtons(); return; }
+  const normalizedAction = action === 'reject' ? 'reject' : 'accept';
+  if(normalizedAction === 'accept' && !window.confirm('Remisangebot annehmen?')) return;
+  if(sendOnlineMessage({type:'respond_draw', action:normalizedAction})){
+    onlineLastMessage = normalizedAction === 'accept' ? 'Remisannahme wird gesendet...' : 'Remisangebot wird abgelehnt...';
+    updateOnlineUi();
+    setTimeout(requestOnlineState, 500);
+  }
+}
 function handleDrawButtonClick(){
   if(!isPlayerAllowedForGameAction()){ updateGameActionButtons(); return; }
   if(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode){
-    if(!window.confirm('Remisangebot annehmen?')) return;
-    if(sendOnlineMessage({type:'respond_draw', action:'accept'})){
-      onlineLastMessage = 'Remisannahme wird gesendet...';
-      updateOnlineUi();
-      setTimeout(requestOnlineState, 500);
-    }
+    respondToOnlineDrawOffer('accept');
     return;
   }
   if(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode) return;
+  if(isDailyTimeControl()){
+    const claimable = !!(onlineDrawClaims && onlineDrawClaims.claimantRole === onlineRoleCode && (onlineDrawClaims.threefold || onlineDrawClaims.fiftyMove));
+    if(claimable){
+      const reason = onlineDrawClaims.threefold ? 'threefold_repetition' : 'fifty_move_rule';
+      if(sendOnlineMessage({type:'claim_draw', reason})){
+        onlineLastMessage = 'Remisreklamation wird vom Server geprüft...';
+        updateOnlineUi();
+        setTimeout(requestOnlineState, 500);
+      }
+      return;
+    }
+    onlineLastMessage = 'Bei Daily Chess wird ein normales Remisangebot zusammen mit dem eigenen Zug angeboten.';
+    updateOnlineUi();
+    return;
+  }
   if(sendOnlineMessage({type:'offer_draw'})){
     onlineLastMessage = 'Remisangebot wird gesendet...';
     updateOnlineUi();
     setTimeout(requestOnlineState, 500);
   }
+}
+function handleDeclineDrawButtonClick(){
+  respondToOnlineDrawOffer('reject');
 }
 function closeResignDialog(options){
   options = options || {};

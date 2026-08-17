@@ -213,6 +213,7 @@ const liveStartHintEl = document.getElementById('liveStartHint');
 const newGameBtn = document.getElementById('newGameBtn');
 const gameActionsEl = document.getElementById('gameActions');
 const offerDrawBtn = document.getElementById('offerDrawBtn');
+const declineDrawBtn = document.getElementById('declineDrawBtn');
 const resignBtn = document.getElementById('resignBtn');
 const resignBackdropEl = document.getElementById('resignBackdrop');
 const resignPromptEl = document.getElementById('resignPrompt');

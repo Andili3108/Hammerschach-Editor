@@ -300,11 +300,19 @@ Game.prototype.repetitionEpKey = function(){
   if(!this.ep) return '-';
   const x = this.ep[0];
   const y = this.ep[1];
-  const pawnY = this.turn === 'w' ? y + 1 : y - 1;
-  const pawn = this.turn === 'w' ? 'P' : 'p';
+  const side = this.turn;
+  const pawnY = side === 'w' ? y + 1 : y - 1;
+  const pawn = side === 'w' ? 'P' : 'p';
+  const capturedPawn = side === 'w' ? 'p' : 'P';
+  if(!this.inBounds(x,pawnY) || this.at(x,pawnY) !== capturedPawn) return '-';
   for(const dx of [-1,1]){
     const px = x + dx;
-    if(this.inBounds(px,pawnY) && this.at(px,pawnY) === pawn) return coordToAlg(x,y);
+    if(!this.inBounds(px,pawnY) || this.at(px,pawnY) !== pawn) continue;
+    const sim = this.clone();
+    const mv = {from:[px,pawnY], to:[x,y], meta:{enpassant:true}};
+    sim.makeMove(mv, true);
+    const kp = sim.findKing(side);
+    if(kp && !sim.isAttacked(kp[0], kp[1], opposite(side))) return coordToAlg(x,y);
   }
   return '-';
 };
@@ -332,15 +340,19 @@ Game.prototype.hasInsufficientMaterial = function(){
   }
   return false;
 };
-Game.prototype.gameOver = function(repetitionCount){
+Game.prototype.gameOver = function(repetitionCount, options){
   const legal = this.legalMoves();
   if(legal.length === 0){
     if(this.inCheck(this.turn)) return {type:'checkmate', winner:opposite(this.turn)};
     return {type:'stalemate'};
   }
   if(this.hasInsufficientMaterial()) return {type:'insufficient_material'};
-  if(this.halfmove >= 100) return {type:'fifty_move_rule'};
-  if((repetitionCount || 0) >= 3) return {type:'threefold_repetition'};
+  const repetitions = Math.max(0, Number(repetitionCount) || 0);
+  if(repetitions >= 5) return {type:'fivefold_repetition'};
+  if(this.halfmove >= 150) return {type:'seventy_five_move_rule'};
+  const autoClaimable = !options || options.autoClaimable !== false;
+  if(autoClaimable && this.halfmove >= 100) return {type:'fifty_move_rule'};
+  if(autoClaimable && repetitions >= 3) return {type:'threefold_repetition'};
   return false;
 };
 

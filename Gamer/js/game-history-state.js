@@ -41,11 +41,12 @@ function buildHistoryState(n){
   const g = new Game();
   const counts = new Map();
   const captures = {w:[],b:[]};
+  const themePly = Math.max(0, Math.min(currentThemePly(), masterHistory.length));
   const addCurrent = () => {
     const key = g.repetitionKey();
     counts.set(key, (counts.get(key) || 0) + 1);
   };
-  addCurrent();
+  if(themePly === 0) addCurrent();
   for(let i=0; i<safeN; i++){
     const h = masterHistory[i];
     const legal = g.legalMoves();
@@ -54,8 +55,14 @@ function buildHistoryState(n){
     const movedSide = g.turn;
     const applied = g.makeMove(mv, true);
     if(applied.taken && applied.taken !== '.') captures[movedSide].push(applied.taken);
-    addCurrent();
+    if(themePly > 0 && i + 1 === themePly){
+      counts.clear();
+      addCurrent();
+    } else if(i + 1 > themePly){
+      addCurrent();
+    }
   }
+  if(!counts.size) addCurrent();
   const state = {
     revision:masterHistoryRevision,
     game:g,
@@ -83,6 +90,8 @@ function drawReasonText(type){
   if(type === 'insufficient_material') return 'Remis — unzureichendes Mattmaterial.';
   if(type === 'fifty_move_rule') return 'Remis — 50-Züge-Regel.';
   if(type === 'threefold_repetition') return 'Remis — dreifache Stellungswiederholung.';
+  if(type === 'fivefold_repetition') return 'Remis — fünffache Stellungswiederholung.';
+  if(type === 'seventy_five_move_rule') return 'Remis — 75-Züge-Regel.';
   if(type === 'stalemate') return 'Patt — Unentschieden';
   return 'Remis — Unentschieden';
 }
