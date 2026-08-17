@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260815-4" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260817-3" />
 </head>
 <body>
 <div class="app" role="main">
@@ -414,6 +414,7 @@
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
           <p>Alternativ wählst du unter <strong>„👥 Mitglieder“ → „👥 Liste“</strong> zuerst deinen Gegner aus. <strong>„Zur Partie einladen“</strong> öffnet dann dasselbe Einstellungsfenster bereits mit festem Empfänger und einem Feld für deine persönliche Nachricht. Ein Spielraum entsteht auch auf diesem Weg erst mit <strong>„Einladung senden“</strong>; ein Abbruch hinterlässt keine offene Einladung.</p>
           <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Unter dem jeweiligen Namen erscheinen die geschlagenen gegnerischen Figuren und – falls vorhanden – der Materialvorteil als <strong>„+…“</strong>. Auf größeren Bildschirmen werden die Spielerangaben kompakt dargestellt. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
+          <p><strong>Remis:</strong> Bei <strong>Daily Chess</strong> führst du zuerst deinen gewünschten Zug nur als Vorschau aus. In diesem Bestätigungszustand werden unter dem Brett ausschließlich <strong>„↩“</strong>, <strong>„½ Remis“</strong> und <strong>„✓ Zug bestätigen“</strong> angezeigt; „Variante“ und „Aufgeben“ kehren nach dem Zurücknehmen wieder zurück. Möchtest du Remis anbieten, aktiviere „½ Remis“ und sende anschließend <strong>„✓ Zug bestätigen + Remis“</strong>. Bei <strong>Live-Partien</strong> wird der Zug sofort ausgeführt; danach kannst du „½ Remis“ anklicken, solange der Gegner am Zug ist. Ein gegnerisches Remisangebot wird deutlich mit <strong>„Remis annehmen“</strong> und <strong>„Ablehnen“</strong> angezeigt.</p>
 
           <h4>5. Eigene Partien wiederfinden</h4>
           <p>Über <strong>„📋 Meine Partien“</strong> im Header findest du deine eigenen <strong>Live-, Daily- und Turnierpartien</strong> in den drei Karteien <strong>„Laufend“</strong>, <strong>„Offen“</strong> und <strong>„Beendet“</strong>. Beim Öffnen erscheint standardmäßig <strong>„Laufend“</strong>; die Zahl direkt im Header zeigt deine laufenden Partien, in denen du gerade am Zug bist. Unter <strong>„Offen“</strong> stehen eingegangene Daily-Einladungen und deine eigenen noch nicht angenommenen Live- oder Daily-Angebote getrennt. Bei einer persönlichen Daily-Einladung siehst du dort auch die Nachricht des Einladenden. Die Einladung kann ausdrücklich angenommen oder abgelehnt werden; erst die Annahme startet die Partie. Bei beiden Entscheidungen öffnet sich ein Antwortfenster. Deine Antwort ist freiwillig, auf 300 Zeichen begrenzt und wird dem Einladenden anschließend ebenfalls unter <strong>„Meine Partien“</strong> angezeigt. Turnierpartien sind golden gekennzeichnet. Die globalen Übersichten <strong>„Angebote“</strong>, <strong>„Laufende“</strong> und <strong>„Archiv“</strong> bleiben zusätzlich für Angebote anderer Mitglieder, Zuschauerpartien und die ausführliche Archivsuche erhalten.</p>
@@ -470,7 +471,8 @@
           <p>Bei Daily Chess erhält immer der Spieler am Zug die vollständige gewählte Zugfrist. Nach seinem Zug beginnt für den Gegner eine neue Frist von <strong>1, 3 oder 7 Tagen</strong>. Nicht verbrauchte Zeit wird nicht angespart und nicht auf den nächsten Zug übertragen.</p>
           <p>Sobald der zweite registrierte Spieler die Einladung angenommen hat, startet die Daily-Partie automatisch und die erste Frist für Weiß beginnt. Läuft eine Zugfrist ab, verliert der Spieler am Zug auf Zeit. Die Frist wird serverseitig überwacht und läuft deshalb auch weiter, wenn ein Browser geschlossen oder die Internetverbindung unterbrochen ist.</p>
           <p>Nach dem Start müssen die Spieler nicht gleichzeitig online bleiben. Öffne die Partie später erneut, führe deinen Zug aus und schließe die Seite anschließend wieder, wenn du möchtest.</p>
-          <p>Ein gewählter Daily-Zug wird zunächst nur als Vorschau angezeigt. Erst über <strong>„Zug bestätigen“</strong> ganz rechts in der Werkzeugleiste unter dem Brett wird er ausgeführt und an den Server übertragen. Mit <strong>„Zug zurücknehmen“</strong> direkt davor kannst du die Vorschau verwerfen und einen anderen Zug wählen. Nach jedem bestätigten Zug erhält der nun ziehende Spieler automatisch eine E-Mail mit Gegner, Zugfrist, Fristende und direktem Partielink, sofern diese Benachrichtigung in seiner Accountverwaltung aktiviert ist.</p>
+          <p>Ein gewählter Daily-Zug wird zunächst nur als Vorschau angezeigt. Sobald diese Vorschau steht, wechselt die Leiste unter dem Brett bewusst in einen klaren Bestätigungszustand: Es bleiben nur <strong>„↩“</strong>, <strong>„½ Remis“</strong> und <strong>„✓ Zug bestätigen“</strong> sichtbar. „Variante“, „Aufgeben“ sowie die normalen Brettwerkzeuge werden in diesem Moment ausgeblendet; mit „↩“ verwirfst du die Vorschau und erhältst die normale Leiste sofort zurück. Möchtest du mit diesem Zug Remis anbieten, aktiviere vorher „½ Remis“; der Bestätigungsbutton lautet dann <strong>„✓ Zug bestätigen + Remis“</strong> und Zug sowie Remisangebot werden gemeinsam an den Server gesendet. Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug ausgeführt haben. Nach jedem bestätigten Zug erhält der nun ziehende Spieler automatisch eine E-Mail mit Gegner, Zugfrist, Fristende und direktem Partielink, sofern diese Benachrichtigung in seiner Accountverwaltung aktiviert ist.</p>
+          <p>Erreicht eine Daily-Stellung die <strong>dreifache Stellungswiederholung</strong> oder die <strong>50-Züge-Regel</strong>, kann der Spieler am Zug das Remis über <strong>„½ Remis reklamieren“</strong> beanspruchen. Das gilt auch dann, wenn erst der gerade als Vorschau ausgeführte Zug den Anspruch erzeugt: In diesem Fall wird der Zug zusammen mit der Reklamation über <strong>„✓ Zug bestätigen + Remis reklamieren“</strong> serverseitig geprüft. Eine ungültige Reklamation beendet die Partie nicht.</p>
           <p>Während der Gegner am Zug ist, erscheint unter der Zugliste das <strong>Verzweigungssymbol für bedingte Züge</strong>. Es öffnet ein vollständig bedienbares Brett: Ziehe dort zuerst den erwarteten Gegnerzug und anschließend deine gewünschte Antwort. Nach dem Speichern führt der Server deine Antwort automatisch aus, sobald der Gegner genau den vorbereiteten Zug spielt. Zieht er anders, verfällt die Bedingung. Pro aktueller Stellung kann eine Bedingung gespeichert, geändert oder gelöscht werden.</p>
 
           <h4>7. Daily Chess vorbereiten und annehmen</h4>
@@ -480,7 +482,7 @@
           <h4>8. Partieübersichten im Header</h4>
           <p>Die wichtigsten Partieübersichten sind direkt erreichbar: <strong>„🔎 Angebote“</strong> und <strong>„📋 Meine Partien“</strong>. Die goldene Zahl bei <strong>„Angebote“</strong> nennt die derzeit annehmbaren Angebote anderer Mitglieder; eigene Angebote werden nicht mitgezählt und bei null bleibt die Zahl ausgeblendet. Unter <strong>„☰ Mehr“</strong> findest du <strong>„👁️ Laufende“</strong> und <strong>„📚 Archiv“</strong>.</p>
           <p>Über <strong>„📋 Meine Partien“</strong> öffnest du deine zentrale Übersicht für <strong>Live-, Daily- und Turnierpartien</strong>. Die drei Karteien <strong>„Laufend“</strong>, <strong>„Offen“</strong> und <strong>„Beendet“</strong> zeigen jeweils ihre Anzahl; <strong>„Laufend“</strong> ist beim normalen Öffnen vorausgewählt. Dort erscheinen auch private laufende Live-Partien, sodass du sie aus der Lobby wieder öffnen kannst. Unter <strong>„Offen“</strong> werden eingegangene Daily-Einladungen und deine eigenen Live- oder Daily-Angebote getrennt aufgeführt. Eingegangene Daily-Einladungen zeigen dort auch die persönliche Nachricht des Einladenden und erscheinen mit den getrennten Schaltflächen <strong>„Annehmen“</strong> und <strong>„Ablehnen“</strong>. Bei beiden Entscheidungen öffnet sich grundsätzlich ein Antwortfenster; der freie Antworttext ist optional und auf 300 Zeichen begrenzt. Unter <strong>„Beendet“</strong> stehen beendete Daily- und Live-Partien. Eigene Partien lassen sich dort mit ❤️ als privater Gamer-Moment bewahren und mit einer persönlichen Erinnerung von höchstens 240 Zeichen versehen; der Filter „Nur Gamer-Momente“ zeigt diese Auswahl allein. Ältere Live-Partien bleiben zusätzlich im ausführlichen Partienarchiv verfügbar. Die Zahl an <strong>„Meine Partien“</strong> im Lobby-Header zählt laufende Partien, in denen du am Zug bist. Turnierpartien sind zusätzlich golden gekennzeichnet.</p>
-          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Mit <strong>„Partie öffnen“</strong> gelangst du direkt zurück in den Raum.</p>
+          <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Ein eingegangenes Remisangebot wird dort ebenfalls hervorgehoben; ist bei Daily Chess eine dreifache Stellungswiederholung oder die 50-Züge-Regel reklamierbar, erscheint bereits in der Übersicht der Hinweis <strong>„½ Remis reklamierbar“</strong>. Mit <strong>„Partie öffnen“</strong>, <strong>„Remisangebot öffnen“</strong> oder <strong>„Remis reklamieren“</strong> gelangst du direkt zurück in den betreffenden Raum.</p>
           <p>Beendete Partien bleiben im Verlauf sichtbar. Angezeigt werden Ergebnis, Beendigungsgrund und Endzeitpunkt. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. <strong>„Aus Verlauf entfernen“</strong> blendet die Partie nur für deinen eigenen Account aus; beim Gegner und im Spielraum bleibt sie erhalten.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie über die kompakte <strong>„Zuschauerfreigabe“</strong> unter dem Brett nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
@@ -521,13 +523,18 @@
           <p>Nachrichten sind auf 300 Zeichen begrenzt. Zwischen zwei eigenen Nachrichten besteht eine kurze Wartezeit. Einzelne Mitglieder können auf dem eigenen Gerät stummgeschaltet und auffällige Nachrichten vertraulich gemeldet werden. Der Administrator kann Nachrichten löschen sowie Chat- oder Accountsperren aussprechen.</p>
           <p>Im Global-Chat bleiben höchstens die letzten 200 Nachrichten und höchstens Nachrichten der vergangenen 30 Tage gespeichert. Beim Öffnen eines Spielraums wird der Global-Chat ausgeblendet; dort steht weiterhin ausschließlich der private Partie-Chat zur Verfügung.</p>
 
-          <h4>14. Partieaktionen</h4>
-          <p>Während einer laufenden Online-Partie stehen <strong>„½ Remis“</strong> und <strong>„🏳️ Aufgeben“</strong> kompakt in derselben Werkzeugleiste wie Brett drehen, Brettfarbe und Ton. <strong>„Aufgeben“</strong> ist bewusst neutral dargestellt; erst die endgültige Bestätigung im Sicherheitsfenster ist rot. <strong>„Weiterspielen“</strong> bricht den Vorgang ab. Bei einer Daily-Zugvorschau erscheinen zusätzlich <strong>„Zug zurücknehmen“</strong> und ganz rechts <strong>„Zug bestätigen“</strong>.</p>
+          <h4>14. Partieaktionen und Remisangebot</h4>
+          <p>Während einer laufenden Online-Partie stehen die Partieaktionen kompakt in der Werkzeugleiste unter dem Brett. <strong>„🏳️ Aufgeben“</strong> ist bewusst neutral dargestellt; erst die endgültige Bestätigung im Sicherheitsfenster ist rot. <strong>„Weiterspielen“</strong> bricht den Vorgang ab.</p>
+          <p><strong>Live-Partie:</strong> Der eigene Zug wird ohne zusätzliche Bestätigung sofort an den Server gesendet. Ein normales Remisangebot kannst du erst abgeben, nachdem beide Spieler mindestens einen Zug ausgeführt haben, und dann <strong>direkt nach deinem eigenen Zug, solange der Gegner am Zug ist</strong>. In dieser Phase ist „½ Remis“ aktiv; während du selbst am Zug bist, ist die Schaltfläche deaktiviert. Das offene Angebot bleibt sichtbar, bis der Gegner es annimmt, ausdrücklich ablehnt oder durch seinen nächsten Zug ablehnt. Bei einem gegnerischen Angebot erscheinen <strong>„🤝 Remis annehmen“</strong> und <strong>„Ablehnen“</strong>.</p>
+          <p><strong>Daily Chess:</strong> Ein normales Remisangebot wird zusammen mit dem eigenen Zug gesendet. Sobald du einen Zug als Vorschau ausführst, ersetzt der Bestätigungszustand die normale Werkzeugleiste; sichtbar bleiben nur <strong>„↩“</strong>, <strong>„½ Remis“</strong> und <strong>„✓ Zug bestätigen“</strong>. Aktivierst du „½ Remis“, wird daraus <strong>„✓ Zug bestätigen + Remis“</strong>. Mit „↩“ kehrst du zur normalen Leiste mit „Variante“ und „Aufgeben“ zurück. Bei einem bereits offenen gegnerischen Angebot erscheinen <strong>„🤝 Remis annehmen“</strong> und <strong>„Ablehnen“</strong>. Ist eine dreifache Stellungswiederholung oder die 50-Züge-Regel reklamierbar, ändert sich die Aktion zu <strong>„½ Remis reklamieren“</strong>.</p>
           <p>Bei zwei registrierten Mitgliedern steht unter dem Namen des Gegners der <strong>direkte Vergleich</strong> mit Siegen, Remis und Niederlagen. Gezählt wird ausschließlich innerhalb derselben Hammerschach-Kategorie: Daily Classic, Daily Freestyle, Live Classic, Live Rapid, Live Blitz oder Live Freestyle. Normale und Turnierpartien sowie gewertete und ungewertete Partien fließen gemeinsam in die jeweils passende Kategorie ein.</p>
           <p>Nach dem Ende einer normalen Partie erscheint unter den Spielerleisten die Schaltfläche <strong>„🔁 Revanche anbieten“</strong>. Solange beide Spieler noch im Live-Spielraum sind, kann der Gegner dort direkt annehmen und das neue Brett wird sofort geöffnet. Offene Revanchen erscheinen zusätzlich unter <strong>„Meine Partien → Offen“</strong> und bleiben dadurch auch später oder auf einem anderen Gerät erreichbar. Ein Mail-Link öffnet gezielt diese Übersicht. Alternativ kann die beendete Ausgangspartie erneut geöffnet und die Revanche dort beantwortet werden. Erst bei Annahme wird ein neuer Spielraum mit identischer Bedenkzeit, identischem Spielmodus und identischer Wertung erstellt; die Farben werden automatisch getauscht. Bei Turnierpartien, Zuschauern und Gastspielern wird keine direkte Revanche angeboten.</p>
 
-          <h4>15. Automatische Partieenden</h4>
-          <p>Erkannt werden Schachmatt, Patt, Zeitablauf, Aufgabe, Remis durch Annahme, 50-Züge-Regel, dreifache Stellungswiederholung und unzureichendes Mattmaterial. Bei Daily Chess führt das Ablaufen der aktuellen Zugfrist zum Zeitverlust des Spielers am Zug.</p>
+          <h4>15. Partieende und Remisregeln</h4>
+          <p>Der Server entscheidet bei Online-Partien verbindlich über das Partieende. <strong>Schachmatt</strong> und <strong>Patt</strong> werden automatisch erkannt. Ebenso beendet der Gamer eine Partie automatisch remis, wenn eine von ihm sicher erkannte Stellung mit <strong>unzureichendem Mattmaterial</strong> vorliegt.</p>
+          <p><strong>Live-Partien:</strong> Die <strong>dreifache Stellungswiederholung</strong> und die <strong>50-Züge-Regel</strong> werden automatisch als Remis gewertet. <strong>Fünffache Stellungswiederholung</strong> und die <strong>75-Züge-Regel</strong> beenden die Partie ebenfalls automatisch; ein Schachmatt mit dem betreffenden Zug hat Vorrang.</p>
+          <p><strong>Daily Chess:</strong> Dreifache Stellungswiederholung und 50-Züge-Regel sind zunächst <strong>reklamierbar</strong>. Der Spieler am Zug kann den vorhandenen Anspruch direkt reklamieren oder – falls erst sein beabsichtigter Zug den Anspruch erzeugt – den Zug zusammen mit der Reklamation bestätigen. Fünffache Stellungswiederholung und 75-Züge-Regel werden auch bei Daily automatisch als Remis beendet.</p>
+          <p>Bei <strong>Zeitablauf</strong> verliert grundsätzlich der Spieler, dessen Bedenkzeit abgelaufen ist; bei Daily Chess gilt das für die aktuelle Zugfrist. Kann der Gegner nach der auf dem Brett vorhandenen Materiallage jedoch nicht mehr mattsetzen, wird die Partie remis gewertet. Entsprechend führt auch eine <strong>Aufgabe</strong> nicht zu einem Sieg, wenn für den Gegner keine Mattmöglichkeit mehr besteht. Ein angenommenes Remisangebot beendet die Partie als <strong>Remisvereinbarung</strong>.</p>
 
           <h4>16. Brett und Darstellung</h4>
           <p>Direkt unter der unteren Spielerleiste führen dich <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> zum Anfang, einen Halbzug zurück, einen Halbzug vor oder zur letzten Stellung. Daneben kannst du das gerade sichtbare Brett drehen, die Brettfarbe und den Figurensatz ändern sowie den Ton ein- oder ausschalten. Beim geöffneten Variantenbrett arbeiten Navigation und Drehschaltfläche automatisch mit der Variante.</p>
@@ -1818,8 +1825,7 @@
           </div>
         </div>
         <div class="board-tools" aria-label="Brett-, Anzeige- und Partieaktionen">
-          <div class="board-utility-tools" aria-label="Brettnavigation und Anzeige">
-            <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
+          <div class="gamer-board-nav" aria-label="Zugnavigation unter dem Brett">
             <button id="boardNavStart" class="button-flat gamer-board-nav-btn" type="button" title="Anfang der Partie" aria-label="Anfang der Partie">&laquo;</button>
             <button id="boardNavBack" class="button-flat gamer-board-nav-btn" type="button" title="Einen Halbzug zurück" aria-label="Einen Halbzug zurück">&lsaquo;</button>
             <button id="boardNavForward" class="button-flat gamer-board-nav-btn" type="button" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">&rsaquo;</button>
@@ -1879,11 +1885,9 @@
               <button id="boardSizeResetBtn" class="button-flat board-size-reset-btn" type="button">Standard wiederherstellen</button>
             </div>
           </div>
+          <div id="variationLauncher" class="variation-launcher" hidden>
+            <button id="variationOpenBtn" class="button-flat board-action-btn variation-open-btn" type="button" aria-pressed="false">♟ Variante</button>
           </div>
-          <div class="board-primary-actions" aria-label="Partieaktionen">
-            <div id="variationLauncher" class="variation-launcher" hidden>
-              <button id="variationOpenBtn" class="button-flat board-action-btn variation-open-btn" type="button" aria-pressed="false">♟ Variante</button>
-            </div>
           <div id="gameActions" class="board-game-actions" aria-label="Partieaktionen" hidden>
             <button id="offerDrawBtn" class="button-flat board-action-btn" type="button">½ Remis</button>
             <button id="declineDrawBtn" class="button-flat board-action-btn draw-offer-decline-btn" type="button" hidden>Ablehnen</button>
@@ -1893,7 +1897,6 @@
             <button id="dailyMoveCancelBtn" class="button-flat board-action-btn board-daily-cancel-btn" type="button" title="Zug zurücknehmen" aria-label="Zug zurücknehmen">↩</button>
             <button id="dailyMoveDrawBtn" class="button-flat board-action-btn board-daily-draw-btn" type="button" aria-pressed="false" title="Remis zusammen mit diesem Zug anbieten">½ Remis</button>
             <button id="dailyMoveConfirmBtn" class="board-action-btn board-daily-confirm-btn" type="button">✓ Zug bestätigen</button>
-          </div>
           </div>
         </div>
         <div id="premoveNotice" class="premove-notice" role="status" aria-live="polite" hidden>
@@ -2124,15 +2127,15 @@
 <script src="js/chess960-core.js?v=20260804-1"></script>
 <script src="js/board-setup-utils.js?v=20260804-1"></script>
 <script src="js/game-setup.js?v=20260804-1"></script>
-<script src="js/chess-engine.js?v=20260804-1"></script>
+<script src="js/chess-engine.js?v=20260817-3"></script>
 <script src="js/game-history-cache.js?v=20260809-8"></script>
 <script src="js/board-ui-state.js?v=20260813-1"></script>
-<script src="js/board-ui-elements.js?v=20260813-1"></script>
+<script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260813-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260810-1"></script>
 <script src="js/header-ui.js?v=20260810-1"></script>
-<script src="js/dialog-ui-state.js?v=20260811-1"></script>
+<script src="js/dialog-ui-state.js?v=20260817-3"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
 <script src="js/embedded-tools.js?v=20260810-3"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
@@ -2141,7 +2144,7 @@
 <script src="js/admin-ticker.js?v=20260804-1"></script>
 <script src="js/admin-member-delete.js?v=20260804-1"></script>
 <script src="js/admin-messaging.js?v=20260804-1"></script>
-<script src="js/online-session.js?v=20260815-1"></script>
+<script src="js/online-session.js?v=20260817-3"></script>
 <script src="js/game-openings.js?v=20260810-2"></script>
 <script src="js/game-reactions.js?v=20260810-1"></script>
 <script src="js/game-moments.js?v=20260815-3"></script>
@@ -2158,33 +2161,33 @@
 <script src="js/tournament-detail.js?v=20260804-1"></script>
 <script src="js/tournament-management.js?v=20260804-1"></script>
 <script src="js/tournament-actions.js?v=20260804-1"></script>
-  <script src="js/daily-games.js?v=20260815-2"></script>
+  <script src="js/daily-games.js?v=20260817-3"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
 <script src="js/public-games.js?v=20260804-1"></script>
-<script src="js/game-archive.js?v=20260815-1"></script>
+<script src="js/game-archive.js?v=20260817-3"></script>
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
-<script src="js/online-ui-state.js?v=20260815-1"></script>
+<script src="js/online-ui-state.js?v=20260817-3"></script>
 <script src="js/member-directory.js?v=20260811-3"></script>
 <script src="js/direct-messages.js?v=20260811-1"></script>
 <script src="js/game-invitations.js?v=20260810-3"></script>
-<script src="js/online-sync-state.js?v=20260815-1"></script>
-<script src="js/online-connection.js?v=20260815-1"></script>
+<script src="js/online-sync-state.js?v=20260817-3"></script>
+<script src="js/online-connection.js?v=20260817-3"></script>
 <script src="js/online-game-setup-sync.js?v=20260804-1"></script>
-<script src="js/online-game-lifecycle.js?v=20260804-1"></script>
-<script src="js/online-room-creation.js?v=20260804-1"></script>
+<script src="js/online-game-lifecycle.js?v=20260817-3"></script>
+<script src="js/online-room-creation.js?v=20260817-3"></script>
 <script src="js/online-room-preferences.js?v=20260804-1"></script>
 <script src="js/move-matching-utils.js?v=20260804-1"></script>
-<script src="js/game-history-state.js?v=20260809-8"></script>
+<script src="js/game-history-state.js?v=20260817-3"></script>
 <script src="js/premove.js?v=20260804-1"></script>
-<script src="js/board-render-status.js?v=20260813-1"></script>
-<script src="js/variation-board.js?v=20260813-1"></script>
+<script src="js/board-render-status.js?v=20260817-3"></script>
+<script src="js/variation-board.js?v=20260817-3"></script>
 <script src="js/conditional-moves.js?v=20260813-1"></script>
 <script src="js/board-input.js?v=20260804-1"></script>
 <script src="js/piece-drag-helpers.js?v=20260813-1"></script>
-<script src="js/move-commit.js?v=20260809-8"></script>
-<script src="js/app-event-bindings.js?v=20260810-2"></script>
+<script src="js/move-commit.js?v=20260817-3"></script>
+<script src="js/app-event-bindings.js?v=20260817-3"></script>
 <script src="js/move-history-navigation.js?v=20260813-1"></script>
 <script src="js/pgn-export.js?v=20260804-1"></script>
 <script src="js/new-game-board-ui.js?v=20260804-1"></script>
