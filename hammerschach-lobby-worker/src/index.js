@@ -1,4 +1,4 @@
-// BUILD: GAMER-CONDITIONAL-MOVES-20260813-1
+// BUILD: GAMER-DRAW-RULES-20260817-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -3476,6 +3476,9 @@ async function ensureDailyGamesTable(env) {
        end_reason TEXT,
        draw_offer_by_role TEXT,
        draw_offer_at TEXT,
+       draw_claim_by_role TEXT,
+       draw_claim_threefold INTEGER NOT NULL DEFAULT 0,
+       draw_claim_fifty_move INTEGER NOT NULL DEFAULT 0,
        rated INTEGER NOT NULL DEFAULT 1
      )`
   ).run();
@@ -3487,6 +3490,9 @@ async function ensureDailyGamesTable(env) {
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_response_message TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_offer_by_role TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_offer_at TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_claim_by_role TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_claim_threefold INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_claim_fifty_move INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
@@ -3533,7 +3539,7 @@ async function listDailyGames(env, sessionUser) {
             daily_games.time_label, daily_games.days_per_move, daily_games.variant, daily_games.started,
             daily_games.started_at, daily_games.updated_at, daily_games.turn,
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
-            daily_games.result, daily_games.end_reason, daily_games.draw_offer_by_role, daily_games.draw_offer_at, daily_games.rated,
+            daily_games.result, daily_games.end_reason, daily_games.draw_offer_by_role, daily_games.draw_offer_at, daily_games.draw_claim_by_role, daily_games.draw_claim_threefold, daily_games.draw_claim_fifty_move, daily_games.rated,
             completed_game.pgn AS completed_pgn,
             CASE WHEN my_moment.room_id IS NULL THEN 0 ELSE 1 END AS favorite,
             my_moment.note AS moment_note,
@@ -3656,6 +3662,10 @@ async function listDailyGames(env, sessionUser) {
       drawOfferAt:row.draw_offer_at || null,
       incomingDrawOffer:!!role && !row.ended && (row.draw_offer_by_role === 'w' || row.draw_offer_by_role === 'b') && row.draw_offer_by_role !== role,
       outgoingDrawOffer:!!role && !row.ended && row.draw_offer_by_role === role,
+      drawClaimByRole:row.draw_claim_by_role === 'w' || row.draw_claim_by_role === 'b' ? row.draw_claim_by_role : '',
+      drawClaimThreefold:Number(row.draw_claim_threefold || 0) === 1,
+      drawClaimFiftyMove:Number(row.draw_claim_fifty_move || 0) === 1,
+      drawClaimAvailable:!!role && !row.ended && row.draw_claim_by_role === role && (Number(row.draw_claim_threefold || 0) === 1 || Number(row.draw_claim_fifty_move || 0) === 1),
       favorite:Number(row.favorite || 0) === 1,
       momentNote:cleanGameMomentNote(row.moment_note),
       momentAt:row.moment_created_at || null,
@@ -11653,6 +11663,18 @@ function safeDrawOfferForClient(value) {
   };
 }
 
+function safeDrawClaimsForClient(value) {
+  const claims = value && typeof value === 'object' ? value : {};
+  const claimantRole = claims.claimantRole === 'w' || claims.claimantRole === 'b' ? claims.claimantRole : '';
+  return {
+    threefold:!!claims.threefold,
+    fiftyMove:!!claims.fiftyMove,
+    claimantRole,
+    repetitionCount:Math.max(0, Math.floor(Number(claims.repetitionCount || 0))),
+    halfmove:Math.max(0, Math.floor(Number(claims.halfmove || 0)))
+  };
+}
+
 function safeSend(ws, payload) {
   try {
     ws.send(JSON.stringify(payload));
@@ -12354,12 +12376,89 @@ ChessGame.prototype.makeMove = function(mv, silent) {
   return { piece, taken };
 };
 
-ChessGame.prototype.gameOver = function() {
+ChessGame.prototype.repetitionEpKey = function() {
+  if (!this.ep) return '-';
+  const x = this.ep[0];
+  const y = this.ep[1];
+  const side = this.turn;
+  const pawnY = side === 'w' ? y + 1 : y - 1;
+  const pawn = side === 'w' ? 'P' : 'p';
+  const capturedPawn = side === 'w' ? 'p' : 'P';
+  if (!this.inBounds(x, pawnY) || this.at(x, pawnY) !== capturedPawn) return '-';
+  for (const dx of [-1, 1]) {
+    const px = x + dx;
+    if (!this.inBounds(px, pawnY) || this.at(px, pawnY) !== pawn) continue;
+    const sim = this.clone();
+    sim.makeMove({from:[px,pawnY], to:[x,y], meta:{enpassant:true}}, true);
+    const kp = sim.findKing(side);
+    if (kp && !sim.isAttacked(kp[0], kp[1], opposite(side))) return coordToAlg(x, y);
+  }
+  return '-';
+};
+
+ChessGame.prototype.repetitionKey = function() {
+  const boardPart = this.board.map(row => row.join('')).join('/');
+  const castlingPart = ['K','Q','k','q'].filter(key => this.castling[key]).join('') || '-';
+  return [boardPart, this.turn, castlingPart, this.repetitionEpKey()].join(' ');
+};
+
+ChessGame.prototype.hasInsufficientMaterial = function() {
+  const pieces = [];
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const p = this.at(x, y);
+      if (!p || p === '.') continue;
+      const kind = p.toLowerCase();
+      if (kind === 'p' || kind === 'r' || kind === 'q') return false;
+      if (kind !== 'k') pieces.push({kind, squareColor:(x + y) % 2});
+    }
+  }
+  if (pieces.length === 0) return true;
+  if (pieces.length === 1 && (pieces[0].kind === 'b' || pieces[0].kind === 'n')) return true;
+  if (pieces.every(piece => piece.kind === 'b')) {
+    const firstColor = pieces[0].squareColor;
+    if (pieces.every(piece => piece.squareColor === firstColor)) return true;
+  }
+  return false;
+};
+
+ChessGame.prototype.canSidePossiblyMate = function(color) {
+  const own = [];
+  let opponentHasNonKingPiece = false;
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const p = this.at(x, y);
+      if (!p || p === '.') continue;
+      const pieceSide = pieceColor(p);
+      const kind = p.toLowerCase();
+      if (kind === 'k') continue;
+      if (pieceSide === color) own.push({kind, squareColor:(x + y) % 2});
+      else opponentHasNonKingPiece = true;
+    }
+  }
+  if (own.some(piece => piece.kind === 'p' || piece.kind === 'r' || piece.kind === 'q')) return true;
+  if (!own.length) return false;
+  if (opponentHasNonKingPiece) return true;
+  const knights = own.filter(piece => piece.kind === 'n').length;
+  const bishops = own.filter(piece => piece.kind === 'b');
+  if (knights >= 2) return true;
+  if (knights >= 1 && bishops.length >= 1) return true;
+  if (new Set(bishops.map(piece => piece.squareColor)).size >= 2) return true;
+  return false;
+};
+
+ChessGame.prototype.gameOver = function(repetitionCount, options = {}) {
   const legal = this.legalMoves();
   if (legal.length === 0) {
     if (this.inCheck(this.turn)) return { type:'checkmate', winner: opposite(this.turn) };
     return { type:'stalemate' };
   }
+  if (this.hasInsufficientMaterial()) return { type:'insufficient_material' };
+  const repetitions = Math.max(0, Number(repetitionCount) || 0);
+  if (repetitions >= 5) return { type:'fivefold_repetition' };
+  if (this.halfmove >= 150) return { type:'seventy_five_move_rule' };
+  if (options.autoClaimable === true && this.halfmove >= 100) return { type:'fifty_move_rule' };
+  if (options.autoClaimable === true && repetitions >= 3) return { type:'threefold_repetition' };
   return false;
 };
 
@@ -12454,28 +12553,84 @@ function findMatchingLegalMove(legalMoves, moveLike) {
   return castleByKingTarget.length === 1 ? castleByKingTarget[0] : null;
 }
 
-function buildGameFromStoredMoves(moves, gameSetup = null) {
+function buildServerHistoryState(moves, gameSetup = null) {
   const setup = cleanGameSetup(gameSetup);
   const g = new ChessGame(setup);
-  const combined = [];
-  if (setup.theme && Array.isArray(setup.theme.moves)) combined.push(...setup.theme.moves);
-  combined.push(...(moves || []));
-  for (const stored of combined) {
+  const positionCounts = new Map();
+  const addPosition = () => {
+    const key = g.repetitionKey();
+    positionCounts.set(key, (positionCounts.get(key) || 0) + 1);
+  };
+  const themeMoves = setup.theme && Array.isArray(setup.theme.moves) ? setup.theme.moves : [];
+  if (themeMoves.length) {
+    for (const stored of themeMoves) {
+      const legal = g.legalMoves();
+      const found = findMatchingLegalMove(legal, stored);
+      if (!found) throw new Error('Gespeicherte Themenzugfolge enthält einen illegalen Zug.');
+      const mv = { from:found.from, to:found.to, meta:found.meta || {}, promotion:stored.promotion || null };
+      g.makeMove(mv, true);
+    }
+    addPosition();
+  } else {
+    addPosition();
+  }
+  for (const stored of (moves || [])) {
     const legal = g.legalMoves();
     const found = findMatchingLegalMove(legal, stored);
     if (!found) throw new Error('Gespeicherte Zugliste enthält einen illegalen Zug.');
-    const mv = { from: found.from, to: found.to, meta: found.meta || {}, promotion: stored.promotion || null };
+    const mv = { from:found.from, to:found.to, meta:found.meta || {}, promotion:stored.promotion || null };
     g.makeMove(mv, true);
+    addPosition();
   }
-  return g;
+  return {
+    game:g,
+    positionCounts,
+    repetitionCount:positionCounts.get(g.repetitionKey()) || 1
+  };
+}
+
+function buildGameFromStoredMoves(moves, gameSetup = null) {
+  return buildServerHistoryState(moves, gameSetup).game;
+}
+
+function drawClaimsFromHistoryState(historyState, timeControl = null, game = null) {
+  const control = cleanTimeControl(timeControl || null);
+  const currentGame = historyState && historyState.game;
+  if (!currentGame || !control || control.mode !== 'daily' || (game && game.ended)) {
+    return safeDrawClaimsForClient(null);
+  }
+  return safeDrawClaimsForClient({
+    threefold:Math.max(0, Number(historyState.repetitionCount) || 0) >= 3,
+    fiftyMove:Math.max(0, Number(currentGame.halfmove) || 0) >= 100,
+    claimantRole:currentGame.turn,
+    repetitionCount:historyState.repetitionCount,
+    halfmove:currentGame.halfmove
+  });
+}
+
+function drawClaimsForStoredPosition(moves, gameSetup, timeControl, game = null) {
+  try {
+    return drawClaimsFromHistoryState(buildServerHistoryState(moves || [], gameSetup), timeControl, game);
+  } catch (_) {
+    return safeDrawClaimsForClient(null);
+  }
 }
 
 function gameTurnForSetup(gameSetup) {
   return buildGameFromStoredMoves([], gameSetup).turn;
 }
 
-function validateMoveOnServer(storedMoves, incoming, gameSetup = null, preparedBefore = null) {
-  const before = preparedBefore ? preparedBefore.clone() : buildGameFromStoredMoves(storedMoves || [], gameSetup);
+function validateMoveOnServer(storedMoves, incoming, gameSetup = null, preparedBefore = null, preparedPositionCounts = null, options = {}) {
+  let before;
+  let positionCounts;
+  if (preparedBefore && preparedPositionCounts instanceof Map) {
+    before = preparedBefore.clone();
+    positionCounts = new Map(preparedPositionCounts);
+  } else {
+    const historyState = buildServerHistoryState(storedMoves || [], gameSetup);
+    before = preparedBefore ? preparedBefore.clone() : historyState.game;
+    positionCounts = new Map(historyState.positionCounts);
+  }
   const legal = before.legalMoves();
   const found = findMatchingLegalMove(legal, incoming);
   if (!found) {
@@ -12491,20 +12646,31 @@ function validateMoveOnServer(storedMoves, incoming, gameSetup = null, preparedB
     return { ok:false, code:'PROMOTION_NOT_ALLOWED', message:'Bauernumwandlung ist bei diesem Zug nicht erlaubt.' };
   }
 
-  const mv = { from: found.from, to: found.to, meta: found.meta || {}, promotion: needsPromotion ? incoming.promotion : null };
+  const mv = { from:found.from, to:found.to, meta:found.meta || {}, promotion:needsPromotion ? incoming.promotion : null };
   const after = before.clone();
   const applied = after.makeMove(mv, false);
   mv.piece = applied.piece;
   mv.taken = applied.taken;
   mv.san = serverMoveToSan(before, mv, after);
+  const afterKey = after.repetitionKey();
+  positionCounts.set(afterKey, (positionCounts.get(afterKey) || 0) + 1);
+  const repetitionCount = positionCounts.get(afterKey) || 1;
 
-  return { ok:true, before, after, move: mv, gameOver: after.gameOver() };
+  return {
+    ok:true,
+    before,
+    after,
+    move:mv,
+    positionCounts,
+    repetitionCount,
+    gameOver:after.gameOver(repetitionCount, {autoClaimable:options.autoClaimable === true})
+  };
 }
 
 function resultFromGameOver(gameOver) {
   if (!gameOver) return '*';
   if (gameOver.type === 'checkmate') return gameOver.winner === 'w' ? '1-0' : '0-1';
-  if (['stalemate', 'insufficient_material', 'fifty_move_rule', 'threefold_repetition'].includes(gameOver.type)) return '1/2-1/2';
+  if (['stalemate', 'insufficient_material', 'fifty_move_rule', 'threefold_repetition', 'fivefold_repetition', 'seventy_five_move_rule'].includes(gameOver.type)) return '1/2-1/2';
   return '*';
 }
 
@@ -15066,6 +15232,15 @@ export class GameRoom {
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
       const clock = advanceClock((await this.state.storage.get('clock')) || null, Date.now());
       const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
+      const storedMoves = (await this.state.storage.get('moves')) || [];
+      const drawClaims = game && game.started && !game.ended
+        ? drawClaimsForStoredPosition(storedMoves, setup, timeControl, game)
+        : safeDrawClaimsForClient(null);
+      const drawClaimByRole = drawClaims && (drawClaims.threefold || drawClaims.fiftyMove) && (drawClaims.claimantRole === 'w' || drawClaims.claimantRole === 'b')
+        ? drawClaims.claimantRole
+        : null;
+      const drawClaimThreefold = drawClaimByRole && drawClaims.threefold ? 1 : 0;
+      const drawClaimFiftyMove = drawClaimByRole && drawClaims.fiftyMove ? 1 : 0;
       const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
       const ratedForIndex = game.started && Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION
         ? !!game.ratingRated
@@ -15081,8 +15256,9 @@ export class GameRoom {
            invited_user_id, invited_name, invitation_status, invitation_responded_at,
            invitation_message, invitation_response_message,
            time_label, days_per_move, variant, started, started_at, updated_at,
-           turn, deadline_at, ended, ended_at, result, end_reason, draw_offer_by_role, draw_offer_at, rated
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           turn, deadline_at, ended, ended_at, result, end_reason, draw_offer_by_role, draw_offer_at,
+           draw_claim_by_role, draw_claim_threefold, draw_claim_fifty_move, rated
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
@@ -15108,6 +15284,9 @@ export class GameRoom {
            end_reason = excluded.end_reason,
            draw_offer_by_role = excluded.draw_offer_by_role,
            draw_offer_at = excluded.draw_offer_at,
+           draw_claim_by_role = excluded.draw_claim_by_role,
+           draw_claim_threefold = excluded.draw_claim_threefold,
+           draw_claim_fifty_move = excluded.draw_claim_fifty_move,
            rated = excluded.rated`
       ).bind(
         roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
@@ -15116,7 +15295,8 @@ export class GameRoom {
         timeControl.label, timeControl.daysPerMove, setup.variant,
         game.started ? 1 : 0, game.startedAt || null, new Date(now).toISOString(),
         clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : null, deadlineAt,
-        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null, drawOfferByRole, drawOfferAt, ratedForIndex ? 1 : 0
+        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null, drawOfferByRole, drawOfferAt,
+        drawClaimByRole, drawClaimThreefold, drawClaimFiftyMove, ratedForIndex ? 1 : 0
       ).run();
     } catch (_) {
       // Ein D1-Fehler darf die eigentliche Partie nicht unterbrechen.
@@ -15431,7 +15611,7 @@ export class GameRoom {
   async refreshTimedGameState(now = Date.now(), options = {}) {
     const stored = options.stored && typeof options.stored.get === 'function'
       ? options.stored
-      : await this.state.storage.get(['game','clock']);
+      : await this.state.storage.get(['game','clock','moves','gameSetup','timeControl']);
     let game = stored.get('game') || { started: false, ended: false, result: '*' };
     let clock = stored.get('clock') || null;
     if (!clock) return { game, clock: null, justEnded: false };
@@ -15448,7 +15628,24 @@ export class GameRoom {
 
     let justEnded = false;
     if (game.started && !game.ended && clock && clock.timeLost) {
-      game = finishGameState(game, 'time', clock.winner, now);
+      let winner = clock.winner === 'w' || clock.winner === 'b' ? clock.winner : null;
+      let endReason = 'time';
+      if (winner) {
+        try {
+          const moves = stored.has('moves') ? (stored.get('moves') || []) : ((await this.state.storage.get('moves')) || []);
+          const setup = stored.has('gameSetup') ? stored.get('gameSetup') : await this.state.storage.get('gameSetup');
+          const position = buildServerHistoryState(moves, setup).game;
+          if (!position.canSidePossiblyMate(winner)) {
+            winner = null;
+            endReason = 'time_insufficient_material';
+            clock.winner = null;
+          }
+        } catch (_) {
+          // Bei beschädigter Historie wird die bereits festgestellte Zeitüberschreitung nicht verschluckt.
+        }
+      }
+      game = finishGameState(game, endReason, winner, now);
+      game.result = winner === 'w' ? '1-0' : winner === 'b' ? '0-1' : '1/2-1/2';
       await this.state.storage.put({game,clock});
       await this.state.storage.delete('drawOffer');
       await this.state.storage.delete('conditionalMoves');
@@ -15628,6 +15825,9 @@ export class GameRoom {
       ? safeConditionalMoveForClient(storedConditionalMoves[info.role])
       : null;
     const drawOffer = safeDrawOfferForClient((await this.state.storage.get('drawOffer')) || null);
+    const drawClaims = timed.game && timed.game.started && !timed.game.ended
+      ? drawClaimsForStoredPosition(storedMoves, storedGameSetup, storedTimeControl, timed.game)
+      : safeDrawClaimsForClient(null);
     const storedChatValue = await this.state.storage.get('chatMessages');
     const storedChatMessages = Array.isArray(storedChatValue) ? storedChatValue : [];
     const isSpectator = info.role === 'spectator';
@@ -15701,6 +15901,7 @@ export class GameRoom {
       moves,
       conditionalMove,
       drawOffer,
+      drawClaims,
       chatMessages,
       clock: clockPayload(timed.clock, now),
       serverNow: now
@@ -15734,11 +15935,12 @@ export class GameRoom {
     }
   }
 
-  broadcastMove(move, messageId = null, clock = null, game = null, drawOffer = null, excludeWs = null, serverProcessingMs = null) {
+  broadcastMove(move, messageId = null, clock = null, game = null, drawOffer = null, drawClaims = null, excludeWs = null, serverProcessingMs = null) {
     const now = Date.now();
     const publicMove = safeMoveForClient(move);
     const publicGame = safeGameForClient(game);
     const publicDrawOffer = safeDrawOfferForClient(drawOffer);
+    const publicDrawClaims = safeDrawClaimsForClient(drawClaims);
     const publicClock = clockPayload(clock, now);
     for (const ws of this.state.getWebSockets()) {
       if (excludeWs && ws === excludeWs) continue;
@@ -15752,6 +15954,7 @@ export class GameRoom {
         move: publicMove,
         game: publicGame,
         drawOffer: publicDrawOffer,
+        drawClaims: publicDrawClaims,
         clock: publicClock,
         serverProcessingMs,
         serverNow: now
@@ -16422,6 +16625,7 @@ export class GameRoom {
       }
 
       const drawTimeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      const drawMoves = (await this.state.storage.get('moves')) || [];
       if (drawTimeControl && drawTimeControl.mode === 'daily') {
         safeSend(ws, {
           type: 'error',
@@ -16429,6 +16633,14 @@ export class GameRoom {
           message: 'Bei Daily Chess wird ein Remisangebot zusammen mit dem eigenen Zug gesendet.'
         });
         await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+      if (drawMoves.length < 2) {
+        safeSend(ws, {
+          type:'error',
+          code:'DRAW_AGREEMENT_TOO_EARLY',
+          message:'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.'
+        });
         return;
       }
 
@@ -16536,6 +16748,90 @@ export class GameRoom {
       return;
     }
 
+    if (data.type === 'claim_draw') {
+      if (role !== 'w' && role !== 'b') {
+        safeSend(ws, {type:'error', code:'NOT_A_PLAYER', message:'Nur Spieler können Remis reklamieren.'});
+        return;
+      }
+      const state = await this.state.storage.get(['game','clock','timeControl','moves','gameSetup']);
+      const timed = await this.refreshTimedGameState(Date.now(), {stored:state});
+      let game = timed.game || {started:false,ended:false};
+      if (!game.started) {
+        safeSend(ws, {type:'error', code:'GAME_NOT_STARTED', message:'Die Partie wurde noch nicht gestartet.'});
+        return;
+      }
+      if (game.ended) {
+        safeSend(ws, {type:'error', code:'GAME_ALREADY_ENDED', message:'Die Partie ist bereits beendet.'});
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+      const timeControl = cleanTimeControl(state.get('timeControl') || null);
+      if (!timeControl || timeControl.mode !== 'daily') {
+        safeSend(ws, {type:'error', code:'DRAW_CLAIM_DAILY_ONLY', message:'Eine Remisreklamation ist hier nicht nötig; Live-Partien werten Wiederholung und 50-Züge-Regel automatisch aus.'});
+        return;
+      }
+      const moves = state.get('moves') || [];
+      const gameSetup = cleanGameSetup(state.get('gameSetup') || (game && game.gameSetup) || null);
+      let historyState;
+      try {
+        historyState = buildServerHistoryState(moves, gameSetup);
+      } catch (error) {
+        safeSend(ws, {type:'error', code:'SERVER_MOVE_HISTORY_INVALID', message:error && error.message ? error.message : 'Server-Zugliste konnte nicht geprüft werden.'});
+        return;
+      }
+      if (historyState.game.turn !== role || !timed.clock || timed.clock.turn !== role) {
+        safeSend(ws, {type:'error', code:'DRAW_CLAIM_NOT_YOUR_TURN', message:'Remis kann nur der Spieler reklamieren, der am Zug ist.'});
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+      const claims = drawClaimsFromHistoryState(historyState, timeControl, game);
+      const requested = String(data.reason || '').trim().toLowerCase();
+      let endReason = '';
+      if ((requested === 'threefold_repetition' || !requested) && claims.threefold) endReason = 'threefold_repetition';
+      else if ((requested === 'fifty_move_rule' || !requested) && claims.fiftyMove) endReason = 'fifty_move_rule';
+      else if (claims.threefold) endReason = 'threefold_repetition';
+      else if (claims.fiftyMove) endReason = 'fifty_move_rule';
+      if (!endReason) {
+        safeSend(ws, {
+          type:'error',
+          code:'DRAW_CLAIM_NOT_AVAILABLE',
+          message:'Die Stellung erfüllt aktuell weder die dreifache Stellungswiederholung noch die 50-Züge-Regel.',
+          drawClaims:safeDrawClaimsForClient(claims),
+          serverNow:Date.now()
+        });
+        return;
+      }
+      const now = Date.now();
+      let clock = timed.clock;
+      clock.running = false;
+      clock.timeLost = false;
+      clock.loser = null;
+      clock.winner = null;
+      clock.lastTs = now;
+      clock.updatedAt = now;
+      game = finishGameState(game, endReason, null, now);
+      game.result = '1/2-1/2';
+      await this.state.storage.put({game,clock});
+      await this.state.storage.delete('drawOffer');
+      await this.state.storage.delete('conditionalMoves');
+      try { await this.state.storage.deleteAlarm(); } catch (_) {}
+      await this.finalizeRatingIfNeeded(game);
+      await this.syncGameIndexes();
+      this.queueDailyResultNotifications(game);
+      safeSend(ws, {
+        type:'draw_claim',
+        ok:true,
+        reason:endReason,
+        game:safeGameForClient(game),
+        drawOffer:null,
+        drawClaims:safeDrawClaimsForClient(null),
+        clock:clockPayload(clock, now),
+        serverNow:now
+      });
+      await this.broadcastRoomState('game_finished');
+      return;
+    }
+
     if (data.type === 'resign') {
       if (role !== 'w' && role !== 'b') {
         safeSend(ws, { type: 'error', code: 'NOT_A_PLAYER', message: 'Nur Spieler können aufgeben.' });
@@ -16555,7 +16851,19 @@ export class GameRoom {
       }
 
       const now = Date.now();
-      const winner = opposite(role);
+      const nominalWinner = opposite(role);
+      let winner = nominalWinner;
+      let endReason = 'resignation';
+      try {
+        const state = await this.state.storage.get(['moves','gameSetup']);
+        const position = buildServerHistoryState(state.get('moves') || [], state.get('gameSetup') || (game && game.gameSetup) || null).game;
+        if (!position.canSidePossiblyMate(nominalWinner)) {
+          winner = null;
+          endReason = 'resignation_insufficient_material';
+        }
+      } catch (_) {
+        // Die Aufgabe bleibt gültig; nur die Sonderprüfung auf unmögliches Matt entfällt bei beschädigter Historie.
+      }
       let clock = (await this.state.storage.get('clock')) || null;
       if (clock) {
         clock = advanceClock(clock, now);
@@ -16572,7 +16880,8 @@ export class GameRoom {
         clock.updatedAt = now;
         await this.state.storage.put('clock', clock);
       }
-      game = finishGameState(game, 'resignation', winner, now);
+      game = finishGameState(game, endReason, winner, now);
+      game.result = winner === 'w' ? '1-0' : winner === 'b' ? '0-1' : '1/2-1/2';
       await this.state.storage.put('game', game);
       await this.state.storage.delete('drawOffer');
       await this.state.storage.delete('conditionalMoves');
@@ -16580,7 +16889,7 @@ export class GameRoom {
       await this.finalizeRatingIfNeeded(game);
       await this.syncGameIndexes();
       this.queueDailyResultNotifications(game);
-      safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, clock: clockPayload(clock, now), serverNow: now });
+      safeSend(ws, { type: 'resignation', ok: true, byRole: role, winner, game: safeGameForClient(game), drawOffer: null, drawClaims:safeDrawClaimsForClient(null), clock: clockPayload(clock, now), serverNow: now });
       await this.broadcastRoomState('game_finished');
       return;
     }
@@ -16639,7 +16948,7 @@ export class GameRoom {
           safeSend(ws, {type:'error', code:'CONDITIONAL_EXPECTED_ENDS_GAME', message:'Nach diesem Gegnerzug wäre die Partie bereits beendet; eine Antwort ist nicht möglich.'});
           return;
         }
-        replyValidation = validateMoveOnServer([], replyIncoming, gameSetup, expectedValidation.after);
+        replyValidation = validateMoveOnServer([], replyIncoming, gameSetup, expectedValidation.after, expectedValidation.positionCounts, {autoClaimable:false});
       } catch (error) {
         safeSend(ws, {type:'error', code:'CONDITIONAL_VALIDATION_FAILED', message:error && error.message ? error.message : 'Die vorbereitete Zugfolge konnte nicht geprüft werden.'});
         return;
@@ -16720,9 +17029,20 @@ export class GameRoom {
         safeSend(ws, { type: 'error', code: 'TIME_CONTROL_REQUIRED', message: 'Keine Bedenkzeit im Raum gespeichert.' });
         return;
       }
-      const offerDrawWithMove = timeControl.mode === 'daily' && data.offerDraw === true;
+      const claimDrawWithMove = timeControl.mode === 'daily' && data.claimDraw === true;
 
       const moves = moveState.get('moves') || [];
+      const offerDrawWithMove = timeControl.mode === 'daily' && data.offerDraw === true && !claimDrawWithMove && moves.length + 1 >= 2;
+      if (timeControl.mode === 'daily' && data.offerDraw === true && !claimDrawWithMove && moves.length + 1 < 2) {
+        safeSend(ws, {
+          type:'error',
+          code:'DRAW_AGREEMENT_TOO_EARLY',
+          message:'Ein Remisangebot ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.'
+        });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
       const incoming = cleanMove(data.move || data);
       if (!incoming) {
         safeSend(ws, { type: 'error', code: 'INVALID_MOVE', message: 'Ungültiges Zugformat.' });
@@ -16743,7 +17063,7 @@ export class GameRoom {
       const gameSetup = cleanGameSetup(moveState.get('gameSetup') || (game && game.gameSetup) || null);
       let validation;
       try {
-        validation = validateMoveOnServer(moves, incoming, gameSetup, this.validationGameFor(moves, gameSetup));
+        validation = validateMoveOnServer(moves, incoming, gameSetup, this.validationGameFor(moves, gameSetup), null, {autoClaimable:timeControl.mode !== 'daily'});
       } catch (err) {
         safeSend(ws, {
           type: 'error',
@@ -16767,6 +17087,27 @@ export class GameRoom {
           message: validation.before.turn === 'w' ? 'Weiß ist am Zug.' : 'Schwarz ist am Zug.'
         });
         return;
+      }
+
+      if (claimDrawWithMove && !validation.gameOver) {
+        const requestedClaim = String(data.claimDrawReason || data.claim_draw_reason || '').trim().toLowerCase();
+        const canClaimThreefold = Math.max(0, Number(validation.repetitionCount) || 0) >= 3;
+        const canClaimFifty = Math.max(0, Number(validation.after && validation.after.halfmove) || 0) >= 100;
+        let claimReason = '';
+        if (requestedClaim === 'threefold_repetition' && canClaimThreefold) claimReason = 'threefold_repetition';
+        else if (requestedClaim === 'fifty_move_rule' && canClaimFifty) claimReason = 'fifty_move_rule';
+        else if (canClaimThreefold) claimReason = 'threefold_repetition';
+        else if (canClaimFifty) claimReason = 'fifty_move_rule';
+        if (!claimReason) {
+          safeSend(ws, {
+            type:'error',
+            code:'DRAW_CLAIM_MOVE_NOT_AVAILABLE',
+            message:'Der angekündigte Zug erzeugt keinen gültigen Anspruch aus dreifacher Stellungswiederholung oder 50-Züge-Regel.'
+          });
+          await this.sendRoomState(ws, 'room_state');
+          return;
+        }
+        validation.gameOver = {type:claimReason, winner:null, claimedByRole:role, intendedMove:true};
       }
 
       let clock = timedState.clock || (await this.state.storage.get('clock')) || makeInitialClock(timeControl, Date.parse(game.startedAt) || Date.now(), gameTurnForSetup(gameSetup));
@@ -16884,6 +17225,10 @@ export class GameRoom {
       const humanClock = Object.assign({},clock);
       const humanGame = Object.assign({},game);
       const humanDrawOffer = outgoingDrawOffer;
+      const humanDrawClaims = validation.gameOver
+        ? safeDrawClaimsForClient(null)
+        : drawClaimsFromHistoryState({game:validation.after, repetitionCount:validation.repetitionCount}, timeControl, humanGame);
+      let outgoingDrawClaims = humanDrawClaims;
       const conditionalMoves = moveState.get('conditionalMoves') && typeof moveState.get('conditionalMoves') === 'object'
         ? Object.assign({},moveState.get('conditionalMoves'))
         : {};
@@ -16907,7 +17252,7 @@ export class GameRoom {
         if (exactExpectedMove && !game.ended && clock.turn === conditionalOwner) {
           let automaticValidation = null;
           try {
-            automaticValidation = validateMoveOnServer([], storedConditionalMove.replyMove, gameSetup, validation.after);
+            automaticValidation = validateMoveOnServer([], storedConditionalMove.replyMove, gameSetup, validation.after, validation.positionCounts, {autoClaimable:false});
           } catch (_) {
             automaticValidation = null;
           }
@@ -16968,6 +17313,9 @@ export class GameRoom {
               }
               moves.push(automaticMove);
               finalValidationGame = automaticValidation.after;
+              outgoingDrawClaims = automaticValidation.gameOver
+                ? safeDrawClaimsForClient(null)
+                : drawClaimsFromHistoryState({game:automaticValidation.after, repetitionCount:automaticValidation.repetitionCount}, timeControl, game);
             }
           }
         }
@@ -17002,14 +17350,15 @@ export class GameRoom {
         move: safeMoveForClient(move),
         game: safeGameForClient(humanGame),
         drawOffer: safeDrawOfferForClient(humanDrawOffer),
+        drawClaims: safeDrawClaimsForClient(humanDrawClaims),
         movesCount: ply,
         clock: clockPayload(humanClock, now),
         serverProcessingMs,
         serverNow: now
       });
-      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, humanClock, humanGame, humanDrawOffer, ws, serverProcessingMs);
+      this.broadcastMove(move, data.messageId || incoming.clientMessageId || null, humanClock, humanGame, humanDrawOffer, humanDrawClaims, ws, serverProcessingMs);
       if (automaticMove) {
-        this.broadcastMove(automaticMove, automaticMove.messageId, clock, game, outgoingDrawOffer, null, 0);
+        this.broadcastMove(automaticMove, automaticMove.messageId, clock, game, outgoingDrawOffer, outgoingDrawClaims, null, 0);
       }
       if (conditionalMoveConsumed) {
         this.sendConditionalMoveState(conditionalOwner, null, automaticMove
