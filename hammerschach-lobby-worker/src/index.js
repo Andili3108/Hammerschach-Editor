@@ -3474,6 +3474,8 @@ async function ensureDailyGamesTable(env) {
        ended_at TEXT,
        result TEXT,
        end_reason TEXT,
+       draw_offer_by_role TEXT,
+       draw_offer_at TEXT,
        rated INTEGER NOT NULL DEFAULT 1
      )`
   ).run();
@@ -3483,6 +3485,8 @@ async function ensureDailyGamesTable(env) {
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_responded_at TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_message TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN invitation_response_message TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_offer_by_role TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_offer_at TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
@@ -3529,7 +3533,7 @@ async function listDailyGames(env, sessionUser) {
             daily_games.time_label, daily_games.days_per_move, daily_games.variant, daily_games.started,
             daily_games.started_at, daily_games.updated_at, daily_games.turn,
             daily_games.deadline_at, daily_games.ended, daily_games.ended_at,
-            daily_games.result, daily_games.end_reason, daily_games.rated,
+            daily_games.result, daily_games.end_reason, daily_games.draw_offer_by_role, daily_games.draw_offer_at, daily_games.rated,
             completed_game.pgn AS completed_pgn,
             CASE WHEN my_moment.room_id IS NULL THEN 0 ELSE 1 END AS favorite,
             my_moment.note AS moment_note,
@@ -3648,6 +3652,10 @@ async function listDailyGames(env, sessionUser) {
       endedAt: row.ended_at || null,
       result: row.result || '*',
       endReason: row.end_reason || null,
+      drawOfferByRole:row.draw_offer_by_role === 'w' || row.draw_offer_by_role === 'b' ? row.draw_offer_by_role : '',
+      drawOfferAt:row.draw_offer_at || null,
+      incomingDrawOffer:!!role && !row.ended && (row.draw_offer_by_role === 'w' || row.draw_offer_by_role === 'b') && row.draw_offer_by_role !== role,
+      outgoingDrawOffer:!!role && !row.ended && row.draw_offer_by_role === role,
       favorite:Number(row.favorite || 0) === 1,
       momentNote:cleanGameMomentNote(row.moment_note),
       momentAt:row.moment_created_at || null,
@@ -15037,6 +15045,9 @@ export class GameRoom {
       const invitationRespondedAt = (await this.state.storage.get('invitationRespondedAt')) || null;
       const invitationMessage = normalizeInvitationPersonalMessage((await this.state.storage.get('invitationMessage')) || '');
       const invitationResponseMessage = normalizeInvitationPersonalMessage((await this.state.storage.get('invitationResponseMessage')) || '');
+      const drawOffer = safeDrawOfferForClient((await this.state.storage.get('drawOffer')) || null);
+      const drawOfferByRole = drawOffer && (drawOffer.byRole === 'w' || drawOffer.byRole === 'b') ? drawOffer.byRole : null;
+      const drawOfferAt = drawOfferByRole ? (drawOffer.offeredAt || null) : null;
 
       // Offene Daily-Einladungen bleiben für den Ersteller unter „Meine Partien“
       // sichtbar, damit er sie löschen kann. Ein Raum ohne registrierten Ersteller
@@ -15070,8 +15081,8 @@ export class GameRoom {
            invited_user_id, invited_name, invitation_status, invitation_responded_at,
            invitation_message, invitation_response_message,
            time_label, days_per_move, variant, started, started_at, updated_at,
-           turn, deadline_at, ended, ended_at, result, end_reason, rated
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           turn, deadline_at, ended, ended_at, result, end_reason, draw_offer_by_role, draw_offer_at, rated
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(room_id) DO UPDATE SET
            white_user_id = excluded.white_user_id,
            black_user_id = excluded.black_user_id,
@@ -15095,6 +15106,8 @@ export class GameRoom {
            ended_at = excluded.ended_at,
            result = excluded.result,
            end_reason = excluded.end_reason,
+           draw_offer_by_role = excluded.draw_offer_by_role,
+           draw_offer_at = excluded.draw_offer_at,
            rated = excluded.rated`
       ).bind(
         roomId, whiteUserId || null, blackUserId || null, whiteName, blackName,
@@ -15103,7 +15116,7 @@ export class GameRoom {
         timeControl.label, timeControl.daysPerMove, setup.variant,
         game.started ? 1 : 0, game.startedAt || null, new Date(now).toISOString(),
         clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : null, deadlineAt,
-        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null, ratedForIndex ? 1 : 0
+        game.ended ? 1 : 0, game.endedAt || null, game.result || '*', game.endReason || null, drawOfferByRole, drawOfferAt, ratedForIndex ? 1 : 0
       ).run();
     } catch (_) {
       // Ein D1-Fehler darf die eigentliche Partie nicht unterbrechen.
@@ -16408,8 +16421,20 @@ export class GameRoom {
         return;
       }
 
+      const drawTimeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+      if (drawTimeControl && drawTimeControl.mode === 'daily') {
+        safeSend(ws, {
+          type: 'error',
+          code: 'DAILY_DRAW_OFFER_WITH_MOVE_REQUIRED',
+          message: 'Bei Daily Chess wird ein Remisangebot zusammen mit dem eigenen Zug gesendet.'
+        });
+        await this.sendRoomState(ws, 'room_state');
+        return;
+      }
+
       const existingOffer = (await this.state.storage.get('drawOffer')) || null;
       if (existingOffer && existingOffer.byRole === role) {
+        await this.syncDailyGameIndex();
         safeSend(ws, { type: 'draw_offer', ok: true, drawOffer: safeDrawOfferForClient(existingOffer), message: 'Remisangebot ist bereits offen.', serverNow: Date.now() });
         await this.broadcastRoomState('draw_offer');
         return;
@@ -16428,6 +16453,7 @@ export class GameRoom {
         serverNow: now
       };
       await this.state.storage.put('drawOffer', drawOffer);
+      await this.syncDailyGameIndex();
       safeSend(ws, { type: 'draw_offer', ok: true, drawOffer: safeDrawOfferForClient(drawOffer), serverNow: now });
       await this.broadcastRoomState('draw_offer');
       return;
@@ -16498,6 +16524,7 @@ export class GameRoom {
 
       if (action === 'reject' || action === 'decline' || action === 'rejected' || action === 'declined') {
         await this.state.storage.delete('drawOffer');
+        await this.syncDailyGameIndex();
         const clock = timedState.clock || (await this.state.storage.get('clock')) || null;
         if (clock && clock.running && !clock.timeLost) await this.scheduleClockAlarm(clock, now);
         safeSend(ws, { type: 'draw_response', ok: true, action: 'reject', drawOffer: null, serverNow: now });
@@ -16693,6 +16720,7 @@ export class GameRoom {
         safeSend(ws, { type: 'error', code: 'TIME_CONTROL_REQUIRED', message: 'Keine Bedenkzeit im Raum gespeichert.' });
         return;
       }
+      const offerDrawWithMove = timeControl.mode === 'daily' && data.offerDraw === true;
 
       const moves = moveState.get('moves') || [];
       const incoming = cleanMove(data.move || data);
@@ -16842,6 +16870,14 @@ export class GameRoom {
       let outgoingDrawOffer = openDrawOffer;
       if (validation.gameOver || (openDrawOffer && openDrawOffer.byRole && openDrawOffer.byRole !== role)) {
         outgoingDrawOffer = null;
+      }
+      if (!validation.gameOver && offerDrawWithMove) {
+        outgoingDrawOffer = {
+          offered:true,
+          byRole:role,
+          offeredAt:new Date(now).toISOString(),
+          serverNow:now
+        };
       }
 
       moves.push(move);
