@@ -91,9 +91,9 @@
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
   .header-menu-item:focus-visible{outline:3px solid rgba(132,63,70,.18);outline-offset:1px;}
-  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:14px;row-gap:8px;width:100%;min-width:0;}
+  .board-tools{display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:nowrap;column-gap:14px;row-gap:8px;width:100%;min-width:0;}
   .board-utility-tools{display:flex;align-items:center;justify-content:flex-start;gap:6px;flex:1 1 330px;min-width:0;white-space:nowrap;}
-  .board-primary-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px;flex:0 1 auto;min-width:0;margin-left:auto;white-space:nowrap;}
+  .board-primary-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:nowrap;gap:6px;flex:0 0 auto;min-width:0;margin-left:auto;white-space:nowrap;}
   .gamer-board-nav{display:flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto;}
   .gamer-board-nav-btn{width:36px;height:40px;min-width:36px;min-height:40px;padding:0!important;border-radius:12px!important;font-size:20px!important;line-height:1!important;}
   .icon-btn{width:40px;height:40px;min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:21px;line-height:1;padding:0;}
@@ -110,9 +110,6 @@
   .daily-game-card.draw-claim-available .daily-game-status{color:#356d42!important;font-weight:900;}
   .board-daily-cancel-btn{width:40px!important;min-width:40px!important;padding:0!important;font-size:20px!important;}
   .board-daily-confirm-btn{min-width:126px!important;padding-inline:14px!important;background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;}
-  @media (min-width:761px) and (max-width:1099px){
-    .board-primary-actions{flex:1 1 100%;justify-content:flex-end;}
-  }
   .variation-launcher{width:auto;display:flex;justify-content:center;flex:0 0 auto;}
   .variation-launcher[hidden]{display:none!important;}
   .variation-open-btn{min-height:40px!important;border-radius:13px!important;padding:7px 10px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important;}
