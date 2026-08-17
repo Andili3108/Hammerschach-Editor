@@ -360,12 +360,15 @@ function updateDailyMoveConfirmationUi(){
     onlineRoleCode === g.turn
   );
   dailyMoveConfirmationEl.hidden = !visible;
+  const boardTools = dailyMoveConfirmationEl.closest('.board-tools');
+  if(boardTools) boardTools.classList.toggle('daily-move-pending', visible);
   if(dailyMoveCancelBtn) dailyMoveCancelBtn.disabled = !visible;
   if(dailyMoveDrawBtn){
     const offerWithMove = !!(visible && pendingDailyMove && pendingDailyMove.offerDraw);
     const claimWithMove = !!(visible && pendingDailyMove && pendingDailyMove.claimDraw);
     const claimAvailable = !!(visible && pendingDailyMove && pendingDailyMove.claimDrawReason);
     const agreementAvailable = !!(visible && pendingDailyMove && pendingDailyMove.drawAgreementAvailable);
+    const incomingOfferPending = !!(visible && onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode);
     const activeDrawAction = offerWithMove || claimWithMove;
     dailyMoveDrawBtn.disabled = !visible || (!claimAvailable && !agreementAvailable);
     dailyMoveDrawBtn.classList.toggle('active', activeDrawAction);
@@ -378,7 +381,9 @@ function updateDailyMoveConfirmationUi(){
           ? 'Remisreklamation ist für diesen Zug vorgemerkt. Noch einmal klicken zum Abwählen.'
           : 'Diesen Zug als angekündigten Zug für eine Remisreklamation verwenden.')
       : (!agreementAvailable
-          ? 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.'
+          ? (incomingOfferPending
+              ? 'Der Gegner hat bereits Remis angeboten. Mit „↩“ kehrst du zurück und kannst das Angebot annehmen oder ablehnen.'
+              : 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.')
           : (offerWithMove
               ? 'Remisangebot ist für diesen Zug vorgemerkt. Noch einmal klicken zum Abwählen.'
               : 'Remis zusammen mit diesem Zug anbieten.'));
@@ -416,7 +421,7 @@ function stageDailyMove(found, promotion){
     offerDraw:false,
     claimDraw:false,
     claimDrawReason,
-    drawAgreementAvailable:actualMoveCount() + 1 >= 2,
+    drawAgreementAvailable:actualMoveCount() + 1 >= 2 && !(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode),
     previewRepetitionCount,
     previewHalfmove:preview.halfmove
   };

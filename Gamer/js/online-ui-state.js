@@ -79,15 +79,26 @@ function updateOnlineActionButtons(){
       : '';
   }
 }
+function canOfferLiveDrawNow(){
+  if(isDailyTimeControl() || actualMoveCount() < 2 || (onlineRoleCode !== 'w' && onlineRoleCode !== 'b')) return false;
+  try{
+    const g = buildGameFromHistory(masterHistory.length);
+    return !!(g && (g.turn === 'w' || g.turn === 'b') && g.turn !== onlineRoleCode);
+  } catch(_){
+    return false;
+  }
+}
 function updateGameActionButtons(){
   const live = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
-  if(gameActionsEl) gameActionsEl.hidden = !live;
+  const dailyMovePending = !!(live && isDailyTimeControl() && pendingDailyMove);
+  if(gameActionsEl) gameActionsEl.hidden = !live || dailyMovePending;
   if(!live && resignBackdropEl && !resignBackdropEl.hidden) closeResignDialog({restoreFocus:false});
   if(!offerDrawBtn || !resignBtn) return;
   const incomingDrawOffer = !!(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode);
   const outgoingDrawOffer = !!(onlineDrawOffer && onlineDrawOffer.byRole === onlineRoleCode);
   const daily = isDailyTimeControl();
   const drawAgreementAvailable = actualMoveCount() >= 2;
+  const liveDrawOfferAvailable = !!(!daily && canOfferLiveDrawNow());
   const dailyClaimAvailable = !!(daily && onlineDrawClaims && onlineDrawClaims.claimantRole === onlineRoleCode && (onlineDrawClaims.threefold || onlineDrawClaims.fiftyMove));
   offerDrawBtn.hidden = !!(live && daily && !incomingDrawOffer && !outgoingDrawOffer && !dailyClaimAvailable);
   offerDrawBtn.classList.toggle('draw-offer-accept-btn', incomingDrawOffer || dailyClaimAvailable);
@@ -125,12 +136,14 @@ function updateGameActionButtons(){
     offerDrawBtn.title = 'Remis reklamieren: ' + onlineDrawClaimLabel(onlineDrawClaims) + '.';
   } else {
     offerDrawBtn.textContent = '½ Remis';
-    offerDrawBtn.disabled = daily || !drawAgreementAvailable;
+    offerDrawBtn.disabled = daily || !liveDrawOfferAvailable;
     offerDrawBtn.title = daily
       ? 'Bei Daily Chess wird das Remisangebot nach der Zugauswahl zusammen mit „Zug bestätigen“ gesendet.'
-      : drawAgreementAvailable
-        ? 'Dem Gegner Remis anbieten.'
-        : 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.';
+      : !drawAgreementAvailable
+        ? 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.'
+        : liveDrawOfferAvailable
+          ? 'Dem Gegner jetzt Remis anbieten.'
+          : 'Bei Live-Partien kannst du Remis direkt nach deinem Zug anbieten, solange der Gegner am Zug ist.';
   }
   resignBtn.title = onlineRoleCode === 'w' ? 'Als Weiß aufgeben.' : 'Als Schwarz aufgeben.';
 }

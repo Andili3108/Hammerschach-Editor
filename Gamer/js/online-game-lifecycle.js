@@ -123,6 +123,13 @@ function handleDrawButtonClick(){
     updateOnlineUi();
     return;
   }
+  if(!canOfferLiveDrawNow()){
+    onlineLastMessage = actualMoveCount() < 2
+      ? 'Remis kann erst angeboten werden, nachdem beide Spieler mindestens einen Zug gemacht haben.'
+      : 'Bei Live-Partien kannst du Remis direkt nach deinem Zug anbieten, solange der Gegner am Zug ist.';
+    updateOnlineUi();
+    return;
+  }
   if(sendOnlineMessage({type:'offer_draw'})){
     onlineLastMessage = 'Remisangebot wird gesendet...';
     updateOnlineUi();
