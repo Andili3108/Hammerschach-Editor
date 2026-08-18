@@ -3,6 +3,7 @@
 function applyOnlineGameState(game){
   const wasStarted = onlineGameStarted;
   const wasEnded = onlineGameEnded;
+  const openedAlreadyEnded = !!(game && game.started && game.ended && !wasStarted && !wasEnded);
   onlineGameStarted = !!(game && game.started);
   onlineGameEnded = !!(game && game.ended);
   onlineGameResult = game && game.result ? game.result : (onlineGameEnded ? onlineGameResult : '*');
@@ -20,16 +21,21 @@ function applyOnlineGameState(game){
     invalidateHistoryStateCache();
     viewIndex = masterHistory.length;
     lastMove = masterHistory.length ? {from:masterHistory[masterHistory.length-1].from,to:masterHistory[masterHistory.length-1].to,meta:masterHistory[masterHistory.length-1].meta || {}} : null;
-    gameEnded = false;
+    // Beim Öffnen einer bereits beendeten Online-Partie darf der lokale
+    // Brettzustand niemals kurzzeitig wieder als laufend markiert werden.
+    gameEnded = !!onlineGameEnded;
     onlineDrawOffer = null;
     onlineDrawClaims = null;
     resetClockForNewGame();
     onlineClockSync = null;
-    onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
-    playGameStartSound();
+    if(!onlineGameEnded){
+      onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
+      playGameStartSound();
+    }
     renderBoard();
   }
   if(onlineGameEnded && !wasEnded){
+    gameEnded = true;
     stopClock();
     clockRunning = false;
     pendingDailyMove = null;
@@ -39,7 +45,9 @@ function applyOnlineGameState(game){
     onlineDrawOffer = null;
     onlineDrawClaims = null;
     statusEl.textContent = formatOnlineEndMessage(game);
-    playGameResultSound(onlineGameResult, onlineGameWinner);
+    // Beim bloßen Ansehen einer bereits beendeten Partie keinen Ergebnis-Sound
+    // erneut abspielen. Nur ein tatsächlich live erlebtes Partieende signalisiert ihn.
+    if(!openedAlreadyEnded) playGameResultSound(onlineGameResult, onlineGameWinner);
     updateGameActionButtons();
     updateOnlineUi();
   }

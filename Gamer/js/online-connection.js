@@ -378,12 +378,14 @@ function connectOnlineRoom(roomId, opts){
     else if(msg.type === 'rematch_state') onlineLastMessage = 'Revanche-Status wurde aktualisiert.';
     else if(msg.type === 'game_reaction_state') onlineLastMessage = 'Partie-Reaktion wurde aktualisiert.';
     else if(msg.type === 'game_finished' || msg.type === 'resignation') onlineLastMessage = 'Online-Partie beendet.';
+    else if(incomingGame && onlineGameEnded) onlineLastMessage = formatOnlineEndMessage({result:onlineGameResult, endReason:onlineGameEndReason, winner:onlineGameWinner});
     else if(incomingGame && onlineGameStarted && !previousStarted) onlineLastMessage = isDailyTimeControl() ? 'Daily-Partie wurde automatisch gestartet.' : 'Online-Partie wurde gestartet.';
     else if(incomingTimeControl && !sameTimeControl(previousTime, incomingTimeControl)){
       if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
       else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
     } else if(msg.type === 'time_control_ack') onlineLastMessage = 'Bedenkzeit vom Server bestätigt.';
     else if(msg.type === 'public_game_ack') onlineLastMessage = onlinePublicGame ? 'Zuschauerfreigabe wurde aktiviert.' : 'Zuschauerfreigabe wurde aufgehoben.';
+    else if(onlineGameEnded || gameEnded || timeLost) onlineLastMessage = formatOnlineEndMessage({result:onlineGameResult, endReason:onlineGameEndReason, winner:onlineGameWinner});
     else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
     else if(isOnlineSideConnected('w') && isOnlineSideConnected('b')) onlineLastMessage = 'Beide Spieler sind in der Lobby.';
     else if(onlineOpenOffer && onlineOpenOfferStatus === 'open' && onlineCreatedByMe) onlineLastMessage = 'Dein Partieangebot ist offen. Warte auf einen Gegner.';

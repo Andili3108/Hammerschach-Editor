@@ -253,7 +253,9 @@ function updateStatus(g){
     return;
   }
   const go = onlineRoomId ? false : gameOverForHistory(viewIndex, g);
-  gameEnded = !!go;
+  // Online ist der Server-Endstatus maßgeblich. Ein Rendern des Archivbretts
+  // darf den lokalen Endschutz nicht wieder auf false setzen.
+  gameEnded = onlineRoomId ? !!(onlineGameEnded || timeLost) : !!go;
   if(go){
     stopClock();
     if(go.type === 'checkmate') statusEl.textContent = 'Schachmatt — ' + (go.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt';

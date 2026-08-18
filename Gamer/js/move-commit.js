@@ -4,6 +4,9 @@ function syncMoveToOnline(mv, movedSide, options){
   options = options || {};
   if(applyingRemoteMove) return;
   if(!onlineRoomId || !onlineGameStarted || !onlineConnected) return;
+  // Zweite Schutzschicht: Auch falls die UI einmal einen Zug durchlassen sollte,
+  // wird aus einer beendeten Online-Partie niemals mehr ein Zug übertragen.
+  if(onlineGameEnded || gameEnded || timeLost) return;
   if(onlineRoleCode !== movedSide) return;
   const messageId = 'mv_' + Date.now() + '_' + randomToken(5);
   const move = {
