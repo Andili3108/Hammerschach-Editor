@@ -1,19 +1,25 @@
 'use strict';
 
-const chessChronicleBackdrop = document.getElementById('chessChronicleBackdrop');
-const chessChronicleSubtitle = document.getElementById('chessChronicleSubtitle');
-const chessChronicleSummary = document.getElementById('chessChronicleSummary');
-const chessChronicleTimeline = document.getElementById('chessChronicleTimeline');
-const chessChronicleStatus = document.getElementById('chessChronicleStatus');
-const chessChronicleMoreBtn = document.getElementById('chessChronicleMoreBtn');
-const chessChronicleRefreshBtn = document.getElementById('chessChronicleRefreshBtn');
-const chessChronicleCloseBtn = document.getElementById('chessChronicleCloseBtn');
-const gameChronicleOpenBtn = document.getElementById('gameChronicleOpenBtn');
+/*
+ * Persönliche Schachchronik
+ * ------------------------
+ * Die Chronik ist keine eigene Oberfläche mehr. Ihre dauerhaften Daten werden
+ * in „Meine Partien → Beendet“ eingeblendet und ergänzen dort die bestehenden
+ * Partiekarten um Statistik, Suche, Ergebnisfilter, Monatsmarken und Meilensteine.
+ */
 
-let chessChroniclePage = 1;
-let chessChroniclePages = 1;
-let chessChronicleItems = [];
-let chessChronicleLoading = false;
+const dailyGamesChronicleSummary = document.getElementById('dailyGamesChronicleSummary');
+const dailyGamesChronicleMark = document.getElementById('dailyGamesChronicleMark');
+const dailyGamesChronicleOpponentInput = document.getElementById('dailyGamesChronicleOpponentInput');
+const dailyGamesChronicleResultButtons = Array.from(document.querySelectorAll('[data-chronicle-result-filter]'));
+
+let integratedChessChronicleItems = [];
+let integratedChessChronicleLoaded = false;
+let integratedChessChronicleLoading = false;
+let integratedChessChronicleError = '';
+let integratedChessChronicleLoadPromise = null;
+let integratedChessChronicleResultFilter = '';
+let integratedChessChronicleRefreshTimer = null;
 
 function chessChronicleFormatDate(value, options){
   const date = new Date(value || '');
@@ -32,68 +38,10 @@ function chessChronicleMonthKey(value){
   } catch(_){ return 'Unbekannter Zeitraum'; }
 }
 
-function chessChronicleVariantLabel(game){
-  if(game && game.variant === 'freestyle960'){
-    const positionId = Number(game.positionId);
-    return Number.isFinite(positionId) ? ('Freestyle #' + positionId) : 'Freestyle';
-  }
-  return 'Klassisch';
-}
-
-function chessChronicleModeLabel(game){
-  if(game && game.mode === 'daily'){
-    const days = Number(game.daysPerMove || 0);
-    return days > 0 ? ('Daily · ' + days + ' Tag' + (days === 1 ? '' : 'e') + '/Zug') : 'Daily';
-  }
-  return game && game.timeLabel ? ('Live · ' + game.timeLabel) : 'Live';
-}
-
 function chessChronicleMilestoneIcon(code){
-  if(code === 'first_win') return '🏆';
+  if(code === 'first_win' || code === 'first_tournament') return '🏆';
   if(code === 'first_moment') return '❤️';
-  if(code === 'first_tournament') return '🏆';
   return '♟️';
-}
-
-function chessChronicleRoomUrl(roomId){
-  try{
-    const cleanId = cleanRoomId(roomId || '');
-    if(!cleanId) return '';
-    const url = new URL(window.location.href);
-    url.searchParams.set('room', cleanId);
-    ['watch','fresh','role','player','tournament','dailyInvite','rematch'].forEach(key => url.searchParams.delete(key));
-    return url.toString();
-  } catch(_){ return ''; }
-}
-
-function renderChessChronicleSummary(summary){
-  if(!chessChronicleSummary) return;
-  chessChronicleSummary.innerHTML = '';
-  const values = [
-    ['Partien', Number(summary && summary.total || 0)],
-    ['Siege', Number(summary && summary.wins || 0)],
-    ['Remis', Number(summary && summary.draws || 0)],
-    ['Niederlagen', Number(summary && summary.losses || 0)],
-    ['❤️ Momente', Number(summary && summary.moments || 0)]
-  ];
-  values.forEach(([label, value]) => {
-    const card = document.createElement('div');
-    card.className = 'chess-chronicle-stat';
-    const number = document.createElement('strong');
-    number.textContent = String(value);
-    const name = document.createElement('span');
-    name.textContent = label;
-    card.appendChild(number);
-    card.appendChild(name);
-    chessChronicleSummary.appendChild(card);
-  });
-  if(chessChronicleSubtitle){
-    const username = String(summary && summary.username || '').trim();
-    const since = chessChronicleFormatDate(summary && summary.firstEndedAt, {day:'2-digit', month:'long', year:'numeric'});
-    chessChronicleSubtitle.textContent = summary && Number(summary.total || 0) > 0
-      ? ((username ? username + ' · ' : '') + 'Deine Geschichte im Hammerschach-Gamer' + (since ? ' seit ' + since : '') + '.')
-      : 'Hier entsteht mit deiner ersten beendeten Partie deine persönliche Schachgeschichte.';
-  }
 }
 
 function createChessChronicleMilestones(game){
@@ -108,201 +56,293 @@ function createChessChronicleMilestones(game){
     icon.textContent = chessChronicleMilestoneIcon(item.code);
     const text = document.createElement('strong');
     text.textContent = item.label || 'Meilenstein';
-    marker.appendChild(icon);
-    marker.appendChild(text);
+    marker.append(icon, text);
     box.appendChild(marker);
   });
   return box;
 }
 
-function createChessChronicleGameCard(game){
-  const card = document.createElement('article');
-  const outcomeCode = game && game.outcome && game.outcome.code ? game.outcome.code : 'ended';
-  card.className = 'chess-chronicle-card outcome-' + outcomeCode + (game && game.favorite ? ' gamer-moment' : '');
-
-  const head = document.createElement('div');
-  head.className = 'chess-chronicle-card-head';
-  const date = document.createElement('div');
-  date.className = 'chess-chronicle-date';
-  date.textContent = chessChronicleFormatDate(game && game.endedAt, {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'});
-  const badges = document.createElement('div');
-  badges.className = 'chess-chronicle-badges';
-  if(game && game.favorite){
-    const moment = document.createElement('span');
-    moment.className = 'chess-chronicle-badge moment';
-    moment.textContent = '❤️ Gamer-Moment';
-    badges.appendChild(moment);
-  }
-  if(game && game.tournamentId){
-    const tournament = document.createElement('span');
-    tournament.className = 'chess-chronicle-badge tournament';
-    tournament.textContent = '🏆 Turnier';
-    badges.appendChild(tournament);
-  }
-  head.appendChild(date);
-  head.appendChild(badges);
-  card.appendChild(head);
-
-  const title = document.createElement('div');
-  title.className = 'chess-chronicle-title';
-  title.textContent = 'gegen ' + (game && game.opponentName ? game.opponentName : 'Gegner');
-  card.appendChild(title);
-
-  const resultLine = document.createElement('div');
-  resultLine.className = 'chess-chronicle-result ' + outcomeCode;
-  const outcome = document.createElement('strong');
-  outcome.textContent = game && game.outcome && game.outcome.label ? game.outcome.label : 'Beendet';
-  const details = document.createElement('span');
-  const detailParts = [chessChronicleModeLabel(game), chessChronicleVariantLabel(game)];
-  if(game && game.ratingDelta !== null && game.ratingDelta !== undefined){
-    const delta = Number(game.ratingDelta || 0);
-    detailParts.push((game.ratingLabel ? game.ratingLabel + ' ' : '') + (delta > 0 ? '+' : '') + delta);
-  } else if(game && game.rated && game.ratingLabel){
-    detailParts.push(game.ratingLabel + ' · gewertet');
-  }
-  details.textContent = detailParts.filter(Boolean).join(' · ');
-  resultLine.appendChild(outcome);
-  resultLine.appendChild(details);
-  card.appendChild(resultLine);
-
-  if(game && game.tournamentName){
-    const tournamentLine = document.createElement('div');
-    tournamentLine.className = 'chess-chronicle-tournament-line';
-    tournamentLine.textContent = game.tournamentName + (game.tournamentRoundLabel ? ' · ' + game.tournamentRoundLabel : '');
-    card.appendChild(tournamentLine);
-  }
-
-  const opening = game && game.opening && typeof game.opening === 'object' ? game.opening : null;
-  if(opening && (opening.name || opening.moveText)){
-    const openingBox = document.createElement('div');
-    openingBox.className = 'chess-chronicle-opening';
-    const openingName = document.createElement('div');
-    openingName.className = 'chess-chronicle-opening-name';
-    openingName.textContent = opening.name || 'Partiebeginn';
-    openingBox.appendChild(openingName);
-    if(opening.moveText){
-      const moves = document.createElement('div');
-      moves.className = 'chess-chronicle-opening-moves';
-      moves.textContent = opening.moveText;
-      openingBox.appendChild(moves);
-    }
-    card.appendChild(openingBox);
-  }
-
-  if(game && game.favorite && game.momentNote){
-    const note = document.createElement('div');
-    note.className = 'chess-chronicle-note';
-    const label = document.createElement('strong');
-    label.textContent = 'Meine Erinnerung';
-    const text = document.createElement('div');
-    text.textContent = game.momentNote;
-    note.appendChild(label);
-    note.appendChild(text);
-    card.appendChild(note);
-  }
-
-  if(game && game.archiveAvailable && game.roomId){
-    const actions = document.createElement('div');
-    actions.className = 'chess-chronicle-card-actions';
-    const open = document.createElement('button');
-    open.type = 'button';
-    open.className = 'button-flat';
-    open.textContent = 'Partie ansehen';
-    open.addEventListener('click', () => {
-      const url = chessChronicleRoomUrl(game.roomId);
-      if(url) window.location.href = url;
-    });
-    actions.appendChild(open);
-    card.appendChild(actions);
-  }
-  return card;
+function normalizeChronicleSearch(value){
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase('de-DE');
 }
 
-function renderChessChronicleTimeline(){
-  if(!chessChronicleTimeline) return;
-  chessChronicleTimeline.innerHTML = '';
-  if(!chessChronicleItems.length){
-    const empty = document.createElement('div');
-    empty.className = 'chess-chronicle-empty';
-    empty.textContent = 'Noch keine beendete Partie – deine Schachchronik wartet auf ihre erste Seite.';
-    chessChronicleTimeline.appendChild(empty);
-    return;
-  }
+function integratedChessChronicleScopeItems(options){
+  options = options || {};
+  let items = integratedChessChronicleItems.slice();
+  if(options.tournamentOnly) items = items.filter(game => !!(game && game.tournamentId));
+  return items;
+}
 
-  let currentMonth = '';
-  chessChronicleItems.forEach(game => {
-    const month = chessChronicleMonthKey(game && game.endedAt);
-    if(month !== currentMonth){
-      currentMonth = month;
-      const heading = document.createElement('div');
-      heading.className = 'chess-chronicle-month';
-      heading.textContent = month;
-      chessChronicleTimeline.appendChild(heading);
-    }
-    const milestones = createChessChronicleMilestones(game);
-    if(milestones) chessChronicleTimeline.appendChild(milestones);
-    chessChronicleTimeline.appendChild(createChessChronicleGameCard(game));
+function integratedChessChronicleFilteredItems(options){
+  options = options || {};
+  let items = integratedChessChronicleScopeItems(options);
+  const opponent = normalizeChronicleSearch(dailyGamesChronicleOpponentInput && dailyGamesChronicleOpponentInput.value);
+  if(opponent){
+    items = items.filter(game => normalizeChronicleSearch(game && game.opponentName).includes(opponent));
+  }
+  if(integratedChessChronicleResultFilter){
+    items = items.filter(game => String(game && game.outcome && game.outcome.code || '') === integratedChessChronicleResultFilter);
+  }
+  if(options.momentsOnly){
+    items = items.filter(game => game && game.favorite === true);
+  }
+  return items;
+}
+
+function integratedChessChronicleStats(items){
+  const source = Array.isArray(items) ? items : [];
+  return {
+    total:source.length,
+    wins:source.filter(game => game && game.outcome && game.outcome.code === 'win').length,
+    draws:source.filter(game => game && game.outcome && game.outcome.code === 'draw').length,
+    losses:source.filter(game => game && game.outcome && game.outcome.code === 'loss').length,
+    moments:source.filter(game => game && game.favorite === true).length
+  };
+}
+
+function renderIntegratedChessChronicleSummary(options){
+  if(!dailyGamesChronicleSummary) return;
+  options = options || {};
+  dailyGamesChronicleSummary.innerHTML = '';
+  const stats = integratedChessChronicleLoaded
+    ? integratedChessChronicleStats(integratedChessChronicleScopeItems(options))
+    : null;
+  const values = [
+    ['Partien', stats ? stats.total : '…'],
+    ['Siege', stats ? stats.wins : '…'],
+    ['Remis', stats ? stats.draws : '…'],
+    ['Niederlagen', stats ? stats.losses : '…'],
+    ['❤️ Momente', stats ? stats.moments : '…']
+  ];
+  values.forEach(([label, value]) => {
+    const card = document.createElement('div');
+    card.className = 'chess-chronicle-stat';
+    const number = document.createElement('strong');
+    number.textContent = String(value);
+    const name = document.createElement('span');
+    name.textContent = label;
+    card.append(number, name);
+    dailyGamesChronicleSummary.appendChild(card);
+  });
+  if(dailyGamesChronicleMark){
+    dailyGamesChronicleMark.title = options.tournamentOnly ? 'Deine Turnierchronik' : 'Deine persönliche Schachchronik';
+  }
+}
+
+function updateIntegratedChessChronicleFilterUi(){
+  dailyGamesChronicleResultButtons.forEach(button => {
+    const value = String(button.dataset.chronicleResultFilter || '');
+    const active = !!value && value === integratedChessChronicleResultFilter;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
 }
 
-async function loadChessChronicle(options){
+function integratedChessChronicleState(){
+  return {
+    loaded:integratedChessChronicleLoaded,
+    loading:integratedChessChronicleLoading,
+    error:integratedChessChronicleError
+  };
+}
+
+async function loadIntegratedChessChronicle(options){
   options = options || {};
-  if(chessChronicleLoading || !onlineAuthToken || !onlineAuthUser) return;
-  const append = options.append === true;
-  const page = append ? chessChroniclePage + 1 : 1;
-  chessChronicleLoading = true;
-  if(chessChronicleRefreshBtn) chessChronicleRefreshBtn.disabled = true;
-  if(chessChronicleMoreBtn) chessChronicleMoreBtn.disabled = true;
-  if(chessChronicleStatus) chessChronicleStatus.textContent = append ? 'Ältere Einträge werden geladen…' : 'Schachchronik wird geladen…';
-  if(!append && chessChronicleTimeline) chessChronicleTimeline.innerHTML = '<div class="chess-chronicle-empty">Chronik wird geladen…</div>';
-  try{
-    const data = await authApi('/api/chess-chronicle?page=' + encodeURIComponent(page) + '&limit=60');
-    const incoming = data && Array.isArray(data.items) ? data.items : [];
-    chessChroniclePage = Math.max(1, Number(data && data.page || page));
-    chessChroniclePages = Math.max(1, Number(data && data.pages || 1));
-    chessChronicleItems = append ? chessChronicleItems.concat(incoming) : incoming;
-    renderChessChronicleSummary(data && data.summary ? data.summary : null);
-    renderChessChronicleTimeline();
-    if(chessChronicleMoreBtn) chessChronicleMoreBtn.hidden = chessChroniclePage >= chessChroniclePages;
-    if(chessChronicleStatus){
-      const total = Number(data && data.total || 0);
-      chessChronicleStatus.textContent = total > 0
-        ? (chessChronicleItems.length + ' von ' + total + ' Partie' + (total === 1 ? '' : 'n'))
-        : '';
+  const force = options.force === true;
+  if(!onlineAuthToken || !onlineAuthUser) return [];
+  if(integratedChessChronicleLoading && integratedChessChronicleLoadPromise) return integratedChessChronicleLoadPromise;
+  if(integratedChessChronicleLoaded && !force){
+    renderIntegratedChessChronicleSummary({tournamentOnly:typeof dailyGamesTournamentOnly !== 'undefined' && dailyGamesTournamentOnly});
+    return integratedChessChronicleItems;
+  }
+
+  integratedChessChronicleLoading = true;
+  integratedChessChronicleError = '';
+  if(!integratedChessChronicleLoaded){
+    renderIntegratedChessChronicleSummary({tournamentOnly:typeof dailyGamesTournamentOnly !== 'undefined' && dailyGamesTournamentOnly});
+  }
+
+  integratedChessChronicleLoadPromise = (async () => {
+    try{
+      const first = await authApi('/api/chess-chronicle?page=1&limit=120');
+      let items = Array.isArray(first && first.items) ? first.items.slice() : [];
+      const pages = Math.max(1, Number(first && first.pages || 1));
+      for(let page = 2; page <= pages; page += 1){
+        const data = await authApi('/api/chess-chronicle?page=' + encodeURIComponent(page) + '&limit=120');
+        if(Array.isArray(data && data.items)) items.push(...data.items);
+      }
+      const seen = new Set();
+      integratedChessChronicleItems = items
+        .filter(game => {
+          const roomId = cleanRoomId(game && game.roomId);
+          if(!roomId || seen.has(roomId)) return false;
+          seen.add(roomId);
+          return true;
+        })
+        .sort((a,b) => (Date.parse(b && b.endedAt || 0) || 0) - (Date.parse(a && a.endedAt || 0) || 0));
+      integratedChessChronicleLoaded = true;
+      integratedChessChronicleError = '';
+    } catch(err){
+      integratedChessChronicleError = err && err.message ? err.message : 'Die Schachchronik konnte nicht geladen werden.';
+      if(!integratedChessChronicleLoaded) integratedChessChronicleItems = [];
+    } finally {
+      integratedChessChronicleLoading = false;
+      integratedChessChronicleLoadPromise = null;
+      renderIntegratedChessChronicleSummary({tournamentOnly:typeof dailyGamesTournamentOnly !== 'undefined' && dailyGamesTournamentOnly});
+      if(typeof renderDailyGames === 'function' && typeof dailyGamesCache !== 'undefined') renderDailyGames(dailyGamesCache);
+      if(typeof refreshDailyGamesCountStatus === 'function') refreshDailyGamesCountStatus();
     }
-  } catch(err){
-    if(!append) chessChronicleItems = [];
-    renderChessChronicleTimeline();
-    if(chessChronicleStatus) chessChronicleStatus.textContent = err && err.message ? err.message : 'Die Schachchronik konnte nicht geladen werden.';
-    if(chessChronicleMoreBtn) chessChronicleMoreBtn.hidden = true;
-  } finally {
-    chessChronicleLoading = false;
-    if(chessChronicleRefreshBtn) chessChronicleRefreshBtn.disabled = false;
-    if(chessChronicleMoreBtn) chessChronicleMoreBtn.disabled = false;
+    return integratedChessChronicleItems;
+  })();
+  return integratedChessChronicleLoadPromise;
+}
+
+function syncIntegratedChessChronicleGame(game){
+  const roomId = cleanRoomId(game && game.roomId);
+  if(!roomId) return;
+  const target = integratedChessChronicleItems.find(item => cleanRoomId(item && item.roomId) === roomId);
+  if(!target) return;
+  target.favorite = game.favorite === true;
+  target.momentNote = String(game.momentNote || '').slice(0, 240);
+  target.momentAt = game.momentAt || null;
+  renderIntegratedChessChronicleSummary({tournamentOnly:typeof dailyGamesTournamentOnly !== 'undefined' && dailyGamesTournamentOnly});
+  if(integratedChessChronicleRefreshTimer) clearTimeout(integratedChessChronicleRefreshTimer);
+  integratedChessChronicleRefreshTimer = setTimeout(() => {
+    integratedChessChronicleRefreshTimer = null;
+    loadIntegratedChessChronicle({force:true});
+  }, 350);
+}
+
+function chronicleFallbackModeLabel(game){
+  if(game && game.mode === 'daily'){
+    const days = Number(game.daysPerMove || 0);
+    return days > 0 ? ('Daily · ' + days + ' Tag' + (days === 1 ? '' : 'e') + '/Zug') : 'Daily';
   }
+  return 'Live-Partie';
 }
 
-function openChessChronicleDialog(options){
-  options = options || {};
-  if(!onlineAuthToken || !onlineAuthUser){
-    if(typeof openAuthDialog === 'function') openAuthDialog('login');
-    return;
+function chronicleFallbackVariantLabel(game){
+  if(game && game.variant === 'freestyle960'){
+    const positionId = Number(game.positionId);
+    return Number.isFinite(positionId) ? ('Freestyle #' + positionId) : 'Freestyle';
   }
-  if(options.source === 'daily' && typeof closeDailyGamesDialog === 'function') closeDailyGamesDialog();
-  if(options.source === 'profile' && typeof closeMemberProfileDialog === 'function') closeMemberProfileDialog();
-  if(chessChronicleBackdrop) chessChronicleBackdrop.hidden = false;
-  loadChessChronicle({append:false});
+  return 'Klassisch';
 }
 
-function closeChessChronicleDialog(){
-  if(chessChronicleBackdrop) chessChronicleBackdrop.hidden = true;
+function createIntegratedChessChronicleCard(entry){
+  const game = entry || {};
+  game.ended = true;
+  game.isParticipant = true;
+  game.startSummary = game.startSummary || game.opening || null;
+
+  const card = document.createElement('div');
+  card.className = 'daily-game-card completed chronicle-archive-card' + (game.tournamentId ? ' tournament-game' : '');
+  const content = document.createElement('div');
+
+  const title = document.createElement('div');
+  title.className = 'daily-game-title';
+  title.textContent = 'gegen ' + (cleanDisplayName(game.opponentName) || 'Gegner');
+  content.appendChild(title);
+
+  if(game.tournamentId){
+    const tournamentBadge = document.createElement('div');
+    tournamentBadge.className = 'daily-tournament-badge';
+    tournamentBadge.textContent = '🏆 ' + (game.tournamentName || 'Turnier') + (game.tournamentRoundLabel ? ' · ' + game.tournamentRoundLabel : '');
+    content.appendChild(tournamentBadge);
+  }
+
+  const status = document.createElement('div');
+  status.className = 'daily-game-status';
+  const outcomeCode = String(game && game.outcome && game.outcome.code || 'ended');
+  const outcomeLabel = outcomeCode === 'win' ? 'Gewonnen' : outcomeCode === 'loss' ? 'Verloren' : outcomeCode === 'draw' ? 'Remis' : 'Beendet';
+  status.textContent = outcomeLabel + ' · ' + (typeof dailyResultLabel === 'function' ? dailyResultLabel(game.result) : String(game.result || '—'));
+  if(outcomeCode === 'win') status.classList.add('result-win');
+  else if(outcomeCode === 'loss') status.classList.add('result-loss');
+  else if(outcomeCode === 'draw') status.classList.add('result-draw');
+  content.appendChild(status);
+
+  const meta = document.createElement('div');
+  meta.className = 'daily-game-meta';
+  const endedAt = game.endedAt ? ('beendet: ' + (typeof formatDailyGameDeadline === 'function' ? formatDailyGameDeadline(game.endedAt) : chessChronicleFormatDate(game.endedAt))) : '';
+  const ratingDelta = game.ratingDelta !== null && game.ratingDelta !== undefined
+    ? ((game.ratingLabel ? game.ratingLabel + ' ' : '') + (Number(game.ratingDelta) > 0 ? '+' : '') + Number(game.ratingDelta))
+    : (game.rated ? (game.ratingLabel ? game.ratingLabel + ' · gewertet' : 'Gewertet') : 'Ungewertet');
+  const endReason = typeof myGamesEndReasonLabel === 'function' ? myGamesEndReasonLabel(game.endReason) : String(game.endReason || '').replace(/_/g, ' ');
+  meta.textContent = [chronicleFallbackModeLabel(game), game.timeLabel || '', chronicleFallbackVariantLabel(game), ratingDelta, endReason, endedAt].filter(Boolean).join(' · ');
+  content.appendChild(meta);
+
+  const startSummary = typeof createGameStartSummaryPanel === 'function' ? createGameStartSummaryPanel(game) : null;
+  if(startSummary) content.appendChild(startSummary);
+
+  const momentPanel = typeof createGameMomentPanel === 'function' ? createGameMomentPanel(game, {
+    statusElement:typeof dailyGamesStatusEl !== 'undefined' ? dailyGamesStatusEl : null,
+    onChange:changed => {
+      syncIntegratedChessChronicleGame(changed);
+      if(typeof renderDailyGames === 'function' && typeof dailyGamesCache !== 'undefined') renderDailyGames(dailyGamesCache);
+    }
+  }) : null;
+  if(momentPanel) content.appendChild(momentPanel);
+
+  const actions = document.createElement('div');
+  actions.className = 'daily-game-actions';
+  if(game.archiveAvailable && game.roomId){
+    const openLink = document.createElement('a');
+    openLink.className = 'daily-game-open-btn';
+    openLink.href = typeof dailyGameRoomUrl === 'function' ? (dailyGameRoomUrl(game) || '#') : '#';
+    openLink.textContent = 'Partie ansehen';
+    openLink.title = 'Beendete Partie im aktuellen Tab öffnen';
+    actions.appendChild(openLink);
+
+    if(typeof openArchiveInAnalyzer === 'function'){
+      const analyzerBtn = document.createElement('button');
+      analyzerBtn.type = 'button';
+      analyzerBtn.className = 'daily-game-pgn-btn';
+      analyzerBtn.textContent = 'Analyzer';
+      analyzerBtn.addEventListener('click', () => openArchiveInAnalyzer(game, analyzerBtn));
+      actions.appendChild(analyzerBtn);
+    }
+    if(typeof downloadArchivePgn === 'function'){
+      const pgnBtn = document.createElement('button');
+      pgnBtn.type = 'button';
+      pgnBtn.className = 'daily-game-pgn-btn';
+      pgnBtn.textContent = 'PGN';
+      pgnBtn.addEventListener('click', () => downloadArchivePgn(game, pgnBtn));
+      actions.appendChild(pgnBtn);
+    }
+  } else {
+    const archiveNote = document.createElement('span');
+    archiveNote.className = 'chronicle-archive-note';
+    archiveNote.textContent = 'Chronikeintrag · Partie nicht mehr im normalen Archiv';
+    actions.appendChild(archiveNote);
+  }
+
+  card.append(content, actions);
+  return card;
 }
 
-if(dailyGamesChronicleBtn) dailyGamesChronicleBtn.addEventListener('click', () => openChessChronicleDialog({source:'daily'}));
-if(memberProfileChronicleBtn) memberProfileChronicleBtn.addEventListener('click', () => openChessChronicleDialog({source:'profile'}));
-if(gameChronicleOpenBtn) gameChronicleOpenBtn.addEventListener('click', () => openChessChronicleDialog({source:'room'}));
-if(chessChronicleMoreBtn) chessChronicleMoreBtn.addEventListener('click', () => loadChessChronicle({append:true}));
-if(chessChronicleRefreshBtn) chessChronicleRefreshBtn.addEventListener('click', () => loadChessChronicle({append:false}));
-if(chessChronicleCloseBtn) chessChronicleCloseBtn.addEventListener('click', closeChessChronicleDialog);
-if(chessChronicleBackdrop) chessChronicleBackdrop.addEventListener('click', ev => { if(ev.target === chessChronicleBackdrop) closeChessChronicleDialog(); });
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape' && chessChronicleBackdrop && !chessChronicleBackdrop.hidden) closeChessChronicleDialog(); });
+dailyGamesChronicleResultButtons.forEach(button => button.addEventListener('click', () => {
+  const value = String(button.dataset.chronicleResultFilter || '');
+  integratedChessChronicleResultFilter = integratedChessChronicleResultFilter === value ? '' : value;
+  updateIntegratedChessChronicleFilterUi();
+  if(typeof renderDailyGames === 'function' && typeof dailyGamesCache !== 'undefined') renderDailyGames(dailyGamesCache);
+}));
+
+if(dailyGamesChronicleOpponentInput){
+  dailyGamesChronicleOpponentInput.addEventListener('input', () => {
+    if(typeof renderDailyGames === 'function' && typeof dailyGamesCache !== 'undefined') renderDailyGames(dailyGamesCache);
+  });
+}
+
+
+window.loadIntegratedChessChronicle = loadIntegratedChessChronicle;
+window.integratedChessChronicleState = integratedChessChronicleState;
+window.integratedChessChronicleFilteredItems = integratedChessChronicleFilteredItems;
+window.integratedChessChronicleScopeItems = integratedChessChronicleScopeItems;
+window.renderIntegratedChessChronicleSummary = renderIntegratedChessChronicleSummary;
+window.syncIntegratedChessChronicleGame = syncIntegratedChessChronicleGame;
+window.createIntegratedChessChronicleCard = createIntegratedChessChronicleCard;
+window.createChessChronicleMilestones = createChessChronicleMilestones;
+window.chessChronicleMonthKey = chessChronicleMonthKey;

@@ -333,7 +333,10 @@ function createMyLiveCompletedCard(game){
   if(startSummary) content.appendChild(startSummary);
   const momentPanel = createGameMomentPanel(game, {
     statusElement:dailyGamesStatusEl,
-    onChange:() => renderDailyGames(dailyGamesCache)
+    onChange:changed => {
+      if(typeof syncIntegratedChessChronicleGame === 'function') syncIntegratedChessChronicleGame(changed);
+      renderDailyGames(dailyGamesCache);
+    }
   });
   if(momentPanel) content.appendChild(momentPanel);
   const reactionPanel = createGameReactionPanel(game, {
@@ -634,7 +637,10 @@ function createDailyGameCard(game){
   if(game.ended){
     const momentPanel = createGameMomentPanel(game, {
       statusElement:dailyGamesStatusEl,
-      onChange:() => renderDailyGames(dailyGamesCache)
+      onChange:changed => {
+        if(typeof syncIntegratedChessChronicleGame === 'function') syncIntegratedChessChronicleGame(changed);
+        renderDailyGames(dailyGamesCache);
+      }
     });
     if(momentPanel) content.appendChild(momentPanel);
     const reactionPanel = createGameReactionPanel(game, {
@@ -753,10 +759,26 @@ function dailyGamesGroups(games){
   const completedLive = dailyGamesTournamentOnly ? myLiveCompletedGamesCache.filter(game => !!game.tournamentId) : myLiveCompletedGamesCache;
   return {allDailyGames, runningDaily, openDaily, completedDaily, runningLive, openLive, rematches, completedLive};
 }
+function dailyGamesCompletedCountForGroups(groups){
+  if(typeof integratedChessChronicleState === 'function' && typeof integratedChessChronicleScopeItems === 'function'){
+    const state = integratedChessChronicleState();
+    if(state && state.loaded) return integratedChessChronicleScopeItems({tournamentOnly:dailyGamesTournamentOnly}).length;
+  }
+  return groups.completedDaily.length + groups.completedLive.length;
+}
 function updateDailyGamesTabCounts(groups){
   if(dailyGamesRunningCount) dailyGamesRunningCount.textContent = String(groups.runningDaily.length + groups.runningLive.length);
   if(dailyGamesOpenCount) dailyGamesOpenCount.textContent = String(groups.openDaily.length + groups.openLive.length + groups.rematches.length);
-  if(dailyGamesCompletedCount) dailyGamesCompletedCount.textContent = String(groups.completedDaily.length + groups.completedLive.length);
+  if(dailyGamesCompletedCount) dailyGamesCompletedCount.textContent = String(dailyGamesCompletedCountForGroups(groups));
+}
+function refreshDailyGamesCountStatus(){
+  const groups = dailyGamesGroups(dailyGamesCache);
+  updateDailyGamesTabCounts(groups);
+  if(!dailyGamesStatusEl || dailyGamesActiveTab !== 'completed') return;
+  const runningCount = groups.runningDaily.length + groups.runningLive.length;
+  const openCount = groups.openDaily.length + groups.openLive.length + groups.rematches.length;
+  const completedCount = dailyGamesCompletedCountForGroups(groups);
+  dailyGamesStatusEl.textContent = runningCount + ' laufend · ' + openCount + ' offen · ' + completedCount + ' beendet.';
 }
 function setDailyGamesActiveTab(tab, options){
   const validTabs = ['running','open','completed'];
@@ -769,6 +791,10 @@ function setDailyGamesActiveTab(tab, options){
     if(active && dailyGamesListEl) dailyGamesListEl.setAttribute('aria-labelledby', button.id || 'dailyGamesRunningTab');
   });
   if(dailyGamesCompletedFilters) dailyGamesCompletedFilters.hidden = dailyGamesActiveTab !== 'completed';
+  if(dailyGamesActiveTab === 'completed'){
+    if(typeof renderIntegratedChessChronicleSummary === 'function') renderIntegratedChessChronicleSummary({tournamentOnly:dailyGamesTournamentOnly});
+    if(typeof loadIntegratedChessChronicle === 'function') loadIntegratedChessChronicle();
+  }
   if(!options || options.render !== false) renderDailyGames(dailyGamesCache);
 }
 function appendDailyGameCards(games, emptyText, renderer){
@@ -809,6 +835,7 @@ function appendMixedGameCards(items, emptyText){
 function renderDailyGames(games){
   if(!dailyGamesListEl) return;
   dailyGamesListEl.innerHTML = '';
+  dailyGamesListEl.classList.toggle('chronicle-view', dailyGamesActiveTab === 'completed');
   const groups = dailyGamesGroups(games);
   updateDailyGamesTabCounts(groups);
   if(dailyGamesActiveTab === 'open'){
@@ -853,20 +880,75 @@ function renderDailyGames(games){
     return;
   }
   if(dailyGamesActiveTab === 'completed'){
-    const items = sortMyGamesByDateAndTurn([
+    if(typeof renderIntegratedChessChronicleSummary === 'function') renderIntegratedChessChronicleSummary({tournamentOnly:dailyGamesTournamentOnly});
+    const chronicleState = typeof integratedChessChronicleState === 'function' ? integratedChessChronicleState() : null;
+    if(chronicleState && !chronicleState.loaded){
+      const loading = document.createElement('div');
+      loading.className = 'daily-games-empty';
+      loading.textContent = chronicleState.error || 'Schachchronik wird geladen…';
+      dailyGamesListEl.appendChild(loading);
+      if(!chronicleState.loading && !chronicleState.error && typeof loadIntegratedChessChronicle === 'function') loadIntegratedChessChronicle();
+      return;
+    }
+
+    if(chronicleState && chronicleState.loaded && typeof integratedChessChronicleFilteredItems === 'function'){
+      const richByRoom = new Map();
+      groups.completedDaily.forEach(game => {
+        const roomId = cleanRoomId(game && game.roomId);
+        if(roomId) richByRoom.set(roomId, {kind:'daily', game});
+      });
+      groups.completedLive.forEach(game => {
+        const roomId = cleanRoomId(game && game.roomId);
+        if(roomId) richByRoom.set(roomId, {kind:'live-completed', game});
+      });
+      const chronicleItems = integratedChessChronicleFilteredItems({
+        tournamentOnly:dailyGamesTournamentOnly,
+        momentsOnly:dailyGamesMomentsOnly
+      });
+      if(!chronicleItems.length){
+        const empty = document.createElement('div');
+        empty.className = 'daily-games-empty';
+        empty.textContent = dailyGamesMomentsOnly
+          ? 'Keine Gamer-Momente passen zu dieser Auswahl.'
+          : 'Keine beendete Partie passt zu dieser Auswahl.';
+        dailyGamesListEl.appendChild(empty);
+        return;
+      }
+
+      let currentMonth = '';
+      chronicleItems.forEach(chronicleGame => {
+        const month = typeof chessChronicleMonthKey === 'function' ? chessChronicleMonthKey(chronicleGame && chronicleGame.endedAt) : '';
+        if(month && month !== currentMonth){
+          currentMonth = month;
+          const heading = document.createElement('div');
+          heading.className = 'chess-chronicle-month';
+          heading.textContent = month;
+          dailyGamesListEl.appendChild(heading);
+        }
+        const milestoneBox = typeof createChessChronicleMilestones === 'function' ? createChessChronicleMilestones(chronicleGame) : null;
+        if(milestoneBox) dailyGamesListEl.appendChild(milestoneBox);
+
+        const roomId = cleanRoomId(chronicleGame && chronicleGame.roomId);
+        const rich = roomId ? richByRoom.get(roomId) : null;
+        if(rich && rich.game){
+          rich.game.favorite = chronicleGame.favorite === true;
+          rich.game.momentNote = chronicleGame.momentNote || '';
+          rich.game.momentAt = chronicleGame.momentAt || null;
+          if(!rich.game.startSummary && chronicleGame.opening) rich.game.startSummary = chronicleGame.opening;
+          if(rich.kind === 'daily') dailyGamesListEl.appendChild(createDailyGameCard(rich.game));
+          else dailyGamesListEl.appendChild(createMyLiveCompletedCard(rich.game));
+        } else if(typeof createIntegratedChessChronicleCard === 'function'){
+          dailyGamesListEl.appendChild(createIntegratedChessChronicleCard(chronicleGame));
+        }
+      });
+      return;
+    }
+
+    const fallbackItems = sortMyGamesByDateAndTurn([
       ...groups.completedDaily.map(game => ({kind:'daily', game, date:game.endedAt || game.updatedAt || ''})),
       ...groups.completedLive.map(game => ({kind:'live-completed', game, date:game.endedAt || ''}))
     ]).filter(item => !dailyGamesMomentsOnly || item.game.favorite === true);
-    const emptyText = dailyGamesMomentsOnly
-      ? 'Noch keine Gamer-Momente in dieser Auswahl.'
-      : (dailyGamesTournamentOnly ? 'Noch keine beendete Turnierpartie im Verlauf.' : 'Noch keine beendete Partie im Verlauf.');
-    appendMixedGameCards(items, emptyText);
-    if(!dailyGamesTournamentOnly && myLiveCompletedTotal > myLiveCompletedGamesCache.length){
-      const note = document.createElement('div');
-      note.className = 'daily-games-empty';
-      note.textContent = 'Weitere ältere Live-Partien findest du im Partienarchiv.';
-      dailyGamesListEl.appendChild(note);
-    }
+    appendMixedGameCards(fallbackItems, dailyGamesTournamentOnly ? 'Noch keine beendete Turnierpartie im Verlauf.' : 'Noch keine beendete Partie im Verlauf.');
     return;
   }
   const runningItems = sortMyGamesByDateAndTurn([
@@ -1044,7 +1126,7 @@ async function loadDailyGames(options){
     const groups = dailyGamesGroups(games);
     const runningCount = groups.runningDaily.length + groups.runningLive.length;
     const openCount = groups.openDaily.length + groups.openLive.length + groups.rematches.length;
-    const completedCount = groups.completedDaily.length + groups.completedLive.length;
+    const completedCount = dailyGamesCompletedCountForGroups(groups);
     const addressedRoom = dailyInvitationRoomFromAddress();
     const addressedInvitationFound = !!(addressedRoom && games.some(game => game.incomingInvitation && cleanRoomId(game.roomId) === addressedRoom));
     const addressedRematch = rematchInvitationFromAddress();
@@ -1092,7 +1174,6 @@ function openDailyGamesDialog(tournamentOnly){
   const invitationFromAddress = !!dailyInvitationRoomFromAddress() || !!rematchInvitationFromAddress();
   setDailyGamesActiveTab(invitationFromAddress ? 'open' : 'running', {render:false});
   if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Partien';
-  if(dailyGamesChronicleBtn) dailyGamesChronicleBtn.hidden = dailyGamesTournamentOnly;
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
     ? 'Deine Daily- und Live-Turnierpartien nach Status. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
     : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Offene Revanchen findest du im Bereich „Offen“.';
@@ -1114,7 +1195,10 @@ if(dailyGamesMomentsOnlyBtn) dailyGamesMomentsOnlyBtn.addEventListener('click', 
 });
 if(dailyGamesOpenBtn) dailyGamesOpenBtn.addEventListener('click', () => openDailyGamesDialog(false));
 if(tournamentGamesOpenBtn) tournamentGamesOpenBtn.addEventListener('click', () => openDailyGamesDialog(true));
-if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', loadDailyGames);
+if(dailyGamesRefreshBtn) dailyGamesRefreshBtn.addEventListener('click', () => {
+  if(dailyGamesActiveTab === 'completed' && typeof loadIntegratedChessChronicle === 'function') loadIntegratedChessChronicle({force:true});
+  loadDailyGames();
+});
 if(dailyGamesCloseBtn) dailyGamesCloseBtn.addEventListener('click', closeDailyGamesDialog);
 if(dailyGamesBackdrop) dailyGamesBackdrop.addEventListener('click', ev => { if(ev.target === dailyGamesBackdrop) closeDailyGamesDialog(); });
 if(dailyInvitationResponseInput) dailyInvitationResponseInput.addEventListener('input', updateDailyInvitationResponseCount);
