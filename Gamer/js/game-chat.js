@@ -99,7 +99,11 @@ function clearChatUnreadIndicator(){
 function formatChatTime(value){
   const d = value ? new Date(value) : new Date();
   if(Number.isNaN(d.getTime())) return '';
-  try{ return d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}); } catch(_){ return ''; }
+  try{
+    const date = d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'});
+    const time = d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+    return date + ', ' + time;
+  } catch(_){ return ''; }
 }
 function normalizeChatMessage(message){
   const chat = message && message.chat ? message.chat : message;
