@@ -554,6 +554,7 @@ async function durableObjectBackupRoomNameMap(env) {
     'public_games',
     'open_game_offers',
     'completed_games',
+    'chess_chronicle_games',
     'game_reactions',
     'rated_games',
     'account_game_rooms',
@@ -5423,6 +5424,329 @@ async function ensureCompletedGamesTable(env) {
   return true;
 }
 
+let chessChronicleTableReady = false;
+let chessChronicleMetadataBackfillDone = false;
+async function ensureChessChronicleTable(env) {
+  if (!env || !env.DB) return false;
+  if (chessChronicleTableReady) return true;
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS chess_chronicle_games (
+       room_id TEXT PRIMARY KEY,
+       white_user_id TEXT,
+       black_user_id TEXT,
+       white_name TEXT NOT NULL,
+       black_name TEXT NOT NULL,
+       mode TEXT NOT NULL,
+       time_label TEXT,
+       days_per_move INTEGER,
+       variant TEXT NOT NULL,
+       position_id INTEGER,
+       started_at TEXT,
+       ended_at TEXT NOT NULL,
+       result TEXT NOT NULL,
+       end_reason TEXT,
+       rated INTEGER NOT NULL DEFAULT 0,
+       rating_type TEXT,
+       tournament_id TEXT,
+       tournament_name TEXT,
+       tournament_round_label TEXT,
+       opening_name TEXT NOT NULL DEFAULT '',
+       opening_moves TEXT NOT NULL DEFAULT '',
+       created_at TEXT NOT NULL,
+       updated_at TEXT NOT NULL
+     )`
+  ).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_chess_chronicle_white ON chess_chronicle_games (white_user_id, ended_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_chess_chronicle_black ON chess_chronicle_games (black_user_id, ended_at)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_chess_chronicle_tournament ON chess_chronicle_games (tournament_id, ended_at)`).run();
+  chessChronicleTableReady = true;
+  return true;
+}
+
+async function backfillChessChronicleMetadata(env) {
+  if (chessChronicleMetadataBackfillDone) return true;
+  if (!(await ensureChessChronicleTable(env))) return false;
+  await ensureCompletedGamesTable(env);
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO chess_chronicle_games (
+       room_id, white_user_id, black_user_id, white_name, black_name,
+       mode, time_label, days_per_move, variant, position_id,
+       started_at, ended_at, result, end_reason, rated, rating_type,
+       tournament_id, tournament_name, tournament_round_label,
+       opening_name, opening_moves, created_at, updated_at
+     )
+     SELECT room_id, white_user_id, black_user_id, white_name, black_name,
+            mode, time_label, days_per_move, variant, position_id,
+            started_at, ended_at, result, end_reason, rated, rating_type,
+            tournament_id, tournament_name, tournament_round_label,
+            '', '', COALESCE(ended_at, updated_at, ?), COALESCE(updated_at, ended_at, ?)
+       FROM completed_games`
+  ).bind(nowIso, nowIso).run();
+  chessChronicleMetadataBackfillDone = true;
+  return true;
+}
+
+async function backfillChessChronicleOpenings(env, limit = 400) {
+  if (!(await ensureChessChronicleTable(env))) return 0;
+  await ensureCompletedGamesTable(env);
+  const maximum = Math.max(1, Math.min(1000, Number(limit || 400)));
+  const result = await env.DB.prepare(
+    `SELECT chronicle.room_id, completed.pgn, chronicle.variant
+       FROM chess_chronicle_games chronicle
+       JOIN completed_games completed ON completed.room_id = chronicle.room_id
+      WHERE chronicle.opening_name = '' AND chronicle.opening_moves = ''
+      ORDER BY chronicle.ended_at ASC
+      LIMIT ?`
+  ).bind(maximum).all();
+  const rows = result && Array.isArray(result.results) ? result.results : [];
+  const updatedAt = new Date().toISOString();
+  const statements = [];
+  for (const row of rows) {
+    const summary = gameStartSummaryFromPgn(row.pgn, row.variant);
+    if (!summary) continue;
+    statements.push(env.DB.prepare(
+      `UPDATE chess_chronicle_games
+          SET opening_name = ?, opening_moves = ?, updated_at = ?
+        WHERE room_id = ?`
+    ).bind(String(summary.name || '').slice(0, 120), String(summary.moveText || '').slice(0, 320), updatedAt, row.room_id));
+  }
+  if (statements.length) await env.DB.batch(statements);
+  return statements.length;
+}
+
+async function upsertChessChronicleGame(env, game) {
+  if (!(await ensureChessChronicleTable(env)) || !game) return false;
+  const roomId = cleanRoomId(game.roomId || game.room_id);
+  if (!roomId) return false;
+  const summary = gameStartSummaryFromPgn(game.pgn, game.variant) || {name:'', moveText:''};
+  const nowIso = new Date().toISOString();
+  const endedAt = game.endedAt || game.ended_at || nowIso;
+  await env.DB.prepare(
+    `INSERT INTO chess_chronicle_games (
+       room_id, white_user_id, black_user_id, white_name, black_name,
+       mode, time_label, days_per_move, variant, position_id,
+       started_at, ended_at, result, end_reason, rated, rating_type,
+       tournament_id, tournament_name, tournament_round_label,
+       opening_name, opening_moves, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(room_id) DO UPDATE SET
+       white_user_id = excluded.white_user_id,
+       black_user_id = excluded.black_user_id,
+       white_name = excluded.white_name,
+       black_name = excluded.black_name,
+       mode = excluded.mode,
+       time_label = excluded.time_label,
+       days_per_move = excluded.days_per_move,
+       variant = excluded.variant,
+       position_id = excluded.position_id,
+       started_at = excluded.started_at,
+       ended_at = excluded.ended_at,
+       result = excluded.result,
+       end_reason = excluded.end_reason,
+       rated = excluded.rated,
+       rating_type = excluded.rating_type,
+       tournament_id = excluded.tournament_id,
+       tournament_name = excluded.tournament_name,
+       tournament_round_label = excluded.tournament_round_label,
+       opening_name = excluded.opening_name,
+       opening_moves = excluded.opening_moves,
+       updated_at = excluded.updated_at`
+  ).bind(
+    roomId,
+    game.whiteUserId || game.white_user_id || null,
+    game.blackUserId || game.black_user_id || null,
+    cleanDisplayName(game.whiteName || game.white_name) || 'Weiß',
+    cleanDisplayName(game.blackName || game.black_name) || 'Schwarz',
+    game.mode === 'daily' ? 'daily' : 'live',
+    String(game.timeLabel || game.time_label || '').slice(0, 80),
+    game.daysPerMove != null ? Math.max(1, Number(game.daysPerMove || game.days_per_move || 1)) : null,
+    game.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    game.positionId != null ? Number(game.positionId) : (game.position_id != null ? Number(game.position_id) : null),
+    game.startedAt || game.started_at || null,
+    endedAt,
+    String(game.result || '*').slice(0, 16),
+    String(game.endReason || game.end_reason || '').slice(0, 80) || null,
+    game.rated ? 1 : 0,
+    String(game.ratingType || game.rating_type || '').slice(0, 40) || null,
+    String(game.tournamentId || game.tournament_id || '').slice(0, 128) || null,
+    String(game.tournamentName || game.tournament_name || '').slice(0, 160) || null,
+    String(game.tournamentRoundLabel || game.tournament_round_label || '').slice(0, 80) || null,
+    String(summary.name || '').slice(0, 120),
+    String(summary.moveText || '').slice(0, 320),
+    endedAt,
+    nowIso
+  ).run();
+  return true;
+}
+
+function chessChronicleOutcome(row, userId) {
+  const role = String(row && row.white_user_id || '') === String(userId || '') ? 'w' : 'b';
+  const result = String(row && row.result || '*');
+  if (result === '1/2-1/2') return {code:'draw', label:'Remis'};
+  const won = (role === 'w' && result === '1-0') || (role === 'b' && result === '0-1');
+  if (result === '1-0' || result === '0-1') return won ? {code:'win', label:'Sieg'} : {code:'loss', label:'Niederlage'};
+  return {code:'ended', label:'Beendet'};
+}
+
+function chessChronicleGameDto(row, userId, milestoneMap) {
+  const role = String(row.white_user_id || '') === String(userId || '') ? 'w' : 'b';
+  const opponentName = role === 'w' ? row.black_name : row.white_name;
+  const ratingBefore = role === 'w' ? Number(row.white_rating_before) : Number(row.black_rating_before);
+  const ratingAfter = role === 'w' ? Number(row.white_rating_after) : Number(row.black_rating_after);
+  const hasRating = Number.isFinite(ratingBefore) && Number.isFinite(ratingAfter);
+  const fallbackOpening = (!row.opening_name && !row.opening_moves && row.completed_pgn)
+    ? gameStartSummaryFromPgn(row.completed_pgn, row.variant)
+    : null;
+  const openingName = String(row.opening_name || (fallbackOpening && fallbackOpening.name) || '').slice(0, 120);
+  const openingMoves = String(row.opening_moves || (fallbackOpening && fallbackOpening.moveText) || '').slice(0, 320);
+  const info = ratingTypeInfo(row.rating_type);
+  return {
+    roomId:cleanRoomId(row.room_id),
+    role,
+    opponentName:cleanDisplayName(opponentName) || 'Gegner',
+    whiteName:cleanDisplayName(row.white_name) || 'Weiß',
+    blackName:cleanDisplayName(row.black_name) || 'Schwarz',
+    mode:row.mode === 'daily' ? 'daily' : 'live',
+    timeLabel:String(row.time_label || '').slice(0, 80),
+    daysPerMove:row.days_per_move != null ? Number(row.days_per_move) : null,
+    variant:row.variant === GAME_VARIANT_FREESTYLE ? GAME_VARIANT_FREESTYLE : GAME_VARIANT_STANDARD,
+    positionId:row.position_id != null ? Number(row.position_id) : null,
+    startedAt:row.started_at || null,
+    endedAt:row.ended_at || null,
+    result:String(row.result || '*').slice(0, 16),
+    endReason:String(row.end_reason || '').slice(0, 80),
+    outcome:chessChronicleOutcome(row, userId),
+    rated:Number(row.rated || 0) === 1,
+    ratingType:String(row.rating_type || '').slice(0, 40),
+    ratingLabel:info ? info.label : '',
+    ratingBefore:hasRating ? Math.round(ratingBefore) : null,
+    ratingAfter:hasRating ? Math.round(ratingAfter) : null,
+    ratingDelta:hasRating ? Math.round(ratingAfter) - Math.round(ratingBefore) : null,
+    tournamentId:String(row.tournament_id || '').slice(0, 128),
+    tournamentName:String(row.tournament_name || '').slice(0, 160),
+    tournamentRoundLabel:String(row.tournament_round_label || '').slice(0, 80),
+    favorite:Number(row.favorite || 0) === 1,
+    momentNote:cleanGameMomentNote(row.moment_note),
+    momentAt:row.moment_created_at || null,
+    opening:{name:openingName, moveText:openingMoves},
+    archiveAvailable:Number(row.archive_available || 0) === 1,
+    milestones:(milestoneMap && milestoneMap.get(String(row.room_id || ''))) || []
+  };
+}
+
+async function chessChronicleMilestones(env, userId) {
+  const uid = String(userId || '');
+  const milestones = [];
+  const specs = [
+    {
+      code:'first_game', label:'Deine erste Partie im Gamer',
+      sql:`SELECT room_id, ended_at FROM chess_chronicle_games WHERE white_user_id = ? OR black_user_id = ? ORDER BY ended_at ASC LIMIT 1`,
+      values:[uid, uid]
+    },
+    {
+      code:'first_win', label:'Dein erster Sieg',
+      sql:`SELECT room_id, ended_at FROM chess_chronicle_games
+            WHERE (white_user_id = ? OR black_user_id = ?)
+              AND ((white_user_id = ? AND result = '1-0') OR (black_user_id = ? AND result = '0-1'))
+            ORDER BY ended_at ASC LIMIT 1`,
+      values:[uid, uid, uid, uid]
+    },
+    {
+      code:'first_moment', label:'Dein erster Gamer-Moment',
+      sql:`SELECT chronicle.room_id, chronicle.ended_at
+             FROM chess_chronicle_games chronicle
+             JOIN game_archive_favorites moment ON moment.room_id = chronicle.room_id AND moment.user_id = ?
+            WHERE chronicle.white_user_id = ? OR chronicle.black_user_id = ?
+            ORDER BY COALESCE(moment.created_at, chronicle.ended_at) ASC LIMIT 1`,
+      values:[uid, uid, uid]
+    },
+    {
+      code:'first_tournament', label:'Deine erste Turnierpartie',
+      sql:`SELECT room_id, ended_at FROM chess_chronicle_games
+            WHERE (white_user_id = ? OR black_user_id = ?)
+              AND tournament_id IS NOT NULL AND tournament_id <> ''
+            ORDER BY ended_at ASC LIMIT 1`,
+      values:[uid, uid]
+    }
+  ];
+  for (const spec of specs) {
+    const row = await env.DB.prepare(spec.sql).bind(...spec.values).first();
+    if (row && row.room_id) milestones.push({code:spec.code, label:spec.label, roomId:String(row.room_id), endedAt:row.ended_at || null});
+  }
+  return milestones;
+}
+
+async function listChessChronicle(env, sessionUser, url) {
+  const userId = String(sessionUser && sessionUser.id || '');
+  if (!userId) return {items:[], total:0, page:1, pages:1, summary:null, milestones:[]};
+  await ensureCompletedGamesTable(env);
+  await ensureRatingTables(env);
+  await backfillChessChronicleMetadata(env);
+  await backfillChessChronicleOpenings(env, 120);
+
+  const page = archivePositiveInteger(url.searchParams.get('page'), 1, 100000);
+  const limit = archivePositiveInteger(url.searchParams.get('limit'), 60, 120);
+  const offset = (page - 1) * limit;
+  const summaryRow = await env.DB.prepare(
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN (chronicle.white_user_id = ? AND chronicle.result = '1-0') OR (chronicle.black_user_id = ? AND chronicle.result = '0-1') THEN 1 ELSE 0 END) AS wins,
+            SUM(CASE WHEN chronicle.result = '1/2-1/2' THEN 1 ELSE 0 END) AS draws,
+            SUM(CASE WHEN (chronicle.white_user_id = ? AND chronicle.result = '0-1') OR (chronicle.black_user_id = ? AND chronicle.result = '1-0') THEN 1 ELSE 0 END) AS losses,
+            SUM(CASE WHEN moment.room_id IS NOT NULL THEN 1 ELSE 0 END) AS moments,
+            MIN(chronicle.ended_at) AS first_ended_at,
+            MAX(chronicle.ended_at) AS last_ended_at
+       FROM chess_chronicle_games chronicle
+       LEFT JOIN game_archive_favorites moment ON moment.room_id = chronicle.room_id AND moment.user_id = ?
+      WHERE chronicle.white_user_id = ? OR chronicle.black_user_id = ?`
+  ).bind(userId, userId, userId, userId, userId, userId, userId).first();
+  const total = Number(summaryRow && summaryRow.total || 0);
+  const pages = Math.max(1, Math.ceil(total / limit));
+  const milestones = await chessChronicleMilestones(env, userId);
+  const milestoneMap = new Map();
+  for (const milestone of milestones) {
+    const list = milestoneMap.get(milestone.roomId) || [];
+    list.push({code:milestone.code, label:milestone.label});
+    milestoneMap.set(milestone.roomId, list);
+  }
+
+  const result = await env.DB.prepare(
+    `SELECT chronicle.*,
+            CASE WHEN moment.room_id IS NULL THEN 0 ELSE 1 END AS favorite,
+            moment.note AS moment_note,
+            moment.created_at AS moment_created_at,
+            CASE WHEN completed.room_id IS NULL THEN 0 ELSE 1 END AS archive_available,
+            completed.pgn AS completed_pgn,
+            rated.white_rating_before, rated.white_rating_after,
+            rated.black_rating_before, rated.black_rating_after
+       FROM chess_chronicle_games chronicle
+       LEFT JOIN game_archive_favorites moment ON moment.room_id = chronicle.room_id AND moment.user_id = ?
+       LEFT JOIN completed_games completed ON completed.room_id = chronicle.room_id
+       LEFT JOIN rated_games rated ON rated.room_id = chronicle.room_id
+      WHERE chronicle.white_user_id = ? OR chronicle.black_user_id = ?
+      ORDER BY chronicle.ended_at DESC
+      LIMIT ? OFFSET ?`
+  ).bind(userId, userId, userId, limit, offset).all();
+  const items = (result && Array.isArray(result.results) ? result.results : []).map(row => chessChronicleGameDto(row, userId, milestoneMap));
+  return {
+    items,
+    total,
+    page,
+    pages,
+    summary:{
+      username:cleanDisplayName(sessionUser && sessionUser.username) || 'Mitglied',
+      total,
+      wins:Number(summaryRow && summaryRow.wins || 0),
+      draws:Number(summaryRow && summaryRow.draws || 0),
+      losses:Number(summaryRow && summaryRow.losses || 0),
+      moments:Number(summaryRow && summaryRow.moments || 0),
+      firstEndedAt:summaryRow && summaryRow.first_ended_at || null,
+      lastEndedAt:summaryRow && summaryRow.last_ended_at || null
+    },
+    milestones
+  };
+}
+
 const GAME_REACTION_CODES = Object.freeze(['thanks', 'well_played', 'exciting']);
 const GAME_MOMENT_NOTE_MAX_LENGTH = 240;
 let gameReactionsTableReady = false;
@@ -6983,7 +7307,8 @@ async function collectAccountRoomIds(env, userId) {
   for (const query of [
     `SELECT room_id FROM daily_games WHERE white_user_id = ? OR black_user_id = ?`,
     `SELECT room_id FROM public_games WHERE white_user_id = ? OR black_user_id = ?`,
-    `SELECT room_id FROM rated_games WHERE white_user_id = ? OR black_user_id = ?`
+    `SELECT room_id FROM rated_games WHERE white_user_id = ? OR black_user_id = ?`,
+    `SELECT room_id FROM chess_chronicle_games WHERE white_user_id = ? OR black_user_id = ?`
   ]) {
     try {
       const result = await env.DB.prepare(query).bind(uid, uid).all();
@@ -7170,6 +7495,26 @@ async function deleteUserAccount(env, target, options = {}) {
               public_game = 0
         WHERE white_user_id = ? OR black_user_id = ?`
     ).bind(target.id, target.id, target.id, deletedLabel, target.id, deletedLabel, target.id, target.id).run();
+  } catch (_) {}
+  try {
+    if (await ensureChessChronicleTable(env)) {
+      await env.DB.prepare(
+        `UPDATE chess_chronicle_games
+            SET white_user_id = CASE WHEN white_user_id = ? THEN ? ELSE white_user_id END,
+                black_user_id = CASE WHEN black_user_id = ? THEN ? ELSE black_user_id END,
+                white_name = CASE WHEN white_user_id = ? THEN ? ELSE white_name END,
+                black_name = CASE WHEN black_user_id = ? THEN ? ELSE black_name END,
+                updated_at = ?
+          WHERE white_user_id = ? OR black_user_id = ?`
+      ).bind(
+        target.id, anonymizedId,
+        target.id, anonymizedId,
+        target.id, deletedLabel,
+        target.id, deletedLabel,
+        new Date().toISOString(),
+        target.id, target.id
+      ).run();
+    }
   } catch (_) {}
   try {
     await env.DB.prepare(
@@ -10131,6 +10476,18 @@ async function handleAuthApi(request, env, url) {
       return json({ ok: true, games, serverNow: Date.now() });
     } catch (_) {
       return json({ ok: false, code: 'PUBLIC_GAMES_UNAVAILABLE', message: 'Öffentliche Partien konnten nicht geladen werden.' }, { status: 500 });
+    }
+  }
+
+  if (url.pathname === '/api/chess-chronicle' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Die Schachchronik ist nur nach Login verfügbar.'}, {status:401});
+    try {
+      const chronicle = await listChessChronicle(env, session.user, url);
+      return json({ok:true, ...chronicle, serverNow:Date.now()});
+    } catch (error) {
+      console.error('Chess chronicle list failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({ok:false, code:'CHESS_CHRONICLE_UNAVAILABLE', message:'Deine Schachchronik konnte nicht geladen werden.'}, {status:500});
     }
   }
 
@@ -15544,6 +15901,33 @@ export class GameRoom {
         tournamentId ? 1 : 0, 1, pgn, updatedAt
       ).run();
 
+      try {
+        await upsertChessChronicleGame(this.env, {
+          roomId,
+          whiteUserId:whiteUserId || null,
+          blackUserId:blackUserId || null,
+          whiteName,
+          blackName,
+          mode,
+          timeLabel:timeControl && timeControl.label ? timeControl.label : (mode === 'daily' ? 'Daily Chess' : 'Live'),
+          daysPerMove:mode === 'daily' ? Math.max(1, Number(timeControl && timeControl.daysPerMove || 1)) : null,
+          variant:setup.variant,
+          positionId:setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
+          startedAt:game.startedAt || null,
+          endedAt:game.endedAt || updatedAt,
+          result:game.result || '*',
+          endReason:game.endReason || null,
+          rated,
+          ratingType:ratingType || null,
+          tournamentId:tournamentId || null,
+          tournamentName:tournamentName || null,
+          tournamentRoundLabel:tournamentRoundLabel || null,
+          pgn
+        });
+      } catch (_) {
+        // Die Chronik ist bewusst eine Zusatzschicht und darf den Partieabschluss nie blockieren.
+      }
+
       if (await ensureFairplayGameDataTable(this.env)) {
         const fairplayMoves = buildFairplayMoveArchive(moves, game);
         const fairplayCreatedAt = game.endedAt || updatedAt;
@@ -17527,14 +17911,22 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', '/api/my-live-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-moments/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_game_moments', 'private_game_moment_notes', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', 'GET /api/chess-chronicle', '/api/my-live-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-moments/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_ticker', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_game_moments', 'private_game_moment_notes', 'personal_chess_chronicle', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   },
 
   async scheduled(_event, env, ctx) {
-    const maintenance = runGameArchiveMaintenance(env).catch(error => {
+    const maintenance = (async () => {
+      try {
+        await backfillChessChronicleMetadata(env);
+        await backfillChessChronicleOpenings(env, 500);
+      } catch (error) {
+        console.error('Scheduled chess chronicle sync failed', error && error.message ? error.message : String(error || 'unknown'));
+      }
+      await runGameArchiveMaintenance(env);
+    })().catch(error => {
       console.error('Scheduled game archive maintenance failed', error && error.message ? error.message : String(error || 'unknown'));
     });
     if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(maintenance);
