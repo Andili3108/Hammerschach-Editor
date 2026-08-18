@@ -1092,6 +1092,7 @@ function openDailyGamesDialog(tournamentOnly){
   const invitationFromAddress = !!dailyInvitationRoomFromAddress() || !!rematchInvitationFromAddress();
   setDailyGamesActiveTab(invitationFromAddress ? 'open' : 'running', {render:false});
   if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Partien';
+  if(dailyGamesChronicleBtn) dailyGamesChronicleBtn.hidden = dailyGamesTournamentOnly;
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
     ? 'Deine Daily- und Live-Turnierpartien nach Status. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
     : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Offene Revanchen findest du im Bereich „Offen“.';

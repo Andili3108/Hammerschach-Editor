@@ -215,6 +215,11 @@ function updateMemberProfileInviteButton(){
     memberProfileEditBtn.disabled = !isOwnProfile;
     memberProfileEditBtn.title = isOwnProfile ? 'Eigenes Mitgliederprofil bearbeiten.' : '';
   }
+  if(memberProfileChronicleBtn){
+    memberProfileChronicleBtn.hidden = !isOwnProfile;
+    memberProfileChronicleBtn.disabled = !isOwnProfile;
+    memberProfileChronicleBtn.title = isOwnProfile ? 'Eigene Schachchronik öffnen.' : '';
+  }
   const hasTarget = !!(memberProfileTarget && memberProfileTarget.id && onlineAuthUser && memberProfileTarget.id !== onlineAuthUser.id);
   if(memberProfileMessageBtn){
     memberProfileMessageBtn.hidden = !hasTarget;
