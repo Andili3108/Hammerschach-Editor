@@ -335,6 +335,7 @@
   .moves-title{font-size:18px;font-weight:900;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   #moveList{display:grid;grid-template-columns:34px 1fr 1fr 34px 1fr 1fr;gap:5px 4px;max-height:calc(var(--board-size) - 136px);overflow-y:auto;padding-right:6px;font-size:15px;line-height:1.42;}
   .move-cell{border-radius:6px;padding:1px 3px;}
+  .move-cell.move-result{grid-column:1 / -1;text-align:center;font-weight:900;margin-top:3px;letter-spacing:.02em;}
   .move-cell.current{background:rgba(132,63,70,.12);font-weight:900;}
   .move-cell.theme-move{color:#777;font-style:italic;background:rgba(59,110,167,.055);}
   .move-cell.theme-end{box-shadow:inset 0 -2px 0 rgba(59,110,167,.48);}
