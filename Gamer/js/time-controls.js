@@ -80,6 +80,19 @@ function getDisplayClocks(gameState){
 }
 function updateClockDisplay(gameState){
   const g = gameState || buildGameFromHistory(viewIndex);
+  const ended = !!(timeLost || gameEnded || (onlineRoomId && onlineGameEnded));
+  if(ended){
+    clockWEl.textContent = 'Beendet';
+    clockBEl.textContent = 'Beendet';
+    clockWEl.classList.remove('waiting');
+    clockBEl.classList.remove('waiting');
+    clockWEl.title = '';
+    clockBEl.title = '';
+    clockCardW.classList.remove('active');
+    clockCardB.classList.remove('active');
+    updateTimeControlsLock();
+    return;
+  }
   const shown = getDisplayClocks(g);
   const activeSide = onlineClockSync && onlineClockSync.running ? (onlineClockSync.active || g.turn) : g.turn;
   const daily = isDailyTimeControl();

@@ -1,5 +1,12 @@
 'use strict';
 
+function moveListPgnResultToken(){
+  if(!(onlineGameEnded || gameEnded || timeLost)) return '';
+  const finalGame = buildGameFromHistory(masterHistory.length);
+  const finalState = gameOverForHistory(masterHistory.length, finalGame);
+  const result = typeof pgnResultFromState === 'function' ? pgnResultFromState(finalState) : '';
+  return result === '1-0' || result === '0-1' || result === '1/2-1/2' ? result : '';
+}
 function renderMoveList(){
   const theme = currentTheme();
   const themePly = currentThemePly();
@@ -7,14 +14,15 @@ function renderMoveList(){
     themeMoveNotice.hidden = !theme;
     themeMoveNotice.textContent = theme ? ('🎯 Thementurnier: ' + theme.name + ' · ' + themePly + ' vorgegebene Halbzüge. Mit den Pfeilen lässt sich ihre Entstehung vollständig zurückverfolgen.') : '';
   }
+  const resultToken = moveListPgnResultToken();
   if(masterHistory.length === 0){
     let empty = moveListEl.firstElementChild;
     if(!empty){
       empty = document.createElement('div');
       moveListEl.appendChild(empty);
     }
-    empty.className = '';
-    empty.textContent = '—';
+    empty.className = resultToken ? 'move-cell move-result' : '';
+    empty.textContent = resultToken || '—';
     empty.removeAttribute('data-move-index');
     while(moveListEl.children.length > 1) moveListEl.lastElementChild.remove();
     return;
@@ -26,6 +34,7 @@ function renderMoveList(){
     cells.push({txt:num1 + '.', idx:null}, {txt:masterHistory[i]?.san || '', idx:i}, {txt:masterHistory[i+1]?.san || '', idx:i+1});
     cells.push({txt:masterHistory[i+2] || masterHistory[i+3] ? num2 + '.' : '', idx:null}, {txt:masterHistory[i+2]?.san || '', idx:i+2}, {txt:masterHistory[i+3]?.san || '', idx:i+3});
   }
+  if(resultToken) cells.push({txt:resultToken, idx:null, result:true});
   const navigationLocked = isMoveNavigationLocked();
   cells.forEach((c, cellIndex) => {
     let div = moveListEl.children[cellIndex];
@@ -34,7 +43,8 @@ function renderMoveList(){
       moveListEl.appendChild(div);
     }
     div.className = 'move-cell';
-    if(cellIndex % 6 >= 3) div.classList.add('hide-mobile-pair');
+    if(c.result) div.classList.add('move-result');
+    else if(cellIndex % 6 >= 3) div.classList.add('hide-mobile-pair');
     div.textContent = c.txt;
     div.removeAttribute('data-move-index');
     div.title = '';
