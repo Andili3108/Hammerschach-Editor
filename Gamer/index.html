@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260818-2" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260818-3" />
 </head>
 <body>
 <div class="app" role="main">
@@ -1246,8 +1246,22 @@
           <button id="dailyGamesCompletedTab" class="daily-games-tab" type="button" role="tab" aria-selected="false" aria-controls="dailyGamesList" data-daily-games-tab="completed">Beendet <span id="dailyGamesCompletedCount" class="daily-games-tab-count">0</span></button>
         </div>
         <div id="dailyGamesCompletedFilters" class="daily-games-completed-filters" hidden>
-          <button id="dailyGamesChronicleBtn" class="daily-games-chronicle-btn" type="button">📖 Schachchronik</button>
-          <button id="dailyGamesMomentsOnlyBtn" class="daily-games-moments-filter" type="button" aria-pressed="false">♡ Nur Gamer-Momente</button>
+          <div class="daily-games-chronicle-summary-row">
+            <div id="dailyGamesChronicleSummary" class="chess-chronicle-summary" aria-live="polite"></div>
+            <div id="dailyGamesChronicleMark" class="chess-chronicle-mark" aria-hidden="true">♟️</div>
+          </div>
+          <div class="daily-games-chronicle-filter-row">
+            <label class="daily-games-opponent-filter" for="dailyGamesChronicleOpponentInput">
+              <span>Gegner</span>
+              <input id="dailyGamesChronicleOpponentInput" type="search" autocomplete="off" placeholder="Gegner suchen …" />
+            </label>
+            <div class="daily-games-result-filters" role="group" aria-label="Nach Partieergebnis filtern">
+              <button class="daily-games-result-filter win" type="button" data-chronicle-result-filter="win" aria-pressed="false">Siege</button>
+              <button class="daily-games-result-filter draw" type="button" data-chronicle-result-filter="draw" aria-pressed="false">Remisen</button>
+              <button class="daily-games-result-filter loss" type="button" data-chronicle-result-filter="loss" aria-pressed="false">Niederlagen</button>
+            </div>
+            <button id="dailyGamesMomentsOnlyBtn" class="daily-games-moments-filter" type="button" aria-pressed="false">♡ Nur Gamer-Momente</button>
+          </div>
         </div>
         <div id="dailyGamesList" class="daily-games-list" role="tabpanel" aria-labelledby="dailyGamesRunningTab" aria-live="polite"><div class="daily-games-empty">Noch keine Partien geladen.</div></div>
         <div id="dailyGamesStatus" class="daily-games-status" aria-live="polite"></div>
@@ -1322,28 +1336,6 @@
             <button id="gameArchiveMoreBtn" class="button-flat" type="button" hidden>Weitere laden</button>
             <button id="gameArchiveRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
             <button id="gameArchiveCloseBtn" type="button">Schließen</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="chessChronicleBackdrop" class="identity-backdrop" hidden>
-      <div class="identity-modal chess-chronicle-modal" role="dialog" aria-modal="true" aria-labelledby="chessChronicleTitle">
-        <div class="chess-chronicle-head">
-          <div>
-            <h3 id="chessChronicleTitle">📖 Meine Schachchronik</h3>
-            <div id="chessChronicleSubtitle" class="chess-chronicle-subtitle">Deine persönliche Geschichte im Hammerschach-Gamer.</div>
-          </div>
-          <div class="chess-chronicle-mark" aria-hidden="true">♟️</div>
-        </div>
-        <div id="chessChronicleSummary" class="chess-chronicle-summary" aria-live="polite"></div>
-        <div id="chessChronicleTimeline" class="chess-chronicle-timeline" aria-live="polite"><div class="chess-chronicle-empty">Chronik wird geladen…</div></div>
-        <div class="chess-chronicle-footer">
-          <div id="chessChronicleStatus" class="chess-chronicle-status" aria-live="polite"></div>
-          <div class="chess-chronicle-actions">
-            <button id="chessChronicleMoreBtn" class="button-flat" type="button" hidden>Ältere Einträge laden</button>
-            <button id="chessChronicleRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
-            <button id="chessChronicleCloseBtn" type="button">Schließen</button>
           </div>
         </div>
       </div>
@@ -1469,7 +1461,6 @@
         <div id="memberProfileStatus" class="member-profile-status" aria-live="polite"></div>
         <div class="identity-actions">
           <button id="memberProfileEditBtn" class="button-flat" type="button" hidden>✏️ Profil bearbeiten</button>
-          <button id="memberProfileChronicleBtn" class="button-flat" type="button" hidden>📖 Schachchronik</button>
           <button id="memberProfileMessageBtn" class="button-flat" type="button" hidden>✉️ Nachricht</button>
           <button id="memberProfileInviteBtn" class="button-flat" type="button" hidden>Zur Partie einladen</button>
           <button id="memberProfileCloseBtn" type="button">Schließen</button>
@@ -1946,7 +1937,6 @@
           </div>
           <div id="gameMomentBar" class="game-moment-bar" hidden aria-live="polite">
             <button id="gameMomentToggleBtn" class="game-moment-room-toggle" type="button" aria-pressed="false" aria-expanded="false" aria-controls="gameMomentDetails">♡ Als Gamer-Moment merken</button>
-            <button id="gameChronicleOpenBtn" class="button-flat game-chronicle-room-btn" type="button">📖 Meine Schachchronik</button>
             <div id="gameMomentDetails" class="game-moment-room-details" hidden>
               <label for="gameMomentNoteInput">Meine private Erinnerung <span id="gameMomentNoteCount">0 / 240</span></label>
               <textarea id="gameMomentNoteInput" maxlength="240" rows="3" placeholder="Warum bleibt dir diese Partie in Erinnerung?"></textarea>
@@ -2173,7 +2163,7 @@
 <script src="js/game-openings.js?v=20260810-2"></script>
 <script src="js/game-reactions.js?v=20260810-1"></script>
 <script src="js/game-moments.js?v=20260815-3"></script>
-<script src="js/chess-chronicle.js?v=20260818-1"></script>
+<script src="js/chess-chronicle.js?v=20260818-3"></script>
 <script src="js/lobby-ticker.js?v=20260804-1"></script>
 <script src="js/info-center.js?v=20260804-1"></script>
 <script src="js/admin-info-center.js?v=20260804-1"></script>
@@ -2187,7 +2177,7 @@
 <script src="js/tournament-detail.js?v=20260804-1"></script>
 <script src="js/tournament-management.js?v=20260804-1"></script>
 <script src="js/tournament-actions.js?v=20260804-1"></script>
-  <script src="js/daily-games.js?v=20260818-1"></script>
+  <script src="js/daily-games.js?v=20260818-2"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
 <script src="js/public-games.js?v=20260804-1"></script>
 <script src="js/game-archive.js?v=20260817-3"></script>
