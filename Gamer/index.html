@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260818-3" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260819-2" />
 </head>
 <body>
 <div class="app" role="main">
@@ -307,24 +307,23 @@
     </div>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
-      <div id="lobbyTicker" class="lobby-ticker" hidden aria-live="polite" aria-label="Hammerschach-Veranstaltungsticker">
-        <button id="lobbyTickerPrevBtn" class="lobby-ticker-nav" type="button" title="Vorherige Meldung">‹</button>
-        <div class="lobby-ticker-content">
-          <span id="lobbyTickerIcon" class="lobby-ticker-icon" aria-hidden="true">📢</span>
-          <div class="lobby-ticker-copy"><strong id="lobbyTickerTitle" class="lobby-ticker-title">Hammerschach aktuell</strong><span id="lobbyTickerText" class="lobby-ticker-text"></span></div>
+      <section id="lobbyTicker" class="lobby-tournaments" hidden aria-live="polite" aria-label="Aktuelle Hammerschach-Turniere">
+        <div class="lobby-tournaments-head">
+          <div class="lobby-tournaments-heading"><span aria-hidden="true">🏆</span><strong>Turniere</strong></div>
+          <button id="lobbyTickerActionBtn" class="button-flat lobby-tournaments-all" type="button">Alle Turniere ›</button>
         </div>
-        <button id="lobbyTickerActionBtn" class="lobby-ticker-action" type="button" hidden>Mehr erfahren</button>
-        <span id="lobbyTickerCounter" class="lobby-ticker-counter"></span>
-        <button id="lobbyTickerNextBtn" class="lobby-ticker-nav" type="button" title="Nächste Meldung">›</button>
-        <button id="lobbyTickerCloseBtn" class="lobby-ticker-close" type="button" title="Diese Meldung ausblenden">×</button>
-      </div>
+        <div id="lobbyTickerList" class="lobby-tournaments-list"></div>
+      </section>
       <section id="infoCenterBar" class="info-center-bar" hidden aria-label="Hammerschach Info-Center">
-        <button id="infoCenterOpenBtn" class="info-center-open" type="button">
-          <span class="info-center-bar-icon" aria-hidden="true">ℹ️</span>
-          <span class="info-center-bar-copy"><strong>Info-Center</strong><span id="infoCenterLatestText">Mitteilungen und Neuigkeiten nachlesen</span></span>
-          <span id="infoCenterUnreadBadge" class="info-center-unread-badge" hidden>0 neu</span>
+        <button id="infoCenterPrevBtn" class="info-center-nav" type="button" title="Vorherige Mitteilung" aria-label="Vorherige Mitteilung">‹</button>
+        <button id="infoCenterOpenBtn" class="info-center-open" type="button" title="Info-Center öffnen">
+          <span id="infoCenterCarouselIcon" class="info-center-bar-icon" aria-hidden="true">ℹ️</span>
+          <span class="info-center-bar-copy"><span class="info-center-bar-kicker">Info-Center</span><strong id="infoCenterCarouselTitle">Mitteilungen und Neuigkeiten</strong><span id="infoCenterLatestText">Alle Informationen im Info-Center nachlesen</span></span>
           <span class="info-center-bar-action">Öffnen ›</span>
         </button>
+        <span id="infoCenterUnreadBadge" class="info-center-unread-badge" hidden>0 neu</span>
+        <span id="infoCenterCounter" class="info-center-counter"></span>
+        <button id="infoCenterNextBtn" class="info-center-nav" type="button" title="Nächste Mitteilung" aria-label="Nächste Mitteilung">›</button>
       </section>
       <div class="box global-chat-shell" aria-label="Hammerschach Mitglieder-Chat">
         <div class="global-chat-header">
@@ -619,12 +618,11 @@
           <h4>29. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
           <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und sind dort gold markiert.</p>
-          <h4>30. Veranstaltungsticker und Mitgliederbegrüßung</h4>
-          <p>Ganz oben in der Mitglieder-Lobby zeigt der Veranstaltungsticker aktuelle Hinweise. Neu veröffentlichte und laufende Turniere werden automatisch mit einem direkten Link zur Turnierzentrale übernommen. Mehrere Meldungen wechseln ruhig nacheinander; mit den Pfeilen kannst du selbst blättern und mit <strong>×</strong> die aktuelle Meldung für deine laufende Browsersitzung ausblenden.</p>
-          <p>Andili verwaltet zusätzliche Veranstaltungen und Neuigkeiten unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Lobby-Ticker verwalten“</strong>. Dort lassen sich Überschrift, Kurztext, optionaler Link, Priorität sowie Beginn und Ende festlegen. Nach erfolgreicher Bestätigung der Mailadresse wird ein neues Mitglied außerdem automatisch begrüßt. Begrüßungstext, Anzeigedauer und die gesamte Automatik sind im selben Verwaltungsfenster einstellbar.</p>
+          <h4>30. Turnierübersicht in der Lobby</h4>
+          <p>Ganz oben in der Mitglieder-Lobby zeigt der gelbe Turnierbereich bis zu vier derzeit relevante Turniere kompakt untereinander. Anstehende Turniere – mit offener Anmeldung oder bereits ausgebucht – stehen zuerst, laufende Turniere darunter. Über <strong>„Öffnen“</strong> gelangst du direkt zum jeweiligen Turnier; weitere und beendete Turniere bleiben über <strong>„🏆 Turniere“</strong> im Header erreichbar.</p>
           <h4>31. Info-Center</h4>
-          <p>Direkt unter dem Ticker bleibt das Info-Center dauerhaft erreichbar. Dort stehen Neuigkeiten, Gamer-Updates, Veranstaltungen und Servicehinweise chronologisch bereit; die neueste Mitteilung steht immer oben und ungelesene Einträge sind mit <strong>„Neu“</strong> gekennzeichnet. Bilder, PDF- und PGN-Dateien können einer Mitteilung beigefügt werden.</p>
-          <p>Andili verwaltet die Inhalte unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Info-Center verwalten“</strong>. Eine Mitteilung kann als Entwurf gespeichert, veröffentlicht oder archiviert sowie optional zusätzlich im Lobby-Ticker und – nach ausdrücklicher Bestätigung – per E-Mail angekündigt werden.</p>
+          <p>Direkt unter der Turnierübersicht zeigt das blaue Info-Center-Karussell veröffentlichte Neuigkeiten, Gamer-Updates, Veranstaltungen und Servicehinweise. Mit den Pfeilen kannst du zwischen den Mitteilungen blättern. Ein Klick auf die Mitteilung öffnet das vollständige Info-Center; dort stehen weiterhin alle Informationen chronologisch bereit und ungelesene Einträge sind mit <strong>„Neu“</strong> gekennzeichnet. Bilder, PDF- und PGN-Dateien können einer Mitteilung beigefügt werden.</p>
+          <p>Andili verwaltet die Inhalte unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Info-Center verwalten“</strong>. Eine Mitteilung kann als Entwurf gespeichert, veröffentlicht oder archiviert werden. Veröffentlichte Mitteilungen erscheinen automatisch im Info-Center-Karussell und können – nach ausdrücklicher Bestätigung – optional zusätzlich per E-Mail angekündigt werden.</p>
         </div>
         <div class="info-actions">
           <button id="infoCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -1002,7 +1000,7 @@
     <div id="adminInfoCenterBackdrop" class="identity-backdrop" hidden>
       <div class="identity-modal admin-info-center-modal" role="dialog" aria-modal="true" aria-labelledby="adminInfoCenterTitle">
         <h3 id="adminInfoCenterTitle">Info-Center verwalten</h3>
-        <p>Mitteilungen bleiben im Info-Center nachlesbar. Ticker und E-Mail sind optionale zusätzliche Kanäle.</p>
+        <p>Mitteilungen bleiben im Info-Center nachlesbar und erscheinen nach der Veröffentlichung automatisch im blauen Info-Center-Karussell. E-Mail ist ein optionaler zusätzlicher Kanal.</p>
         <div class="admin-info-center-grid">
           <section class="admin-info-center-panel">
             <div class="admin-info-center-form-head"><h4 id="adminInfoCenterFormTitle">Neue Mitteilung</h4><button id="adminInfoCenterResetBtn" class="button-flat" type="button">Neue Mitteilung</button></div>
@@ -1027,7 +1025,6 @@
               </label>
               <div id="adminInfoCenterFilesList" class="admin-info-center-files"></div>
               <div class="admin-info-center-options">
-                <label><input id="adminInfoCenterTickerCheckbox" type="checkbox" /> Zusätzlich im Lobby-Ticker anzeigen</label>
                 <label><input id="adminInfoCenterEmailCheckbox" type="checkbox" /> Zusätzlich per E-Mail versenden</label>
               </div>
               <div class="admin-info-center-mail-note">E-Mail ist standardmäßig ausgeschaltet und wird nur beim ausdrücklich bestätigten Speichern versendet.</div>
@@ -2148,9 +2145,9 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260818-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260810-1"></script>
+<script src="js/online-ui-elements.js?v=20260819-2"></script>
 <script src="js/header-ui.js?v=20260810-1"></script>
-<script src="js/dialog-ui-state.js?v=20260818-1"></script>
+<script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
 <script src="js/embedded-tools.js?v=20260810-3"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
@@ -2164,9 +2161,9 @@
 <script src="js/game-reactions.js?v=20260810-1"></script>
 <script src="js/game-moments.js?v=20260815-3"></script>
 <script src="js/chess-chronicle.js?v=20260818-3"></script>
-<script src="js/lobby-ticker.js?v=20260804-1"></script>
-<script src="js/info-center.js?v=20260804-1"></script>
-<script src="js/admin-info-center.js?v=20260804-1"></script>
+<script src="js/lobby-ticker.js?v=20260819-2"></script>
+<script src="js/info-center.js?v=20260819-2"></script>
+<script src="js/admin-info-center.js?v=20260819-2"></script>
 <script src="js/account-profile.js?v=20260811-2"></script>
 <script src="js/auth-recovery.js?v=20260804-1"></script>
 <script src="js/auth-account.js?v=20260810-1"></script>
@@ -2175,7 +2172,7 @@
 <script src="js/live-tournaments.js?v=20260804-1"></script>
 <script src="js/tournament-list.js?v=20260804-1"></script>
 <script src="js/tournament-detail.js?v=20260804-1"></script>
-<script src="js/tournament-management.js?v=20260804-1"></script>
+<script src="js/tournament-management.js?v=20260819-2"></script>
 <script src="js/tournament-actions.js?v=20260804-1"></script>
   <script src="js/daily-games.js?v=20260818-2"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
