@@ -13,7 +13,7 @@ function updateVariationLauncherUi(){
   if(variationModeActive && (!available || pendingDailyMove)){
     closeVariationBoard({skipLauncherUpdate:true});
   }
-  variationLauncherEl.hidden = !available || (variationModeActive && variationPurpose === 'conditional');
+  variationLauncherEl.hidden = !available || !!pendingDailyMove || (variationModeActive && variationPurpose === 'conditional');
   variationOpenBtn.disabled = !available || !!pendingDailyMove;
   variationOpenBtn.classList.toggle('active',variationModeActive);
   variationOpenBtn.setAttribute('aria-pressed',variationModeActive ? 'true' : 'false');
@@ -264,7 +264,7 @@ function renderVariationBoard(){
 }
 function commitVariationMove(found, promotion){
   if(!variationGame) return;
-  if(variationPurpose === 'conditional' && variationHistory.length >= 2) return;
+  if(variationPurpose === 'conditional' && variationHistory.length >= CONDITIONAL_MOVE_MAX_PLIES) return;
   const before = variationGame.clone();
   const entry = {
     from:found.from.slice(),
@@ -293,7 +293,7 @@ function commitVariationMove(found, promotion){
 }
 function onVariationSquareClick(x,y){
   if(!variationGame || variationGame.gameOver()) return;
-  if(variationPurpose === 'conditional' && variationHistory.length >= 2) return;
+  if(variationPurpose === 'conditional' && variationHistory.length >= CONDITIONAL_MOVE_MAX_PLIES) return;
   const piece = variationGame.at(x,y);
   if(!variationSelected){
     if(piece === '.' || pieceColor(piece) !== variationGame.turn) return;

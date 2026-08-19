@@ -3,7 +3,7 @@
 function pieceDragCanStart(mode,x,y){
   if(mode === 'variation'){
     if(!variationGame || variationGame.gameOver()) return false;
-    if(variationPurpose === 'conditional' && variationHistory.length >= 2) return false;
+    if(variationPurpose === 'conditional' && variationHistory.length >= CONDITIONAL_MOVE_MAX_PLIES) return false;
     const piece = variationGame.at(x,y);
     return piece !== '.' && pieceColor(piece) === variationGame.turn;
   }

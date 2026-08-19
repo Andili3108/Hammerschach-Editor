@@ -1,5 +1,7 @@
 'use strict';
 
+const CONDITIONAL_MOVE_MAX_PLIES = 10;
+
 function normalizeConditionalMoveRecord(value){
   if(!value || typeof value !== 'object') return null;
   const normalizeMove = move => {
@@ -13,14 +15,17 @@ function normalizeConditionalMoveRecord(value){
       san:String(normalized.san || '').slice(0,40)
     };
   };
-  const expected = normalizeMove(value.expectedMove || value.expected_move || value.expected);
-  const reply = normalizeMove(value.replyMove || value.reply_move || value.reply);
+  const rawLine = Array.isArray(value.line || value.moves || value.sequence)
+    ? (value.line || value.moves || value.sequence)
+    : [value.expectedMove || value.expected_move || value.expected, value.replyMove || value.reply_move || value.reply];
+  const line = rawLine.slice(0,CONDITIONAL_MOVE_MAX_PLIES).map(normalizeMove);
   const basePly = Math.max(0,Math.floor(Number(value.basePly ?? value.base_ply ?? 0) || 0));
-  if(!expected || !reply) return null;
+  if(line.length < 2 || line.length % 2 !== 0 || line.some(move => !move)) return null;
   return {
     basePly,
-    expectedMove:expected,
-    replyMove:reply,
+    line,
+    expectedMove:line[0],
+    replyMove:line[1],
     updatedAt:value.updatedAt || value.updated_at || null
   };
 }
@@ -72,10 +77,11 @@ function updateConditionalMoveUi(){
   conditionalMoveBtn.disabled = !available || conditionalMoveBusy;
   conditionalMoveBtn.classList.toggle('active',variationModeActive && variationPurpose === 'conditional');
   conditionalMoveBtn.setAttribute('aria-pressed',variationModeActive && variationPurpose === 'conditional' ? 'true' : 'false');
-  conditionalMoveBtn.title = savedForPosition
-    ? 'Gespeicherte bedingte Züge anzeigen oder ändern'
-    : 'Bedingte Züge auf dem Brett vorbereiten';
-  conditionalMoveBtn.setAttribute('aria-label',conditionalMoveBtn.title);
+  const hoverHelp = 'Du kannst bis zu 5 gegnerische Züge mit jeweils deiner Antwort vorbereiten.';
+  const canHover = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  if(canHover) conditionalMoveBtn.title = hoverHelp;
+  else conditionalMoveBtn.removeAttribute('title');
+  conditionalMoveBtn.setAttribute('aria-label',savedForPosition ? 'Gespeicherte bedingte Züge anzeigen oder ändern' : 'Bedingte Züge vorbereiten');
   if(conditionalMoveSavedMark) conditionalMoveSavedMark.hidden = !savedForPosition;
 }
 
@@ -106,14 +112,18 @@ function conditionalMoveEntryFromGame(game,rawMove){
 function loadSavedConditionalMoveIntoEditor(){
   const saved = normalizeConditionalMoveRecord(onlineConditionalMove);
   if(!saved || saved.basePly !== conditionalMoveBasePly || !variationGame) return false;
-  const expected = conditionalMoveEntryFromGame(variationGame,saved.expectedMove);
-  if(!expected) return false;
-  const reply = conditionalMoveEntryFromGame(variationGame,saved.replyMove);
-  if(!reply){
-    variationGame = variationStartGame.clone();
-    return false;
+  const entries = [];
+  for(const rawMove of saved.line){
+    const entry = conditionalMoveEntryFromGame(variationGame,rawMove);
+    if(!entry){
+      variationGame = variationStartGame.clone();
+      variationHistory = [];
+      variationRedo = [];
+      return false;
+    }
+    entries.push(entry);
   }
-  variationHistory = [expected,reply];
+  variationHistory = entries;
   variationRedo = [];
   return true;
 }
@@ -171,15 +181,17 @@ function undoConditionalMoveDraft(){
 
 function updateConditionalMoveEditorUi(){
   if(!conditionalMovePanelEl || variationPurpose !== 'conditional') return;
-  const expected = variationHistory[0] || null;
-  const reply = variationHistory[1] || null;
-  if(conditionalMoveExpectedTextEl) conditionalMoveExpectedTextEl.textContent = conditionalMoveLabel(expected);
-  if(conditionalMoveReplyTextEl) conditionalMoveReplyTextEl.textContent = conditionalMoveLabel(reply);
+  const count = variationHistory.length;
+  const complete = count >= 2 && count % 2 === 0;
+  const lineText = count ? variationHistory.map(conditionalMoveLabel).join(' → ') : 'noch keine Züge';
+  if(conditionalMoveExpectedTextEl) conditionalMoveExpectedTextEl.textContent = lineText;
+  if(conditionalMoveReplyTextEl) conditionalMoveReplyTextEl.textContent = count + ' von ' + CONDITIONAL_MOVE_MAX_PLIES + ' Halbzügen';
   if(conditionalMoveInstructionEl){
-    conditionalMoveInstructionEl.classList.toggle('complete',!!reply);
-    if(!expected) conditionalMoveInstructionEl.textContent = '1. Ziehe auf dem Brett den erwarteten Zug deines Gegners.';
-    else if(!reply) conditionalMoveInstructionEl.textContent = '2. Ziehe jetzt auf dem Brett deine automatische Antwort.';
-    else conditionalMoveInstructionEl.textContent = 'Die Bedingung ist vollständig und kann gespeichert werden.';
+    conditionalMoveInstructionEl.classList.toggle('complete',complete);
+    if(count === 0) conditionalMoveInstructionEl.textContent = 'Ziehe zuerst den erwarteten Zug deines Gegners.';
+    else if(count % 2 === 1) conditionalMoveInstructionEl.textContent = 'Ziehe jetzt deine automatische Antwort.';
+    else if(count >= CONDITIONAL_MOVE_MAX_PLIES) conditionalMoveInstructionEl.textContent = 'Maximal 5 gegnerische Züge mit jeweils deiner Antwort sind vorbereitet.';
+    else conditionalMoveInstructionEl.textContent = 'Die Bedingung ist speicherbar. Oder füge den nächsten erwarteten Gegnerzug hinzu.';
   }
   if(conditionalMoveUndoBtn) conditionalMoveUndoBtn.disabled = conditionalMoveBusy || variationHistory.length === 0;
   if(conditionalMoveResetBtn) conditionalMoveResetBtn.disabled = conditionalMoveBusy || (variationHistory.length === 0 && variationRedo.length === 0);
@@ -188,7 +200,7 @@ function updateConditionalMoveEditorUi(){
     conditionalMoveDeleteBtn.disabled = conditionalMoveBusy;
   }
   if(conditionalMoveSaveBtn){
-    conditionalMoveSaveBtn.disabled = conditionalMoveBusy || !reply || conditionalMoveBasePly !== actualMoveCount();
+    conditionalMoveSaveBtn.disabled = conditionalMoveBusy || !complete || conditionalMoveBasePly !== actualMoveCount();
     conditionalMoveSaveBtn.textContent = conditionalMoveBusy ? 'Wird gespeichert…' : 'Speichern & beenden';
   }
   if(conditionalMoveCloseBtn) conditionalMoveCloseBtn.disabled = conditionalMoveBusy;
@@ -200,10 +212,9 @@ function saveConditionalMove(){
     setConditionalMoveStatus('Die Partie hat sich inzwischen verändert. Bitte öffne die Vorbereitung erneut.','error');
     return;
   }
-  const expected = variationHistory[0];
-  const reply = variationHistory[1];
-  if(!expected || !reply){
-    setConditionalMoveStatus('Bitte zuerst Gegnerzug und eigene Antwort auf dem Brett ziehen.','error');
+  const line = variationHistory.slice(0,CONDITIONAL_MOVE_MAX_PLIES);
+  if(line.length < 2 || line.length % 2 !== 0){
+    setConditionalMoveStatus('Bitte die Zugfolge immer mit deiner Antwort abschließen.','error');
     return;
   }
   const messageId = 'cm_' + Date.now() + '_' + randomToken(6);
@@ -215,8 +226,9 @@ function saveConditionalMove(){
     type:'set_conditional_move',
     messageId,
     basePly:conditionalMoveBasePly,
-    expectedMove:conditionalMovePayload(expected),
-    replyMove:conditionalMovePayload(reply)
+    line:line.map(conditionalMovePayload),
+    expectedMove:conditionalMovePayload(line[0]),
+    replyMove:conditionalMovePayload(line[1])
   });
   if(!sent){
     conditionalMoveBusy = false;
