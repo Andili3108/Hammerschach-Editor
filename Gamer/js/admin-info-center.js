@@ -197,7 +197,6 @@ function resetAdminInfoCenterForm(){
   if(adminInfoCenterActionLabel) adminInfoCenterActionLabel.value = '';
   if(adminInfoCenterStartsAt) adminInfoCenterStartsAt.value = adminInfoCenterInputDate(new Date());
   if(adminInfoCenterEndsAt) adminInfoCenterEndsAt.value = '';
-  if(adminInfoCenterTickerCheckbox) adminInfoCenterTickerCheckbox.checked = false;
   if(adminInfoCenterEmailCheckbox) adminInfoCenterEmailCheckbox.checked = false;
   if(adminInfoCenterFiles) adminInfoCenterFiles.value = '';
   if(adminInfoCenterSaveBtn) adminInfoCenterSaveBtn.textContent = 'Mitteilung speichern';
@@ -221,7 +220,6 @@ function editAdminInfoCenterItem(item){
   if(adminInfoCenterActionLabel) adminInfoCenterActionLabel.value = item.actionLabel || '';
   if(adminInfoCenterStartsAt) adminInfoCenterStartsAt.value = adminInfoCenterInputDate(item.startsAt || item.publishedAt || new Date());
   if(adminInfoCenterEndsAt) adminInfoCenterEndsAt.value = adminInfoCenterInputDate(item.endsAt);
-  if(adminInfoCenterTickerCheckbox) adminInfoCenterTickerCheckbox.checked = item.showInTicker === true;
   if(adminInfoCenterEmailCheckbox) adminInfoCenterEmailCheckbox.checked = false;
   if(adminInfoCenterSaveBtn) adminInfoCenterSaveBtn.textContent = 'Änderungen speichern';
   adminInfoCenterUpdateCounts();
@@ -248,7 +246,7 @@ function renderAdminInfoCenterItems(){
     const title = document.createElement('div'); title.className = 'admin-info-center-card-title'; title.textContent = (item.icon || 'ℹ️') + ' ' + (item.title || 'Mitteilung');
     const summary = document.createElement('div'); summary.className = 'admin-info-center-card-summary'; summary.textContent = item.summary || '';
     const meta = document.createElement('div'); meta.className = 'admin-info-center-card-meta';
-    meta.textContent = adminInfoCenterStatusLabel(item) + ' · ' + (item.categoryLabel || 'Mitteilung') + ' · ' + formatAdminDateTime(item.publishedAt || item.startsAt || item.createdAt) + ' · ' + Number(item.attachmentCount || 0) + ' Datei(en)' + (item.showInTicker ? ' · Ticker' : '') + (item.emailSentAt ? ' · Mail versendet' : '');
+    meta.textContent = adminInfoCenterStatusLabel(item) + ' · ' + (item.categoryLabel || 'Mitteilung') + ' · ' + formatAdminDateTime(item.publishedAt || item.startsAt || item.createdAt) + ' · ' + Number(item.attachmentCount || 0) + ' Datei(en)' + (item.emailSentAt ? ' · Mail versendet' : '');
     const actions = document.createElement('div'); actions.className = 'admin-info-center-card-actions';
     const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'button-flat'; edit.textContent = 'Bearbeiten'; edit.addEventListener('click', () => editAdminInfoCenterItem(item));
     const preview = document.createElement('button'); preview.type = 'button'; preview.className = 'button-flat'; preview.textContent = 'Ansehen'; preview.addEventListener('click', () => previewAdminInfoCenterItem(item));
@@ -329,7 +327,6 @@ async function saveAdminInfoCenter(event){
       actionLabel:String(adminInfoCenterActionLabel && adminInfoCenterActionLabel.value || ''),
       startsAt:adminInfoCenterOutputDate(adminInfoCenterStartsAt && adminInfoCenterStartsAt.value),
       endsAt:adminInfoCenterOutputDate(adminInfoCenterEndsAt && adminInfoCenterEndsAt.value),
-      showInTicker:!!(adminInfoCenterTickerCheckbox && adminInfoCenterTickerCheckbox.checked),
       sendEmail,
       keepAttachmentIds:adminInfoCenterExistingFiles.map(file => String(file.id || '')).filter(Boolean),
       attachmentMeta:adminInfoCenterExistingFiles.map(file => ({id:String(file.id || ''), caption:String(file.caption || ''), altText:String(file.altText || '')})),
@@ -337,7 +334,7 @@ async function saveAdminInfoCenter(event){
     })});
     resetAdminInfoCenterForm();
     await loadAdminInfoCenter();
-    await Promise.all([loadInfoCenter(), loadLobbyTicker()]);
+    await loadInfoCenter();
     setAdminInfoCenterStatus(data.message || 'Die Mitteilung wurde gespeichert.', data.mailResult && data.mailResult.ok === false ? 'error' : 'success');
   } catch(err){ setAdminInfoCenterStatus(err && err.message ? err.message : 'Die Mitteilung konnte nicht gespeichert werden.', 'error'); }
   finally { adminInfoCenterBusy = false; if(adminInfoCenterSaveBtn) adminInfoCenterSaveBtn.disabled = false; updateAdminInfoCenterChannelUi(); renderAdminInfoCenterFiles(); }
@@ -352,7 +349,7 @@ async function deleteAdminInfoCenterItem(item){
     const data = await authApi('/api/admin/info-center/' + encodeURIComponent(item.id), {method:'DELETE'});
     if(adminInfoCenterEditingId === String(item.id)) resetAdminInfoCenterForm();
     await loadAdminInfoCenter();
-    await Promise.all([loadInfoCenter(), loadLobbyTicker()]);
+    await loadInfoCenter();
     setAdminInfoCenterStatus(data.message || 'Die Mitteilung wurde gelöscht.', 'success');
   } catch(err){ setAdminInfoCenterStatus(err && err.message ? err.message : 'Die Mitteilung konnte nicht gelöscht werden.', 'error'); }
   finally { adminInfoCenterBusy = false; }

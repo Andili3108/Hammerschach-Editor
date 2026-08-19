@@ -1,107 +1,103 @@
 'use strict';
 
-let lobbyTickerItems = [];
-let lobbyTickerIndex = 0;
-let lobbyTickerRotationTimer = null;
-function lobbyTickerStorageKey(){
-  return 'hammerschachLobbyTickerDismissed:' + String(onlineAuthUser && onlineAuthUser.id || 'guest');
-}
-function lobbyTickerDismissedIds(){
-  try{
-    const value = JSON.parse(sessionStorage.getItem(lobbyTickerStorageKey()) || '[]');
-    return new Set(Array.isArray(value) ? value.map(String) : []);
-  } catch(_){ return new Set(); }
-}
-function saveLobbyTickerDismissedIds(ids){
-  try{ sessionStorage.setItem(lobbyTickerStorageKey(), JSON.stringify(Array.from(ids).slice(-100))); } catch(_){}
-}
-function stopLobbyTickerRotation(){
-  if(lobbyTickerRotationTimer){ clearInterval(lobbyTickerRotationTimer); lobbyTickerRotationTimer = null; }
-}
-function startLobbyTickerRotation(){
-  stopLobbyTickerRotation();
-  if(lobbyTickerItems.length > 1){
-    lobbyTickerRotationTimer = setInterval(() => showLobbyTickerAt(lobbyTickerIndex + 1), 9000);
-  }
-}
 function clearLobbyTicker(){
-  stopLobbyTickerRotation();
-  lobbyTickerItems = [];
-  lobbyTickerIndex = 0;
+  if(lobbyTickerList) lobbyTickerList.innerHTML = '';
   if(lobbyTicker) lobbyTicker.hidden = true;
 }
-function currentLobbyTickerItem(){ return lobbyTickerItems[lobbyTickerIndex] || null; }
-function showLobbyTickerAt(index){
-  if(!lobbyTicker || !lobbyTickerItems.length){ clearLobbyTicker(); return; }
-  lobbyTickerIndex = (Number(index || 0) + lobbyTickerItems.length) % lobbyTickerItems.length;
-  const item = currentLobbyTickerItem();
-  lobbyTicker.hidden = false;
-  if(lobbyTickerIcon) lobbyTickerIcon.textContent = item.icon || (item.category === 'event' ? '📅' : item.category === 'welcome' ? '👋' : '📢');
-  if(lobbyTickerTitle) lobbyTickerTitle.textContent = item.title || 'Hammerschach aktuell';
-  if(lobbyTickerText) lobbyTickerText.textContent = item.message || '';
-  const actionable = ['tournament','profile','link','info'].includes(String(item.actionKind || '')) && !!String(item.actionValue || '').trim();
-  if(lobbyTickerActionBtn){
-    lobbyTickerActionBtn.hidden = !actionable;
-    lobbyTickerActionBtn.textContent = item.actionLabel || (item.actionKind === 'tournament' ? 'Turnier ansehen' : item.actionKind === 'profile' ? 'Profil ansehen' : item.actionKind === 'info' ? 'Im Info-Center lesen' : 'Mehr erfahren');
-  }
-  if(lobbyTickerCounter) lobbyTickerCounter.textContent = lobbyTickerItems.length > 1 ? ((lobbyTickerIndex + 1) + '/' + lobbyTickerItems.length) : '';
-  if(lobbyTickerPrevBtn) lobbyTickerPrevBtn.hidden = lobbyTickerItems.length < 2;
-  if(lobbyTickerNextBtn) lobbyTickerNextBtn.hidden = lobbyTickerItems.length < 2;
+
+function lobbyTournamentSortTime(tournament){
+  const scheduled = Date.parse(tournament && tournament.scheduledStartAt || '');
+  if(Number.isFinite(scheduled)) return scheduled;
+  const updated = Date.parse(tournament && tournament.updatedAt || tournament && tournament.createdAt || '');
+  return Number.isFinite(updated) ? updated : Number.MAX_SAFE_INTEGER;
 }
+
+function lobbyTournamentItems(){
+  const items = Array.isArray(tournamentItems) ? tournamentItems.filter(item => item && ['open','full','running'].includes(item.status)) : [];
+  return items.sort((a,b) => {
+    const groupA = a.status === 'running' ? 1 : 0;
+    const groupB = b.status === 'running' ? 1 : 0;
+    if(groupA !== groupB) return groupA - groupB;
+    if(groupA === 0){
+      const openA = a.status === 'open' ? 0 : 1;
+      const openB = b.status === 'open' ? 0 : 1;
+      if(openA !== openB) return openA - openB;
+      const aScheduled = Date.parse(a.scheduledStartAt || '');
+      const bScheduled = Date.parse(b.scheduledStartAt || '');
+      if(Number.isFinite(aScheduled) && Number.isFinite(bScheduled) && aScheduled !== bScheduled) return aScheduled - bScheduled;
+      if(Number.isFinite(aScheduled) !== Number.isFinite(bScheduled)) return Number.isFinite(aScheduled) ? -1 : 1;
+      return lobbyTournamentSortTime(b) - lobbyTournamentSortTime(a);
+    }
+    return lobbyTournamentSortTime(b) - lobbyTournamentSortTime(a);
+  });
+}
+
+function lobbyTournamentMeta(tournament){
+  if(tournament.status === 'running'){
+    if(Number(tournament.currentRound || 0) > 0){
+      const total = Number(tournament.totalRounds || 0);
+      return 'Runde ' + Number(tournament.currentRound) + (total > 0 ? '/' + total : '') + ' · ' + (tournament.tournamentTypeLabel || 'Turnier');
+    }
+    return (tournament.tournamentTypeLabel || 'Turnier') + ' · läuft';
+  }
+  if(tournament.live && tournament.scheduledStartAt){
+    const date = new Date(tournament.scheduledStartAt);
+    if(!Number.isNaN(date.getTime())){
+      try{
+        return 'Start ' + date.toLocaleString('de-DE', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + ' Uhr';
+      } catch(_){}
+    }
+  }
+  const confirmed = Math.max(0, Number(tournament.confirmedCount || 0));
+  const maxPlayers = Math.max(0, Number(tournament.players || 0));
+  const participants = maxPlayers > 0 ? (confirmed + '/' + maxPlayers + ' Teilnehmer') : (confirmed + ' Teilnehmer');
+  return (tournament.tournamentTypeLabel || 'Turnier') + ' · ' + participants;
+}
+
+function renderLobbyTournamentRow(tournament){
+  const row = document.createElement('div');
+  row.className = 'lobby-tournament-row';
+
+  const main = document.createElement('div');
+  main.className = 'lobby-tournament-main';
+  const name = document.createElement('span');
+  name.className = 'lobby-tournament-name';
+  name.textContent = tournament.name || 'Turnier';
+  const status = document.createElement('span');
+  status.className = 'lobby-tournament-status ' + (tournament.status === 'running' ? 'running' : 'upcoming');
+  status.textContent = tournament.status === 'running' ? 'Läuft' : (tournament.status === 'full' ? 'Ausgebucht' : 'Anmeldung offen');
+  main.append(name, status);
+
+  const meta = document.createElement('span');
+  meta.className = 'lobby-tournament-meta';
+  meta.textContent = lobbyTournamentMeta(tournament);
+
+  const open = document.createElement('button');
+  open.type = 'button';
+  open.className = 'button-flat lobby-tournament-open';
+  open.textContent = 'Öffnen ›';
+  open.addEventListener('click', () => openTournamentDialog(String(tournament.id || '')));
+
+  row.append(main, meta, open);
+  return row;
+}
+
+function renderLobbyTournaments(){
+  if(!lobbyTicker || !lobbyTickerList) return;
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  if(!loggedIn){ clearLobbyTicker(); return; }
+  const items = lobbyTournamentItems();
+  const visibleItems = items.slice(0, 4);
+  lobbyTickerList.innerHTML = '';
+  lobbyTicker.hidden = items.length < 1;
+  if(!items.length) return;
+  const fragment = document.createDocumentFragment();
+  visibleItems.forEach(tournament => fragment.appendChild(renderLobbyTournamentRow(tournament)));
+  lobbyTickerList.appendChild(fragment);
+}
+
 async function loadLobbyTicker(){
-  if(!onlineAuthToken || !onlineAuthUser){ clearLobbyTicker(); return; }
-  const data = await authApi('/api/lobby-ticker');
-  const dismissed = lobbyTickerDismissedIds();
-  lobbyTickerItems = (Array.isArray(data.items) ? data.items : []).filter(item => item && item.id && !dismissed.has(String(item.id)));
-  lobbyTickerIndex = Math.min(lobbyTickerIndex, Math.max(0, lobbyTickerItems.length - 1));
-  showLobbyTickerAt(lobbyTickerIndex);
-  startLobbyTickerRotation();
-}
-function dismissCurrentLobbyTickerItem(){
-  const item = currentLobbyTickerItem();
-  if(!item) return;
-  const dismissed = lobbyTickerDismissedIds();
-  dismissed.add(String(item.id));
-  saveLobbyTickerDismissedIds(dismissed);
-  lobbyTickerItems.splice(lobbyTickerIndex, 1);
-  if(lobbyTickerIndex >= lobbyTickerItems.length) lobbyTickerIndex = 0;
-  showLobbyTickerAt(lobbyTickerIndex);
-  startLobbyTickerRotation();
-}
-function openCurrentLobbyTickerItem(){
-  const item = currentLobbyTickerItem();
-  if(!item) return;
-  if(item.actionKind === 'tournament'){
-    openTournamentDialog(String(item.actionValue || ''));
-  } else if(item.actionKind === 'profile'){
-    openMemberProfile({id:String(item.actionValue || '')}, 'standalone');
-  } else if(item.actionKind === 'info'){
-    openInfoCenter(String(item.actionValue || ''));
-  } else if(item.actionKind === 'link'){
-    const raw = String(item.actionValue || '').trim();
-    try{
-      const url = new URL(raw, window.location.origin);
-      if(!['http:','https:'].includes(url.protocol)) return;
-      window.open(url.href, '_blank', 'noopener,noreferrer');
-    } catch(_){}
-  }
-}
-if(lobbyTickerPrevBtn) lobbyTickerPrevBtn.addEventListener('click', () => { showLobbyTickerAt(lobbyTickerIndex - 1); startLobbyTickerRotation(); });
-if(lobbyTickerNextBtn) lobbyTickerNextBtn.addEventListener('click', () => { showLobbyTickerAt(lobbyTickerIndex + 1); startLobbyTickerRotation(); });
-if(lobbyTickerCloseBtn) lobbyTickerCloseBtn.addEventListener('click', dismissCurrentLobbyTickerItem);
-if(lobbyTickerActionBtn) lobbyTickerActionBtn.addEventListener('click', openCurrentLobbyTickerItem);
-if(lobbyTicker){
-  lobbyTicker.addEventListener('mouseenter', stopLobbyTickerRotation);
-  lobbyTicker.addEventListener('mouseleave', startLobbyTickerRotation);
-  lobbyTicker.addEventListener('focusin', stopLobbyTickerRotation);
-  lobbyTicker.addEventListener('focusout', startLobbyTickerRotation);
+  renderLobbyTournaments();
 }
 
-
-
-
-
-
-
-
-
+if(lobbyTickerActionBtn) lobbyTickerActionBtn.addEventListener('click', () => openTournamentDialog(''));

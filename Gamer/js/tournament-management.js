@@ -42,6 +42,7 @@ async function loadTournaments(options){
     tournamentItems = [];
     updateTournamentNotificationUi();
     renderTournamentList();
+    if(typeof renderLobbyTournaments === 'function') renderLobbyTournaments();
     return [];
   }
   const data = await authApi('/api/tournaments');
@@ -67,6 +68,7 @@ async function loadTournaments(options){
   tournamentUnreadCount = Number(data.unreadCount || 0);
   updateTournamentNotificationUi();
   renderTournamentList();
+  if(typeof renderLobbyTournaments === 'function') renderLobbyTournaments();
   if(options && options.keepDetail && tournamentSelectedId){
     const selected = tournamentItems.find(item => item.id === tournamentSelectedId);
     if(selected) renderTournamentDetail(selected);

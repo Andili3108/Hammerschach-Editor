@@ -118,7 +118,6 @@ const adminInfoCenterStartsAt = document.getElementById('adminInfoCenterStartsAt
 const adminInfoCenterEndsAt = document.getElementById('adminInfoCenterEndsAt');
 const adminInfoCenterFiles = document.getElementById('adminInfoCenterFiles');
 const adminInfoCenterFilesList = document.getElementById('adminInfoCenterFilesList');
-const adminInfoCenterTickerCheckbox = document.getElementById('adminInfoCenterTickerCheckbox');
 const adminInfoCenterEmailCheckbox = document.getElementById('adminInfoCenterEmailCheckbox');
 const adminInfoCenterPreviewBtn = document.getElementById('adminInfoCenterPreviewBtn');
 const adminInfoCenterSaveBtn = document.getElementById('adminInfoCenterSaveBtn');
