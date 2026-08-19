@@ -748,17 +748,22 @@
   .tournament-lobby-banner span{margin-top:3px;font-size:13px;font-weight:700;opacity:.92;}
   .tournament-lobby-banner-actions{display:flex;gap:7px;flex-wrap:wrap;}
   .tournament-lobby-banner-actions button{min-height:36px;}
-  .lobby-ticker{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto;gap:8px;align-items:center;border-radius:16px;background:linear-gradient(135deg,#fff8cf,#eef39f);border:1px solid rgba(132,63,70,.22);padding:9px 11px;box-shadow:0 7px 20px rgba(90,74,20,.13);color:#2d2d2d;}
-  .lobby-ticker[hidden]{display:none!important;}
-  .lobby-ticker-nav,.lobby-ticker-close{min-width:34px;min-height:34px!important;padding:5px 8px!important;border-radius:10px!important;background:rgba(255,255,255,.68)!important;color:#843f46!important;border-color:rgba(132,63,70,.18)!important;}
-  .lobby-ticker-content{display:flex;align-items:center;gap:10px;min-width:0;}
-  .lobby-ticker-icon{font-size:24px;line-height:1;flex:0 0 auto;}
-  .lobby-ticker-copy{min-width:0;line-height:1.25;}
-  .lobby-ticker-title{display:block;color:#843f46;font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .lobby-ticker-text{display:block;margin-top:2px;color:#444;font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .lobby-ticker-action{justify-self:end;width:auto!important;min-width:150px;max-width:220px;min-height:34px!important;padding:6px 14px!important;border:1px solid rgba(132,63,70,.20)!important;border-radius:999px!important;background:rgba(255,255,255,.75)!important;color:#843f46!important;box-shadow:none!important;white-space:nowrap;}
-  .lobby-ticker-action:hover:not(:disabled){transform:none!important;background:rgba(255,255,255,.94)!important;box-shadow:none!important;filter:none!important;}
-  .lobby-ticker-counter{min-width:34px;text-align:center;font-size:11px;font-weight:900;color:#765f20;}
+  .lobby-tournaments{border-radius:16px;background:linear-gradient(135deg,#fff8cf,#eef39f);border:1px solid rgba(132,63,70,.22);padding:10px 12px;box-shadow:0 7px 20px rgba(90,74,20,.13);color:#2d2d2d;}
+  .lobby-tournaments[hidden]{display:none!important;}
+  .lobby-tournaments-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;}
+  .lobby-tournaments-heading{display:flex;align-items:center;gap:7px;color:#843f46;font-size:15px;font-weight:900;}
+  .lobby-tournaments-all{width:auto!important;min-height:30px!important;padding:4px 10px!important;border-radius:999px!important;background:rgba(255,255,255,.62)!important;color:#843f46!important;border-color:rgba(132,63,70,.16)!important;box-shadow:none!important;font-size:11px!important;white-space:nowrap;}
+  .lobby-tournaments-list{display:flex;flex-direction:column;gap:0;}
+  .lobby-tournament-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:38px;padding:5px 2px;border-top:1px solid rgba(118,95,32,.16);}
+  .lobby-tournament-row:first-child{border-top:0;}
+  .lobby-tournament-main{display:flex;align-items:center;gap:8px;min-width:0;}
+  .lobby-tournament-name{min-width:0;overflow:hidden;color:#3a3031;font-size:13px;font-weight:900;text-overflow:ellipsis;white-space:nowrap;}
+  .lobby-tournament-status{flex:0 0 auto;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.68);font-size:10px;font-weight:900;white-space:nowrap;}
+  .lobby-tournament-status.upcoming{color:#7a4a00;}
+  .lobby-tournament-status.running{color:#24623a;}
+  .lobby-tournament-meta{color:#675f42;font-size:11px;font-weight:850;white-space:nowrap;}
+  .lobby-tournament-open{width:auto!important;min-width:76px;min-height:30px!important;padding:4px 10px!important;border-radius:999px!important;background:rgba(255,255,255,.78)!important;color:#843f46!important;border-color:rgba(132,63,70,.16)!important;box-shadow:none!important;font-size:11px!important;white-space:nowrap;}
+  .lobby-tournaments-empty{padding:5px 2px 2px;color:#675f42;font-size:12px;font-weight:800;}
   .admin-ticker-open-btn{background:linear-gradient(180deg,#fff8cf 0%,#e9f06b 100%)!important;color:#643f10!important;border-color:rgba(100,63,16,.26)!important;}
   .admin-ticker-modal{width:900px;max-width:100%;max-height:92vh;overflow:auto;}
   .admin-ticker-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
@@ -1380,10 +1385,11 @@
   html.dark-mode .tv-playlist-video-channel{color:#adb3ba;}
   html.dark-mode .tv-playlist-empty{background:#2b3037;border-color:rgba(255,255,255,.09);color:#c1c6cc;}
   html.dark-mode :is(.player-card,.player-time-setup,.player-clock-card,.auth-account,.auth-ratings,.auth-email-notifications,.auth-rating-card,.online-panel,.online-item,.member-search-box,.daily-game-card,.open-offer-card,.public-game-card,.chat-messages,.chat-message,.global-chat-messages,.global-chat-message,.global-chat-members,.global-chat-member,.admin-stat-card,.admin-section,.admin-inline-stat,.admin-list-empty,.admin-event-row,.admin-database-item,.admin-backup-box,.admin-message-attachment-box,.admin-message-preview,.admin-message-attachment-selected,.admin-report-card,.admin-delete-card,.admin-delete-target,.freestyle-position-controls,.next-daily-game-box,.room-rating-status,.privacy-storage-list dd){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
-  html.dark-mode .lobby-ticker{background:linear-gradient(135deg,#3b3926,#343a26);border-color:rgba(233,240,107,.25);color:#f3f4f6;box-shadow:none;}
-  html.dark-mode .lobby-ticker-title{color:#f1c4c9;}html.dark-mode .lobby-ticker-text{color:#e7e8dc;}html.dark-mode .lobby-ticker-counter{color:#e9f06b;}
-  html.dark-mode .lobby-ticker-action{border-color:rgba(241,196,201,.25)!important;background:rgba(255,255,255,.06)!important;color:#f1c4c9!important;box-shadow:none!important;}
-  html.dark-mode .lobby-ticker-action:hover:not(:disabled){background:rgba(255,255,255,.10)!important;}
+  html.dark-mode .lobby-tournaments{background:linear-gradient(135deg,#3b3926,#343a26);border-color:rgba(233,240,107,.25);color:#f3f4f6;box-shadow:none;}
+  html.dark-mode .lobby-tournaments-heading,html.dark-mode .lobby-tournament-name{color:#f1c4c9;}
+  html.dark-mode .lobby-tournament-meta,html.dark-mode .lobby-tournaments-empty{color:#e7e8dc;}
+  html.dark-mode .lobby-tournament-row{border-color:rgba(233,240,107,.13);}
+  html.dark-mode .lobby-tournament-status,html.dark-mode .lobby-tournaments-all,html.dark-mode .lobby-tournament-open{background:rgba(255,255,255,.07)!important;border-color:rgba(241,196,201,.18)!important;color:#f1c4c9!important;}
   html.dark-mode :is(.admin-ticker-panel,.admin-ticker-card){background:#252930;border-color:rgba(255,255,255,.09);color:#eef0f2;}
   html.dark-mode :is(.admin-ticker-input,.admin-ticker-select,.admin-ticker-textarea){background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
   html.dark-mode :is(.admin-ticker-panel h4,.admin-ticker-card-title){color:#f1c4c9;}
@@ -1915,7 +1921,7 @@
   }
 
   @media (max-width:1299px){html.hammerschach-standalone body::before,html.hammerschach-standalone body::after{display:none}}
-  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.member-lobby-setup-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.member-lobby-setup-action{width:100%;white-space:normal}.tournament-lobby-banner-actions button{flex:1}.lobby-ticker{grid-template-columns:auto minmax(0,1fr) auto auto}#lobbyTickerPrevBtn{grid-column:1;grid-row:1}.lobby-ticker-content{grid-column:2;grid-row:1}#lobbyTickerNextBtn{grid-column:3;grid-row:1}.lobby-ticker-close{grid-column:4;grid-row:1}.lobby-ticker-action{grid-column:2 / 4;grid-row:2;width:100%!important;min-width:0;max-width:none}.lobby-ticker-counter{display:none}.lobby-ticker-text{white-space:normal}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
+  @media (max-width:760px){.member-lobby-section{padding:13px}.member-lobby-heading,.tournament-lobby-banner{flex-direction:column;align-items:stretch}.member-lobby-setup-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.member-lobby-setup-action{width:100%;white-space:normal}.tournament-lobby-banner-actions button{flex:1}.lobby-tournament-row{grid-template-columns:minmax(0,1fr) auto}.lobby-tournament-meta{grid-column:1 / -1;padding-left:0}.lobby-tournament-main{min-width:0}.info-center-bar{grid-template-columns:auto minmax(0,1fr) auto}.info-center-unread-badge,.info-center-counter{display:none}.info-center-bar-action{display:none}.info-center-open{grid-template-columns:auto minmax(0,1fr)}.admin-ticker-grid,.admin-ticker-form-grid{grid-template-columns:1fr}.admin-ticker-field-wide{grid-column:1}.member-lobby-settings-mount #preRoomSetupPanel{grid-template-columns:1fr}.member-lobby-settings-mount #timeSetupBox,.member-lobby-settings-mount #publicVisibilityBox{grid-column:auto}.global-chat-layout{grid-template-columns:1fr}.global-chat-members{border-left:0;border-top:1px solid rgba(132,63,70,.12)}.global-chat-members-list{max-height:150px}.global-chat-messages{height:330px}.global-chat-input-row{grid-template-columns:1fr}.global-chat-send{width:100%}}
 
   @media (max-width:980px){:root{--board-size:min(var(--board-max), calc(100vw - 24px));}.top-layout{flex-wrap:wrap}.moves-right{width:var(--board-size);flex-basis:var(--board-size)}.header{grid-template-columns:1fr;padding:12px}.header-brand{justify-content:center}.brand-link{justify-content:center}.logo-slot{width:138px;height:112px;flex-basis:138px}.brand-title{font-size:24px}.actions{justify-content:center}}
   @media (max-width:760px){.shell{width:calc(100vw - 24px)}.header{grid-template-columns:1fr;padding:10px}.header-top-row{grid-template-columns:1fr}.header-utility-actions{justify-content:center;flex-wrap:wrap}.analyzer-tool-frame,.trainer-tool-frame,.openings-tool-frame,.fairplay-tool-frame{min-height:860px;border-radius:14px}.logo-slot{width:126px;height:96px;flex-basis:126px}.brand-origin-line{justify-content:center;flex-wrap:wrap;font-size:12px;gap:7px;white-space:normal}.brand-origin-button{min-height:23px;padding:3px 9px;font-size:11px}.brand-origin-site-button{width:138px;min-width:138px;flex-basis:138px;min-height:27px;padding:4px 11px 4px 9px;font-size:12px}.brand-origin-rook{width:15px;height:17px;flex-basis:15px}.brand-title{font-size:22px}.online-panel,.time-selectors,.invite-color-options,.variant-options{grid-template-columns:1fr}.freestyle-position-row{grid-template-columns:1fr}.freestyle-position-apply-btn{width:100%}.actions{justify-content:center}.match-actions{grid-template-columns:1fr}.header-menu{width:100%}.header-menu-popup{left:0;right:0;transform:none;width:100%;min-width:0}.board-tools{gap:9px;flex-wrap:wrap}.gamer-board-nav{flex:0 0 100%}.top-layout{flex-direction:column;align-items:center;flex-wrap:nowrap}.board-column,.moves-right{width:var(--board-size);flex:0 1 auto}.side-panel{height:auto;min-height:0}.board-tools .board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:min(238px, calc(100vw - 48px))}.player-clock-time{font-size:32px}#moveList{font-size:14px;grid-template-columns:38px 1fr 1fr;max-height:none}.hide-mobile-pair{display:none}}
@@ -2015,17 +2021,21 @@
     .board-room-controls>.public-visibility-box{grid-template-columns:1fr;gap:6px;}
   }
 
-  .info-center-bar{margin-top:9px;border:1px solid rgba(59,110,167,.28);border-radius:15px;background:linear-gradient(135deg,#f8fbfd,#e7eef5);box-shadow:0 8px 20px rgba(45,66,86,.11);overflow:hidden;}
+  .info-center-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;align-items:center;gap:6px;min-height:72px;margin-top:9px;border:1px solid rgba(59,110,167,.28);border-radius:15px;background:linear-gradient(135deg,#f8fbfd,#e7eef5);box-shadow:0 8px 20px rgba(45,66,86,.11);overflow:hidden;padding:5px 7px;}
   .info-center-bar[hidden]{display:none!important;}
   .info-center-bar:not([hidden]) + .global-chat-shell{margin-top:26px;}
-  .info-center-open{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;width:100%!important;min-height:64px!important;padding:10px 14px!important;border:0!important;border-radius:0!important;background:transparent!important;color:#2f2527!important;text-align:left!important;box-shadow:none!important;}
+  .info-center-open{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;width:100%!important;min-height:60px!important;padding:7px 9px!important;border:0!important;border-radius:11px!important;background:transparent!important;color:#2f2527!important;text-align:left!important;box-shadow:none!important;}
   .info-center-open:hover{background:rgba(59,110,167,.055)!important;transform:none!important;}
-  .info-center-bar-icon{font-size:27px;line-height:1;}
-  .info-center-bar-copy{display:flex;flex-direction:column;gap:2px;min-width:0;}
-  .info-center-bar-copy strong{font-size:17px;color:#315f8c;line-height:1.15;}
-  .info-center-bar-copy span{overflow:hidden;color:#4d4547;font-size:13px;font-weight:850;text-overflow:ellipsis;white-space:nowrap;}
-  .info-center-unread-badge{padding:5px 9px;border-radius:999px;background:#3b6ea7;color:#fff;font-size:11px;font-weight:900;white-space:nowrap;}
-  .info-center-bar-action{padding:6px 10px;border:1px solid rgba(59,110,167,.24);border-radius:999px;background:rgba(255,255,255,.78);color:#315f8c;font-size:12px;font-weight:900;white-space:nowrap;}
+  .info-center-nav{min-width:32px!important;width:32px!important;min-height:38px!important;padding:4px 7px!important;border-radius:10px!important;background:rgba(255,255,255,.72)!important;color:#315f8c!important;border-color:rgba(59,110,167,.18)!important;box-shadow:none!important;font-size:19px!important;}
+  .info-center-nav[hidden]{display:none!important;}
+  .info-center-bar-icon{font-size:25px;line-height:1;}
+  .info-center-bar-copy{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .info-center-bar-kicker{overflow:hidden;color:#6f7f90!important;font-size:9px!important;font-weight:900!important;letter-spacing:.08em;text-transform:uppercase;text-overflow:ellipsis;white-space:nowrap;}
+  .info-center-bar-copy strong{overflow:hidden;color:#315f8c;font-size:15px;line-height:1.2;text-overflow:ellipsis;white-space:nowrap;}
+  .info-center-bar-copy>span:last-child{overflow:hidden;color:#4d4547;font-size:12px;font-weight:850;text-overflow:ellipsis;white-space:nowrap;}
+  .info-center-unread-badge{padding:5px 8px;border-radius:999px;background:#3b6ea7;color:#fff;font-size:10px;font-weight:900;white-space:nowrap;}
+  .info-center-counter{min-width:30px;color:#5b7188;font-size:10px;font-weight:900;text-align:center;white-space:nowrap;}
+  .info-center-bar-action{padding:5px 9px;border:1px solid rgba(59,110,167,.24);border-radius:999px;background:rgba(255,255,255,.78);color:#315f8c;font-size:11px;font-weight:900;white-space:nowrap;}
   .info-center-modal{width:min(1040px,96vw);max-width:1040px;max-height:92vh;overflow:auto;}
   .info-center-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
   .info-center-modal-head h3{margin:2px 0 0;}
@@ -2596,3 +2606,8 @@ html.dark-mode .chess-chronicle-milestone.first_moment{color:#efb5bc;}
   .chess-chronicle-stat span{font-size:8px;}
 }
 
+
+/* Lobby 2026-08-19: Turnierübersicht + Info-Center-Karussell */
+html.dark-mode .info-center-nav{background:rgba(255,255,255,.06)!important;border-color:rgba(169,204,235,.22)!important;color:#a9cceb!important;}
+html.dark-mode .info-center-counter{color:#a9cceb;}
+html.dark-mode .info-center-bar-kicker{color:#9aaaba!important;}
