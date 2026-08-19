@@ -473,7 +473,7 @@
           <p>Nach dem Start müssen die Spieler nicht gleichzeitig online bleiben. Öffne die Partie später erneut, führe deinen Zug aus und schließe die Seite anschließend wieder, wenn du möchtest.</p>
           <p>Ein gewählter Daily-Zug wird zunächst nur als Vorschau angezeigt. Sobald diese Vorschau steht, wechselt die Leiste unter dem Brett bewusst in einen klaren Bestätigungszustand: Es bleiben nur <strong>„↩“</strong>, <strong>„½ Remis“</strong> und <strong>„✓ Zug bestätigen“</strong> sichtbar. „Variante“, „Aufgeben“ sowie die normalen Brettwerkzeuge werden in diesem Moment ausgeblendet; mit „↩“ verwirfst du die Vorschau und erhältst die normale Leiste sofort zurück. Möchtest du mit diesem Zug Remis anbieten, aktiviere vorher „½ Remis“; der Bestätigungsbutton lautet dann <strong>„✓ Zug bestätigen + Remis“</strong> und Zug sowie Remisangebot werden gemeinsam an den Server gesendet. Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug ausgeführt haben. Nach jedem bestätigten Zug erhält der nun ziehende Spieler automatisch eine E-Mail mit Gegner, Zugfrist, Fristende und direktem Partielink, sofern diese Benachrichtigung in seiner Accountverwaltung aktiviert ist.</p>
           <p>Erreicht eine Daily-Stellung die <strong>dreifache Stellungswiederholung</strong> oder die <strong>50-Züge-Regel</strong>, kann der Spieler am Zug das Remis über <strong>„½ Remis reklamieren“</strong> beanspruchen. Das gilt auch dann, wenn erst der gerade als Vorschau ausgeführte Zug den Anspruch erzeugt: In diesem Fall wird der Zug zusammen mit der Reklamation über <strong>„✓ Zug bestätigen + Remis reklamieren“</strong> serverseitig geprüft. Eine ungültige Reklamation beendet die Partie nicht.</p>
-          <p>Während der Gegner am Zug ist, erscheint unter der Zugliste das <strong>Verzweigungssymbol für bedingte Züge</strong>. Es öffnet ein vollständig bedienbares Brett: Ziehe dort zuerst den erwarteten Gegnerzug und anschließend deine gewünschte Antwort. Nach dem Speichern führt der Server deine Antwort automatisch aus, sobald der Gegner genau den vorbereiteten Zug spielt. Zieht er anders, verfällt die Bedingung. Pro aktueller Stellung kann eine Bedingung gespeichert, geändert oder gelöscht werden.</p>
+          <p>Während der Gegner am Zug ist, erscheint unter der Zugliste das <strong>Verzweigungssymbol für bedingte Züge</strong>. Es öffnet ein vollständig bedienbares Brett: Ziehe dort zuerst den erwarteten Gegnerzug und anschließend deine gewünschte Antwort. Danach kannst du die Zugfolge paarweise fortsetzen und bis zu <strong>5 gegnerische Züge mit jeweils deiner Antwort</strong> vorbereiten. Speichern kannst du nach jedem vollständigen Zugpaar. Trifft der nächste Gegnerzug genau zu, führt der Server deine Antwort automatisch aus und lässt einen eventuell vorbereiteten Rest der Zugfolge aktiv. Weicht der Gegner an einer Stelle ab, verfällt nur der noch offene Rest. Pro aktueller Stellung kann eine solche Zugfolge gespeichert, geändert oder gelöscht werden.</p>
 
           <h4>7. Daily Chess vorbereiten und annehmen</h4>
           <p>Der Einladende muss vor der Auswahl von Daily Chess eingeloggt sein. Auch der eingeladene Spieler öffnet den Link und meldet sich mit seinem Account an. Gäste können einem Daily-Raum nur als Zuschauer beitreten.</p>
@@ -2077,7 +2077,7 @@
                 <button class="nav-btn" id="navForward" title="Einen Halbzug vor" aria-label="Einen Halbzug vor">›</button>
                 <button class="nav-btn" id="navEnd" title="Letzte Stellung" aria-label="Letzte Stellung">»</button>
               </div>
-              <button id="conditionalMoveBtn" class="button-flat conditional-move-btn" type="button" title="Bedingte Züge vorbereiten" aria-label="Bedingte Züge vorbereiten" aria-pressed="false" hidden>
+              <button id="conditionalMoveBtn" class="button-flat conditional-move-btn" type="button" aria-label="Bedingte Züge vorbereiten" aria-pressed="false" hidden>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h3.2c2.1 0 3.8 1.7 3.8 3.8v6.4c0 2.1 1.7 3.8 3.8 3.8H19m-3-3 3 3-3 3M12 9.5c.4-2.5 1.9-4.5 4.3-4.5H19m-3-3 3 3-3 3"/></svg>
                 <span id="conditionalMoveSavedMark" class="conditional-move-saved-mark" aria-hidden="true" hidden></span>
               </button>
@@ -2118,8 +2118,8 @@
             </div>
             <div id="conditionalMoveInstruction" class="conditional-move-instruction" aria-live="polite">Ziehe auf dem Brett den erwarteten Zug deines Gegners.</div>
             <div class="conditional-move-sequence" aria-label="Vorbereitete Zugbedingung">
-              <div><span>Wenn der Gegner</span><strong id="conditionalMoveExpectedText">noch nicht gewählt</strong></div>
-              <div><span>Dann spiele ich</span><strong id="conditionalMoveReplyText">noch nicht gewählt</strong></div>
+              <div><span>Vorbereitete Zugfolge</span><strong id="conditionalMoveExpectedText">noch keine Züge</strong></div>
+              <div><span>Umfang</span><strong id="conditionalMoveReplyText">0 von 10 Halbzügen</strong></div>
             </div>
             <div id="conditionalMoveStatus" class="conditional-move-status" aria-live="polite"></div>
             <div class="conditional-move-actions">
@@ -2128,7 +2128,7 @@
               <button id="conditionalMoveDeleteBtn" class="button-flat conditional-move-delete-btn" type="button" hidden>Bedingung löschen</button>
               <button id="conditionalMoveSaveBtn" class="conditional-move-save-btn" type="button" disabled>Speichern &amp; beenden</button>
             </div>
-            <p class="conditional-move-note">Die Antwort wird nur ausgeführt, wenn der Gegner genau den vorbereiteten Zug spielt. Andernfalls verfällt die Bedingung.</p>
+            <p class="conditional-move-note">Die Zugfolge wird nur fortgesetzt, solange der Gegner jeweils genau den vorbereiteten Zug spielt. Bei einer Abweichung verfällt der noch offene Rest.</p>
           </div>
         </div>
       </aside>
@@ -2198,10 +2198,10 @@
 <script src="js/game-history-state.js?v=20260817-3"></script>
 <script src="js/premove.js?v=20260804-1"></script>
 <script src="js/board-render-status.js?v=20260817-3"></script>
-<script src="js/variation-board.js?v=20260817-3"></script>
-<script src="js/conditional-moves.js?v=20260813-1"></script>
+<script src="js/variation-board.js?v=20260819-1"></script>
+<script src="js/conditional-moves.js?v=20260819-1"></script>
 <script src="js/board-input.js?v=20260804-1"></script>
-<script src="js/piece-drag-helpers.js?v=20260813-1"></script>
+<script src="js/piece-drag-helpers.js?v=20260819-1"></script>
 <script src="js/move-commit.js?v=20260817-3"></script>
 <script src="js/app-event-bindings.js?v=20260817-3"></script>
 <script src="js/move-history-navigation.js?v=20260818-1"></script>
