@@ -11986,16 +11986,28 @@ function conditionalStoredMove(value) {
   };
 }
 
+const CONDITIONAL_MOVE_MAX_PLIES = 10;
+
+function conditionalStoredLine(value) {
+  if (!value || typeof value !== 'object') return null;
+  const rawLine = Array.isArray(value.line || value.moves || value.sequence)
+    ? (value.line || value.moves || value.sequence)
+    : [value.expectedMove || value.expected_move || value.expected, value.replyMove || value.reply_move || value.reply];
+  if (rawLine.length < 2 || rawLine.length > CONDITIONAL_MOVE_MAX_PLIES || rawLine.length % 2 !== 0) return null;
+  const line = rawLine.map(conditionalStoredMove);
+  return line.some(move => !move) ? null : line;
+}
+
 function safeConditionalMoveForClient(value) {
   if (!value || typeof value !== 'object') return null;
-  const expectedMove = conditionalStoredMove(value.expectedMove || value.expected_move || value.expected);
-  const replyMove = conditionalStoredMove(value.replyMove || value.reply_move || value.reply);
+  const line = conditionalStoredLine(value);
   const basePly = Math.max(0, Math.floor(Number(value.basePly ?? value.base_ply ?? 0) || 0));
-  if (!expectedMove || !replyMove) return null;
+  if (!line) return null;
   return {
     basePly,
-    expectedMove,
-    replyMove,
+    line,
+    expectedMove:line[0],
+    replyMove:line[1],
     updatedAt:value.updatedAt || value.updated_at || null
   };
 }
@@ -17319,42 +17331,64 @@ export class GameRoom {
         await this.sendRoomState(ws,'room_state');
         return;
       }
-      const expectedIncoming = cleanMove(data.expectedMove || data.expected_move || data.expected);
-      const replyIncoming = cleanMove(data.replyMove || data.reply_move || data.reply);
-      if (!expectedIncoming || !replyIncoming) {
-        safeSend(ws, {type:'error', code:'CONDITIONAL_INVALID_LINE', message:'Gegnerzug und eigene Antwort müssen vollständig angegeben sein.'});
+      const requestedLineRaw = Array.isArray(data.line || data.moves || data.sequence)
+        ? (data.line || data.moves || data.sequence)
+        : [data.expectedMove || data.expected_move || data.expected, data.replyMove || data.reply_move || data.reply];
+      if (requestedLineRaw.length < 2 || requestedLineRaw.length > CONDITIONAL_MOVE_MAX_PLIES || requestedLineRaw.length % 2 !== 0) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_INVALID_LINE', message:'Die Zugfolge muss aus 1 bis 5 Gegnerzügen mit jeweils deiner Antwort bestehen.'});
+        return;
+      }
+      const requestedLine = requestedLineRaw.map(cleanMove);
+      if (requestedLine.some(move => !move)) {
+        safeSend(ws, {type:'error', code:'CONDITIONAL_INVALID_LINE', message:'Die vorbereitete Zugfolge enthält einen ungültigen Zug.'});
         return;
       }
       const gameSetup = cleanGameSetup(state.get('gameSetup') || (game && game.gameSetup) || null);
-      let expectedValidation;
-      let replyValidation;
+      const validatedLine = [];
+      let preparedGame = this.validationGameFor(moves,gameSetup);
+      let preparedPositionCounts = null;
       try {
-        expectedValidation = validateMoveOnServer(moves, expectedIncoming, gameSetup, this.validationGameFor(moves,gameSetup));
-        if (!expectedValidation.ok) {
-          safeSend(ws, {type:'error', code:'CONDITIONAL_EXPECTED_' + expectedValidation.code, message:'Der erwartete Gegnerzug ist nicht legal.'});
-          return;
+        for (let index = 0; index < requestedLine.length; index += 1) {
+          const expectedSide = index % 2 === 0 ? opposite(role) : role;
+          const validation = validateMoveOnServer(
+            index === 0 ? moves : [],
+            requestedLine[index],
+            gameSetup,
+            preparedGame,
+            preparedPositionCounts,
+            {autoClaimable:false}
+          );
+          if (!validation.ok || validation.before.turn !== expectedSide) {
+            safeSend(ws, {
+              type:'error',
+              code:index % 2 === 0 ? 'CONDITIONAL_EXPECTED_ILLEGAL' : 'CONDITIONAL_REPLY_ILLEGAL',
+              message:index % 2 === 0
+                ? 'Ein vorbereiteter Gegnerzug ist in der Zugfolge nicht legal.'
+                : 'Eine vorbereitete eigene Antwort ist in der Zugfolge nicht legal.'
+            });
+            return;
+          }
+          if (index % 2 === 0 && validation.gameOver) {
+            safeSend(ws, {type:'error', code:'CONDITIONAL_EXPECTED_ENDS_GAME', message:'Nach einem vorbereiteten Gegnerzug wäre die Partie bereits beendet; eine Antwort ist dann nicht möglich.'});
+            return;
+          }
+          if (index < requestedLine.length - 1 && validation.gameOver) {
+            safeSend(ws, {type:'error', code:'CONDITIONAL_LINE_AFTER_GAME_END', message:'Die Zugfolge kann nach einem Partieende nicht fortgesetzt werden.'});
+            return;
+          }
+          validatedLine.push(conditionalStoredMove(validation.move));
+          preparedGame = validation.after;
+          preparedPositionCounts = validation.positionCounts;
         }
-        if (expectedValidation.before.turn !== opposite(role)) {
-          safeSend(ws, {type:'error', code:'CONDITIONAL_WRONG_EXPECTED_SIDE', message:'Zuerst muss ein Zug des Gegners vorbereitet werden.'});
-          return;
-        }
-        if (expectedValidation.gameOver) {
-          safeSend(ws, {type:'error', code:'CONDITIONAL_EXPECTED_ENDS_GAME', message:'Nach diesem Gegnerzug wäre die Partie bereits beendet; eine Antwort ist nicht möglich.'});
-          return;
-        }
-        replyValidation = validateMoveOnServer([], replyIncoming, gameSetup, expectedValidation.after, expectedValidation.positionCounts, {autoClaimable:false});
       } catch (error) {
         safeSend(ws, {type:'error', code:'CONDITIONAL_VALIDATION_FAILED', message:error && error.message ? error.message : 'Die vorbereitete Zugfolge konnte nicht geprüft werden.'});
         return;
       }
-      if (!replyValidation.ok || replyValidation.before.turn !== role) {
-        safeSend(ws, {type:'error', code:'CONDITIONAL_REPLY_ILLEGAL', message:'Die vorbereitete eigene Antwort ist in dieser Stellung nicht legal.'});
-        return;
-      }
       const conditionalMove = {
         basePly:moves.length,
-        expectedMove:conditionalStoredMove(expectedValidation.move),
-        replyMove:conditionalStoredMove(replyValidation.move),
+        line:validatedLine,
+        expectedMove:validatedLine[0],
+        replyMove:validatedLine[1],
         updatedAt:new Date().toISOString()
       };
       const conditionalMoves = state.get('conditionalMoves') && typeof state.get('conditionalMoves') === 'object'
@@ -17630,23 +17664,28 @@ export class GameRoom {
       const storedConditionalMove = conditionalMoves[conditionalOwner] || null;
       let automaticMove = null;
       let conditionalMoveConsumed = false;
+      let remainingConditionalMove = null;
       let finalValidationGame = validation.after;
 
       /*
         Eine Bedingung gehört immer dem Spieler, der nach dem gerade
-        eingegangenen Zug am Zug wäre. Sie wird bei jeder Antwort des Gegners
-        genau einmal verbraucht – passend bedeutet automatische Ausführung,
-        abweichend bedeutet stilles Verfallen.
+        eingegangenen Zug am Zug wäre. Passt der erwartete Gegnerzug, wird
+        die eigene Antwort automatisch ausgeführt. Bei längeren Zugfolgen
+        bleibt anschließend das nächste Paar aktiv; bei Abweichung verfällt
+        nur der noch offene Rest.
       */
       if (storedConditionalMove && timeControl.mode === 'daily') {
         conditionalMoveConsumed = true;
         delete conditionalMoves[conditionalOwner];
-        const basePly = Math.max(0, Math.floor(Number(storedConditionalMove.basePly) || 0));
-        const exactExpectedMove = basePly === ply - 1 && sameConditionalMove(storedConditionalMove.expectedMove, move);
-        if (exactExpectedMove && !game.ended && clock.turn === conditionalOwner) {
+        const normalizedConditionalMove = safeConditionalMoveForClient(storedConditionalMove);
+        const basePly = normalizedConditionalMove ? normalizedConditionalMove.basePly : -1;
+        const expectedMove = normalizedConditionalMove && normalizedConditionalMove.line[0];
+        const replyMove = normalizedConditionalMove && normalizedConditionalMove.line[1];
+        const exactExpectedMove = basePly === ply - 1 && sameConditionalMove(expectedMove, move);
+        if (exactExpectedMove && replyMove && !game.ended && clock.turn === conditionalOwner) {
           let automaticValidation = null;
           try {
-            automaticValidation = validateMoveOnServer([], storedConditionalMove.replyMove, gameSetup, validation.after, validation.positionCounts, {autoClaimable:false});
+            automaticValidation = validateMoveOnServer([], replyMove, gameSetup, validation.after, validation.positionCounts, {autoClaimable:false});
           } catch (_) {
             automaticValidation = null;
           }
@@ -17710,6 +17749,18 @@ export class GameRoom {
               outgoingDrawClaims = automaticValidation.gameOver
                 ? safeDrawClaimsForClient(null)
                 : drawClaimsFromHistoryState({game:automaticValidation.after, repetitionCount:automaticValidation.repetitionCount}, timeControl, game);
+
+              const remainingLine = normalizedConditionalMove.line.slice(2);
+              if (!automaticValidation.gameOver && remainingLine.length >= 2) {
+                remainingConditionalMove = {
+                  basePly:moves.length,
+                  line:remainingLine,
+                  expectedMove:remainingLine[0],
+                  replyMove:remainingLine[1],
+                  updatedAt:new Date(automaticNow).toISOString()
+                };
+                conditionalMoves[conditionalOwner] = remainingConditionalMove;
+              }
             }
           }
         }
@@ -17755,9 +17806,14 @@ export class GameRoom {
         this.broadcastMove(automaticMove, automaticMove.messageId, clock, game, outgoingDrawOffer, outgoingDrawClaims, null, 0);
       }
       if (conditionalMoveConsumed) {
-        this.sendConditionalMoveState(conditionalOwner, null, automaticMove
-          ? {triggered:true, message:'Dein bedingter Zug wurde automatisch ausgeführt.'}
-          : {expired:true, message:'Der Gegner hat anders gezogen; die Bedingung ist verfallen.'});
+        this.sendConditionalMoveState(conditionalOwner, remainingConditionalMove, automaticMove
+          ? {
+              triggered:true,
+              message:remainingConditionalMove
+                ? 'Dein bedingter Zug wurde automatisch ausgeführt. Die vorbereitete Zugfolge bleibt aktiv.'
+                : 'Dein bedingter Zug wurde automatisch ausgeführt.'
+            }
+          : {expired:true, message:'Der Gegner hat anders gezogen; der noch offene Rest der Bedingung ist verfallen.'});
       }
       if (timeControl.mode !== 'daily') {
         this.runBackgroundTask(updateClockAlarm(), 'Uhrenalarm nach Live-Zug fehlgeschlagen');
