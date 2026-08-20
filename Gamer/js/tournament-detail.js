@@ -195,24 +195,27 @@ function renderTournamentDetail(tournament){
     const progress = tournament.status === 'running' ? (tournament.arena ? (' Die Arena läuft' + (tournament.arenaEndsAt ? ' bis ' + formatTournamentLocalDateTime(tournament.arenaEndsAt) : '') + '.') : (' Aktuell läuft ' + (current && current.label ? current.label : ('Runde ' + tournament.currentRound)) + ' von insgesamt ' + tournament.totalRounds + ' Runden.')) : '';
     const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? (tournament.arena ? ' Jede Arena-Partie erhält serverseitig eine zufällige Chess960-Stellung.' : ' Jede Runde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.') : '';
     const thematic = tournament.theme ? (' Thementurnier: Alle Partien beginnen nach „' + tournament.theme.name + '“ (' + tournament.theme.moveText + '). ' + themeSideToMoveLabel(tournament.theme)) : '';
-    const schedule = tournament.live && tournament.scheduledStartAt ? (' Geplanter automatischer Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '. Der Check-in öffnet eine Stunde vorher.') : '';
-    const capacity = tournament.arena ? 'mit offener Teilnehmerzahl' : ('für ' + (tournament.live ? ('bis zu ' + tournament.players) : tournament.players) + ' Teilnehmer');
+    const schedule = tournament.scheduledStartAt ? (' Geplanter automatischer Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '.' + (tournament.live ? ' Der Check-in öffnet eine Stunde vorher.' : '')) : '';
+    const flexibleField = mode === 'swiss';
+    const capacity = tournament.arena ? 'mit offener Teilnehmerzahl' : ('für ' + (flexibleField ? ('bis zu ' + tournament.players) : tournament.players) + ' Teilnehmer');
     tournamentOverviewText.textContent = typeConfig.label + '-' + modeConfig.label + ' ' + capacity + '. ' + modeConfig.description + schedule + freestyle + thematic + progress;
   }
   if(tournamentLocalNote){
     tournamentLocalNote.hidden = tournament.status !== 'draft';
     tournamentLocalNote.textContent = mode === 'knockout'
       ? 'Dieser K.-o.-Entwurf ist serverseitig gespeichert und für Mitglieder unsichtbar. Der Turnierbaum dient bereits als echte Layout-Vorschau; Veröffentlichung und Start bleiben bis zur fertig getesteten K.-o.-Rundenlogik gesperrt.'
-      : 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler ab einer Stunde vor dem Termin ihre Anwesenheit; der Start erfolgt automatisch.' : '');
+      : 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail. Der geplante Start erfolgt automatisch, sobald die Voraussetzungen erfüllt sind.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler ab einer Stunde vor dem Termin zusätzlich ihre Anwesenheit.' : '');
   }
   if(tournamentFactStatus) tournamentFactStatus.textContent = info.label;
   if(tournamentFactMode) tournamentFactMode.textContent = typeConfig.label + ' · ' + modeConfig.label;
   if(tournamentFactPlayers){
     if(tournament.arena) tournamentFactPlayers.textContent = String(tournament.confirmedCount || 0) + ' Teilnehmer · offen' + (tournament.status === 'running' ? (' · ' + String(tournament.arenaRunningGames || 0) + ' laufende Partien') : '');
-    else if(tournament.status === 'draft') tournamentFactPlayers.textContent = (tournament.live ? 'max. ' : '') + String(tournament.players);
-    else tournamentFactPlayers.textContent = String(tournament.confirmedCount || 0) + ' / ' + String(tournament.players) + (tournament.live ? (' · ' + String(tournament.checkedInCount || 0) + ' eingecheckt') : '');
+    else if(tournament.status === 'draft') tournamentFactPlayers.textContent = (mode === 'swiss' ? 'max. ' : '') + String(tournament.players);
+    else tournamentFactPlayers.textContent = String(tournament.confirmedCount || 0) + ' / ' + String(tournament.players) + (mode === 'swiss' ? ' max.' : '') + (tournament.live ? (' · ' + String(tournament.checkedInCount || 0) + ' eingecheckt') : '');
   }
   if(tournamentFactClock) tournamentFactClock.textContent = tournament.timeLabel || (tournament.hours + ' Stunden/Zug');
+  if(tournamentFactScheduleWrap) tournamentFactScheduleWrap.hidden = !tournament.scheduledStartAt;
+  if(tournamentFactSchedule) tournamentFactSchedule.textContent = tournament.scheduledStartAt ? formatTournamentLocalDateTime(tournament.scheduledStartAt) : '—';
   if(tournamentFactVariant) tournamentFactVariant.textContent = tournament.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch';
   if(tournamentFactThemeWrap) tournamentFactThemeWrap.hidden = !tournament.theme;
   if(tournamentFactTheme) tournamentFactTheme.textContent = tournament.theme ? (tournament.theme.name + ' · ' + tournament.theme.moveText) : '—';
@@ -221,6 +224,9 @@ function renderTournamentDetail(tournament){
     const baseDescription = tournament.description || defaultTournamentDescription(mode, tournament.tournamentType);
     tournamentDescriptionText.textContent = mode === 'knockout' ? (baseDescription + '\n\nFeste K.-o.-Regeln:\n' + tournamentKnockoutRulesText()) : baseDescription;
   }
+  if(tournamentStandingsTab) tournamentStandingsTab.textContent = mode === 'knockout' ? 'Turnierbaum' : 'Tabelle';
+  if(tournamentStandingsTitle) tournamentStandingsTitle.textContent = mode === 'knockout' ? 'Turnierbaum' : 'Turniertabelle';
+  if(tournamentStandingsTableContent) tournamentStandingsTableContent.hidden = mode === 'knockout';
   if(tournamentKnockoutBracket){
     tournamentKnockoutBracket.hidden = mode !== 'knockout';
     if(mode === 'knockout') renderKnockoutBracket(tournamentKnockoutBracketTree, tournament.players, {rules:false});
@@ -274,14 +280,24 @@ function renderTournamentDetail(tournament){
   }
   if(tournamentStartBtn){
     const recoverable = tournament.status === 'running' && Array.isArray(tournament.games) && tournament.games.some(game => game.status === 'creating');
-    const startReady = tournament.arena ? true : (tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0));
+    const readiness = typeof tournamentAdminStartReadiness === 'function'
+      ? tournamentAdminStartReadiness(tournament)
+      : {ok:false, mode};
+    const scheduledMs = Date.parse(tournament.scheduledStartAt || '');
+    const scheduledDue = !Number.isFinite(scheduledMs) || scheduledMs <= Date.now();
     tournamentStartBtn.hidden = !(admin && (['open','full'].includes(tournament.status) || recoverable));
-    tournamentStartBtn.disabled = mode === 'knockout' || (!recoverable && !startReady);
-    tournamentStartBtn.textContent = recoverable ? '↻ Fehlende Partien vorbereiten' : '▶️ Turnier starten';
-    tournamentStartBtn.title = mode === 'knockout'
+    tournamentStartBtn.disabled = !!readiness.knockoutPreviewOnly || (!recoverable && !readiness.ok);
+    tournamentStartBtn.textContent = recoverable
+      ? '↻ Fehlende Partien vorbereiten'
+      : (!scheduledDue && readiness.ok ? '▶️ Vorzeitig starten' : '▶️ Turnier starten');
+    tournamentStartBtn.title = readiness.knockoutPreviewOnly
       ? 'K.-o.-Turniere werden erst nach Fertigstellung und Test der Rundenlogik startbar.'
       : tournamentStartBtn.disabled
-        ? (tournament.live ? 'Mindestens vier angemeldete Spieler müssen eingecheckt sein.' : 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.')
-        : recoverable ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.' : (tournament.live ? 'Live-Turnier mit allen eingecheckten Spielern starten.' : 'Turnier und erste Turnierrunde manuell starten.');
+        ? (tournament.live ? 'Mindestens vier angemeldete Spieler müssen eingecheckt sein.' : readiness.mode === 'swiss' ? 'Das Schweizer System startet ab vier bestätigten Teilnehmern.' : 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.')
+        : recoverable
+          ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.'
+          : !scheduledDue
+            ? 'Als Turnier-Admin kannst du den geplanten Starttermin übersteuern und das Turnier jetzt starten.'
+            : 'Turnier jetzt manuell starten.';
   }
 }

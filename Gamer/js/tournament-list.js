@@ -144,9 +144,9 @@ function createTournamentListCard(tournament){
   meta.className = 'tournament-list-meta';
   const participantCount = Number(tournament.confirmedCount || 0);
   appendTournamentMeta(meta, (tournament.tournamentType === 'blitz' ? '⚡ ' : tournament.tournamentType === 'rapid' ? '⏱️ ' : '⏳ ') + tournament.tournamentTypeLabel);
-  appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer · offen') : (tournament.status === 'draft' ? ('👥 ' + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players)));
+  appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer · offen') : (tournament.status === 'draft' ? ('👥 ' + (normalizeTournamentMode(tournament.mode) === 'swiss' ? 'max. ' : '') + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players + (normalizeTournamentMode(tournament.mode) === 'swiss' ? ' max.' : ''))));
   appendTournamentMeta(meta, '⏱ ' + (tournament.timeLabel || (tournament.hours + ' Std./Zug')));
-  if(tournament.live && tournament.scheduledStartAt) appendTournamentMeta(meta, '📅 ' + formatTournamentLocalDateTime(tournament.scheduledStartAt));
+  if(tournament.scheduledStartAt) appendTournamentMeta(meta, '📅 ' + formatTournamentLocalDateTime(tournament.scheduledStartAt));
   if(tournament.arena) appendTournamentMeta(meta, '⌛ ' + (Number(tournament.arenaDurationMinutes) === 1440 ? '24 Stunden' : (tournament.arenaDurationMinutes + ' Minuten')));
   appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
   appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');

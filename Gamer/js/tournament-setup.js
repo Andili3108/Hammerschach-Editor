@@ -6,6 +6,24 @@ function normalizeTournamentMode(value){
 function normalizeTournamentType(value){
   return Object.prototype.hasOwnProperty.call(TOURNAMENT_TYPE_CONFIG, value) ? value : 'daily';
 }
+
+function tournamentAdminStartReadiness(tournament){
+  const item = tournament || {};
+  const mode = normalizeTournamentMode(item.mode);
+  const confirmed = Math.max(0, Number(item.confirmedCount || 0));
+  const checkedIn = Math.max(0, Number(item.checkedInCount || 0));
+  const maximum = Math.max(0, Number(item.players || 0));
+  const live = !!item.live;
+  const arena = !!item.arena || (live && mode === 'arena');
+  if(mode === 'knockout') return {ok:false, mode, knockoutPreviewOnly:true, count:confirmed, maximum};
+  if(arena) return {ok:true, mode, arena:true, count:checkedIn, minimum:0, maximum:0};
+  if(mode === 'swiss'){
+    const count = live ? checkedIn : confirmed;
+    return {ok:count >= 4 && (maximum < 1 || count <= maximum), mode, flexible:true, count, minimum:4, maximum};
+  }
+  return {ok:maximum > 0 && confirmed === maximum, mode, flexible:false, count:confirmed, minimum:maximum, maximum};
+}
+
 function defaultTournamentDescription(modeValue, typeValue){
   const type = normalizeTournamentType(typeValue);
   return TOURNAMENT_TYPE_CONFIG[type].label + '-' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(modeValue)].label + ': ' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(modeValue)].description;
@@ -15,7 +33,6 @@ function updateTournamentPlayerOptions(preferredValue){
   const type = normalizeTournamentType(tournamentEditingType);
   const mode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
   const arena = TOURNAMENT_TYPE_CONFIG[type].live && mode === 'arena';
-  if(tournamentPlayersField) tournamentPlayersField.hidden = arena;
   if(arena) return;
   const allowed = TOURNAMENT_TYPE_CONFIG[type].live ? [8,12,16,24,32] : TOURNAMENT_MODE_CONFIG[mode].players;
   const preferred = Number(preferredValue == null ? tournamentPlayersSelect.value : preferredValue);
@@ -42,11 +59,20 @@ function updateTournamentModeOptions(preferredMode){
     tournamentModeSelect.appendChild(option);
   });
 }
-function updateTournamentModeUi(preferredPlayers){
+function updateTournamentCreationFieldVisibility(){
+  const type = normalizeTournamentType(tournamentEditingType);
+  const config = TOURNAMENT_TYPE_CONFIG[type];
   const mode = normalizeTournamentMode(tournamentModeSelect ? tournamentModeSelect.value : 'double_round_robin');
-  const arena = TOURNAMENT_TYPE_CONFIG[normalizeTournamentType(tournamentEditingType)].live && mode === 'arena';
+  const arena = !!(config.live && mode === 'arena');
   if(tournamentArenaDurationField) tournamentArenaDurationField.hidden = !arena;
   if(tournamentPlayersField) tournamentPlayersField.hidden = arena;
+  if(tournamentPlayersLabel) tournamentPlayersLabel.textContent = mode === 'swiss' ? 'Maximale Teilnehmerzahl' : 'Teilnehmerzahl';
+  if(tournamentScheduleField) tournamentScheduleField.hidden = false;
+  if(tournamentScheduleInput) tournamentScheduleInput.required = true;
+  if(tournamentScheduleLabel) tournamentScheduleLabel.textContent = config.live ? 'Starttermin' : 'Geplanter Start';
+}
+function updateTournamentModeUi(preferredPlayers){
+  updateTournamentCreationFieldVisibility();
   updateTournamentPlayerOptions(preferredPlayers);
   updateTournamentKnockoutPreview();
 }
@@ -168,7 +194,6 @@ function updateTournamentTypeUi(typeValue, preferredPlayers, preferredTime, pref
   updateTournamentModeOptions(currentMode);
   if(tournamentModeSelect) tournamentModeSelect.disabled = false;
   if(tournamentModeField) tournamentModeField.title = config.live ? 'Wähle zwischen Schweizer System und offener Arena.' : '';
-  if(tournamentPlayersLabel) tournamentPlayersLabel.textContent = config.live ? 'Maximale Teilnehmerzahl' : 'Teilnehmerzahl';
   updateTournamentModeUi(preferredPlayers);
   if(tournamentClockLabel) tournamentClockLabel.textContent = config.live ? (config.label + '-Bedenkzeit') : 'Daily-Bedenkzeit';
   if(tournamentClockSelect){
@@ -182,11 +207,7 @@ function updateTournamentTypeUi(typeValue, preferredPlayers, preferredTime, pref
       tournamentClockSelect.appendChild(option);
     });
   }
-  if(tournamentScheduleField) tournamentScheduleField.hidden = !config.live;
-  if(tournamentScheduleInput){
-    tournamentScheduleInput.required = config.live;
-    if(config.live && !tournamentScheduleInput.value) tournamentScheduleInput.value = tournamentDefaultScheduleValue();
-  }
+  if(tournamentScheduleInput && !tournamentScheduleInput.value) tournamentScheduleInput.value = tournamentDefaultScheduleValue();
 }
 const TOURNAMENT_STATUS_CONFIG = Object.freeze({
   draft:{label:'Entwurf',className:'status-draft'},

@@ -57,7 +57,7 @@ async function loadTournaments(options){
         for(const legacy of legacyDrafts){
           const normalized = normalizeLocalTournament(legacy,0);
           if(!normalized || serverNames.has(normalized.name.toLocaleLowerCase('de-DE'))) continue;
-          const imported = await authApi('/api/tournaments', {method:'POST',body:JSON.stringify({name:normalized.name,description:normalized.description,players:normalized.players,hours:normalized.hours,rated:normalized.rated,variant:normalized.variant,mode:normalized.mode})});
+          const imported = await authApi('/api/tournaments', {method:'POST',body:JSON.stringify({name:normalized.name,description:normalized.description,players:normalized.players,hours:normalized.hours,rated:normalized.rated,variant:normalized.variant,mode:normalized.mode,scheduledStartAt:normalized.scheduledStartAt || new Date(Date.now() + 24*60*60*1000).toISOString()})});
           if(imported && imported.tournament) data.tournaments.push(imported.tournament);
         }
         localStorage.setItem(migrationKey,'done');
@@ -90,7 +90,7 @@ async function openTournamentDetail(tournamentId){
   }
   tournamentSelectedId = tournament.id;
   renderTournamentDetail(tournament);
-  setTournamentTab('overview', false);
+  setTournamentTab(normalizeTournamentMode(tournament.mode) === 'knockout' ? 'standings' : 'overview', false);
   if(tournamentSelectionView) tournamentSelectionView.hidden = true;
   if(tournamentDetailView) tournamentDetailView.hidden = false;
   if(tournament.unread && tournament.status !== 'draft'){
@@ -180,16 +180,13 @@ async function saveTournamentDraft(event){
     openThemePicker();
     return;
   }
-  let scheduledStartAt = null;
-  if(live){
-    const scheduled = new Date(String(tournamentScheduleInput ? tournamentScheduleInput.value : ''));
-    if(Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now()){
-      setTournamentCreateStatus('Bitte einen zukünftigen Starttermin für das Live-Turnier wählen.', 'error');
-      if(tournamentScheduleInput) tournamentScheduleInput.focus();
-      return;
-    }
-    scheduledStartAt = scheduled.toISOString();
+  const scheduled = new Date(String(tournamentScheduleInput ? tournamentScheduleInput.value : ''));
+  if(Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now()){
+    setTournamentCreateStatus('Bitte einen zukünftigen geplanten Start wählen.', 'error');
+    if(tournamentScheduleInput) tournamentScheduleInput.focus();
+    return;
   }
+  const scheduledStartAt = scheduled.toISOString();
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.disabled = true;
   setTournamentCreateStatus('Entwurf wird gespeichert…', '');
   try{

@@ -113,11 +113,17 @@ async function startSelectedTournament(){
   const tournament = selectedTournament();
   if(!tournament || !hasTournamentAdminAccess()) return;
   const recoverable = tournament.status === 'running' && Array.isArray(tournament.games) && tournament.games.some(game => game.status === 'creating');
-  const startReady = tournament.arena ? true : (tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0));
-  if(!recoverable && !startReady){
-    if(statusEl) statusEl.textContent = tournament.live
-      ? 'Für den Start müssen mindestens vier angemeldete Spieler eingecheckt sein.'
-      : 'Das Turnier kann erst bei vollständig belegtem Teilnehmerfeld gestartet werden.';
+  const readiness = typeof tournamentAdminStartReadiness === 'function'
+    ? tournamentAdminStartReadiness(tournament)
+    : {ok:false, mode:normalizeTournamentMode(tournament.mode)};
+  if(!recoverable && !readiness.ok){
+    if(statusEl) statusEl.textContent = readiness.knockoutPreviewOnly
+      ? 'K.-o.-Turniere sind bis zur Freigabe der Rundenlogik noch nicht startbar.'
+      : tournament.live
+        ? 'Für den Start müssen mindestens vier angemeldete Spieler eingecheckt sein.'
+        : readiness.mode === 'swiss'
+          ? 'Das Schweizer System kann ab vier bestätigten Teilnehmern gestartet werden.'
+          : 'Das Turnier kann erst bei vollständig belegtem Teilnehmerfeld gestartet werden.';
     return;
   }
   if(recoverable && !window.confirm('Die Vorbereitung dieser Turnierrunde wurde unterbrochen. Fehlende Turnierpartien jetzt erneut vorbereiten?')) return;
@@ -125,7 +131,12 @@ async function startSelectedTournament(){
   const liveNote = tournament.live
     ? (tournament.arena ? '\n\nDie Arena startet sofort und bleibt während der gewählten Dauer für spätere Einsteiger offen.' : ('\n\nEs starten ' + Number(tournament.checkedInCount || 0) + ' eingecheckte Spieler. Nicht eingecheckte Anmeldungen werden für dieses Turnier als abwesend markiert. Die Bretter öffnen sich automatisch.'))
     : '\n\nDadurch werden alle Partien der ersten Turnierrunde sofort eröffnet.';
-  if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?' + liveNote + freestyleNote)) return;
+  const scheduledMs = Date.parse(tournament.scheduledStartAt || '');
+  const earlyStart = Number.isFinite(scheduledMs) && scheduledMs > Date.now();
+  const earlyNote = earlyStart
+    ? '\n\n⚠️ Geplanter Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '.\nAls Turnier-Admin übersteuerst du diesen Termin und startest das Turnier vorzeitig.'
+    : '';
+  if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?' + earlyNote + liveNote + freestyleNote)) return;
   if(tournamentStartBtn) tournamentStartBtn.disabled = true;
   try{
     const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/start', {method:'POST',body:JSON.stringify({confirmed:true})});
@@ -134,4 +145,3 @@ async function startSelectedTournament(){
   } catch(err){ if(statusEl) statusEl.textContent = err && err.message ? err.message : 'Das Turnier konnte nicht gestartet werden.'; }
   finally { if(tournamentStartBtn) tournamentStartBtn.disabled = false; }
 }
-

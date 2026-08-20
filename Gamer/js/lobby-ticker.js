@@ -40,7 +40,7 @@ function lobbyTournamentMeta(tournament){
     }
     return (tournament.tournamentTypeLabel || 'Turnier') + ' · läuft';
   }
-  if(tournament.live && tournament.scheduledStartAt){
+  if(tournament.scheduledStartAt){
     const date = new Date(tournament.scheduledStartAt);
     if(!Number.isNaN(date.getTime())){
       try{
