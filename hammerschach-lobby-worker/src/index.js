@@ -3975,6 +3975,21 @@ function normalizeTournamentArenaDuration(value) {
   return TOURNAMENT_ARENA_DURATIONS.includes(duration) ? duration : 90;
 }
 
+function tournamentStartCapacity(tournamentRow, startingPlayers) {
+  const mode = normalizeTournamentMode(tournamentRow && tournamentRow.mode);
+  const live = tournamentIsLive(tournamentRow);
+  const players = Math.max(0, Number(startingPlayers || 0));
+  const maxPlayers = Math.max(0, Number(tournamentRow && tournamentRow.max_players || 0));
+  if (live && mode === TOURNAMENT_MODE_ARENA) {
+    return {ok:true, flexible:true, minPlayers:0, maxPlayers:0};
+  }
+  if (mode === TOURNAMENT_MODE_SWISS) {
+    const upper = maxPlayers > 0 ? Math.min(32, maxPlayers) : 32;
+    return {ok:players >= 4 && players <= upper, flexible:true, minPlayers:4, maxPlayers:upper};
+  }
+  return {ok:maxPlayers > 0 && players === maxPlayers, flexible:false, minPlayers:maxPlayers, maxPlayers};
+}
+
 function normalizeTournamentStatus(value) {
   const status = String(value || '').toLowerCase();
   return ['draft', 'open', 'full', 'running', 'ended', 'cancelled'].includes(status) ? status : 'draft';
@@ -4891,18 +4906,29 @@ async function pairArenaPlayers(env, tournamentId) {
 
 async function autoStartScheduledTournament(env, tournamentId, options = {}) {
   const tournament = await loadTournamentRow(env, tournamentId);
-  if (!tournament || !tournamentIsLive(tournament)) return {started:false, reason:'not_live'};
+  if (!tournament) return {started:false, reason:'not_found'};
   if (tournament.status === 'running') return {started:false, reason:'already_running', arenaEndsAt:tournament.arena_ends_at || null};
   if (!['open', 'full'].includes(tournament.status)) return {started:false, reason:'not_startable'};
   const scheduledMs = Date.parse(tournament.scheduled_start_at || '');
   if (!options.force && (!Number.isFinite(scheduledMs) || scheduledMs > Date.now())) return {started:false, reason:'not_due'};
+
+  const live = tournamentIsLive(tournament);
   const mode = normalizeTournamentMode(tournament.mode);
-  const arena = mode === TOURNAMENT_MODE_ARENA;
+  const arena = live && mode === TOURNAMENT_MODE_ARENA;
+  if (mode === TOURNAMENT_MODE_KNOCKOUT) return {started:false, reason:'knockout_preview_only'};
+
   const count = await env.DB.prepare(
-    `SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NOT NULL`
+    live
+      ? `SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NOT NULL`
+      : `SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed'`
   ).bind(tournament.id).first();
   const startingPlayers = Number(count && count.count || 0);
-  if (!arena && startingPlayers < 4) return {started:false, reason:'waiting_for_players', retry:true};
+  const capacity = tournamentStartCapacity(tournament, startingPlayers);
+  if (!capacity.ok) {
+    const waiting = startingPlayers < Number(capacity.minPlayers || 0) || (!capacity.flexible && startingPlayers !== Number(capacity.maxPlayers || 0));
+    return {started:false, reason:waiting ? 'waiting_for_players' : 'invalid_player_count', retry:false, startingPlayers, minPlayers:capacity.minPlayers, maxPlayers:capacity.maxPlayers};
+  }
+
   const now = new Date().toISOString();
   if (arena) {
     const duration = normalizeTournamentArenaDuration(tournament.arena_duration_minutes);
@@ -4922,11 +4948,20 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
     ).bind(now, now, now, tournament.id).run();
     return {started:true, arena:true, startingPlayers, arenaEndsAt};
   }
-  if (mode !== TOURNAMENT_MODE_SWISS || startingPlayers > 32) return {started:false, reason:'invalid_live_mode'};
-  await env.DB.prepare(
-    `UPDATE tournament_participants SET status = 'absent', updated_at = ?
-      WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NULL`
-  ).bind(now, tournament.id).run();
+
+  if (live) {
+    if (mode !== TOURNAMENT_MODE_SWISS || startingPlayers > 32) return {started:false, reason:'invalid_live_mode'};
+    await env.DB.prepare(
+      `UPDATE tournament_participants SET status = 'absent', updated_at = ?
+        WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NULL`
+    ).bind(now, tournament.id).run();
+  }
+
+  if (!live && mode === TOURNAMENT_MODE_GROUPS) {
+    const participants = (await tournamentParticipantsFor(env, tournament.id)).filter(item => item.status === 'confirmed');
+    await assignTournamentGroups(env, tournament.id, participants);
+  }
+
   const totalRounds = tournamentTotalRounds(mode, startingPlayers);
   const changed = await env.DB.prepare(
     `UPDATE tournaments SET status = 'running', current_round = 1, total_rounds = ?, started_at = ?, updated_at = ?, next_round_at = NULL
@@ -4941,8 +4976,8 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
 async function autoStartDueTournaments(env) {
   if (!(await ensureTournamentTables(env))) return [];
   const due = await env.DB.prepare(
-    `SELECT * FROM tournaments WHERE status IN ('open','full') AND tournament_type IN ('rapid','blitz')
-      AND scheduled_start_at IS NOT NULL AND scheduled_start_at <= ? ORDER BY scheduled_start_at ASC LIMIT 12`
+    `SELECT * FROM tournaments WHERE status IN ('open','full')
+      AND scheduled_start_at IS NOT NULL AND scheduled_start_at <= ? ORDER BY scheduled_start_at ASC LIMIT 24`
   ).bind(new Date().toISOString()).all();
   const outcomes = [];
   for (const tournament of (due && due.results ? due.results : [])) {
@@ -4963,8 +4998,8 @@ async function autoStartDueTournaments(env) {
 async function startTournamentRound(env, tournamentRow, roundNumber) {
   const tournamentId = String(tournamentRow && tournamentRow.id || '');
   const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
-  const live = tournamentIsLive(tournamentRow);
-  if (live ? participants.length < 4 || participants.length > 32 : !tournamentAllowedPlayers(tournamentRow && tournamentRow.mode).includes(participants.length)) {
+  const capacity = tournamentStartCapacity(tournamentRow, participants.length);
+  if (!capacity.ok) {
     throw new Error('Die Teilnehmerzahl ist für diese Turnierform nicht zulässig.');
   }
   const allGames = await tournamentGamesFor(env, tournamentId);
@@ -5204,16 +5239,32 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
   const mode = tournamentModeLabel(tournament.mode);
   const type = tournamentTypeLabel(tournament.tournament_type);
   const time = tournamentTimeLabel(tournament.tournament_type, tournament.time_key, tournament.hours_per_move);
-  const scheduled = tournamentIsLive(tournament) && tournament.scheduled_start_at
+  const scheduled = tournament.scheduled_start_at
     ? new Date(tournament.scheduled_start_at).toLocaleString('de-DE', {timeZone:'Europe/Berlin', dateStyle:'medium', timeStyle:'short'}) + ' Uhr'
     : '';
-  const arena = normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_ARENA;
-  const participation = arena ? `offene Teilnehmerzahl · ${normalizeTournamentArenaDuration(tournament.arena_duration_minutes)} Minuten Arena` : `maximal ${Number(tournament.max_players)} Teilnehmer`;
+  const normalizedMode = normalizeTournamentMode(tournament.mode);
+  const arena = normalizedMode === TOURNAMENT_MODE_ARENA;
+  const swiss = normalizedMode === TOURNAMENT_MODE_SWISS;
+  const participation = arena
+    ? `offene Teilnehmerzahl · ${normalizeTournamentArenaDuration(tournament.arena_duration_minutes)} Minuten Arena`
+    : swiss
+      ? `maximal ${Number(tournament.max_players)} Teilnehmer · Start ab 4`
+      : `${Number(tournament.max_players)} Teilnehmer`;
   const details = `${type} · ${mode} · ${participation} · ${time} · ${variant} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}${scheduled ? ` · Start: ${scheduled}` : ''}`;
   const subject = `Neues Hammerschach-Turnier: ${title}`;
-  const textPart = `Hallo ${name},\n\nfür das Turnier „${title}“ ist die Anmeldung geöffnet.\n\n${details}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.${tournamentIsLive(tournament) ? '\n\nDer Check-in öffnet eine Stunde vor dem Turnierstart. Live-Turniere starten anschließend automatisch.' : ''}${arena ? '\nIn die laufende Arena kannst du auch später jederzeit einsteigen.' : ''}\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const startHint = tournamentIsLive(tournament)
+    ? '\n\nDer Check-in öffnet eine Stunde vor dem Turnierstart. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.'
+    : swiss
+      ? '\n\nDas Turnier startet zum geplanten Termin automatisch, sobald mindestens 4 Teilnehmer bestätigt sind.'
+      : '\n\nDas Turnier startet zum geplanten Termin automatisch, sobald alle Startplätze belegt sind.';
+  const textPart = `Hallo ${name},\n\nfür das Turnier „${title}“ ist die Anmeldung geöffnet.\n\n${details}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.${startHint}${arena ? '\nIn die laufende Arena kannst du auch später jederzeit einsteigen.' : ''}\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier ansehen</a></p>` : '';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses ${escapeEmailHtml(type)}-Turnier ist die Anmeldung geöffnet.</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p>${tournamentIsLive(tournament) ? '<p>Der Check-in öffnet eine Stunde vor dem Turnierstart. Das Live-Turnier startet automatisch.</p>' : ''}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const startHintHtml = tournamentIsLive(tournament)
+    ? '<p>Der Check-in öffnet eine Stunde vor dem Turnierstart. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.</p>'
+    : swiss
+      ? '<p>Das Turnier startet zum geplanten Termin automatisch, sobald mindestens 4 Teilnehmer bestätigt sind.</p>'
+      : '<p>Das Turnier startet zum geplanten Termin automatisch, sobald alle Startplätze belegt sind.</p>';
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses ${escapeEmailHtml(type)}-Turnier ist die Anmeldung geöffnet.</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p>${startHintHtml}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_published', recipientEmail:recipient.email, recipientName:name, subject, textPart, htmlPart, attachments:[]};
 }
 
@@ -5286,12 +5337,14 @@ function prepareTournamentFullAdminEmail(env, tournament, admin) {
   const title = cleanTournamentName(tournament.name);
   const playerCount = Number(tournament.max_players || 0);
   const live = tournamentIsLive(tournament);
-  const scheduled = live && tournament.scheduled_start_at
+  const scheduled = tournament.scheduled_start_at
     ? new Date(tournament.scheduled_start_at).toLocaleString('de-DE', {timeZone:'Europe/Berlin', dateStyle:'medium', timeStyle:'short'}) + ' Uhr'
     : '';
   const nextStepText = live
     ? `Der Check-in öffnet eine Stunde vor dem geplanten Start${scheduled ? ` am ${scheduled}` : ''}. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.`
-    : 'Das vollständig belegte Daily-Turnier kann jetzt manuell durch dich gestartet werden.';
+    : scheduled
+      ? `Das vollständig belegte Daily-Turnier startet automatisch zum geplanten Termin am ${scheduled}. Du musst es nicht manuell starten.`
+      : 'Dieses ältere Daily-Turnier besitzt noch keinen geplanten Start und kann wie bisher manuell gestartet werden.';
   const subject = `Turnier vollständig belegt: ${title}`;
   const textPart = `Hallo ${adminName},\n\ndas Turnier „${title}“ ist mit ${playerCount} von ${playerCount} bestätigten Teilnehmern vollständig belegt.\n\n${nextStepText}\n\n${link ? `Turnier öffnen:\n${link}\n\n` : ''}Du musst zum Startzeitpunkt nicht online sein.\n\nViele Grüße\nHammerschach-Gamer`;
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier öffnen</a></p>` : '';
@@ -10036,8 +10089,8 @@ async function handleAuthApi(request, env, url) {
     const hours = TOURNAMENT_ALLOWED_HOURS.includes(Number(body.hours)) ? Number(body.hours) : 24;
     const timeKey = live ? normalizeTournamentTimeKey(tournamentType, body.timeKey) : '';
     const timeLabel = tournamentTimeLabel(tournamentType, timeKey, hours);
-    const scheduledStartMs = live ? Date.parse(String(body.scheduledStartAt || '')) : NaN;
-    const scheduledStartAt = live && Number.isFinite(scheduledStartMs) ? new Date(scheduledStartMs).toISOString() : null;
+    const scheduledStartMs = Date.parse(String(body.scheduledStartAt || ''));
+    const scheduledStartAt = Number.isFinite(scheduledStartMs) ? new Date(scheduledStartMs).toISOString() : null;
     const variant = normalizeTournamentVariant(body.variant);
     const themeRequested = body.theme !== null && body.theme !== undefined;
     const theme = themeRequested ? cleanThemeDefinition(body.theme) : null;
@@ -10045,8 +10098,8 @@ async function handleAuthApi(request, env, url) {
     if (name.length < 3) return json({ok:false, code:'INVALID_TOURNAMENT_NAME', message:'Bitte einen Turniernamen mit mindestens drei Zeichen eingeben.'}, {status:400});
     if (themeRequested && !theme) return json({ok:false, code:'INVALID_TOURNAMENT_THEME', message:'Die gewählte Eröffnung ist ungültig oder enthält keine vollständig legale Zugfolge.'}, {status:400});
     if (theme && variant === GAME_VARIANT_FREESTYLE) return json({ok:false, code:'THEME_FREESTYLE_CONFLICT', message:'Thementurniere verwenden klassische Eröffnungen und können nicht mit Freestyle kombiniert werden.'}, {status:400});
-    if (live && !scheduledStartAt) return json({ok:false, code:'INVALID_TOURNAMENT_START', message:'Bitte einen gültigen Starttermin für das Live-Turnier wählen.'}, {status:400});
-    if (live && Date.parse(scheduledStartAt) <= Date.now()) return json({ok:false, code:'TOURNAMENT_START_IN_PAST', message:'Der Starttermin des Live-Turniers muss in der Zukunft liegen.'}, {status:400});
+    if (!scheduledStartAt) return json({ok:false, code:'INVALID_TOURNAMENT_START', message:'Bitte einen gültigen geplanten Start für das Turnier wählen.'}, {status:400});
+    if (Date.parse(scheduledStartAt) <= Date.now()) return json({ok:false, code:'TOURNAMENT_START_IN_PAST', message:'Der geplante Turnierstart muss in der Zukunft liegen.'}, {status:400});
     try {
       await ensureTournamentTables(env);
       const requestedId = String(body.id || '').trim();
@@ -10100,13 +10153,13 @@ async function handleAuthApi(request, env, url) {
       if (d1Changes(changed) < 1) return json({ok:false, code:'TOURNAMENT_PUBLISH_CONFLICT', message:'Der Turnierstatus hat sich bereits geändert.'}, {status:409});
       const published = await loadTournamentRow(env, tournamentId);
       let automaticStartScheduled = false;
-      if (tournamentIsLive(published) && published.scheduled_start_at) {
+      if (published.scheduled_start_at) {
         try { automaticStartScheduled = await scheduleTournamentAlarm(env, published, published.scheduled_start_at, 'start'); }
         catch (error) { console.error('Tournament start scheduling failed', error && error.message ? error.message : String(error || 'unknown')); }
       }
       const mail = await sendTournamentPublishedEmails(env, published);
       await env.DB.prepare(`UPDATE tournaments SET publication_mail_sent_at = ? WHERE id = ?`).bind(new Date().toISOString(), tournamentId).run();
-      return json({ok:true, tournament:await tournamentDto(env, published, admin.session.user), mail, automaticStartScheduled, message:`Turnier wurde veröffentlicht. ${mail.sent} Turniermail${mail.sent === 1 ? '' : 's'} versendet${mail.failed ? `, ${mail.failed} fehlgeschlagen` : ''}.${tournamentIsLive(published) ? ' Der automatische Start ist eingeplant.' : ''}`});
+      return json({ok:true, tournament:await tournamentDto(env, published, admin.session.user), mail, automaticStartScheduled, message:`Turnier wurde veröffentlicht. ${mail.sent} Turniermail${mail.sent === 1 ? '' : 's'} versendet${mail.failed ? `, ${mail.failed} fehlgeschlagen` : ''}.${published.scheduled_start_at ? ' Der geplante automatische Start ist eingeplant.' : ''}`});
     } catch (error) {
       console.error('Tournament publish failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'TOURNAMENT_PUBLISH_FAILED', message:'Das Turnier wurde veröffentlicht, aber die Verarbeitung konnte nicht vollständig abgeschlossen werden.'}, {status:500});
@@ -10215,10 +10268,24 @@ async function handleAuthApi(request, env, url) {
         const balanced = await rebalanceTournamentParticipants(env, tournamentId, tournament.max_players);
         const nextStatus = balanced.confirmed >= Number(tournament.max_players || 0) ? 'full' : 'open';
         await env.DB.prepare(`UPDATE tournaments SET status = ?, updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(nextStatus, now, tournamentId).run();
-        if (nextStatus === 'full') await notifyAdminTournamentFull(env, tournamentId);
+        let autoStartOutcome = null;
+        const scheduledMs = Date.parse(tournament.scheduled_start_at || '');
+        if (Number.isFinite(scheduledMs) && Date.now() >= scheduledMs) {
+          autoStartOutcome = await autoStartScheduledTournament(env, tournamentId);
+          if (autoStartOutcome.started && autoStartOutcome.arena && autoStartOutcome.arenaEndsAt) {
+            const running = await loadTournamentRow(env, tournamentId);
+            await scheduleTournamentAlarm(env, running, autoStartOutcome.arenaEndsAt, 'end');
+          }
+        }
+        if (nextStatus === 'full' && !(autoStartOutcome && autoStartOutcome.started)) await notifyAdminTournamentFull(env, tournamentId);
         const row = await loadTournamentRow(env, tournamentId);
         const dto = await tournamentDto(env, row, session.user);
-        return json({ok:true, tournament:dto, message:dto.userState === 'waiting' ? `Das Turnier ist voll. Du stehst auf Wartelistenplatz ${dto.waitlistPosition || 1}.` : 'Deine Teilnahme wurde bestätigt.'});
+        const joinedMessage = dto.userState === 'waiting'
+          ? `Das Turnier ist voll. Du stehst auf Wartelistenplatz ${dto.waitlistPosition || 1}.`
+          : (autoStartOutcome && autoStartOutcome.started
+            ? `Deine Teilnahme wurde bestätigt. Das Turnier startet jetzt mit ${autoStartOutcome.startingPlayers} Teilnehmern.`
+            : 'Deine Teilnahme wurde bestätigt.');
+        return json({ok:true, tournament:dto, message:joinedMessage});
       }
 
       const existing = await env.DB.prepare(`SELECT status FROM tournament_participants WHERE tournament_id = ? AND user_id = ? LIMIT 1`).bind(tournamentId, session.user.id).first();
@@ -10238,6 +10305,10 @@ async function handleAuthApi(request, env, url) {
                 full_notification_sent_at = CASE WHEN ? = 'open' THEN NULL ELSE full_notification_sent_at END
           WHERE id = ? AND status IN ('open','full')`
       ).bind(nextStatus, now, nextStatus, tournamentId).run();
+      const scheduledMs = Date.parse(tournament.scheduled_start_at || '');
+      if (Number.isFinite(scheduledMs) && Date.now() >= scheduledMs) {
+        await autoStartScheduledTournament(env, tournamentId);
+      }
       const row = await loadTournamentRow(env, tournamentId);
       return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Deine Turnierteilnahme wurde zurückgezogen.'});
     } catch (error) {
@@ -10321,13 +10392,42 @@ async function handleAuthApi(request, env, url) {
       }
       if (!['open', 'full'].includes(tournament.status)) return json({ok:false, code:'TOURNAMENT_NOT_STARTABLE', message:'Dieses Turnier kann in seinem aktuellen Status nicht gestartet werden.'}, {status:409});
       const live = tournamentIsLive(tournament);
+      const mode = normalizeTournamentMode(tournament.mode);
+      const scheduledMs = Date.parse(tournament.scheduled_start_at || '');
+      if (Number.isFinite(scheduledMs)) {
+        const manualEarlyStart = scheduledMs > Date.now();
+        const outcome = await autoStartScheduledTournament(env, tournamentId, manualEarlyStart ? {force:true} : {});
+        if (!outcome.started) {
+          let message = 'Das Turnier konnte noch nicht gestartet werden.';
+          if (outcome.reason === 'waiting_for_players') {
+            if (mode === TOURNAMENT_MODE_SWISS) {
+              message = live
+                ? 'Für den Start des Schweizer Systems werden mindestens vier eingecheckte Teilnehmer benötigt.'
+                : 'Für den Start des Schweizer Systems werden mindestens vier bestätigte Teilnehmer benötigt.';
+            } else {
+              message = `Für den Start werden genau ${Number(tournament.max_players || 0)} bestätigte Teilnehmer benötigt.`;
+            }
+          }
+          return json({ok:false, code:'TOURNAMENT_START_REQUIREMENTS', message}, {status:409});
+        }
+        if (outcome.arena) {
+          const running = await loadTournamentRow(env, tournamentId);
+          if (outcome.arenaEndsAt) await scheduleTournamentAlarm(env, running, outcome.arenaEndsAt, 'end');
+          await pairArenaPlayers(env, tournamentId);
+        }
+        const finalRow = await loadTournamentRow(env, tournamentId);
+        return json({ok:true, tournament:await tournamentDto(env, finalRow, admin.session.user), message:outcome.arena
+          ? (manualEarlyStart ? 'Die Arena wurde vom Turnier-Admin vorzeitig gestartet. Mitglieder können während der gesamten Laufzeit einsteigen.' : 'Die Arena wurde gestartet. Mitglieder können während der gesamten Laufzeit einsteigen.')
+          : `${live ? 'Das Live-Turnier' : 'Das Turnier'} wurde${manualEarlyStart ? ' vom Turnier-Admin vorzeitig' : ''} mit ${outcome.startingPlayers} Teilnehmern gestartet. Die Bretter der ersten Runde werden automatisch geöffnet.`});
+      }
+
       if (live) {
         const outcome = await autoStartScheduledTournament(env, tournamentId, {force:true});
         if (!outcome.started) {
           const message = outcome.reason === 'waiting_for_players'
             ? 'Für den Start des Schweizer Systems werden mindestens vier eingecheckte Teilnehmer benötigt.'
             : 'Das Live-Turnier konnte nicht gestartet werden.';
-          return json({ok:false, code:'TOURNAMENT_CHECK_IN_INCOMPLETE', message}, {status:409});
+          return json({ok:false, code:'TOURNAMENT_START_REQUIREMENTS', message}, {status:409});
         }
         if (outcome.arena) {
           const running = await loadTournamentRow(env, tournamentId);
@@ -10337,30 +10437,26 @@ async function handleAuthApi(request, env, url) {
         const finalRow = await loadTournamentRow(env, tournamentId);
         return json({ok:true, tournament:await tournamentDto(env, finalRow, admin.session.user), message:outcome.arena
           ? 'Die Arena wurde gestartet. Mitglieder können während der gesamten Laufzeit einsteigen.'
-          : `Das Live-Turnier wurde mit ${outcome.startingPlayers} Spielern gestartet. Die Bretter der ersten Runde werden automatisch geöffnet.`});
+          : `Das Live-Turnier wurde mit ${outcome.startingPlayers} Teilnehmern gestartet. Die Bretter der ersten Runde werden automatisch geöffnet.`});
       }
+
+      // Rückwärtskompatibilität: ältere veröffentlichte Daily-Turniere besitzen noch keinen geplanten Start.
       const count = await env.DB.prepare(
-        live
-          ? `SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NOT NULL`
-          : `SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed'`
+        `SELECT COUNT(*) AS count FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed'`
       ).bind(tournamentId).first();
       const startingPlayers = Number(count && count.count || 0);
-      if (live && startingPlayers < 4) return json({ok:false, code:'TOURNAMENT_CHECK_IN_INCOMPLETE', message:'Für den Start werden mindestens vier eingecheckte Teilnehmer benötigt.'}, {status:409});
-      if (!live && startingPlayers !== Number(tournament.max_players || 0)) return json({ok:false, code:'TOURNAMENT_NOT_FULL', message:`Für den Start werden genau ${Number(tournament.max_players || 0)} bestätigte Teilnehmer benötigt.`}, {status:409});
-      const mode = normalizeTournamentMode(tournament.mode);
-      if (live ? mode !== TOURNAMENT_MODE_SWISS || startingPlayers > 32 : !tournamentAllowedPlayers(mode).includes(Number(tournament.max_players || 0))) return json({ok:false, code:'INVALID_TOURNAMENT_SIZE', message:'Die Teilnehmerzahl passt nicht zur gewählten Turnierform.'}, {status:409});
-      if (live) {
-        const absentAt = new Date().toISOString();
-        await env.DB.prepare(
-          `UPDATE tournament_participants SET status = 'absent', updated_at = ?
-            WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NULL`
-        ).bind(absentAt, tournamentId).run();
+      const capacity = tournamentStartCapacity(tournament, startingPlayers);
+      if (!capacity.ok) {
+        const message = mode === TOURNAMENT_MODE_SWISS
+          ? (live ? 'Für den Start werden mindestens vier eingecheckte Teilnehmer benötigt.' : 'Für den Start werden mindestens vier bestätigte Teilnehmer benötigt.')
+          : `Für den Start werden genau ${Number(tournament.max_players || 0)} bestätigte Teilnehmer benötigt.`;
+        return json({ok:false, code:'TOURNAMENT_START_REQUIREMENTS', message}, {status:409});
       }
       if (mode === TOURNAMENT_MODE_GROUPS) {
         const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
         await assignTournamentGroups(env, tournamentId, participants);
       }
-      const totalRounds = tournamentTotalRounds(mode, live ? startingPlayers : Number(tournament.max_players || 0));
+      const totalRounds = tournamentTotalRounds(mode, startingPlayers);
       const now = new Date().toISOString();
       const changed = await env.DB.prepare(
         `UPDATE tournaments SET status = 'running', current_round = 1, total_rounds = ?, started_at = ?, updated_at = ?, next_round_at = NULL
@@ -10370,7 +10466,7 @@ async function handleAuthApi(request, env, url) {
       const running = await loadTournamentRow(env, tournamentId);
       await startTournamentRound(env, running, 1);
       const finalRow = await loadTournamentRow(env, tournamentId);
-      return json({ok:true, tournament:await tournamentDto(env, finalRow, admin.session.user), message:live ? `Das Live-Turnier wurde mit ${startingPlayers} Spielern gestartet. Die Bretter der ersten Runde werden automatisch geöffnet.` : 'Das Turnier wurde gestartet. Die Partien der ersten Turnierrunde sind eröffnet.'});
+      return json({ok:true, tournament:await tournamentDto(env, finalRow, admin.session.user), message:`Das Turnier wurde mit ${startingPlayers} Teilnehmern gestartet. Die Partien der ersten Turnierrunde sind eröffnet.`});
     } catch (error) {
       console.error('Tournament start failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'TOURNAMENT_START_FAILED', message:error && error.message ? error.message : 'Das Turnier konnte nicht gestartet werden.'}, {status:500});
