@@ -2662,3 +2662,17 @@ html.dark-mode .info-center-bar-kicker{color:#9aaaba!important;}
   .tournament-bracket-round{width:145px;min-width:145px;}
   .tournament-bracket-winner-round{width:118px;min-width:118px;}
 }
+
+/* K.-o.-Turnier: entschiedene Begegnungen im Baum */
+.tournament-bracket-slot.winner{background:rgba(199,149,45,.12);color:#6c4b12;font-weight:950;}
+.tournament-bracket-slot.winner .tournament-bracket-score{color:#843f46;}
+html.dark-mode .tournament-bracket-slot.winner{background:rgba(235,190,102,.10);color:#f1d18d;}
+html.dark-mode .tournament-bracket-slot.winner .tournament-bracket-score{color:#efb5bc;}
+
+/* iPad/Tablets quer: Zugliste scrollt, Bedienleiste bleibt vollständig sichtbar. */
+@media (orientation:landscape) and (min-width:761px) and (max-width:1400px) and (min-height:600px) and (hover:none) and (pointer:coarse){
+  .moves-panel{display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+  .moves-panel[hidden]{display:none!important;}
+  #moveList{flex:1 1 auto;min-height:0;max-height:none;overflow-y:auto;}
+  .moves-footer{flex:0 0 auto;margin-top:8px;padding-bottom:1px;}
+}
