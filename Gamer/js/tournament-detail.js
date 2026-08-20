@@ -201,7 +201,9 @@ function renderTournamentDetail(tournament){
   }
   if(tournamentLocalNote){
     tournamentLocalNote.hidden = tournament.status !== 'draft';
-    tournamentLocalNote.textContent = 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler ab einer Stunde vor dem Termin ihre Anwesenheit; der Start erfolgt automatisch.' : '');
+    tournamentLocalNote.textContent = mode === 'knockout'
+      ? 'Dieser K.-o.-Entwurf ist serverseitig gespeichert und für Mitglieder unsichtbar. Der Turnierbaum dient bereits als echte Layout-Vorschau; Veröffentlichung und Start bleiben bis zur fertig getesteten K.-o.-Rundenlogik gesperrt.'
+      : 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler ab einer Stunde vor dem Termin ihre Anwesenheit; der Start erfolgt automatisch.' : '');
   }
   if(tournamentFactStatus) tournamentFactStatus.textContent = info.label;
   if(tournamentFactMode) tournamentFactMode.textContent = typeConfig.label + ' · ' + modeConfig.label;
@@ -215,7 +217,14 @@ function renderTournamentDetail(tournament){
   if(tournamentFactThemeWrap) tournamentFactThemeWrap.hidden = !tournament.theme;
   if(tournamentFactTheme) tournamentFactTheme.textContent = tournament.theme ? (tournament.theme.name + ' · ' + tournament.theme.moveText) : '—';
   if(tournamentFactRating) tournamentFactRating.textContent = tournament.rated ? 'Gewertet' : 'Ohne Rating';
-  if(tournamentDescriptionText) tournamentDescriptionText.textContent = tournament.description || defaultTournamentDescription(mode, tournament.tournamentType);
+  if(tournamentDescriptionText){
+    const baseDescription = tournament.description || defaultTournamentDescription(mode, tournament.tournamentType);
+    tournamentDescriptionText.textContent = mode === 'knockout' ? (baseDescription + '\n\nFeste K.-o.-Regeln:\n' + tournamentKnockoutRulesText()) : baseDescription;
+  }
+  if(tournamentKnockoutBracket){
+    tournamentKnockoutBracket.hidden = mode !== 'knockout';
+    if(mode === 'knockout') renderKnockoutBracket(tournamentKnockoutBracketTree, tournament.players, {rules:false});
+  }
   renderTournamentParticipants(tournament);
   renderTournamentPairings(tournament);
   renderTournamentStandings(tournament);
@@ -223,7 +232,11 @@ function renderTournamentDetail(tournament){
   const admin = hasTournamentAdminAccess();
   const registered = ['confirmed','waiting','playing','finished'].includes(tournament.userState);
   if(tournamentDetailEditBtn) tournamentDetailEditBtn.hidden = !(tournament.status === 'draft' && admin);
-  if(tournamentPublishBtn) tournamentPublishBtn.hidden = !(tournament.status === 'draft' && admin);
+  if(tournamentPublishBtn){
+    tournamentPublishBtn.hidden = !(tournament.status === 'draft' && admin);
+    tournamentPublishBtn.disabled = mode === 'knockout';
+    tournamentPublishBtn.title = mode === 'knockout' ? 'Die K.-o.-Vorschau ist freigegeben; Veröffentlichung folgt erst nach Fertigstellung und Test der Rundenlogik.' : '';
+  }
   if(tournamentJoinBtn){
     tournamentJoinBtn.hidden = !(['open','full'].includes(tournament.status) && !registered);
     tournamentJoinBtn.textContent = tournament.status === 'full' ? '⏳ Auf die Warteliste' : '✅ Am Turnier teilnehmen';
@@ -263,10 +276,12 @@ function renderTournamentDetail(tournament){
     const recoverable = tournament.status === 'running' && Array.isArray(tournament.games) && tournament.games.some(game => game.status === 'creating');
     const startReady = tournament.arena ? true : (tournament.live ? Number(tournament.checkedInCount || 0) >= 4 : Number(tournament.confirmedCount || 0) === Number(tournament.players || 0));
     tournamentStartBtn.hidden = !(admin && (['open','full'].includes(tournament.status) || recoverable));
-    tournamentStartBtn.disabled = !recoverable && !startReady;
+    tournamentStartBtn.disabled = mode === 'knockout' || (!recoverable && !startReady);
     tournamentStartBtn.textContent = recoverable ? '↻ Fehlende Partien vorbereiten' : '▶️ Turnier starten';
-    tournamentStartBtn.title = tournamentStartBtn.disabled
-      ? (tournament.live ? 'Mindestens vier angemeldete Spieler müssen eingecheckt sein.' : 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.')
-      : recoverable ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.' : (tournament.live ? 'Live-Turnier mit allen eingecheckten Spielern starten.' : 'Turnier und erste Turnierrunde manuell starten.');
+    tournamentStartBtn.title = mode === 'knockout'
+      ? 'K.-o.-Turniere werden erst nach Fertigstellung und Test der Rundenlogik startbar.'
+      : tournamentStartBtn.disabled
+        ? (tournament.live ? 'Mindestens vier angemeldete Spieler müssen eingecheckt sein.' : 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.')
+        : recoverable ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.' : (tournament.live ? 'Live-Turnier mit allen eingecheckten Spielern starten.' : 'Turnier und erste Turnierrunde manuell starten.');
   }
 }

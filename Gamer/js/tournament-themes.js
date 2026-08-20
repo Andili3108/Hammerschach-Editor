@@ -5,6 +5,7 @@ const TOURNAMENT_MODE_CONFIG = Object.freeze({
   double_round_robin:{label:'Doppelrundenturnier',players:[4,6,8],description:'Jede Begegnung besteht aus zwei parallelen Partien mit vertauschten Farben.'},
   swiss:{label:'Schweizer System',players:[8,12,16,24,32],description:'Spieler mit ähnlicher Punktzahl werden pro Runde neu gepaart; Wiederholungspaarungen werden vermieden.'},
   groups_knockout:{label:'Gruppenphase + K.-o.',players:[8,16,32],description:'Vierergruppen ermitteln jeweils zwei Qualifikanten. Danach folgen K.-o.-Duelle bis zum Finale und Spiel um Platz 3.'},
+  knockout:{label:'K.-o.-Turnier',players:[4,8,16,32],description:'Jede Begegnung besteht aus zwei parallelen Daily-Partien mit vertauschten Farben. Die nächste Runde beginnt erst, wenn alle Begegnungen der laufenden Runde beendet sind.'},
   arena:{label:'Arena',players:[],description:'Offene Teilnehmerzahl, laufender Einstieg und automatische Paarungen. Sieg 2 Punkte, Remis 1 Punkt, Niederlage 0 Punkte.'}
 });
 const TOURNAMENT_TYPE_CONFIG = Object.freeze({

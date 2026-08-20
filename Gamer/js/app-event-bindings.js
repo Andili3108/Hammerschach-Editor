@@ -36,6 +36,7 @@ if(themePickerBackdrop) themePickerBackdrop.addEventListener('click', event => {
 if(tournamentModeSelect) tournamentModeSelect.addEventListener('change', () => {
   updateTournamentModeUi();
 });
+if(tournamentPlayersSelect) tournamentPlayersSelect.addEventListener('change', updateTournamentKnockoutPreview);
 tournamentTypeButtons.forEach(button => {
   button.addEventListener('click', () => updateTournamentTypeUi(button.dataset.tournamentType));
 });
