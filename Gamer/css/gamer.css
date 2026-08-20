@@ -867,6 +867,30 @@
   .theme-preview-square.light{background:#ece2d2;}
   .theme-preview-square.dark{background:#a86f65;}
   .theme-picker-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;}
+
+  .tournament-bracket-card{margin-top:12px;border-radius:15px;background:linear-gradient(135deg,rgba(255,248,207,.72),rgba(247,247,249,.96));border:1px solid rgba(168,111,22,.25);padding:13px 14px;min-width:0;overflow:hidden;}
+  .tournament-bracket-card[hidden]{display:none!important;}
+  .tournament-bracket-create-preview{grid-column:1 / -1;margin-top:14px;}
+  .tournament-bracket-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:10px;}
+  .tournament-bracket-title{font-size:19px;font-weight:900;color:#2f2f2f;line-height:1.15;}
+  .tournament-bracket-hint{max-width:360px;color:#777;font-size:11px;font-weight:800;line-height:1.35;text-align:right;}
+  .tournament-bracket-scroller{overflow-x:auto;overflow-y:hidden;padding:3px 2px 8px;scrollbar-width:thin;}
+  .tournament-bracket-tree{display:flex;align-items:stretch;gap:24px;min-width:max-content;min-height:calc(var(--bracket-first-matches, 4) * 56px);padding:1px 12px 1px 2px;}
+  .tournament-bracket-round{width:160px;display:flex;flex-direction:column;min-width:160px;}
+  .tournament-bracket-round-title{height:28px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:rgba(132,63,70,.09);border:1px solid rgba(132,63,70,.14);color:#843f46;padding:0 8px;font-size:11px;font-weight:900;white-space:nowrap;}
+  .tournament-bracket-matches{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:8px;padding:8px 0;}
+  .tournament-bracket-match{position:relative;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,.10);box-shadow:0 3px 9px rgba(0,0,0,.045);overflow:visible;}
+  .tournament-bracket-match::after{content:'›';position:absolute;right:-19px;top:50%;transform:translateY(-50%);color:rgba(132,63,70,.62);font-size:22px;font-weight:900;line-height:1;}
+  .tournament-bracket-slot{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:23px;padding:4px 7px;box-sizing:border-box;color:#4d4d4d;font-size:11px;font-weight:850;}
+  .tournament-bracket-slot-second{border-top:1px solid rgba(0,0,0,.07);}
+  .tournament-bracket-player{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tournament-bracket-score{flex:0 0 auto;color:#9b7a3a;font-weight:900;}
+  .tournament-bracket-winner-round{width:132px;min-width:132px;}
+  .tournament-bracket-winner-round .tournament-bracket-matches{justify-content:center;}
+  .tournament-bracket-winner{display:flex;align-items:center;justify-content:center;gap:7px;min-height:52px;border-radius:12px;background:linear-gradient(135deg,#fff7d0,#f1e7a8);border:1px solid rgba(168,111,22,.34);color:#6c4b12;font-size:13px;font-weight:900;box-shadow:0 4px 12px rgba(110,78,18,.08);}
+  .tournament-bracket-trophy{font-size:23px;line-height:1;}
+  .tournament-bracket-rules{margin-top:9px;border-top:1px solid rgba(168,111,22,.18);padding-top:9px;color:#5f5a4f;font-size:11px;font-weight:800;line-height:1.42;}
+
   .tournament-create-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;}
   .tournament-create-status.error{color:#9A2D33;}
   .tournament-create-status.success{color:#226b36;}
@@ -1624,6 +1648,18 @@
   html.dark-mode .tournament-table-wrap{border-color:rgba(255,255,255,.09);}
   html.dark-mode .tournament-table{background:#252930;color:#eef0f2;}
   html.dark-mode .tournament-table th{background:#30262a;color:#e6a3ab;}
+
+  html.dark-mode .tournament-bracket-card{background:linear-gradient(135deg,rgba(97,72,29,.28),rgba(37,41,48,.96));border-color:rgba(235,190,102,.18);}
+  html.dark-mode .tournament-bracket-title{color:#f0f1f3;}
+  html.dark-mode .tournament-bracket-hint{color:#aeb3bb;}
+  html.dark-mode .tournament-bracket-round-title{background:rgba(230,163,171,.08);border-color:rgba(230,163,171,.14);color:#e6a3ab;}
+  html.dark-mode .tournament-bracket-match{background:#2a2e35;border-color:rgba(255,255,255,.09);box-shadow:none;}
+  html.dark-mode .tournament-bracket-slot{color:#e2e4e8;}
+  html.dark-mode .tournament-bracket-slot-second{border-color:rgba(255,255,255,.08);}
+  html.dark-mode .tournament-bracket-score{color:#e2bd70;}
+  html.dark-mode .tournament-bracket-winner{background:linear-gradient(135deg,#463b25,#3c3422);border-color:rgba(235,190,102,.24);color:#f1d18d;}
+  html.dark-mode .tournament-bracket-rules{border-color:rgba(235,190,102,.13);color:#c9c3b7;}
+
   html.dark-mode .tournament-group-title{color:#e6a3ab;}
   html.dark-mode .tournament-table th,
   html.dark-mode .tournament-table td{border-color:rgba(255,255,255,.08);}
@@ -2611,3 +2647,13 @@ html.dark-mode .chess-chronicle-milestone.first_moment{color:#efb5bc;}
 html.dark-mode .info-center-nav{background:rgba(255,255,255,.06)!important;border-color:rgba(169,204,235,.22)!important;color:#a9cceb!important;}
 html.dark-mode .info-center-counter{color:#a9cceb;}
 html.dark-mode .info-center-bar-kicker{color:#9aaaba!important;}
+
+
+@media (max-width:760px){
+  .tournament-bracket-card{padding:11px 10px;}
+  .tournament-bracket-head{display:block;margin-bottom:8px;}
+  .tournament-bracket-hint{max-width:none;margin-top:4px;text-align:left;}
+  .tournament-bracket-tree{gap:21px;min-height:calc(var(--bracket-first-matches, 4) * 52px);}
+  .tournament-bracket-round{width:145px;min-width:145px;}
+  .tournament-bracket-winner-round{width:118px;min-width:118px;}
+}
