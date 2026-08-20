@@ -617,7 +617,7 @@
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
           <h4>29. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
-          <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Schweizer System sowie Gruppenphase mit anschließender K.-o.-Runde und startet bei vollständig belegtem Feld. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und sind dort gold markiert.</p>
+          <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Doppelrunde, Schweizer System, Gruppenphase mit anschließender K.-o.-Runde sowie K.-o.-Turniere. Alle Turniere besitzen einen geplanten Start. Runde, Doppelrunde, Gruppen+K.-o. und K.-o. starten erst bei vollständig belegtem Feld; beim Schweizer System ist die Teilnehmerzahl eine Maximalzahl und der Start ist ab vier bestätigten Spielern möglich. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und sind dort gold markiert.</p>
           <h4>30. Turnierübersicht in der Lobby</h4>
           <p>Ganz oben in der Mitglieder-Lobby zeigt der gelbe Turnierbereich bis zu vier derzeit relevante Turniere kompakt untereinander. Anstehende Turniere – mit offener Anmeldung oder bereits ausgebucht – stehen zuerst, laufende Turniere darunter. Über <strong>„Öffnen“</strong> gelangst du direkt zum jeweiligen Turnier; weitere und beendete Turniere bleiben über <strong>„🏆 Turniere“</strong> im Header erreichbar.</p>
           <h4>31. Info-Center</h4>
@@ -1509,7 +1509,7 @@
             <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelDescription" data-tournament-tab="description">Beschreibung</button>
             <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelParticipants" data-tournament-tab="participants">Teilnehmer</button>
             <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelPairings" data-tournament-tab="pairings">Paarungen</button>
-            <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelStandings" data-tournament-tab="standings">Tabelle</button>
+            <button id="tournamentStandingsTab" class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelStandings" data-tournament-tab="standings">Tabelle</button>
             <button class="tournament-tab" type="button" role="tab" aria-selected="false" aria-controls="tournamentPanelWinners" data-tournament-tab="winners">Siegerliste</button>
           </div>
 
@@ -1528,21 +1528,12 @@
                   <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div id="tournamentFactMode" class="tournament-fact-value">Doppelrundenturnier</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">6</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
+                  <div id="tournamentFactScheduleWrap" class="tournament-fact" hidden><div class="tournament-fact-label">Geplanter Start</div><div id="tournamentFactSchedule" class="tournament-fact-value">—</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Variante</div><div id="tournamentFactVariant" class="tournament-fact-value">Klassisch</div></div>
                   <div id="tournamentFactThemeWrap" class="tournament-fact" hidden><div class="tournament-fact-label">Thementurnier</div><div id="tournamentFactTheme" class="tournament-fact-value">—</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
                 </div>
               </div>
-              <section id="tournamentKnockoutBracket" class="tournament-bracket-card" hidden aria-label="K.-o.-Turnierbaum">
-                <div class="tournament-bracket-head">
-                  <div>
-                    <div class="tournament-card-kicker">🏆 K.-o.-Turnier</div>
-                    <div class="tournament-bracket-title">Turnierbaum</div>
-                  </div>
-                  <div class="tournament-bracket-hint">Die tatsächlichen Paarungen erscheinen erst beim Turnierstart.</div>
-                </div>
-                <div id="tournamentKnockoutBracketTree"></div>
-              </section>
               <div id="tournamentLiveWaiting" class="tournament-live-waiting" hidden>
                 <div id="tournamentLiveWaitingTitle" class="tournament-live-waiting-title">Live-Turnier-Warteraum</div>
                 <div id="tournamentLiveWaitingText" class="tournament-live-waiting-text">Die nächste Runde wird vorbereitet.</div>
@@ -1566,13 +1557,25 @@
             </section>
 
             <section id="tournamentPanelStandings" class="tournament-tab-panel" role="tabpanel" data-tournament-panel="standings" hidden>
-              <h3 class="tournament-panel-title">Turniertabelle</h3>
-              <div id="tournamentGroupStandings" class="tournament-group-tables" hidden></div>
-              <div class="tournament-table-wrap">
-                <table class="tournament-table">
-                  <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th><th>BH</th></tr></thead>
-                  <tbody id="tournamentStandingsBody"><tr><td class="tournament-table-empty" colspan="8">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
-                </table>
+              <h3 id="tournamentStandingsTitle" class="tournament-panel-title">Turniertabelle</h3>
+              <section id="tournamentKnockoutBracket" class="tournament-bracket-card tournament-bracket-detail" hidden aria-label="K.-o.-Turnierbaum">
+                <div class="tournament-bracket-head">
+                  <div>
+                    <div class="tournament-card-kicker">🏆 K.-o.-Turnier</div>
+                    <div class="tournament-bracket-title">Turnierbaum</div>
+                  </div>
+                  <div class="tournament-bracket-hint">Die tatsächlichen Paarungen erscheinen erst beim Turnierstart.</div>
+                </div>
+                <div id="tournamentKnockoutBracketTree"></div>
+              </section>
+              <div id="tournamentStandingsTableContent">
+                <div id="tournamentGroupStandings" class="tournament-group-tables" hidden></div>
+                <div class="tournament-table-wrap">
+                  <table class="tournament-table">
+                    <thead><tr><th>Rang</th><th>Spieler</th><th>Sp.</th><th>S</th><th>R</th><th>N</th><th>Punkte</th><th>BH</th></tr></thead>
+                    <tbody id="tournamentStandingsBody"><tr><td class="tournament-table-empty" colspan="8">Die Tabelle erscheint nach dem Turnierstart.</td></tr></tbody>
+                  </table>
+                </div>
               </div>
             </section>
 
@@ -1643,9 +1646,9 @@
                 <option value="72">72 Stunden pro Zug</option>
               </select>
             </div>
-            <div id="tournamentScheduleField" class="tournament-field" hidden>
-              <label for="tournamentScheduleInput">Starttermin</label>
-              <input id="tournamentScheduleInput" class="tournament-input" type="datetime-local" />
+            <div id="tournamentScheduleField" class="tournament-field">
+              <label id="tournamentScheduleLabel" for="tournamentScheduleInput">Geplanter Start</label>
+              <input id="tournamentScheduleInput" class="tournament-input" type="datetime-local" required />
             </div>
             <div id="tournamentArenaDurationField" class="tournament-field" hidden>
               <label for="tournamentArenaDurationSelect">Arena-Dauer</label>
@@ -2189,12 +2192,12 @@
 <script src="js/auth-recovery.js?v=20260804-1"></script>
 <script src="js/auth-account.js?v=20260810-1"></script>
 <script src="js/tournament-themes.js?v=20260820-1"></script>
-<script src="js/tournament-setup.js?v=20260820-1"></script>
+<script src="js/tournament-setup.js?v=20260820-2"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
 <script src="js/tournament-list.js?v=20260804-1"></script>
-<script src="js/tournament-detail.js?v=20260820-1"></script>
+<script src="js/tournament-detail.js?v=20260820-2"></script>
 <script src="js/tournament-management.js?v=20260819-2"></script>
-<script src="js/tournament-actions.js?v=20260804-1"></script>
+<script src="js/tournament-actions.js?v=20260820-1"></script>
   <script src="js/daily-games.js?v=20260818-2"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
 <script src="js/public-games.js?v=20260804-1"></script>
