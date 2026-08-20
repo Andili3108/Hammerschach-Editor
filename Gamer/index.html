@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260819-2" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260820-1" />
 </head>
 <body>
 <div class="app" role="main">
@@ -1533,6 +1533,16 @@
                   <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
                 </div>
               </div>
+              <section id="tournamentKnockoutBracket" class="tournament-bracket-card" hidden aria-label="K.-o.-Turnierbaum">
+                <div class="tournament-bracket-head">
+                  <div>
+                    <div class="tournament-card-kicker">🏆 K.-o.-Turnier</div>
+                    <div class="tournament-bracket-title">Turnierbaum</div>
+                  </div>
+                  <div class="tournament-bracket-hint">Die tatsächlichen Paarungen erscheinen erst beim Turnierstart.</div>
+                </div>
+                <div id="tournamentKnockoutBracketTree"></div>
+              </section>
               <div id="tournamentLiveWaiting" class="tournament-live-waiting" hidden>
                 <div id="tournamentLiveWaitingTitle" class="tournament-live-waiting-title">Live-Turnier-Warteraum</div>
                 <div id="tournamentLiveWaitingText" class="tournament-live-waiting-text">Die nächste Runde wird vorbereitet.</div>
@@ -1613,6 +1623,7 @@
                 <option value="double_round_robin" selected>Doppelrundenturnier</option>
                 <option value="swiss">Schweizer System</option>
                 <option value="groups_knockout">Gruppenphase + K.-o.</option>
+                <option value="knockout">K.-o.-Turnier</option>
                 <option value="arena">Arena</option>
               </select>
             </div>
@@ -1681,6 +1692,16 @@
               <textarea id="tournamentDescriptionInput" class="tournament-textarea" maxlength="1200" placeholder="Teilnahmebedingungen, Ablauf und weitere Hinweise"></textarea>
             </div>
           </div>
+          <section id="tournamentCreateBracketPreview" class="tournament-bracket-card tournament-bracket-create-preview" hidden aria-label="Vorschau des K.-o.-Turnierbaums">
+            <div class="tournament-bracket-head">
+              <div>
+                <div class="tournament-card-kicker">🏆 Vorschau</div>
+                <div class="tournament-bracket-title">Turnierbaum</div>
+              </div>
+              <div class="tournament-bracket-hint">Die tatsächlichen Paarungen erscheinen beim Turnierstart.</div>
+            </div>
+            <div id="tournamentCreateBracketPreviewTree"></div>
+          </section>
           <div id="tournamentCreateStatus" class="tournament-create-status" aria-live="polite"></div>
           <div class="identity-actions">
             <button id="tournamentCreateCancelBtn" class="button-flat" type="button">Abbrechen</button>
@@ -2145,7 +2166,7 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260818-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260819-2"></script>
+<script src="js/online-ui-elements.js?v=20260820-1"></script>
 <script src="js/header-ui.js?v=20260810-1"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
@@ -2167,11 +2188,11 @@
 <script src="js/account-profile.js?v=20260811-2"></script>
 <script src="js/auth-recovery.js?v=20260804-1"></script>
 <script src="js/auth-account.js?v=20260810-1"></script>
-<script src="js/tournament-themes.js?v=20260804-1"></script>
-<script src="js/tournament-setup.js?v=20260804-1"></script>
+<script src="js/tournament-themes.js?v=20260820-1"></script>
+<script src="js/tournament-setup.js?v=20260820-1"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
 <script src="js/tournament-list.js?v=20260804-1"></script>
-<script src="js/tournament-detail.js?v=20260804-1"></script>
+<script src="js/tournament-detail.js?v=20260820-1"></script>
 <script src="js/tournament-management.js?v=20260819-2"></script>
 <script src="js/tournament-actions.js?v=20260804-1"></script>
   <script src="js/daily-games.js?v=20260818-2"></script>
@@ -2200,7 +2221,7 @@
 <script src="js/board-input.js?v=20260804-1"></script>
 <script src="js/piece-drag-helpers.js?v=20260819-1"></script>
 <script src="js/move-commit.js?v=20260817-3"></script>
-<script src="js/app-event-bindings.js?v=20260817-3"></script>
+<script src="js/app-event-bindings.js?v=20260820-1"></script>
 <script src="js/move-history-navigation.js?v=20260818-1"></script>
 <script src="js/pgn-export.js?v=20260804-1"></script>
 <script src="js/new-game-board-ui.js?v=20260804-1"></script>
