@@ -3797,6 +3797,9 @@ async function ensureTournamentTables(env) {
   try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_joined_at TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_waiting_since TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN arena_pairing_not_before TEXT`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN knockout_seed INTEGER`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN start_rating INTEGER`).run(); } catch (_) {}
+  try { await env.DB.prepare(`ALTER TABLE tournament_participants ADD COLUMN start_rating_type TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_rounds (
        tournament_id TEXT NOT NULL,
@@ -3835,6 +3838,24 @@ async function ensureTournamentTables(env) {
   try { await env.DB.prepare(`ALTER TABLE tournament_games ADD COLUMN group_name TEXT`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE tournament_games ADD COLUMN pairing_label TEXT`).run(); } catch (_) {}
   await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS tournament_knockout_results (
+       tournament_id TEXT NOT NULL,
+       round_number INTEGER NOT NULL,
+       pairing_number INTEGER NOT NULL,
+       first_user_id TEXT NOT NULL,
+       second_user_id TEXT NOT NULL,
+       first_score REAL NOT NULL,
+       second_score REAL NOT NULL,
+       first_rating INTEGER NOT NULL,
+       second_rating INTEGER NOT NULL,
+       winner_user_id TEXT NOT NULL,
+       loser_user_id TEXT NOT NULL,
+       resolution TEXT NOT NULL,
+       resolved_at TEXT NOT NULL,
+       PRIMARY KEY (tournament_id, round_number, pairing_number)
+     )`
+  ).run();
+  await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS tournament_byes (
        tournament_id TEXT NOT NULL,
        round_number INTEGER NOT NULL,
@@ -3861,7 +3882,8 @@ async function ensureTournamentTables(env) {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_round ON tournament_games (tournament_id, round_number, status)`),
     env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_tournament_games_slot ON tournament_games (tournament_id, round_number, pairing_number, game_number)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_white ON tournament_games (white_user_id, status)`),
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_black ON tournament_games (black_user_id, status)`)
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_black ON tournament_games (black_user_id, status)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_knockout_results_round ON tournament_knockout_results (tournament_id, round_number, pairing_number)`)
   ]);
   tournamentTablesReady = true;
   return true;
@@ -4092,7 +4114,8 @@ async function tournamentParticipantsFor(env, tournamentId) {
   const result = await env.DB.prepare(
     `SELECT participant.user_id, participant.status, participant.group_name, participant.checked_in_at,
             participant.arena_active, participant.arena_joined_at, participant.arena_waiting_since,
-            participant.arena_pairing_not_before,
+            participant.arena_pairing_not_before, participant.knockout_seed,
+            participant.start_rating, participant.start_rating_type,
             participant.joined_at, participant.updated_at,
             COALESCE(account.username, 'Gelöschter Benutzer') AS username
        FROM tournament_participants participant
@@ -4115,6 +4138,9 @@ async function tournamentParticipantsFor(env, tournamentId) {
       arenaJoinedAt:row.arena_joined_at || null,
       arenaWaitingSince:row.arena_waiting_since || null,
       arenaPairingNotBefore:row.arena_pairing_not_before || null,
+      knockoutSeed:row.knockout_seed === null || row.knockout_seed === undefined ? null : Number(row.knockout_seed),
+      startRating:row.start_rating === null || row.start_rating === undefined ? null : Number(row.start_rating),
+      startRatingType:String(row.start_rating_type || ''),
       joinedAt:row.joined_at || null,
       updatedAt:row.updated_at || null,
       waitlistPosition:row.status === 'waiting' ? waitingPosition : null
@@ -4137,6 +4163,32 @@ async function tournamentByesFor(env, tournamentId) {
     username:cleanDisplayName(row.username) || 'Mitglied',
     points:Number(row.points == null ? 1 : row.points),
     createdAt:row.created_at || null
+  }));
+}
+
+async function tournamentKnockoutResultsFor(env, tournamentId) {
+  const result = await env.DB.prepare(
+    `SELECT tournament_id, round_number, pairing_number, first_user_id, second_user_id,
+            first_score, second_score, first_rating, second_rating, winner_user_id, loser_user_id,
+            resolution, resolved_at
+       FROM tournament_knockout_results
+      WHERE tournament_id = ?
+      ORDER BY round_number ASC, pairing_number ASC`
+  ).bind(tournamentId).all();
+  return (result && result.results ? result.results : []).map(row => ({
+    tournamentId:String(row.tournament_id || ''),
+    roundNumber:Number(row.round_number || 0),
+    pairingNumber:Number(row.pairing_number || 0),
+    firstUserId:String(row.first_user_id || ''),
+    secondUserId:String(row.second_user_id || ''),
+    firstScore:Number(row.first_score || 0),
+    secondScore:Number(row.second_score || 0),
+    firstRating:Number(row.first_rating || RATING_START),
+    secondRating:Number(row.second_rating || RATING_START),
+    winnerUserId:String(row.winner_user_id || ''),
+    loserUserId:String(row.loser_user_id || ''),
+    resolution:String(row.resolution || ''),
+    resolvedAt:row.resolved_at || null
   }));
 }
 
@@ -4214,6 +4266,7 @@ async function tournamentDto(env, row, sessionUser) {
   const rounds = await tournamentRoundsFor(env, id);
   const games = await tournamentGamesFor(env, id);
   const byes = await tournamentByesFor(env, id);
+  const knockoutResults = await tournamentKnockoutResultsFor(env, id);
   const own = participants.find(item => String(item.userId) === String(sessionUser && sessionUser.id || ''));
   const confirmedCount = participants.filter(item => item.status === 'confirmed').length;
   const waitingCount = participants.filter(item => item.status === 'waiting').length;
@@ -4275,9 +4328,10 @@ async function tournamentDto(env, row, sessionUser) {
     rounds,
     games,
     byes,
+    knockoutResults,
     standings,
     groupStandings:mode === TOURNAMENT_MODE_GROUPS ? tournamentGroupStandings(participants, games) : [],
-    winners:arena ? (status === 'ended' ? standings.slice(0, 3) : []) : tournamentWinners(row, participants, games, byes),
+    winners:arena ? (status === 'ended' ? standings.slice(0, 3) : []) : tournamentWinners(row, participants, games, byes, knockoutResults),
     canCheckIn:!!(checkInOpen && own && own.status === 'confirmed' && !own.checkedIn),
     checkedIn:!!(own && own.checkedIn),
     canArenaJoin:!!(arena && status === 'running' && !row.arena_closed_at && (!own || Number(own.arenaActive || 0) === 0)),
@@ -4290,6 +4344,7 @@ async function tournamentDto(env, row, sessionUser) {
 async function listTournaments(env, sessionUser) {
   if (!(await ensureTournamentTables(env)) || !sessionUser) return [];
   await autoStartDueTournaments(env);
+  await repairRunningKnockoutTournaments(env);
   const admin = isAdminUser(sessionUser, env);
   const result = await env.DB.prepare(
     `SELECT tournament.*, view.viewed_at
@@ -4439,6 +4494,130 @@ function tournamentTotalRounds(modeValue, playerCount) {
   return Math.max(1, players - 1);
 }
 
+function tournamentCryptoIndex(maxExclusive) {
+  const max = Math.max(1, Math.floor(Number(maxExclusive || 1)));
+  if (max === 1) return 0;
+  const data = new Uint32Array(1);
+  const range = 0x100000000;
+  const limit = range - (range % max);
+  do { crypto.getRandomValues(data); } while (data[0] >= limit);
+  return data[0] % max;
+}
+
+function shuffledTournamentParticipants(participants) {
+  const shuffled = (participants || []).slice();
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const other = tournamentCryptoIndex(index + 1);
+    [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+  }
+  return shuffled;
+}
+
+async function initializeTournamentKnockoutParticipants(env, tournamentRow, participants) {
+  if (normalizeTournamentMode(tournamentRow && tournamentRow.mode) !== TOURNAMENT_MODE_KNOCKOUT) return participants || [];
+  if (tournamentIsLive(tournamentRow)) throw new Error('K.-o.-Turniere sind ausschließlich als Daily-Turniere vorgesehen.');
+  const players = (participants || []).filter(item => item && item.status === 'confirmed');
+  const maximum = Number(tournamentRow && tournamentRow.max_players || 0);
+  if (!maximum || players.length !== maximum || ![4, 8, 16, 32].includes(players.length)) {
+    throw new Error('Das K.-o.-Turnier kann nur mit vollständig belegtem 4er-, 8er-, 16er- oder 32er-Feld gestartet werden.');
+  }
+  const ratingType = normalizeTournamentVariant(tournamentRow.variant) === GAME_VARIANT_FREESTYLE ? 'daily_freestyle' : 'daily_classic';
+  const ratings = await getRatingTypeForUsers(env, players.map(item => item.userId), ratingType);
+  const seeds = players.map(item => Number(item.knockoutSeed || 0));
+  const validExistingSeeds = seeds.every(seed => seed >= 1 && seed <= players.length) && new Set(seeds).size === players.length;
+  const seededPlayers = validExistingSeeds
+    ? players.slice().sort((a, b) => Number(a.knockoutSeed) - Number(b.knockoutSeed))
+    : shuffledTournamentParticipants(players);
+  const now = new Date().toISOString();
+  const statements = seededPlayers.map((participant, index) => {
+    const rating = ratings[String(participant.userId)] || normalizeRatingRow(null, ratingType);
+    return env.DB.prepare(
+      `UPDATE tournament_participants
+          SET knockout_seed = ?,
+              start_rating = COALESCE(start_rating, ?),
+              start_rating_type = COALESCE(NULLIF(start_rating_type, ''), ?),
+              updated_at = ?
+        WHERE tournament_id = ? AND user_id = ? AND status = 'confirmed'`
+    ).bind(index + 1, Math.round(Number(rating && rating.rating || RATING_START)), ratingType, now, tournamentRow.id, participant.userId);
+  });
+  if (statements.length) await env.DB.batch(statements);
+  return (await tournamentParticipantsFor(env, tournamentRow.id)).filter(item => item.status === 'confirmed');
+}
+
+function tournamentMatchScores(matchGames, firstId, secondId) {
+  const scores = new Map([[String(firstId), 0], [String(secondId), 0]]);
+  for (const game of matchGames || []) {
+    if (!game || game.status !== 'ended') continue;
+    const whiteId = String(game.whiteUserId || '');
+    const blackId = String(game.blackUserId || '');
+    if (game.result === '1-0') scores.set(whiteId, Number(scores.get(whiteId) || 0) + 1);
+    else if (game.result === '0-1') scores.set(blackId, Number(scores.get(blackId) || 0) + 1);
+    else if (game.result === '1/2-1/2') {
+      scores.set(whiteId, Number(scores.get(whiteId) || 0) + 0.5);
+      scores.set(blackId, Number(scores.get(blackId) || 0) + 0.5);
+    }
+  }
+  return {first:Number(scores.get(String(firstId)) || 0), second:Number(scores.get(String(secondId)) || 0)};
+}
+
+function tournamentKnockoutDecision(firstId, secondId, score, firstRating, secondRating) {
+  const firstScore = Number(score && score.first || 0);
+  const secondScore = Number(score && score.second || 0);
+  if (firstScore > secondScore) return {winnerId:String(firstId), loserId:String(secondId), resolution:'score'};
+  if (secondScore > firstScore) return {winnerId:String(secondId), loserId:String(firstId), resolution:'score'};
+  if (Math.abs(Number(firstRating) - Number(secondRating)) <= 25) {
+    const winnerId = tournamentCryptoIndex(2) === 0 ? String(firstId) : String(secondId);
+    return {winnerId, loserId:winnerId === String(firstId) ? String(secondId) : String(firstId), resolution:'lot'};
+  }
+  const winnerId = Number(firstRating) < Number(secondRating) ? String(firstId) : String(secondId);
+  return {winnerId, loserId:winnerId === String(firstId) ? String(secondId) : String(firstId), resolution:'lower_rating'};
+}
+
+async function ensureKnockoutRoundResults(env, tournamentRow, roundNumber, options = {}) {
+  if (!tournamentRow || normalizeTournamentMode(tournamentRow.mode) !== TOURNAMENT_MODE_KNOCKOUT) return [];
+  const tournamentId = String(tournamentRow.id || '');
+  const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
+  const participantById = new Map(participants.map(item => [String(item.userId), item]));
+  const games = (await tournamentGamesFor(env, tournamentId)).filter(game => Number(game.roundNumber) === Number(roundNumber));
+  const existing = await tournamentKnockoutResultsFor(env, tournamentId);
+  const pairingNumbers = Array.from(new Set(games.map(game => Number(game.pairingNumber)))).sort((a, b) => a - b);
+  if (!pairingNumbers.length) {
+    if (options.requireAll) throw new Error('Die K.-o.-Runde enthält keine Paarungen.');
+    return existing.filter(item => Number(item.roundNumber) === Number(roundNumber));
+  }
+  const existingKeys = new Set(existing.filter(item => Number(item.roundNumber) === Number(roundNumber)).map(item => Number(item.pairingNumber)));
+  const now = new Date().toISOString();
+  for (const pairingNumber of pairingNumbers) {
+    if (existingKeys.has(pairingNumber)) continue;
+    const matchGames = games.filter(game => Number(game.pairingNumber) === pairingNumber).sort((a, b) => Number(a.gameNumber) - Number(b.gameNumber));
+    if (matchGames.length !== 2 || matchGames.some(game => game.status !== 'ended' || !['1-0', '0-1', '1/2-1/2'].includes(game.result))) {
+      if (options.requireAll) throw new Error('Eine K.-o.-Begegnung ist noch nicht mit zwei gültigen Ergebnissen abgeschlossen.');
+      continue;
+    }
+    const firstGame = matchGames[0];
+    const firstId = String(firstGame.whiteUserId || '');
+    const secondId = String(firstGame.blackUserId || '');
+    const firstParticipant = participantById.get(firstId) || {};
+    const secondParticipant = participantById.get(secondId) || {};
+    const firstRating = Math.round(Number(firstParticipant.startRating == null ? RATING_START : firstParticipant.startRating));
+    const secondRating = Math.round(Number(secondParticipant.startRating == null ? RATING_START : secondParticipant.startRating));
+    const score = tournamentMatchScores(matchGames, firstId, secondId);
+    const decision = tournamentKnockoutDecision(firstId, secondId, score, firstRating, secondRating);
+    const winnerId = decision.winnerId;
+    const loserId = decision.loserId;
+    const resolution = decision.resolution;
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO tournament_knockout_results
+         (tournament_id, round_number, pairing_number, first_user_id, second_user_id,
+          first_score, second_score, first_rating, second_rating, winner_user_id, loser_user_id,
+          resolution, resolved_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(tournamentId, Number(roundNumber), pairingNumber, firstId, secondId, score.first, score.second,
+      firstRating, secondRating, winnerId, loserId, resolution, now).run();
+  }
+  return (await tournamentKnockoutResultsFor(env, tournamentId)).filter(item => Number(item.roundNumber) === Number(roundNumber));
+}
+
 function tournamentColorBalance(userId, games) {
   let balance = 0;
   for (const game of games || []) {
@@ -4536,15 +4715,36 @@ function tournamentQualifierSeedOrder(participants, games) {
 }
 
 function tournamentKnockoutLabel(pairCount) {
+  if (pairCount >= 16) return 'Runde der 32';
   if (pairCount >= 8) return 'Achtelfinale';
   if (pairCount >= 4) return 'Viertelfinale';
   if (pairCount >= 2) return 'Halbfinale';
   return 'Finale';
 }
 
-function tournamentWinners(tournamentRow, participants, games, byes = []) {
+function tournamentKnockoutStage(pairCount) {
+  if (pairCount >= 16) return 'round_of_32';
+  if (pairCount >= 8) return 'round_of_16';
+  if (pairCount >= 4) return 'quarterfinal';
+  if (pairCount >= 2) return 'semifinal';
+  return 'final';
+}
+
+function tournamentWinners(tournamentRow, participants, games, byes = [], knockoutResults = []) {
   if (normalizeTournamentStatus(tournamentRow && tournamentRow.status) !== 'ended') return [];
-  if (normalizeTournamentMode(tournamentRow && tournamentRow.mode) !== TOURNAMENT_MODE_GROUPS) {
+  const mode = normalizeTournamentMode(tournamentRow && tournamentRow.mode);
+  if (mode === TOURNAMENT_MODE_KNOCKOUT) {
+    const confirmedPlayers = (participants || []).filter(item => item && item.status === 'confirmed').length;
+    const finalRound = Number(tournamentRow && tournamentRow.total_rounds || 0) || tournamentTotalRounds(mode, confirmedPlayers);
+    const finalResult = (knockoutResults || []).find(item => Number(item.roundNumber) === finalRound && Number(item.pairingNumber) === 1);
+    if (!finalResult) return [];
+    const participantById = new Map((participants || []).map(item => [String(item.userId), item]));
+    return [finalResult.winnerUserId, finalResult.loserUserId].filter(Boolean).map((userId, index) => {
+      const participant = participantById.get(String(userId)) || {};
+      return {rank:index + 1, userId:String(userId), username:cleanDisplayName(participant.username) || 'Mitglied'};
+    });
+  }
+  if (mode !== TOURNAMENT_MODE_GROUPS) {
     return tournamentStandings(participants, games, byes).slice(0, 3);
   }
   const finalRound = tournamentTotalRounds(TOURNAMENT_MODE_GROUPS, participants.length);
@@ -4582,10 +4782,41 @@ function tournamentMatchOutcome(matchGames, seedOrder) {
   return {winnerId, loserId:winnerId === firstId ? secondId : firstId};
 }
 
-function tournamentRoundPlan(tournamentRow, roundNumber, participants, games, byes = []) {
+function tournamentRoundPlan(tournamentRow, roundNumber, participants, games, byes = [], knockoutResults = []) {
   const mode = normalizeTournamentMode(tournamentRow && tournamentRow.mode);
-  if (mode === TOURNAMENT_MODE_KNOCKOUT) throw new Error('Die K.-o.-Rundenlogik ist in diesem Vorschau-Stand noch nicht freigegeben.');
   const makePair = (pair, index, extra = {}) => ({first:pair[0], second:pair[1], pairingLabel:extra.pairingLabel || ('Paarung ' + (index + 1)), groupName:extra.groupName || ''});
+  if (mode === TOURNAMENT_MODE_KNOCKOUT) {
+    const ordered = (participants || []).slice().sort((a, b) => Number(a.knockoutSeed || 9999) - Number(b.knockoutSeed || 9999));
+    const participantById = new Map(ordered.map(item => [String(item.userId), item]));
+    let pairs = [];
+    if (Number(roundNumber) === 1) {
+      const seeds = ordered.map(item => Number(item.knockoutSeed || 0));
+      if (ordered.length < 4 || seeds.some(seed => seed < 1) || new Set(seeds).size !== ordered.length) {
+        throw new Error('Die K.-o.-Auslosung ist noch nicht vollständig vorbereitet.');
+      }
+      for (let index = 0; index < ordered.length; index += 2) pairs.push([ordered[index], ordered[index + 1]]);
+    } else {
+      const previousRound = Number(roundNumber) - 1;
+      const previous = (knockoutResults || []).filter(item => Number(item.roundNumber) === previousRound).sort((a, b) => Number(a.pairingNumber) - Number(b.pairingNumber));
+      const expected = Math.max(1, ordered.length / Math.pow(2, previousRound));
+      if (previous.length !== expected || previous.some(item => !item.winnerUserId)) {
+        throw new Error('Die Ergebnisse der vorherigen K.-o.-Runde sind noch nicht vollständig.');
+      }
+      for (let index = 0; index < previous.length; index += 2) {
+        const first = previous[index] && participantById.get(String(previous[index].winnerUserId));
+        const second = previous[index + 1] && participantById.get(String(previous[index + 1].winnerUserId));
+        if (first && second) pairs.push([first, second]);
+      }
+    }
+    if (!pairs.length || pairs.some(pair => !pair[0] || !pair[1])) throw new Error('Für die K.-o.-Runde konnten keine vollständigen Paarungen gebildet werden.');
+    const label = tournamentKnockoutLabel(pairs.length);
+    return {
+      stage:tournamentKnockoutStage(pairs.length),
+      label,
+      gamesPerPair:2,
+      pairs:pairs.map((pair, index) => makePair(pair, index, {pairingLabel:label === 'Finale' ? 'Finale' : (label + ' ' + (index + 1))}))
+    };
+  }
   if (mode === TOURNAMENT_MODE_SINGLE || mode === TOURNAMENT_MODE_DOUBLE) {
     return {
       stage:'round',
@@ -4915,7 +5146,6 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
   const live = tournamentIsLive(tournament);
   const mode = normalizeTournamentMode(tournament.mode);
   const arena = live && mode === TOURNAMENT_MODE_ARENA;
-  if (mode === TOURNAMENT_MODE_KNOCKOUT) return {started:false, reason:'knockout_preview_only'};
 
   const count = await env.DB.prepare(
     live
@@ -4957,6 +5187,10 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
     ).bind(now, tournament.id).run();
   }
 
+  if (!live && mode === TOURNAMENT_MODE_KNOCKOUT) {
+    const participants = (await tournamentParticipantsFor(env, tournament.id)).filter(item => item.status === 'confirmed');
+    await initializeTournamentKnockoutParticipants(env, tournament, participants);
+  }
   if (!live && mode === TOURNAMENT_MODE_GROUPS) {
     const participants = (await tournamentParticipantsFor(env, tournament.id)).filter(item => item.status === 'confirmed');
     await assignTournamentGroups(env, tournament.id, participants);
@@ -5004,9 +5238,11 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
   }
   const allGames = await tournamentGamesFor(env, tournamentId);
   const allByes = await tournamentByesFor(env, tournamentId);
+  const allKnockoutResults = await tournamentKnockoutResultsFor(env, tournamentId);
   const historicalGames = allGames.filter(game => Number(game.roundNumber) < Number(roundNumber));
   const historicalByes = allByes.filter(bye => Number(bye.roundNumber) < Number(roundNumber));
-  const plan = tournamentRoundPlan(tournamentRow, roundNumber, participants, historicalGames, historicalByes);
+  const historicalKnockoutResults = allKnockoutResults.filter(item => Number(item.roundNumber) < Number(roundNumber));
+  const plan = tournamentRoundPlan(tournamentRow, roundNumber, participants, historicalGames, historicalByes, historicalKnockoutResults);
   if (!plan || !Array.isArray(plan.pairs) || !plan.pairs.length) throw new Error('Für diese Runde konnten keine gültigen Paarungen erzeugt werden.');
   const variant = normalizeTournamentVariant(tournamentRow.variant);
   let positionId = null;
@@ -5089,25 +5325,27 @@ async function startTournamentRound(env, tournamentRow, roundNumber) {
         });
         await env.DB.prepare(`UPDATE tournament_games SET status = 'running' WHERE id = ?`).bind(gameId).run();
       }
-      const initialTurn = gameTurnForSetup(setup);
-      const gameUrl = gamerInvitationUrl(env, roomId);
-      try {
-        await Promise.all([
-          sendTournamentGameStartedEmailNotification(env, {
-            tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournamentRow.name),
-            roundLabel:plan.label, pairingLabel:pair.pairingLabel || '', timeLabel:timeControl.label || '',
-            variantLabel:tournamentGameVariantLabel(setup), gameUrl,
-            recipientUserId:white.userId, opponentName:black.username, role:'w', isTurn:initialTurn === 'w'
-          }),
-          sendTournamentGameStartedEmailNotification(env, {
-            tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournamentRow.name),
-            roundLabel:plan.label, pairingLabel:pair.pairingLabel || '', timeLabel:timeControl.label || '',
-            variantLabel:tournamentGameVariantLabel(setup), gameUrl,
-            recipientUserId:black.userId, opponentName:white.username, role:'b', isTurn:initialTurn === 'b'
-          })
-        ]);
-      } catch (error) {
-        console.error('Tournament game start notification failed', error && error.message ? error.message : String(error || 'unknown'));
+      if (!existingGame || String(existingGame.status || '') !== 'running') {
+        const initialTurn = gameTurnForSetup(setup);
+        const gameUrl = gamerInvitationUrl(env, roomId);
+        try {
+          await Promise.all([
+            sendTournamentGameStartedEmailNotification(env, {
+              tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournamentRow.name),
+              roundLabel:plan.label, pairingLabel:pair.pairingLabel || '', timeLabel:timeControl.label || '',
+              variantLabel:tournamentGameVariantLabel(setup), gameUrl,
+              recipientUserId:white.userId, opponentName:black.username, role:'w', isTurn:initialTurn === 'w'
+            }),
+            sendTournamentGameStartedEmailNotification(env, {
+              tournamentGameId:gameId, roomId, tournamentName:cleanTournamentName(tournamentRow.name),
+              roundLabel:plan.label, pairingLabel:pair.pairingLabel || '', timeLabel:timeControl.label || '',
+              variantLabel:tournamentGameVariantLabel(setup), gameUrl,
+              recipientUserId:black.userId, opponentName:white.username, role:'b', isTurn:initialTurn === 'b'
+            })
+          ]);
+        } catch (error) {
+          console.error('Tournament game start notification failed', error && error.message ? error.message : String(error || 'unknown'));
+        }
       }
     }
   }
@@ -5121,6 +5359,10 @@ async function advanceTournamentRoundIfReady(env, tournamentId, roundNumber) {
       WHERE tournament_id = ? AND round_number = ? AND status <> 'ended'`
   ).bind(tournamentId, roundNumber).first();
   if (Number(remaining && remaining.count || 0) > 0) return;
+  const readyTournament = await loadTournamentRow(env, tournamentId);
+  if (readyTournament && normalizeTournamentMode(readyTournament.mode) === TOURNAMENT_MODE_KNOCKOUT) {
+    await ensureKnockoutRoundResults(env, readyTournament, roundNumber, {requireAll:true});
+  }
   const now = new Date().toISOString();
   await env.DB.prepare(
     `UPDATE tournament_rounds SET status = 'ended', ended_at = COALESCE(ended_at, ?)
@@ -5156,6 +5398,32 @@ async function advanceTournamentRoundIfReady(env, tournamentId, roundNumber) {
     } catch (error) {
       console.error('Tournament round preparation interrupted', error && error.message ? error.message : String(error || 'unknown'));
       throw error;
+    }
+  }
+}
+
+async function repairRunningKnockoutTournaments(env) {
+  if (!(await ensureTournamentTables(env))) return;
+  const result = await env.DB.prepare(
+    `SELECT * FROM tournaments
+      WHERE status = 'running' AND mode = ?
+      ORDER BY updated_at ASC LIMIT 24`
+  ).bind(TOURNAMENT_MODE_KNOCKOUT).all();
+  for (const row of (result && result.results ? result.results : [])) {
+    const roundNumber = Number(row.current_round || 0);
+    if (roundNumber < 1) continue;
+    try {
+      const participants = (await tournamentParticipantsFor(env, String(row.id))).filter(item => item.status === 'confirmed');
+      const expectedGames = Math.max(2, Math.floor(participants.length / Math.pow(2, roundNumber - 1)));
+      const gameCountRow = await env.DB.prepare(
+        `SELECT COUNT(*) AS count FROM tournament_games WHERE tournament_id = ? AND round_number = ?`
+      ).bind(String(row.id), roundNumber).first();
+      if (Number(gameCountRow && gameCountRow.count || 0) < expectedGames) {
+        await startTournamentRound(env, row, roundNumber);
+      }
+      await advanceTournamentRoundIfReady(env, String(row.id), roundNumber);
+    } catch (error) {
+      console.error('K.-o.-Turnierfortschritt konnte nicht repariert werden', error && error.message ? error.message : String(error || 'unknown'));
     }
   }
 }
@@ -5216,6 +5484,9 @@ async function syncTournamentGameResult(env, tournamentMeta, game) {
     if (deadlinePassed) await closeArenaTournamentIfDue(env, tournamentId);
     else await pairArenaPlayers(env, tournamentId);
     return;
+  }
+  if (tournament && normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_KNOCKOUT) {
+    await ensureKnockoutRoundResults(env, tournament, Number(tournamentMeta.roundNumber || 0));
   }
   await advanceTournamentRoundIfReady(env, tournamentId, Number(tournamentMeta.roundNumber || 0));
 }
@@ -10145,7 +10416,6 @@ async function handleAuthApi(request, env, url) {
       const tournament = await loadTournamentRow(env, tournamentId);
       if (!tournament) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
       if (tournament.status !== 'draft') return json({ok:false, code:'TOURNAMENT_ALREADY_PUBLISHED', message:'Dieses Turnier wurde bereits veröffentlicht.'}, {status:409});
-      if (normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_KNOCKOUT) return json({ok:false, code:'KNOCKOUT_PREVIEW_ONLY', message:'Der K.-o.-Turnierbaum ist derzeit als Entwurfsvorschau verfügbar. Veröffentlichung folgt erst nach fertig getesteter Rundenlogik.'}, {status:409});
       const now = new Date().toISOString();
       const changed = await env.DB.prepare(
         `UPDATE tournaments SET status = 'open', published_at = ?, updated_at = ? WHERE id = ? AND status = 'draft'`
@@ -10380,7 +10650,6 @@ async function handleAuthApi(request, env, url) {
     try {
       const tournament = await loadTournamentRow(env, tournamentId);
       if (!tournament) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
-      if (normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_KNOCKOUT) return json({ok:false, code:'KNOCKOUT_PREVIEW_ONLY', message:'Dieses K.-o.-Turnier ist noch nicht startbar. Die Rundenlogik wird erst nach Freigabe der Turnierbaum-Vorschau aktiviert.'}, {status:409});
       if (tournament.status === 'running') {
         const pending = await env.DB.prepare(
           `SELECT COUNT(*) AS count FROM tournament_games WHERE tournament_id = ? AND round_number = ? AND status = 'creating'`
@@ -10451,6 +10720,10 @@ async function handleAuthApi(request, env, url) {
           ? (live ? 'Für den Start werden mindestens vier eingecheckte Teilnehmer benötigt.' : 'Für den Start werden mindestens vier bestätigte Teilnehmer benötigt.')
           : `Für den Start werden genau ${Number(tournament.max_players || 0)} bestätigte Teilnehmer benötigt.`;
         return json({ok:false, code:'TOURNAMENT_START_REQUIREMENTS', message}, {status:409});
+      }
+      if (mode === TOURNAMENT_MODE_KNOCKOUT) {
+        const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
+        await initializeTournamentKnockoutParticipants(env, tournament, participants);
       }
       if (mode === TOURNAMENT_MODE_GROUPS) {
         const participants = (await tournamentParticipantsFor(env, tournamentId)).filter(item => item.status === 'confirmed');
