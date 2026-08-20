@@ -3697,7 +3697,8 @@ const TOURNAMENT_PLAYERS_BY_MODE = Object.freeze({
   single_round_robin:Object.freeze([4, 6, 8]),
   double_round_robin:Object.freeze([4, 6, 8]),
   swiss:Object.freeze([8, 12, 16, 24, 32]),
-  groups_knockout:Object.freeze([8, 16, 32])
+  groups_knockout:Object.freeze([8, 16, 32]),
+  knockout:Object.freeze([4, 8, 16, 32])
 });
 const TOURNAMENT_MODE_ARENA = 'arena';
 const TOURNAMENT_TYPE_DAILY = 'daily';
@@ -3887,10 +3888,11 @@ const TOURNAMENT_MODE_SINGLE = 'single_round_robin';
 const TOURNAMENT_MODE_DOUBLE = 'double_round_robin';
 const TOURNAMENT_MODE_SWISS = 'swiss';
 const TOURNAMENT_MODE_GROUPS = 'groups_knockout';
+const TOURNAMENT_MODE_KNOCKOUT = 'knockout';
 
 function normalizeTournamentMode(value) {
   const mode = String(value || '').toLowerCase();
-  return [TOURNAMENT_MODE_SINGLE, TOURNAMENT_MODE_DOUBLE, TOURNAMENT_MODE_SWISS, TOURNAMENT_MODE_GROUPS, TOURNAMENT_MODE_ARENA].includes(mode)
+  return [TOURNAMENT_MODE_SINGLE, TOURNAMENT_MODE_DOUBLE, TOURNAMENT_MODE_SWISS, TOURNAMENT_MODE_GROUPS, TOURNAMENT_MODE_KNOCKOUT, TOURNAMENT_MODE_ARENA].includes(mode)
     ? mode
     : TOURNAMENT_MODE_DOUBLE;
 }
@@ -3900,6 +3902,7 @@ function tournamentModeLabel(value) {
   if (mode === TOURNAMENT_MODE_SINGLE) return 'Einfaches Rundenturnier';
   if (mode === TOURNAMENT_MODE_SWISS) return 'Schweizer System';
   if (mode === TOURNAMENT_MODE_GROUPS) return 'Gruppenphase + K.-o.';
+  if (mode === TOURNAMENT_MODE_KNOCKOUT) return 'K.-o.-Turnier';
   if (mode === TOURNAMENT_MODE_ARENA) return 'Arena';
   return 'Doppelrundenturnier';
 }
@@ -4417,6 +4420,7 @@ function tournamentTotalRounds(modeValue, playerCount) {
   if (mode === TOURNAMENT_MODE_ARENA) return 0;
   if (mode === TOURNAMENT_MODE_SWISS) return players <= 8 ? 3 : players <= 16 ? 4 : 5;
   if (mode === TOURNAMENT_MODE_GROUPS) return 3 + Math.max(1, Math.round(Math.log2(Math.max(2, players / 2))));
+  if (mode === TOURNAMENT_MODE_KNOCKOUT) return Math.max(1, Math.round(Math.log2(Math.max(2, players))));
   return Math.max(1, players - 1);
 }
 
@@ -4565,6 +4569,7 @@ function tournamentMatchOutcome(matchGames, seedOrder) {
 
 function tournamentRoundPlan(tournamentRow, roundNumber, participants, games, byes = []) {
   const mode = normalizeTournamentMode(tournamentRow && tournamentRow.mode);
+  if (mode === TOURNAMENT_MODE_KNOCKOUT) throw new Error('Die K.-o.-Rundenlogik ist in diesem Vorschau-Stand noch nicht freigegeben.');
   const makePair = (pair, index, extra = {}) => ({first:pair[0], second:pair[1], pairingLabel:extra.pairingLabel || ('Paarung ' + (index + 1)), groupName:extra.groupName || ''});
   if (mode === TOURNAMENT_MODE_SINGLE || mode === TOURNAMENT_MODE_DOUBLE) {
     return {
@@ -10087,6 +10092,7 @@ async function handleAuthApi(request, env, url) {
       const tournament = await loadTournamentRow(env, tournamentId);
       if (!tournament) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
       if (tournament.status !== 'draft') return json({ok:false, code:'TOURNAMENT_ALREADY_PUBLISHED', message:'Dieses Turnier wurde bereits veröffentlicht.'}, {status:409});
+      if (normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_KNOCKOUT) return json({ok:false, code:'KNOCKOUT_PREVIEW_ONLY', message:'Der K.-o.-Turnierbaum ist derzeit als Entwurfsvorschau verfügbar. Veröffentlichung folgt erst nach fertig getesteter Rundenlogik.'}, {status:409});
       const now = new Date().toISOString();
       const changed = await env.DB.prepare(
         `UPDATE tournaments SET status = 'open', published_at = ?, updated_at = ? WHERE id = ? AND status = 'draft'`
@@ -10303,6 +10309,7 @@ async function handleAuthApi(request, env, url) {
     try {
       const tournament = await loadTournamentRow(env, tournamentId);
       if (!tournament) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
+      if (normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_KNOCKOUT) return json({ok:false, code:'KNOCKOUT_PREVIEW_ONLY', message:'Dieses K.-o.-Turnier ist noch nicht startbar. Die Rundenlogik wird erst nach Freigabe der Turnierbaum-Vorschau aktiviert.'}, {status:409});
       if (tournament.status === 'running') {
         const pending = await env.DB.prepare(
           `SELECT COUNT(*) AS count FROM tournament_games WHERE tournament_id = ? AND round_number = ? AND status = 'creating'`
