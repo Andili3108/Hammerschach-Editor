@@ -1,5 +1,10 @@
 'use strict';
 
+function syncTournamentPageScrollLock(){
+  const locked = !!((tournamentBackdrop && !tournamentBackdrop.hidden) || (tournamentCreateBackdrop && !tournamentCreateBackdrop.hidden));
+  document.documentElement.classList.toggle('tournament-page-locked', locked);
+  document.body.classList.toggle('tournament-page-locked', locked);
+}
 function setTournamentCreateStatus(message, kind){
   if(!tournamentCreateStatus) return;
   tournamentCreateStatus.textContent = message || '';
@@ -9,6 +14,7 @@ function setTournamentCreateStatus(message, kind){
 function closeTournamentCreateDialog(){
   closeThemePicker();
   if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = true;
+  syncTournamentPageScrollLock();
   setTournamentCreateStatus('', '');
 }
 function closeTournamentDialog(){
@@ -21,6 +27,7 @@ function closeTournamentDialog(){
   }
   closeTournamentCreateDialog();
   if(tournamentBackdrop) tournamentBackdrop.hidden = true;
+  syncTournamentPageScrollLock();
   tournamentSelectedId = '';
   try{ refreshHeaderStatusFromState(); } catch(_){ }
   hammerschachScheduleHeightReport(false);
@@ -106,6 +113,7 @@ async function openTournamentDialog(tournamentId){
   closeEmbeddedTools();
   closePlayerMenu();
   if(tournamentBackdrop) tournamentBackdrop.hidden = false;
+  syncTournamentPageScrollLock();
   if(tournamentListGrid) tournamentListGrid.innerHTML = '<div class="tournament-list-empty">Turniere werden geladen…</div>';
   try{ await loadTournaments(); }
   catch(err){
@@ -155,6 +163,7 @@ function openTournamentCreateDialog(tournamentId){
   if(tournamentDescriptionInput) tournamentDescriptionInput.value = draft ? draft.description : '';
   setTournamentCreateStatus('', '');
   if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = false;
+  syncTournamentPageScrollLock();
   setTimeout(() => { if(tournamentNameInput) tournamentNameInput.focus(); }, 0);
 }
 async function saveTournamentDraft(event){
