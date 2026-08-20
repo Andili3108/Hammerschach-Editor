@@ -24,6 +24,7 @@ function renderTournamentParticipants(tournament){
     else if(participant.status === 'absent') state.textContent = 'Nicht eingecheckt';
     else if(tournament.arena && tournament.status === 'running') state.textContent = Number(participant.arenaActive || 0) === 2 ? 'Spielt gerade' : Number(participant.arenaActive || 0) === 1 ? 'Aktiv · wartet auf Paarung' : 'Arena pausiert';
     else if(tournament.live) state.textContent = (participant.checkedIn ? 'Eingecheckt · startbereit' : 'Angemeldet · Check-in ausstehend') + group;
+    else if(normalizeTournamentMode(tournament.mode) === 'knockout' && participant.startRating != null) state.textContent = 'Start-Rating ' + Math.round(Number(participant.startRating)) + ' · Teilnahme bestätigt';
     else state.textContent = 'Teilnahme bestätigt' + group;
     row.appendChild(name);
     row.appendChild(state);
@@ -203,7 +204,7 @@ function renderTournamentDetail(tournament){
   if(tournamentLocalNote){
     tournamentLocalNote.hidden = tournament.status !== 'draft';
     tournamentLocalNote.textContent = mode === 'knockout'
-      ? 'Dieser K.-o.-Entwurf ist serverseitig gespeichert und für Mitglieder unsichtbar. Der Turnierbaum dient bereits als echte Layout-Vorschau; Veröffentlichung und Start bleiben bis zur fertig getesteten K.-o.-Rundenlogik gesperrt.'
+      ? 'Dieser K.-o.-Entwurf ist serverseitig gespeichert und für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung. Die tatsächliche Auslosung erfolgt erst beim Turnierstart; dann starten je Begegnung zwei Daily-Partien mit vertauschten Farben.'
       : 'Dieser Entwurf ist serverseitig gespeichert, aber für Mitglieder unsichtbar. Erst „Turnier veröffentlichen“ öffnet die Anmeldung und versendet die einmalige Turniermail. Der geplante Start erfolgt automatisch, sobald die Voraussetzungen erfüllt sind.' + (tournament.live ? ' Beim Live-Turnier bestätigen die Spieler ab einer Stunde vor dem Termin zusätzlich ihre Anwesenheit.' : '');
   }
   if(tournamentFactStatus) tournamentFactStatus.textContent = info.label;
@@ -229,7 +230,7 @@ function renderTournamentDetail(tournament){
   if(tournamentStandingsTableContent) tournamentStandingsTableContent.hidden = mode === 'knockout';
   if(tournamentKnockoutBracket){
     tournamentKnockoutBracket.hidden = mode !== 'knockout';
-    if(mode === 'knockout') renderKnockoutBracket(tournamentKnockoutBracketTree, tournament.players, {rules:false});
+    if(mode === 'knockout') renderKnockoutBracket(tournamentKnockoutBracketTree, tournament.players, {rules:false,tournament});
   }
   renderTournamentParticipants(tournament);
   renderTournamentPairings(tournament);
@@ -240,8 +241,8 @@ function renderTournamentDetail(tournament){
   if(tournamentDetailEditBtn) tournamentDetailEditBtn.hidden = !(tournament.status === 'draft' && admin);
   if(tournamentPublishBtn){
     tournamentPublishBtn.hidden = !(tournament.status === 'draft' && admin);
-    tournamentPublishBtn.disabled = mode === 'knockout';
-    tournamentPublishBtn.title = mode === 'knockout' ? 'Die K.-o.-Vorschau ist freigegeben; Veröffentlichung folgt erst nach Fertigstellung und Test der Rundenlogik.' : '';
+    tournamentPublishBtn.disabled = false;
+    tournamentPublishBtn.title = mode === 'knockout' ? 'Anmeldung für dieses K.-o.-Turnier öffnen. Die Paarungen werden erst beim Turnierstart ausgelost.' : '';
   }
   if(tournamentJoinBtn){
     tournamentJoinBtn.hidden = !(['open','full'].includes(tournament.status) && !registered);
@@ -286,18 +287,16 @@ function renderTournamentDetail(tournament){
     const scheduledMs = Date.parse(tournament.scheduledStartAt || '');
     const scheduledDue = !Number.isFinite(scheduledMs) || scheduledMs <= Date.now();
     tournamentStartBtn.hidden = !(admin && (['open','full'].includes(tournament.status) || recoverable));
-    tournamentStartBtn.disabled = !!readiness.knockoutPreviewOnly || (!recoverable && !readiness.ok);
+    tournamentStartBtn.disabled = !recoverable && !readiness.ok;
     tournamentStartBtn.textContent = recoverable
       ? '↻ Fehlende Partien vorbereiten'
       : (!scheduledDue && readiness.ok ? '▶️ Vorzeitig starten' : '▶️ Turnier starten');
-    tournamentStartBtn.title = readiness.knockoutPreviewOnly
-      ? 'K.-o.-Turniere werden erst nach Fertigstellung und Test der Rundenlogik startbar.'
-      : tournamentStartBtn.disabled
-        ? (tournament.live ? 'Mindestens vier angemeldete Spieler müssen eingecheckt sein.' : readiness.mode === 'swiss' ? 'Das Schweizer System startet ab vier bestätigten Teilnehmern.' : 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.')
-        : recoverable
-          ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.'
-          : !scheduledDue
-            ? 'Als Turnier-Admin kannst du den geplanten Starttermin übersteuern und das Turnier jetzt starten.'
-            : 'Turnier jetzt manuell starten.';
+    tournamentStartBtn.title = tournamentStartBtn.disabled
+      ? (tournament.live ? 'Mindestens vier angemeldete Spieler müssen eingecheckt sein.' : readiness.mode === 'swiss' ? 'Das Schweizer System startet ab vier bestätigten Teilnehmern.' : readiness.mode === 'knockout' ? 'Das K.-o.-Turnier startet erst bei vollständig belegtem 4er-, 8er-, 16er- oder 32er-Feld.' : 'Der Start ist erst bei vollständig belegtem Teilnehmerfeld möglich.')
+      : recoverable
+        ? 'Eine unterbrochene Rundenvorbereitung fortsetzen.'
+        : !scheduledDue
+          ? 'Als Turnier-Admin kannst du den geplanten Starttermin übersteuern und das Turnier jetzt starten.'
+          : 'Turnier jetzt manuell starten.';
   }
 }

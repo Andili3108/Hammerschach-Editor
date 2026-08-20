@@ -117,17 +117,18 @@ async function startSelectedTournament(){
     ? tournamentAdminStartReadiness(tournament)
     : {ok:false, mode:normalizeTournamentMode(tournament.mode)};
   if(!recoverable && !readiness.ok){
-    if(statusEl) statusEl.textContent = readiness.knockoutPreviewOnly
-      ? 'K.-o.-Turniere sind bis zur Freigabe der Rundenlogik noch nicht startbar.'
-      : tournament.live
-        ? 'Für den Start müssen mindestens vier angemeldete Spieler eingecheckt sein.'
-        : readiness.mode === 'swiss'
-          ? 'Das Schweizer System kann ab vier bestätigten Teilnehmern gestartet werden.'
+    if(statusEl) statusEl.textContent = tournament.live
+      ? 'Für den Start müssen mindestens vier angemeldete Spieler eingecheckt sein.'
+      : readiness.mode === 'swiss'
+        ? 'Das Schweizer System kann ab vier bestätigten Teilnehmern gestartet werden.'
+        : readiness.mode === 'knockout'
+          ? 'Das K.-o.-Turnier kann erst bei vollständig belegtem Teilnehmerfeld gestartet werden.'
           : 'Das Turnier kann erst bei vollständig belegtem Teilnehmerfeld gestartet werden.';
     return;
   }
   if(recoverable && !window.confirm('Die Vorbereitung dieser Turnierrunde wurde unterbrochen. Fehlende Turnierpartien jetzt erneut vorbereiten?')) return;
   const freestyleNote = tournament.variant === GAME_VARIANT_FREESTYLE ? '\n\nFür die erste Runde wird jetzt serverseitig eine zufällige Chess960-Stellung erzeugt.' : '';
+  const knockoutNote = !tournament.live && normalizeTournamentMode(tournament.mode) === 'knockout' ? '\n\nDie erste K.-o.-Runde wird jetzt ausgelost. Je Begegnung starten zwei Daily-Partien mit vertauschten Farben.' : '';
   const liveNote = tournament.live
     ? (tournament.arena ? '\n\nDie Arena startet sofort und bleibt während der gewählten Dauer für spätere Einsteiger offen.' : ('\n\nEs starten ' + Number(tournament.checkedInCount || 0) + ' eingecheckte Spieler. Nicht eingecheckte Anmeldungen werden für dieses Turnier als abwesend markiert. Die Bretter öffnen sich automatisch.'))
     : '\n\nDadurch werden alle Partien der ersten Turnierrunde sofort eröffnet.';
@@ -136,7 +137,7 @@ async function startSelectedTournament(){
   const earlyNote = earlyStart
     ? '\n\n⚠️ Geplanter Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '.\nAls Turnier-Admin übersteuerst du diesen Termin und startest das Turnier vorzeitig.'
     : '';
-  if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?' + earlyNote + liveNote + freestyleNote)) return;
+  if(!recoverable && !window.confirm('Turnier „' + tournament.name + '“ jetzt starten?' + earlyNote + liveNote + knockoutNote + freestyleNote)) return;
   if(tournamentStartBtn) tournamentStartBtn.disabled = true;
   try{
     const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/start', {method:'POST',body:JSON.stringify({confirmed:true})});
