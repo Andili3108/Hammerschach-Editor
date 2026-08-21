@@ -4737,9 +4737,10 @@ function tournamentWinners(tournamentRow, participants, games, byes = [], knocko
     const confirmedPlayers = (participants || []).filter(item => item && item.status === 'confirmed').length;
     const finalRound = Number(tournamentRow && tournamentRow.total_rounds || 0) || tournamentTotalRounds(mode, confirmedPlayers);
     const finalResult = (knockoutResults || []).find(item => Number(item.roundNumber) === finalRound && Number(item.pairingNumber) === 1);
+    const thirdPlaceResult = (knockoutResults || []).find(item => Number(item.roundNumber) === finalRound && Number(item.pairingNumber) === 2);
     if (!finalResult) return [];
     const participantById = new Map((participants || []).map(item => [String(item.userId), item]));
-    return [finalResult.winnerUserId, finalResult.loserUserId].filter(Boolean).map((userId, index) => {
+    return [finalResult.winnerUserId, finalResult.loserUserId, thirdPlaceResult && thirdPlaceResult.winnerUserId].filter(Boolean).map((userId, index) => {
       const participant = participantById.get(String(userId)) || {};
       return {rank:index + 1, userId:String(userId), username:cleanDisplayName(participant.username) || 'Mitglied'};
     });
@@ -4799,16 +4800,38 @@ function tournamentRoundPlan(tournamentRow, roundNumber, participants, games, by
       const previousRound = Number(roundNumber) - 1;
       const previous = (knockoutResults || []).filter(item => Number(item.roundNumber) === previousRound).sort((a, b) => Number(a.pairingNumber) - Number(b.pairingNumber));
       const expected = Math.max(1, ordered.length / Math.pow(2, previousRound));
-      if (previous.length !== expected || previous.some(item => !item.winnerUserId)) {
+      if (previous.length !== expected || previous.some(item => !item.winnerUserId || !item.loserUserId)) {
         throw new Error('Die Ergebnisse der vorherigen K.-o.-Runde sind noch nicht vollständig.');
       }
-      for (let index = 0; index < previous.length; index += 2) {
-        const first = previous[index] && participantById.get(String(previous[index].winnerUserId));
-        const second = previous[index + 1] && participantById.get(String(previous[index + 1].winnerUserId));
-        if (first && second) pairs.push([first, second]);
+      const finalRound = tournamentTotalRounds(TOURNAMENT_MODE_KNOCKOUT, ordered.length);
+      if (Number(roundNumber) === finalRound && previous.length === 2) {
+        const firstFinalist = participantById.get(String(previous[0].winnerUserId));
+        const secondFinalist = participantById.get(String(previous[1].winnerUserId));
+        const firstThirdPlacePlayer = participantById.get(String(previous[0].loserUserId));
+        const secondThirdPlacePlayer = participantById.get(String(previous[1].loserUserId));
+        if (firstFinalist && secondFinalist) pairs.push([firstFinalist, secondFinalist]);
+        if (firstThirdPlacePlayer && secondThirdPlacePlayer) pairs.push([firstThirdPlacePlayer, secondThirdPlacePlayer]);
+      } else {
+        for (let index = 0; index < previous.length; index += 2) {
+          const first = previous[index] && participantById.get(String(previous[index].winnerUserId));
+          const second = previous[index + 1] && participantById.get(String(previous[index + 1].winnerUserId));
+          if (first && second) pairs.push([first, second]);
+        }
       }
     }
     if (!pairs.length || pairs.some(pair => !pair[0] || !pair[1])) throw new Error('Für die K.-o.-Runde konnten keine vollständigen Paarungen gebildet werden.');
+    const finalRound = tournamentTotalRounds(TOURNAMENT_MODE_KNOCKOUT, ordered.length);
+    if (Number(roundNumber) === finalRound && pairs.length === 2) {
+      return {
+        stage:'final',
+        label:'Finale und Spiel um Platz 3',
+        gamesPerPair:2,
+        pairs:[
+          makePair(pairs[0], 0, {pairingLabel:'Finale'}),
+          makePair(pairs[1], 1, {pairingLabel:'Spiel um Platz 3'})
+        ]
+      };
+    }
     const label = tournamentKnockoutLabel(pairs.length);
     return {
       stage:tournamentKnockoutStage(pairs.length),
@@ -5414,7 +5437,10 @@ async function repairRunningKnockoutTournaments(env) {
     if (roundNumber < 1) continue;
     try {
       const participants = (await tournamentParticipantsFor(env, String(row.id))).filter(item => item.status === 'confirmed');
-      const expectedGames = Math.max(2, Math.floor(participants.length / Math.pow(2, roundNumber - 1)));
+      const finalRound = tournamentTotalRounds(TOURNAMENT_MODE_KNOCKOUT, participants.length);
+      const expectedGames = Number(roundNumber) === finalRound
+        ? 4
+        : Math.max(2, Math.floor(participants.length / Math.pow(2, roundNumber - 1)));
       const gameCountRow = await env.DB.prepare(
         `SELECT COUNT(*) AS count FROM tournament_games WHERE tournament_id = ? AND round_number = ?`
       ).bind(String(row.id), roundNumber).first();
