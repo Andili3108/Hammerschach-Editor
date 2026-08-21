@@ -92,19 +92,19 @@ function createArchiveGameCard(game){
 }
 function renderGameArchive(){
   if(!gameArchiveListEl)return;gameArchiveListEl.innerHTML='';
-  if(!gameArchiveGames.length){const empty=document.createElement('div');empty.className='game-archive-empty';empty.textContent=gameArchiveScope==='mine'&&gameArchiveMomentsFilter&&gameArchiveMomentsFilter.value==='1'?'Noch keine Gamer-Momente in dieser Auswahl.':(gameArchiveScope==='mine'?'Noch keine eigene beendete Partie im Archiv.':'Keine passende öffentliche Partie gefunden.');gameArchiveListEl.appendChild(empty);}
+  if(!gameArchiveGames.length){const empty=document.createElement('div');empty.className='game-archive-empty';empty.textContent=gameArchiveScope==='mine'&&gameArchiveMomentsFilter&&gameArchiveMomentsFilter.value==='1'?'Noch keine Gamer-Momente in dieser Auswahl.':(gameArchiveScope==='mine'?'Noch keine eigene beendete Partie in der Partiechronik.':'Keine passende öffentliche Partie gefunden.');gameArchiveListEl.appendChild(empty);}
   else gameArchiveGames.forEach(game=>gameArchiveListEl.appendChild(createArchiveGameCard(game)));
   if(gameArchiveMoreBtn)gameArchiveMoreBtn.hidden=gameArchiveGames.length>=gameArchiveTotal;
 }
 async function loadGameArchive(options){
   options=options||{};const append=!!options.append;const page=append?gameArchivePage+1:1;
-  if(gameArchiveStatusEl)gameArchiveStatusEl.textContent='Archiv wird geladen …';
+  if(gameArchiveStatusEl)gameArchiveStatusEl.textContent='Partiechronik wird geladen …';
   if(gameArchiveRefreshBtn)gameArchiveRefreshBtn.disabled=true;if(gameArchiveMoreBtn)gameArchiveMoreBtn.disabled=true;
   try{
     const data=await authApi(archiveQuery(page));const games=Array.isArray(data.games)?data.games:[];
     gameArchivePage=page;gameArchiveTotal=Math.max(0,Number(data.total||0));gameArchiveGames=append?gameArchiveGames.concat(games):games;renderGameArchive();
-    if(gameArchiveStatusEl)gameArchiveStatusEl.textContent=gameArchiveTotal===1?'1 Partie im Archiv.':gameArchiveTotal+' Partien im Archiv.';
-  }catch(err){if(!append){gameArchiveGames=[];gameArchiveTotal=0;renderGameArchive();}if(gameArchiveStatusEl)gameArchiveStatusEl.textContent=err&&err.message?err.message:'Partienarchiv konnte nicht geladen werden.';}
+    if(gameArchiveStatusEl)gameArchiveStatusEl.textContent=gameArchiveTotal===1?'1 Partie in der Partiechronik.':gameArchiveTotal+' Partien in der Partiechronik.';
+  }catch(err){if(!append){gameArchiveGames=[];gameArchiveTotal=0;renderGameArchive();}if(gameArchiveStatusEl)gameArchiveStatusEl.textContent=err&&err.message?err.message:'Partiechronik konnte nicht geladen werden.';}
   finally{if(gameArchiveRefreshBtn)gameArchiveRefreshBtn.disabled=false;if(gameArchiveMoreBtn)gameArchiveMoreBtn.disabled=false;}
 }
 function setGameArchiveScope(scope){
