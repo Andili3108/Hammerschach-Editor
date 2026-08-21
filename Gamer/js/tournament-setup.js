@@ -148,10 +148,18 @@ function tournamentKnockoutMatchData(tournament, players, roundNumber, pairingNu
     firstId = seeded[offset] ? String(seeded[offset].userId || '') : '';
     secondId = seeded[offset + 1] ? String(seeded[offset + 1].userId || '') : '';
   } else if(Number(roundNumber) > 1){
-    const left = tournamentKnockoutResultFor(tournament, Number(roundNumber) - 1, Number(pairingNumber) * 2 - 1);
-    const right = tournamentKnockoutResultFor(tournament, Number(roundNumber) - 1, Number(pairingNumber) * 2);
-    firstId = left ? String(left.winnerUserId || '') : '';
-    secondId = right ? String(right.winnerUserId || '') : '';
+    const finalRound = tournamentKnockoutRoundLabels(players).length;
+    if(Number(roundNumber) === finalRound && Number(pairingNumber) === 2){
+      const firstSemi = tournamentKnockoutResultFor(tournament, Number(roundNumber) - 1, 1);
+      const secondSemi = tournamentKnockoutResultFor(tournament, Number(roundNumber) - 1, 2);
+      firstId = firstSemi ? String(firstSemi.loserUserId || '') : '';
+      secondId = secondSemi ? String(secondSemi.loserUserId || '') : '';
+    } else {
+      const left = tournamentKnockoutResultFor(tournament, Number(roundNumber) - 1, Number(pairingNumber) * 2 - 1);
+      const right = tournamentKnockoutResultFor(tournament, Number(roundNumber) - 1, Number(pairingNumber) * 2);
+      firstId = left ? String(left.winnerUserId || '') : '';
+      secondId = right ? String(right.winnerUserId || '') : '';
+    }
   }
   if(!firstId && result) firstId = String(result.firstUserId || '');
   if(!secondId && result) secondId = String(result.secondUserId || '');
@@ -219,13 +227,15 @@ function renderKnockoutBracket(container, playerCount, options){
     column.className = 'tournament-bracket-round';
     const heading = document.createElement('div');
     heading.className = 'tournament-bracket-round-title';
-    heading.textContent = label;
+    const isFinalRound = roundIndex === labels.length - 1;
+    heading.textContent = isFinalRound ? 'Finale + Platz 3' : label;
     const matches = document.createElement('div');
     matches.className = 'tournament-bracket-matches';
-    const matchCount = Math.max(1, players / Math.pow(2, roundIndex + 1));
+    const matchCount = isFinalRound ? 2 : Math.max(1, players / Math.pow(2, roundIndex + 1));
     for(let index=0; index<matchCount; index += 1){
+      const matchLabel = isFinalRound ? (index === 0 ? 'Finale' : 'Spiel um Platz 3') : (label + ' ' + (index + 1));
       const data = tournament ? tournamentKnockoutMatchData(tournament, players, roundNumber, index + 1) : null;
-      matches.appendChild(createKnockoutPreviewMatch(label + ' ' + (index + 1), data));
+      matches.appendChild(createKnockoutPreviewMatch(matchLabel, data));
     }
     column.appendChild(heading);
     column.appendChild(matches);
