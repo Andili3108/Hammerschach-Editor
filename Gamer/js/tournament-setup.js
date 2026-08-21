@@ -223,52 +223,98 @@ function renderKnockoutBracket(container, playerCount, options){
   tree.style.setProperty('--bracket-first-matches', String(players / 2));
   labels.forEach((label,roundIndex) => {
     const roundNumber = roundIndex + 1;
+    const isFinalRound = roundIndex === labels.length - 1;
     const column = document.createElement('section');
-    column.className = 'tournament-bracket-round';
+    column.className = 'tournament-bracket-round' + (isFinalRound ? ' tournament-bracket-endgames-round' : '');
     const heading = document.createElement('div');
     heading.className = 'tournament-bracket-round-title';
-    const isFinalRound = roundIndex === labels.length - 1;
-    heading.textContent = isFinalRound ? 'Finale + Platz 3' : label;
+    heading.textContent = isFinalRound ? 'Endspiele' : label;
     const matches = document.createElement('div');
-    matches.className = 'tournament-bracket-matches';
-    const matchCount = isFinalRound ? 2 : Math.max(1, players / Math.pow(2, roundIndex + 1));
-    for(let index=0; index<matchCount; index += 1){
-      const matchLabel = isFinalRound ? (index === 0 ? 'Finale' : 'Spiel um Platz 3') : (label + ' ' + (index + 1));
-      const data = tournament ? tournamentKnockoutMatchData(tournament, players, roundNumber, index + 1) : null;
-      matches.appendChild(createKnockoutPreviewMatch(matchLabel, data));
+    matches.className = 'tournament-bracket-matches' + (isFinalRound ? ' tournament-bracket-endgames' : '');
+    if(isFinalRound){
+      const endgames = [
+        {pairingNumber:1,title:'Finale',subtitle:'Sieger der Halbfinals',className:'tournament-bracket-final-match'},
+        {pairingNumber:2,title:'Spiel um Platz 3',subtitle:'Verlierer der Halbfinals',className:'tournament-bracket-third-place-match'}
+      ];
+      endgames.forEach(endgame => {
+        const lane = document.createElement('div');
+        lane.className = 'tournament-bracket-endgame-lane';
+        const laneHead = document.createElement('div');
+        laneHead.className = 'tournament-bracket-endgame-head';
+        const laneTitle = document.createElement('div');
+        laneTitle.className = 'tournament-bracket-endgame-title';
+        laneTitle.textContent = endgame.title;
+        const laneSubtitle = document.createElement('div');
+        laneSubtitle.className = 'tournament-bracket-endgame-subtitle';
+        laneSubtitle.textContent = endgame.subtitle;
+        laneHead.appendChild(laneTitle);
+        laneHead.appendChild(laneSubtitle);
+        const data = tournament ? tournamentKnockoutMatchData(tournament, players, roundNumber, endgame.pairingNumber) : null;
+        const match = createKnockoutPreviewMatch(endgame.title, data);
+        match.classList.add(endgame.className);
+        lane.appendChild(laneHead);
+        lane.appendChild(match);
+        matches.appendChild(lane);
+      });
+    } else {
+      const matchCount = Math.max(1, players / Math.pow(2, roundIndex + 1));
+      for(let index=0; index<matchCount; index += 1){
+        const data = tournament ? tournamentKnockoutMatchData(tournament, players, roundNumber, index + 1) : null;
+        matches.appendChild(createKnockoutPreviewMatch(label + ' ' + (index + 1), data));
+      }
     }
     column.appendChild(heading);
     column.appendChild(matches);
     tree.appendChild(column);
   });
-  const winner = document.createElement('section');
-  winner.className = 'tournament-bracket-round tournament-bracket-winner-round';
-  const winnerHeading = document.createElement('div');
-  winnerHeading.className = 'tournament-bracket-round-title';
-  winnerHeading.textContent = 'Sieger';
-  const winnerMatches = document.createElement('div');
-  winnerMatches.className = 'tournament-bracket-matches';
-  const winnerCard = document.createElement('div');
-  winnerCard.className = 'tournament-bracket-winner';
+  const placement = document.createElement('section');
+  placement.className = 'tournament-bracket-round tournament-bracket-placement-round';
+  const placementHeading = document.createElement('div');
+  placementHeading.className = 'tournament-bracket-round-title';
+  placementHeading.textContent = 'Platzierung';
+  const placementMatches = document.createElement('div');
+  placementMatches.className = 'tournament-bracket-matches tournament-bracket-placements';
   const finalRound = labels.length;
+  const participantById = tournament ? tournamentKnockoutParticipantMap(tournament) : new Map();
   const finalResult = tournament ? tournamentKnockoutResultFor(tournament, finalRound, 1) : null;
+  const thirdResult = tournament ? tournamentKnockoutResultFor(tournament, finalRound, 2) : null;
   let winnerName = 'offen';
+  let thirdName = 'offen';
   if(finalResult){
-    winnerName = tournamentKnockoutUserName(tournamentKnockoutParticipantMap(tournament), finalResult.winnerUserId, 'Sieger');
+    winnerName = tournamentKnockoutUserName(participantById, finalResult.winnerUserId, 'Sieger');
   } else if(tournament && Array.isArray(tournament.winners) && tournament.winners[0] && tournament.winners[0].username){
     winnerName = String(tournament.winners[0].username);
   }
-  const trophy = document.createElement('span');
-  trophy.className = 'tournament-bracket-trophy';
-  trophy.textContent = '🏆';
-  const winnerText = document.createElement('span');
-  winnerText.textContent = winnerName;
-  winnerCard.appendChild(trophy);
-  winnerCard.appendChild(winnerText);
-  winnerMatches.appendChild(winnerCard);
-  winner.appendChild(winnerHeading);
-  winner.appendChild(winnerMatches);
-  tree.appendChild(winner);
+  if(thirdResult){
+    thirdName = tournamentKnockoutUserName(participantById, thirdResult.winnerUserId, '3. Platz');
+  } else if(tournament && Array.isArray(tournament.winners) && tournament.winners[2] && tournament.winners[2].username){
+    thirdName = String(tournament.winners[2].username);
+  }
+  [
+    {label:'Sieger',icon:'🏆',name:winnerName,className:'tournament-bracket-winner'},
+    {label:'3. Platz',icon:'🥉',name:thirdName,className:'tournament-bracket-third'}
+  ].forEach(item => {
+    const lane = document.createElement('div');
+    lane.className = 'tournament-bracket-placement-lane';
+    const labelNode = document.createElement('div');
+    labelNode.className = 'tournament-bracket-placement-label';
+    labelNode.textContent = item.label;
+    const card = document.createElement('div');
+    card.className = item.className;
+    const icon = document.createElement('span');
+    icon.className = 'tournament-bracket-trophy';
+    icon.textContent = item.icon;
+    const text = document.createElement('span');
+    text.textContent = item.name;
+    card.appendChild(icon);
+    card.appendChild(text);
+    lane.appendChild(labelNode);
+    lane.appendChild(card);
+    placementMatches.appendChild(lane);
+  });
+  placement.appendChild(placementHeading);
+  placement.appendChild(placementMatches);
+  tree.appendChild(placement);
   scroller.appendChild(tree);
   container.appendChild(scroller);
   if(options && options.rules){
