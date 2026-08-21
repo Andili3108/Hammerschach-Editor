@@ -796,24 +796,63 @@ async function privateMessageUnreadCount(env, userId) {
 async function listPrivateMessages(env, userId, limit = 100) {
   if (!(await ensurePrivateMessagesTables(env))) return {messages:[], unreadCount:0};
   const safeLimit = Math.max(1, Math.min(200, Math.floor(Number(limit || 100))));
+  const me = String(userId || '');
   const result = await env.DB.prepare(
-    `SELECT message.id, message.text, message.created_at,
-            message.sender_user_id, sender.username AS sender_username,
-            recipient.read_at
-       FROM private_message_recipients recipient
-       JOIN private_messages message ON message.id = recipient.message_id
-       LEFT JOIN users sender ON sender.id = message.sender_user_id
-      WHERE recipient.recipient_user_id = ?
-      ORDER BY message.created_at DESC
+    `WITH conversation_messages AS (
+       SELECT message.id,
+              message.text,
+              message.created_at,
+              message.sender_user_id,
+              message.sender_user_id AS other_user_id,
+              sender.username AS other_username,
+              'incoming' AS direction,
+              CASE WHEN recipient.read_at IS NULL THEN 1 ELSE 0 END AS unread
+         FROM private_message_recipients recipient
+         JOIN private_messages message ON message.id = recipient.message_id
+         LEFT JOIN users sender ON sender.id = message.sender_user_id
+        WHERE recipient.recipient_user_id = ?
+       UNION ALL
+       SELECT message.id,
+              message.text,
+              message.created_at,
+              message.sender_user_id,
+              recipient.recipient_user_id AS other_user_id,
+              other.username AS other_username,
+              'outgoing' AS direction,
+              0 AS unread
+         FROM private_messages message
+         JOIN private_message_recipients recipient ON recipient.message_id = message.id
+         LEFT JOIN users other ON other.id = recipient.recipient_user_id
+        WHERE message.sender_user_id = ?
+     ), ranked AS (
+       SELECT *,
+              ROW_NUMBER() OVER (PARTITION BY other_user_id ORDER BY created_at DESC, id DESC) AS row_num,
+              MAX(unread) OVER (PARTITION BY other_user_id) AS has_unread
+         FROM conversation_messages
+     )
+     SELECT id, text, created_at, other_user_id, other_username, direction, has_unread
+       FROM ranked
+      WHERE row_num = 1
+      ORDER BY created_at DESC, id DESC
       LIMIT ?`
-  ).bind(String(userId), safeLimit).all();
-  const messages = (result && Array.isArray(result.results) ? result.results : []).map(row => ({
-    id:String(row.id || ''),
-    sender:{id:String(row.sender_user_id || ''), username:cleanDisplayName(row.sender_username) || 'Gelöschter Benutzer'},
-    text:String(row.text || ''),
-    createdAt:row.created_at || null,
-    readAt:row.read_at || null
-  }));
+  ).bind(me, me, safeLimit).all();
+  const messages = (result && Array.isArray(result.results) ? result.results : []).map(row => {
+    const otherUser = {
+      id:String(row.other_user_id || ''),
+      username:cleanDisplayName(row.other_username) || 'Gelöschter Benutzer'
+    };
+    const unread = Number(row.has_unread || 0) > 0;
+    return {
+      id:otherUser.id,
+      otherUser,
+      sender:otherUser,
+      direction:String(row.direction || '') === 'outgoing' ? 'outgoing' : 'incoming',
+      text:String(row.text || ''),
+      createdAt:row.created_at || null,
+      unread,
+      readAt:unread ? null : (row.created_at || null)
+    };
+  });
   return {messages, unreadCount:await privateMessageUnreadCount(env, userId)};
 }
 
