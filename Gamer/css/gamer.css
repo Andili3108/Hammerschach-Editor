@@ -2515,7 +2515,12 @@ html.dark-mode .private-messages-reader,html.dark-mode .private-message-row{back
 html.dark-mode .private-message-row.unread{background:rgba(43,154,75,.12)!important;border-color:rgba(76,190,103,.30)!important;}
 html.dark-mode .private-message-row:hover{background:#2b3037!important;}
 html.dark-mode .private-message-row-preview,html.dark-mode .private-message-row-time,html.dark-mode .private-message-reader-time,html.dark-mode .private-messages-compose-meta,html.dark-mode .private-messages-status{color:#b9bec6;}
-html.dark-mode .private-message-reader-text,html.dark-mode .private-message-member-row{color:#f3f4f6;}
+html.dark-mode .private-message-reader-text{color:#f3f4f6;}
+html.dark-mode .private-message-reader-sender{color:#efb5bc;}
+html.dark-mode .private-messages-compose .identity-label{color:#d8dbe0;}
+html.dark-mode .private-message-member-row{background:#202329;color:#f3f4f6;border-color:rgba(255,255,255,.10);}
+html.dark-mode .private-message-member-row:hover{background:#2b3037;}
+html.dark-mode .private-message-member-row.selected{background:rgba(43,154,75,.16);border-color:rgba(76,190,103,.30);}
 html.dark-mode .private-message-reader-head,html.dark-mode .private-messages-footer{border-color:rgba(255,255,255,.10);}
 html.dark-mode .private-messages-text{background:#252930;color:#f3f4f6;border-color:rgba(255,255,255,.12);}
 html.dark-mode .private-message-recipient-chip{background:rgba(229,165,173,.10);border-color:rgba(229,165,173,.20);color:#efb5bc;}
