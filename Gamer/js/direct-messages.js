@@ -135,28 +135,41 @@ function closePrivateMessagesDialog(){
   if(privateMessagesBackdrop) privateMessagesBackdrop.hidden = true;
 }
 
+function privateMessageConversationMember(message){
+  return message && (message.otherUser || message.sender) ? (message.otherUser || message.sender) : null;
+}
+
+function privateMessageIsUnread(message){
+  if(!message) return false;
+  if(typeof message.unread === 'boolean') return message.unread;
+  return !message.readAt;
+}
+
 function renderPrivateMessagesList(){
   if(!privateMessagesList) return;
   privateMessagesList.innerHTML = '';
   if(!privateMessagesInbox.length){
-    privateMessagesList.innerHTML = '<div class="private-messages-empty">Noch keine persönlichen Nachrichten.</div>';
-    if(privateMessagesReader) privateMessagesReader.innerHTML = '<div class="private-messages-empty">Hier erscheinen Nachrichten anderer Mitglieder.</div>';
+    privateMessagesList.innerHTML = '<div class="private-messages-empty">Noch keine Unterhaltungen.</div>';
+    if(privateMessagesReader) privateMessagesReader.innerHTML = '<div class="private-messages-empty">Hier erscheinen deine persönlichen Unterhaltungen.</div>';
     return;
   }
   privateMessagesInbox.forEach(message => {
+    const member = privateMessageConversationMember(message);
+    const unread = privateMessageIsUnread(message);
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'private-message-row' + (!message.readAt ? ' unread' : '') + (message.id === privateMessagesActiveId ? ' active' : '');
+    button.className = 'private-message-row' + (unread ? ' unread' : '') + (message.id === privateMessagesActiveId ? ' active' : '');
     const sender = document.createElement('div');
     sender.className = 'private-message-row-sender';
-    if(!message.readAt){ const dot=document.createElement('span'); dot.className='private-message-unread-dot'; sender.appendChild(dot); }
-    sender.appendChild(document.createTextNode(message.sender && message.sender.username ? message.sender.username : 'Mitglied'));
+    if(unread){ const dot=document.createElement('span'); dot.className='private-message-unread-dot'; sender.appendChild(dot); }
+    sender.appendChild(document.createTextNode(member && member.username ? member.username : 'Mitglied'));
     const time = document.createElement('div');
     time.className = 'private-message-row-time';
     time.textContent = formatPrivateMessageTime(message.createdAt, true);
     const preview = document.createElement('div');
     preview.className = 'private-message-row-preview';
-    preview.textContent = String(message.text || '').replace(/\s+/g, ' ');
+    const prefix = message.direction === 'outgoing' ? 'Du: ' : '';
+    preview.textContent = prefix + String(message.text || '').replace(/\s+/g, ' ');
     button.append(sender, time, preview);
     button.addEventListener('click', () => openPrivateMessage(message.id));
     privateMessagesList.appendChild(button);
@@ -166,25 +179,27 @@ function renderPrivateMessagesList(){
 function renderPrivateMessageReader(message, conversation){
   if(!privateMessagesReader) return;
   privateMessagesReader.innerHTML = '';
-  if(!message){ privateMessagesReader.innerHTML = '<div class="private-messages-empty">Wähle links eine Nachricht aus.</div>'; return; }
-  const senderName = message.sender && message.sender.username ? message.sender.username : 'Mitglied';
+  if(!message){ privateMessagesReader.innerHTML = '<div class="private-messages-empty">Wähle links eine Unterhaltung aus.</div>'; return; }
+  const member = privateMessageConversationMember(message);
+  const memberName = member && member.username ? member.username : 'Mitglied';
   const head = document.createElement('div'); head.className='private-message-reader-head';
-  const sender = document.createElement('div'); sender.className='private-message-reader-sender'; sender.textContent = 'Verlauf mit ' + senderName;
+  const sender = document.createElement('div'); sender.className='private-message-reader-sender'; sender.textContent = 'Verlauf mit ' + memberName;
   const time = document.createElement('div'); time.className='private-message-reader-time'; time.textContent = 'Persönliche Nachrichten';
   head.append(sender,time);
   const thread = document.createElement('div'); thread.className='private-message-thread';
-  const items = Array.isArray(conversation) && conversation.length ? conversation : [{direction:'incoming',text:message.text,createdAt:message.createdAt}];
+  const fallbackDirection = message.direction === 'outgoing' ? 'outgoing' : 'incoming';
+  const items = Array.isArray(conversation) && conversation.length ? conversation : [{direction:fallbackDirection,text:message.text,createdAt:message.createdAt}];
   items.forEach(item => {
     const row=document.createElement('div'); row.className='private-message-thread-row '+(item.direction==='outgoing'?'outgoing':'incoming');
     const bubble=document.createElement('div'); bubble.className='private-message-thread-bubble';
     const meta=document.createElement('div'); meta.className='private-message-thread-meta';
-    meta.textContent=(item.direction==='outgoing'?'Du':senderName)+' · '+formatPrivateMessageTime(item.createdAt,false);
+    meta.textContent=(item.direction==='outgoing'?'Du':memberName)+' · '+formatPrivateMessageTime(item.createdAt,false);
     const body=document.createElement('div'); body.className='private-message-thread-text'; body.textContent=item.text || '';
     bubble.append(meta,body); row.appendChild(bubble); thread.appendChild(row);
   });
   const actions = document.createElement('div'); actions.className='private-message-reader-actions';
   const reply = document.createElement('button'); reply.type='button'; reply.textContent='↩️ Antworten';
-  reply.addEventListener('click', () => openPrivateMessagesCompose(message.sender));
+  reply.addEventListener('click', () => openPrivateMessagesCompose(member));
   actions.appendChild(reply);
   privateMessagesReader.append(head,thread,actions);
   requestAnimationFrame(() => { try{ thread.scrollTop=thread.scrollHeight; } catch(_){} });
@@ -194,26 +209,20 @@ async function openPrivateMessage(id){
   const message = privateMessagesInbox.find(item => item.id === id);
   if(!message) return;
   privateMessagesActiveId = id;
-  const senderId = String(message.sender && message.sender.id || '');
+  const member = privateMessageConversationMember(message);
+  const memberId = String(member && member.id || '');
   let conversation = [];
-  if(senderId){
+  if(memberId){
     try{
-      const [threadData, readData] = await Promise.all([
-        authApi('/api/private-messages/conversation/' + encodeURIComponent(senderId) + '?limit=250'),
-        authApi('/api/private-messages/conversation/' + encodeURIComponent(senderId) + '/read', {method:'POST', body:'{}'})
-      ]);
+      const threadData = await authApi('/api/private-messages/conversation/' + encodeURIComponent(memberId) + '?limit=250');
       conversation = Array.isArray(threadData.messages) ? threadData.messages : [];
-      privateMessagesInbox.forEach(item => { if(String(item.sender && item.sender.id || '')===senderId && !item.readAt) item.readAt = readData.readAt || new Date().toISOString(); });
-      setPrivateMessagesBadge(readData.unreadCount || 0);
-    } catch(_){
-      if(!message.readAt){
-        try{
-          const data = await authApi('/api/private-messages/' + encodeURIComponent(id) + '/read', {method:'POST', body:'{}'});
-          message.readAt = data.readAt || new Date().toISOString();
-          setPrivateMessagesBadge(data.unreadCount || 0);
-        } catch(_){}
-      }
-    }
+      try{
+        const readData = await authApi('/api/private-messages/conversation/' + encodeURIComponent(memberId) + '/read', {method:'POST', body:'{}'});
+        message.unread = false;
+        message.readAt = readData.readAt || message.readAt || new Date().toISOString();
+        setPrivateMessagesBadge(readData.unreadCount || 0);
+      } catch(_){}
+    } catch(_){}
   }
   renderPrivateMessagesList();
   renderPrivateMessageReader(message, conversation);
@@ -223,7 +232,7 @@ async function loadPrivateMessagesInbox(options){
   options = options || {};
   if(!privateMessagesLoggedIn()) return;
   const requestId = ++privateMessagesRequestId;
-  if(!options.silent) setPrivateMessagesStatus('Nachrichten werden geladen…', '', false);
+  if(!options.silent) setPrivateMessagesStatus('Unterhaltungen werden geladen…', '', false);
   if(privateMessagesRefreshBtn) privateMessagesRefreshBtn.disabled = true;
   try{
     const data = await authApi('/api/private-messages?limit=150');
@@ -236,10 +245,10 @@ async function loadPrivateMessagesInbox(options){
       const activeId=privateMessagesActiveId;
       setTimeout(() => openPrivateMessage(activeId).catch(() => {}),0);
     }
-    setPrivateMessagesStatus(privateMessagesInbox.length ? `${privateMessagesInbox.length} Nachricht${privateMessagesInbox.length === 1 ? '' : 'en'}.` : 'Noch keine persönlichen Nachrichten.', privateMessagesInbox.length ? 'success' : '', false);
+    setPrivateMessagesStatus(privateMessagesInbox.length ? `${privateMessagesInbox.length} Unterhaltung${privateMessagesInbox.length === 1 ? '' : 'en'}.` : 'Noch keine Unterhaltungen.', privateMessagesInbox.length ? 'success' : '', false);
   } catch(err){
     if(requestId !== privateMessagesRequestId) return;
-    setPrivateMessagesStatus(err && err.message ? err.message : 'Nachrichten konnten nicht geladen werden.', 'error', false);
+    setPrivateMessagesStatus(err && err.message ? err.message : 'Unterhaltungen konnten nicht geladen werden.', 'error', false);
   } finally {
     if(privateMessagesRefreshBtn) privateMessagesRefreshBtn.disabled = false;
   }
