@@ -242,6 +242,24 @@
   function setBoardStatus(text,type=''){boardStatus.textContent=text;boardStatus.className='board-status'+(type?' '+type:'');}
   function setEngineState(text,type=''){engineState.textContent=text;engineState.className='engine-state'+(type?' '+type:'');}
   function setFairplayNotice(text=''){fairplayNotice.textContent=text;fairplayNotice.hidden=!text;}
+  function showPromotionOverlay(color){
+    return new Promise(resolve=>{
+      const old=byId('promotionBackdrop');if(old)old.remove();
+      const backdrop=document.createElement('div');backdrop.id='promotionBackdrop';backdrop.className='promo-backdrop';
+      const modal=document.createElement('div');modal.className='promo-modal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','promotionTitle');
+      const pieces=color==='w'?{Q:'♕',R:'♖',B:'♗',N:'♘'}:{Q:'♛',R:'♜',B:'♝',N:'♞'};
+      const names={Q:'Dame',R:'Turm',B:'Läufer',N:'Springer'};
+      modal.innerHTML='<h3 id="promotionTitle">♟️ Bauernumwandlung</h3><p>Bitte wähle die gewünschte Figur:</p><div class="promo-grid">'+Object.entries(pieces).map(([key,value])=>'<button class="promo-btn" type="button" data-piece="'+key+'"><span class="promo-piece">'+value+'</span><span>'+names[key]+'</span></button>').join('')+'</div><div class="promo-actions"><button id="promoCancel" class="button-flat" type="button">Abbrechen</button></div>';
+      backdrop.appendChild(modal);document.body.appendChild(backdrop);
+      let settled=false;
+      const close=choice=>{if(settled)return;settled=true;document.removeEventListener('keydown',onKeydown);backdrop.remove();resolve(choice);};
+      const onKeydown=event=>{if(event.key==='Escape')close(null);};
+      modal.querySelectorAll('.promo-btn').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();close(button.dataset.piece);}));
+      byId('promoCancel').addEventListener('click',event=>{event.stopPropagation();close(null);});
+      backdrop.addEventListener('click',event=>{if(event.target===backdrop)close(null);});
+      document.addEventListener('keydown',onKeydown);modal.querySelector('.promo-btn').focus();
+    });
+  }
 
   function createRoot(game){rootNode={id:0,game:game.clone(),parent:null,move:null,san:'',children:[]};currentNode=rootNode;nextNodeId=1;selectedSquare=null;legalTargets=[];renderMoveTree();}
   function moveKey(game,move){
@@ -255,7 +273,7 @@
     }
     selectedSquare=null;legalTargets=[];renderBoard();renderMoveTree();saveSession();return key;
   }
-  function handleSquareClick(x,y){
+  async function handleSquareClick(x,y){
     const game=activeGame();
     if(mode==='setup'){
       setupGame.set(x,y,selectedPalette);selectedSquare=null;syncControlsFromGame(setupGame);renderBoard();saveSession();return;
@@ -269,9 +287,11 @@
     const candidates=legalTargets.filter(move=>move.to[0]===x&&move.to[1]===y);
     if(!candidates.length&&piece!=='.'&&pieceColor(piece)===game.turn){selectedSquare=[x,y];legalTargets=game.legalMoves().filter(move=>move.from[0]===x&&move.from[1]===y);renderBoard();return;}
     if(!candidates.length){selectedSquare=null;legalTargets=[];renderBoard();setBoardStatus('Dieser Zug ist in der aktuellen Stellung nicht legal.','error');return;}
-    const promotion=String(byId('promotionSelect').value||'Q').toUpperCase();
-    let chosen=candidates.find(move=>(move.promotion||promotion).toUpperCase()===promotion)||candidates[0];
-    if(game.at(chosen.from[0],chosen.from[1]).toLowerCase()==='p'&&(chosen.to[1]===0||chosen.to[1]===7))chosen=Object.assign({},chosen,{promotion});
+    const first=candidates[0];const movingPiece=game.at(first.from[0],first.from[1]);const needsPromotion=movingPiece.toLowerCase()==='p'&&(first.to[1]===0||first.to[1]===7);
+    let promotion=null;
+    if(needsPromotion){promotion=await showPromotionOverlay(game.turn);if(!promotion){selectedSquare=null;legalTargets=[];renderBoard();return;}}
+    let chosen=needsPromotion?(candidates.find(move=>String(move.promotion||'').toUpperCase()===promotion)||first):first;
+    if(needsPromotion)chosen=Object.assign({},chosen,{promotion});
     const playedUci=moveKey(game,chosen);applyMove(chosen,'user');
     if(mode==='training')afterTrainingMove(playedUci);else{setBoardStatus('Zug ausgeführt. Du kannst weiterziehen oder die Stellung analysieren.','success');if(byId('autoAnalyzeCheck').checked)analyzeCurrent();}
   }
