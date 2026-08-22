@@ -2649,6 +2649,29 @@ html.dark-mode .daily-games-result-filter.draw.active{background:rgba(179,130,38
 html.dark-mode .daily-games-result-filter.loss.active,html.dark-mode .daily-games-moments-filter.active{background:rgba(154,45,51,.21)!important;color:#efb5bc!important;border-color:rgba(226,151,160,.24)!important;}
 html.dark-mode .chess-chronicle-milestone{color:#efcf91;}
 html.dark-mode .chess-chronicle-milestone.first_moment{color:#efb5bc;}
+/* Auf Smartphones und Touch-Tablets scrollt „Meine Partien“ als ein
+   zusammenhängendes Fenster. Statistik und Filter der Chronik bleiben
+   dadurch Teil derselben Wischfläche. */
+@media (max-width:760px), (hover:none) and (pointer:coarse){
+  #dailyGamesBackdrop{align-items:flex-start;padding:8px;overflow:hidden;}
+  .daily-games-modal{
+    width:100%;
+    max-height:calc(100vh - 16px);
+    max-height:calc(100dvh - 16px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+  }
+  .daily-games-modal > *{flex-shrink:0;}
+  .daily-games-list{
+    flex:0 0 auto;
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+    padding-right:0;
+  }
+}
 @media (max-width:760px){
   .daily-games-chronicle-summary-row{gap:6px;}
   .chess-chronicle-summary{gap:4px;}
