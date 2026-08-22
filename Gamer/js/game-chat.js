@@ -1,10 +1,10 @@
 'use strict';
 
 let opponentChatMuted = false;
-const chatCountEl = document.getElementById('chatCount');
 const CHAT_MESSAGE_MAX_LENGTH = 300;
 const CHAT_HISTORY_MAX = 80;
 const CHAT_SEND_COOLDOWN_MS = 1200;
+const CHAT_SEEN_STORAGE_PREFIX = 'hammerschachChatSeen:';
 let chatMessages = [];
 let chatMessageIds = new Set();
 let chatLastSentAt = 0;
@@ -83,17 +83,59 @@ function resetChatMessages(){
   renderChatMessages();
   updateChatUnreadIndicator();
 }
+function chatSeenStorageKey(){
+  const roomId = typeof onlineRoomId !== 'undefined' ? String(onlineRoomId || '').trim() : '';
+  return roomId ? CHAT_SEEN_STORAGE_PREFIX + roomId : '';
+}
+function readChatSeenMarker(){
+  const key = chatSeenStorageKey();
+  if(!key) return null;
+  try{
+    const value = JSON.parse(localStorage.getItem(key) || 'null');
+    if(!value || typeof value !== 'object') return null;
+    return {id:String(value.id || ''), sentAt:String(value.sentAt || '')};
+  } catch(_){ return null; }
+}
+function latestOpponentChatMessage(){
+  for(let index = chatMessages.length - 1; index >= 0; index--){
+    if(chatMessages[index] && !chatMessages[index].mine) return chatMessages[index];
+  }
+  return null;
+}
+function markOpponentChatSeen(){
+  const key = chatSeenStorageKey();
+  const latest = latestOpponentChatMessage();
+  if(!key || !latest) return;
+  try{ localStorage.setItem(key, JSON.stringify({id:latest.id, sentAt:latest.sentAt || ''})); } catch(_){}
+}
+function unseenOpponentChatCount(){
+  if(opponentChatMuted) return 0;
+  const opponentMessages = chatMessages.filter(message => message && !message.mine);
+  if(!opponentMessages.length) return 0;
+  const seen = readChatSeenMarker();
+  if(!seen) return Math.min(99, opponentMessages.length);
+  const exactIndex = opponentMessages.findIndex(message => message.id === seen.id);
+  if(exactIndex >= 0) return Math.min(99, opponentMessages.length - exactIndex - 1);
+  const seenTime = Date.parse(seen.sentAt || '');
+  if(!Number.isFinite(seenTime)) return 0;
+  return Math.min(99, opponentMessages.filter(message => {
+    const messageTime = Date.parse(message.sentAt || '');
+    return Number.isFinite(messageTime) && messageTime > seenTime;
+  }).length);
+}
 function updateChatUnreadIndicator(){
   if(!showChatPanelBtn) return;
   const hasUnread = chatUnreadCount > 0 && rightPanelMode !== 'chat';
   showChatPanelBtn.classList.toggle('has-unread', hasUnread);
-  showChatPanelBtn.textContent = hasUnread ? ('💬 Chat · ' + Math.min(chatUnreadCount, 99)) : 'Chat';
-  showChatPanelBtn.title = hasUnread ? (chatUnreadCount + ' neue Chatnachricht' + (chatUnreadCount === 1 ? '' : 'en')) : 'Partie-Chat öffnen';
-  showChatPanelBtn.setAttribute('aria-label', hasUnread ? ('Chat öffnen, ' + chatUnreadCount + ' neue Nachricht' + (chatUnreadCount === 1 ? '' : 'en')) : 'Chat öffnen');
+  const label = showChatPanelBtn.querySelector('span');
+  if(label) label.textContent = 'Chat';
+  const unreadText = chatUnreadCount === 1 ? 'Neue gegnerische Chatnachricht' : 'Neue gegnerische Chatnachrichten';
+  showChatPanelBtn.title = hasUnread ? unreadText + ' – Chat öffnen' : 'Partie-Chat öffnen';
+  showChatPanelBtn.setAttribute('aria-label', hasUnread ? unreadText + ' vorhanden. Chat öffnen' : 'Chat öffnen');
 }
 function clearChatUnreadIndicator(){
-  if(chatUnreadCount === 0) return;
   chatUnreadCount = 0;
+  markOpponentChatSeen();
   updateChatUnreadIndicator();
 }
 function formatChatTime(value){
@@ -137,9 +179,10 @@ function appendChatMessage(message, options){
     chatMessages = chatMessages.slice(-CHAT_HISTORY_MAX);
     chatMessageIds = new Set(chatMessages.map(m => m.id));
   }
-  if(!options.suppressUnread && !chat.mine && rightPanelMode !== 'chat'){
+  if(!options.suppressUnread && !chat.mine && !opponentChatMuted && rightPanelMode !== 'chat'){
     chatUnreadCount = Math.min(99, chatUnreadCount + 1);
   }
+  if(!options.suppressUnread && !chat.mine && rightPanelMode === 'chat') markOpponentChatSeen();
   if(!options.deferRender){
     renderChatMessages();
     updateChatUnreadIndicator();
@@ -160,13 +203,18 @@ function applyChatHistory(messages){
     });
     chatMessages = chatMessages.slice(-CHAT_HISTORY_MAX);
     chatMessageIds = new Set(chatMessages.map(message => message.id));
+    if(rightPanelMode === 'chat'){
+      chatUnreadCount = 0;
+      markOpponentChatSeen();
+    } else {
+      chatUnreadCount = unseenOpponentChatCount();
+    }
     renderChatMessages();
     updateChatUnreadIndicator();
   }
   return added;
 }
 function renderChatMessages(){
-  if(chatCountEl) chatCountEl.textContent = String(chatMessages.length);
   if(!chatMessagesEl) return;
   chatMessagesEl.innerHTML = '';
   if(chatMessages.length === 0){
