@@ -1,4 +1,4 @@
-// BUILD: GAMER-DRAW-RULES-20260817-1
+// BUILD: GAMER-SCHACHLABOR-20260821-1
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -7763,6 +7763,70 @@ async function listMyRunningLiveGames(env, sessionUser) {
   });
 }
 
+async function collectSchachlaborActiveRoomIds(env, userId) {
+  const uid = String(userId || '').trim();
+  if (!env || !env.DB || !uid) throw new Error('Die laufenden Partien konnten nicht sicher ermittelt werden.');
+  const ids = new Set();
+  await ensureDailyGamesTable(env);
+  const daily = await env.DB.prepare(
+    `SELECT room_id
+       FROM daily_games
+      WHERE started = 1
+        AND ended = 0
+        AND (white_user_id = ? OR black_user_id = ?)
+      ORDER BY updated_at DESC`
+  ).bind(uid, uid).all();
+  for (const row of (daily && daily.results) || []) {
+    const roomId = cleanRoomId(row.room_id);
+    if (roomId) ids.add(roomId);
+  }
+  await ensureAccountGameRoomIndex(env);
+  await ensureCompletedGamesTable(env);
+  const live = await env.DB.prepare(
+    `SELECT indexed.room_id
+      FROM account_game_rooms indexed
+      WHERE indexed.user_id = ?
+        AND NOT EXISTS (
+          SELECT 1 FROM completed_games completed
+           WHERE completed.room_id = indexed.room_id
+        )
+      ORDER BY indexed.last_seen_at DESC`
+  ).bind(uid).all();
+  for (const row of (live && live.results) || []) {
+    const roomId = cleanRoomId(row.room_id);
+    if (roomId) ids.add(roomId);
+  }
+  const roomIds = Array.from(ids);
+  if (roomIds.length > 200) throw new Error('Zu viele offene Spielräume für eine sichere Fairplay-Prüfung.');
+  return roomIds;
+}
+
+async function schachlaborPositionAllowed(env, sessionUser, fen) {
+  const userId = String(sessionUser && sessionUser.id || '').trim();
+  const candidateFen = String(fen || '').trim();
+  if (!env || !env.GAME_ROOM || !userId) throw new Error('Schachlabor-Fairplay-Prüfung ist nicht verfügbar.');
+  if (!candidateFen || candidateFen.length > 200) throw new Error('Die zu prüfende Stellung ist ungültig.');
+  const roomIds = await collectSchachlaborActiveRoomIds(env, userId);
+  if (!roomIds.length) return true;
+  const checks = await Promise.all(roomIds.map(async roomId => {
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const response = await gameRoomStub(env, id).fetch(new Request('https://game-room.internal/schachlabor-position-check?room=' + encodeURIComponent(roomId), {
+        method:'POST',
+        headers:{'content-type':'application/json','x-hammerschach-user-id':userId},
+        body:JSON.stringify({fen:candidateFen})
+      }));
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data && data.ok === true ? data.match === true : null;
+    } catch (_) {
+      return null;
+    }
+  }));
+  if (checks.some(result => result === null)) throw new Error('Mindestens ein laufender Spielraum konnte nicht sicher geprüft werden.');
+  return !checks.some(Boolean);
+}
+
 async function callAccountRoomAction(env, roomId, action, userId, anonymizedId = '') {
   if (!env || !env.GAME_ROOM) return { ok:false, status:503, code:'ROOM_SERVICE_UNAVAILABLE', message:'Spielräume konnten nicht geprüft werden.' };
   try {
@@ -10837,6 +10901,21 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  if (url.pathname === '/api/schachlabor/fairplay-check' && request.method === 'POST') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({allowed:false}, {status:401});
+    const body = await readJsonBody(request);
+    const fen = String(body && body.fen || '').trim();
+    if (!fen || fen.length > 200) return json({allowed:false}, {status:400});
+    try {
+      const allowed = await schachlaborPositionAllowed(env, session.user, fen);
+      return json({allowed:allowed === true});
+    } catch (error) {
+      console.error('Schachlabor fairplay check failed', error && error.message ? error.message : String(error || 'unknown'));
+      return json({allowed:false}, {status:503});
+    }
+  }
+
   if (url.pathname === '/api/rematches' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
@@ -13513,6 +13592,84 @@ function fenBoardPartFromServerBoard(board) {
   }).join('/');
 }
 
+function parseSchachlaborFenForSetup(value, setup) {
+  const parts = String(value || '').trim().split(/\s+/);
+  if (parts.length < 4) return null;
+  const ranks = String(parts[0] || '').split('/');
+  if (ranks.length !== 8 || (parts[1] !== 'w' && parts[1] !== 'b')) return null;
+  const board = [];
+  for (const rank of ranks) {
+    const row = [];
+    for (const token of rank) {
+      if (/^[1-8]$/.test(token)) row.push(...Array(Number(token)).fill('.'));
+      else if (/^[prnbqkPRNBQK]$/.test(token)) row.push(token);
+      else return null;
+    }
+    if (row.length !== 8) return null;
+    board.push(row);
+  }
+  const game = new ChessGame(setup);
+  game.board = board;
+  game.turn = parts[1];
+  game.castling = {K:false,Q:false,k:false,q:false};
+  const rights = parts[2] === '-' ? '' : String(parts[2] || '');
+  for (const token of rights) {
+    if ('KQkq'.includes(token)) {
+      game.castling[token] = true;
+      continue;
+    }
+    const lower = token.toLowerCase();
+    if (!/^[a-h]$/.test(lower)) return null;
+    const file = files.indexOf(lower);
+    if (token === token.toUpperCase()) {
+      if (file === game.castleInfo.w.kingside.rookFile) game.castling.K = true;
+      else if (file === game.castleInfo.w.queenside.rookFile) game.castling.Q = true;
+      else return null;
+    } else {
+      if (file === game.castleInfo.b.kingside.rookFile) game.castling.k = true;
+      else if (file === game.castleInfo.b.queenside.rookFile) game.castling.q = true;
+      else return null;
+    }
+  }
+  if (parts[3] === '-') game.ep = null;
+  else {
+    const match = /^([a-h])([36])$/.exec(String(parts[3] || ''));
+    if (!match) return null;
+    game.ep = [files.indexOf(match[1]), 8 - Number(match[2])];
+  }
+  game.halfmove = Math.max(0, Number(parts[4] || 0) || 0);
+  game.fullmove = Math.max(1, Number(parts[5] || 1) || 1);
+  return game;
+}
+
+function normalizedSchachlaborCastling(game) {
+  const result = [];
+  const info = game && game.castleInfo;
+  if (!game || !info) return '-';
+  const possible = (key, color, side) => {
+    if (!game.castling || !game.castling[key]) return false;
+    const rank = color === 'w' ? 7 : 0;
+    const king = color === 'w' ? 'K' : 'k';
+    const rook = color === 'w' ? 'R' : 'r';
+    return game.at(info[color].kingFile, rank) === king && game.at(info[color][side].rookFile, rank) === rook;
+  };
+  if (possible('K','w','kingside')) result.push('K');
+  if (possible('Q','w','queenside')) result.push('Q');
+  if (possible('k','b','kingside')) result.push('k');
+  if (possible('q','b','queenside')) result.push('q');
+  return result.join('') || '-';
+}
+
+function schachlaborPositionKey(game) {
+  if (!game) return '';
+  return [
+    game.board.map(row => row.join('')).join('/'),
+    game.turn,
+    normalizedSchachlaborCastling(game),
+    game.repetitionEpKey()
+  ].join(' ');
+}
+
 function initialFenForServerSetup(setup) {
   const game = new ChessGame(setup);
   return fenBoardPartFromServerBoard(game.board) + ' w KQkq - 0 1';
@@ -15386,6 +15543,15 @@ export class GameRoom {
       return json(result, {status:result.status || (result.ok ? 200 : 400)});
     }
 
+    if (request.method === 'POST' && url.pathname === '/schachlabor-position-check') {
+      const body = await readJsonBody(request);
+      const result = await this.schachlaborPositionCheck(
+        request.headers.get('x-hammerschach-user-id') || '',
+        body && body.fen
+      );
+      return json(result, {status:result.status || (result.ok ? 200 : 400)});
+    }
+
     if (request.method === 'POST' && url.pathname === '/game-moment-eligibility') {
       const result = await this.gameMomentEligibility(request.headers.get('x-hammerschach-user-id') || '');
       return json(result, {status:result.status || (result.ok ? 200 : 400)});
@@ -15576,6 +15742,42 @@ export class GameRoom {
       tournamentRoundLabel:tournamentMeta && tournamentMeta.roundLabel ? String(tournamentMeta.roundLabel).slice(0,80) : '',
       isTournamentGame:!!(tournamentMeta && tournamentMeta.tournamentId)
     };
+  }
+
+  async schachlaborPositionCheck(requestingUserId, candidateFen) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return {ok:false, status:400};
+    const players = await this.getSecurePlayers();
+    const belongs = [players.white, players.black].some(slot => slot && slot.userId && String(slot.userId) === userId);
+    if (!belongs) return {ok:false, status:403};
+    const timed = await this.refreshTimedGameState(Date.now());
+    const storedGame = timed.game || (await this.state.storage.get('game')) || {started:false,ended:false};
+    if (!storedGame.started || storedGame.ended) return {ok:true, status:200, active:false, match:false};
+    const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || storedGame.gameSetup || null);
+    const moves = (await this.state.storage.get('moves')) || [];
+    let current;
+    try {
+      current = buildServerHistoryState(moves, setup).game;
+    } catch (_) {
+      return {ok:false, status:500};
+    }
+    const candidate = parseSchachlaborFenForSetup(candidateFen, setup);
+    if (!candidate) return {ok:false, status:400};
+    const candidateKey = schachlaborPositionKey(candidate);
+    if (candidateKey === schachlaborPositionKey(current)) {
+      return {ok:true, status:200, active:true, match:true};
+    }
+    /* Eine direkt aus der laufenden Stellung entstehende legale Folgestellung
+       wird ebenfalls blockiert. Das verhindert die triviale Umgehung, vor der
+       Analyse einfach einen plausiblen Halbzug auf dem Laborbrett auszuführen. */
+    for (const legalMove of current.legalMoves()) {
+      const after = current.clone();
+      after.makeMove(legalMove, true);
+      if (candidateKey === schachlaborPositionKey(after)) {
+        return {ok:true, status:200, active:true, match:true};
+      }
+    }
+    return {ok:true, status:200, active:true, match:false};
   }
 
   async gameMomentEligibility(requestingUserId) {
@@ -18388,7 +18590,7 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', 'GET /api/chess-chronicle', '/api/my-live-games', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-moments/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', 'GET /api/chess-chronicle', '/api/my-live-games', 'POST /api/schachlabor/fairplay-check', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-moments/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
       features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_game_moments', 'private_game_moment_notes', 'personal_chess_chronicle', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
