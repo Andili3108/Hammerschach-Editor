@@ -144,7 +144,7 @@
     const theme=boardThemes.find(item=>item.id===id)||boardThemes[0];
     const root=document.documentElement.style;
     root.setProperty('--light-square',theme.light);root.setProperty('--dark-square',theme.dark);
-    const frame=theme.frame||['#442226','#6c343a','#a7666d'];const coords=theme.coords||['#fff5e7','#311418'];
+    const frame=theme.frame||['#32181b','#603036','#a96970'];const coords=theme.coords||['#fff4e1','#32181b'];
     root.setProperty('--board-frame-dark',frame[0]);root.setProperty('--board-frame-mid',frame[1]);root.setProperty('--board-frame-light',frame[2]);root.setProperty('--board-coord-light',coords[0]);root.setProperty('--board-coord-dark',coords[1]);document.documentElement.dataset.boardMaterial=theme.material||'classic';
     boardThemeSelect.value=theme.id;if(persist)try{localStorage.setItem(BOARD_KEY,theme.id);}catch(_){}
   }
