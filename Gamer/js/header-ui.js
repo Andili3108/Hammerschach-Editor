@@ -10,6 +10,10 @@ function updateSiteFootnotePlacement(){
     if(siteFootnoteEl.parentNode!==trainerToolView)trainerToolView.appendChild(siteFootnoteEl);
     return;
   }
+  if(schachlaborToolActive&&schachlaborToolView){
+    if(siteFootnoteEl.parentNode!==schachlaborToolView)schachlaborToolView.appendChild(siteFootnoteEl);
+    return;
+  }
   if(openingsToolActive&&openingsToolView){
     if(siteFootnoteEl.parentNode!==openingsToolView)openingsToolView.appendChild(siteFootnoteEl);
     return;
@@ -92,7 +96,7 @@ function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
 }
 const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
-const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Mitglieder-Menü');
+const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Spieler-Menü');
 const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Tools-Menü');
 const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
@@ -132,6 +136,7 @@ function setDarkMode(enabled){
   updateThemeToggleUi();
   postAnalyzerToolContext();
   postTrainerToolContext();
+  postSchachlaborToolContext();
   postOpeningsToolContext();
   postFairplayToolContext();
   hammerschachScheduleHeightReport(true);
