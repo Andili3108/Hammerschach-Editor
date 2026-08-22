@@ -37,6 +37,14 @@
   const castleInputs={K:byId('castleK'),Q:byId('castleQ'),k:byId('castlek'),q:byId('castleq')};
   const boardThemeSelect=byId('boardThemeSelect');
   const pieceSetSelect=byId('pieceSetSelect');
+  const boardThemeBtn=byId('boardThemeBtn');
+  const boardThemePopup=byId('boardThemePopup');
+  const boardThemeOptions=byId('boardThemeOptions');
+  const boardThemeCurrent=byId('boardThemeCurrent');
+  const pieceSetBtn=byId('pieceSetBtn');
+  const pieceSetPopup=byId('pieceSetPopup');
+  const pieceSetOptions=byId('pieceSetOptions');
+  const pieceSetCurrent=byId('pieceSetCurrent');
   const analyzeBtn=byId('analyzeBtn');
   const stopBtn=byId('stopBtn');
   const engineState=byId('engineState');
@@ -151,6 +159,37 @@
     const channel=key=>Math.round(from[key]+(to[key]-from[key])*ratio).toString(16).padStart(2,'0');
     return '#'+channel('r')+channel('g')+channel('b');
   }
+  function closeAppearancePopups(){
+    boardThemePopup.hidden=true;pieceSetPopup.hidden=true;
+    boardThemeBtn.setAttribute('aria-expanded','false');pieceSetBtn.setAttribute('aria-expanded','false');
+  }
+  function toggleAppearancePopup(popup,button){
+    const open=popup.hidden;closeAppearancePopups();
+    if(open){popup.hidden=false;button.setAttribute('aria-expanded','true');}
+  }
+  function syncAppearancePopupState(){
+    const theme=boardThemes.find(item=>item.id===boardThemeSelect.value)||boardThemes[0];
+    const set=pieceSets.find(item=>item.id===pieceSetSelect.value)||pieceSets[0];
+    boardThemeCurrent.textContent=theme.name;pieceSetCurrent.textContent=set.name;
+    boardThemeOptions.querySelectorAll('.appearance-option').forEach(button=>button.classList.toggle('active',button.dataset.boardTheme===theme.id));
+    pieceSetOptions.querySelectorAll('.appearance-option').forEach(button=>button.classList.toggle('active',button.dataset.pieceSet===set.id));
+  }
+  function renderAppearanceOptions(){
+    boardThemeOptions.textContent='';pieceSetOptions.textContent='';
+    for(const theme of boardThemes){
+      const button=document.createElement('button');button.type='button';button.className='appearance-option';button.dataset.boardTheme=theme.id;
+      const label=document.createElement('span');label.textContent=theme.name;
+      const swatch=document.createElement('span');swatch.className='board-color-swatch';
+      const light=document.createElement('span');light.style.background=theme.light;const dark=document.createElement('span');dark.style.background=theme.dark;
+      swatch.append(light,dark);button.append(label,swatch);button.addEventListener('click',()=>{applyTheme(theme.id);saveSession();closeAppearancePopups();});boardThemeOptions.appendChild(button);
+    }
+    for(const set of pieceSets){
+      const button=document.createElement('button');button.type='button';button.className='appearance-option';button.dataset.pieceSet=set.id;
+      const label=document.createElement('span');label.textContent=set.name;
+      const preview=document.createElement('img');preview.className='piece-set-preview';preview.src=set.path('N');preview.alt='';
+      button.append(label,preview);button.addEventListener('click',()=>{applyPieceSet(set.id);saveSession();closeAppearancePopups();});pieceSetOptions.appendChild(button);
+    }
+  }
   function applyTheme(id,persist=true){
     const theme=boardThemes.find(item=>item.id===id)||boardThemes[0];
     const root=document.documentElement.style;
@@ -158,12 +197,13 @@
     const frame=theme.frame||[mixBoardHex(theme.dark,'#000000',.62),mixBoardHex(theme.dark,'#000000',.31),mixBoardHex(theme.dark,'#ffffff',.24)];
     const coords=theme.coords||[mixBoardHex(theme.light,'#ffffff',.56),mixBoardHex(theme.dark,'#000000',.58)];
     root.setProperty('--board-frame-dark',frame[0]);root.setProperty('--board-frame-mid',frame[1]);root.setProperty('--board-frame-light',frame[2]);root.setProperty('--board-coord-light',coords[0]);root.setProperty('--board-coord-dark',coords[1]);document.documentElement.dataset.boardMaterial=theme.material||'classic';
-    boardThemeSelect.value=theme.id;if(persist)try{localStorage.setItem(BOARD_KEY,theme.id);}catch(_){}
+    boardThemeSelect.value=theme.id;syncAppearancePopupState();if(persist)try{localStorage.setItem(BOARD_KEY,theme.id);}catch(_){}
   }
-  function applyPieceSet(id,persist=true){const set=pieceSets.find(item=>item.id===id)||pieceSets[0];pieceSetSelect.value=set.id;if(persist)try{localStorage.setItem(PIECE_KEY,set.id);}catch(_){}renderPalette();renderBoard();}
+  function applyPieceSet(id,persist=true){const set=pieceSets.find(item=>item.id===id)||pieceSets[0];pieceSetSelect.value=set.id;syncAppearancePopupState();if(persist)try{localStorage.setItem(PIECE_KEY,set.id);}catch(_){}renderPalette();renderBoard();}
   function initializeAppearance(){
     boardThemes.forEach(item=>boardThemeSelect.add(new Option(item.name,item.id)));
     pieceSets.forEach(item=>pieceSetSelect.add(new Option(item.name,item.id)));
+    renderAppearanceOptions();
     let boardId='basis',pieceId='cburnett';
     try{boardId=localStorage.getItem(BOARD_KEY)||'basis';pieceId=localStorage.getItem(PIECE_KEY)||'cburnett';}catch(_){}
     applyTheme(boardId==='metal-prestige'?'onyx-elegance':boardId,false);applyPieceSet(pieceId,false);
@@ -373,6 +413,9 @@
   byId('flipBtn').addEventListener('click',()=>{orientationWhite=!orientationWhite;renderBoard();saveSession();});
   byId('navStartBtn').addEventListener('click',()=>{if(rootNode){currentNode=rootNode;selectedSquare=null;legalTargets=[];renderBoard();renderMoveTree();}});byId('navBackBtn').addEventListener('click',()=>{if(currentNode&&currentNode.parent){currentNode=currentNode.parent;selectedSquare=null;legalTargets=[];renderBoard();renderMoveTree();}});byId('navForwardBtn').addEventListener('click',()=>{if(currentNode&&currentNode.children.length){currentNode=currentNode.children[0];selectedSquare=null;legalTargets=[];renderBoard();renderMoveTree();}});byId('navEndBtn').addEventListener('click',goToEnd);
   boardThemeSelect.addEventListener('change',()=>{applyTheme(boardThemeSelect.value);saveSession();});pieceSetSelect.addEventListener('change',()=>{applyPieceSet(pieceSetSelect.value);saveSession();});
+  boardThemeBtn.addEventListener('click',()=>toggleAppearancePopup(boardThemePopup,boardThemeBtn));pieceSetBtn.addEventListener('click',()=>toggleAppearancePopup(pieceSetPopup,pieceSetBtn));
+  document.addEventListener('pointerdown',event=>{if(!event.target.closest('.board-option-wrap'))closeAppearancePopups();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeAppearancePopups();});
   [byId('engineColorSelect'),byId('depthSelect'),byId('multiPvSelect'),byId('autoAnalyzeCheck')].forEach(control=>control.addEventListener('change',saveSession));
   window.addEventListener('storage',event=>{if(event.key===BOARD_KEY&&event.newValue)applyTheme(event.newValue,false);if(event.key===PIECE_KEY&&event.newValue)applyPieceSet(event.newValue,false);});
   window.addEventListener('message',event=>{

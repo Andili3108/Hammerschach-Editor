@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Hammerschach – Schachlabor</title>
-  <link rel="stylesheet" href="schachlabor.css?v=20260822-2">
+  <link rel="stylesheet" href="schachlabor.css?v=20260822-3">
 </head>
 <body>
   <main class="labor-shell">
+    <div id="loginState" hidden aria-live="polite">Gamer-Verbindung wird geprüft …</div>
     <section class="setup-card card" id="setupCard">
       <div class="card-head">
         <div class="card-title">
@@ -15,7 +16,6 @@
           <span>Standard und Freestyle</span>
         </div>
         <div class="setup-head-actions">
-          <div class="login-state" id="loginState" aria-live="polite">Gamer-Verbindung wird geprüft …</div>
           <button id="toggleSetupBtn" class="quiet" type="button" aria-expanded="true">Einklappen</button>
         </div>
       </div>
@@ -76,25 +76,41 @@
         </div>
         <div class="board-toolbar" aria-label="Brettaktionen">
           <div class="board-nav-actions">
-            <div class="nav-group">
-              <button id="navStartBtn" class="icon-button" type="button" title="Zur Ausgangsstellung">«</button>
-              <button id="navBackBtn" class="icon-button" type="button" title="Einen Zug zurück">‹</button>
-              <button id="navForwardBtn" class="icon-button" type="button" title="Einen Zug vor">›</button>
-              <button id="navEndBtn" class="icon-button" type="button" title="Zur letzten Stellung">»</button>
+            <div class="nav-group" aria-label="Zugnavigation unter dem Brett">
+              <button id="navStartBtn" class="button-flat board-nav-button" type="button" title="Zur Ausgangsstellung" aria-label="Zur Ausgangsstellung">«</button>
+              <button id="navBackBtn" class="button-flat board-nav-button" type="button" title="Einen Zug zurück" aria-label="Einen Zug zurück">‹</button>
+              <button id="navForwardBtn" class="button-flat board-nav-button" type="button" title="Einen Zug vor" aria-label="Einen Zug vor">›</button>
+              <button id="navEndBtn" class="button-flat board-nav-button" type="button" title="Zur letzten Stellung" aria-label="Zur letzten Stellung">»</button>
             </div>
-            <button id="flipBtn" class="icon-button" type="button" title="Brett drehen">↻</button>
+            <button id="flipBtn" class="button-flat toolbar-icon-button" type="button" title="Brett drehen" aria-label="Brett drehen">↻</button>
           </div>
-          <label class="compact-select">Umwandlung
-            <select id="promotionSelect">
-              <option value="Q">Dame</option><option value="R">Turm</option><option value="B">Läufer</option><option value="N">Springer</option>
+
+          <label class="promotion-control" title="Umwandlungsfigur">
+            <span class="sr-only">Umwandlungsfigur</span>
+            <select id="promotionSelect" aria-label="Umwandlungsfigur">
+              <option value="Q">♛ Dame</option><option value="R">♜ Turm</option><option value="B">♝ Läufer</option><option value="N">♞ Springer</option>
             </select>
           </label>
-          <label class="compact-select">Brett
-            <select id="boardThemeSelect"></select>
-          </label>
-          <label class="compact-select">Figuren
-            <select id="pieceSetSelect"></select>
-          </label>
+
+          <div class="board-option-wrap" id="boardThemeWrap">
+            <button id="boardThemeBtn" class="button-flat toolbar-icon-button" type="button" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe">🎨</button>
+            <div id="boardThemePopup" class="appearance-popup" hidden>
+              <div class="appearance-popup-title">Brettfarbe wählen</div>
+              <div id="boardThemeOptions" class="appearance-options"></div>
+              <div class="appearance-current">Aktuell: <span id="boardThemeCurrent">Hammerschach Rubin</span></div>
+            </div>
+            <select id="boardThemeSelect" hidden aria-hidden="true" tabindex="-1"></select>
+          </div>
+
+          <div class="board-option-wrap" id="pieceSetWrap">
+            <button id="pieceSetBtn" class="button-flat toolbar-icon-button" type="button" aria-haspopup="true" aria-expanded="false" title="Figurensatz" aria-label="Figurensatz">♞</button>
+            <div id="pieceSetPopup" class="appearance-popup" hidden>
+              <div class="appearance-popup-title">Figurensatz wählen</div>
+              <div id="pieceSetOptions" class="appearance-options"></div>
+              <div class="appearance-current">Aktuell: <span id="pieceSetCurrent">Cburnett · Standard</span></div>
+            </div>
+            <select id="pieceSetSelect" hidden aria-hidden="true" tabindex="-1"></select>
+          </div>
         </div>
         <div id="boardStatus" class="board-status" aria-live="polite">Stellung kann frei aufgebaut werden.</div>
       </div>
@@ -154,6 +170,6 @@
   <script src="../js/game-setup.js?v=20260804-1"></script>
   <script src="../js/chess-engine.js?v=20260817-3"></script>
   <script src="../js/move-matching-utils.js?v=20260804-1"></script>
-  <script src="schachlabor.js?v=20260822-2"></script>
+  <script src="schachlabor.js?v=20260822-3"></script>
 </body>
 </html>
