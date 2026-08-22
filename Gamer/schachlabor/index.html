@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Hammerschach – Schachlabor</title>
+  <link rel="stylesheet" href="schachlabor.css?v=20260821-1">
+</head>
+<body>
+  <main class="labor-shell">
+    <section class="labor-heading" aria-labelledby="laborTitle">
+      <div>
+        <p class="eyebrow">Hammerschach · Tools</p>
+        <h1 id="laborTitle">Schachlabor</h1>
+        <p>Stellungen aufbauen, untersuchen und gegen Stockfish trainieren.</p>
+      </div>
+      <div class="login-state" id="loginState" aria-live="polite">Gamer-Verbindung wird geprüft …</div>
+    </section>
+
+    <section class="setup-card card" id="setupCard">
+      <div class="card-head">
+        <div><span class="step">1</span><h2>Stellung aufbauen</h2></div>
+        <button id="toggleSetupBtn" class="quiet" type="button" aria-expanded="true">Einklappen</button>
+      </div>
+      <div id="setupContent" class="setup-content">
+        <div class="setup-primary">
+          <label>Spielart
+            <select id="variantSelect">
+              <option value="standard">Standardschach</option>
+              <option value="freestyle960">Freestyle / Chess960</option>
+            </select>
+          </label>
+          <div id="freestyleControls" class="freestyle-controls" hidden>
+            <label>Chess960-Stellung
+              <input id="positionIdInput" type="number" min="0" max="959" value="518" inputmode="numeric">
+            </label>
+            <button id="apply960Btn" class="quiet" type="button">Übernehmen</button>
+            <button id="random960Btn" class="quiet" type="button">Zufällig</button>
+            <output id="backRankOutput">RNBQKBNR</output>
+          </div>
+          <div class="setup-actions">
+            <button id="startPositionBtn" type="button">Startstellung setzen</button>
+            <button id="clearBoardBtn" class="quiet" type="button">Brett leeren</button>
+            <button id="editPositionBtn" class="quiet" type="button" hidden>Stellung bearbeiten</button>
+          </div>
+        </div>
+
+        <div class="piece-palette" id="piecePalette" aria-label="Figurenpalette"></div>
+
+        <div class="position-rights">
+          <label>Am Zug
+            <select id="sideToMoveSelect"><option value="w">Weiß</option><option value="b">Schwarz</option></select>
+          </label>
+          <fieldset>
+            <legend>Rochaderechte</legend>
+            <label><input id="castleK" type="checkbox" checked> Weiß kurz</label>
+            <label><input id="castleQ" type="checkbox" checked> Weiß lang</label>
+            <label><input id="castlek" type="checkbox" checked> Schwarz kurz</label>
+            <label><input id="castleq" type="checkbox" checked> Schwarz lang</label>
+          </fieldset>
+          <label>En-passant-Feld
+            <select id="epSelect"><option value="-">– keines –</option></select>
+          </label>
+        </div>
+
+        <div class="fen-row">
+          <label for="fenInput">FEN</label>
+          <input id="fenInput" type="text" spellcheck="false" autocomplete="off">
+          <button id="loadFenBtn" class="quiet" type="button">FEN laden</button>
+          <button id="copyFenBtn" class="quiet" type="button">Kopieren</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="labor-grid">
+      <div class="board-column">
+        <div id="boardFrame" class="board-frame">
+          <div id="board" class="board" role="grid" aria-label="Schachbrett"></div>
+        </div>
+        <div class="board-toolbar" aria-label="Brettaktionen">
+          <div class="nav-group">
+            <button id="navStartBtn" class="icon-button" type="button" title="Zur Ausgangsstellung">«</button>
+            <button id="navBackBtn" class="icon-button" type="button" title="Einen Zug zurück">‹</button>
+            <button id="navForwardBtn" class="icon-button" type="button" title="Einen Zug vor">›</button>
+            <button id="navEndBtn" class="icon-button" type="button" title="Zur letzten Stellung">»</button>
+          </div>
+          <button id="flipBtn" class="icon-button" type="button" title="Brett drehen">↻</button>
+          <label class="compact-select">Umwandlung
+            <select id="promotionSelect">
+              <option value="Q">Dame</option><option value="R">Turm</option><option value="B">Läufer</option><option value="N">Springer</option>
+            </select>
+          </label>
+          <label class="compact-select">Brett
+            <select id="boardThemeSelect"></select>
+          </label>
+          <label class="compact-select">Figuren
+            <select id="pieceSetSelect"></select>
+          </label>
+        </div>
+        <div id="boardStatus" class="board-status" aria-live="polite">Stellung kann frei aufgebaut werden.</div>
+      </div>
+
+      <div class="control-column">
+        <section class="card mode-card">
+          <div class="card-head"><div><span class="step">2</span><h2>Experiment</h2></div></div>
+          <div class="mode-actions">
+            <button id="playAnalyzeBtn" class="primary" type="button">Play &amp; Analyze</button>
+            <button id="trainingBtn" type="button">Training starten</button>
+          </div>
+          <div class="training-settings">
+            <label>Engine spielt
+              <select id="engineColorSelect"><option value="b">Schwarz</option><option value="w">Weiß</option></select>
+            </label>
+            <p>Im Training wird deine Lösung zunächst verdeckt berechnet und erst nach deinem Zug verglichen.</p>
+          </div>
+        </section>
+
+        <section class="card engine-card">
+          <div class="card-head"><div><span class="step">3</span><h2>Stockfish</h2></div><span id="engineState" class="engine-state">nicht gestartet</span></div>
+          <div class="engine-options">
+            <label>Tiefe
+              <select id="depthSelect"><option>10</option><option selected>14</option><option>18</option><option>22</option></select>
+            </label>
+            <label>MultiPV
+              <select id="multiPvSelect"><option>1</option><option selected>3</option><option>4</option><option>5</option></select>
+            </label>
+            <label class="check-label"><input id="autoAnalyzeCheck" type="checkbox"> Auto-Analyse</label>
+          </div>
+          <div class="engine-actions">
+            <button id="analyzeBtn" class="primary" type="button">Stellung analysieren</button>
+            <button id="stopBtn" class="quiet" type="button">Stopp</button>
+          </div>
+          <div id="fairplayNotice" class="fairplay-notice" hidden></div>
+          <div class="evaluation-grid">
+            <div><span>Bewertung</span><strong id="evaluationValue">–</strong></div>
+            <div><span>WDL</span><strong id="wdlValue">–</strong></div>
+            <div><span>Bestzug</span><strong id="bestMoveValue">–</strong></div>
+            <div><span>Tiefe</span><strong id="depthValue">–</strong></div>
+          </div>
+          <div id="trainingResult" class="training-result" hidden></div>
+          <ol id="variationsList" class="variations-list"><li class="empty">Noch keine Analyse.</li></ol>
+        </section>
+
+        <section class="card moves-card">
+          <div class="card-head"><div><span class="step">4</span><h2>Züge &amp; Varianten</h2></div><span id="moveCounter">0 Halbzüge</span></div>
+          <div id="moveTree" class="move-tree"><p class="empty">Noch keine Züge.</p></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/chess-utils.js?v=20260804-1"></script>
+  <script src="../js/chess960-core.js?v=20260804-1"></script>
+  <script src="../js/board-setup-utils.js?v=20260804-1"></script>
+  <script src="../js/game-setup.js?v=20260804-1"></script>
+  <script src="../js/chess-engine.js?v=20260817-3"></script>
+  <script src="../js/move-matching-utils.js?v=20260804-1"></script>
+  <script src="schachlabor.js?v=20260821-1"></script>
+</body>
+</html>
