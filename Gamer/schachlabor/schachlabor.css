@@ -233,7 +233,7 @@ input[type="checkbox"] { accent-color: var(--brand); }
 
 .setup-content {
   display: grid;
-  grid-template-columns: minmax(220px, 250px) 315px minmax(350px, 1fr);
+  grid-template-columns: 280px 332px minmax(400px, 1fr);
   align-items: start;
   justify-content: space-between;
   gap: 10px;
@@ -298,33 +298,43 @@ input[type="checkbox"] { accent-color: var(--brand); }
 
 .setup-actions {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 7px;
 }
 
 .setup-actions button {
   min-width: 0;
-  padding-inline: 9px;
+  min-height: 38px;
+  padding: 5px 4px;
   border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
-.setup-actions button { grid-column: 1; }
+.setup-actions button:nth-child(3) {
+  grid-column: 1 / -1;
+  font-size: 13px;
+}
+
+.setup-card.locked #startPositionBtn,
+.setup-card.locked #clearBoardBtn { display: none; }
 
 .piece-palette {
   display: grid;
-  grid-template-columns: repeat(7, 38px);
+  grid-template-columns: repeat(7, 42px);
   align-content: center;
   justify-content: center;
   align-self: start;
-  width: 315px;
+  width: 332px;
   max-width: 100%;
-  gap: 5px;
-  padding: 8px;
+  gap: 4px;
+  padding: 6px;
 }
 
 .palette-piece {
   display: grid;
-  width: 38px;
+  width: 42px;
   min-width: 0;
   aspect-ratio: 1;
   min-height: 0;
@@ -337,8 +347,8 @@ input[type="checkbox"] { accent-color: var(--brand); }
 
 .palette-piece img {
   display: block;
-  width: 92%;
-  height: 92%;
+  width: 94%;
+  height: 94%;
   object-fit: contain;
   pointer-events: none;
 }
@@ -1251,7 +1261,7 @@ html.dark-mode .appearance-option { color: #eef0f2; background: #292d33; }
 html.dark-mode .appearance-option.active { color: #fff; background: var(--brand); }
 html.dark-mode .appearance-current { color: #b7bcc4; }
 
-@media (max-width: 980px) {
+@media (max-width: 1060px) {
   .setup-content {
     grid-template-columns: minmax(210px, .75fr) minmax(300px, 1.15fr) minmax(235px, .9fr);
   }
@@ -1288,7 +1298,7 @@ html.dark-mode .appearance-current { color: #b7bcc4; }
   .position-rights,
   .piece-palette,
   .fen-row { grid-column: 1; grid-row: auto; }
-  .piece-palette { grid-template-columns: repeat(7, minmax(30px, 1fr)); width: 315px; padding: 8px; }
+  .piece-palette { grid-template-columns: repeat(7, minmax(30px, 1fr)); width: 332px; padding: 6px; }
   .palette-piece { width: 100%; }
   .position-rights fieldset { grid-template-columns: 1fr 1fr; }
 
