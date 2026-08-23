@@ -1,9 +1,9 @@
-// BUILD: GAMER-SCHACHLABOR-20260823-3
+// BUILD: GAMER-SCHACHLABOR-20260823-4
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
 const FAIRPLAY_RAW_DATA_VERSION = 1;
-const SCHACHLABOR_FAIRPLAY_BUILD = '20260823-3';
+const SCHACHLABOR_FAIRPLAY_BUILD = '20260823-4';
 
 function configuredGamerPublicUrl(env) {
   return String((env && env.GAMER_PUBLIC_URL) || DEFAULT_GAMER_PUBLIC_URL).trim();
@@ -7784,14 +7784,14 @@ async function collectSchachlaborActiveRoomIds(env, userId) {
   await ensureAccountGameRoomIndex(env);
   await ensureCompletedGamesTable(env);
   const live = await env.DB.prepare(
-    `SELECT indexed.room_id
-      FROM account_game_rooms indexed
-      WHERE indexed.user_id = ?
+    `SELECT account_rooms.room_id
+      FROM account_game_rooms account_rooms
+      WHERE account_rooms.user_id = ?
         AND NOT EXISTS (
           SELECT 1 FROM completed_games completed
-           WHERE completed.room_id = indexed.room_id
+           WHERE completed.room_id = account_rooms.room_id
         )
-      ORDER BY indexed.last_seen_at DESC`
+      ORDER BY account_rooms.last_seen_at DESC`
   ).bind(uid).all();
   for (const row of (live && live.results) || []) {
     const roomId = cleanRoomId(row.room_id);
