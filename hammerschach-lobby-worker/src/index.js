@@ -15764,7 +15764,14 @@ export class GameRoom {
     if (!userId) return {ok:false, status:400};
     const players = await this.getSecurePlayers();
     const belongs = [players.white, players.black].some(slot => slot && slot.userId && String(slot.userId) === userId);
-    if (!belongs) return {ok:false, status:403};
+    /* account_game_rooms ist ein Suchindex und kann nach alten, abgebrochenen
+       oder inzwischen neu belegten Räumen noch einen veralteten Verweis
+       enthalten. Die geschützte Raumbelegung ist hier die maßgebliche Quelle:
+       Gehört der angemeldete Benutzer nicht zum Raum, ist dieser Raum keine
+       laufende Partie dieses Benutzers und darf die gesamte Prüfung nicht als
+       technischer Fehler blockieren. Alle echten Lese-/Rekonstruktionsfehler
+       bleiben dagegen weiterhin fail-closed. */
+    if (!belongs) return {ok:true, status:200, active:false, match:false, belongs:false};
     const timed = await this.refreshTimedGameState(Date.now());
     const storedGame = timed.game || (await this.state.storage.get('game')) || {started:false,ended:false};
     if (!storedGame.started || storedGame.ended) return {ok:true, status:200, active:false, match:false};
