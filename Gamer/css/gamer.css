@@ -142,7 +142,6 @@
   html.visitor-start-view .top-layout{justify-content:center;}
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
-  html.hammerschach-room-view #toolsMenu{display:none!important;}
   html.visitor-start-view #newGameMenu,html.visitor-start-view #newGameOpenBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
