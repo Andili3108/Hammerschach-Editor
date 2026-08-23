@@ -10903,16 +10903,31 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/schachlabor/fairplay-check' && request.method === 'POST') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({allowed:false}, {status:401});
+    if (!session) return json({
+      ok:false,
+      allowed:false,
+      code:'NOT_AUTHENTICATED',
+      message:'Bitte zuerst einloggen.'
+    }, {status:401});
     const body = await readJsonBody(request);
     const fen = String(body && body.fen || '').trim();
-    if (!fen || fen.length > 200) return json({allowed:false}, {status:400});
+    if (!fen || fen.length > 200) return json({
+      ok:false,
+      allowed:false,
+      code:'INVALID_POSITION',
+      message:'Die zu prüfende Stellung ist ungültig.'
+    }, {status:400});
     try {
       const allowed = await schachlaborPositionAllowed(env, session.user, fen);
-      return json({allowed:allowed === true});
+      return json({ok:true, allowed:allowed === true});
     } catch (error) {
       console.error('Schachlabor fairplay check failed', error && error.message ? error.message : String(error || 'unknown'));
-      return json({allowed:false}, {status:503});
+      return json({
+        ok:false,
+        allowed:false,
+        code:'FAIRPLAY_CHECK_UNAVAILABLE',
+        message:'Die Fairplay-Prüfung ist momentan nicht verfügbar.'
+      }, {status:503});
     }
   }
 
