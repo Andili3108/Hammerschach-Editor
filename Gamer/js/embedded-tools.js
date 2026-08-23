@@ -21,8 +21,15 @@ let analyzerToolReady = false;
 let pendingAnalyzerOpeningPgn = '';
 let pendingAnalyzerArchivePgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
+const PENDING_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachPendingEmbeddedToolV1';
+const ACTIVE_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachActiveEmbeddedToolV1';
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['analyzer','trainer','schachlabor','openings','tv']);
+const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
+}
+function embeddedToolsNavigable(){
+  return !!(onlineAuthToken && onlineAuthUser && !onlineSpectatorOnly);
 }
 function embeddedToolActive(){
   return analyzerToolActive || trainerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;
@@ -38,18 +45,36 @@ function embeddedToolStatusText(){
 }
 function updateAnalyzerToolAvailability(){
   const available = embeddedToolsAvailable();
+  const navigable = embeddedToolsNavigable();
   const fairplayAvailable = available && !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
   if(!available && embeddedToolActive()) setEmbeddedToolActive('');
   if(!fairplayAvailable && fairplayToolActive) setEmbeddedToolActive('');
-  if(analyzerToolBtn){analyzerToolBtn.hidden=!available;analyzerToolBtn.title='Hammerschach-Analyzer öffnen';}
-  if(trainerToolBtn){trainerToolBtn.hidden=!available;trainerToolBtn.title='Hammerschach-Trainer öffnen';}
-  if(schachlaborToolBtn){schachlaborToolBtn.hidden=!available;schachlaborToolBtn.title='Hammerschach-Schachlabor öffnen';}
-  if(openingsToolBtn){openingsToolBtn.hidden=!available;openingsToolBtn.title='Hammerschach-Eröffnungsschule öffnen';}
-  if(tvToolBtn){tvToolBtn.hidden=!available;tvToolBtn.title='Hammerschach TV öffnen';}
+  const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
+  if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Hammerschach-Analyzer');}
+  if(trainerToolBtn){trainerToolBtn.hidden=!navigable;trainerToolBtn.title=titleFor('Hammerschach-Trainer');}
+  if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Hammerschach-Schachlabor');}
+  if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Hammerschach-Eröffnungsschule');}
+  if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Hammerschach TV');}
   if(toolsMenuEl){
-    toolsMenuEl.hidden = !available;
-    if(!available) closeToolsMenu();
+    toolsMenuEl.hidden = !navigable;
+    if(!navigable) closeToolsMenu();
+  }
+  if(available){
+    let pending='';
+    let remembered='';
+    try{
+      pending=String(sessionStorage.getItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY)||'');
+      remembered=String(sessionStorage.getItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY)||'');
+      sessionStorage.removeItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY);
+    }catch(_){}
+    const restorePending=NAVIGABLE_EMBEDDED_TOOLS.has(pending)?pending:'';
+    const restoreRemembered=!embeddedToolActive()&&RESTORABLE_EMBEDDED_TOOLS.has(remembered)&&
+      (remembered!=='fairplay'||fairplayAvailable)?remembered:'';
+    const restoreTool=restorePending||restoreRemembered;
+    if(restoreTool){
+      setTimeout(()=>setEmbeddedToolActive(restoreTool),0);
+    }
   }
 }
 function embeddedToolTargetOrigin(){
@@ -132,6 +157,10 @@ function setEmbeddedToolActive(toolName){
   const requested=embeddedToolsAvailable()
     ? (toolName==='tv'?'tv':(toolName==='fairplay'&&fairplayAllowed?'fairplay':(toolName==='openings'?'openings':(toolName==='schachlabor'?'schachlabor':(toolName==='trainer'?'trainer':(toolName==='analyzer'?'analyzer':''))))))
     : '';
+  try{
+    if(requested)sessionStorage.setItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY,requested);
+    else sessionStorage.removeItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY);
+  }catch(_){}
   analyzerToolActive=requested==='analyzer';
   trainerToolActive=requested==='trainer';
   schachlaborToolActive=requested==='schachlabor';
@@ -210,29 +239,50 @@ function setOpeningsToolActive(active){setEmbeddedToolActive(active?'openings':'
 function setFairplayToolActive(active){setEmbeddedToolActive(active?'fairplay':'');}
 function setTvToolActive(active){setEmbeddedToolActive(active?'tv':'');}
 function closeEmbeddedTools(){setEmbeddedToolActive('');}
+function openEmbeddedToolFromCurrentContext(toolName){
+  const requested=NAVIGABLE_EMBEDDED_TOOLS.has(toolName)?toolName:'';
+  if(!requested||!embeddedToolsNavigable())return;
+  if(embeddedToolsAvailable()){
+    setEmbeddedToolActive(requested);
+    return;
+  }
+  try{sessionStorage.setItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY,requested);}catch(_){}
+  if(typeof openNewGameView==='function'){
+    openNewGameView();
+    return;
+  }
+  try{
+    const target=new URL(window.location.href);
+    ['room','role','player','watch'].forEach(key=>target.searchParams.delete(key));
+    target.searchParams.set('fresh','1');
+    window.location.assign(target.toString());
+  }catch(_){
+    window.location.assign((window.location.pathname||'/')+'?fresh=1');
+  }
+}
 function openAnalyzerToolDebounced(){
   const now=Date.now();
   if(now-analyzerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   analyzerToolLastOpenAt=now;
-  setAnalyzerToolActive(true);
+  openEmbeddedToolFromCurrentContext('analyzer');
 }
 function openTrainerToolDebounced(){
   const now=Date.now();
   if(now-trainerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   trainerToolLastOpenAt=now;
-  setTrainerToolActive(true);
+  openEmbeddedToolFromCurrentContext('trainer');
 }
 function openSchachlaborToolDebounced(){
   const now=Date.now();
   if(now-schachlaborToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   schachlaborToolLastOpenAt=now;
-  setSchachlaborToolActive(true);
+  openEmbeddedToolFromCurrentContext('schachlabor');
 }
 function openOpeningsToolDebounced(){
   const now=Date.now();
   if(now-openingsToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   openingsToolLastOpenAt=now;
-  setOpeningsToolActive(true);
+  openEmbeddedToolFromCurrentContext('openings');
 }
 function openFairplayToolDebounced(){
   const now=Date.now();
@@ -244,7 +294,7 @@ function openTvToolDebounced(){
   const now=Date.now();
   if(now-tvToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   tvToolLastOpenAt=now;
-  setTvToolActive(true);
+  openEmbeddedToolFromCurrentContext('tv');
 }
 if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebounced);
 if(trainerToolBtn)trainerToolBtn.addEventListener('click',openTrainerToolDebounced);
