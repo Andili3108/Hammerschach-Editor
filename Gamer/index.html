@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260822-2" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260823-1" />
 </head>
 <body>
 <div class="app" role="main">
@@ -553,7 +553,7 @@
 
           <h4>18. Der integrierte Analyzer</h4>
           <p>Über <strong>„🛠️ Tools“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
-          <p>Das Tools-Menü mit dem Analyzer ist ausschließlich für eingeloggte Mitglieder und außerhalb eines Spielraums verfügbar. <strong>Für ausgeloggte Besucher sowie in einem laufenden oder als Zuschauer geöffneten Spielraum wird das Tools-Menü nicht angezeigt.</strong> Über die Gamer-Verbindung können ausschließlich beendete Partien direkt in den Analyzer geladen werden. Damit bleibt die integrierte Analyse klar von einer laufenden Live- oder Daily-Partie getrennt.</p>
+          <p>Das Tools-Menü ist ausschließlich für eingeloggte Mitglieder verfügbar. Wird ein Werkzeug aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch das gewählte Werkzeug. Die Partie bleibt serverseitig bestehen; das Werkzeug wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt das gerade aktive Werkzeug wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Im Zuschauermodus bleibt das Tools-Menü ausgeblendet. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, eine Brettfarbe wählen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Die Brettfarbe wird auf dem Gerät gespeichert. Der Dark Mode wird automatisch vom Gamer übernommen.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
@@ -568,7 +568,7 @@
           </ul>
 
           <h4>19. Der integrierte Trainer</h4>
-          <p>Über <strong>„🛠️ Tools“ → „🎯 Trainer“</strong> öffnest du als eingeloggtes Mitglied das Taktiktraining direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Wie der Analyzer ist der Trainer für ausgeloggte Besucher sowie in einem laufenden oder als Zuschauer geöffneten Spielraum ausgeblendet.</p>
+          <p>Über <strong>„🛠️ Tools“ → „🎯 Trainer“</strong> öffnest du als eingeloggtes Mitglied das Taktiktraining direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Im eigenen Spielraum bleibt der Eintrag erreichbar; seine Auswahl führt zuerst über den sicheren Raumwechsel und öffnet danach den Trainer.</p>
           <ul>
             <li><strong>Gamer-Anmeldung:</strong> Der Trainer übernimmt automatisch den aktuell angemeldeten Gamer-Account. Eine zweite Registrierung oder ein gesonderter Trainer-Login ist nicht erforderlich. Ohne Gamer-Anmeldung kann weiterhin trainiert werden, jedoch ausschließlich ohne Rating.</li>
             <li><strong>Mit oder ohne Rating:</strong> Angemeldete Mitglieder wählen im Trainer zwischen <strong>„Mit Rating“</strong> und <strong>„Ohne Rating“</strong>. Im Modus ohne Rating werden keine Ergebnisse im Account gespeichert.</li>
@@ -2189,7 +2189,7 @@
 <script src="js/header-ui.js?v=20260821-1"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
-<script src="js/embedded-tools.js?v=20260821-1"></script>
+<script src="js/embedded-tools.js?v=20260823-1"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
