@@ -69,7 +69,10 @@
   let engineWorker=null;
   let engineInitPromise=null;
   let engineInitResolve=null;
+  let engineInitReject=null;
   let pendingEngineJob=null;
+  let engineBusy=false;
+  let engineOperationCounter=0;
   let fairplayRequestCounter=0;
   const fairplayRequests=new Map();
   let trainingCandidates=[];
@@ -116,24 +119,29 @@
     const game=new Game(setup);
     game.board=board;game.turn=parts[1];game.castling={K:false,Q:false,k:false,q:false};
     const rights=parts[2]==='-'?'':parts[2];
+    const seenRights=new Set();
     for(const char of rights){
+      if(seenRights.has(char))throw new Error('Die FEN enthält ein Rochaderecht mehrfach.');
+      seenRights.add(char);
       if('KQkq'.includes(char)){game.castling[char]=true;continue;}
       if(/[A-H]/.test(char)){
         const file=files.indexOf(char.toLowerCase());
         if(file===game.castleInfo.w.kingside.rookFile)game.castling.K=true;
-        if(file===game.castleInfo.w.queenside.rookFile)game.castling.Q=true;
+        else if(file===game.castleInfo.w.queenside.rookFile)game.castling.Q=true;
+        else throw new Error('Das weiße Rochaderecht passt nicht zur gewählten Startstellung.');
         continue;
       }
       if(/[a-h]/.test(char)){
         const file=files.indexOf(char);
         if(file===game.castleInfo.b.kingside.rookFile)game.castling.k=true;
-        if(file===game.castleInfo.b.queenside.rookFile)game.castling.q=true;
+        else if(file===game.castleInfo.b.queenside.rookFile)game.castling.q=true;
+        else throw new Error('Das schwarze Rochaderecht passt nicht zur gewählten Startstellung.');
         continue;
       }
       throw new Error('Die Rochaderechte der FEN sind ungültig.');
     }
     game.ep=parts[3]==='-'?null:squareFromName(parts[3]);
-    if(parts[3]!=='-'&&!game.ep)throw new Error('Das En-passant-Feld der FEN ist ungültig.');
+    if(parts[3]!=='-'&&(!game.ep||![2,5].includes(game.ep[1])))throw new Error('Das En-passant-Feld der FEN muss auf der dritten oder sechsten Reihe liegen.');
     game.halfmove=Math.max(0,Number(parts[4]||0)||0);
     game.fullmove=Math.max(1,Number(parts[5]||1)||1);
     return game;
@@ -145,6 +153,19 @@
     const wk=game.findKing('w'),bk=game.findKing('b');
     if(Math.max(Math.abs(wk[0]-bk[0]),Math.abs(wk[1]-bk[1]))<=1)return 'Die beiden Könige dürfen nicht nebeneinander stehen.';
     if(game.inCheck('w')&&game.inCheck('b'))return 'Beide Könige können nicht gleichzeitig im Schach stehen.';
+    const info=game.castleInfo;
+    for(const [key,color,side,label] of [['K','w','kingside','Weiß kurz'],['Q','w','queenside','Weiß lang'],['k','b','kingside','Schwarz kurz'],['q','b','queenside','Schwarz lang']]){
+      if(!game.castling[key])continue;
+      const rank=color==='w'?7:0;const king=color==='w'?'K':'k';const rook=color==='w'?'R':'r';
+      if(!info||game.at(info[color].kingFile,rank)!==king||game.at(info[color][side].rookFile,rank)!==rook)return `Das Rochaderecht „${label}“ passt nicht zur Figurenstellung.`;
+    }
+    if(game.ep){
+      const expectedY=game.turn==='w'?2:5;
+      if(game.ep[1]!==expectedY)return `Das En-passant-Feld passt nicht zum Zugrecht von ${game.turn==='w'?'Weiß':'Schwarz'}.`;
+      if(game.at(game.ep[0],game.ep[1])!=='.')return 'Das En-passant-Feld muss leer sein.';
+      const pawnY=game.turn==='w'?game.ep[1]+1:game.ep[1]-1;const pawn=game.turn==='w'?'p':'P';
+      if(game.at(game.ep[0],pawnY)!==pawn)return 'Zum En-passant-Feld fehlt der soeben vorgerückte gegnerische Bauer.';
+    }
     return '';
   }
 
@@ -242,6 +263,11 @@
   function setBoardStatus(text,type=''){boardStatus.textContent=text;boardStatus.className='board-status'+(type?' '+type:'');}
   function setEngineState(text,type=''){engineState.textContent=text;engineState.className='engine-state'+(type?' '+type:'');}
   function setFairplayNotice(text=''){fairplayNotice.textContent=text;fairplayNotice.hidden=!text;}
+  function setEngineBusy(value){
+    engineBusy=!!value;analyzeBtn.disabled=engineBusy||!loggedIn;stopBtn.disabled=!engineBusy;
+    byId('playAnalyzeBtn').disabled=engineBusy;byId('trainingBtn').disabled=engineBusy||!loggedIn;byId('editPositionBtn').disabled=engineBusy;
+  }
+  function engineCancelledError(){return Object.assign(new Error('Analyse gestoppt.'),{cancelled:true});}
   function showPromotionOverlay(color){
     return new Promise(resolve=>{
       const old=byId('promotionBackdrop');if(old)old.remove();
@@ -278,7 +304,7 @@
     if(mode==='setup'){
       setupGame.set(x,y,selectedPalette);selectedSquare=null;syncControlsFromGame(setupGame);renderBoard();saveSession();return;
     }
-    if(pendingEngineJob||(mode==='training'&&(!trainingReady||game.turn===byId('engineColorSelect').value))){setBoardStatus('Bitte kurz warten, bis Stockfish die verdeckte Lösung vorbereitet hat.');return;}
+    if(engineBusy||(mode==='training'&&(!trainingReady||game.turn===byId('engineColorSelect').value))){setBoardStatus('Bitte kurz warten, bis Stockfish die aktuelle Berechnung beendet hat.');return;}
     const piece=game.at(x,y);
     if(!selectedSquare){
       if(piece!=='.'&&pieceColor(piece)===game.turn){selectedSquare=[x,y];legalTargets=game.legalMoves().filter(move=>move.from[0]===x&&move.from[1]===y);renderBoard();}
@@ -319,10 +345,13 @@
   function syncSetupDisplay(){variantSelect.value=labSetup.variant;freestyleControls.hidden=labSetup.variant!==GAME_VARIANT_FREESTYLE;if(labSetup.variant===GAME_VARIANT_FREESTYLE){positionIdInput.value=labSetup.positionId;backRankOutput.textContent=labSetup.backRank;}else backRankOutput.textContent=STANDARD_BACK_RANK;}
   function setMode(next){
     mode=next;const editing=mode==='setup';byId('setupCard').classList.toggle('locked',!editing);byId('editPositionBtn').hidden=editing;byId('piecePalette').setAttribute('aria-disabled',editing?'false':'true');
-    [variantSelect,positionIdInput,byId('apply960Btn'),byId('random960Btn'),byId('startPositionBtn'),byId('clearBoardBtn'),sideToMoveSelect,epSelect,...Object.values(castleInputs)].forEach(el=>{if(el)el.disabled=!editing;});
+    [variantSelect,positionIdInput,byId('apply960Btn'),byId('random960Btn'),byId('startPositionBtn'),byId('clearBoardBtn'),sideToMoveSelect,epSelect,fenInput,byId('loadFenBtn'),...Object.values(castleInputs)].forEach(el=>{if(el)el.disabled=!editing;});
+    byId('piecePalette').querySelectorAll('button').forEach(button=>button.disabled=!editing);
+    byId('engineColorSelect').disabled=mode==='training';
     byId('playAnalyzeBtn').classList.toggle('primary',mode==='play');byId('trainingBtn').classList.toggle('primary',mode==='training');syncNavigation();
   }
   function beginMode(next){
+    if(engineBusy){setBoardStatus('Bitte stoppe zuerst die laufende Stockfish-Berechnung.');return;}
     const error=validateGame(setupGame);if(error){setBoardStatus(error,'error');return;}
     setupGame.setup=normalizeGameSetup(labSetup);setupGame.variant=setupGame.setup.variant;setupGame.startBackRank=setupGame.setup.backRank;setupGame.castleInfo=castlingInfoFromBackRank(setupGame.setup.backRank);
     createRoot(setupGame);setMode(next);trainingCandidates=[];trainingReady=next!=='training';trainingResult.hidden=true;setFairplayNotice('');renderBoard();
@@ -330,6 +359,7 @@
     saveSession();
   }
   function editPosition(){
+    if(engineBusy){setBoardStatus('Bitte stoppe zuerst die laufende Stockfish-Berechnung.');return;}
     setupGame=activeGame().clone();labSetup=normalizeGameSetup(setupGame.setup);rootNode=null;currentNode=null;setMode('setup');syncSetupDisplay();syncControlsFromGame(setupGame);selectedSquare=null;legalTargets=[];renderBoard();renderMoveTree();trainingResult.hidden=true;setBoardStatus('Die aktuell sichtbare Stellung kann jetzt bearbeitet werden.');saveSession();
   }
 
@@ -345,12 +375,12 @@
   function ensureEngine(){
     if(engineWorker)return engineInitPromise;
     setEngineState('wird geladen','busy');
-    engineInitPromise=new Promise((resolve,reject)=>{engineInitResolve=resolve;try{engineWorker=new Worker('./stockfish.js');}catch(error){reject(error);return;}engineWorker.onmessage=event=>handleEngineLine(String(event.data||''));engineWorker.onerror=()=>{setEngineState('Fehler','error');reject(new Error('Stockfish konnte nicht gestartet werden.'));};engineWorker.postMessage('uci');});
+    engineInitPromise=new Promise((resolve,reject)=>{engineInitResolve=resolve;engineInitReject=reject;try{engineWorker=new Worker('./stockfish.js');}catch(error){engineWorker=null;engineInitPromise=null;engineInitResolve=null;engineInitReject=null;reject(error);return;}engineWorker.onmessage=event=>handleEngineLine(String(event.data||''));engineWorker.onerror=()=>{const error=new Error('Stockfish konnte nicht gestartet werden. Bitte prüfe stockfish.js und stockfish.wasm im Ordner Gamer/schachlabor/.');const job=pendingEngineJob;pendingEngineJob=null;if(job){clearTimeout(job.stopTimeout);job.reject(error);}if(engineInitReject)engineInitReject(error);try{engineWorker.terminate();}catch(_){}engineWorker=null;engineInitPromise=null;engineInitResolve=null;engineInitReject=null;setEngineBusy(false);setEngineState('Fehler','error');};engineWorker.postMessage('uci');});
     return engineInitPromise;
   }
   function handleEngineLine(line){
     if(line==='uciok'){engineWorker.postMessage('setoption name UCI_ShowWDL value true');engineWorker.postMessage('isready');return;}
-    if(line==='readyok'&&engineInitResolve){const resolve=engineInitResolve;engineInitResolve=null;setEngineState('bereit','ready');resolve();return;}
+    if(line==='readyok'&&engineInitResolve){const resolve=engineInitResolve;engineInitResolve=null;engineInitReject=null;setEngineState('bereit','ready');resolve();return;}
     const job=pendingEngineJob;if(!job)return;
     if(line.startsWith('info ')){
       const depth=/\bdepth (\d+)/.exec(line);const multipv=/\bmultipv (\d+)/.exec(line);const cp=/\bscore cp (-?\d+)/.exec(line);const mate=/\bscore mate (-?\d+)/.exec(line);const wdl=/\bwdl (\d+) (\d+) (\d+)/.exec(line);const pv=/\bpv (.+)$/.exec(line);
@@ -358,20 +388,23 @@
       return;
     }
     if(line.startsWith('bestmove ')){
-      pendingEngineJob=null;const best=line.split(/\s+/)[1]||'';const result={bestmove:best,lines:Array.from(job.lines.entries()).sort((a,b)=>a[0]-b[0]).map(([index,value])=>Object.assign({index},value))};setEngineState('bereit','ready');analyzeBtn.disabled=false;
-      if(job.cancelled)job.reject(new Error('Analyse gestoppt.'));else job.resolve(result);
+      pendingEngineJob=null;clearTimeout(job.stopTimeout);const best=line.split(/\s+/)[1]||'';const result={bestmove:best,lines:Array.from(job.lines.entries()).sort((a,b)=>a[0]-b[0]).map(([index,value])=>Object.assign({index},value))};setEngineBusy(false);setEngineState('bereit','ready');
+      if(job.cancelled)job.reject(engineCancelledError());else job.resolve(result);
     }
   }
   async function runEngine(game,{hidden=false,multiPv=null,depth=null}={}){
-    const fen=gameToFen(game);setFairplayNotice('');setEngineState('Fairplay-Prüfung','busy');analyzeBtn.disabled=true;
+    if(engineBusy)throw new Error('Stockfish führt bereits eine Berechnung aus.');
+    const operationId=++engineOperationCounter;const fen=gameToFen(game);setFairplayNotice('');setEngineBusy(true);setEngineState('Fairplay-Prüfung','busy');
     let check;
-    try{check=await fairplayCheck(fen);}catch(error){setEngineState('Prüfung nicht möglich','error');analyzeBtn.disabled=false;throw error;}
-    if(!check||check.allowed!==true){setFairplayNotice(check&&check.message?check.message:FAIRPLAY_MESSAGE);setEngineState('gesperrt','error');analyzeBtn.disabled=false;throw Object.assign(new Error(check&&check.message?check.message:FAIRPLAY_MESSAGE),{fairplay:true});}
-    await ensureEngine();if(pendingEngineJob){pendingEngineJob.cancelled=true;engineWorker.postMessage('stop');}
+    try{check=await fairplayCheck(fen);}catch(error){if(operationId!==engineOperationCounter)throw engineCancelledError();setEngineBusy(false);setEngineState('Prüfung nicht möglich','error');throw error;}
+    if(operationId!==engineOperationCounter)throw engineCancelledError();
+    if(!check||check.allowed!==true){setFairplayNotice(check&&check.message?check.message:FAIRPLAY_MESSAGE);setEngineBusy(false);setEngineState('gesperrt','error');throw Object.assign(new Error(check&&check.message?check.message:FAIRPLAY_MESSAGE),{fairplay:true});}
+    try{await ensureEngine();}catch(error){if(operationId===engineOperationCounter)setEngineBusy(false);throw error;}
+    if(operationId!==engineOperationCounter)throw engineCancelledError();
     const selectedPv=Math.max(1,Math.min(5,Number(multiPv||byId('multiPvSelect').value)||1));const selectedDepth=Math.max(6,Math.min(28,Number(depth||byId('depthSelect').value)||14));
     setEngineState(hidden?'Lösung wird verdeckt berechnet':`analysiert · Tiefe ${selectedDepth}`,'busy');
     engineWorker.postMessage(`setoption name UCI_Chess960 value ${game.setup.variant===GAME_VARIANT_FREESTYLE?'true':'false'}`);engineWorker.postMessage(`setoption name MultiPV value ${selectedPv}`);engineWorker.postMessage('ucinewgame');engineWorker.postMessage(`position fen ${fen}`);
-    return new Promise((resolve,reject)=>{pendingEngineJob={game:game.clone(),hidden,lines:new Map(),resolve,reject,cancelled:false};engineWorker.postMessage(`go depth ${selectedDepth}`);});
+    return new Promise((resolve,reject)=>{pendingEngineJob={game:game.clone(),hidden,lines:new Map(),resolve,reject,cancelled:false,operationId,stopTimeout:null};engineWorker.postMessage(`go depth ${selectedDepth}`);});
   }
   function normalizedLine(line,turn){
     const sign=turn==='b'?-1:1;return Object.assign({},line,{cp:line.cp===null?null:line.cp*sign,mate:line.mate===null?null:line.mate*sign,wdl:line.wdl&&turn==='b'?[line.wdl[2],line.wdl[1],line.wdl[0]]:line.wdl});
@@ -390,16 +423,25 @@
   }
   async function analyzeCurrent(){
     const game=activeGame().clone();const error=validateGame(game);if(error){setBoardStatus(error,'error');return;}
-    try{const result=await runEngine(game);renderEngineResults({game},result);setBoardStatus('Stockfish-Analyse abgeschlossen.','success');}catch(error){if(!error.fairplay)setBoardStatus(error.message||'Analyse fehlgeschlagen.','error');}
+    try{const result=await runEngine(game);renderEngineResults({game},result);setBoardStatus('Stockfish-Analyse abgeschlossen.','success');}catch(error){if(!error.fairplay&&!error.cancelled)setBoardStatus(error.message||'Analyse fehlgeschlagen.','error');}
   }
-  function stopEngine(){if(pendingEngineJob){pendingEngineJob.cancelled=true;engineWorker.postMessage('stop');setEngineState('wird gestoppt','busy');}else setEngineState(engineWorker?'bereit':'nicht gestartet',engineWorker?'ready':'');}
+  function stopEngine(){
+    if(!engineBusy){setEngineState(engineWorker?'bereit':'nicht gestartet',engineWorker?'ready':'');return;}
+    engineOperationCounter++;
+    if(pendingEngineJob){
+      const job=pendingEngineJob;job.cancelled=true;engineWorker.postMessage('stop');setEngineState('wird gestoppt','busy');setBoardStatus('Stockfish wird gestoppt.');
+      job.stopTimeout=setTimeout(()=>{if(pendingEngineJob!==job)return;pendingEngineJob=null;try{engineWorker.terminate();}catch(_){}engineWorker=null;engineInitPromise=null;engineInitResolve=null;engineInitReject=null;setEngineBusy(false);setEngineState('gestoppt');job.reject(engineCancelledError());},3000);
+      return;
+    }
+    setEngineBusy(false);setEngineState(engineWorker?'bereit':'nicht gestartet',engineWorker?'ready':'');setBoardStatus('Analyse gestoppt.');
+  }
 
   async function prepareTrainingTurn(){
     if(mode!=='training')return;const game=activeGame().clone();const engineColor=byId('engineColorSelect').value;
     if(game.gameOver()){trainingReady=false;setBoardStatus('Die Trainingspartie ist beendet.','success');return;}
-    if(game.turn===engineColor){trainingReady=false;setBoardStatus('Stockfish berechnet seinen Zug …');try{const result=await runEngine(game,{hidden:true,multiPv:1});const move=uciToMove(game,result.bestmove||result.lines[0]?.pv?.[0]||'');if(!move)throw new Error('Stockfish lieferte keinen spielbaren Zug.');applyMove(move,'engine');setBoardStatus(`Stockfish spielte ${currentNode.san}. Deine Lösung wird verdeckt vorbereitet.`);await prepareTrainingTurn();}catch(error){if(!error.fairplay)setBoardStatus(error.message||'Engine-Zug fehlgeschlagen.','error');}return;}
-    trainingReady=false;trainingCandidates=[];trainingResult.hidden=true;setBoardStatus('Stockfish berechnet die Lösung verdeckt …');
-    try{const result=await runEngine(game,{hidden:true,multiPv:Math.max(3,Number(byId('multiPvSelect').value)||3)});trainingCandidates=result.lines;trainingReady=true;setBoardStatus('Die Lösung ist verdeckt vorbereitet. Ziehe jetzt deinen Kandidatenzug.','success');}catch(error){if(!error.fairplay)setBoardStatus(error.message||'Die Trainingslösung konnte nicht berechnet werden.','error');}
+    if(game.turn===engineColor){trainingReady=false;setBoardStatus('Stockfish berechnet seinen Zug …');try{const result=await runEngine(game,{hidden:true,multiPv:1});if(mode!=='training')return;const move=uciToMove(game,result.bestmove||result.lines[0]?.pv?.[0]||'');if(!move)throw new Error('Stockfish lieferte keinen spielbaren Zug.');applyMove(move,'engine');setBoardStatus(`Stockfish spielte ${currentNode.san}. Deine Lösung wird verdeckt vorbereitet.`);await prepareTrainingTurn();}catch(error){if(!error.fairplay&&!error.cancelled)setBoardStatus(error.message||'Engine-Zug fehlgeschlagen.','error');}return;}
+    trainingReady=false;trainingCandidates=[];setBoardStatus('Stockfish berechnet die Lösung verdeckt …');
+    try{const result=await runEngine(game,{hidden:true,multiPv:Math.max(3,Number(byId('multiPvSelect').value)||3)});if(mode!=='training')return;trainingCandidates=result.lines;trainingReady=true;setBoardStatus('Die Lösung ist verdeckt vorbereitet. Ziehe jetzt deinen Kandidatenzug.','success');}catch(error){if(!error.fairplay&&!error.cancelled)setBoardStatus(error.message||'Die Trainingslösung konnte nicht berechnet werden.','error');}
   }
   function afterTrainingMove(playedUci){
     const rank=trainingCandidates.findIndex(line=>line.pv&&line.pv[0]===playedUci);const best=trainingCandidates[0];trainingResult.hidden=false;trainingResult.className='training-result'+(rank<0?' warn':'');
@@ -416,10 +458,11 @@
     try{const data=JSON.parse(localStorage.getItem(LAB_SESSION_KEY)||'null');if(!data||data.version!==1)return false;suppressSessionSave=true;labSetup=normalizeGameSetup(data.setup);setupGame=parseFen(data.fen,labSetup);orientationWhite=data.orientationWhite!==false;byId('engineColorSelect').value=data.engineColor==='w'?'w':'b';byId('depthSelect').value=String(data.depth||14);byId('multiPvSelect').value=String(data.multiPv||3);byId('autoAnalyzeCheck').checked=!!data.auto;syncSetupDisplay();syncControlsFromGame(setupGame);setMode('setup');suppressSessionSave=false;return true;}catch(_){suppressSessionSave=false;return false;}
   }
   function reportHeight(){if(window.parent===window)return;window.parent.postMessage({type:'hammerschach-schachlabor-height',height:Math.ceil(document.documentElement.scrollHeight)},location.origin);}
-  function applyContext(message){parentReady=true;loggedIn=message.loggedIn===true;document.documentElement.classList.toggle('dark-mode',message.darkMode===true);if(message.boardColor)applyTheme(message.boardColor,false);if(message.pieceSet)applyPieceSet(message.pieceSet,false);loginState.textContent=loggedIn?`Verbunden${message.username?' · '+message.username:''}`:'Bitte im Gamer einloggen';loginState.className='login-state '+(loggedIn?'ready':'error');[analyzeBtn,byId('trainingBtn')].forEach(button=>button.disabled=!loggedIn);}
+  function applyContext(message){parentReady=true;loggedIn=message.loggedIn===true;document.documentElement.classList.toggle('dark-mode',message.darkMode===true);if(message.boardColor)applyTheme(message.boardColor,false);if(message.pieceSet)applyPieceSet(message.pieceSet,false);loginState.textContent=loggedIn?`Verbunden${message.username?' · '+message.username:''}`:'Bitte im Gamer einloggen';loginState.className='login-state '+(loggedIn?'ready':'error');setEngineBusy(engineBusy);}
 
   for(const rank of [3,6])for(const file of files)epSelect.add(new Option(`${file}${rank}`,`${file}${rank}`));
   initializeAppearance();renderPalette();
+  setEngineBusy(false);
   if(!restoreSession()){startPosition();}else{renderBoard();setBoardStatus('Die zuletzt bearbeitete Laborstellung wurde wiederhergestellt.');}
 
   byId('toggleSetupBtn').addEventListener('click',()=>{const content=byId('setupContent');content.hidden=!content.hidden;byId('toggleSetupBtn').textContent=content.hidden?'Ausklappen':'Einklappen';byId('toggleSetupBtn').setAttribute('aria-expanded',String(!content.hidden));reportHeight();});
@@ -427,7 +470,7 @@
   byId('apply960Btn').addEventListener('click',startPosition);byId('random960Btn').addEventListener('click',()=>{positionIdInput.value=randomChess960Setup().positionId;startPosition();});
   byId('startPositionBtn').addEventListener('click',startPosition);byId('clearBoardBtn').addEventListener('click',clearBoard);byId('editPositionBtn').addEventListener('click',editPosition);
   [sideToMoveSelect,epSelect,...Object.values(castleInputs)].forEach(control=>control.addEventListener('change',syncGameFromControls));
-  byId('loadFenBtn').addEventListener('click',()=>{try{setupGame=parseFen(fenInput.value,labSetup);syncControlsFromGame(setupGame);renderBoard();setBoardStatus('FEN wurde übernommen.','success');saveSession();}catch(error){setBoardStatus(error.message,'error');}});
+  byId('loadFenBtn').addEventListener('click',()=>{if(mode!=='setup')return;try{const candidate=parseFen(fenInput.value,labSetup);const error=validateGame(candidate);if(error)throw new Error(error);setupGame=candidate;syncControlsFromGame(setupGame);renderBoard();setBoardStatus('FEN wurde übernommen.','success');saveSession();}catch(error){setBoardStatus(error.message,'error');}});
   byId('copyFenBtn').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(gameToFen(activeGame()));setBoardStatus('FEN wurde kopiert.','success');}catch(_){fenInput.select();setBoardStatus('FEN ist markiert und kann kopiert werden.');}});
   byId('playAnalyzeBtn').addEventListener('click',()=>beginMode('play'));byId('trainingBtn').addEventListener('click',()=>beginMode('training'));analyzeBtn.addEventListener('click',analyzeCurrent);stopBtn.addEventListener('click',stopEngine);
   byId('flipBtn').addEventListener('click',()=>{orientationWhite=!orientationWhite;renderBoard();saveSession();});
