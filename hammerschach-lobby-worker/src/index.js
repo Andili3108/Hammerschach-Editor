@@ -1,8 +1,9 @@
-// BUILD: GAMER-SCHACHLABOR-20260821-1
+// BUILD: GAMER-SCHACHLABOR-20260823-3
 import { connect } from 'cloudflare:sockets';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
 const FAIRPLAY_RAW_DATA_VERSION = 1;
+const SCHACHLABOR_FAIRPLAY_BUILD = '20260823-3';
 
 function configuredGamerPublicUrl(env) {
   return String((env && env.GAMER_PUBLIC_URL) || DEFAULT_GAMER_PUBLIC_URL).trim();
@@ -7796,35 +7797,52 @@ async function collectSchachlaborActiveRoomIds(env, userId) {
     const roomId = cleanRoomId(row.room_id);
     if (roomId) ids.add(roomId);
   }
-  const roomIds = Array.from(ids);
-  if (roomIds.length > 200) throw new Error('Zu viele offene Spielräume für eine sichere Fairplay-Prüfung.');
-  return roomIds;
+  return Array.from(ids);
+}
+
+function schachlaborCheckError(code, message) {
+  const error = new Error(message);
+  error.schachlaborCode = String(code || 'FP-INTERN');
+  return error;
 }
 
 async function schachlaborPositionAllowed(env, sessionUser, fen) {
   const userId = String(sessionUser && sessionUser.id || '').trim();
   const candidateFen = String(fen || '').trim();
-  if (!env || !env.GAME_ROOM || !userId) throw new Error('Schachlabor-Fairplay-Prüfung ist nicht verfügbar.');
-  if (!candidateFen || candidateFen.length > 200) throw new Error('Die zu prüfende Stellung ist ungültig.');
-  const roomIds = await collectSchachlaborActiveRoomIds(env, userId);
+  if (!env || !env.GAME_ROOM || !userId) throw schachlaborCheckError('FP-KONFIG', 'Schachlabor-Fairplay-Prüfung ist nicht verfügbar.');
+  if (!candidateFen || candidateFen.length > 200) throw schachlaborCheckError('FP-FEN', 'Die zu prüfende Stellung ist ungültig.');
+  let roomIds;
+  try {
+    roomIds = await collectSchachlaborActiveRoomIds(env, userId);
+  } catch (error) {
+    if (error && error.schachlaborCode) throw error;
+    throw schachlaborCheckError('FP-INDEX', 'Die laufenden Partien konnten nicht sicher ermittelt werden.');
+  }
   if (!roomIds.length) return true;
-  const checks = await Promise.all(roomIds.map(async roomId => {
-    try {
-      const id = env.GAME_ROOM.idFromName(roomId);
-      const response = await gameRoomStub(env, id).fetch(new Request('https://game-room.internal/schachlabor-position-check?room=' + encodeURIComponent(roomId), {
-        method:'POST',
-        headers:{'content-type':'application/json','x-hammerschach-user-id':userId},
-        body:JSON.stringify({fen:candidateFen})
-      }));
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data && data.ok === true ? data.match === true : null;
-    } catch (_) {
-      return null;
-    }
-  }));
-  if (checks.some(result => result === null)) throw new Error('Mindestens ein laufender Spielraum konnte nicht sicher geprüft werden.');
-  return !checks.some(Boolean);
+  /* Eine kleine Batchgröße schützt Worker und Durable Objects auch bei einem
+     testbedingt großen Raumindex. Es werden trotzdem alle Kandidaten geprüft;
+     ein Fehler bleibt fail-closed und eine Übereinstimmung beendet die Prüfung
+     sofort mit einer Sperre. */
+  for (let offset = 0; offset < roomIds.length; offset += 20) {
+    const checks = await Promise.all(roomIds.slice(offset, offset + 20).map(async roomId => {
+      try {
+        const id = env.GAME_ROOM.idFromName(roomId);
+        const response = await gameRoomStub(env, id).fetch(new Request('https://game-room.internal/schachlabor-position-check?room=' + encodeURIComponent(roomId), {
+          method:'POST',
+          headers:{'content-type':'application/json','x-hammerschach-user-id':userId},
+          body:JSON.stringify({fen:candidateFen})
+        }));
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data && data.ok === true ? data.match === true : null;
+      } catch (_) {
+        return null;
+      }
+    }));
+    if (checks.some(result => result === null)) throw schachlaborCheckError('FP-RAUM', 'Mindestens ein laufender Spielraum konnte nicht sicher geprüft werden.');
+    if (checks.some(Boolean)) return false;
+  }
+  return true;
 }
 
 async function callAccountRoomAction(env, roomId, action, userId, anonymizedId = '') {
@@ -10906,6 +10924,7 @@ async function handleAuthApi(request, env, url) {
     if (!session) return json({
       ok:false,
       allowed:false,
+      fairplayBuild:SCHACHLABOR_FAIRPLAY_BUILD,
       code:'NOT_AUTHENTICATED',
       message:'Bitte zuerst einloggen.'
     }, {status:401});
@@ -10914,19 +10933,23 @@ async function handleAuthApi(request, env, url) {
     if (!fen || fen.length > 200) return json({
       ok:false,
       allowed:false,
+      fairplayBuild:SCHACHLABOR_FAIRPLAY_BUILD,
       code:'INVALID_POSITION',
       message:'Die zu prüfende Stellung ist ungültig.'
     }, {status:400});
     try {
       const allowed = await schachlaborPositionAllowed(env, session.user, fen);
-      return json({ok:true, allowed:allowed === true});
+      return json({ok:true, allowed:allowed === true, fairplayBuild:SCHACHLABOR_FAIRPLAY_BUILD});
     } catch (error) {
       console.error('Schachlabor fairplay check failed', error && error.message ? error.message : String(error || 'unknown'));
+      const failureCode = error && error.schachlaborCode ? String(error.schachlaborCode) : 'FP-INTERN';
       return json({
         ok:false,
         allowed:false,
+        fairplayBuild:SCHACHLABOR_FAIRPLAY_BUILD,
         code:'FAIRPLAY_CHECK_UNAVAILABLE',
-        message:'Die Fairplay-Prüfung ist momentan nicht verfügbar.'
+        reason:failureCode,
+        message:`Die Fairplay-Prüfung ist momentan nicht verfügbar (${failureCode}, Build ${SCHACHLABOR_FAIRPLAY_BUILD}).`
       }, {status:503});
     }
   }
