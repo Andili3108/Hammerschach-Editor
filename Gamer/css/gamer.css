@@ -151,9 +151,9 @@
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-header-view .match-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:12px;}
-  html.visitor-header-view .match-actions>:not(#visitorLearningOpenBtn):not(#visitorPublicGamesOpenBtn):not(#infoMenu){display:none!important;}
-  html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:190px!important;min-width:190px!important;max-width:190px!important;flex:0 0 190px;}
-  html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
+  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorPublicGamesOpenBtn):not(#infoMenu){display:none!important;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:190px!important;min-width:190px!important;max-width:190px!important;flex:0 0 190px;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
   html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{width:100%;}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
