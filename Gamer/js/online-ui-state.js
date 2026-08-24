@@ -48,9 +48,12 @@ function updateOnlineActionButtons(){
   }
   if(roomLobbyBtn){
     roomLobbyBtn.hidden = !showLobbyButton;
-    roomLobbyBtn.title = embeddedToolActive()
-      ? ((openingsToolActive ? 'Eröffnungsschule' : (trainerToolActive ? 'Trainer' : 'Analyzer')) + ' schließen und zur Lobby zurückkehren.')
-      : 'Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.';
+    if(embeddedToolActive()){
+      const activeName=learningToolActive?'Schach lernen':(tvToolActive?'Hammerschach TV':(openingsToolActive?'Eröffnungsschule':(schachlaborToolActive?'Schachlabor':(trainerToolActive?'Taktiktrainer':'Analyzer'))));
+      roomLobbyBtn.title=activeName+' schließen und zur Lobby zurückkehren.';
+    }else{
+      roomLobbyBtn.title='Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.';
+    }
   }
   if(createOnlineBtn){
     createOnlineBtn.hidden = inRoom || directInvitationMode;

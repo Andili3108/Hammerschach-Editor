@@ -460,6 +460,7 @@ function saveAuthState(token, user){
     try{ updateTimeControlsLock(); updateTimePickerUi(); } catch(_){}
   }, 0);
   if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
+  postLearningToolContext();
   postAnalyzerToolContext();
   postTrainerToolContext();
   postSchachlaborToolContext();

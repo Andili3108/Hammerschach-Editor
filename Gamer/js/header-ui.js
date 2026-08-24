@@ -2,6 +2,10 @@
 
 function updateSiteFootnotePlacement(){
   if(!siteFootnoteEl||!siteFootnoteHome)return;
+  if(learningToolActive&&learningToolView){
+    if(siteFootnoteEl.parentNode!==learningToolView)learningToolView.appendChild(siteFootnoteEl);
+    return;
+  }
   if(analyzerToolActive&&analyzerToolView){
     if(siteFootnoteEl.parentNode!==analyzerToolView)analyzerToolView.appendChild(siteFootnoteEl);
     return;
@@ -97,7 +101,7 @@ function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
 const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
 const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Spieler-Menü');
-const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Tools-Menü');
+const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Bereiche-Menü');
 const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }
@@ -134,6 +138,7 @@ function setDarkMode(enabled){
   document.documentElement.classList.toggle('dark-mode', darkModeEnabled);
   try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, darkModeEnabled ? 'dark' : 'light'); } catch(_){ }
   updateThemeToggleUi();
+  postLearningToolContext();
   postAnalyzerToolContext();
   postTrainerToolContext();
   postSchachlaborToolContext();

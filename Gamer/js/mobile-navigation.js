@@ -2,8 +2,8 @@
 
 /*
  * Automatische Mobil-/Tablet-Navigation.
- * Smartphone: kompakte Navigation in Smartphone-Viewports.
- * Tablet: kompakte Navigation im Spielraum in Tablet-Viewports.
+ * Smartphone und schmale Fenster: kompakte, stets einzeilige Navigation.
+ * Tablet: kompakte Navigation im Spielraum auch oberhalb der schmalen Ansicht.
  * Große Desktopbretter verwenden einen getrennten Kompaktmodus, ohne die
  * mobilen Layoutklassen zu aktivieren.
  */
@@ -55,12 +55,13 @@
   }
 
   function roomContext(){
-    return root.classList.contains('hammerschach-room-view') || !!(roomLobbyButton && !roomLobbyButton.hidden);
+    return (root.classList.contains('hammerschach-room-view') && !root.classList.contains('visitor-start-view')) || !!(roomLobbyButton && !roomLobbyButton.hidden);
   }
 
   function compactNavigationWanted(){
     if(phoneViewport()) return true;
-    return tabletViewport() && roomContext();
+    if(tabletViewport() && roomContext()) return true;
+    return window.matchMedia('(min-width: 761px) and (max-width: 1100px)').matches;
   }
 
   function desktopBoardCompactWanted(){
@@ -112,6 +113,7 @@
   function syncPrimaryButton(){
     if(!primaryButton) return;
     const backToLobby = !!(roomLobbyButton && !roomLobbyButton.hidden);
+    primaryButton.hidden = !backToLobby && (!newGameButton || newGameButton.hidden);
     const icon = primaryButton.querySelector('span');
     const label = primaryButton.querySelector('strong');
     if(icon) icon.textContent = backToLobby ? '↩️' : '♟️';
@@ -122,7 +124,9 @@
   function syncStatus(){
     if(testStatus && sourceStatus) testStatus.textContent = sourceStatus.textContent || 'Hammerschach-Gamer';
     if(testContext){
-      testContext.textContent = roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer');
+      const learning = root.classList.contains('learning-tool-active');
+      const area = root.classList.contains('analyzer-tool-active') || root.classList.contains('trainer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active') || root.classList.contains('tv-tool-active');
+      testContext.textContent = learning ? 'Schach lernen' : (area ? 'Bereich' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')));
     }
   }
 
@@ -166,7 +170,7 @@
     refreshFrame = requestAnimationFrame(() => {
       refreshFrame = 0;
       const controlsReady = !!(classicHeader && testHeader && openButton && backdrop);
-      const mobileActive = controlsReady && memberContext() && compactNavigationWanted();
+      const mobileActive = controlsReady && compactNavigationWanted();
       const desktopActive = controlsReady && !mobileActive && desktopBoardCompactWanted();
       const active = mobileActive || desktopActive;
 
