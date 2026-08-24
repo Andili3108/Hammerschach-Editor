@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-BESUCHERHEADER-20260824-4 -->
+<!-- BUILD: GAMER-BESUCHERHEADER-20260824-5 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260824-4" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260824-5" />
 </head>
 <body>
 <div class="app" role="main">
@@ -149,6 +149,12 @@
           <button id="mobileNavTestClose" class="mobile-nav-test-close" type="button" aria-label="Menü schließen">×</button>
         </div>
         <nav class="mobile-nav-test-list" aria-label="Mobile Gamer-Navigation">
+          <section id="mobileNavVisitorSection" hidden>
+            <h2>Navigation</h2>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="roomLobbyBtn" data-mobile-nav-visitor-only><span>↩️</span><strong>Zur Startseite</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLearningOpenBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schach lernen</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
+          </section>
           <section>
             <h2>Spielen</h2>
             <button id="mobileNavTestPrimary" class="mobile-nav-test-item primary" type="button"><span>♟️</span><strong>Neue Partie</strong></button>
@@ -181,6 +187,7 @@
             <h2>Information</h2>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="firstStepsOpenBtn"><span>🚀</span><strong>Erste Schritte</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="infoGuideOpenBtn"><span>📖</span><strong>Handbuch</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="leitbildOpenBtn"><span>🤝</span><strong>Unser Leitbild</strong></button>
             <button id="mobileNavTestTheme" class="mobile-nav-test-item" type="button"><span>🌙</span><strong>Dunkle Darstellung</strong></button>
           </section>
         </nav>
@@ -2271,6 +2278,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260815-1"></script>
 <script src="js/board-size-control.js?v=20260813-1"></script>
-<script src="js/mobile-navigation.js?v=20260824-1"></script>
+<script src="js/mobile-navigation.js?v=20260824-5"></script>
 </body>
 </html>
