@@ -29,6 +29,8 @@
   const roomLobbyButton = document.getElementById('roomLobbyBtn');
   const newGameButton = document.getElementById('newGameOpenBtn');
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
+  const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
+  const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
   let refreshFrame = 0;
   let lastFocus = null;
 
@@ -104,21 +106,34 @@
   }
 
   function syncTargetButton(button){
-    const source = document.getElementById(button.dataset.mobileNavTarget || '');
-    const unavailable = !source || source.hidden || sourceDisabled(source);
-    button.hidden = !source || source.hidden;
+    const targetId = button.dataset.mobileNavTarget || '';
+    const source = document.getElementById(targetId);
+    const visitor = root.classList.contains('visitor-header-view');
+    const visitorOnly = button.hasAttribute('data-mobile-nav-visitor-only');
+    const visitorBlocked = visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly;
+    const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked;
+    button.hidden = !source || source.hidden || visitorBlocked;
     button.disabled = unavailable;
   }
 
   function syncPrimaryButton(){
     if(!primaryButton) return;
     const backToLobby = !!(roomLobbyButton && !roomLobbyButton.hidden);
-    primaryButton.hidden = !backToLobby && (!newGameButton || newGameButton.hidden);
+    const visitor = root.classList.contains('visitor-header-view');
+    primaryButton.hidden = visitor || (!backToLobby && (!newGameButton || newGameButton.hidden));
     const icon = primaryButton.querySelector('span');
     const label = primaryButton.querySelector('strong');
     if(icon) icon.textContent = backToLobby ? '↩️' : '♟️';
-    if(label) label.textContent = backToLobby ? 'Zur Lobby' : 'Neue Partie';
+    if(label) label.textContent = backToLobby ? (visitor ? 'Zur Startseite' : 'Zur Lobby') : 'Neue Partie';
     primaryButton.disabled = backToLobby ? sourceDisabled(roomLobbyButton) : sourceDisabled(newGameButton);
+    if(testBrand) testBrand.setAttribute('aria-label',backToLobby?(visitor?'Zur Startseite':'Zur Lobby'):'Zum Seitenanfang');
+  }
+
+  function syncSections(){
+    navigationSections.forEach(section => {
+      const visibleItem = Array.from(section.querySelectorAll('.mobile-nav-test-item')).some(button => !button.hidden);
+      section.hidden = !visibleItem;
+    });
   }
 
   function syncStatus(){
@@ -163,6 +178,7 @@
     syncOffersCount();
     syncPrimaryButton();
     targetButtons.forEach(syncTargetButton);
+    syncSections();
   }
 
   function refresh(){
