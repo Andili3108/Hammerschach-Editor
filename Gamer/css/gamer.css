@@ -2398,6 +2398,7 @@ html.mobile-nav-test-active .mobile-nav-test-header,html.desktop-board-header-ac
 .mobile-nav-test-close{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:13px!important;font-size:25px!important;}
 .mobile-nav-test-list{min-height:0;overflow:auto;padding:10px 2px;overscroll-behavior:contain;}
 .mobile-nav-test-list section{display:grid;gap:6px;margin-bottom:14px;}
+.mobile-nav-test-list section[hidden]{display:none!important;}
 .mobile-nav-test-list h2{margin:0;padding:0 5px;color:#6c6265;font:900 10px Arial,sans-serif;letter-spacing:.09em;text-transform:uppercase;}
 .mobile-nav-test-item{width:100%!important;min-height:46px!important;display:grid!important;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 11px!important;border-radius:12px!important;text-align:left!important;}
 .mobile-nav-test-item>span{text-align:center;}
