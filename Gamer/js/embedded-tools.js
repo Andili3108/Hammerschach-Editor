@@ -38,7 +38,7 @@ function learningToolAvailable(){
   return !!(!onlineRoomId && !hasOnlineTargetInAddress());
 }
 function learningToolNavigable(){
-  return !onlineSpectatorOnly;
+  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function memberEmbeddedToolActive(){
   return analyzerToolActive || trainerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;

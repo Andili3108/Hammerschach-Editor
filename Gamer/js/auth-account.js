@@ -137,15 +137,19 @@ function isAnonymousVisitorStartView(){
 }
 function updateVisitorLandingUi(){
   const active = isAnonymousVisitorStartView();
+  const visitorHeaderActive = !(onlineAuthToken && onlineAuthUser);
   document.documentElement.classList.toggle('visitor-start-view', active);
+  document.documentElement.classList.toggle('visitor-header-view', visitorHeaderActive);
   if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
+  if(visitorLearningOpenBtn) visitorLearningOpenBtn.hidden = !visitorHeaderActive;
+  if(visitorPublicGamesOpenBtn) visitorPublicGamesOpenBtn.hidden = !visitorHeaderActive;
   updateAnalyzerToolAvailability();
 
-  /* In der anonymen Startansicht bleibt das öffentliche Info-Menü gut erreichbar.
-     Nach Login oder beim Öffnen eines Spielraums kehrt es an seinen normalen
-     Platz neben dem Status zurück. */
+  /* Für anonyme Besucher bleibt dieselbe reduzierte Navigation auch in einem
+     Zuschauer-Spielraum erhalten. Nach dem Login kehrt das Info-Menü an seinen
+     normalen Platz neben dem Status zurück. */
   if(infoMenuEl && matchActionsEl && infoMenuHome){
-    if(active){
+    if(visitorHeaderActive){
       const visitorInfoAnchor = toolsMenuEl && toolsMenuEl.parentNode === matchActionsEl ? toolsMenuEl : null;
       if(infoMenuEl.parentNode !== matchActionsEl || infoMenuEl.nextSibling !== visitorInfoAnchor){
         matchActionsEl.insertBefore(infoMenuEl, visitorInfoAnchor);
@@ -160,6 +164,17 @@ function updateVisitorLandingUi(){
   }
   updateMemberLobbyUi();
   hammerschachScheduleHeightReport(false);
+}
+
+if(visitorLearningOpenBtn){
+  visitorLearningOpenBtn.addEventListener('click', () => {
+    if(learningToolBtn && !learningToolBtn.disabled) learningToolBtn.click();
+  });
+}
+if(visitorPublicGamesOpenBtn){
+  visitorPublicGamesOpenBtn.addEventListener('click', () => {
+    if(publicGamesOpenBtn && !publicGamesOpenBtn.disabled) publicGamesOpenBtn.click();
+  });
 }
 
 function hasTournamentViewerAccess(){
@@ -197,7 +212,7 @@ function updateAuthUi(){
   if(membersOpenBtn){
     membersOpenBtn.hidden = !loggedIn;
     membersOpenBtn.disabled = !loggedIn;
-    membersOpenBtn.title = loggedIn ? 'Mitgliederliste mit Profilen und Aktivitätsstatus anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
+    membersOpenBtn.title = loggedIn ? 'Registrierte Mitglieder und Online-Status anzeigen.' : 'Mitgliederliste ist nur nach Login verfügbar.';
   }
   if(!loggedIn && membersBackdrop && !membersBackdrop.hidden) closeMembersDialog();
   if(dailyGamesOpenBtn){
