@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-BESUCHERHEADER-20260824-5 -->
+<!-- BUILD: GAMER-BEREICHE-TV-20260824-6 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260824-5" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260824-6" />
 </head>
 <body>
 <div class="app" role="main">
@@ -124,9 +124,10 @@
               <div class="header-menu-section-label analysis-menu-label">Analysieren</div>
               <button id="analyzerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="analyzerToolView">🧠 Analyzer</button>
               <button id="schachlaborToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="schachlaborToolView">🧪 Schachlabor</button>
+              <div class="header-menu-section-label">Zuschauen</div>
+              <button id="tvToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="tvToolView" hidden>📺 Hammerschach TV</button>
             </div>
           </div>
-          <button id="tvToolBtn" class="button-flat name-action-btn header-direct-action tv-header-action" type="button" aria-controls="tvToolView" hidden>📺 TV</button>
         </div>
       </div>
     </header>
@@ -437,7 +438,7 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„♟️ Bereiche“</strong> führen zu den weiteren Angeboten; <strong>„📺 TV“</strong> öffnet Hammerschach TV direkt. Der kleine <strong>Briefumschlag ✉️</strong> oben rechts öffnet deine persönlichen Nachrichten; eine grüne Zahl zeigt ungelesene Nachrichten an. Im Nachrichtenfenster kannst du Nachrichten lesen, direkt antworten oder unter <strong>„Neue Nachricht“</strong> eine oder mehrere Personen gleichzeitig anschreiben. Über <strong>„ℹ️ Info“</strong> bleiben Erste Schritte, Handbuch und Leitbild erreichbar; <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselt die Darstellung.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„♟️ Bereiche“</strong> führen zu den weiteren Angeboten; unter <strong>„♟️ Bereiche“ → „Zuschauen“</strong> öffnet <strong>„📺 Hammerschach TV“</strong> den TV-Bereich. Der kleine <strong>Briefumschlag ✉️</strong> oben rechts öffnet deine persönlichen Nachrichten; eine grüne Zahl zeigt ungelesene Nachrichten an. Im Nachrichtenfenster kannst du Nachrichten lesen, direkt antworten oder unter <strong>„Neue Nachricht“</strong> eine oder mehrere Personen gleichzeitig anschreiben. Über <strong>„ℹ️ Info“</strong> bleiben Erste Schritte, Handbuch und Leitbild erreichbar; <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselt die Darstellung.</p>
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
@@ -475,7 +476,7 @@
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
           <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby mit dem festen <strong>Hammerschach-Mitglieder-Chat</strong>. Über <strong>„♟️ Neue Partie“</strong> im Header öffnest du die Partievorbereitung als eigenes Fenster. Dadurch bleibt die Lobby auch auf Smartphones kompakt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
-          <p>Die aktuelle Header-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>; daneben führen <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„♟️ Bereiche“</strong> zu den übrigen Angeboten. Hammerschach TV besitzt mit <strong>„📺 TV“</strong> einen eigenen Direktzugang. <strong>„ℹ️ Info“</strong> öffnet Erste Schritte, Handbuch und Leitbild. Mit <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselst du das Farbschema. In einem Spielraum oder einem integrierten Bereich ersetzt <strong>„↩️ Zur Lobby“</strong> die Schaltfläche für eine neue Partie.</p>
+          <p>Die aktuelle Header-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>; daneben führen <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„♟️ Bereiche“</strong> zu den übrigen Angeboten. Hammerschach TV findest du unter <strong>„♟️ Bereiche“ → „Zuschauen“ → „📺 Hammerschach TV“</strong>. <strong>„ℹ️ Info“</strong> öffnet Erste Schritte, Handbuch und Leitbild. Mit <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselst du das Farbschema. In einem Spielraum oder einem integrierten Bereich ersetzt <strong>„↩️ Zur Lobby“</strong> die Schaltfläche für eine neue Partie.</p>
           <p>Auf dem Spielbrett kannst du eine Figur entweder wie bisher antippen und anschließend das Zielfeld wählen oder sie direkt mit Maus beziehungsweise Finger dorthin ziehen. Beim Ziehen dient das gesamte Feld der Figur als großzügige Grifffläche. Ein ungültiger Ablageversuch verändert die Stellung nicht; die Figur bleibt ausgewählt und die erlaubten Zielfelder werden weiterhin angezeigt.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
@@ -628,7 +629,7 @@
           </ul>
 
           <h4>23. Hammerschach TV</h4>
-          <p>Über den eigenen Header-Punkt <strong>„📺 TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Hammerschach TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
+          <p>Über <strong>„♟️ Bereiche“ → „Zuschauen“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Hammerschach TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>24. Neue Partie und Rückkehr zur Lobby</h4>
