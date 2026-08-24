@@ -48,11 +48,12 @@ function updateOnlineActionButtons(){
   }
   if(roomLobbyBtn){
     roomLobbyBtn.hidden = !showLobbyButton;
+    roomLobbyBtn.textContent = loggedIn ? '↩️ Zur Lobby' : '↩️ Zur Startseite';
     if(embeddedToolActive()){
       const activeName=learningToolActive?'Schach lernen':(tvToolActive?'Hammerschach TV':(openingsToolActive?'Eröffnungsschule':(schachlaborToolActive?'Schachlabor':(trainerToolActive?'Taktiktrainer':'Analyzer'))));
-      roomLobbyBtn.title=activeName+' schließen und zur Lobby zurückkehren.';
+      roomLobbyBtn.title=activeName+' schließen und '+(loggedIn?'zur Lobby':'zur Startseite')+' zurückkehren.';
     }else{
-      roomLobbyBtn.title='Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.';
+      roomLobbyBtn.title=loggedIn?'Im aktuellen Browser-Tab zur Mitglieder-Lobby zurückkehren.':'Im aktuellen Browser-Tab zur Startseite zurückkehren.';
     }
   }
   if(createOnlineBtn){
