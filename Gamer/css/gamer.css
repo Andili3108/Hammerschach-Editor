@@ -85,7 +85,6 @@
   .header-menu-section-label{padding:6px 8px 1px;color:#746a6d;font-family:Arial,sans-serif;font-size:9px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;}
   .header-menu-section-label:not(:first-child){margin-top:3px;padding-top:8px;border-top:1px solid rgba(132,63,70,.12);}
   .areas-menu-popup:not(:has(#analyzerToolBtn:not([hidden]))) .analysis-menu-label{display:none;}
-  .tv-header-action{min-width:58px!important;padding-inline:9px!important;}
   .tournaments-open-btn[aria-disabled="true"]{cursor:default;}
   .tournaments-open-btn[aria-disabled="true"]:hover{transform:none!important;filter:none!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92), inset 0 -1px 0 rgba(0,0,0,.04), 0 6px 14px rgba(0,0,0,.10)!important;}
   .tournaments-new-badge,.header-menu-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;margin-left:4px;padding:0 5px;box-sizing:border-box;border-radius:999px;background:#b91c1c;color:#fff;font-size:9px;font-weight:900;line-height:1;vertical-align:middle;}
@@ -2035,7 +2034,6 @@
     #tournamentsOpenBtn{grid-column:2;}
     #playerMenu{grid-column:1;}
     #toolsMenu{grid-column:2;}
-    #tvToolBtn{grid-column:1 / -1;}
     #authOpenBtn{grid-column:1 / -1;}
     #gamesMenu .header-menu-popup,#playerMenu .header-menu-popup{left:0;right:auto;transform:none;width:calc(200% + 8px);}
     #playerMenu .header-menu-popup{left:auto;right:0;}
