@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Schach lernen · Hammerschach</title>
+  <script>
+    try{
+      if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
+        document.documentElement.classList.add('dark-mode');
+      }
+    }catch(_){ }
+  </script>
+  <link rel="stylesheet" href="schachlernen.css?v=20260824-1">
+</head>
+<body>
+  <main class="learning-app">
+    <section class="learning-hero" aria-labelledby="courseTitle">
+      <div class="hero-copy">
+        <div class="eyebrow">Hammerschach-Grundkurs</div>
+        <h1 id="courseTitle">🎓 Schach lernen</h1>
+        <p>Zehn verständliche Lektionen führen dich vom leeren Brett bis zu Schach, Matt und Patt. Du bestimmst das Tempo und kannst jederzeit dort weitermachen, wo du aufgehört hast.</p>
+      </div>
+      <div class="progress-card" aria-label="Kursfortschritt">
+        <div class="progress-summary"><strong id="progressValue">0 von 10</strong><span>Lektionen abgeschlossen</span></div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Abgeschlossene Lektionen">
+          <span id="progressBar"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="learning-layout">
+      <aside class="course-card" aria-labelledby="courseOverviewTitle">
+        <div class="course-card-head">
+          <div>
+            <div class="eyebrow">Dein Kurs</div>
+            <h2 id="courseOverviewTitle">Alle Lektionen</h2>
+          </div>
+          <button id="resetProgressBtn" class="quiet-button" type="button" title="Gespeicherten Kursfortschritt zurücksetzen">Neu beginnen</button>
+        </div>
+        <nav id="lessonList" class="lesson-list" aria-label="Lektionen"></nav>
+        <p class="storage-note">Dein Fortschritt wird ausschließlich auf diesem Gerät gespeichert. Für diesen Grundkurs ist keine Anmeldung erforderlich.</p>
+      </aside>
+
+      <article class="lesson-card" aria-labelledby="lessonTitle">
+        <div class="lesson-heading">
+          <div>
+            <div id="lessonNumber" class="eyebrow">Lektion 1 von 10</div>
+            <h2 id="lessonTitle" tabindex="-1">Das Schachbrett und die Figuren</h2>
+          </div>
+          <span id="lessonState" class="lesson-state">Offen</span>
+        </div>
+        <p id="lessonIntro" class="lesson-intro"></p>
+
+        <div class="video-shell">
+          <div class="video-frame">
+            <iframe id="lessonVideo" title="Schachlernvideo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+          </div>
+          <div class="video-caption">
+            <span>Videotraining mit TheBigGreek</span>
+            <a href="https://www.youtube.com/@TheBigGreek" target="thebiggreek" rel="noopener">YouTube-Kanal öffnen ↗</a>
+          </div>
+        </div>
+
+        <section class="goals-card" aria-labelledby="goalsTitle">
+          <h3 id="goalsTitle">Darauf kommt es in dieser Lektion an</h3>
+          <ul id="lessonGoals"></ul>
+        </section>
+
+        <div class="lesson-actions">
+          <button id="previousLessonBtn" class="quiet-button" type="button">← Vorherige Lektion</button>
+          <button id="completeLessonBtn" class="complete-button" type="button">✓ Als erledigt markieren</button>
+          <button id="nextLessonBtn" class="quiet-button" type="button">Nächste Lektion →</button>
+        </div>
+        <p id="lessonFeedback" class="lesson-feedback" aria-live="polite"></p>
+      </article>
+    </div>
+
+    <footer class="learning-footer">
+      <p>Die Videoreihe wird mit freundlichem Hinweis auf TheBigGreek innerhalb des Hammerschach-Grundkurses gezeigt.</p>
+      <a href="https://www.andili.de/page-hammerschach-videotraining-schach_lernen.html" target="hammerschach-videotraining" rel="noopener">Zur ursprünglichen Hammerschach-Videoseite ↗</a>
+    </footer>
+  </main>
+  <script src="schachlernen.js?v=20260824-1"></script>
+</body>
+</html>
