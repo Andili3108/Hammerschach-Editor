@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260825-4" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260825-5" />
 </head>
 <body>
 <div class="app" role="main">
@@ -89,9 +89,16 @@
           <button id="openOffersOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="openOffersBackdrop">🔎 Angebote <span id="openOffersCount" class="header-menu-count open-offers-count" hidden>0</span></button>
           <button id="newGameOpenBtn" class="name-action-btn new-game-open-btn" type="button" aria-haspopup="dialog" aria-controls="newGameBackdrop" hidden>♟️ Neue Partie</button>
           <button id="roomLobbyBtn" class="button-flat name-action-btn" type="button" hidden>↩️ Zur Lobby</button>
-          <button id="trainerBeginnerHeaderBtn" class="button-flat name-action-btn header-direct-action trainer-header-action active" type="button" aria-pressed="true" hidden>🎯 Anfängertraining</button>
+          <div id="trainerBeginnerMenu" class="header-menu trainer-beginner-menu" hidden>
+            <button id="trainerBeginnerMenuBtn" class="button-flat name-action-btn header-menu-button trainer-header-action active" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="trainerBeginnerMenuPopup">
+              <span>🎯 Anfängertraining</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="trainerBeginnerMenuPopup" class="header-menu-popup" role="menu" aria-label="Anfängertraining" hidden>
+              <button id="trainerBeginnerHeaderBtn" class="header-menu-item active" type="button" role="menuitem" aria-current="page">🧩 Aufgaben</button>
+              <button id="trainerProgressHeaderBtn" class="header-menu-item" type="button" role="menuitem">📊 Lernstand · 0/65</button>
+            </div>
+          </div>
           <button id="trainerFreeHeaderBtn" class="button-flat name-action-btn header-direct-action trainer-header-action" type="button" aria-pressed="false" hidden>🎯 Freies Training</button>
-          <button id="trainerProgressHeaderBtn" class="button-flat name-action-btn header-direct-action trainer-header-action" type="button" aria-pressed="false" hidden>📊 Lernstand · 0/65</button>
           <button id="dailyGamesOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="dailyGamesBackdrop">📋 Meine Partien <span id="dailyGamesTurnCount" class="header-menu-count daily-games-turn-count" hidden>0</span></button>
           <div id="gamesMenu" class="header-menu">
             <button id="gamesMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gamesMenuPopup">
@@ -114,7 +121,8 @@
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
           <button id="visitorLearningOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="learningToolView" hidden>🎓 Schach lernen</button>
-          <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Anfängertraining</button>
+          <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Anfängertraining</button>
+          <button id="visitorTrainerProgressHeaderBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>📊 Lernstand · 0/65</button>
           <button id="visitorPublicGamesOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-haspopup="dialog" aria-controls="publicGamesBackdrop" hidden>👁️ Laufende Partien</button>
           <div id="toolsMenu" class="header-menu tools-menu" hidden>
             <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
@@ -159,13 +167,14 @@
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="roomLobbyBtn" data-mobile-nav-visitor-only><span>↩️</span><strong>Zur Startseite</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLearningOpenBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schach lernen</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerOpenBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Anfängertraining</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerProgressHeaderBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Lernstand</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
           </section>
           <section id="mobileNavTrainerSection" hidden>
-            <h2>Trainer</h2>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerBeginnerHeaderBtn"><span>🎯</span><strong>Anfängertraining</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerFreeHeaderBtn"><span>🎯</span><strong>Freies Training</strong></button>
+            <h2>Anfängertraining</h2>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerBeginnerHeaderBtn"><span>🧩</span><strong>Aufgaben</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerProgressHeaderBtn"><span>📊</span><strong>Lernstand</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerFreeHeaderBtn"><span>🎯</span><strong>Freies Training</strong></button>
           </section>
           <section>
             <h2>Spielen</h2>
@@ -2229,11 +2238,11 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260825-2"></script>
-<script src="js/header-ui.js?v=20260824-1"></script>
+<script src="js/online-ui-elements.js?v=20260825-3"></script>
+<script src="js/header-ui.js?v=20260825-2"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
-<script src="js/embedded-tools.js?v=20260825-5"></script>
+<script src="js/embedded-tools.js?v=20260825-6"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2250,7 +2259,7 @@
 <script src="js/admin-info-center.js?v=20260819-2"></script>
 <script src="js/account-profile.js?v=20260811-2"></script>
 <script src="js/auth-recovery.js?v=20260804-1"></script>
-<script src="js/auth-account.js?v=20260825-1"></script>
+<script src="js/auth-account.js?v=20260825-2"></script>
 <script src="js/tournament-themes.js?v=20260821-1"></script>
 <script src="js/tournament-setup.js?v=20260821-2"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
@@ -2293,6 +2302,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260815-1"></script>
 <script src="js/board-size-control.js?v=20260813-1"></script>
-<script src="js/mobile-navigation.js?v=20260825-3"></script>
+<script src="js/mobile-navigation.js?v=20260825-4"></script>
 </body>
 </html>
