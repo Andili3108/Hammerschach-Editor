@@ -1,10 +1,11 @@
 <!doctype html>
-<!-- BUILD: TRAINER-PREMIUM-BOARD-20260730-1 -->
+<!-- BUILD: BEGINNER-TRAINING-20260825-2 -->
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hammerschach-Trainer im Gamer</title>
+<link rel="stylesheet" href="beginner-training.css?v=20260825-2">
 <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_plt45.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_rlt45.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_nlt45.svg">
@@ -1035,6 +1036,58 @@ html.dark-mode #board{
     </div>
   </div>
 
+  <section id="beginnerTrainingPanel" class="beginner-training-panel" aria-labelledby="beginnerTrainingTitle">
+    <div class="beginner-training-heading">
+      <div>
+        <div class="beginner-training-kicker">Dein persönlicher Schachcoach</div>
+        <h1 id="beginnerTrainingTitle">🎯 Hammerschach-Anfängertraining</h1>
+        <p id="beginnerTrainingLead">Vom ersten Mattbild bis zum sicheren Taktikblick – Schritt für Schritt und ohne Leistungsdruck.</p>
+      </div>
+      <div class="beginner-training-mode" role="group" aria-label="Trainingsart">
+        <button id="btnCoachMode" type="button" class="active" aria-pressed="true">🧭 Anfänger-Lernpfad</button>
+        <button id="btnFreeMode" type="button" aria-pressed="false">🎯 Freies Training</button>
+      </div>
+    </div>
+
+    <div id="coachDashboard" class="coach-dashboard">
+      <div class="coach-progress-card">
+        <div class="coach-progress-copy">
+          <strong id="coachProgressText">0 von 65 Aufgaben gemeistert</strong>
+          <span id="coachProgressHint">Beginne mit einfachen Mattbildern.</span>
+        </div>
+        <div class="coach-progress-track" role="progressbar" aria-label="Fortschritt im Anfänger-Lernpfad" aria-valuemin="0" aria-valuemax="65" aria-valuenow="0">
+          <span id="coachProgressBar"></span>
+        </div>
+        <div class="coach-summary" aria-label="Trainingsübersicht">
+          <span><strong id="coachSolvedCount">0</strong> gemeistert</span>
+          <span><strong id="coachReviewCount">0</strong> zur Wiederholung</span>
+          <span><strong id="coachStageCount">1/6</strong> Trainingsblock</span>
+        </div>
+      </div>
+
+      <div id="coachStageList" class="coach-stage-list" aria-label="Anfänger-Trainingsblöcke"></div>
+
+      <div class="coach-current-card">
+        <div>
+          <div class="coach-current-label">Aktueller Trainingsblock</div>
+          <h2 id="coachCurrentTitle">Matt in einem Zug</h2>
+          <p id="coachCurrentDescription">Erkenne direkte Mattbilder und kontrolliere alle Fluchtfelder des Königs.</p>
+          <div id="coachCurrentTip" class="coach-tip"><strong>Trainer-Tipp:</strong> Prüfe zuerst alle Schachgebote.</div>
+        </div>
+        <div class="coach-actions">
+          <button id="btnCoachStart" class="coach-primary" type="button">Training starten</button>
+          <button id="btnCoachReview" type="button" disabled>Fehler wiederholen <span id="coachReviewBadge">0</span></button>
+          <button id="btnCoachReset" class="coach-reset" type="button">Lernpfad zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="freeTrainingIntro" class="free-training-intro" hidden>
+      <strong>Freies Training für Fortgeschrittene</strong>
+      <span>Wähle Rating, Motive und Länge selbst. Gewertete Versuche stehen nach dem Gamer-Login zur Verfügung.</span>
+    </div>
+  </section>
+
   <div class="page">
     <div class="board-column">
       <div id="board" aria-label="Schachbrett"></div>
@@ -1155,6 +1208,7 @@ html.dark-mode #board{
     </div>
   </aside>
 </div>
+<p class="trainer-source-note">Aufgabenbasis: Lichess Open Database · CC0</p>
 </div>
 
 <div id="guideBackdrop" class="guide-backdrop" hidden>
@@ -1162,12 +1216,21 @@ html.dark-mode #board{
     <div class="guide-modal-head">
       <div>
         <h2 id="guideTitle">Anleitung – Hammerschach-Trainer</h2>
-        <p>Finde in jeder Stellung die beste taktische Fortsetzung. Diese Anleitung bleibt direkt im Trainer und kann gescrollt werden.</p>
+        <p>Trainiere geführt im Anfänger-Lernpfad oder stelle dir im freien Training eigene Aufgaben zusammen.</p>
       </div>
       <button id="btnGuideCloseIcon" class="button-flat guide-close-icon" type="button" aria-label="Anleitung schließen">×</button>
     </div>
 
     <div class="guide-scroll">
+      <section class="guide-section">
+        <h3>Anfänger-Lernpfad und freies Training</h3>
+        <ul>
+          <li>Der <strong>Anfänger-Lernpfad</strong> führt in sechs aufeinander aufbauenden Blöcken vom Matt in einem Zug bis zur gemischten Abschlussprüfung.</li>
+          <li>Falsch gelöste Aufgaben landen automatisch unter <strong>„Fehler wiederholen“</strong>. Erst eine fehlerfreie Wiederholung gilt als gemeistert.</li>
+          <li>Der Lernfortschritt wird auf diesem Gerät gespeichert und funktioniert auch ohne Anmeldung.</li>
+          <li>Im <strong>freien Training</strong> stehen weiterhin alle Filter sowie – nach Anmeldung – gewertete Versuche zur Verfügung.</li>
+        </ul>
+      </section>
       <section class="guide-section">
         <h3>1. Aufgabe starten</h3>
         <ol>
@@ -1890,6 +1953,7 @@ function saveTrainerSessionNow(){
     trainingActive:!!trainingActive,solutionVisible:!!solutionVisible,
     solutionBreak:!!solutionBreak,solutionText:puzzleSolutionEl.textContent||'',
     statusText:statusEl.textContent||'',statusDefaultText:statusDefaultText||'',
+    beginnerTrainingMode:window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.isCoachMode()?'coach':'free',
     ratedTrainingPreference:!!ratedTrainingPreference,
     ratedAttemptResolved:!!ratedAttemptResolved,ratedAttemptId:ratedAttemptId||'',
     filters:{
@@ -2179,7 +2243,8 @@ function requestFromGamer(type,payload){
   });
 }
 function activeRatedTraining(){
-  return !!(trainerLoggedIn&&ratedTrainingPreference);
+  const coachActive=!!(window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.isCoachMode());
+  return !!(trainerLoggedIn&&ratedTrainingPreference&&!coachActive);
 }
 function updateTrainerAccountUi(){
   if(trainerUserDisplayEl){
@@ -2477,6 +2542,7 @@ function setupPuzzle(p){
   setDefaultStatus(sideText+" am Zug – finde die beste Fortsetzung!");
   selected=null;
   renderBoard();
+  if(window.HammerschachBeginnerTrainer)window.HammerschachBeginnerTrainer.onPuzzleSetup(p);
 }
 
 /* Aufgabenliste laden */
@@ -2500,7 +2566,8 @@ async function loadPuzzleList(){
 /* Buttons */
 document.getElementById('btnNewPuzzle').addEventListener('click',()=>{
   isRetry = false;
-  const p=chooseRandomFilteredPuzzle();
+  const coachPuzzle=window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.choosePuzzle();
+  const p=coachPuzzle||chooseRandomFilteredPuzzle();
   setupPuzzle(p);
 });
 document.getElementById('btnRetry').addEventListener('click',()=>{
@@ -2543,6 +2610,7 @@ document.getElementById('btnShowSolution').addEventListener('click',()=>{
   solutionVisible=true;
   solutionBreak=true;
   ratedAttemptResolved=true;
+  if(window.HammerschachBeginnerTrainer)window.HammerschachBeginnerTrainer.recordResult('fail',{solution:true});
   scheduleTrainerSessionSave();
 });
 document.getElementById('btnFlip').addEventListener('click',()=>{
@@ -2597,6 +2665,7 @@ function onSquareClick(x,y){
       if(uciPlayed!==expected){
         setStatus("Das ist nicht die Lösung dieser Aufgabe.", STATUS_RED, true);
         saveTrainerResult("fail");
+        if(window.HammerschachBeginnerTrainer)window.HammerschachBeginnerTrainer.recordResult('fail');
         window.HammerschachToolSound?.play('defeat');
         selected=null;
         renderBoard();
@@ -2613,7 +2682,8 @@ function onSquareClick(x,y){
 
     if(trainingActive){
       if(solutionLine.length===0){
-        setStatus("Ausgezeichnet! Aufgabe vollständig gelöst.", STATUS_GREEN, true);
+        const coachText=window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.recordResult('success');
+        setStatus(coachText||"Ausgezeichnet! Aufgabe vollständig gelöst.", STATUS_GREEN, true);
         saveTrainerResult("success");
         setTimeout(()=>window.HammerschachToolSound?.play('victory'),140);
       }else{
@@ -2627,7 +2697,8 @@ function onSquareClick(x,y){
           isAnimatingOpponent=false;
         }
         if(solutionLine.length===0){
-          setStatus("Sehr gut! Die Kombination ist abgeschlossen.", STATUS_GREEN, true);
+          const coachText=window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.recordResult('success');
+          setStatus(coachText||"Sehr gut! Die Kombination ist abgeschlossen.", STATUS_GREEN, true);
           saveTrainerResult("success");
           setTimeout(()=>window.HammerschachToolSound?.play('victory'),140);
         }else{
@@ -2809,17 +2880,21 @@ parentMessage({type:'hammerschach-trainer-ready'});
 (async function init(){
   renderBoard();
   await loadPuzzleList();
-  if(!restoreTrainerSession()){
-    const first=chooseRandomFilteredPuzzle();
+  const bypassRestore=!!(window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.shouldBypassSessionRestore());
+  if(bypassRestore||!restoreTrainerSession()){
+    const coachFirst=window.HammerschachBeginnerTrainer&&window.HammerschachBeginnerTrainer.choosePuzzle();
+    const first=coachFirst||chooseRandomFilteredPuzzle();
     setupPuzzle(first);
   }
   trainerSessionPersistenceReady=true;
   updateAutoDiffState();
   updateTrainerAccountUi();
   saveTrainerSessionNow();
+  if(window.HammerschachBeginnerTrainer)window.HammerschachBeginnerTrainer.ready();
   reportTrainerHeight();
 })();
 </script>
+<script src="beginner-training.js?v=20260825-2"></script>
 
 </body>
 </html>

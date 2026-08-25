@@ -1,0 +1,132 @@
+:root{
+  --coach-gold:#d39a31;
+  --coach-gold-dark:#9f6719;
+  --coach-red:#843f46;
+  --coach-green:#2e8b57;
+  --coach-ink:#302426;
+  --coach-soft:#fff8e9;
+}
+
+.beginner-training-panel{
+  width:min(1180px,calc(100% - 24px));
+  margin:14px auto 18px;
+  padding:18px;
+  border:1px solid rgba(132,63,70,.20);
+  border-radius:18px;
+  color:var(--coach-ink);
+  background:
+    radial-gradient(circle at 96% 0,rgba(211,154,49,.20),transparent 32%),
+    linear-gradient(145deg,#fffdf8 0%,#fff7e8 100%);
+  box-shadow:0 16px 38px rgba(62,38,29,.12);
+}
+.beginner-training-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.beginner-training-kicker{font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--coach-red)}
+.beginner-training-heading h1{margin:4px 0 5px;font-size:clamp(23px,3vw,36px);line-height:1.08;color:#3d272a}
+.beginner-training-heading p{margin:0;max-width:720px;color:#665154;font-size:14px;line-height:1.5}
+.beginner-training-mode{display:flex;gap:6px;padding:5px;border-radius:12px;background:rgba(132,63,70,.08);flex:0 0 auto}
+.beginner-training-mode button{min-height:40px;padding:8px 12px;border-radius:9px!important;white-space:nowrap}
+.beginner-training-mode button.active{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important}
+
+.coach-dashboard{display:grid;gap:14px;margin-top:18px}
+.coach-progress-card,.coach-current-card{
+  border:1px solid rgba(132,63,70,.15);
+  border-radius:14px;
+  background:rgba(255,255,255,.82);
+  padding:14px;
+}
+.coach-progress-copy{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.coach-progress-copy strong{font-size:16px;color:#493034}
+.coach-progress-copy span{font-size:13px;color:#765e62}
+.coach-progress-track{height:11px;margin-top:10px;overflow:hidden;border-radius:999px;background:#eaded3;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.coach-progress-track span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--coach-red),var(--coach-gold));transition:width .28s ease}
+.coach-summary{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.coach-summary span{padding:6px 9px;border-radius:999px;background:#f5ede4;color:#654f52;font-size:12px}
+.coach-summary strong{color:#422d30}
+
+.coach-stage-list{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px}
+.coach-stage{
+  min-height:92px;
+  padding:10px!important;
+  text-align:left;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.78)!important;
+  border:1px solid rgba(132,63,70,.14)!important;
+  color:#4c373a!important;
+}
+.coach-stage:hover:not(:disabled){transform:translateY(-1px)}
+.coach-stage.active{background:linear-gradient(145deg,#fff5d9,#f8e2aa)!important;border-color:#c78c26!important;box-shadow:0 8px 18px rgba(144,94,19,.16)!important}
+.coach-stage.complete{background:linear-gradient(145deg,#edf8f1,#dff1e6)!important;border-color:rgba(46,139,87,.45)!important}
+.coach-stage:disabled{opacity:.48;cursor:not-allowed}
+.coach-stage-number{display:block;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#9a656b}
+.coach-stage-name{display:block;margin:4px 0;font-size:13px;font-weight:900;line-height:1.2}
+.coach-stage-progress{display:block;font-size:11px;color:#78666a}
+
+.coach-current-card{display:flex;justify-content:space-between;gap:18px;align-items:center}
+.coach-current-label{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#9a656b}
+.coach-current-card h2{margin:3px 0 5px;font-size:21px;color:#432d31}
+.coach-current-card p{margin:0;color:#6d585b;line-height:1.45}
+.coach-tip{margin-top:10px;padding:9px 11px;border-left:4px solid var(--coach-gold);border-radius:7px;background:#fff8df;color:#5b462b;font-size:13px}
+.coach-actions{display:flex;flex-direction:column;gap:7px;min-width:205px}
+.coach-actions button{width:100%;min-height:39px}
+.coach-actions .coach-primary{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important;font-weight:900}
+.coach-actions .coach-reset{font-size:11px;min-height:31px;opacity:.76}
+#coachReviewBadge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;margin-left:4px;padding:0 5px;border-radius:999px;background:rgba(132,63,70,.12);font-size:11px}
+.free-training-intro{display:flex;gap:8px;align-items:baseline;margin-top:16px;padding:12px 14px;border-radius:11px;background:rgba(255,255,255,.75);color:#6a5256}
+.free-training-intro strong{color:#432d31}
+.trainer-source-note{width:min(1180px,calc(100% - 24px));margin:2px auto 16px;text-align:center;color:#7b686b;font-size:11px}
+
+body.coach-mode .filter-box{display:none}
+body.coach-mode .rating-mode{display:none}
+body.coach-mode #ratingDisplay{display:none}
+body.coach-mode .sidebar{align-self:start}
+body.coach-mode #btnNewPuzzle{font-weight:900}
+body.coach-review-active .coach-current-card{box-shadow:inset 0 0 0 2px rgba(211,154,49,.52)}
+
+html.dark-mode .beginner-training-panel{
+  color:#eef0f2;
+  border-color:rgba(226,151,160,.20);
+  background:radial-gradient(circle at 96% 0,rgba(211,154,49,.14),transparent 32%),linear-gradient(145deg,#22262c,#1b1e23);
+  box-shadow:0 18px 44px rgba(0,0,0,.42);
+}
+html.dark-mode .beginner-training-heading h1,
+html.dark-mode .coach-progress-copy strong,
+html.dark-mode .coach-current-card h2,
+html.dark-mode .free-training-intro strong{color:#f4f0eb}
+html.dark-mode .beginner-training-heading p,
+html.dark-mode .coach-progress-copy span,
+html.dark-mode .coach-current-card p,
+html.dark-mode .free-training-intro{color:#bdc0c6}
+html.dark-mode .beginner-training-mode{background:rgba(255,255,255,.06)}
+html.dark-mode .coach-progress-card,
+html.dark-mode .coach-current-card,
+html.dark-mode .free-training-intro{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.09)}
+html.dark-mode .coach-progress-track{background:#3b3533}
+html.dark-mode .coach-summary span{background:#2b2f36;color:#c8cbd0}
+html.dark-mode .coach-summary strong{color:#f2f3f5}
+html.dark-mode .coach-stage{background:#292d33!important;color:#eef0f2!important;border-color:rgba(255,255,255,.09)!important}
+html.dark-mode .coach-stage.active{background:linear-gradient(145deg,#5a4628,#3e3427)!important;border-color:#b8842c!important}
+html.dark-mode .coach-stage.complete{background:linear-gradient(145deg,#264233,#21382d)!important;border-color:#3f8d61!important}
+html.dark-mode .coach-stage-progress{color:#b9bdc4}
+html.dark-mode .coach-tip{background:#393222;color:#ead9ac;border-color:#c59031}
+html.dark-mode .trainer-source-note{color:#969ba3}
+
+@media(max-width:900px){
+  .beginner-training-heading,.coach-current-card{align-items:stretch;flex-direction:column}
+  .beginner-training-mode{align-self:flex-start}
+  .coach-stage-list{grid-template-columns:repeat(3,minmax(120px,1fr))}
+  .coach-actions{display:grid;grid-template-columns:1fr 1fr;min-width:0}
+  .coach-actions .coach-reset{grid-column:1/-1}
+}
+@media(max-width:560px){
+  .beginner-training-panel{width:calc(100% - 12px);padding:12px;margin-top:8px;border-radius:14px}
+  .beginner-training-mode{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .beginner-training-mode button{white-space:normal;font-size:12px}
+  .coach-progress-copy{align-items:flex-start;flex-direction:column;gap:3px}
+  .coach-stage-list{display:flex;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}
+  .coach-stage{min-width:150px;scroll-snap-align:start}
+  .coach-actions{grid-template-columns:1fr}
+  .coach-actions .coach-reset{grid-column:auto}
+  .free-training-intro{align-items:flex-start;flex-direction:column}
+}
+
+@media(prefers-reduced-motion:reduce){.coach-progress-track span{transition:none}}
