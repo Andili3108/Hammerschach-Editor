@@ -111,6 +111,7 @@
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
           <button id="visitorLearningOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="learningToolView" hidden>🎓 Schach lernen</button>
+          <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Anfängertraining</button>
           <button id="visitorPublicGamesOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-haspopup="dialog" aria-controls="publicGamesBackdrop" hidden>👁️ Laufende Partien</button>
           <div id="toolsMenu" class="header-menu tools-menu" hidden>
             <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
@@ -119,7 +120,7 @@
             <div id="toolsMenuPopup" class="header-menu-popup areas-menu-popup" role="menu" aria-label="Hammerschach-Bereiche" hidden>
               <div class="header-menu-section-label">Lernen &amp; Trainieren</div>
               <button id="learningToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="learningToolView">🎓 Schach lernen</button>
-              <button id="trainerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="trainerToolView">🎯 Taktiktrainer</button>
+              <button id="trainerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="trainerToolView">🎯 Trainer</button>
               <button id="openingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="openingsToolView">📘 Eröffnungsschule</button>
               <div class="header-menu-section-label analysis-menu-label">Analysieren</div>
               <button id="analyzerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="analyzerToolView">🧠 Analyzer</button>
@@ -154,6 +155,7 @@
             <h2>Navigation</h2>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="roomLobbyBtn" data-mobile-nav-visitor-only><span>↩️</span><strong>Zur Startseite</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLearningOpenBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schach lernen</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerOpenBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Anfängertraining</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
           </section>
           <section>
@@ -172,7 +174,7 @@
           <section>
             <h2>Lernen &amp; Trainieren</h2>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="learningToolBtn"><span>🎓</span><strong>Schach lernen</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerToolBtn"><span>🎯</span><strong>Taktiktrainer</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerToolBtn"><span>🎯</span><strong>Trainer</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="openingsToolBtn"><span>📘</span><strong>Eröffnungsschule</strong></button>
           </section>
           <section>
@@ -578,11 +580,12 @@
 
           <h4>18. Schach lernen</h4>
           <p>Über <strong>„♟️ Bereiche“ → „🎓 Schach lernen“</strong> öffnest du den Hammerschach-Grundkurs direkt innerhalb des Gamers. Die zehn Lektionen behandeln Brett und Figuren, sämtliche Figurenzüge, Figurenwerte, Rochade sowie Schach, Matt und Patt. Die Videos von TheBigGreek starten nicht automatisch. Jede Lektion kann nach dem Ansehen als erledigt markiert werden; Kursstand und zuletzt geöffnete Lektion werden ausschließlich auf diesem Gerät gespeichert.</p>
+          <p>Nach Abschluss aller zehn Lektionen führt <strong>„🎯 Anfängertraining starten“</strong> ohne Umweg in den geführten Lernpfad. Der Trainer beginnt mit Matt in einem Zug und steigert die Anforderungen blockweise.</p>
           <p>Der Grundkurs steht auch ohne Registrierung zur Verfügung. Der Gamer-Header bleibt sichtbar. Besucher kehren mit <strong>„↩️ Zur Startseite“</strong> zurück; angemeldete Mitglieder schließen den Lernbereich mit <strong>„↩️ Zur Lobby“</strong>. Während eines geöffneten Spiel- oder Zuschauerraums wird der Lernkurs nicht parallel eingeblendet.</p>
 
           <h4>19. Der integrierte Analyzer</h4>
           <p>Über <strong>„♟️ Bereiche“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
-          <p>Analyzer, Taktiktrainer, Schachlabor und Eröffnungsschule sind ausschließlich für eingeloggte Mitglieder verfügbar; der Grundkurs „Schach lernen“ ist davon ausgenommen. Wird ein Mitgliederbereich aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch den gewählten Bereich. Die Partie bleibt serverseitig bestehen; der Bereich wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt den gerade aktiven Bereich wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Im Zuschauermodus bleibt das Bereiche-Menü ausgeblendet. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
+          <p>Analyzer, Schachlabor und Eröffnungsschule sind ausschließlich für eingeloggte Mitglieder verfügbar; der Grundkurs „Schach lernen“ und das Anfängertraining sind davon ausgenommen. Wird ein Mitgliederbereich aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch den gewählten Bereich. Die Partie bleibt serverseitig bestehen; der Bereich wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt den gerade aktiven Bereich wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Im Zuschauermodus bleibt das Bereiche-Menü ausgeblendet. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, eine Brettfarbe wählen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Die Brettfarbe wird auf dem Gerät gespeichert. Der Dark Mode wird automatisch vom Gamer übernommen.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
@@ -597,13 +600,15 @@
           </ul>
 
           <h4>20. Der integrierte Trainer</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „🎯 Taktiktrainer“</strong> öffnest du als eingeloggtes Mitglied das Taktiktraining direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Im eigenen Spielraum bleibt der Eintrag erreichbar; seine Auswahl führt zuerst über den sicheren Raumwechsel und öffnet danach den Trainer.</p>
+          <p>Über <strong>„♟️ Bereiche“ → „🎯 Trainer“</strong> öffnest du das Training direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Anfängertraining und lokaler Lernfortschritt stehen auch ohne Registrierung zur Verfügung.</p>
           <ul>
-            <li><strong>Gamer-Anmeldung:</strong> Der Trainer übernimmt automatisch den aktuell angemeldeten Gamer-Account. Eine zweite Registrierung oder ein gesonderter Trainer-Login ist nicht erforderlich. Ohne Gamer-Anmeldung kann weiterhin trainiert werden, jedoch ausschließlich ohne Rating.</li>
+            <li><strong>Anfänger-Lernpfad:</strong> Sechs aufeinander aufbauende Blöcke führen durch Matt in 1, Ein-Zug-Taktik, Gabeln, Fesselung und Spieß, Matt in 2 sowie eine gemischte Abschlussprüfung. Der nächste Block wird nach dem sicheren Abschluss freigeschaltet.</li>
+            <li><strong>Fehlertraining:</strong> Falsch gelöste oder über die Lösung angezeigte Aufgaben landen automatisch in einer persönlichen Wiederholungsliste. Erst eine fehlerfreie Wiederholung gilt als gemeistert.</li>
+            <li><strong>Gamer-Anmeldung:</strong> Der Trainer übernimmt automatisch den aktuell angemeldeten Gamer-Account. Eine zweite Registrierung oder ein gesonderter Trainer-Login ist nicht erforderlich. Ohne Gamer-Anmeldung wird ausschließlich ohne Rating trainiert.</li>
             <li><strong>Mit oder ohne Rating:</strong> Angemeldete Mitglieder wählen im Trainer zwischen <strong>„Mit Rating“</strong> und <strong>„Ohne Rating“</strong>. Im Modus ohne Rating werden keine Ergebnisse im Account gespeichert.</li>
             <li><strong>Faire Wertung:</strong> Bei aktiviertem Rating zählt ausschließlich der erste Lösungsversuch einer neuen Aufgabe. Nach einem Fehlversuch, einer Wiederholung oder dem Einblenden der Lösung wird für diese Aufgabe keine weitere Ratingänderung gespeichert.</li>
             <li><strong>Taktik-Rating:</strong> Das eigenständige Taktik-Rating startet bei 1500 und berücksichtigt das Rating der jeweiligen Aufgabe. Es bleibt von den sechs Partie-Ratings des Gamers getrennt.</li>
-            <li><strong>Aufgaben und Filter:</strong> Ratingbereich, Themen, maximale Zahl der Halbzüge und Popularität lassen sich filtern. Angemeldete Mitglieder können die Schwierigkeit automatisch an ihr Taktik-Rating anpassen lassen.</li>
+            <li><strong>Freies Training:</strong> Fortgeschrittene wechseln jederzeit zum bisherigen freien Training. Dort lassen sich Ratingbereich, Themen, maximale Zahl der Halbzüge und Popularität selbst filtern.</li>
             <li><strong>Sitzung und Darstellung:</strong> Aktuelle Aufgabe, Stellung, Filter, Brettausrichtung, Ratingmodus und Lösungsstatus werden lokal wiederhergestellt. Der Dark Mode und die verfügbare Höhe werden automatisch vom Gamer übernommen.</li>
           </ul>
 
@@ -633,7 +638,7 @@
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>24. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Taktiktrainer, Schachlabor, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
+          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
 
           <h4>25. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -708,7 +713,7 @@
 
           <h4>2. Nutzung ohne Account</h4>
           <p>Live-Partien können über einen Einladungslink auch als Gast gespielt werden. Dabei werden ein Gastname, eine zufällig erzeugte Spielerkennung, der belegte Spielerplatz sowie die für die Partie erforderlichen Verbindungs- und Spieldaten verarbeitet. Gäste können keine eigenen Einladungen erstellen und Daily Chess nicht als Spieler verwenden.</p>
-          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbaren Bereichs-Sitzungen. Der Grundkurs speichert die zuletzt geöffnete und die erledigten Lektionen; das Schachlabor speichert die zuletzt bearbeitete Stellung und seine lokalen Optionen; die Eröffnungsschule speichert das auf diesem Gerät markierte Repertoire und den lokalen Übungsfortschritt. Bei Nutzung der ausschließlich für den Administrator zugänglichen Fairplay-Prüfung werden bereits berechnete Stockfish-Ergebnisse lokal zwischengespeichert, damit eine Partie nicht nach jedem Neuladen erneut berechnet werden muss. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Bereichs-Sitzungen, Lern- und Eröffnungsfortschritt sowie die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
+          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbaren Bereichs-Sitzungen. Der Grundkurs speichert die zuletzt geöffnete und die erledigten Lektionen; das Anfängertraining speichert Lernblöcke, gemeisterte Aufgaben und die persönliche Fehlerliste; das Schachlabor speichert die zuletzt bearbeitete Stellung und seine lokalen Optionen; die Eröffnungsschule speichert das auf diesem Gerät markierte Repertoire und den lokalen Übungsfortschritt. Bei Nutzung der ausschließlich für den Administrator zugänglichen Fairplay-Prüfung werden bereits berechnete Stockfish-Ergebnisse lokal zwischengespeichert, damit eine Partie nicht nach jedem Neuladen erneut berechnet werden muss. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Bereichs-Sitzungen, Lern- und Eröffnungsfortschritt sowie die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
 
           <h4>3. Registrierung, Account und Login</h4>
           <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen, aktive Anmeldesitzungen und der Zeitpunkt der einmaligen Leitbild-Bestätigung verwaltet.</p>
@@ -2215,11 +2220,11 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260824-2"></script>
+<script src="js/online-ui-elements.js?v=20260825-1"></script>
 <script src="js/header-ui.js?v=20260824-1"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
-<script src="js/embedded-tools.js?v=20260824-3"></script>
+<script src="js/embedded-tools.js?v=20260825-2"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2236,7 +2241,7 @@
 <script src="js/admin-info-center.js?v=20260819-2"></script>
 <script src="js/account-profile.js?v=20260811-2"></script>
 <script src="js/auth-recovery.js?v=20260804-1"></script>
-<script src="js/auth-account.js?v=20260824-3"></script>
+<script src="js/auth-account.js?v=20260825-1"></script>
 <script src="js/tournament-themes.js?v=20260821-1"></script>
 <script src="js/tournament-setup.js?v=20260821-2"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
