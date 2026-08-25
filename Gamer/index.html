@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-BEREICHE-TV-20260824-6 -->
+<!-- BUILD: GAMER-ANFAENGERTRAINING-KOMPAKT-20260825-2 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260824-6" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260825-4" />
 </head>
 <body>
 <div class="app" role="main">
@@ -89,6 +89,9 @@
           <button id="openOffersOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="openOffersBackdrop">🔎 Angebote <span id="openOffersCount" class="header-menu-count open-offers-count" hidden>0</span></button>
           <button id="newGameOpenBtn" class="name-action-btn new-game-open-btn" type="button" aria-haspopup="dialog" aria-controls="newGameBackdrop" hidden>♟️ Neue Partie</button>
           <button id="roomLobbyBtn" class="button-flat name-action-btn" type="button" hidden>↩️ Zur Lobby</button>
+          <button id="trainerBeginnerHeaderBtn" class="button-flat name-action-btn header-direct-action trainer-header-action active" type="button" aria-pressed="true" hidden>🎯 Anfängertraining</button>
+          <button id="trainerFreeHeaderBtn" class="button-flat name-action-btn header-direct-action trainer-header-action" type="button" aria-pressed="false" hidden>🎯 Freies Training</button>
+          <button id="trainerProgressHeaderBtn" class="button-flat name-action-btn header-direct-action trainer-header-action" type="button" aria-pressed="false" hidden>📊 Lernstand · 0/65</button>
           <button id="dailyGamesOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="dailyGamesBackdrop">📋 Meine Partien <span id="dailyGamesTurnCount" class="header-menu-count daily-games-turn-count" hidden>0</span></button>
           <div id="gamesMenu" class="header-menu">
             <button id="gamesMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="gamesMenuPopup">
@@ -157,6 +160,12 @@
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLearningOpenBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schach lernen</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerOpenBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Anfängertraining</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
+          </section>
+          <section id="mobileNavTrainerSection" hidden>
+            <h2>Trainer</h2>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerBeginnerHeaderBtn"><span>🎯</span><strong>Anfängertraining</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerFreeHeaderBtn"><span>🎯</span><strong>Freies Training</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="trainerProgressHeaderBtn"><span>📊</span><strong>Lernstand</strong></button>
           </section>
           <section>
             <h2>Spielen</h2>
@@ -2220,11 +2229,11 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260825-1"></script>
+<script src="js/online-ui-elements.js?v=20260825-2"></script>
 <script src="js/header-ui.js?v=20260824-1"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
-<script src="js/embedded-tools.js?v=20260825-2"></script>
+<script src="js/embedded-tools.js?v=20260825-5"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2284,6 +2293,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260815-1"></script>
 <script src="js/board-size-control.js?v=20260813-1"></script>
-<script src="js/mobile-navigation.js?v=20260824-5"></script>
+<script src="js/mobile-navigation.js?v=20260825-3"></script>
 </body>
 </html>
