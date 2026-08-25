@@ -22,6 +22,7 @@ let fairplayToolLastOpenAt = 0;
 let tvToolLastOpenAt = 0;
 let analyzerToolReady = false;
 let pendingTrainerStartMode = '';
+let trainerHeaderState = {mode:'coach',detailsOpen:false,solved:0,total:65,stage:1,stageTotal:6,stageTitle:'Matt in einem Zug'};
 let pendingAnalyzerOpeningPgn = '';
 let pendingAnalyzerArchivePgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
@@ -121,6 +122,25 @@ function postTrainerToolMessage(message){
   if(!trainerToolFrameStarted || !trainerToolFrame || !trainerToolFrame.contentWindow) return;
   try{ trainerToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
 }
+function updateTrainerHeaderActions(){
+  const active=!!trainerToolActive;
+  const coach=trainerHeaderState.mode!=='free';
+  [trainerBeginnerHeaderBtn,trainerFreeHeaderBtn,trainerProgressHeaderBtn].forEach(button=>{if(button)button.hidden=!active;});
+  if(trainerBeginnerHeaderBtn){
+    trainerBeginnerHeaderBtn.classList.toggle('active',active&&coach);
+    trainerBeginnerHeaderBtn.setAttribute('aria-pressed',active&&coach?'true':'false');
+  }
+  if(trainerFreeHeaderBtn){
+    trainerFreeHeaderBtn.classList.toggle('active',active&&!coach);
+    trainerFreeHeaderBtn.setAttribute('aria-pressed',active&&!coach?'true':'false');
+  }
+  if(trainerProgressHeaderBtn){
+    trainerProgressHeaderBtn.hidden=!active||!coach;
+    trainerProgressHeaderBtn.classList.toggle('active',active&&coach&&!!trainerHeaderState.detailsOpen);
+    trainerProgressHeaderBtn.setAttribute('aria-pressed',active&&coach&&trainerHeaderState.detailsOpen?'true':'false');
+    trainerProgressHeaderBtn.textContent='📊 Lernstand · '+Math.max(0,Number(trainerHeaderState.solved)||0)+'/'+Math.max(1,Number(trainerHeaderState.total)||65);
+  }
+}
 function postSchachlaborToolMessage(message){
   if(!schachlaborToolFrameStarted || !schachlaborToolFrame || !schachlaborToolFrame.contentWindow) return;
   try{ schachlaborToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
@@ -194,6 +214,7 @@ function postFairplayToolContext(){
   });
 }
 function setEmbeddedToolActive(toolName){
+  const trainerWasActive=trainerToolActive;
   const fairplayAllowed=!!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   let requested='';
   if(toolName==='learning'&&learningToolAvailable())requested='learning';
@@ -224,6 +245,7 @@ function setEmbeddedToolActive(toolName){
   document.documentElement.classList.toggle('openings-tool-active',openingsToolActive);
   document.documentElement.classList.toggle('fairplay-tool-active',fairplayToolActive);
   document.documentElement.classList.toggle('tv-tool-active',tvToolActive);
+  updateTrainerHeaderActions();
   if(learningToolView)learningToolView.hidden=!learningToolActive;
   if(analyzerToolView)analyzerToolView.hidden=!analyzerToolActive;
   if(trainerToolView)trainerToolView.hidden=!trainerToolActive;
@@ -286,6 +308,11 @@ function setEmbeddedToolActive(toolName){
   updateOnlineActionButtons();
   if(embeddedToolActive()&&roomLobbyBtn){
     try{roomLobbyBtn.focus({preventScroll:true});}catch(_){roomLobbyBtn.focus();}
+  }
+  if(trainerToolActive&&!trainerWasActive){
+    requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}));
+    setTimeout(()=>{if(trainerToolActive)window.scrollTo({top:0,left:0,behavior:'auto'});},250);
+    setTimeout(()=>{if(trainerToolActive)window.scrollTo({top:0,left:0,behavior:'auto'});},900);
   }
   hammerschachScheduleHeightReport(true);
 }
@@ -367,6 +394,9 @@ function openTvToolDebounced(){
 if(learningToolBtn)learningToolBtn.addEventListener('click',openLearningToolDebounced);
 if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebounced);
 if(trainerToolBtn)trainerToolBtn.addEventListener('click',openTrainerToolDebounced);
+if(trainerBeginnerHeaderBtn)trainerBeginnerHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'coach'}));
+if(trainerFreeHeaderBtn)trainerFreeHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'free'}));
+if(trainerProgressHeaderBtn)trainerProgressHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-toggle-progress'}));
 if(schachlaborToolBtn)schachlaborToolBtn.addEventListener('click',openSchachlaborToolDebounced);
 if(openingsToolBtn)openingsToolBtn.addEventListener('click',openOpeningsToolDebounced);
 if(tvToolBtn)tvToolBtn.addEventListener('click',openTvToolDebounced);
@@ -549,6 +579,21 @@ window.addEventListener('message',async event=>{
     return;
   }
   if(fromTrainer){
+    if(message.type==='hammerschach-trainer-ui-state'){
+      trainerHeaderState={
+        mode:message.mode==='free'?'free':'coach',detailsOpen:!!message.detailsOpen,
+        solved:Math.max(0,Number(message.solved)||0),total:Math.max(1,Number(message.total)||65),
+        stage:Math.max(1,Number(message.stage)||1),stageTotal:Math.max(1,Number(message.stageTotal)||6),
+        stageTitle:String(message.stageTitle||'Anfängertraining')
+      };
+      updateTrainerHeaderActions();
+      if(trainerToolActive&&statusEl){
+        statusEl.textContent=trainerHeaderState.mode==='free'
+          ? 'Freies Training – Aufgaben und Schwierigkeitsgrad selbst wählen'
+          : 'Block '+trainerHeaderState.stage+'/'+trainerHeaderState.stageTotal+' · '+trainerHeaderState.stageTitle+' · '+trainerHeaderState.solved+'/'+trainerHeaderState.total+' gemeistert';
+      }
+      return;
+    }
     if(message.type==='hammerschach-trainer-ready'){
       postTrainerToolContext();
       postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});

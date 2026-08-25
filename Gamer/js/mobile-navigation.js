@@ -31,8 +31,10 @@
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
+  const trainerHeaderTargets = new Set(['trainerBeginnerHeaderBtn','trainerFreeHeaderBtn','trainerProgressHeaderBtn']);
   let refreshFrame = 0;
   let lastFocus = null;
+  let drawerScrollY = 0;
 
   function memberUser(){
     try{
@@ -82,9 +84,12 @@
 
   function closeDrawer(restoreFocus){
     if(!backdrop || backdrop.hidden) return;
+    const restoreScrollY=drawerScrollY;
     backdrop.hidden = true;
     root.classList.remove('mobile-nav-test-drawer-open');
     document.body.classList.remove('mobile-nav-test-drawer-open');
+    window.scrollTo({top:restoreScrollY,left:0,behavior:'auto'});
+    requestAnimationFrame(()=>window.scrollTo({top:restoreScrollY,left:0,behavior:'auto'}));
     if(openButton) openButton.setAttribute('aria-expanded', 'false');
     if(restoreFocus !== false && lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
     lastFocus = null;
@@ -92,6 +97,7 @@
 
   function openDrawer(){
     if(!backdrop || !drawer || !compactHeaderActive()) return;
+    drawerScrollY=window.scrollY;
     lastFocus = document.activeElement;
     syncControls();
     backdrop.hidden = false;
@@ -109,10 +115,14 @@
     const targetId = button.dataset.mobileNavTarget || '';
     const source = document.getElementById(targetId);
     const visitor = root.classList.contains('visitor-header-view');
+    const trainerContext = root.classList.contains('trainer-tool-active');
     const visitorOnly = button.hasAttribute('data-mobile-nav-visitor-only');
-    const visitorBlocked = visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly;
-    const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked;
-    button.hidden = !source || source.hidden || visitorBlocked;
+    const visitorBlocked = trainerContext&&trainerHeaderTargets.has(targetId)
+      ? false
+      : (visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly);
+    const trainerBlocked = trainerContext&&!trainerHeaderTargets.has(targetId)&&!visitorInfoTargets.has(targetId);
+    const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked || trainerBlocked;
+    button.hidden = !source || source.hidden || visitorBlocked || trainerBlocked;
     button.disabled = unavailable;
   }
 
@@ -237,7 +247,8 @@
 
   const rootObserver = new MutationObserver(refresh);
   rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
-  [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount].filter(Boolean).forEach(element => {
+  [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,
+    document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn')].filter(Boolean).forEach(element => {
     const observer = new MutationObserver(refresh);
     observer.observe(element, {attributes:true, childList:true, characterData:true, subtree:true});
   });
