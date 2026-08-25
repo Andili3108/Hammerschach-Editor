@@ -142,6 +142,7 @@ function updateVisitorLandingUi(){
   document.documentElement.classList.toggle('visitor-header-view', visitorHeaderActive);
   if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
   if(visitorLearningOpenBtn) visitorLearningOpenBtn.hidden = !visitorHeaderActive;
+  if(visitorTrainerOpenBtn) visitorTrainerOpenBtn.hidden = !visitorHeaderActive;
   if(visitorPublicGamesOpenBtn) visitorPublicGamesOpenBtn.hidden = !visitorHeaderActive;
   updateAnalyzerToolAvailability();
 
@@ -169,6 +170,11 @@ function updateVisitorLandingUi(){
 if(visitorLearningOpenBtn){
   visitorLearningOpenBtn.addEventListener('click', () => {
     if(learningToolBtn && !learningToolBtn.disabled) learningToolBtn.click();
+  });
+}
+if(visitorTrainerOpenBtn){
+  visitorTrainerOpenBtn.addEventListener('click', () => {
+    if(trainerToolBtn && !trainerToolBtn.disabled) trainerToolBtn.click();
   });
 }
 if(visitorPublicGamesOpenBtn){

@@ -135,6 +135,7 @@ const themePickerApplyBtn = document.getElementById('themePickerApplyBtn');
 const visitorBoardOverlay = document.getElementById('visitorBoardOverlay');
 const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const visitorLearningOpenBtn = document.getElementById('visitorLearningOpenBtn');
+const visitorTrainerOpenBtn = document.getElementById('visitorTrainerOpenBtn');
 const visitorPublicGamesOpenBtn = document.getElementById('visitorPublicGamesOpenBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const dailyGamesTurnCount = document.getElementById('dailyGamesTurnCount');
