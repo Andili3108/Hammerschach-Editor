@@ -80,6 +80,8 @@
   const completeButton=document.getElementById('completeLessonBtn');
   const resetButton=document.getElementById('resetProgressBtn');
   const feedback=document.getElementById('lessonFeedback');
+  const courseNextStep=document.getElementById('courseNextStep');
+  const openBeginnerTrainingButton=document.getElementById('openBeginnerTrainingBtn');
   let state=loadState();
 
   function loadState(){
@@ -153,6 +155,7 @@
     previousButton.disabled=state.current===0;
     nextButton.disabled=state.current===lessons.length-1;
     feedback.textContent=completed?'Diese Lektion ist in deinem Fortschritt gespeichert.':'';
+    if(courseNextStep)courseNextStep.hidden=state.completed.length!==lessons.length;
     renderList();
     renderProgress();
     reportHeight();
@@ -201,6 +204,9 @@
   nextButton.addEventListener('click',()=>selectLesson(state.current+1,true));
   completeButton.addEventListener('click',toggleComplete);
   resetButton.addEventListener('click',resetProgress);
+  openBeginnerTrainingButton?.addEventListener('click',()=>{
+    try{window.parent.postMessage({type:'hammerschach-learning-open-trainer',mode:'coach'},parentOrigin());}catch(_){ }
+  });
   window.addEventListener('message',event=>{
     if(parentOrigin()!=='*'&&event.origin!==parentOrigin())return;
     const message=event.data&&typeof event.data==='object'?event.data:{};

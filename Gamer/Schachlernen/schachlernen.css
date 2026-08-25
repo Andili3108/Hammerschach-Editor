@@ -112,3 +112,35 @@ html.dark-mode .lesson-actions button,html.dark-mode .quiet-button{background:li
   .learning-footer a{flex-basis:auto}
 }
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+.course-next-step{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin-top:18px;
+  padding:18px;
+  border:1px solid rgba(132,63,70,.18);
+  border-radius:16px;
+  background:linear-gradient(145deg,#fff8e7,#f7e5b5);
+  box-shadow:0 12px 28px rgba(93,57,35,.12);
+}
+.course-next-step[hidden]{display:none}
+.course-next-step h3{margin:4px 0 6px;color:#472e32;font-size:20px}
+.course-next-step p{margin:0;color:#6b5559;line-height:1.48}
+.beginner-training-button{
+  flex:0 0 auto;
+  min-height:46px;
+  padding:10px 16px;
+  border:1px solid #6f333a;
+  border-radius:11px;
+  color:#fff;
+  background:linear-gradient(180deg,#9d5058,#76383f);
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(96,43,49,.22);
+}
+.beginner-training-button:hover{filter:brightness(1.06);transform:translateY(-1px)}
+html.dark-mode .course-next-step{background:linear-gradient(145deg,#3f3524,#292820);border-color:rgba(211,154,49,.35)}
+html.dark-mode .course-next-step h3{color:#f2f3f5}
+html.dark-mode .course-next-step p{color:#c6c1b7}
+@media(max-width:680px){.course-next-step{align-items:stretch;flex-direction:column}.beginner-training-button{width:100%}}
