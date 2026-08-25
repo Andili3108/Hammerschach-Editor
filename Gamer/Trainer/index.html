@@ -1990,8 +1990,10 @@ function restoreTrainerSession(){
   ratedAttemptResolved=!!session.ratedAttemptResolved;
   ratedAttemptId=String(session.ratedAttemptId||'')||newRatedAttemptId();
   puzzleSolutionEl.textContent=session.solutionText||(solutionVisible?'Lösung eingeblendet.':'versteckt – mit „Lösung“ einblenden');
-  statusDefaultText=String(session.statusDefaultText||((game.turn==='w'?'Weiß':'Schwarz')+' am Zug – finde die beste Fortsetzung!'));
-  statusEl.textContent=String(session.statusText||statusDefaultText);
+  const savedDefaultText=String(session.statusDefaultText||'');
+  const savedStatusText=String(session.statusText||'');
+  statusDefaultText=puzzleStatusText(puzzle,game.turn==='w'?'Weiß':'Schwarz');
+  statusEl.textContent=savedStatusText&&savedStatusText!==savedDefaultText?savedStatusText:statusDefaultText;
   statusEl.style.color=STATUS_BLUE;
   selected=null;
   renderBoard();
@@ -2335,6 +2337,7 @@ window.addEventListener('message',event=>{
     trainerLoggedIn=nextLoggedIn;
     trainerUserId=nextUserId;
     trainerUser=nextLoggedIn?String(message.username||'Mitglied'):null;
+    if(window.HammerschachBeginnerTrainer)window.HammerschachBeginnerTrainer.setFreeTrainingAllowed(trainerLoggedIn);
     if(!trainerLoggedIn){
       trainerRating=1500;trainerAttempts=0;trainerSolved=0;trainerFailed=0;
       ratedAttemptResolved=false;
@@ -2489,19 +2492,77 @@ document.getElementById('themesSelect').addEventListener('change',()=>{updateFil
 
 /* Puzzle-Setup */
 function themeLabelDE(t){
-  switch(t){
-    case "mate": return "Matt";
-    case "mateIn1": return "Matt in 1";
-    case "mateIn2": return "Matt in 2";
-    case "fork": return "Gabel";
-    case "pin": return "Fesselung";
-    case "skewer": return "Spieß";
-    case "sacrifice": return "Opfer";
-    case "endgame": return "Endspiel";
-    case "opening": return "Eröffnung";
-    case "middlegame": return "Mittelspiel";
-    default: return t;
-  }
+  const labels={
+    mate:'Matt',mateIn1:'Matt in 1',mateIn2:'Matt in 2',mateIn3:'Matt in 3',mateIn4:'Matt in 4',
+    fork:'Gabel',pin:'Fesselung',skewer:'Spieß',sacrifice:'Opfer',discoveredAttack:'Abzugsangriff',
+    doubleCheck:'Doppelschach',deflection:'Ablenkung',attraction:'Hinlenkung',interference:'Unterbrechung',
+    clearance:'Räumung',capturingDefender:'Verteidiger beseitigen',hangingPiece:'Ungedeckte Figur',
+    trappedPiece:'Gefangene Figur',xRayAttack:'Röntgenangriff',promotion:'Umwandlung',
+    underPromotion:'Unterverwandlung',advancedPawn:'Freibauer',defensiveMove:'Verteidigungszug',
+    quietMove:'Stiller Zug',intermezzo:'Zwischenzug',zugzwang:'Zugzwang',exposedKing:'Offener König',
+    kingsideAttack:'Königsangriff',queensideAttack:'Damenflügelangriff',backRankMate:'Grundreihenmatt',
+    smotheredMate:'Ersticktes Matt',anastasiaMate:'Anastasias Matt',arabianMate:'Arabisches Matt',
+    bodenMate:'Bodens Matt',doubleBishopMate:'Läufermatt',dovetailMate:'Schwalbenschwanzmatt',
+    hookMate:'Hakenmatt',killBoxMate:'Mattnetz',vukovicMate:'Vuković-Matt',
+    endgame:'Endspiel',rookEndgame:'Turmendspiel',pawnEndgame:'Bauernendspiel',
+    bishopEndgame:'Läuferendspiel',knightEndgame:'Springerendspiel',queenEndgame:'Damenendspiel',
+    queenRookEndgame:'Dame-Turm-Endspiel',opening:'Eröffnung',middlegame:'Mittelspiel',
+    advantage:'Vorteil',crushing:'Gewinnstellung',equality:'Ausgleich',castling:'Rochade',
+    attackingF2F7:'Angriff auf f2/f7',enPassant:'En passant'
+  };
+  return labels[t]||t;
+}
+const puzzleStatusThemes=[
+  {themes:['mateIn1'],label:'Matt in einem Zug',prompt:'finde den Mattzug!'},
+  {themes:['mateIn2'],label:'Matt in zwei Zügen',prompt:'finde die Mattfolge!'},
+  {themes:['mateIn3'],label:'Matt in drei Zügen',prompt:'berechne die Mattfolge!'},
+  {themes:['mateIn4'],label:'Matt in vier Zügen',prompt:'berechne die Mattfolge!'},
+  {themes:['fork'],label:'Gabel',prompt:'finde die Gabel!'},
+  {themes:['pin'],label:'Fesselung',prompt:'nutze die Fesselung!'},
+  {themes:['skewer'],label:'Spieß',prompt:'nutze den Angriff entlang der Linie!'},
+  {themes:['discoveredAttack'],label:'Abzugsangriff',prompt:'finde den Abzugsangriff!'},
+  {themes:['doubleCheck'],label:'Doppelschach',prompt:'finde das Doppelschach!'},
+  {themes:['deflection'],label:'Ablenkung',prompt:'lenke den Verteidiger ab!'},
+  {themes:['attraction'],label:'Hinlenkung',prompt:'ziehe die Figur auf das entscheidende Feld!'},
+  {themes:['interference'],label:'Unterbrechung',prompt:'unterbrich die Verteidigungslinie!'},
+  {themes:['clearance'],label:'Räumung',prompt:'räume die entscheidende Linie!'},
+  {themes:['capturingDefender'],label:'Verteidiger beseitigen',prompt:'entferne den Verteidiger!'},
+  {themes:['hangingPiece'],label:'Ungedeckte Figur',prompt:'gewinne die ungedeckte Figur!'},
+  {themes:['trappedPiece'],label:'Gefangene Figur',prompt:'fange die gegnerische Figur!'},
+  {themes:['xRayAttack'],label:'Röntgenangriff',prompt:'nutze den Angriff durch die Figur hindurch!'},
+  {themes:['underPromotion'],label:'Unterverwandlung',prompt:'finde die richtige Umwandlungsfigur!'},
+  {themes:['promotion'],label:'Bauernumwandlung',prompt:'bringe den Bauern sicher durch!'},
+  {themes:['advancedPawn'],label:'Freibauer',prompt:'nutze den weit vorgerückten Bauern!'},
+  {themes:['sacrifice'],label:'Opfer',prompt:'finde das entscheidende Opfer!'},
+  {themes:['intermezzo'],label:'Zwischenzug',prompt:'finde den stärkeren Zwischenzug!'},
+  {themes:['quietMove'],label:'Stiller Zug',prompt:'finde den stillen Gewinnzug!'},
+  {themes:['defensiveMove'],label:'Verteidigung',prompt:'finde die einzige sichere Verteidigung!'},
+  {themes:['zugzwang'],label:'Zugzwang',prompt:'bringe den Gegner in Zugzwang!'},
+  {themes:['backRankMate','smotheredMate','anastasiaMate','arabianMate','bodenMate','doubleBishopMate','dovetailMate','hookMate','killBoxMate','vukovicMate'],label:'Mattmotiv',prompt:'finde den Mattzug!'},
+  {themes:['mate'],label:'Mattangriff',prompt:'finde die Mattfortsetzung!'},
+  {themes:['kingsideAttack','exposedKing'],label:'Königsangriff',prompt:'nutze die offene Königsstellung!'},
+  {themes:['rookEndgame'],label:'Turmendspiel',prompt:'finde die beste Endspielfortsetzung!'},
+  {themes:['pawnEndgame'],label:'Bauernendspiel',prompt:'berechne das Bauernendspiel!'},
+  {themes:['bishopEndgame'],label:'Läuferendspiel',prompt:'finde die beste Endspielfortsetzung!'},
+  {themes:['knightEndgame'],label:'Springerendspiel',prompt:'finde die beste Endspielfortsetzung!'},
+  {themes:['queenEndgame','queenRookEndgame'],label:'Damenendspiel',prompt:'finde die beste Endspielfortsetzung!'},
+  {themes:['endgame'],label:'Endspiel',prompt:'finde die beste Endspielfortsetzung!'},
+  {themes:['crushing'],label:'Gewinnzug',prompt:'finde die gewinnende Fortsetzung!'},
+  {themes:['advantage'],label:'Vorteil',prompt:'finde die beste Fortsetzung!'}
+];
+function primaryPuzzleStatusTheme(p){
+  const themes=new Set(Array.isArray(p&&p.themes)?p.themes:[]);
+  return puzzleStatusThemes.find(item=>item.themes.some(theme=>themes.has(theme)))||{label:'Taktikaufgabe',prompt:'finde die beste Fortsetzung!'};
+}
+function puzzleStatusText(p,sideText){
+  const beginner=window.HammerschachBeginnerTrainer;
+  const coach=!!(beginner&&beginner.isCoachMode());
+  const coachContext=coach&&typeof beginner.statusContext==='function'?beginner.statusContext(p):null;
+  const detail=coachContext||primaryPuzzleStatusTheme(p);
+  const parts=[detail.label];
+  if(!coach)parts.push('ca. '+Math.round(Number(p&&p.rating)||1200)+' Elo');
+  parts.push(sideText+' am Zug – '+detail.prompt);
+  return parts.join(' · ');
 }
 function setupPuzzle(p){
   currentPuzzle=p;
@@ -2535,7 +2596,7 @@ function setupPuzzle(p){
   puzzleSolutionEl.textContent="versteckt – mit „Lösung“ einblenden";
   solutionVisible=false;
   const sideText=(game.turn==='w'?"Weiß":"Schwarz");
-  setDefaultStatus(sideText+" am Zug – finde die beste Fortsetzung!");
+  setDefaultStatus(puzzleStatusText(p,sideText));
   selected=null;
   renderBoard();
   if(window.HammerschachBeginnerTrainer)window.HammerschachBeginnerTrainer.onPuzzleSetup(p);
@@ -2898,7 +2959,7 @@ parentMessage({type:'hammerschach-trainer-ready'});
   reportTrainerHeight();
 })();
 </script>
-<script src="beginner-training.js?v=20260825-4"></script>
+<script src="beginner-training.js?v=20260825-5"></script>
 
 </body>
 </html>

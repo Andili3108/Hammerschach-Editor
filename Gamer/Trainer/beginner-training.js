@@ -49,6 +49,7 @@
   let currentStage=Math.max(0,Math.min(stageDefinitions.length-1,progress.activeStage));
   let reviewActive=false;
   let detailsOpen=false;
+  let freeTrainingAllowed=false;
   let currentAttempt={id:'',stage:currentStage,failed:false,resolved:false};
   let controllerReady=false;
   let requestedMode=consumeRequestedMode();
@@ -130,6 +131,18 @@
   function completedStages(){return stageDefinitions.filter((_,index)=>stageComplete(index)).length;}
   function totalSolved(){return progress.solvedByStage.reduce((sum,ids,index)=>sum+Math.min(ids.length,stageDefinitions[index].goal),0);}
   function isCoachMode(){return progress.mode!=='free';}
+  function statusContext(puzzle){
+    if(!isCoachMode())return null;
+    if(currentStage===0)return{label:'Matt in einem Zug',prompt:'finde den Mattzug!'};
+    if(currentStage===1)return{label:'Ein-Zug-Taktik',prompt:'finde den besten Zug!'};
+    if(currentStage===2)return{label:'Gabel',prompt:'finde die Gabel!'};
+    if(currentStage===3){
+      if(hasTheme(puzzle,'skewer'))return{label:'Spieß',prompt:'nutze den Angriff entlang der Linie!'};
+      return{label:'Fesselung',prompt:'nutze die Fesselung!'};
+    }
+    if(currentStage===4)return{label:'Matt in zwei Zügen',prompt:'finde die Mattfolge!'};
+    return null;
+  }
   function postUiState(){
     const stage=stageDefinitions[currentStage];
     if(typeof parentMessage==='function')parentMessage({
@@ -163,6 +176,7 @@
     if(coachDashboard)coachDashboard.hidden=!coach;
     btnCoachMode?.classList.toggle('active',coach);
     btnFreeMode?.classList.toggle('active',!coach);
+    if(btnFreeMode)btnFreeMode.hidden=!freeTrainingAllowed;
     btnCoachMode?.setAttribute('aria-pressed',coach?'true':'false');
     btnFreeMode?.setAttribute('aria-pressed',coach?'false':'true');
     if(btnCoachDetailsOpen){
@@ -182,7 +196,7 @@
     if(reviewBadge)reviewBadge.textContent=String(progress.review.length);
     if(btnCoachReview)btnCoachReview.disabled=progress.review.length===0;
     if(btnCoachStart)btnCoachStart.textContent=currentAttempt.id?'Nächste Aufgabe':'Training starten';
-    if(btnNewPuzzle)btnNewPuzzle.textContent=reviewActive?'🔁 Nächste Wiederholung':'🧩 Nächste Anfänger-Aufgabe';
+    if(btnNewPuzzle)btnNewPuzzle.textContent=coach?(reviewActive?'🔁 Nächste Wiederholung':'🧩 Nächste Aufgabe'):'🧩 Neue Aufgabe';
     const stage=stageDefinitions[currentStage];
     if(currentTitle)currentTitle.textContent=reviewActive?'Fehlertraining: '+stage.title:stage.title;
     if(currentDescription)currentDescription.textContent=reviewActive?'Diese Aufgaben hast du noch nicht fehlerfrei gelöst. Jetzt werden sie sicher gefestigt.':stage.description;
@@ -239,7 +253,7 @@
     }
   }
   function setMode(mode,startPuzzle){
-    progress.mode=mode==='free'?'free':'coach';
+    progress.mode=mode==='free'&&freeTrainingAllowed?'free':'coach';
     reviewActive=false;
     detailsOpen=false;
     currentAttempt={id:'',stage:currentStage,failed:false,resolved:false};
@@ -249,6 +263,14 @@
     isRetry=false;
     const puzzle=isCoachMode()?chooseCoachPuzzle():chooseRandomFilteredPuzzle();
     if(puzzle)setupPuzzle(puzzle);
+  }
+  function setFreeTrainingAllowed(allowed){
+    freeTrainingAllowed=!!allowed;
+    if(!freeTrainingAllowed&&!isCoachMode()){
+      setMode('coach',true);
+      return;
+    }
+    renderCoachUi();
   }
   function setDetailsOpen(open){
     detailsOpen=!!open&&isCoachMode();
@@ -338,7 +360,7 @@
   }
 
   btnCoachMode?.addEventListener('click',()=>setMode('coach',true));
-  btnFreeMode?.addEventListener('click',()=>setMode('free',true));
+  btnFreeMode?.addEventListener('click',()=>{if(freeTrainingAllowed)setMode('free',true);});
   btnCoachDetailsOpen?.addEventListener('click',()=>setDetailsOpen(!detailsOpen));
   btnCoachDetailsClose?.addEventListener('click',()=>setDetailsOpen(false));
   btnCoachStart?.addEventListener('click',()=>{
@@ -353,17 +375,23 @@
     if(event.source!==window.parent)return;
     if(location.origin!=='null'&&event.origin!==location.origin)return;
     const message=event.data&&typeof event.data==='object'?event.data:{};
-    if(message.type==='hammerschach-trainer-open-mode')setMode(message.mode==='free'?'free':'coach',true);
+    if(message.type==='hammerschach-trainer-open-mode')setMode(message.mode==='free'&&freeTrainingAllowed?'free':'coach',true);
     if(message.type==='hammerschach-trainer-toggle-progress')setDetailsOpen(!detailsOpen);
+    if(message.type==='hammerschach-trainer-open-progress'){
+      setMode('coach',true);
+      setDetailsOpen(true);
+    }
   });
 
   window.HammerschachBeginnerTrainer={
     isCoachMode,
+    statusContext,
     choosePuzzle:chooseCoachPuzzle,
     onPuzzleSetup,
     recordResult,
     shouldBypassSessionRestore,
     ready,
+    setFreeTrainingAllowed,
     requestMode:mode=>setMode(mode,true)
   };
   renderCoachUi();
