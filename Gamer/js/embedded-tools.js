@@ -125,19 +125,32 @@ function postTrainerToolMessage(message){
 function updateTrainerHeaderActions(){
   const active=!!trainerToolActive;
   const coach=trainerHeaderState.mode!=='free';
-  [trainerBeginnerHeaderBtn,trainerFreeHeaderBtn,trainerProgressHeaderBtn].forEach(button=>{if(button)button.hidden=!active;});
+  const visitor=!(onlineAuthToken&&onlineAuthUser);
+  if(trainerBeginnerMenuEl)trainerBeginnerMenuEl.hidden=!active||visitor;
+  [trainerBeginnerHeaderBtn,trainerProgressHeaderBtn].forEach(button=>{if(button)button.hidden=!active||visitor;});
+  if(trainerFreeHeaderBtn)trainerFreeHeaderBtn.hidden=!active||visitor;
+  if(visitorTrainerProgressHeaderBtn){
+    visitorTrainerProgressHeaderBtn.hidden=!active||!visitor;
+    visitorTrainerProgressHeaderBtn.textContent='📊 Lernstand · '+Math.max(0,Number(trainerHeaderState.solved)||0)+'/'+Math.max(1,Number(trainerHeaderState.total)||65);
+    visitorTrainerProgressHeaderBtn.classList.toggle('active',active&&visitor&&coach&&!!trainerHeaderState.detailsOpen);
+  }
+  if(visitorTrainerOpenBtn)visitorTrainerOpenBtn.classList.toggle('active',active&&visitor&&coach&&!trainerHeaderState.detailsOpen);
+  if(trainerBeginnerMenuBtn){
+    trainerBeginnerMenuBtn.classList.toggle('active',active&&coach);
+    trainerBeginnerMenuBtn.setAttribute('aria-pressed',active&&coach?'true':'false');
+  }
   if(trainerBeginnerHeaderBtn){
-    trainerBeginnerHeaderBtn.classList.toggle('active',active&&coach);
-    trainerBeginnerHeaderBtn.setAttribute('aria-pressed',active&&coach?'true':'false');
+    const tasksActive=active&&coach&&!trainerHeaderState.detailsOpen;
+    trainerBeginnerHeaderBtn.classList.toggle('active',tasksActive);
+    if(tasksActive)trainerBeginnerHeaderBtn.setAttribute('aria-current','page');else trainerBeginnerHeaderBtn.removeAttribute('aria-current');
   }
   if(trainerFreeHeaderBtn){
     trainerFreeHeaderBtn.classList.toggle('active',active&&!coach);
     trainerFreeHeaderBtn.setAttribute('aria-pressed',active&&!coach?'true':'false');
   }
   if(trainerProgressHeaderBtn){
-    trainerProgressHeaderBtn.hidden=!active||!coach;
     trainerProgressHeaderBtn.classList.toggle('active',active&&coach&&!!trainerHeaderState.detailsOpen);
-    trainerProgressHeaderBtn.setAttribute('aria-pressed',active&&coach&&trainerHeaderState.detailsOpen?'true':'false');
+    if(active&&coach&&trainerHeaderState.detailsOpen)trainerProgressHeaderBtn.setAttribute('aria-current','page');else trainerProgressHeaderBtn.removeAttribute('aria-current');
     trainerProgressHeaderBtn.textContent='📊 Lernstand · '+Math.max(0,Number(trainerHeaderState.solved)||0)+'/'+Math.max(1,Number(trainerHeaderState.total)||65);
   }
 }
@@ -255,6 +268,7 @@ function setEmbeddedToolActive(toolName){
   if(tvToolView)tvToolView.hidden=!tvToolActive;
   if(embeddedToolActive()){
     closeNewGameMenu();
+    closeTrainerBeginnerMenu();
     closeGamesMenu();
     closeToolsMenu();
   }
@@ -366,6 +380,10 @@ function openTrainerToolDebounced(){
   if(now-trainerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   trainerToolLastOpenAt=now;
   openEmbeddedToolFromCurrentContext('trainer');
+  if(pendingTrainerStartMode&&trainerToolActive&&trainerToolFrameStarted){
+    postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:pendingTrainerStartMode});
+    pendingTrainerStartMode='';
+  }
 }
 function openSchachlaborToolDebounced(){
   const now=Date.now();
@@ -396,7 +414,7 @@ if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebo
 if(trainerToolBtn)trainerToolBtn.addEventListener('click',openTrainerToolDebounced);
 if(trainerBeginnerHeaderBtn)trainerBeginnerHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'coach'}));
 if(trainerFreeHeaderBtn)trainerFreeHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'free'}));
-if(trainerProgressHeaderBtn)trainerProgressHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-toggle-progress'}));
+if(trainerProgressHeaderBtn)trainerProgressHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-progress'}));
 if(schachlaborToolBtn)schachlaborToolBtn.addEventListener('click',openSchachlaborToolDebounced);
 if(openingsToolBtn)openingsToolBtn.addEventListener('click',openOpeningsToolDebounced);
 if(tvToolBtn)tvToolBtn.addEventListener('click',openTvToolDebounced);
@@ -580,12 +598,15 @@ window.addEventListener('message',async event=>{
   }
   if(fromTrainer){
     if(message.type==='hammerschach-trainer-ui-state'){
+      const visitor=!(onlineAuthToken&&onlineAuthUser);
+      const reportedMode=message.mode==='free'?'free':'coach';
       trainerHeaderState={
-        mode:message.mode==='free'?'free':'coach',detailsOpen:!!message.detailsOpen,
+        mode:visitor?'coach':reportedMode,detailsOpen:visitor&&reportedMode==='free'?false:!!message.detailsOpen,
         solved:Math.max(0,Number(message.solved)||0),total:Math.max(1,Number(message.total)||65),
         stage:Math.max(1,Number(message.stage)||1),stageTotal:Math.max(1,Number(message.stageTotal)||6),
         stageTitle:String(message.stageTitle||'Anfängertraining')
       };
+      if(visitor&&reportedMode==='free')postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'coach'});
       updateTrainerHeaderActions();
       if(trainerToolActive&&statusEl){
         statusEl.textContent=trainerHeaderState.mode==='free'

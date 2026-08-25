@@ -120,7 +120,8 @@
     const visitorBlocked = trainerContext&&trainerHeaderTargets.has(targetId)
       ? false
       : (visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly);
-    const trainerBlocked = trainerContext&&!trainerHeaderTargets.has(targetId)&&!visitorInfoTargets.has(targetId);
+    const visitorTrainerTarget=visitor&&(targetId==='visitorTrainerOpenBtn'||targetId==='visitorTrainerProgressHeaderBtn');
+    const trainerBlocked = trainerContext&&!trainerHeaderTargets.has(targetId)&&!visitorInfoTargets.has(targetId)&&!visitorTrainerTarget;
     const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked || trainerBlocked;
     button.hidden = !source || source.hidden || visitorBlocked || trainerBlocked;
     button.disabled = unavailable;
@@ -248,7 +249,8 @@
   const rootObserver = new MutationObserver(refresh);
   rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
   [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,
-    document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn')].filter(Boolean).forEach(element => {
+    document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
+    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn')].filter(Boolean).forEach(element => {
     const observer = new MutationObserver(refresh);
     observer.observe(element, {attributes:true, childList:true, characterData:true, subtree:true});
   });
