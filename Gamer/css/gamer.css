@@ -73,10 +73,15 @@
   .header-direct-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;}
   .header-direct-action[hidden]{display:none!important;}
   .trainer-header-action.active{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important;}
+  .trainer-beginner-menu .header-menu-item.active{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important;font-weight:900;}
   html.trainer-tool-active .match-actions{flex-wrap:nowrap;}
-  html.trainer-tool-active .match-actions>:not(#roomLobbyBtn):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
-  html.trainer-tool-active .match-actions>#roomLobbyBtn,
-  html.trainer-tool-active .match-actions>.trainer-header-action{display:inline-flex!important;flex:1 1 0;min-width:0;max-width:210px;}
+  html.trainer-tool-active .match-actions>:not(#roomLobbyBtn):not(#trainerBeginnerMenu):not(#trainerFreeHeaderBtn):not(#visitorTrainerOpenBtn):not(#visitorTrainerProgressHeaderBtn){display:none!important;}
+  html.trainer-tool-active .match-actions>#roomLobbyBtn{display:inline-flex!important;flex:0 0 auto;min-width:0;width:auto;}
+  html.trainer-tool-active:not(.visitor-header-view) .match-actions>#trainerFreeHeaderBtn{display:inline-flex!important;flex:0 0 auto;min-width:0;width:auto;}
+  html.trainer-tool-active:not(.visitor-header-view) .match-actions>#trainerBeginnerMenu{display:flex!important;flex:0 0 auto;width:auto;}
+  html.trainer-tool-active .trainer-beginner-menu>.header-menu-button{width:auto;}
+  html.trainer-tool-active.visitor-header-view .match-actions>#visitorTrainerOpenBtn,
+  html.trainer-tool-active.visitor-header-view .match-actions>#visitorTrainerProgressHeaderBtn{display:inline-flex!important;width:auto!important;min-width:0!important;max-width:none!important;flex:0 0 auto;}
   .header-menu{position:relative;min-width:0;display:flex;}
   .header-menu[hidden]{display:none!important;}
   .header-menu-button{display:flex!important;align-items:center;justify-content:center;gap:6px;}
@@ -155,8 +160,9 @@
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-header-view .match-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:12px;}
-  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorTrainerOpenBtn):not(#visitorPublicGamesOpenBtn):not(#infoMenu):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:178px!important;min-width:178px!important;max-width:178px!important;flex:0 0 178px;}
+  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorTrainerOpenBtn):not(#visitorTrainerProgressHeaderBtn):not(#visitorPublicGamesOpenBtn):not(#infoMenu):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerProgressHeaderBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:178px!important;min-width:178px!important;max-width:178px!important;flex:0 0 178px;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn{width:auto!important;min-width:0!important;max-width:none!important;flex:0 0 auto;}
   html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
   html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{width:100%;}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
@@ -1425,6 +1431,7 @@
   html.dark-mode .header-menu-section-label{color:#aeb2b9;border-color:rgba(255,255,255,.09);}
   html.dark-mode .header-menu-item{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
   html.dark-mode .header-menu-item:hover:not(:disabled){background:#353a42!important;box-shadow:none!important;}
+  html.dark-mode .trainer-beginner-menu .header-menu-item.active{color:#fff!important;background:linear-gradient(180deg,#a95660,#74343c)!important;border-color:#bc737b!important;}
   html.dark-mode .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(226,151,160,.22),0 8px 18px rgba(0,0,0,.34)!important;}
   html.dark-mode .tv-stage{background:transparent;}
   html.dark-mode .tv-player-card,html.dark-mode .tv-admin-card{background:#22262c;border-color:rgba(255,255,255,.09);box-shadow:0 14px 32px rgba(0,0,0,.34);}
@@ -2038,9 +2045,8 @@
     #roomLobbyBtn{grid-column:1;}
     html.trainer-tool-active .match-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
     html.trainer-tool-active #roomLobbyBtn{grid-column:1;}
-    html.trainer-tool-active #trainerBeginnerHeaderBtn{grid-column:2;}
-    html.trainer-tool-active #trainerFreeHeaderBtn{grid-column:1;}
-    html.trainer-tool-active #trainerProgressHeaderBtn{grid-column:2;}
+    html.trainer-tool-active #trainerBeginnerMenu{grid-column:2;}
+    html.trainer-tool-active #trainerFreeHeaderBtn{grid-column:1 / -1;justify-self:start;}
     #dailyGamesOpenBtn{grid-column:2;}
     #gamesMenu{grid-column:1;}
     #tournamentsOpenBtn{grid-column:2;}
