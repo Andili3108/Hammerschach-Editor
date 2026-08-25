@@ -7,27 +7,39 @@
   --coach-soft:#fff8e9;
 }
 
+.trainer-local-nav{display:none;gap:7px;margin:0 0 10px;padding:5px;border-radius:12px;background:rgba(132,63,70,.08)}
+html.trainer-standalone .trainer-local-nav{display:flex}
+.trainer-local-nav button{flex:1 1 0;min-height:40px}
+.trainer-local-nav button.active{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important}
+
 .beginner-training-panel{
-  width:min(1180px,calc(100% - 24px));
-  margin:14px auto 18px;
+  position:fixed;
+  z-index:2400;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(1076px,calc(100% - 24px));
+  max-height:calc(100vh - 24px);
+  margin:0;
   padding:18px;
+  box-sizing:border-box;
+  overflow:auto;
+  overscroll-behavior:contain;
   border:1px solid rgba(132,63,70,.20);
   border-radius:18px;
   color:var(--coach-ink);
   background:
     radial-gradient(circle at 96% 0,rgba(211,154,49,.20),transparent 32%),
     linear-gradient(145deg,#fffdf8 0%,#fff7e8 100%);
-  box-shadow:0 16px 38px rgba(62,38,29,.12);
+  box-shadow:0 24px 60px rgba(62,38,29,.32);
 }
+.beginner-training-panel[hidden]{display:none!important}
 .beginner-training-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
 .beginner-training-kicker{font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--coach-red)}
-.beginner-training-heading h1{margin:4px 0 5px;font-size:clamp(23px,3vw,36px);line-height:1.08;color:#3d272a}
-.beginner-training-heading p{margin:0;max-width:720px;color:#665154;font-size:14px;line-height:1.5}
-.beginner-training-mode{display:flex;gap:6px;padding:5px;border-radius:12px;background:rgba(132,63,70,.08);flex:0 0 auto}
-.beginner-training-mode button{min-height:40px;padding:8px 12px;border-radius:9px!important;white-space:nowrap}
-.beginner-training-mode button.active{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important}
+.beginner-training-heading h1{margin:4px 0 0;font-size:clamp(22px,2.6vw,30px);line-height:1.08;color:#3d272a}
+.coach-details-close{width:42px!important;min-width:42px!important;height:42px!important;min-height:42px!important;padding:0!important;border-radius:999px!important;font-size:24px!important;line-height:1!important}
 
-.coach-dashboard{display:grid;gap:14px;margin-top:18px}
+.coach-dashboard{display:grid;gap:12px;margin-top:14px}
 .coach-progress-card,.coach-current-card{
   border:1px solid rgba(132,63,70,.15);
   border-radius:14px;
@@ -68,16 +80,18 @@
 .coach-tip{margin-top:10px;padding:9px 11px;border-left:4px solid var(--coach-gold);border-radius:7px;background:#fff8df;color:#5b462b;font-size:13px}
 .coach-actions{display:flex;flex-direction:column;gap:7px;min-width:205px}
 .coach-actions button{width:100%;min-height:39px}
-.coach-actions .coach-primary{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important;font-weight:900}
 .coach-actions .coach-reset{font-size:11px;min-height:31px;opacity:.76}
 #coachReviewBadge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;margin-left:4px;padding:0 5px;border-radius:999px;background:rgba(132,63,70,.12);font-size:11px}
-.free-training-intro{display:flex;gap:8px;align-items:baseline;margin-top:16px;padding:12px 14px;border-radius:11px;background:rgba(255,255,255,.75);color:#6a5256}
-.free-training-intro strong{color:#432d31}
 .trainer-source-note{width:min(1180px,calc(100% - 24px));margin:2px auto 16px;text-align:center;color:#7b686b;font-size:11px}
 
 body.coach-mode .filter-box{display:none}
 body.coach-mode .rating-mode{display:none}
 body.coach-mode #ratingDisplay{display:none}
+body.coach-mode .trainer-toprow{margin-bottom:10px}
+body.coach-mode .trainer-topbox{padding:8px 10px}
+body.coach-mode .trainer-topinfo{gap:0}
+body.coach-mode .trainer-header{display:none}
+body.coach-mode .status{min-height:40px;padding:7px 13px;font-size:clamp(15px,1.7vw,17px);box-shadow:none}
 body.coach-mode .sidebar{align-self:start}
 body.coach-mode #btnNewPuzzle{font-weight:900}
 body.coach-review-active .coach-current-card{box-shadow:inset 0 0 0 2px rgba(211,154,49,.52)}
@@ -90,16 +104,11 @@ html.dark-mode .beginner-training-panel{
 }
 html.dark-mode .beginner-training-heading h1,
 html.dark-mode .coach-progress-copy strong,
-html.dark-mode .coach-current-card h2,
-html.dark-mode .free-training-intro strong{color:#f4f0eb}
-html.dark-mode .beginner-training-heading p,
+html.dark-mode .coach-current-card h2{color:#f4f0eb}
 html.dark-mode .coach-progress-copy span,
-html.dark-mode .coach-current-card p,
-html.dark-mode .free-training-intro{color:#bdc0c6}
-html.dark-mode .beginner-training-mode{background:rgba(255,255,255,.06)}
+html.dark-mode .coach-current-card p{color:#bdc0c6}
 html.dark-mode .coach-progress-card,
-html.dark-mode .coach-current-card,
-html.dark-mode .free-training-intro{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.09)}
+html.dark-mode .coach-current-card{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.09)}
 html.dark-mode .coach-progress-track{background:#3b3533}
 html.dark-mode .coach-summary span{background:#2b2f36;color:#c8cbd0}
 html.dark-mode .coach-summary strong{color:#f2f3f5}
@@ -112,21 +121,20 @@ html.dark-mode .trainer-source-note{color:#969ba3}
 
 @media(max-width:900px){
   .beginner-training-heading,.coach-current-card{align-items:stretch;flex-direction:column}
-  .beginner-training-mode{align-self:flex-start}
   .coach-stage-list{grid-template-columns:repeat(3,minmax(120px,1fr))}
   .coach-actions{display:grid;grid-template-columns:1fr 1fr;min-width:0}
   .coach-actions .coach-reset{grid-column:1/-1}
 }
 @media(max-width:560px){
-  .beginner-training-panel{width:calc(100% - 12px);padding:12px;margin-top:8px;border-radius:14px}
-  .beginner-training-mode{display:grid;grid-template-columns:1fr 1fr;width:100%}
-  .beginner-training-mode button{white-space:normal;font-size:12px}
+  .trainer-local-nav{display:none}
+  html.trainer-standalone .trainer-local-nav{display:grid;grid-template-columns:1fr 1fr}
+  html.trainer-standalone .trainer-local-nav #btnCoachDetailsOpen{grid-column:1/-1}
+  .beginner-training-panel{top:6px;width:calc(100% - 12px);max-height:calc(100vh - 12px);padding:12px;border-radius:14px}
   .coach-progress-copy{align-items:flex-start;flex-direction:column;gap:3px}
   .coach-stage-list{display:flex;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}
   .coach-stage{min-width:150px;scroll-snap-align:start}
   .coach-actions{grid-template-columns:1fr}
   .coach-actions .coach-reset{grid-column:auto}
-  .free-training-intro{align-items:flex-start;flex-direction:column}
 }
 
 @media(prefers-reduced-motion:reduce){.coach-progress-track span{transition:none}}

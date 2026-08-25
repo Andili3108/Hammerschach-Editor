@@ -1,6 +1,9 @@
 'use strict';
 
 (function initialiseBeginnerTrainer(){
+  if(document.documentElement&&document.documentElement.classList){
+    document.documentElement.classList.add(window.self===window.top?'trainer-standalone':'trainer-embedded');
+  }
   const STORAGE_KEY='hammerschachBeginnerTrainingProgressV1';
   const REQUESTED_MODE_KEY='hammerschachTrainerRequestedMode';
   const stageDefinitions=[
@@ -45,6 +48,7 @@
   let progress=loadProgress();
   let currentStage=Math.max(0,Math.min(stageDefinitions.length-1,progress.activeStage));
   let reviewActive=false;
+  let detailsOpen=false;
   let currentAttempt={id:'',stage:currentStage,failed:false,resolved:false};
   let controllerReady=false;
   let requestedMode=consumeRequestedMode();
@@ -52,9 +56,10 @@
 
   const panel=document.getElementById('beginnerTrainingPanel');
   const coachDashboard=document.getElementById('coachDashboard');
-  const freeTrainingIntro=document.getElementById('freeTrainingIntro');
   const btnCoachMode=document.getElementById('btnCoachMode');
   const btnFreeMode=document.getElementById('btnFreeMode');
+  const btnCoachDetailsOpen=document.getElementById('btnCoachDetailsOpen');
+  const btnCoachDetailsClose=document.getElementById('btnCoachDetailsClose');
   const stageList=document.getElementById('coachStageList');
   const progressText=document.getElementById('coachProgressText');
   const progressHint=document.getElementById('coachProgressHint');
@@ -125,6 +130,13 @@
   function completedStages(){return stageDefinitions.filter((_,index)=>stageComplete(index)).length;}
   function totalSolved(){return progress.solvedByStage.reduce((sum,ids,index)=>sum+Math.min(ids.length,stageDefinitions[index].goal),0);}
   function isCoachMode(){return progress.mode!=='free';}
+  function postUiState(){
+    const stage=stageDefinitions[currentStage];
+    if(typeof parentMessage==='function')parentMessage({
+      type:'hammerschach-trainer-ui-state',mode:isCoachMode()?'coach':'free',detailsOpen:detailsOpen&&isCoachMode(),
+      solved:totalSolved(),total:totalGoal,stage:currentStage+1,stageTotal:stageDefinitions.length,stageTitle:stage.title
+    });
+  }
 
   function renderStages(){
     if(!stageList)return;
@@ -147,12 +159,17 @@
     document.body.classList.toggle('coach-mode',coach);
     document.body.classList.toggle('free-training-mode',!coach);
     document.body.classList.toggle('coach-review-active',coach&&reviewActive);
+    if(panel)panel.hidden=!coach||!detailsOpen;
     if(coachDashboard)coachDashboard.hidden=!coach;
-    if(freeTrainingIntro)freeTrainingIntro.hidden=coach;
     btnCoachMode?.classList.toggle('active',coach);
     btnFreeMode?.classList.toggle('active',!coach);
     btnCoachMode?.setAttribute('aria-pressed',coach?'true':'false');
     btnFreeMode?.setAttribute('aria-pressed',coach?'false':'true');
+    if(btnCoachDetailsOpen){
+      btnCoachDetailsOpen.disabled=!coach;
+      btnCoachDetailsOpen.classList.toggle('active',coach&&detailsOpen);
+      btnCoachDetailsOpen.setAttribute('aria-expanded',coach&&detailsOpen?'true':'false');
+    }
     const solved=totalSolved();
     const percent=Math.max(0,Math.min(100,Math.round((solved/totalGoal)*100)));
     if(progressText)progressText.textContent=solved+' von '+totalGoal+' Aufgaben gemeistert';
@@ -171,6 +188,7 @@
     if(currentDescription)currentDescription.textContent=reviewActive?'Diese Aufgaben hast du noch nicht fehlerfrei gelöst. Jetzt werden sie sicher gefestigt.':stage.description;
     if(currentTip)currentTip.innerHTML='<strong>Trainer-Tipp:</strong> '+stage.tip;
     renderStages();
+    postUiState();
     if(typeof updateTrainerAccountUi==='function')updateTrainerAccountUi();
     if(typeof reportTrainerHeight==='function')setTimeout(reportTrainerHeight,0);
   }
@@ -223,6 +241,7 @@
   function setMode(mode,startPuzzle){
     progress.mode=mode==='free'?'free':'coach';
     reviewActive=false;
+    detailsOpen=false;
     currentAttempt={id:'',stage:currentStage,failed:false,resolved:false};
     saveProgress();
     renderCoachUi();
@@ -230,6 +249,10 @@
     isRetry=false;
     const puzzle=isCoachMode()?chooseCoachPuzzle():chooseRandomFilteredPuzzle();
     if(puzzle)setupPuzzle(puzzle);
+  }
+  function setDetailsOpen(open){
+    detailsOpen=!!open&&isCoachMode();
+    renderCoachUi();
   }
   function onPuzzleSetup(puzzle){
     if(!isCoachMode())return;
@@ -316,6 +339,8 @@
 
   btnCoachMode?.addEventListener('click',()=>setMode('coach',true));
   btnFreeMode?.addEventListener('click',()=>setMode('free',true));
+  btnCoachDetailsOpen?.addEventListener('click',()=>setDetailsOpen(!detailsOpen));
+  btnCoachDetailsClose?.addEventListener('click',()=>setDetailsOpen(false));
   btnCoachStart?.addEventListener('click',()=>{
     if(!isCoachMode())setMode('coach',false);
     isRetry=false;
@@ -329,6 +354,7 @@
     if(location.origin!=='null'&&event.origin!==location.origin)return;
     const message=event.data&&typeof event.data==='object'?event.data:{};
     if(message.type==='hammerschach-trainer-open-mode')setMode(message.mode==='free'?'free':'coach',true);
+    if(message.type==='hammerschach-trainer-toggle-progress')setDetailsOpen(!detailsOpen);
   });
 
   window.HammerschachBeginnerTrainer={

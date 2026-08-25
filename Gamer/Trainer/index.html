@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hammerschach-Trainer im Gamer</title>
-<link rel="stylesheet" href="beginner-training.css?v=20260825-2">
+<link rel="stylesheet" href="beginner-training.css?v=20260825-4">
 <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_plt45.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_rlt45.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../assets/pieces/Chess_nlt45.svg">
@@ -1036,17 +1036,19 @@ html.dark-mode #board{
     </div>
   </div>
 
-  <section id="beginnerTrainingPanel" class="beginner-training-panel" aria-labelledby="beginnerTrainingTitle">
+  <div class="trainer-local-nav" aria-label="Trainingsart">
+    <button id="btnCoachMode" type="button" class="active" aria-pressed="true">🎯 Anfängertraining</button>
+    <button id="btnFreeMode" type="button" aria-pressed="false">🎯 Freies Training</button>
+    <button id="btnCoachDetailsOpen" type="button" aria-expanded="false" aria-controls="beginnerTrainingPanel">📊 Lernstand</button>
+  </div>
+
+  <section id="beginnerTrainingPanel" class="beginner-training-panel" aria-labelledby="beginnerTrainingTitle" hidden>
     <div class="beginner-training-heading">
       <div>
-        <div class="beginner-training-kicker">Dein persönlicher Schachcoach</div>
-        <h1 id="beginnerTrainingTitle">🎯 Hammerschach-Anfängertraining</h1>
-        <p id="beginnerTrainingLead">Vom ersten Mattbild bis zum sicheren Taktikblick – Schritt für Schritt und ohne Leistungsdruck.</p>
+        <div class="beginner-training-kicker">Dein Lernstand</div>
+        <h1 id="beginnerTrainingTitle">🎯 Anfänger-Lernpfad</h1>
       </div>
-      <div class="beginner-training-mode" role="group" aria-label="Trainingsart">
-        <button id="btnCoachMode" type="button" class="active" aria-pressed="true">🧭 Anfänger-Lernpfad</button>
-        <button id="btnFreeMode" type="button" aria-pressed="false">🎯 Freies Training</button>
-      </div>
+      <button id="btnCoachDetailsClose" class="coach-details-close" type="button" aria-label="Lernstand schließen">×</button>
     </div>
 
     <div id="coachDashboard" class="coach-dashboard">
@@ -1075,16 +1077,10 @@ html.dark-mode #board{
           <div id="coachCurrentTip" class="coach-tip"><strong>Trainer-Tipp:</strong> Prüfe zuerst alle Schachgebote.</div>
         </div>
         <div class="coach-actions">
-          <button id="btnCoachStart" class="coach-primary" type="button">Training starten</button>
           <button id="btnCoachReview" type="button" disabled>Fehler wiederholen <span id="coachReviewBadge">0</span></button>
           <button id="btnCoachReset" class="coach-reset" type="button">Lernpfad zurücksetzen</button>
         </div>
       </div>
-    </div>
-
-    <div id="freeTrainingIntro" class="free-training-intro" hidden>
-      <strong>Freies Training für Fortgeschrittene</strong>
-      <span>Wähle Rating, Motive und Länge selbst. Gewertete Versuche stehen nach dem Gamer-Login zur Verfügung.</span>
     </div>
   </section>
 
@@ -2867,8 +2863,16 @@ if(window.PointerEvent){
   window.addEventListener('blur',()=>cancelActivePieceDrag());
 }
 
+let lastReportedTrainerHeight=0;
 function reportTrainerHeight(){
-  parentMessage({type:'hammerschach-trainer-height',height:Math.ceil(document.documentElement.scrollHeight)});
+  const shell=document.querySelector('.trainer-shell');
+  const contentBottom=shell
+    ? Math.ceil(shell.getBoundingClientRect().bottom+window.scrollY)
+    : Math.ceil(document.body.getBoundingClientRect().bottom+window.scrollY);
+  const height=Math.max(720,contentBottom+8);
+  if(Math.abs(height-lastReportedTrainerHeight)<2)return;
+  lastReportedTrainerHeight=height;
+  parentMessage({type:'hammerschach-trainer-height',height});
 }
 if(window.ResizeObserver)new ResizeObserver(reportTrainerHeight).observe(document.body);
 window.addEventListener('load',reportTrainerHeight);
@@ -2894,7 +2898,7 @@ parentMessage({type:'hammerschach-trainer-ready'});
   reportTrainerHeight();
 })();
 </script>
-<script src="beginner-training.js?v=20260825-2"></script>
+<script src="beginner-training.js?v=20260825-4"></script>
 
 </body>
 </html>
