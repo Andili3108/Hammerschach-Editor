@@ -72,6 +72,11 @@
   .match-actions .name-action-btn{min-width:0;}
   .header-direct-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;}
   .header-direct-action[hidden]{display:none!important;}
+  .trainer-header-action.active{color:#fff!important;background:linear-gradient(180deg,#9d5058,#76383f)!important;border-color:#6f333a!important;}
+  html.trainer-tool-active .match-actions{flex-wrap:nowrap;}
+  html.trainer-tool-active .match-actions>:not(#roomLobbyBtn):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
+  html.trainer-tool-active .match-actions>#roomLobbyBtn,
+  html.trainer-tool-active .match-actions>.trainer-header-action{display:inline-flex!important;flex:1 1 0;min-width:0;max-width:210px;}
   .header-menu{position:relative;min-width:0;display:flex;}
   .header-menu[hidden]{display:none!important;}
   .header-menu-button{display:flex!important;align-items:center;justify-content:center;gap:6px;}
@@ -150,9 +155,9 @@
   html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
   html.visitor-header-view .match-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:12px;}
-  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorPublicGamesOpenBtn):not(#infoMenu){display:none!important;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:190px!important;min-width:190px!important;max-width:190px!important;flex:0 0 190px;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
+  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorTrainerOpenBtn):not(#visitorPublicGamesOpenBtn):not(#infoMenu):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:178px!important;min-width:178px!important;max-width:178px!important;flex:0 0 178px;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
   html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{width:100%;}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
@@ -1229,6 +1234,8 @@
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
   .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
   .learning-tool-view,.analyzer-tool-view,.trainer-tool-view,.schachlabor-tool-view,.openings-tool-view,.fairplay-tool-view,.tv-tool-view{width:100%;min-width:0;}
+  html.trainer-tool-active,html.trainer-tool-active body{overflow-anchor:none;}
+  html.trainer-tool-active .trainer-tool-view,html.trainer-tool-active .trainer-tool-frame{overflow-anchor:none;}
   .learning-tool-view[hidden],.analyzer-tool-view[hidden],.trainer-tool-view[hidden],.schachlabor-tool-view[hidden],.openings-tool-view[hidden],.fairplay-tool-view[hidden],.tv-tool-view[hidden]{display:none!important;}
   .learning-tool-frame,.analyzer-tool-frame,.trainer-tool-frame,.schachlabor-tool-frame,.openings-tool-frame,.fairplay-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
   .tv-stage{overflow:visible;padding:0;background:transparent;border:0;box-shadow:none;}
@@ -2029,6 +2036,11 @@
     #openOffersOpenBtn{grid-column:1;}
     #newGameOpenBtn{grid-column:2;}
     #roomLobbyBtn{grid-column:1;}
+    html.trainer-tool-active .match-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+    html.trainer-tool-active #roomLobbyBtn{grid-column:1;}
+    html.trainer-tool-active #trainerBeginnerHeaderBtn{grid-column:2;}
+    html.trainer-tool-active #trainerFreeHeaderBtn{grid-column:1;}
+    html.trainer-tool-active #trainerProgressHeaderBtn{grid-column:2;}
     #dailyGamesOpenBtn{grid-column:2;}
     #gamesMenu{grid-column:1;}
     #tournamentsOpenBtn{grid-column:2;}
