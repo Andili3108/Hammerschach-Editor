@@ -32,8 +32,7 @@
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
-  const trainerHeaderTargets = new Set(['trainerBeginnerHeaderBtn','trainerFreeHeaderBtn','trainerProgressHeaderBtn']);
-  const trainerContextAllowedTargets = new Set([...trainerHeaderTargets,'roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn']);
+  const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn',...visitorInfoTargets]);
   let refreshFrame = 0;
   let lastFocus = null;
   let drawerScrollY = 0;
@@ -133,11 +132,8 @@
     const visitor = root.classList.contains('visitor-header-view');
     const trainerContext = root.classList.contains('trainer-tool-active');
     const visitorOnly = button.hasAttribute('data-mobile-nav-visitor-only');
-    const visitorBlocked = trainerContext&&trainerHeaderTargets.has(targetId)
-      ? false
-      : (visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly);
-    const visitorTrainerTarget=visitor&&(targetId==='visitorTrainerOpenBtn'||targetId==='visitorTrainerProgressHeaderBtn');
-    const trainerBlocked = trainerContext&&!trainerContextAllowedTargets.has(targetId)&&!visitorInfoTargets.has(targetId)&&!visitorTrainerTarget;
+    const visitorBlocked = visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly;
+    const trainerBlocked = visitor && trainerContext && !visitorTrainerAllowedTargets.has(targetId);
     const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked || trainerBlocked;
     button.hidden = !source || source.hidden || visitorBlocked || trainerBlocked;
     button.disabled = unavailable;
