@@ -30,6 +30,8 @@
   const roomLobbyButton = document.getElementById('roomLobbyBtn');
   const newGameButton = document.getElementById('newGameOpenBtn');
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
+  const accordions = Array.from(document.querySelectorAll('[data-mobile-nav-accordion-source]'));
+  const accordionToggles = accordions.map(accordion => accordion.querySelector('.mobile-nav-accordion-toggle')).filter(Boolean);
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
   const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn',...visitorInfoTargets]);
@@ -91,9 +93,26 @@
     if(root.classList.contains(name) !== active) root.classList.toggle(name,active);
   }
 
+  function setAccordionOpen(accordion,open){
+    if(!accordion) return;
+    const toggle = accordion.querySelector('.mobile-nav-accordion-toggle');
+    const panel = accordion.querySelector('.mobile-nav-accordion-panel');
+    const expanded = !!open && !accordion.hidden;
+    accordion.classList.toggle('open',expanded);
+    if(toggle) toggle.setAttribute('aria-expanded',expanded ? 'true' : 'false');
+    if(panel) panel.hidden = !expanded;
+  }
+
+  function closeAccordions(except){
+    accordions.forEach(accordion => {
+      if(accordion !== except) setAccordionOpen(accordion,false);
+    });
+  }
+
   function closeDrawer(restoreFocus){
     if(!backdrop || backdrop.hidden) return;
     const restoreScrollY=drawerScrollY;
+    closeAccordions();
     backdrop.hidden = true;
     root.classList.remove('mobile-nav-test-drawer-open');
     document.body.classList.remove('mobile-nav-test-drawer-open');
@@ -163,9 +182,23 @@
     if(testBrand) testBrand.setAttribute('aria-label',backToLobby?(visitor?'Zur Startseite':'Zur Lobby'):'Zum Seitenanfang');
   }
 
+  function syncAccordion(accordion){
+    const sourceId = accordion.dataset.mobileNavAccordionSource || '';
+    const source = document.getElementById(sourceId);
+    const sourceToggle = source ? source.querySelector('.header-menu-button') : null;
+    const visibleChild = Array.from(accordion.querySelectorAll('[data-mobile-nav-target]')).some(button => !button.hidden);
+    const unavailable = !source || source.hidden || !visibleChild;
+    accordion.hidden = unavailable;
+    const toggle = accordion.querySelector('.mobile-nav-accordion-toggle');
+    if(toggle) toggle.disabled = unavailable || sourceDisabled(sourceToggle);
+    if(unavailable) setAccordionOpen(accordion,false);
+  }
+
   function syncSections(){
     navigationSections.forEach(section => {
-      const visibleItem = Array.from(section.querySelectorAll('.mobile-nav-test-item')).some(button => !button.hidden);
+      const visibleItem = Array.from(section.children).some(element => {
+        return (element.classList.contains('mobile-nav-test-item') || element.classList.contains('mobile-nav-accordion')) && !element.hidden;
+      });
       section.hidden = !visibleItem;
     });
   }
@@ -221,6 +254,7 @@
     syncTournamentsNew();
     syncPrimaryButton();
     targetButtons.forEach(syncTargetButton);
+    accordions.forEach(syncAccordion);
     syncSections();
   }
 
@@ -267,6 +301,14 @@
   targetButtons.forEach(button => {
     button.addEventListener('click', () => runSourceAction(document.getElementById(button.dataset.mobileNavTarget || '')));
   });
+  accordionToggles.forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const accordion = toggle.closest('.mobile-nav-accordion');
+      const open = toggle.getAttribute('aria-expanded') !== 'true';
+      closeAccordions(open ? accordion : null);
+      setAccordionOpen(accordion,open);
+    });
+  });
   backdrop.addEventListener('click', event => { if(event.target === backdrop) closeDrawer(true); });
   document.addEventListener('keydown', event => {
     if(event.key === 'Escape' && !backdrop.hidden){
@@ -301,6 +343,8 @@
   const rootObserver = new MutationObserver(refresh);
   if(root&&root.nodeType===Node.ELEMENT_NODE)rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
   [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,sourceTournamentsNewBadge,
+    document.getElementById('trainerBeginnerMenu'),document.getElementById('gamesMenu'),document.getElementById('playerMenu'),
+    document.getElementById('toolsMenu'),document.getElementById('infoMenu'),
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
     document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn')]
     .filter(element=>element&&element.nodeType===Node.ELEMENT_NODE).forEach(element => {

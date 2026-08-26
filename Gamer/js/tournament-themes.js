@@ -115,7 +115,13 @@ function renderThemePickerList(){
       themePickerCandidate = theme;
       renderThemePickerList();
       const active = themePickerList.querySelector('.theme-picker-item.active');
-      if(active) active.scrollIntoView({block:'nearest'});
+      const mobile = !!(window.matchMedia && window.matchMedia('(max-width:760px)').matches);
+      if(mobile && themePickerBackdrop){
+        const preview = themePickerBackdrop.querySelector('.theme-picker-preview');
+        if(preview) preview.scrollIntoView({block:'start',behavior:'smooth'});
+      }else if(active){
+        active.scrollIntoView({block:'nearest'});
+      }
     });
     fragment.appendChild(button);
   });
