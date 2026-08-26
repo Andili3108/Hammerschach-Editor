@@ -2704,6 +2704,59 @@ html.dark-mode .chess-chronicle-milestone.first_moment{color:#efb5bc;}
     padding-right:0;
   }
 }
+/* Die uebrigen grossen Listenfenster verwenden auf Smartphones und
+   Touch-Tablets dieselbe zusammenhaengende Wischflaeche wie
+   "Meine Partien". Dadurch lassen sich auch Kopf, Filter, Status und
+   Fussaktionen mit einer einzigen vertikalen Geste erreichen. */
+@media (max-width:760px), (hover:none) and (pointer:coarse){
+  :is(#membersBackdrop,#openOffersBackdrop,#publicGamesBackdrop,#gameArchiveBackdrop,#tvPlaylistBackdrop,#inviteBackdrop){
+    align-items:flex-start;
+    padding:8px;
+    overflow:hidden;
+  }
+  :is(
+    #membersBackdrop .members-modal,
+    #openOffersBackdrop .open-offers-modal,
+    #publicGamesBackdrop .public-games-modal,
+    #gameArchiveBackdrop .game-archive-modal,
+    #tvPlaylistBackdrop .tv-playlist-modal,
+    #inviteBackdrop .invite-modal
+  ){
+    width:100%;
+    max-height:calc(100vh - 16px);
+    max-height:calc(100dvh - 16px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+  }
+  :is(
+    #membersBackdrop .members-modal,
+    #openOffersBackdrop .open-offers-modal,
+    #publicGamesBackdrop .public-games-modal,
+    #gameArchiveBackdrop .game-archive-modal,
+    #tvPlaylistBackdrop .tv-playlist-modal
+  ) > *{
+    flex-shrink:0;
+  }
+  #membersBackdrop :is(.members-search-box,.members-results),
+  #openOffersBackdrop .open-offers-list,
+  #publicGamesBackdrop .public-games-list,
+  #gameArchiveBackdrop .game-archive-list,
+  #tvPlaylistBackdrop .tv-playlist-video-list,
+  #inviteBackdrop .member-search-results{
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+  }
+  #membersBackdrop .members-results,
+  #openOffersBackdrop .open-offers-list,
+  #publicGamesBackdrop .public-games-list,
+  #gameArchiveBackdrop .game-archive-list,
+  #tvPlaylistBackdrop .tv-playlist-video-list{
+    padding-right:0;
+  }
+}
 @media (max-width:760px){
   .daily-games-chronicle-summary-row{gap:6px;}
   .chess-chronicle-summary{gap:4px;}
