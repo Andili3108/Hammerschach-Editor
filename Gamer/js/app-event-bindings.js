@@ -154,6 +154,15 @@ if(membersSortSelect) membersSortSelect.addEventListener('change', () => setMemb
 if(membersRefreshBtn) membersRefreshBtn.addEventListener('click', refreshStandaloneMemberDirectory);
 if(membersCloseBtn) membersCloseBtn.addEventListener('click', closeMembersDialog);
 if(membersBackdrop) membersBackdrop.addEventListener('click', ev => { if(ev.target === membersBackdrop) closeMembersDialog(); });
+document.addEventListener('click', ev => {
+  const closeIcon = ev.target instanceof Element ? ev.target.closest('[data-dialog-close-target]') : null;
+  if(!closeIcon) return;
+  const targetId = String(closeIcon.getAttribute('data-dialog-close-target') || '').trim();
+  const targetButton = targetId ? document.getElementById(targetId) : null;
+  if(!targetButton) return;
+  ev.preventDefault();
+  targetButton.click();
+});
 document.addEventListener('keydown', ev => {
   if(ev.key !== 'Escape') return;
   if(invitationMessageBackdrop && !invitationMessageBackdrop.hidden) closeInvitationMessageDialog(false);

@@ -15,6 +15,7 @@ const privateMessagesComposeTab = document.getElementById('privateMessagesCompos
 const privateMessagesInboxTabCount = document.getElementById('privateMessagesInboxTabCount');
 const privateMessagesInboxPanel = document.getElementById('privateMessagesInboxPanel');
 const privateMessagesComposePanel = document.getElementById('privateMessagesComposePanel');
+const privateMessagesMobileBackBtn = document.getElementById('privateMessagesMobileBackBtn');
 const privateMessagesList = document.getElementById('privateMessagesList');
 const privateMessagesReader = document.getElementById('privateMessagesReader');
 const privateMessagesStatus = document.getElementById('privateMessagesStatus');
@@ -35,6 +36,7 @@ let privateMessagesActiveId = '';
 let privateMessagesPollTimer = null;
 let privateMessagesRequestId = 0;
 let privateMessagesLastUnreadCount = null;
+let privateMessagesMobileReaderActive = false;
 
 function setPrivateMessagesStatus(message, kind, compose){
   const el = compose ? privateMessagesComposeStatus : privateMessagesStatus;
@@ -122,6 +124,7 @@ function formatPrivateMessageTime(value, compact){
 
 function setPrivateMessagesTab(tab){
   const compose = tab === 'compose';
+  setPrivateMessagesMobileReader(false);
   if(privateMessagesInboxTab){ privateMessagesInboxTab.classList.toggle('active', !compose); privateMessagesInboxTab.setAttribute('aria-selected', compose ? 'false' : 'true'); }
   if(privateMessagesComposeTab){ privateMessagesComposeTab.classList.toggle('active', compose); privateMessagesComposeTab.setAttribute('aria-selected', compose ? 'true' : 'false'); }
   if(privateMessagesInboxPanel) privateMessagesInboxPanel.hidden = compose;
@@ -131,7 +134,24 @@ function setPrivateMessagesTab(tab){
   if(compose) setTimeout(() => { try{ if(privateMessagesMemberSearch) privateMessagesMemberSearch.focus(); } catch(_){} }, 0);
 }
 
+function privateMessagesUsesSinglePane(){
+  return !!(window.matchMedia && window.matchMedia('(max-width:700px)').matches);
+}
+
+function setPrivateMessagesMobileReader(active){
+  privateMessagesMobileReaderActive = !!active;
+  if(privateMessagesInboxPanel) privateMessagesInboxPanel.classList.toggle('mobile-reader-active', privateMessagesMobileReaderActive);
+  if(privateMessagesMobileBackBtn) privateMessagesMobileBackBtn.hidden = !privateMessagesMobileReaderActive;
+  if(!privateMessagesMobileReaderActive && privateMessagesList){
+    const selectedRow = privateMessagesList.querySelector('.private-message-row.active');
+    if(selectedRow && selectedRow.scrollIntoView){
+      try{ selectedRow.scrollIntoView({block:'nearest'}); } catch(_){}
+    }
+  }
+}
+
 function closePrivateMessagesDialog(){
+  setPrivateMessagesMobileReader(false);
   if(privateMessagesBackdrop) privateMessagesBackdrop.hidden = true;
 }
 
@@ -149,6 +169,7 @@ function renderPrivateMessagesList(){
   if(!privateMessagesList) return;
   privateMessagesList.innerHTML = '';
   if(!privateMessagesInbox.length){
+    setPrivateMessagesMobileReader(false);
     privateMessagesList.innerHTML = '<div class="private-messages-empty">Noch keine Unterhaltungen.</div>';
     if(privateMessagesReader) privateMessagesReader.innerHTML = '<div class="private-messages-empty">Hier erscheinen deine persönlichen Unterhaltungen.</div>';
     return;
@@ -202,6 +223,7 @@ function renderPrivateMessageReader(message, conversation){
   reply.addEventListener('click', () => openPrivateMessagesCompose(member));
   actions.appendChild(reply);
   privateMessagesReader.append(head,thread,actions);
+  setPrivateMessagesMobileReader(true);
   requestAnimationFrame(() => { try{ thread.scrollTop=thread.scrollHeight; } catch(_){} });
 }
 
@@ -241,7 +263,7 @@ async function loadPrivateMessagesInbox(options){
     setPrivateMessagesBadge(data.unreadCount || 0);
     if(privateMessagesActiveId && !privateMessagesInbox.some(item => item.id === privateMessagesActiveId)) privateMessagesActiveId = '';
     renderPrivateMessagesList();
-    if(privateMessagesActiveId){
+    if(privateMessagesActiveId && (!privateMessagesUsesSinglePane() || privateMessagesMobileReaderActive)){
       const activeId=privateMessagesActiveId;
       setTimeout(() => openPrivateMessage(activeId).catch(() => {}),0);
     }
@@ -270,8 +292,13 @@ function renderPrivateMessageSelectedRecipients(){
 function renderPrivateMessagesMembers(){
   if(!privateMessagesMembers) return;
   const query = String(privateMessagesMemberSearch && privateMessagesMemberSearch.value || '').trim().toLocaleLowerCase('de-DE');
-  const shown = privateMessagesMembersCache.filter(member => !query || String(member.username || '').toLocaleLowerCase('de-DE').includes(query));
   privateMessagesMembers.innerHTML='';
+  if(privateMessagesUsesSinglePane() && query.length < 2){
+    privateMessagesMembers.innerHTML='<div class="private-messages-empty">Gib mindestens zwei Zeichen ein, um weitere Empfänger zu suchen.</div>';
+    return;
+  }
+  const matches = privateMessagesMembersCache.filter(member => !query || String(member.username || '').toLocaleLowerCase('de-DE').includes(query));
+  const shown = privateMessagesUsesSinglePane() ? matches.slice(0,24) : matches;
   if(!shown.length){ privateMessagesMembers.innerHTML='<div class="private-messages-empty">Kein passendes Mitglied gefunden.</div>'; return; }
   shown.forEach(member => {
     const label=document.createElement('label'); label.className='private-message-member-row'+(privateMessagesSelected.has(String(member.id))?' selected':'');
@@ -284,6 +311,11 @@ function renderPrivateMessagesMembers(){
     const name=document.createElement('span'); name.textContent=member.username || 'Mitglied';
     label.append(box,name); privateMessagesMembers.appendChild(label);
   });
+  if(matches.length > shown.length){
+    const note=document.createElement('div'); note.className='private-messages-empty';
+    note.textContent=`${matches.length-shown.length} weitere Treffer – bitte genauer suchen.`;
+    privateMessagesMembers.appendChild(note);
+  }
 }
 
 async function loadPrivateMessageMembers(){
@@ -359,6 +391,7 @@ if(privateMessagesCloseIconBtn) privateMessagesCloseIconBtn.addEventListener('cl
 if(privateMessagesRefreshBtn) privateMessagesRefreshBtn.addEventListener('click', () => loadPrivateMessagesInbox());
 if(privateMessagesInboxTab) privateMessagesInboxTab.addEventListener('click', () => { setPrivateMessagesTab('inbox'); loadPrivateMessagesInbox({silent:true}); });
 if(privateMessagesComposeTab) privateMessagesComposeTab.addEventListener('click', () => { setPrivateMessagesTab('compose'); loadPrivateMessageMembers(); });
+if(privateMessagesMobileBackBtn) privateMessagesMobileBackBtn.addEventListener('click', () => setPrivateMessagesMobileReader(false));
 if(privateMessagesMemberSearch) privateMessagesMemberSearch.addEventListener('input', renderPrivateMessagesMembers);
 if(privateMessagesText) privateMessagesText.addEventListener('input', () => { if(privateMessagesTextCount) privateMessagesTextCount.textContent=String(privateMessagesText.value.length)+' / 1500'; });
 if(privateMessagesClearBtn) privateMessagesClearBtn.addEventListener('click', () => clearPrivateMessageCompose(false));
