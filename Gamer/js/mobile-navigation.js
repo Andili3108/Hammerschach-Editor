@@ -3,9 +3,8 @@
 /*
  * Automatische Mobil-/Tablet-Navigation.
  * Smartphone und schmale Fenster: kompakte, stets einzeilige Navigation.
- * Tablet: kompakte Navigation im Spielraum auch oberhalb der schmalen Ansicht.
- * Große Desktopbretter verwenden einen getrennten Kompaktmodus, ohne die
- * mobilen Layoutklassen zu aktivieren.
+ * Im Spielraum ist die kompakte Navigation unabhängig von der Brettgröße der
+ * gemeinsame Standard. Desktop-Brettgrößen bleiben separat freigeschaltet.
  */
 (function initialiseMobileNavigation(){
   const root = document.documentElement;
@@ -26,12 +25,15 @@
   const sourceTheme = document.getElementById('themeToggleBtn');
   const sourceTurnCount = document.getElementById('dailyGamesTurnCount');
   const sourceOffersCount = document.getElementById('openOffersCount');
+  const sourceTournamentsNewBadge = document.getElementById('tournamentsNewBadge');
+  const mobileTournamentsNewBadge = document.getElementById('mobileNavTournamentsNewBadge');
   const roomLobbyButton = document.getElementById('roomLobbyBtn');
   const newGameButton = document.getElementById('newGameOpenBtn');
   const targetButtons = Array.from(document.querySelectorAll('[data-mobile-nav-target]'));
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
   const trainerHeaderTargets = new Set(['trainerBeginnerHeaderBtn','trainerFreeHeaderBtn','trainerProgressHeaderBtn']);
+  const trainerContextAllowedTargets = new Set([...trainerHeaderTargets,'roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn']);
   let refreshFrame = 0;
   let lastFocus = null;
   let drawerScrollY = 0;
@@ -62,16 +64,24 @@
     return (root.classList.contains('hammerschach-room-view') && !root.classList.contains('visitor-start-view')) || !!(roomLobbyButton && !roomLobbyButton.hidden);
   }
 
+  function embeddedToolContext(){
+    return ['learning-tool-active','analyzer-tool-active','trainer-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','tv-tool-active']
+      .some(className => root.classList.contains(className));
+  }
+
+  function desktopGameRoomContext(){
+    return roomContext() && !embeddedToolContext();
+  }
+
   function compactNavigationWanted(){
     if(phoneViewport()) return true;
     if(tabletViewport() && roomContext()) return true;
     return window.matchMedia('(min-width: 761px) and (max-width: 1100px)').matches;
   }
 
-  function desktopBoardCompactWanted(){
-    return root.classList.contains('desktop-board-compact')
-      && roomContext()
-      && window.matchMedia('(min-width: 1101px) and (min-height: 720px) and (hover: hover) and (pointer: fine)').matches;
+  function desktopRoomHeaderWanted(){
+    return desktopGameRoomContext()
+      && window.matchMedia('(min-width: 1101px) and (hover: hover) and (pointer: fine)').matches;
   }
 
   function compactHeaderActive(){
@@ -93,6 +103,12 @@
     if(openButton) openButton.setAttribute('aria-expanded', 'false');
     if(restoreFocus !== false && lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
     lastFocus = null;
+  }
+
+  function drawerFocusableElements(){
+    if(!drawer) return [];
+    return Array.from(drawer.querySelectorAll('button:not([hidden]):not(:disabled),a[href]:not([hidden]),[tabindex]:not([tabindex="-1"]):not([hidden])'))
+      .filter(element => element.getClientRects().length > 0);
   }
 
   function openDrawer(){
@@ -121,10 +137,21 @@
       ? false
       : (visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly);
     const visitorTrainerTarget=visitor&&(targetId==='visitorTrainerOpenBtn'||targetId==='visitorTrainerProgressHeaderBtn');
-    const trainerBlocked = trainerContext&&!trainerHeaderTargets.has(targetId)&&!visitorInfoTargets.has(targetId)&&!visitorTrainerTarget;
+    const trainerBlocked = trainerContext&&!trainerContextAllowedTargets.has(targetId)&&!visitorInfoTargets.has(targetId)&&!visitorTrainerTarget;
     const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked || trainerBlocked;
     button.hidden = !source || source.hidden || visitorBlocked || trainerBlocked;
     button.disabled = unavailable;
+    if(source){
+      const current = source.getAttribute('aria-current');
+      const active = source.classList.contains('active') || current === 'page' || source.getAttribute('aria-pressed') === 'true';
+      button.classList.toggle('active',active);
+      if(current) button.setAttribute('aria-current',current); else button.removeAttribute('aria-current');
+      const label = button.querySelector('strong');
+      if(label && (targetId === 'trainerProgressHeaderBtn' || targetId === 'visitorTrainerProgressHeaderBtn')){
+        const progress = String(source.textContent || '').match(/(\d+)\s*\/\s*(\d+)/);
+        label.textContent = progress ? ('Lernstand · ' + progress[1] + '/' + progress[2]) : 'Lernstand';
+      }
+    }
   }
 
   function syncPrimaryButton(){
@@ -151,8 +178,9 @@
     if(testStatus && sourceStatus) testStatus.textContent = sourceStatus.textContent || 'Hammerschach-Gamer';
     if(testContext){
       const learning = root.classList.contains('learning-tool-active');
-      const area = root.classList.contains('analyzer-tool-active') || root.classList.contains('trainer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active') || root.classList.contains('tv-tool-active');
-      testContext.textContent = learning ? 'Schach lernen' : (area ? 'Bereich' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')));
+      const trainer = root.classList.contains('trainer-tool-active');
+      const area = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active') || root.classList.contains('tv-tool-active');
+      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (area ? 'Bereich' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer'))));
     }
   }
 
@@ -182,11 +210,19 @@
     else offersCount.removeAttribute('aria-label');
   }
 
+  function syncTournamentsNew(){
+    if(!mobileTournamentsNewBadge || !sourceTournamentsNewBadge) return;
+    const badgeText = String(sourceTournamentsNewBadge.textContent || '').trim();
+    mobileTournamentsNewBadge.textContent = badgeText || 'NEU';
+    mobileTournamentsNewBadge.hidden = sourceTournamentsNewBadge.hidden || !badgeText;
+  }
+
   function syncControls(){
     syncStatus();
     syncTheme();
     syncTurnCount();
     syncOffersCount();
+    syncTournamentsNew();
     syncPrimaryButton();
     targetButtons.forEach(syncTargetButton);
     syncSections();
@@ -198,7 +234,7 @@
       refreshFrame = 0;
       const controlsReady = !!(classicHeader && testHeader && openButton && backdrop);
       const mobileActive = controlsReady && compactNavigationWanted();
-      const desktopActive = controlsReady && !mobileActive && desktopBoardCompactWanted();
+      const desktopActive = controlsReady && !mobileActive && desktopRoomHeaderWanted();
       const active = mobileActive || desktopActive;
 
       setRootClass('mobile-nav-test-active',mobileActive);
@@ -240,6 +276,26 @@
     if(event.key === 'Escape' && !backdrop.hidden){
       event.preventDefault();
       closeDrawer(true);
+      return;
+    }
+    if(event.key === 'Tab' && !backdrop.hidden){
+      const focusable = drawerFocusableElements();
+      if(!focusable.length){
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if(event.shiftKey && document.activeElement === first){
+        event.preventDefault();
+        last.focus();
+      }else if(!event.shiftKey && document.activeElement === last){
+        event.preventDefault();
+        first.focus();
+      }else if(!drawer.contains(document.activeElement)){
+        event.preventDefault();
+        first.focus();
+      }
     }
   });
   window.addEventListener('resize', refresh, {passive:true});
@@ -248,7 +304,7 @@
 
   const rootObserver = new MutationObserver(refresh);
   if(root&&root.nodeType===Node.ELEMENT_NODE)rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
-  [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,
+  [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,sourceTournamentsNewBadge,
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
     document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn')]
     .filter(element=>element&&element.nodeType===Node.ELEMENT_NODE).forEach(element => {

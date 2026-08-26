@@ -67,9 +67,12 @@
   function roomContext(){
     const roomClass = root.classList.contains('hammerschach-room-view');
     const roomButtonVisible = !!(roomLobbyButton && !roomLobbyButton.hidden);
+    const embeddedTool = ['learning-tool-active','analyzer-tool-active','trainer-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','tv-tool-active']
+      .some(className => root.classList.contains(className));
     return (roomClass || roomButtonVisible)
       && !root.classList.contains('member-lobby-view')
-      && !root.classList.contains('visitor-start-view');
+      && !root.classList.contains('visitor-start-view')
+      && !embeddedTool;
   }
 
   function maximumFittingSize(){
@@ -140,7 +143,9 @@
     root.style.setProperty('--desktop-shell-width',(effective + RIGHT_COLUMN + LAYOUT_GAP) + 'px');
     root.classList.toggle('desktop-board-sizing-active',customSize);
     updateCompactMode(effective,forceCompactDecision);
-    compactButton.hidden = !root.classList.contains('desktop-board-compact');
+    /* Der kompakte Header ist unabhängig von der Brettgröße. Der Zugriff auf
+       die Brettgröße bleibt trotzdem an die bestehende Desktopprüfung gebunden. */
+    compactButton.hidden = !available;
     updateControls(effective,true);
 
     window.dispatchEvent(new CustomEvent('hammerschach:board-size-change',{
