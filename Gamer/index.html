@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260826-6" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260826-7" />
 </head>
 <body>
 <div class="app" role="main">
@@ -1291,7 +1291,10 @@
 
     <div id="dailyGamesBackdrop" class="identity-backdrop" hidden>
       <div class="daily-games-modal" role="dialog" aria-modal="true" aria-labelledby="dailyGamesTitle">
-        <h3 id="dailyGamesTitle">Meine Partien</h3>
+        <div class="list-dialog-title-row">
+          <h3 id="dailyGamesTitle">Meine Partien</h3>
+          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Meine Partien schließen" data-dialog-close-target="dailyGamesCloseBtn">×</button>
+        </div>
         <div id="dailyGamesTabs" class="daily-games-tabs" role="tablist" aria-label="Partiestatus">
           <button id="dailyGamesRunningTab" class="daily-games-tab active" type="button" role="tab" aria-selected="true" aria-controls="dailyGamesList" data-daily-games-tab="running">Laufend <span id="dailyGamesRunningCount" class="daily-games-tab-count">0</span></button>
           <button id="dailyGamesOpenTab" class="daily-games-tab" type="button" role="tab" aria-selected="false" aria-controls="dailyGamesList" data-daily-games-tab="open">Offen <span id="dailyGamesOpenCount" class="daily-games-tab-count">0</span></button>
@@ -1341,7 +1344,10 @@
 
     <div id="openOffersBackdrop" class="identity-backdrop" hidden>
       <div class="open-offers-modal" role="dialog" aria-modal="true" aria-labelledby="openOffersTitle">
-        <h3 id="openOffersTitle">Offene Partien</h3>
+        <div class="list-dialog-title-row">
+          <h3 id="openOffersTitle">Offene Partien</h3>
+          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Offene Partien schließen" data-dialog-close-target="openOffersCloseBtn">×</button>
+        </div>
         <div id="openOffersList" class="open-offers-list" aria-live="polite"><div class="open-offers-empty">Noch keine Partieangebote geladen.</div></div>
         <div id="openOffersStatus" class="open-offers-status" aria-live="polite"></div>
         <div class="open-offers-actions">
@@ -1353,7 +1359,10 @@
 
     <div id="publicGamesBackdrop" class="identity-backdrop" hidden>
       <div class="public-games-modal" role="dialog" aria-modal="true" aria-labelledby="publicGamesTitle">
-        <h3 id="publicGamesTitle">Laufende öffentliche Partien</h3>
+        <div class="list-dialog-title-row">
+          <h3 id="publicGamesTitle">Laufende öffentliche Partien</h3>
+          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Laufende Partien schließen" data-dialog-close-target="publicGamesCloseBtn">×</button>
+        </div>
         <div id="publicGamesList" class="public-games-list" aria-live="polite"><div class="public-games-empty">Noch keine Partien geladen.</div></div>
         <div id="publicGamesStatus" class="public-games-status" aria-live="polite"></div>
         <div class="public-games-actions">
@@ -1365,7 +1374,10 @@
 
     <div id="gameArchiveBackdrop" class="identity-backdrop" hidden>
       <div class="game-archive-modal" role="dialog" aria-modal="true" aria-labelledby="gameArchiveTitle">
-        <h3 id="gameArchiveTitle">📖 Partiechronik</h3>
+        <div class="list-dialog-title-row">
+          <h3 id="gameArchiveTitle">📖 Partiechronik</h3>
+          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Partiechronik schließen" data-dialog-close-target="gameArchiveCloseBtn">×</button>
+        </div>
         <div class="game-archive-tabs" role="tablist" aria-label="Chronikbereich">
           <button id="gameArchiveMineTab" class="game-archive-tab active" type="button" role="tab" aria-selected="true">Meine Partien</button>
           <button id="gameArchivePublicTab" class="game-archive-tab" type="button" role="tab" aria-selected="false">Öffentliche Partien</button>
@@ -1395,7 +1407,10 @@
 
     <div id="membersBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal members-modal" role="dialog" aria-modal="true" aria-labelledby="membersTitle">
-        <h3 id="membersTitle">Hammerschach-Mitglieder</h3>
+        <div class="list-dialog-title-row">
+          <h3 id="membersTitle">Hammerschach-Mitglieder</h3>
+          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Mitgliederliste schließen" data-dialog-close-target="membersCloseBtn">×</button>
+        </div>
         <div class="member-search-box members-search-box">
           <div class="member-search-head">Mitglied suchen</div>
           <p id="membersSearchHint" class="member-search-hint">In der Mitglieder-Lobby kannst du ein Mitglied direkt zu deiner vorbereiteten Partie einladen.</p>
@@ -1438,6 +1453,7 @@
         </div>
 
         <section id="privateMessagesInboxPanel" class="private-messages-panel" role="tabpanel" aria-labelledby="privateMessagesInboxTab">
+          <button id="privateMessagesMobileBackBtn" class="button-flat private-messages-mobile-back" type="button" hidden>‹ Unterhaltungen</button>
           <div class="private-messages-inbox-layout">
             <div id="privateMessagesList" class="private-messages-list" aria-live="polite"><div class="private-messages-empty">Unterhaltungen werden geladen…</div></div>
             <div id="privateMessagesReader" class="private-messages-reader">
@@ -1802,7 +1818,10 @@
 
     <div id="inviteBackdrop" class="identity-backdrop" hidden>
       <div class="invite-modal" role="dialog" aria-modal="true" aria-labelledby="inviteTitle">
-        <h3 id="inviteTitle">Zur Partie einladen</h3>
+        <div class="list-dialog-title-row">
+          <h3 id="inviteTitle">Zur Partie einladen</h3>
+          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Einladung schließen" data-dialog-close-target="inviteCloseBtn">×</button>
+        </div>
         <div id="inviteColorSummary" class="invite-color-summary" hidden></div>
         <div id="inviteRatingSummary" class="invite-color-summary" hidden></div>
 
@@ -2261,7 +2280,7 @@
 <script src="js/online-room-utils.js?v=20260804-1"></script>
 <script src="js/online-ui-state.js?v=20260824-4"></script>
 <script src="js/member-directory.js?v=20260818-1"></script>
-<script src="js/direct-messages.js?v=20260811-1"></script>
+<script src="js/direct-messages.js?v=20260826-1"></script>
 <script src="js/game-invitations.js?v=20260810-3"></script>
 <script src="js/online-sync-state.js?v=20260817-3"></script>
 <script src="js/online-connection.js?v=20260817-3"></script>
@@ -2278,7 +2297,7 @@
 <script src="js/board-input.js?v=20260804-1"></script>
 <script src="js/piece-drag-helpers.js?v=20260819-1"></script>
 <script src="js/move-commit.js?v=20260817-3"></script>
-<script src="js/app-event-bindings.js?v=20260820-1"></script>
+<script src="js/app-event-bindings.js?v=20260826-1"></script>
 <script src="js/move-history-navigation.js?v=20260818-1"></script>
 <script src="js/pgn-export.js?v=20260804-1"></script>
 <script src="js/new-game-board-ui.js?v=20260804-1"></script>
