@@ -861,6 +861,7 @@ async function sendPrivateMessage(env, senderUser, recipientIds, text) {
   if (!(await ensurePrivateMessagesTables(env))) {
     return {ok:false, status:503, code:'PRIVATE_MESSAGES_UNAVAILABLE', message:'Persönliche Nachrichten sind momentan nicht verfügbar.'};
   }
+  await ensureAccountSecurityTables(env);
   const messageText = cleanPrivateMessageText(text);
   if (!messageText) return {ok:false, status:400, code:'EMPTY_PRIVATE_MESSAGE', message:'Bitte eine Nachricht eingeben.'};
   const requestedIds = cleanPrivateMessageRecipientIds(recipientIds, senderUser && senderUser.id);
@@ -876,12 +877,19 @@ async function sendPrivateMessage(env, senderUser, recipientIds, text) {
   if (Number(dayRow && dayRow.count || 0) >= 200) return {ok:false, status:429, code:'PRIVATE_MESSAGE_DAILY_LIMIT', message:'Das Nachrichtenlimit für heute ist erreicht.'};
   const placeholders = requestedIds.map(() => '?').join(',');
   const rows = await env.DB.prepare(
-    `SELECT id, username FROM users WHERE id IN (${placeholders})`
+    `SELECT users.id, users.username
+       FROM users
+       LEFT JOIN user_email_status email_status ON email_status.user_id = users.id
+      WHERE users.id IN (${placeholders})
+        AND (
+          email_status.user_id IS NULL
+          OR (LOWER(COALESCE(email_status.email, '')) = users.email_lc AND email_status.verified = 1)
+        )`
   ).bind(...requestedIds).all();
   const recipients = (rows && Array.isArray(rows.results) ? rows.results : []).map(row => ({id:String(row.id || ''), username:cleanDisplayName(row.username) || 'Mitglied'}));
   const found = new Set(recipients.map(item => item.id));
   const missingCount = requestedIds.filter(id => !found.has(id)).length;
-  if (!recipients.length) return {ok:false, status:404, code:'PRIVATE_MESSAGE_RECIPIENTS_NOT_FOUND', message:'Die ausgewählten Mitglieder wurden nicht gefunden.'};
+  if (!recipients.length) return {ok:false, status:409, code:'PRIVATE_MESSAGE_RECIPIENTS_UNAVAILABLE', message:'Die Anmeldung der ausgewählten Person ist noch nicht abgeschlossen.'};
   const messageId = crypto.randomUUID();
   const nowIso = new Date().toISOString();
   const statements = [
@@ -977,8 +985,12 @@ async function setMemberFavorite(env, ownerUserId, targetUserId, favorite) {
   if (!(await ensureMemberFavoritesTable(env))) {
     return {ok:false, status:503, code:'DB_NOT_CONFIGURED', message:'Die Lieblingsmitglieder sind momentan nicht verfügbar.'};
   }
-  const target = await env.DB.prepare(`SELECT id, username FROM users WHERE id = ? LIMIT 1`).bind(targetId).first();
+  const target = await env.DB.prepare(`SELECT id, username, email FROM users WHERE id = ? LIMIT 1`).bind(targetId).first();
   if (!target) return {ok:false, status:404, code:'USER_NOT_FOUND', message:'Das Mitglied wurde nicht gefunden.'};
+  const targetEmailSecurity = await getUserEmailSecurityState(env, target);
+  if (!targetEmailSecurity.emailVerified) {
+    return {ok:false, status:409, code:'MEMBER_REGISTRATION_PENDING', message:'Die Anmeldung dieses Mitglieds ist noch nicht abgeschlossen.'};
+  }
   if (favorite) {
     await env.DB.prepare(
       `INSERT INTO member_favorites (owner_user_id, favorite_user_id, created_at)
@@ -1011,12 +1023,22 @@ function publicMemberActivityFields(row) {
   };
 }
 
+function publicMemberRegistrationFields(row) {
+  const registrationComplete = Number(row && row.registration_complete || 0) === 1;
+  return {
+    registrationComplete,
+    interactionAllowed:registrationComplete,
+    registrationStatus:registrationComplete ? 'active' : 'pending_confirmation'
+  };
+}
+
 async function searchMembers(env, sessionUser, query, options = {}) {
   const cleaned = cleanMemberSearchQuery(query);
   if (!env || !env.DB || !sessionUser || cleaned.length < 2) return [];
   await ensureUserPresenceTable(env);
   await ensureUserPublicProfilesTable(env);
   await ensureMemberFavoritesTable(env);
+  await ensureAccountSecurityTables(env);
 
   const escaped = escapeSqlLike(cleaned);
   const contains = '%' + escaped + '%';
@@ -1027,8 +1049,8 @@ async function searchMembers(env, sessionUser, query, options = {}) {
   const favoritesOnly = normalizeMemberFavoritesOnly(options.favoritesOnly);
   const activityWhere = memberActivityFilterSql(activityFilter);
   const orderSql = memberSort === 'name'
-    ? `is_favorite DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`
-    : `is_favorite DESC, is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`;
+    ? `registration_complete DESC, is_favorite DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`
+    : `registration_complete DESC, is_favorite DESC, is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, CASE WHEN users.username_lc = ? THEN 0 WHEN users.username_lc LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END, users.username_lc ASC`;
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
@@ -1038,10 +1060,16 @@ async function searchMembers(env, sessionUser, query, options = {}) {
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
             CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
             public_profile.avatar_updated_at,
-            CASE WHEN member_favorite.favorite_user_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
+            CASE WHEN member_favorite.favorite_user_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite,
+            CASE
+              WHEN email_status.user_id IS NULL THEN 1
+              WHEN LOWER(COALESCE(email_status.email, '')) = users.email_lc AND email_status.verified = 1 THEN 1
+              ELSE 0
+            END AS registration_complete
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
+       LEFT JOIN user_email_status email_status ON email_status.user_id = users.id
        LEFT JOIN member_favorites member_favorite
          ON member_favorite.owner_user_id = ? AND member_favorite.favorite_user_id = users.id
       WHERE users.id <> ?
@@ -1057,6 +1085,7 @@ async function searchMembers(env, sessionUser, query, options = {}) {
     username: row.username,
     createdAt: row.created_at || null,
     ...publicMemberActivityFields(row),
+    ...publicMemberRegistrationFields(row),
     hasAvatar: Number(row.has_avatar || 0) === 1,
     avatarUpdatedAt: row.avatar_updated_at || null,
     favorite:Number(row.is_favorite || 0) === 1
@@ -1070,6 +1099,7 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
   await ensureUserPresenceTable(env);
   await ensureUserPublicProfilesTable(env);
   await ensureMemberFavoritesTable(env);
+  await ensureAccountSecurityTables(env);
   const safeLimit = Math.max(1, Math.min(100, Math.floor(Number(limit || 50))));
   const onlineSince = presenceOnlineSinceIso();
   const activityFilter = normalizeMemberActivityFilter(options.activity);
@@ -1077,8 +1107,8 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
   const favoritesOnly = normalizeMemberFavoritesOnly(options.favoritesOnly);
   const activityWhere = memberActivityFilterSql(activityFilter);
   const orderSql = memberSort === 'name'
-    ? 'is_favorite DESC, users.username_lc ASC'
-    : 'is_favorite DESC, is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, users.username_lc ASC';
+    ? 'registration_complete DESC, is_favorite DESC, users.username_lc ASC'
+    : 'registration_complete DESC, is_favorite DESC, is_online DESC, CASE WHEN last_active_at IS NULL THEN 1 ELSE 0 END, last_active_at DESC, users.username_lc ASC';
   const result = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1
@@ -1088,10 +1118,16 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
             CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
             CASE WHEN COALESCE(public_profile.avatar_key, '') <> '' THEN 1 ELSE 0 END AS has_avatar,
             public_profile.avatar_updated_at,
-            CASE WHEN member_favorite.favorite_user_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite
+            CASE WHEN member_favorite.favorite_user_id IS NOT NULL THEN 1 ELSE 0 END AS is_favorite,
+            CASE
+              WHEN email_status.user_id IS NULL THEN 1
+              WHEN LOWER(COALESCE(email_status.email, '')) = users.email_lc AND email_status.verified = 1 THEN 1
+              ELSE 0
+            END AS registration_complete
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
+       LEFT JOIN user_email_status email_status ON email_status.user_id = users.id
        LEFT JOIN member_favorites member_favorite
          ON member_favorite.owner_user_id = ? AND member_favorite.favorite_user_id = users.id
       WHERE users.id <> ?
@@ -1106,6 +1142,7 @@ async function listMembers(env, sessionUser, limit = 50, options = {}) {
     username: row.username,
     createdAt: row.created_at || null,
     ...publicMemberActivityFields(row),
+    ...publicMemberRegistrationFields(row),
     hasAvatar: Number(row.has_avatar || 0) === 1,
     avatarUpdatedAt: row.avatar_updated_at || null,
     favorite:Number(row.is_favorite || 0) === 1
@@ -1512,6 +1549,7 @@ async function loadMemberPublicProfile(env, targetUserId) {
   if (!id) return null;
   await ensureUserPresenceTable(env);
   await ensureUserPublicProfilesTable(env);
+  await ensureAccountSecurityTables(env);
   const onlineSince = presenceOnlineSinceIso();
   const row = await env.DB.prepare(
     `SELECT users.id, users.username, users.created_at,
@@ -1519,10 +1557,16 @@ async function loadMemberPublicProfile(env, targetUserId) {
                        AND COALESCE(presence.is_online, 1) = 1
                        AND presence.last_seen_at >= ? THEN 1 ELSE 0 END AS is_online,
             COALESCE(public_profile.show_activity_status, 1) AS activity_visible,
-            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at
+            CASE WHEN COALESCE(public_profile.show_activity_status, 1) = 1 THEN presence.last_seen_at ELSE NULL END AS last_active_at,
+            CASE
+              WHEN email_status.user_id IS NULL THEN 1
+              WHEN LOWER(COALESCE(email_status.email, '')) = users.email_lc AND email_status.verified = 1 THEN 1
+              ELSE 0
+            END AS registration_complete
        FROM users
        LEFT JOIN user_presence presence ON presence.user_id = users.id
        LEFT JOIN user_public_profiles public_profile ON public_profile.user_id = users.id
+       LEFT JOIN user_email_status email_status ON email_status.user_id = users.id
       WHERE users.id = ?
       LIMIT 1`
   ).bind(onlineSince, id).first();
@@ -1532,6 +1576,7 @@ async function loadMemberPublicProfile(env, targetUserId) {
     username:row.username,
     createdAt:row.created_at || null,
     ...publicMemberActivityFields(row),
+    ...publicMemberRegistrationFields(row),
     profile:await getUserPublicProfile(env, row.id),
     ratings:publicMemberRatingsPayload(await getUserRatings(env, row.id))
   };
@@ -11895,7 +11940,7 @@ async function handleAuthApi(request, env, url) {
     }
     const recipientEmailSecurity = await getUserEmailSecurityState(env, recipient);
     if (!recipientEmailSecurity.emailVerified) {
-      return json({ ok:false, code:'RECIPIENT_EMAIL_NOT_VERIFIED', message:'Dieses Mitglied hat seine Mailadresse noch nicht bestätigt.' }, { status:409 });
+      return json({ ok:false, code:'RECIPIENT_EMAIL_NOT_VERIFIED', message:'Die Anmeldung dieses Mitglieds ist noch nicht abgeschlossen.' }, { status:409 });
     }
 
     const rate = await checkInvitationEmailRateLimit(env, String(session.user.id), recipientUserId, roomId);
