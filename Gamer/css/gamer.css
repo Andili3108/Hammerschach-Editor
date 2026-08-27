@@ -616,6 +616,9 @@
   .members-sort-select{width:100%;min-height:34px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:#f7f7f9;color:#333;padding:6px 30px 6px 9px;font-size:12px;font-weight:900;}
   .member-result-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.08);padding:9px 10px;}
   .member-result-card.favorite{border-color:rgba(185,140,20,.34);box-shadow:inset 3px 0 0 rgba(218,171,32,.58);}
+  .member-result-card.registration-pending{background:#f0f1f3;border-color:rgba(90,96,105,.18);box-shadow:inset 3px 0 0 rgba(115,120,128,.34);}
+  .member-result-card.registration-pending .member-result-main{opacity:.66;filter:grayscale(.72);}
+  .member-result-card.registration-pending .member-result-name{color:#686d75;}
   .member-result-card.clickable{cursor:pointer;}
   .member-result-card.clickable:hover{box-shadow:0 7px 18px rgba(0,0,0,.10);transform:translateY(-1px);}
   .member-result-name{font-size:16px;font-weight:900;color:#222;display:flex;align-items:center;gap:7px;min-width:0;}
@@ -628,6 +631,7 @@
   .presence-badge.online{background:rgba(34,107,54,.10);border-color:rgba(34,107,54,.22);color:#226b36;}
   .presence-badge.recent{background:rgba(59,110,167,.09);border-color:rgba(59,110,167,.20);color:#315f91;}
   .presence-badge.hidden-status{background:#f4f4f5;color:#777;border-style:dashed;}
+  .presence-badge.registration-pending{background:#e6e7e9;color:#656a72;border-color:rgba(90,96,105,.22);border-style:dashed;}
   .presence-dot{width:8px;height:8px;border-radius:999px;background:#999;box-shadow:inset 0 0 0 1px rgba(0,0,0,.10);}
   .presence-badge.online .presence-dot{background:#2b9a4b;box-shadow:0 0 0 3px rgba(43,154,75,.12);}
   .presence-badge.recent .presence-dot{background:#4f86bf;box-shadow:0 0 0 3px rgba(79,134,191,.10);}
@@ -697,6 +701,7 @@
   .member-profile-status{min-height:18px;font-size:13px;font-weight:800;color:#666;line-height:1.3;margin-top:9px;}
   .member-profile-status.error{color:#9A2D33;}
   .member-profile-status.success{color:#226b36;}
+  .member-profile-status.registration-pending{min-height:0;padding:10px 12px;border-radius:12px;background:#eceef0;border:1px dashed rgba(90,96,105,.28);color:#5f646c;font-weight:900;}
 
   .tournament-backdrop{z-index:3330;}
   .tournament-create-backdrop{z-index:3360;}
@@ -1589,6 +1594,10 @@
   html.dark-mode .members-favorites-filter-btn{color:#e3c96e!important;}
   html.dark-mode .members-favorites-filter-btn.active{background:rgba(218,171,32,.17)!important;color:#f1d879!important;border-color:rgba(233,197,88,.30)!important;}
   html.dark-mode .member-result-card.favorite{border-color:rgba(233,197,88,.28);box-shadow:inset 3px 0 0 rgba(218,171,32,.48);}
+  html.dark-mode .member-result-card.registration-pending{background:#2a2d32;border-color:rgba(255,255,255,.10);box-shadow:inset 3px 0 0 rgba(190,194,201,.24);}
+  html.dark-mode .member-result-card.registration-pending .member-result-name{color:#b8bdc6!important;}
+  html.dark-mode .presence-badge.registration-pending{background:#30343a;color:#b8bdc6;border-color:rgba(255,255,255,.16);}
+  html.dark-mode .member-profile-status.registration-pending{background:#2a2d32;border-color:rgba(255,255,255,.14);color:#c4c8cf;}
   html.dark-mode .member-favorite-btn{background:#302b1e!important;color:#e3c96e!important;border-color:rgba(233,197,88,.24)!important;}
   html.dark-mode .member-favorite-btn:hover,
   html.dark-mode .member-favorite-btn.active{background:#43391d!important;color:#f1d879!important;border-color:rgba(233,197,88,.38)!important;}
@@ -2535,6 +2544,7 @@ html.dark-mode .game-start-summary-moves{color:#e2e4e7}
 .private-message-member-row{display:flex;align-items:center;gap:9px;min-height:44px;padding:8px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:900;color:#333;background:#fff;border:1px solid rgba(0,0,0,.08);box-sizing:border-box;}
 .private-message-member-row:hover{background:#fbf7f3;}
 .private-message-member-row.selected{background:rgba(43,154,75,.08);border-color:rgba(43,154,75,.24);}
+.private-message-member-row.registration-pending{background:#f0f1f3;color:#747982;border-color:rgba(90,96,105,.16);cursor:default;filter:grayscale(.7);}
 .private-message-member-row input{width:18px;height:18px;margin:0;accent-color:#843f46;flex:0 0 auto;}
 .private-message-member-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .private-messages-members .private-messages-empty{grid-column:1 / -1;}
@@ -2568,6 +2578,7 @@ html.dark-mode .private-messages-compose .identity-label{color:#d8dbe0;}
 html.dark-mode .private-message-member-row{background:#202329;color:#f3f4f6;border-color:rgba(255,255,255,.10);}
 html.dark-mode .private-message-member-row:hover{background:#2b3037;}
 html.dark-mode .private-message-member-row.selected{background:rgba(43,154,75,.16);border-color:rgba(76,190,103,.30);}
+html.dark-mode .private-message-member-row.registration-pending{background:#2a2d32;color:#aeb3bb;border-color:rgba(255,255,255,.10);}
 html.dark-mode .private-message-reader-head,html.dark-mode .private-messages-footer{border-color:rgba(255,255,255,.10);}
 html.dark-mode .private-messages-text{background:#252930;color:#f3f4f6;border-color:rgba(255,255,255,.12);}
 html.dark-mode .private-message-recipient-chip{background:rgba(229,165,173,.10);border-color:rgba(229,165,173,.20);color:#efb5bc;}
