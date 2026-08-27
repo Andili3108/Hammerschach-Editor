@@ -129,6 +129,8 @@
               <button id="schachlaborToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="schachlaborToolView">🧪 Schachlabor</button>
               <div class="header-menu-section-label">Zuschauen</div>
               <button id="tvToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="tvToolView" hidden>📺 Hammerschach TV</button>
+              <div class="header-menu-section-label">Ergebnisse</div>
+              <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
             </div>
           </div>
         </div>
@@ -202,6 +204,8 @@
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="schachlaborToolBtn"><span>🧪</span><strong>Schachlabor</strong></button>
                 <div class="mobile-nav-accordion-label">Zuschauen</div>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="tvToolBtn"><span>📺</span><strong>Hammerschach TV</strong></button>
+                <div class="mobile-nav-accordion-label">Ergebnisse</div>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn"><span>📊</span><strong>Ergebnisdienst</strong></button>
               </div>
             </div>
           </section>
@@ -346,6 +350,53 @@
             <div id="tvAdminStatus" class="tv-admin-status" aria-live="polite"></div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section id="leagueStandingsView" class="league-standings-view" hidden aria-label="Ligatabellen im Ergebnisdienst">
+      <div class="box league-standings-stage">
+        <div class="league-standings-head">
+          <div>
+            <div class="league-standings-kicker">Hammerschach Ergebnisdienst</div>
+            <h2>Ligatabellen</h2>
+            <p>Die aktuellen Ranglisten werden automatisch vom Ergebnisdienst des Schachverbands Ruhrgebiet übernommen.</p>
+          </div>
+          <button id="leagueStandingsReloadBtn" class="button-flat league-standings-reload" type="button">↻ Tabellen neu laden</button>
+        </div>
+
+        <div id="leagueStandingsTabs" class="league-standings-tabs" role="tablist" aria-label="Liga auswählen" hidden></div>
+        <div id="leagueStandingsStatus" class="league-standings-status" aria-live="polite">Ligatabellen werden geladen …</div>
+
+        <article id="leagueStandingsCard" class="league-standings-card" hidden>
+          <div class="league-standings-card-head">
+            <div>
+              <div class="league-standings-card-kicker">Aktuelle Rangliste</div>
+              <h3 id="leagueStandingsTitle">Ligatabelle</h3>
+            </div>
+            <a id="leagueStandingsSourceLink" class="league-standings-source-link" href="#" target="_blank" rel="noopener noreferrer">Originalseite öffnen ↗</a>
+          </div>
+          <div id="leagueStandingsNotice" class="league-standings-notice" hidden></div>
+          <div class="league-standings-table-scroll" tabindex="0" aria-label="Ligatabelle horizontal verschiebbar">
+            <table id="leagueStandingsTable" class="league-standings-table"></table>
+          </div>
+          <div id="leagueStandingsMeta" class="league-standings-meta"></div>
+        </article>
+
+        <section id="leagueStandingsAdminCard" class="league-standings-admin" hidden aria-label="Ligatabellen verwalten">
+          <div class="league-standings-admin-head">
+            <div>
+              <div class="league-standings-admin-title">Ligatabellen verwalten</div>
+              <div class="league-standings-admin-subtitle">Bis zu 15 Tabellen. Überschrift und Ergebnisdienst-Adresse können zu jeder Saison neu eingetragen werden.</div>
+            </div>
+            <button id="leagueStandingsAddBtn" class="button-flat" type="button">＋ Tabelle hinzufügen</button>
+          </div>
+          <div id="leagueStandingsAdminList" class="league-standings-admin-list"></div>
+          <div class="league-standings-admin-actions">
+            <span id="leagueStandingsAdminCount">0 von 15 Plätzen belegt</span>
+            <button id="leagueStandingsSaveBtn" type="button">Ligakonfiguration speichern</button>
+          </div>
+          <div id="leagueStandingsAdminStatus" class="league-standings-admin-status" aria-live="polite"></div>
+        </section>
       </div>
     </section>
 
@@ -662,40 +713,44 @@
           <p>Über <strong>„♟️ Bereiche“ → „Zuschauen“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Hammerschach TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
-          <h4>24. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule oder Hammerschach TV steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
+          <h4>24. Ergebnisdienst und Ligatabellen</h4>
+          <p>Über <strong>„♟️ Bereiche“ → „Ergebnisse“ → „📊 Ergebnisdienst“</strong> öffnest du die freigeschalteten Ligatabellen im Gamer-Look. Anzahl der Mannschaften und Rundenspalten werden automatisch aus der jeweiligen Rangliste übernommen. Vereinsnamen und vorhandene Ergebnislinks führen in einem neuen Browser-Tab zur zugehörigen Originalseite des Ergebnisdienstes. Der Gamer aktualisiert die Tabellen regelmäßig; falls die Quelle vorübergehend nicht erreichbar ist, bleibt die zuletzt erfolgreich geladene Tabelle sichtbar.</p>
+          <p>Der Administrator kann bis zu 15 Tabellen anlegen, frei benennen, sortieren sowie einzeln ein- oder ausschalten. Zu einer neuen Saison müssen lediglich Überschrift und Adresse der Ranglistenseite angepasst werden. Mit <strong>„Jetzt prüfen / aktualisieren“</strong> lässt sich jede gespeicherte Tabelle sofort kontrollieren.</p>
 
-          <h4>25. Verbindung und Wiederaufnahme</h4>
+          <h4>25. Neue Partie und Rückkehr zur Lobby</h4>
+          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule, Hammerschach TV oder den Ligatabellen steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
+
+          <h4>26. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
           <p>Bei Daily Chess solltest du dich zuerst mit dem verwendeten Account anmelden und die Partie anschließend über <strong>„Meine Partien“</strong> öffnen. Dadurch kann dein gesicherter Spielerplatz wieder übernommen werden.</p>
 
-          <h4>26. Ratings für Mitglieder</h4>
+          <h4>27. Ratings für Mitglieder</h4>
           <p>Der Partieeröffner wählt vor der Raumerstellung <strong>„Gewertet“</strong> oder <strong>„Ungewertet“</strong>. Gewertet werden nur entsprechend ausgewählte, neu gestartete Partien zwischen zwei registrierten Mitgliedern. Partien mit einem Gast bleiben unabhängig von der Auswahl ungewertet. Alle Ratingbereiche starten nach dem Glicko-2-Vorbild bei <strong>1500?</strong>; das Fragezeichen kennzeichnet ein noch vorläufiges Rating mit hoher Unsicherheit.</p>
           <p>Es gibt sechs getrennte Ratingbereiche: <strong>Daily Classic</strong>, <strong>Daily Freestyle</strong>, <strong>Live Classic</strong>, <strong>Live Rapid</strong>, <strong>Live Blitz</strong> und <strong>Live Freestyle</strong>. Bei klassischen Live-Partien entscheidet das ausgewählte Bedenkzeit-Menü über den Ratingbereich. Jede Live-Freestyle-Partie verwendet unabhängig von der konkreten Bedenkzeit das eigene Live-Freestyle-Rating.</p>
           <p>In den Spielerleisten direkt am Brett wird während der Partie das passende Rating beider Spieler angezeigt. Beim Gegner ergänzt der Direktvergleich in derselben Kategorie dieses gemeinsame Informationsfeld. Erst nach Partieende erscheint zusätzlich die Ratingänderung. In der Accountverwaltung und im geschützten Mitgliederprofil sind alle sechs Ratings einschließlich Partien, Siegen, Remis und Niederlagen vollständig aufgelistet.</p>
           <p>Über <strong>„Mein Profil bearbeiten“</strong> können Mitglieder freiwillig ein Profilbild, ihren echten Namen, ihren Schachverein, eine DWZ als ungeprüfte Selbstauskunft und einen kurzen „Über mich“-Text mit höchstens 400 Zeichen hinterlegen. Über <strong>„Mein Profil ansehen“</strong> öffnest du anschließend genau dieselbe Profilansicht, die auch andere Mitglieder sehen, und kannst Darstellung und Vollständigkeit selbst kontrollieren. Von dort führt <strong>„Profil bearbeiten“</strong> direkt zurück zur Bearbeitung. Das ausgewählte Bild wird ohne zusätzliche Vorschau automatisch mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Diese Angaben sind nur für eingeloggte Mitglieder sichtbar und können jederzeit geändert oder vollständig entfernt werden.</p>
 
-          <h4>27. Admin-Funktion und Systemübersicht</h4>
+          <h4>28. Admin-Funktion und Systemübersicht</h4>
           <p>Der Administrator-Account <strong>Andili</strong> kann registrierte Benutzer verwalten und bei Bedarf Benutzer löschen. Die Löschfunktion befindet sich bewusst nicht in den normalen Mitgliederlisten, sondern im separaten Bereich <strong>„Mitglieder löschen“</strong> am unteren Ende der <strong>„Admin-Systemübersicht“</strong>. Vor jeder endgültigen Löschung wird das aktuelle Admin-Kennwort serverseitig geprüft. Die Systemübersicht zeigt Account-, Partie-, Sicherheits-, Mail- und Datenbankzahlen sowie die letzten protokollierten Sicherheitsereignisse. Kennwörter, Token, Mailadressen und vollständige IP-Adressen werden dort nicht angezeigt.</p>
           <p>Nach einem manuellen D1-SQL-Export kann der Zeitpunkt in der Systemübersicht als erledigt vermerkt werden. Diese Markierung erstellt selbst kein Backup; sie dokumentiert nur, wann der Export zuletzt durchgeführt wurde.</p>
 
-          <h4>28. Mitglieder-Informationen und Maildarstellung</h4>
+          <h4>29. Mitglieder-Informationen und Maildarstellung</h4>
           <p>Der Administrator kann in der Systemübersicht eine <strong>Mitglieder-Information</strong> verfassen, zunächst als Testmail an sich selbst senden und anschließend kontrolliert zustellen. Neuigkeiten und Funktionsupdates erhalten ausschließlich Mitglieder, die diese freiwillige Option in ihrer Accountverwaltung aktiviert haben. Wichtige Systeminformationen können an alle aktiven Mitglieder mit bestätigter Mailadresse geschickt werden. Über <strong>„Persönliche Admin-Nachricht an ein Mitglied“</strong> kann außerdem genau ein Benutzername ausgewählt und ausschließlich dieser Account angeschrieben werden. Diese persönliche administrative Nachricht ist unabhängig von der freiwilligen Neuigkeiten-Einstellung.</p>
           <p>Die Nachrichten werden einzeln und mit persönlicher Anrede versendet; Mailadressen anderer Mitglieder sind nicht sichtbar. Optional kann eine PDF-, JPG-, PNG- oder WebP-Datei bis 3 MB beigefügt werden. Ausgewählte Bilder lassen sich zusätzlich direkt im Mailinhalt anzeigen. Sämtliche HTML-Mails des Hammerschach-Gamers enthalten oben das Gamer-Logo als einheitlichen Mailkopf. Manche Mailprogramme laden externe Bilder erst nach Zustimmung des Empfängers; der vollständige Text bleibt trotzdem lesbar.</p>
 
-          <h4>29. Fair Play und Spielkultur</h4>
+          <h4>30. Fair Play und Spielkultur</h4>
           <p>Behandle deinen Gegner so, wie du selbst behandelt werden möchtest. Beleidigungen, Drohungen, diskriminierende Inhalte, Werbung und absichtliche Störungen haben im Hammerschach-Gamer keinen Platz.</p>
           <p>Gewertete Partien sollen ohne fremde Hilfe oder den Einsatz von Schachprogrammen gespielt werden. Verwende außerdem keine irreführenden oder anstößigen Benutzernamen und verzögere Partien nicht absichtlich durch unnötige Wartezeiten oder mutwillige Verbindungsabbrüche.</p>
           <p>Bei schweren oder wiederholten Verstößen kann der Administrator geeignete Maßnahmen ergreifen, insbesondere Hinweise aussprechen sowie Accounts einschränken oder löschen.</p>
-          <h4>30. Melden, Stummschalten und Moderation</h4>
+          <h4>31. Melden, Stummschalten und Moderation</h4>
           <p>Spieler können den Chat ihres Gegners für die aktuelle Partie auf dem eigenen Gerät stummschalten. Eingeloggte Mitglieder können einen Gegner außerdem vertraulich melden. Dabei werden Partieangaben und ein begrenzter Ausschnitt des Partie-Chats an den Administrator übermittelt. Eine Meldung führt niemals automatisch zu einer Sanktion.</p>
           <p>Der Administrator kann Meldungen prüfen, verwerfen, Verwarnungen dokumentieren, die Chatfunktion sperren sowie Accounts vorübergehend oder dauerhaft sperren. Bei einer Account-Sperre werden bestehende Anmeldesitzungen beendet. Gäste können gemeldet, aber nicht dauerhaft als Account gesperrt werden.</p>
-          <h4>31. Hammerschach-Turniere</h4>
+          <h4>32. Hammerschach-Turniere</h4>
           <p>Die Schaltfläche <strong>„🏆 Turniere“</strong> steht allen eingeloggten Mitgliedern zur Verfügung. Die Turnierzentrale enthält aktuelle und eigene Turniere, das Archiv sowie – nur für Andili – serverseitige Entwürfe und die Turnierverwaltung. Ein Entwurf wird erst durch die getrennte, ausdrücklich bestätigte Veröffentlichung sichtbar; dann öffnet die Anmeldung und die einmalige Turnierinformation wird entsprechend der persönlichen Mail-Einstellung versendet. Mitglieder bestätigen ihre Teilnahme selbst, können sie bis zum Start zurückziehen und werden bei vollem Feld nach Eingangsreihenfolge auf die Warteliste gesetzt.</p>
           <p>Im Erstellungsbereich sind <strong>Daily</strong>, <strong>Rapid</strong> und <strong>Blitz</strong> optisch getrennt. Daily bietet Rundenturnier, Doppelrunde, Schweizer System, Gruppenphase mit anschließender K.-o.-Runde sowie K.-o.-Turniere. Alle Turniere besitzen einen geplanten Start. Runde, Doppelrunde, Gruppen+K.-o. und K.-o. starten erst bei vollständig belegtem Feld; beim Schweizer System ist die Teilnehmerzahl eine Maximalzahl und der Start ist ab vier bestätigten Spielern möglich. Beim reinen Daily-K.-o.-Turnier werden die Paarungen beim Start ausgelost und je Begegnung zwei Partien mit vertauschten Farben gleichzeitig eröffnet. Endet eine Begegnung 1:1, kommt der Spieler mit dem niedrigeren Rating zum Zeitpunkt des Turnierstarts weiter; beträgt der Ratingunterschied höchstens 25 Punkte, entscheidet das Los. Eine neue K.-o.-Runde beginnt erst, wenn alle Begegnungen der laufenden Runde vollständig beendet sind. Für Rapid und Blitz stehen <strong>Schweizer System</strong> mit maximal 32 Teilnehmern sowie die <strong>Arena</strong> mit offener Teilnehmerzahl zur Wahl. Der Check-in öffnet bei allen Live-Turnieren eine Stunde vor dem Termin. Schweizer Turniere starten automatisch mit den eingecheckten Spielern; sind es zunächst weniger als vier, wartet das System selbstständig auf den vierten Check-in. Die Arena startet auch ohne Teilnehmer pünktlich und erlaubt während ihrer gesamten Laufzeit den späteren Einstieg. Aktive Arena-Spieler werden automatisch gepaart, können zwischen Partien pausieren und erhalten 2 Punkte für einen Sieg, 1 Punkt für ein Remis und 0 Punkte für eine Niederlage. Nach Ablauf der Arena-Zeit entstehen keine neuen Paarungen; laufende Partien zählen noch vollständig. Die Spieler bleiben im Gamer-Warteraum, bis ihr Brett samt Gegner automatisch erscheint. Im Schweizer System folgen nach einer abgeschlossenen Runde 60 Sekunden Pause und die nächste Brettzuweisung; bei ungerader Teilnehmerzahl wird ein möglichst nicht wiederholtes Freilos mit einem Punkt vergeben. Bei Freestyle erhält jede Schweizer Runde beziehungsweise jede Arena-Partie serverseitig eine zufällige Chess960-Stellung; die klassische Anfangsstellung ist ausgeschlossen. Turnierpartien bleiben unter <strong>„Meine Partien“</strong> sichtbar und sind dort gold markiert.</p>
-          <h4>32. Turnierübersicht in der Lobby</h4>
+          <h4>33. Turnierübersicht in der Lobby</h4>
           <p>Ganz oben in der Mitglieder-Lobby zeigt der gelbe Turnierbereich bis zu vier derzeit relevante Turniere kompakt untereinander. Anstehende Turniere – mit offener Anmeldung oder bereits ausgebucht – stehen zuerst, laufende Turniere darunter. Über <strong>„Öffnen“</strong> gelangst du direkt zum jeweiligen Turnier; weitere und beendete Turniere bleiben über <strong>„🏆 Turniere“</strong> im Header erreichbar.</p>
-          <h4>33. Info-Center</h4>
+          <h4>34. Info-Center</h4>
           <p>Direkt unter der Turnierübersicht zeigt das blaue Info-Center-Karussell veröffentlichte Neuigkeiten, Gamer-Updates, Veranstaltungen und Servicehinweise. Mit den Pfeilen kannst du zwischen den Mitteilungen blättern. Ein Klick auf die Mitteilung öffnet das vollständige Info-Center; dort stehen weiterhin alle Informationen chronologisch bereit und ungelesene Einträge sind mit <strong>„Neu“</strong> gekennzeichnet. Bilder, PDF- und PGN-Dateien können einer Mitteilung beigefügt werden.</p>
           <p>Andili verwaltet die Inhalte unter <strong>„Mein Profil“ → „Admin-Systemübersicht“ → „Info-Center verwalten“</strong>. Eine Mitteilung kann als Entwurf gespeichert, veröffentlicht oder archiviert werden. Veröffentlichte Mitteilungen erscheinen automatisch im Info-Center-Karussell und können – nach ausdrücklicher Bestätigung – optional zusätzlich per E-Mail angekündigt werden.</p>
         </div>
@@ -2268,7 +2323,8 @@
 <script src="js/header-ui.js?v=20260825-2"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
-<script src="js/embedded-tools.js?v=20260825-6"></script>
+<script src="js/league-standings.js?v=20260827-1"></script>
+<script src="js/embedded-tools.js?v=20260827-1"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
