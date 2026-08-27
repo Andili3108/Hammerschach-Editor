@@ -301,14 +301,16 @@ function renderPrivateMessagesMembers(){
   const shown = privateMessagesUsesSinglePane() ? matches.slice(0,24) : matches;
   if(!shown.length){ privateMessagesMembers.innerHTML='<div class="private-messages-empty">Kein passendes Mitglied gefunden.</div>'; return; }
   shown.forEach(member => {
-    const label=document.createElement('label'); label.className='private-message-member-row'+(privateMessagesSelected.has(String(member.id))?' selected':'');
-    const box=document.createElement('input'); box.type='checkbox'; box.checked=privateMessagesSelected.has(String(member.id));
+    const registrationComplete=memberRegistrationComplete(member);
+    const label=document.createElement('label'); label.className='private-message-member-row'+(privateMessagesSelected.has(String(member.id))?' selected':'')+(registrationComplete?'':' registration-pending');
+    const box=document.createElement('input'); box.type='checkbox'; box.checked=privateMessagesSelected.has(String(member.id)); box.disabled=!registrationComplete;
     box.addEventListener('change', () => {
       const id=String(member.id);
       if(box.checked) privateMessagesSelected.set(id,member); else privateMessagesSelected.delete(id);
       renderPrivateMessageSelectedRecipients(); renderPrivateMessagesMembers();
     });
-    const name=document.createElement('span'); name.textContent=member.username || 'Mitglied';
+    const name=document.createElement('span'); name.textContent=(member.username || 'Mitglied')+(registrationComplete?'':' · Anmeldung noch nicht abgeschlossen');
+    if(!registrationComplete) label.title=memberRegistrationPendingMessage();
     label.append(box,name); privateMessagesMembers.appendChild(label);
   });
   if(matches.length > shown.length){
@@ -368,6 +370,10 @@ async function openPrivateMessagesDialog(tab){
 
 async function openPrivateMessagesCompose(member){
   if(!privateMessagesLoggedIn()){ if(typeof openAuthDialog === 'function') openAuthDialog('login'); return; }
+  if(member && !memberRegistrationComplete(member)){
+    setPrivateMessagesStatus(memberRegistrationPendingMessage() + '. Nachrichten sind erst nach der Mailbestätigung möglich.','error',true);
+    return;
+  }
   if(member && member.id && (!onlineAuthUser || String(member.id)!==String(onlineAuthUser.id))){
     privateMessagesSelected.clear();
     privateMessagesSelected.set(String(member.id), {id:String(member.id), username:member.username || 'Mitglied'});

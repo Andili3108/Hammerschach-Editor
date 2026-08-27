@@ -135,6 +135,12 @@ function formatMemberActivityAge(value, serverNow){
   try{ return new Date(activityAt).toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit'}); }
   catch(_){ return ''; }
 }
+function memberRegistrationComplete(user){
+  return !(user && user.registrationComplete === false);
+}
+function memberRegistrationPendingMessage(){
+  return 'Anmeldung noch nicht abgeschlossen';
+}
 function createMemberActivityBadge(user, serverNow){
   const source = user && typeof user === 'object' ? user : {};
   const badge = document.createElement('span');
@@ -144,7 +150,11 @@ function createMemberActivityBadge(user, serverNow){
   dot.setAttribute('aria-hidden', 'true');
   const label = document.createElement('span');
 
-  if(source.activityVisible === false){
+  if(!memberRegistrationComplete(source)){
+    badge.classList.add('registration-pending');
+    label.textContent = 'Anmeldung offen';
+    badge.title = 'Die Anmeldung dieses Kontos ist noch nicht abgeschlossen.';
+  } else if(source.activityVisible === false){
     badge.classList.add('hidden-status');
     label.textContent = 'Privat';
     badge.title = 'Dieses Mitglied zeigt seinen Aktivitätsstatus nicht an.';
@@ -173,6 +183,7 @@ function setMemberProfileStatus(message, kind){
   memberProfileStatus.textContent = message || '';
   memberProfileStatus.classList.toggle('error', kind === 'error');
   memberProfileStatus.classList.toggle('success', kind === 'success');
+  memberProfileStatus.classList.toggle('registration-pending', kind === 'registration-pending');
 }
 function renderMemberProfileRatings(ratings){
   if(!memberProfileRatingsGrid) return;
@@ -221,22 +232,26 @@ function updateMemberProfileInviteButton(){
     memberProfileChronicleBtn.title = isOwnProfile ? 'Eigene Schachchronik öffnen.' : '';
   }
   const hasTarget = !!(memberProfileTarget && memberProfileTarget.id && onlineAuthUser && memberProfileTarget.id !== onlineAuthUser.id);
+  const interactionAllowed = hasTarget && memberRegistrationComplete(memberProfileTarget);
   if(memberProfileMessageBtn){
     memberProfileMessageBtn.hidden = !hasTarget;
-    memberProfileMessageBtn.disabled = !hasTarget;
+    memberProfileMessageBtn.disabled = !interactionAllowed;
+    memberProfileMessageBtn.title = interactionAllowed ? 'Persönliche Nachricht schreiben.' : memberRegistrationPendingMessage();
   }
   if(!memberProfileInviteBtn) return;
   memberProfileInviteBtn.hidden = !hasTarget;
   if(!hasTarget) return;
   if(memberProfileContext === 'invite'){
     memberProfileInviteBtn.textContent = '✉️ Einladung senden';
-    memberProfileInviteBtn.disabled = !onlineRoomId;
-    memberProfileInviteBtn.title = onlineRoomId ? 'Partieeinladung automatisch per E-Mail senden.' : 'Es ist kein Spielraum vorbereitet.';
+    memberProfileInviteBtn.disabled = !onlineRoomId || !interactionAllowed;
+    memberProfileInviteBtn.title = !interactionAllowed ? memberRegistrationPendingMessage() : (onlineRoomId ? 'Partieeinladung automatisch per E-Mail senden.' : 'Es ist kein Spielraum vorbereitet.');
   } else {
     const canInvite = standaloneInvitationAvailable();
     memberProfileInviteBtn.textContent = '✉️ Zur Partie einladen';
-    memberProfileInviteBtn.disabled = !canInvite;
-    memberProfileInviteBtn.title = canInvite
+    memberProfileInviteBtn.disabled = !canInvite || !interactionAllowed;
+    memberProfileInviteBtn.title = !interactionAllowed
+      ? memberRegistrationPendingMessage()
+      : canInvite
       ? 'Partieeinstellungen und persönliche Nachricht für dieses Mitglied vorbereiten.'
       : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
   }
@@ -293,7 +308,10 @@ async function openMemberProfile(user, context){
     if(memberProfileAboutText) memberProfileAboutText.textContent = about;
     renderMemberProfileRatings(member.ratings || {});
     updateMemberProfileInviteButton();
-    setMemberProfileStatus('', '');
+    setMemberProfileStatus(
+      memberRegistrationComplete(member) ? '' : 'Die Anmeldung dieses Benutzers ist noch nicht abgeschlossen. Profilinformationen bleiben sichtbar; Einladungen und Nachrichten sind bis zur Mailbestätigung deaktiviert.',
+      memberRegistrationComplete(member) ? '' : 'registration-pending'
+    );
   } catch(err){
     if(requestId !== memberProfileRequestId) return;
     if(memberProfileRatingsGrid) memberProfileRatingsGrid.innerHTML = '<div class="member-empty">Ratings konnten nicht geladen werden.</div>';
@@ -304,6 +322,10 @@ async function inviteFromMemberProfile(){
   const target = memberProfileTarget;
   const context = memberProfileContext;
   if(!target) return;
+  if(!memberRegistrationComplete(target)){
+    setMemberProfileStatus(memberRegistrationPendingMessage() + '. Einladungen sind erst nach der Mailbestätigung möglich.', 'registration-pending');
+    return;
+  }
   closeMemberProfileDialog();
   if(context === 'invite') openInvitationMessageDialog(target, null);
   else await inviteMemberFromStandaloneList(target, null);
@@ -316,6 +338,10 @@ if(memberProfileEditBtn) memberProfileEditBtn.addEventListener('click', () => {
 if(memberProfileMessageBtn) memberProfileMessageBtn.addEventListener('click', () => {
   const target = memberProfileTarget;
   if(!target) return;
+  if(!memberRegistrationComplete(target)){
+    setMemberProfileStatus(memberRegistrationPendingMessage() + '. Nachrichten sind erst nach der Mailbestätigung möglich.', 'registration-pending');
+    return;
+  }
   closeMemberProfileDialog();
   if(typeof openPrivateMessagesCompose === 'function') openPrivateMessagesCompose(target);
 });
@@ -340,8 +366,9 @@ function renderStandaloneMemberResults(users, options){
   }
   const canInvite = standaloneInvitationAvailable();
   users.forEach(user => {
+    const registrationComplete = memberRegistrationComplete(user);
     const card = document.createElement('div');
-    card.className = 'member-result-card' + (user.favorite ? ' favorite' : '');
+    card.className = 'member-result-card' + (user.favorite ? ' favorite' : '') + (registrationComplete ? '' : ' registration-pending');
 
     const main = document.createElement('div');
     main.className = 'member-result-main';
@@ -360,6 +387,8 @@ function renderStandaloneMemberResults(users, options){
       favoriteBtn.type = 'button';
       favoriteBtn.className = 'member-favorite-btn';
       updateMemberFavoriteButton(favoriteBtn, user);
+      favoriteBtn.disabled = !registrationComplete;
+      if(!registrationComplete) favoriteBtn.title = memberRegistrationPendingMessage();
       favoriteBtn.addEventListener('click', ev => {
         ev.stopPropagation();
         toggleStandaloneMemberFavorite(user, favoriteBtn);
@@ -368,7 +397,9 @@ function renderStandaloneMemberResults(users, options){
     }
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = canInvite
+    meta.textContent = !registrationComplete
+      ? memberRegistrationPendingMessage() + ' · Profil kann angesehen werden'
+      : canInvite
       ? 'Profil ansehen oder Einladung mit eigenen Partieeinstellungen vorbereiten'
       : 'Profil ansehen · für eine neue Einladung bitte zur Lobby zurückkehren';
     info.appendChild(name);
@@ -388,7 +419,8 @@ function renderStandaloneMemberResults(users, options){
       messageBtn.type = 'button';
       messageBtn.className = 'button-flat';
       messageBtn.textContent = '✉️ Nachricht';
-      messageBtn.title = 'Persönliche Nachricht schreiben';
+      messageBtn.disabled = !registrationComplete;
+      messageBtn.title = registrationComplete ? 'Persönliche Nachricht schreiben' : memberRegistrationPendingMessage();
       messageBtn.addEventListener('click', ev => {
         ev.stopPropagation();
         closeMembersDialog();
@@ -399,8 +431,10 @@ function renderStandaloneMemberResults(users, options){
       inviteBtn.type = 'button';
       inviteBtn.className = 'button-flat';
       inviteBtn.textContent = 'Zur Partie einladen';
-      inviteBtn.disabled = !canInvite;
-      inviteBtn.title = canInvite
+      inviteBtn.disabled = !canInvite || !registrationComplete;
+      inviteBtn.title = !registrationComplete
+        ? memberRegistrationPendingMessage()
+        : canInvite
         ? 'Partieeinstellungen und persönliche Nachricht für dieses Mitglied öffnen.'
         : 'Neue Einladungen werden in der Mitglieder-Lobby vorbereitet.';
       inviteBtn.addEventListener('click', ev => { ev.stopPropagation(); inviteMemberFromStandaloneList(user, inviteBtn); });
@@ -512,6 +546,10 @@ async function openMembersDialog(){
   setTimeout(() => { try{ if(membersSearchInput) membersSearchInput.focus(); } catch(_){} }, 0);
 }
 async function inviteMemberFromStandaloneList(member, button){
+  if(!memberRegistrationComplete(member)){
+    setMembersStatus(memberRegistrationPendingMessage() + '. Einladungen sind erst nach der Mailbestätigung möglich.', 'error');
+    return;
+  }
   if(!standaloneInvitationAvailable()){
     setMembersStatus('Bitte zuerst über „Zur Lobby“ in die Mitglieder-Lobby zurückkehren und dort die neue Partie vorbereiten.', 'error');
     return;

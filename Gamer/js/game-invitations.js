@@ -19,7 +19,7 @@ function renderDirectInvitationRecipient(member){
   name.textContent = cleanDisplayName(member.username) || 'Mitglied';
   const meta = document.createElement('div');
   meta.className = 'direct-invitation-recipient-meta';
-  meta.appendChild(createMemberActivityBadge(member));
+  meta.appendChild(createPresenceBadge(!!member.isOnline));
   const note = document.createElement('span');
   note.textContent = 'Die folgenden Einstellungen gelten nur für diese Einladung.';
   meta.appendChild(note);
@@ -52,6 +52,10 @@ function resetDirectInvitationSetup(){
 function openDirectInvitationSetup(member, sourceButton){
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   if(!member || !member.id){ setMembersStatus('Bitte ein Mitglied auswählen.', 'error'); return; }
+  if(!memberRegistrationComplete(member)){
+    setMembersStatus(memberRegistrationPendingMessage() + '. Einladungen sind erst nach der Mailbestätigung möglich.', 'error');
+    return;
+  }
   if(onlineAuthUser && String(member.id) === String(onlineAuthUser.id)){
     setMembersStatus('Du kannst deinen eigenen Account nicht einladen.', 'error');
     return;
@@ -129,8 +133,12 @@ async function cancelDirectInvitationSetup(){
 }
 async function submitDirectInvitationSetup(){
   if(directInvitationSendBusy) return;
-  const member = directInvitationSetupMember;
+  let member = directInvitationSetupMember;
   if(!member || !member.id){ setNewGameDialogStatus('Bitte ein gültiges Mitglied auswählen.'); return; }
+  if(!memberRegistrationComplete(member)){
+    setNewGameDialogStatus(memberRegistrationPendingMessage() + '. Einladungen sind erst nach der Mailbestätigung möglich.');
+    return;
+  }
   const expectedTimeControl = currentTimeControlPayload();
   if(!timeMode || !expectedTimeControl){
     setNewGameDialogStatus('Bitte zuerst eine Bedenkzeit auswählen.');
@@ -150,6 +158,18 @@ async function submitDirectInvitationSetup(){
   setNewGameDialogStatus(directInvitationCreatedRoomId ? 'Einladung wird erneut versendet…' : 'Spielraum wird jetzt erstellt und anschließend versendet…');
   try{
     if(!directInvitationCreatedRoomId){
+      if(directInvitationSendBtn) directInvitationSendBtn.textContent = 'Anmeldung wird geprüft…';
+      setNewGameDialogStatus('Der aktuelle Anmeldestatus des Empfängers wird geprüft…');
+      const eligibility = await authApi('/api/members/' + encodeURIComponent(member.id) + '/profile');
+      const currentMember = eligibility && eligibility.member ? eligibility.member : null;
+      if(!currentMember || !memberRegistrationComplete(currentMember)){
+        if(currentMember) directInvitationSetupMember = Object.assign({}, member, currentMember);
+        throw new Error(memberRegistrationPendingMessage() + '. Es wurde kein Spielraum erstellt.');
+      }
+      directInvitationSetupMember = Object.assign({}, member, currentMember);
+      member = directInvitationSetupMember;
+      if(directInvitationSendBtn) directInvitationSendBtn.textContent = 'Spielraum wird erstellt…';
+      setNewGameDialogStatus('Anmeldung bestätigt – Spielraum wird jetzt erstellt…');
       const created = await createNewOnlineRoom({copyLink:false, openOffer:false});
       if(!created || !onlineRoomId) throw new Error('Der Spielraum konnte nicht erstellt werden.');
       directInvitationCreatedRoomId = cleanRoomId(onlineRoomId);
@@ -169,7 +189,10 @@ async function submitDirectInvitationSetup(){
   } finally {
     if(newGameBackdrop && !newGameBackdrop.hidden){
       setDirectInvitationSetupBusy(false);
-      if(directInvitationSendBtn) directInvitationSendBtn.textContent = directInvitationCreatedRoomId ? '✉️ Einladung erneut senden' : '✉️ Einladung senden';
+      if(directInvitationSendBtn){
+        directInvitationSendBtn.textContent = directInvitationCreatedRoomId ? '✉️ Einladung erneut senden' : '✉️ Einladung senden';
+        if(!memberRegistrationComplete(directInvitationSetupMember)) directInvitationSendBtn.disabled = true;
+      }
     } else {
       directInvitationSendBusy = false;
     }
@@ -194,6 +217,10 @@ function closeInvitationMessageDialog(force){
 function openInvitationMessageDialog(member, sourceButton){
   if(!onlineAuthToken || !onlineAuthUser){ setInviteCopyStatus('Bitte einloggen, um Mitglieder per Mail einzuladen.', true); return; }
   if(!member || !member.id){ setInviteCopyStatus('Bitte ein Mitglied auswählen.', true); return; }
+  if(!memberRegistrationComplete(member)){
+    setInviteCopyStatus(memberRegistrationPendingMessage() + '. Einladungen sind erst nach der Mailbestätigung möglich.', true);
+    return;
+  }
   pendingInvitationMember = member;
   pendingInvitationSourceButton = sourceButton || null;
   const recipientName = cleanDisplayName(member.username) || 'das Mitglied';
@@ -242,7 +269,7 @@ function updateInviteDialog(){
   }
   if(memberSearchHint){
     memberSearchHint.textContent = loggedIn
-      ? 'Suche nach Benutzername oder öffne die Mitgliederliste. Online- und zuletzt aktive Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.'
+      ? 'Suche nach Benutzername oder öffne die Mitgliederliste. Online-Mitglieder stehen zuerst; über die Schaltfläche wird die Einladung automatisch per E-Mail versendet.'
       : 'Mitgliedersuche und Mitgliederliste sind nur nach Login verfügbar. Als Gast kannst du den Link kopieren.';
   }
   if(!loggedIn){
@@ -323,6 +350,7 @@ async function sendEmailInvitationToMember(member, button, personalMessage, sour
   if(!onlineAuthToken || !onlineAuthUser){ const message='Bitte einloggen, um Mitglieder per Mail einzuladen.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
   if(!link || !onlineRoomId){ const message='Noch kein Einladungslink vorhanden.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
   if(!member || !member.id){ const message='Bitte ein Mitglied auswählen.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
+  if(!memberRegistrationComplete(member)){ const message=memberRegistrationPendingMessage() + '. Einladungen sind erst nach der Mailbestätigung möglich.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
   if(invitationSendBusy){ const message='Eine Einladung wird bereits versendet.'; setInviteCopyStatus(message, true); return {ok:false,message}; }
 
   const normalizedPersonalMessage = normalizedInvitationPersonalMessage(personalMessage);
@@ -400,46 +428,6 @@ function createPresenceBadge(isOnline){
   return badge;
 }
 
-function memberActivityView(member, serverNow){
-  if(member && member.activityVisible === false){
-    return {label:'Status verborgen', title:'Dieses Mitglied zeigt seinen Aktivitätsstatus in der Mitgliederliste nicht an.', className:' hidden-status'};
-  }
-  if(member && member.isOnline){
-    return {label:'Online', title:'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv.', className:' online'};
-  }
-  const lastActiveMs = Date.parse(member && member.lastActiveAt || '');
-  if(!Number.isFinite(lastActiveMs)){
-    return {label:'Noch keine Aktivität', title:'Für dieses Mitglied liegt noch kein Aktivitätszeitpunkt vor.', className:''};
-  }
-  const referenceMs = Number.isFinite(Number(serverNow)) ? Number(serverNow) : Date.now();
-  const elapsedMs = Math.max(0, referenceMs - lastActiveMs);
-  const minutes = Math.floor(elapsedMs / 60000);
-  const hours = Math.floor(elapsedMs / 3600000);
-  const days = Math.floor(elapsedMs / 86400000);
-  let label = 'Länger her';
-  if(minutes < 1) label = 'Gerade eben';
-  else if(minutes < 60) label = 'vor ' + minutes + ' Min.';
-  else if(hours < 24) label = 'vor ' + hours + ' Std.';
-  else if(hours < 48) label = 'Gestern';
-  else if(days < 7) label = 'vor ' + days + ' Tagen';
-  return {label, title:'Zuletzt aktiv: ' + label + '.', className:elapsedMs < 7 * 86400000 ? ' recent' : ''};
-}
-
-function createMemberActivityBadge(member, serverNow){
-  const view = memberActivityView(member || {}, serverNow);
-  const badge = document.createElement('span');
-  badge.className = 'presence-badge member-activity-badge' + view.className;
-  badge.title = view.title;
-  const dot = document.createElement('span');
-  dot.className = 'presence-dot';
-  dot.setAttribute('aria-hidden', 'true');
-  const label = document.createElement('span');
-  label.textContent = view.label;
-  badge.appendChild(dot);
-  badge.appendChild(label);
-  return badge;
-}
-
 function renderMemberSearchResults(users, options){
   options = options || {};
   if(!memberSearchResults) return;
@@ -453,8 +441,9 @@ function renderMemberSearchResults(users, options){
     return;
   }
   users.forEach(user => {
+    const registrationComplete = memberRegistrationComplete(user);
     const card = document.createElement('div');
-    card.className = 'member-result-card';
+    card.className = 'member-result-card' + (registrationComplete ? '' : ' registration-pending');
 
     const main = document.createElement('div');
     main.className = 'member-result-main';
@@ -470,7 +459,9 @@ function renderMemberSearchResults(users, options){
     name.appendChild(createMemberActivityBadge(user, options.serverNow));
     const meta = document.createElement('div');
     meta.className = 'member-result-meta';
-    meta.textContent = 'Profil, Ratings und freigegebener Aktivitätsstatus';
+    meta.textContent = registrationComplete
+      ? 'Profil, Ratings und aktueller Gamer-Online-Status'
+      : memberRegistrationPendingMessage() + ' · Profil kann angesehen werden';
     info.appendChild(name);
     info.appendChild(meta);
 
@@ -489,7 +480,10 @@ function renderMemberSearchResults(users, options){
     btn.type = 'button';
     btn.className = 'button-flat';
     btn.textContent = 'Einladung senden';
-    btn.title = 'Partieeinladung automatisch an ' + (user.username || 'dieses Mitglied') + ' senden';
+    btn.disabled = !registrationComplete;
+    btn.title = registrationComplete
+      ? 'Partieeinladung automatisch an ' + (user.username || 'dieses Mitglied') + ' senden'
+      : memberRegistrationPendingMessage();
     btn.addEventListener('click', ev => { ev.stopPropagation(); openInvitationMessageDialog(user, btn); });
     actions.appendChild(btn);
 
@@ -507,7 +501,7 @@ async function loadMemberList(){
   if(memberListBtn) memberListBtn.disabled = true;
   try{
     const data = await authApi('/api/members/list?limit=50');
-    renderMemberSearchResults(data.users || [], {source:'list', serverNow:data.serverNow});
+    renderMemberSearchResults(data.users || [], {source:'list'});
     const count = (data.users || []).length;
     if(memberSearchStatus) memberSearchStatus.textContent = count ? (count + ' Mitglied' + (count === 1 ? '' : 'er') + ' geladen. Profil ansehen oder Einladung senden.') : 'Keine weiteren Mitglieder gefunden.';
   } catch(err){
@@ -521,7 +515,7 @@ async function performMemberSearch(query, requestId){
   try{
     const data = await authApi('/api/members/search?q=' + encodeURIComponent(query));
     if(requestId !== memberSearchRequestId) return;
-    renderMemberSearchResults(data.users || [], {source:'search', serverNow:data.serverNow});
+    renderMemberSearchResults(data.users || [], {source:'search'});
     if(memberSearchStatus) memberSearchStatus.textContent = (data.users || []).length ? 'Mitglied anklicken, um die Einladung automatisch zu senden.' : 'Keine Treffer.';
   } catch(err){
     if(requestId !== memberSearchRequestId) return;
