@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260828-4" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260828-5" />
 </head>
 <body>
 <div class="app" role="main">
@@ -115,6 +115,7 @@
           <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Anfängertraining</button>
           <button id="visitorTrainerProgressHeaderBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>📊 Lernstand · 0/65</button>
           <button id="visitorPublicGamesOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-haspopup="dialog" aria-controls="publicGamesBackdrop" hidden>👁️ Laufende Partien</button>
+          <button id="visitorLeagueStandingsOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
           <div id="toolsMenu" class="header-menu tools-menu" hidden>
             <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
               <span>♟️ Bereiche</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
@@ -162,6 +163,7 @@
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerOpenBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Anfängertraining</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerProgressHeaderBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Lernstand</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLeagueStandingsOpenBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Ergebnisdienst</strong></button>
           </section>
           <section id="mobileNavMainSection">
             <h2>Hauptnavigation</h2>
@@ -725,7 +727,7 @@
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>24. Ergebnisdienst und Ligatabellen</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „Ergebnisse“ → „📊 Ergebnisdienst“</strong> öffnest du die freigeschalteten Ligatabellen im Gamer-Look. Anzahl der Mannschaften und Rundenspalten werden automatisch aus der jeweiligen Rangliste übernommen. Unter jeder Tabelle erscheint außerdem die vollständige Rundenübersicht mit allen vom Ergebnisdienst angebotenen Spieltagen; die nächste Runde ist beim Öffnen bereits ausgeklappt. Vereinsnamen sowie vorhandene Ergebnis- und Rundenlinks führen in einem neuen Browser-Tab zur zugehörigen Originalseite des Ergebnisdienstes. Der Gamer aktualisiert die Ligadaten regelmäßig; falls die Quelle vorübergehend nicht erreichbar ist, bleiben die zuletzt erfolgreich geladenen Daten sichtbar.</p>
+          <p>Besucher öffnen die freigeschalteten Ligatabellen direkt über <strong>„📊 Ergebnisdienst“</strong>; angemeldete Mitglieder finden sie zusätzlich unter <strong>„♟️ Bereiche“ → „Ergebnisse“</strong>. Anzahl der Mannschaften und Rundenspalten werden automatisch aus der jeweiligen Rangliste übernommen. Unter jeder Tabelle erscheint außerdem die vollständige Rundenübersicht mit allen vom Ergebnisdienst angebotenen Spieltagen; die nächste Runde ist beim Öffnen bereits ausgeklappt. Vereinsnamen sowie vorhandene Ergebnis- und Rundenlinks führen in einem neuen Browser-Tab zur zugehörigen Originalseite des Ergebnisdienstes. Der Gamer aktualisiert die Ligadaten regelmäßig; falls die Quelle vorübergehend nicht erreichbar ist, bleiben die zuletzt erfolgreich geladenen Daten sichtbar.</p>
           <p>Der Administrator kann die gemeinsame Saisonüberschrift zentral ändern und bis zu 15 Tabellen anlegen, frei benennen, sortieren sowie einzeln ein- oder ausschalten. Zu einer neuen Saison müssen anschließend nur noch die Überschrift und die Adressen der Ranglistenseiten angepasst werden. Mit <strong>„Jetzt prüfen / aktualisieren“</strong> lässt sich jede gespeicherte Tabelle sofort kontrollieren.</p>
 
           <h4>25. Neue Partie und Rückkehr zur Lobby</h4>
@@ -2330,12 +2332,12 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260825-3"></script>
+<script src="js/online-ui-elements.js?v=20260828-1"></script>
 <script src="js/header-ui.js?v=20260825-2"></script>
 <script src="js/dialog-ui-state.js?v=20260819-2"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
-<script src="js/league-standings.js?v=20260828-2"></script>
-<script src="js/embedded-tools.js?v=20260827-1"></script>
+<script src="js/league-standings.js?v=20260828-3"></script>
+<script src="js/embedded-tools.js?v=20260828-1"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2395,6 +2397,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260815-1"></script>
 <script src="js/board-size-control.js?v=20260826-2"></script>
-<script src="js/mobile-navigation.js?v=20260826-4"></script>
+<script src="js/mobile-navigation.js?v=20260828-1"></script>
 </body>
 </html>
