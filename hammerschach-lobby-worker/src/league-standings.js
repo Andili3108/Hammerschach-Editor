@@ -2,6 +2,7 @@ const LEAGUE_STANDINGS_MAX = 15;
 const LEAGUE_STANDINGS_REFRESH_MS = 5 * 60 * 1000;
 const LEAGUE_STANDINGS_MAX_HTML_BYTES = 1_500_000;
 const LEAGUE_STANDINGS_ALLOWED_HOST = 'ergebnisdienst.svr-schach.de';
+const LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE = 'Ligasaison 2026/27';
 
 let leagueStandingsTablesReady = false;
 
@@ -173,10 +174,35 @@ async function ensureLeagueStandingsTables(env) {
       last_error TEXT,
       FOREIGN KEY (league_id) REFERENCES league_standings_sources(id) ON DELETE CASCADE
     )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS league_standings_settings (
+      setting_key TEXT PRIMARY KEY,
+      setting_value TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      updated_by TEXT
+    )`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_league_standings_order ON league_standings_sources (enabled, sort_order, title)`)
   ]);
   leagueStandingsTablesReady = true;
   return true;
+}
+
+async function loadLeaguePageTitle(env) {
+  await ensureLeagueStandingsTables(env);
+  const row = await env.DB.prepare(`SELECT setting_value FROM league_standings_settings WHERE setting_key = 'page_title' LIMIT 1`).first();
+  return cleanText(row && row.setting_value, 80) || LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE;
+}
+
+async function saveLeaguePageTitle(env, value, adminUser) {
+  await ensureLeagueStandingsTables(env);
+  const pageTitle = cleanText(value, 80);
+  if (!pageTitle) return {ok:false, message:'Bitte eine Überschrift für die Ligasaison eintragen.'};
+  const now = new Date().toISOString();
+  await env.DB.prepare(`INSERT INTO league_standings_settings (setting_key, setting_value, updated_at, updated_by)
+    VALUES ('page_title', ?, ?, ?)
+    ON CONFLICT(setting_key) DO UPDATE SET setting_value = excluded.setting_value,
+      updated_at = excluded.updated_at, updated_by = excluded.updated_by`)
+    .bind(pageTitle, now, adminUser && adminUser.id || null).run();
+  return {ok:true, pageTitle};
 }
 
 function sourceRowDto(row) {
@@ -365,7 +391,11 @@ export async function handleLeagueStandingsApi(request, env, url, dependencies) 
     const session = await lookupSession(env, bearerToken(request));
     if (!session) return respondJson({ok:false, code:'NOT_AUTHENTICATED', message:'Die Ligatabellen sind nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
     try {
-      return respondJson({ok:true, maxLeagues:LEAGUE_STANDINGS_MAX, leagues:await loadLeagueStandings(env, false, '')});
+      const [pageTitle, leagues] = await Promise.all([
+        loadLeaguePageTitle(env),
+        loadLeagueStandings(env, false, '')
+      ]);
+      return respondJson({ok:true, pageTitle, maxLeagues:LEAGUE_STANDINGS_MAX, leagues});
     } catch (error) {
       console.error('League standings load failed', error && error.message ? error.message : String(error || 'unknown'));
       return respondJson({ok:false, code:'LEAGUE_STANDINGS_UNAVAILABLE', message:'Die Ligatabellen konnten momentan nicht geladen werden.'}, {status:500});
@@ -376,7 +406,11 @@ export async function handleLeagueStandingsApi(request, env, url, dependencies) 
     const admin = await requireAdmin(request, env);
     if (!admin.ok) return admin.response;
     try {
-      return respondJson({ok:true, maxLeagues:LEAGUE_STANDINGS_MAX, leagues:await loadLeagueStandings(env, true, '')});
+      const [pageTitle, leagues] = await Promise.all([
+        loadLeaguePageTitle(env),
+        loadLeagueStandings(env, true, '')
+      ]);
+      return respondJson({ok:true, pageTitle, maxLeagues:LEAGUE_STANDINGS_MAX, leagues});
     } catch (error) {
       console.error('Admin league standings load failed', error && error.message ? error.message : String(error || 'unknown'));
       return respondJson({ok:false, code:'LEAGUE_STANDINGS_ADMIN_UNAVAILABLE', message:'Die Ligakonfiguration konnte momentan nicht geladen werden.'}, {status:500});
@@ -389,10 +423,16 @@ export async function handleLeagueStandingsApi(request, env, url, dependencies) 
     const body = await readBody(request);
     if (!body) return respondJson({ok:false, code:'BAD_JSON', message:'Die Ligakonfiguration konnte nicht gelesen werden.'}, {status:400});
     try {
+      const currentPageTitle = await loadLeaguePageTitle(env);
+      const requestedPageTitle = cleanText(body.pageTitle === undefined ? currentPageTitle : body.pageTitle, 80);
+      if (!requestedPageTitle) return respondJson({ok:false, code:'INVALID_LEAGUE_PAGE_TITLE', message:'Bitte eine Überschrift für die Ligasaison eintragen.'}, {status:400});
       const saved = await saveLeagueSources(env, body.leagues, admin.session.user);
       if (!saved.ok) return respondJson({ok:false, code:'INVALID_LEAGUE_CONFIG', message:saved.message}, {status:400});
+      const titleSaved = await saveLeaguePageTitle(env, requestedPageTitle, admin.session.user);
+      if (!titleSaved.ok) return respondJson({ok:false, code:'INVALID_LEAGUE_PAGE_TITLE', message:titleSaved.message}, {status:400});
       return respondJson({
         ok:true,
+        pageTitle:titleSaved.pageTitle,
         maxLeagues:LEAGUE_STANDINGS_MAX,
         leagues:await loadLeagueStandings(env, true, ''),
         message:`Die Ligakonfiguration wurde gespeichert (${saved.leagues.length} von ${LEAGUE_STANDINGS_MAX} Plätzen belegt).`
