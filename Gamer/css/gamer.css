@@ -1421,6 +1421,7 @@
   .league-standings-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px;}
   .league-standings-admin-title{color:#2f292b;font-size:20px;font-weight:900;}
   .league-standings-admin-subtitle{max-width:760px;margin-top:4px;color:#6a6466;font-family:Arial,sans-serif;font-size:12px;font-weight:750;line-height:1.4;}
+  .league-standings-admin-page-title{max-width:520px;margin:0 0 13px;}
   .league-standings-admin-list{display:flex;flex-direction:column;gap:10px;}
   .league-standings-admin-empty{padding:20px;border:1px dashed rgba(132,63,70,.24);border-radius:13px;background:rgba(255,255,255,.72);color:#6c6466;font-family:Arial,sans-serif;font-size:13px;font-weight:800;text-align:center;}
   .league-standings-admin-item{padding:13px;border:1px solid rgba(132,63,70,.14);border-radius:14px;background:#fff;box-shadow:0 4px 12px rgba(53,40,42,.05);}
