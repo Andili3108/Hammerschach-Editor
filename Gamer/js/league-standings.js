@@ -14,6 +14,10 @@ let leagueStandingsAdminDrafts = [];
 let leagueStandingsAdminDirty = false;
 let leagueStandingsPageTitleDraft = LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE;
 let leagueStandingsPollTimer = null;
+const leagueStandingsRounds = document.getElementById('leagueStandingsRounds');
+const leagueStandingsRoundsCount = document.getElementById('leagueStandingsRoundsCount');
+const leagueStandingsRoundsNotice = document.getElementById('leagueStandingsRoundsNotice');
+const leagueStandingsRoundsList = document.getElementById('leagueStandingsRoundsList');
 
 function leagueStandingsDate(value){
   const timestamp = Date.parse(String(value || ''));
@@ -89,11 +93,131 @@ function leagueStandingsCellContent(cell){
   return document.createTextNode(text || '–');
 }
 
+function leagueStandingsRoundHeaderKind(header){
+  const normalized=String(header || '').trim().toLowerCase();
+  if(normalized==='heim'||normalized==='gast'||normalized==='mannschaft')return 'team';
+  if(normalized==='ergebnis')return 'result';
+  if(normalized==='paar')return 'pairing';
+  if(normalized==='tln')return 'participant';
+  if(normalized==='dwz')return 'rating';
+  if(normalized==='spieltermin'||normalized==='termin')return 'date';
+  return 'value';
+}
+
+function leagueStandingsDefaultRoundIndex(rounds){
+  const today=new Date();
+  const todayIso=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const next=rounds.findIndex(round=>/^\d{4}-\d{2}-\d{2}$/.test(String(round&&round.dateIso || ''))&&round.dateIso>=todayIso);
+  return next>=0?next:Math.max(0,rounds.length-1);
+}
+
+function renderLeagueStandingsRounds(league){
+  if(!leagueStandingsRounds||!leagueStandingsRoundsList)return;
+  const rounds=Array.isArray(league&&league.rounds)?league.rounds:[];
+  const message=String(league&&league.roundsMessage || '');
+  const sameLeague=leagueStandingsRounds.dataset.leagueId===String(league&&league.id || '');
+  const openKeys=new Set(sameLeague?Array.from(leagueStandingsRoundsList.querySelectorAll('details[open]')).map(item=>String(item.dataset.roundKey || '')):[]);
+  leagueStandingsRoundsList.replaceChildren();
+  leagueStandingsRounds.dataset.leagueId=String(league&&league.id || '');
+  leagueStandingsRounds.hidden=!rounds.length&&!message;
+  if(leagueStandingsRoundsCount){
+    leagueStandingsRoundsCount.textContent=rounds.length===1?'1 Spieltag':`${rounds.length} Spieltage`;
+    leagueStandingsRoundsCount.hidden=!rounds.length;
+  }
+  if(leagueStandingsRoundsNotice){
+    leagueStandingsRoundsNotice.textContent=message;
+    leagueStandingsRoundsNotice.hidden=!message;
+    leagueStandingsRoundsNotice.classList.toggle('warning',!!message);
+  }
+  if(!rounds.length)return;
+
+  const defaultOpenIndex=leagueStandingsDefaultRoundIndex(rounds);
+  rounds.forEach((round,index)=>{
+    const headers=Array.isArray(round&&round.headers)?round.headers:[];
+    const rows=Array.isArray(round&&round.rows)?round.rows:[];
+    const label=String(round&&round.label || `Runde ${index+1}`);
+    const roundKey=String(round&&round.number || round&&round.dateIso || index+1);
+    const details=document.createElement('details');
+    details.className='league-standings-round';
+    details.dataset.roundKey=roundKey;
+    details.open=sameLeague?openKeys.has(roundKey):index===defaultOpenIndex;
+
+    const summary=document.createElement('summary');
+    summary.className='league-standings-round-summary';
+    const title=document.createElement('span');
+    title.className='league-standings-round-title';
+    const strong=document.createElement('strong');
+    strong.textContent=label;
+    const date=document.createElement('span');
+    date.className='league-standings-round-date';
+    date.textContent=String(round&&round.date || '');
+    title.append(strong,date);
+    const count=document.createElement('span');
+    count.className='league-standings-round-match-count';
+    count.textContent=rows.length===1?'1 Paarung':`${rows.length} Paarungen`;
+    summary.append(title,count);
+
+    const body=document.createElement('div');
+    body.className='league-standings-round-body';
+    const roundHref=leagueStandingsSafeLink(round&&round.href);
+    if(roundHref){
+      const linkRow=document.createElement('div');
+      linkRow.className='league-standings-round-link-row';
+      const link=document.createElement('a');
+      link.className='league-standings-round-link';
+      link.href=roundHref;
+      link.target='_blank';
+      link.rel='noopener noreferrer';
+      link.textContent='Einzelergebnisse dieser Runde öffnen ↗';
+      linkRow.appendChild(link);
+      body.appendChild(linkRow);
+    }
+
+    const scroll=document.createElement('div');
+    scroll.className='league-standings-round-table-scroll';
+    scroll.tabIndex=0;
+    scroll.setAttribute('aria-label',`${label} horizontal verschiebbar`);
+    const table=document.createElement('table');
+    table.className='league-standings-round-table';
+    const thead=document.createElement('thead');
+    const headerRow=document.createElement('tr');
+    headers.forEach((header,columnIndex)=>{
+      const th=document.createElement('th');
+      th.scope='col';
+      th.textContent=String(header || '');
+      th.dataset.kind=leagueStandingsRoundHeaderKind(header);
+      th.dataset.column=String(columnIndex);
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    const tbody=document.createElement('tbody');
+    rows.forEach(row=>{
+      const tr=document.createElement('tr');
+      const cells=Array.isArray(row&&row.cells)?row.cells:[];
+      headers.forEach((header,columnIndex)=>{
+        const cell=cells[columnIndex] || {};
+        const td=document.createElement('td');
+        td.dataset.kind=String(cell.kind || leagueStandingsRoundHeaderKind(header));
+        td.dataset.column=String(columnIndex);
+        td.appendChild(leagueStandingsCellContent(cell));
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.append(thead,tbody);
+    scroll.appendChild(table);
+    body.appendChild(scroll);
+    details.append(summary,body);
+    leagueStandingsRoundsList.appendChild(details);
+  });
+}
+
 function renderLeagueStandingsTable(){
   if(!leagueStandingsCard || !leagueStandingsTable) return;
   const league=leagueStandingsSelected();
   if(!league){
     leagueStandingsCard.hidden=true;
+    renderLeagueStandingsRounds(null);
     if(leagueStandingsStatus){
       const isAdmin=!!(onlineAuthUser && onlineAuthUser.isAdmin===true);
       leagueStandingsStatus.hidden=false;
@@ -115,6 +239,7 @@ function renderLeagueStandingsTable(){
     leagueStandingsNotice.textContent=league.message || '';
     leagueStandingsNotice.classList.toggle('warning',league.stale===true);
   }
+  renderLeagueStandingsRounds(league);
 
   leagueStandingsTable.replaceChildren();
   const table=league.table && typeof league.table==='object' ? league.table : null;
@@ -254,7 +379,7 @@ function renderLeagueStandingsAdmin(){
     foot.className='league-standings-admin-item-foot';
     const state=document.createElement('span');
     const date=leagueStandingsDate(draft.fetchedAt || draft.checkedAt);
-    state.textContent=draft.lastError ? `Letzter Fehler: ${draft.lastError}` : (date?`Zuletzt erfolgreich geladen: ${date}`:'Noch nicht geladen');
+    state.textContent=draft.lastError ? `Letzter Hinweis: ${draft.lastError}` : (date?`Zuletzt erfolgreich geladen: ${date}`:'Noch nicht geladen');
     state.classList.toggle('error',!!draft.lastError);
     const refresh=document.createElement('button');
     refresh.type='button';refresh.className='button-flat';refresh.textContent='Jetzt prüfen / aktualisieren';
@@ -334,7 +459,7 @@ async function saveLeagueStandingsAdmin(){
 async function refreshLeagueStandingsAdmin(id,button){
   if(!onlineAuthUser||onlineAuthUser.isAdmin!==true||!id||String(id).startsWith('draft_'))return;
   if(button)button.disabled=true;
-  leagueStandingsAdminMessage('Die ausgewählte Tabelle wird beim Ergebnisdienst geprüft …','');
+  leagueStandingsAdminMessage('Die ausgewählte Tabelle und ihre Runden werden beim Ergebnisdienst geprüft …','');
   try{
     const data=await authApi(`/api/admin/league-standings/${encodeURIComponent(id)}/refresh`,{method:'POST',body:'{}'});
     const league=data.league;
@@ -344,9 +469,9 @@ async function refreshLeagueStandingsAdmin(id,button){
     if(draft&&league){draft.checkedAt=league.checkedAt;draft.fetchedAt=league.fetchedAt;draft.lastError=league.lastError || '';}
     renderLeagueStandingsAdmin();
     selectLeagueStandings(leagueStandingsSelectedId,{persist:false});
-    leagueStandingsAdminMessage(data.message || 'Die Tabelle wurde geprüft.',league&&league.lastError?'error':'success');
+    leagueStandingsAdminMessage(data.message || 'Die Ligadaten wurden geprüft.',league&&league.lastError?'error':'success');
   }catch(error){
-    leagueStandingsAdminMessage(error&&error.message?error.message:'Die Tabelle konnte nicht aktualisiert werden.','error');
+    leagueStandingsAdminMessage(error&&error.message?error.message:'Die Ligadaten konnten nicht aktualisiert werden.','error');
   }finally{
     if(button&&button.isConnected)button.disabled=false;
   }
