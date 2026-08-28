@@ -92,25 +92,24 @@ function newLeagueId() {
 function cellKind(className, headerText) {
   const classes = String(className || '').toLowerCase().split(/\s+/);
   const header = cleanText(headerText, 40).toLowerCase();
-  if (classes.includes('team') || header === 'mannschaft') return 'team';
+  if (classes.includes('team') || header === 'mannschaft' || header === 'heim' || header === 'gast') return 'team';
   if (classes.some(name => name === 'rang' || name.startsWith('rang_')) || header === 'rg') return 'rank';
   if (classes.includes('rnd') || /^\d+$/.test(header)) return 'round';
   if (classes.includes('mp') || header === 'mp') return 'match-points';
   if (classes.includes('bp') || header === 'bp' || header === 'divgl') return 'board-points';
+  if (header === 'ergebnis') return 'result';
+  if (header === 'paar') return 'pairing';
+  if (header === 'tln') return 'participant';
+  if (header === 'dwz') return 'rating';
+  if (header === 'spieltermin' || header === 'termin') return 'date';
   return 'value';
 }
 
-export function parseLeagueStandingsHtml(html, sourceUrl) {
-  const source = normalizeSourceUrl(sourceUrl);
-  if (!source) throw new Error('Die Ergebnisdienst-Adresse ist ungültig.');
-  const documentText = String(html || '');
-  const tableMatch = documentText.match(/<table\b([^>]*\bclass\s*=\s*(?:"[^"]*\b(?:rangliste|kreuztab)\b[^"]*"|'[^']*\b(?:rangliste|kreuztab)\b[^']*'|[^\s>]*\b(?:rangliste|kreuztab)\b[^\s>]*))[^>]*>([^]*?)<\/table>/i);
-  if (!tableMatch) throw new Error('Auf der Seite wurde keine Ranglistentabelle gefunden.');
-
+function parseHtmlTableRows(tableBody, source, maxRows = 200) {
   const rawRows = [];
   const rowPattern = /<tr\b([^>]*)>([^]*?)<\/tr>/gi;
   let rowMatch;
-  while ((rowMatch = rowPattern.exec(tableMatch[2])) && rawRows.length < 101) {
+  while ((rowMatch = rowPattern.exec(String(tableBody || ''))) && rawRows.length < maxRows) {
     const cells = [];
     const cellPattern = /<(th|td)\b([^>]*)>([^]*?)<\/\1>/gi;
     let cellMatch;
@@ -128,6 +127,41 @@ export function parseLeagueStandingsHtml(html, sourceUrl) {
     }
     if (cells.length) rawRows.push(cells);
   }
+  return rawRows;
+}
+
+function germanRoundDateIso(value) {
+  const months = {
+    januar:1, februar:2, maerz:3, märz:3, april:4, mai:5, juni:6,
+    juli:7, august:8, september:9, oktober:10, november:11, dezember:12
+  };
+  const normalized = cleanText(value, 80).toLowerCase();
+  const match = normalized.match(/\b(\d{1,2})\.\s*([a-zäöü]+)\s+(\d{4})\b/i);
+  if (!match) return '';
+  const month = months[match[2]];
+  const day = Number(match[1]);
+  const year = Number(match[3]);
+  if (!month || day < 1 || day > 31 || year < 2000 || year > 2200) return '';
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function leagueRoundsSourceUrl(sourceUrl) {
+  const source = normalizeSourceUrl(sourceUrl);
+  if (!source) return '';
+  const url = new URL(source);
+  url.searchParams.set('view', 'paarungsliste');
+  ['layout', 'format', 'runde', 'dg', 'tlnr'].forEach(name => url.searchParams.delete(name));
+  return normalizeSourceUrl(url.toString());
+}
+
+export function parseLeagueStandingsHtml(html, sourceUrl) {
+  const source = normalizeSourceUrl(sourceUrl);
+  if (!source) throw new Error('Die Ergebnisdienst-Adresse ist ungültig.');
+  const documentText = String(html || '');
+  const tableMatch = documentText.match(/<table\b([^>]*\bclass\s*=\s*(?:"[^"]*\b(?:rangliste|kreuztab)\b[^"]*"|'[^']*\b(?:rangliste|kreuztab)\b[^']*'|[^\s>]*\b(?:rangliste|kreuztab)\b[^\s>]*))[^>]*>([^]*?)<\/table>/i);
+  if (!tableMatch) throw new Error('Auf der Seite wurde keine Ranglistentabelle gefunden.');
+
+  const rawRows = parseHtmlTableRows(tableMatch[2], source, 101);
 
   const headerIndex = rawRows.findIndex(row => row.some(cell => cell.header));
   if (headerIndex < 0) throw new Error('Die Ranglistentabelle enthält keine lesbare Kopfzeile.');
@@ -156,6 +190,56 @@ export function parseLeagueStandingsHtml(html, sourceUrl) {
     columnCount:headers.length,
     teamCount:rows.length
   };
+}
+
+export function parseLeagueRoundsHtml(html, sourceUrl) {
+  const source = normalizeSourceUrl(sourceUrl);
+  if (!source) throw new Error('Die Ergebnisdienst-Adresse der Rundenübersicht ist ungültig.');
+  const documentText = String(html || '');
+  const tables = [];
+  const tablePattern = /<table\b([^>]*)>([^]*?)<\/table>/gi;
+  let tableMatch;
+  while ((tableMatch = tablePattern.exec(documentText)) && tables.length < 80) {
+    const rawRows = parseHtmlTableRows(tableMatch[2], source);
+    const headerIndex = rawRows.findIndex(row => {
+      const headers = row.filter(cell => cell.header).map(cell => cleanText(cell.text, 40).toLowerCase());
+      return headers.includes('paar') && headers.includes('heim') && headers.includes('gast') && headers.includes('ergebnis');
+    });
+    if (headerIndex < 0) continue;
+    const titleRow = rawRows.slice(0, headerIndex).find(row => row.some(cell => /\brunde\s+\d+\b/i.test(cell.text))) || [];
+    const titleCell = titleRow.find(cell => /\brunde\s+\d+\b/i.test(cell.text)) || {};
+    const titleText = cleanText(titleCell.text, 120);
+    const roundMatch = titleText.match(/\brunde\s+(\d+)\b/i);
+    const number = roundMatch ? Number(roundMatch[1]) : tables.length + 1;
+    const label = roundMatch ? `Runde ${number}` : `Spieltag ${tables.length + 1}`;
+    const date = cleanText(titleText.replace(/\brunde\s+\d+\b/i, ''), 80);
+    const headers = rawRows[headerIndex].map(cell => cleanText(cell.text, 40));
+    const rows = rawRows.slice(headerIndex + 1)
+      .filter(row => row.some(cell => cell.text))
+      .map(row => ({
+        cells:headers.map((header, index) => {
+          const cell = row[index] || {text:'', href:'', className:''};
+          return {
+            text:cleanText(cell.text, 180),
+            href:cell.href || '',
+            kind:cellKind(cell.className, header)
+          };
+        })
+      }));
+    if (!headers.length || !rows.length) continue;
+    tables.push({
+      number,
+      label,
+      date,
+      dateIso:germanRoundDateIso(date),
+      href:titleCell.href || '',
+      headers,
+      rows,
+      matchCount:rows.length
+    });
+  }
+  if (!tables.length) throw new Error('Auf der Seite wurde keine lesbare Rundenübersicht gefunden.');
+  return tables;
 }
 
 async function ensureLeagueStandingsTables(env) {
@@ -235,12 +319,23 @@ async function leagueCache(env, source) {
   const row = await env.DB.prepare(`SELECT * FROM league_standings_cache WHERE league_id = ? LIMIT 1`).bind(source.id).first();
   if (!row || normalizeSourceUrl(row.source_url) !== source.sourceUrl) return null;
   let table = null;
+  let rounds = [];
+  let version = 0;
   try {
     const parsed = JSON.parse(String(row.payload_json || 'null'));
-    if (parsed && Array.isArray(parsed.headers) && Array.isArray(parsed.rows)) table = parsed;
+    if (parsed && Array.isArray(parsed.headers) && Array.isArray(parsed.rows)) {
+      table = parsed;
+      version = 1;
+    } else if (parsed && typeof parsed === 'object') {
+      version = Math.max(0, Math.floor(Number(parsed.version) || 0));
+      if (parsed.table && Array.isArray(parsed.table.headers) && Array.isArray(parsed.table.rows)) table = parsed.table;
+      if (Array.isArray(parsed.rounds)) rounds = parsed.rounds;
+    }
   } catch (_) {}
   return {
     table,
+    rounds,
+    version,
     checkedAt:row.checked_at || null,
     fetchedAt:row.fetched_at || null,
     lastError:cleanText(row.last_error, 300)
@@ -283,30 +378,36 @@ async function fetchSourceHtml(sourceUrl) {
 async function refreshLeague(env, source, force) {
   const cached = await leagueCache(env, source);
   const checkedAtMs = Date.parse(cached && cached.checkedAt || '') || 0;
-  if (!force && cached && checkedAtMs && Date.now() - checkedAtMs < LEAGUE_STANDINGS_REFRESH_MS) {
+  if (!force && cached && cached.version >= 2 && checkedAtMs && Date.now() - checkedAtMs < LEAGUE_STANDINGS_REFRESH_MS) {
     return {...cached, stale:!!(cached.table && cached.lastError)};
   }
 
   const checkedAt = new Date().toISOString();
-  try {
-    const table = parseLeagueStandingsHtml(await fetchSourceHtml(source.sourceUrl), source.sourceUrl);
-    await env.DB.prepare(`INSERT INTO league_standings_cache
-      (league_id, source_url, payload_json, checked_at, fetched_at, last_error)
-      VALUES (?, ?, ?, ?, ?, NULL)
-      ON CONFLICT(league_id) DO UPDATE SET source_url = excluded.source_url, payload_json = excluded.payload_json,
-        checked_at = excluded.checked_at, fetched_at = excluded.fetched_at, last_error = NULL`)
-      .bind(source.id, source.sourceUrl, JSON.stringify(table), checkedAt, checkedAt).run();
-    return {table, checkedAt, fetchedAt:checkedAt, lastError:'', stale:false};
-  } catch (error) {
-    const message = cleanText(error && error.message ? error.message : 'Die Tabelle konnte nicht aktualisiert werden.', 300);
-    await env.DB.prepare(`INSERT INTO league_standings_cache
-      (league_id, source_url, payload_json, checked_at, fetched_at, last_error)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(league_id) DO UPDATE SET source_url = excluded.source_url,
-        checked_at = excluded.checked_at, last_error = excluded.last_error`)
-      .bind(source.id, source.sourceUrl, cached && cached.table ? JSON.stringify(cached.table) : null, checkedAt, cached && cached.fetchedAt || null, message).run();
-    return {table:cached && cached.table || null, checkedAt, fetchedAt:cached && cached.fetchedAt || null, lastError:message, stale:!!(cached && cached.table)};
+  const roundsUrl = leagueRoundsSourceUrl(source.sourceUrl);
+  const [tableResult, roundsResult] = await Promise.allSettled([
+    fetchSourceHtml(source.sourceUrl).then(html => parseLeagueStandingsHtml(html, source.sourceUrl)),
+    fetchSourceHtml(roundsUrl).then(html => parseLeagueRoundsHtml(html, roundsUrl))
+  ]);
+  const table = tableResult.status === 'fulfilled' ? tableResult.value : (cached && cached.table || null);
+  const rounds = roundsResult.status === 'fulfilled' ? roundsResult.value : (cached && cached.rounds || []);
+  const errors = [];
+  if (tableResult.status === 'rejected') {
+    errors.push(cleanText(tableResult.reason && tableResult.reason.message ? tableResult.reason.message : 'Die Ligatabelle konnte nicht aktualisiert werden.', 180));
   }
+  if (roundsResult.status === 'rejected') {
+    errors.push(cleanText(roundsResult.reason && roundsResult.reason.message ? roundsResult.reason.message : 'Die Rundenübersicht konnte nicht aktualisiert werden.', 180));
+  }
+  const lastError = cleanText(errors.join(' '), 300);
+  const anyFresh = tableResult.status === 'fulfilled' || roundsResult.status === 'fulfilled';
+  const fetchedAt = anyFresh ? checkedAt : (cached && cached.fetchedAt || null);
+  const payload = table || rounds.length ? JSON.stringify({version:2, table, rounds}) : null;
+  await env.DB.prepare(`INSERT INTO league_standings_cache
+    (league_id, source_url, payload_json, checked_at, fetched_at, last_error)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(league_id) DO UPDATE SET source_url = excluded.source_url, payload_json = excluded.payload_json,
+      checked_at = excluded.checked_at, fetched_at = excluded.fetched_at, last_error = excluded.last_error`)
+    .bind(source.id, source.sourceUrl, payload, checkedAt, fetchedAt, lastError || null).run();
+  return {table, rounds, checkedAt, fetchedAt, lastError, stale:!!lastError && (!!table || rounds.length > 0)};
 }
 
 function publicLeagueDto(source, state, adminView) {
@@ -321,6 +422,10 @@ function publicLeagueDto(source, state, adminView) {
     fetchedAt:state && state.fetchedAt || null,
     stale:state && state.stale === true,
     table:state && state.table || null,
+    rounds:state && Array.isArray(state.rounds) ? state.rounds : [],
+    roundsMessage:state && state.lastError && (!state.rounds || !state.rounds.length)
+      ? 'Die Rundenübersicht konnte momentan nicht geladen werden.'
+      : '',
     message:state && state.table
       ? (state.stale ? 'Der Ergebnisdienst war kurzzeitig nicht erreichbar. Die zuletzt geladene Tabelle bleibt sichtbar.' : '')
       : 'Diese Ligatabelle ist momentan nicht verfügbar.'
@@ -463,11 +568,13 @@ export async function handleLeagueStandingsApi(request, env, url, dependencies) 
       return respondJson({
         ok:true,
         league:publicLeagueDto(source, state, true),
-        message:state.table && !state.lastError ? 'Die Ligatabelle wurde erfolgreich aktualisiert.' : (state.lastError || 'Die Ligatabelle konnte nicht aktualisiert werden.')
+        message:state.table && state.rounds && state.rounds.length && !state.lastError
+          ? 'Die Ligatabelle und ihre Rundenübersicht wurden erfolgreich aktualisiert.'
+          : (state.lastError || 'Die Ligadaten konnten nicht vollständig aktualisiert werden.')
       });
     } catch (error) {
       console.error('League standings refresh failed', error && error.message ? error.message : String(error || 'unknown'));
-      return respondJson({ok:false, code:'LEAGUE_STANDINGS_REFRESH_FAILED', message:'Die Ligatabelle konnte nicht aktualisiert werden.'}, {status:500});
+      return respondJson({ok:false, code:'LEAGUE_STANDINGS_REFRESH_FAILED', message:'Die Ligadaten konnten nicht aktualisiert werden.'}, {status:500});
     }
   }
 
