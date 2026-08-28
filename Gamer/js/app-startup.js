@@ -47,10 +47,11 @@ try{
     history.replaceState(null, '', initialUrl.toString());
   }
 } catch(_){}
-if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !initialRematchOfferId && !freshGameRequested){
-  initialRoomId = getRememberedRoomForReload();
-  initialSpectatorOnly = false;
-  initialPublicWatchId = '';
+if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !initialRematchOfferId){
+  /* Die reine Startadresse bleibt auch nach einem Browser-Reload die
+     Besucher-Startseite. Eine alte Raumkennung aus derselben Browser-Sitzung
+     darf hier weder einen Spielraum noch den Gastnamen-Dialog reaktivieren. */
+  try{ sessionStorage.removeItem(ONLINE_LAST_ROOM_STORAGE_KEY); } catch(_){ }
 }
 initialAuthRefreshPromise.finally(() => {
   if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
