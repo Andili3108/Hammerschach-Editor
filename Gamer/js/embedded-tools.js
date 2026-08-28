@@ -61,7 +61,7 @@ function embeddedToolActive(){
 }
 function embeddedToolStatusText(){
   if(learningToolActive) return 'Hammerschach - Schach lernen';
-  if(leagueStandingsToolActive) return 'Hammerschach - Ligatabellen';
+  if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
   if(tvToolActive) return 'Hammerschach - TV';
   if(fairplayToolActive) return 'Hammerschach - Fairplay-Prüfung';
   if(openingsToolActive) return 'Hammerschach - Eröffnungsschule';

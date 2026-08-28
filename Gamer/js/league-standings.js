@@ -1,12 +1,14 @@
 'use strict';
 
 const LEAGUE_STANDINGS_SELECTED_KEY = 'hammerschachLeagueStandingsSelectedV1';
+const LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE = 'Ligasaison 2026/27';
 let leagueStandingsData = [];
 let leagueStandingsSelectedId = '';
 let leagueStandingsMax = 15;
 let leagueStandingsLoading = false;
 let leagueStandingsAdminDrafts = [];
 let leagueStandingsAdminDirty = false;
+let leagueStandingsPageTitleDraft = LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE;
 let leagueStandingsPollTimer = null;
 
 function leagueStandingsDate(value){
@@ -222,10 +224,10 @@ function renderLeagueStandingsAdmin(){
     fields.className='league-standings-admin-fields';
     const titleField=document.createElement('label');
     titleField.className='league-standings-field';
-    titleField.appendChild(Object.assign(document.createElement('span'),{textContent:'Überschrift'}));
+    titleField.appendChild(Object.assign(document.createElement('span'),{textContent:'Liganame'}));
     const titleInput=document.createElement('input');
     titleInput.type='text';titleInput.maxLength=120;titleInput.value=draft.title;
-    titleInput.placeholder='z. B. Saison 2026/27 – Verbandsbezirksliga 1';
+    titleInput.placeholder='z. B. Verbandsbezirksliga 1';
     titleField.appendChild(titleInput);
 
     const urlField=document.createElement('label');
@@ -307,7 +309,7 @@ async function saveLeagueStandingsAdmin(){
   if(leagueStandingsAddBtn)leagueStandingsAddBtn.disabled=true;
   leagueStandingsAdminMessage('Ligakonfiguration wird gespeichert …','');
   try{
-    const payload={leagues:leagueStandingsAdminDrafts.map(draft=>({
+    const payload={pageTitle:String(leagueStandingsPageTitleDraft || '').trim(),leagues:leagueStandingsAdminDrafts.map(draft=>({
       id:draft.persisted?draft.id:'',
       title:String(draft.title || '').trim(),
       sourceUrl:String(draft.sourceUrl || '').trim(),
@@ -348,6 +350,8 @@ async function refreshLeagueStandingsAdmin(id,button){
 
 function applyLeagueStandingsData(data,adminResponse){
   leagueStandingsMax=Math.max(1,Number(data&&data.maxLeagues)||15);
+  const incomingPageTitle=String(data&&data.pageTitle || LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE).trim() || LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE;
+  if(leagueStandingsPageTitle)leagueStandingsPageTitle.textContent=incomingPageTitle;
   leagueStandingsData=Array.isArray(data&&data.leagues)?data.leagues:[];
   const active=leagueStandingsActiveLeagues();
   let stored='';
@@ -360,6 +364,8 @@ function applyLeagueStandingsData(data,adminResponse){
   const isAdmin=!!(onlineAuthUser&&onlineAuthUser.isAdmin===true);
   if(leagueStandingsAdminCard)leagueStandingsAdminCard.hidden=!isAdmin;
   if(isAdmin&&adminResponse&&!leagueStandingsAdminDirty){
+    leagueStandingsPageTitleDraft=incomingPageTitle;
+    if(leagueStandingsPageTitleInput)leagueStandingsPageTitleInput.value=incomingPageTitle;
     leagueStandingsAdminDrafts=leagueStandingsData.map(leagueStandingsAdminDraft);
     renderLeagueStandingsAdmin();
   }
@@ -395,6 +401,10 @@ function stopLeagueStandingsPolling(){
 }
 
 if(leagueStandingsReloadBtn)leagueStandingsReloadBtn.addEventListener('click',()=>loadLeagueStandings());
+if(leagueStandingsPageTitleInput)leagueStandingsPageTitleInput.addEventListener('input',()=>{
+  leagueStandingsPageTitleDraft=leagueStandingsPageTitleInput.value;
+  leagueStandingsAdminDirty=true;
+  leagueStandingsAdminMessage('Änderungen noch nicht gespeichert.','');
+});
 if(leagueStandingsAddBtn)leagueStandingsAddBtn.addEventListener('click',addLeagueStandingsAdmin);
 if(leagueStandingsSaveBtn)leagueStandingsSaveBtn.addEventListener('click',saveLeagueStandingsAdmin);
-
