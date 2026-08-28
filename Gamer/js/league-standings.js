@@ -501,12 +501,12 @@ function applyLeagueStandingsData(data,adminResponse){
 }
 
 async function loadLeagueStandings(options){
-  if(leagueStandingsLoading||!onlineAuthToken||!onlineAuthUser)return;
+  if(leagueStandingsLoading)return;
   leagueStandingsLoading=true;
   if(leagueStandingsReloadBtn)leagueStandingsReloadBtn.disabled=true;
   if(leagueStandingsStatus&&!leagueStandingsData.length){leagueStandingsStatus.hidden=false;leagueStandingsStatus.textContent='Ligatabellen werden geladen …';}
   try{
-    const isAdmin=onlineAuthUser.isAdmin===true;
+    const isAdmin=!!(onlineAuthToken&&onlineAuthUser&&onlineAuthUser.isAdmin===true);
     const data=await authApi(isAdmin?'/api/admin/league-standings':'/api/league-standings');
     applyLeagueStandingsData(data,isAdmin);
     if(isAdmin&&!leagueStandingsAdminDirty&&leagueStandingsAdminStatus&&!options?.silent)leagueStandingsAdminMessage('','');

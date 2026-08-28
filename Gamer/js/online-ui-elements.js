@@ -138,6 +138,7 @@ const visitorLearningOpenBtn = document.getElementById('visitorLearningOpenBtn')
 const visitorTrainerOpenBtn = document.getElementById('visitorTrainerOpenBtn');
 const visitorTrainerProgressHeaderBtn = document.getElementById('visitorTrainerProgressHeaderBtn');
 const visitorPublicGamesOpenBtn = document.getElementById('visitorPublicGamesOpenBtn');
+const visitorLeagueStandingsOpenBtn = document.getElementById('visitorLeagueStandingsOpenBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const dailyGamesTurnCount = document.getElementById('dailyGamesTurnCount');
 const openOffersCount = document.getElementById('openOffersCount');
