@@ -567,15 +567,11 @@ async function saveLeagueSources(env, incoming, adminUser) {
 
 export async function handleLeagueStandingsApi(request, env, url, dependencies) {
   const respondJson = dependencies && dependencies.json;
-  const lookupSession = dependencies && dependencies.lookupAuthSession;
-  const bearerToken = dependencies && dependencies.bearerTokenFromRequest;
   const requireAdmin = dependencies && dependencies.requireAdminSession;
   const readBody = dependencies && dependencies.readJsonBody;
   if (typeof respondJson !== 'function') return null;
 
   if (url.pathname === '/api/league-standings' && request.method === 'GET') {
-    const session = await lookupSession(env, bearerToken(request));
-    if (!session) return respondJson({ok:false, code:'NOT_AUTHENTICATED', message:'Die Ligatabellen sind nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
     try {
       const [pageTitle, leagues] = await Promise.all([
         loadLeaguePageTitle(env),
