@@ -2,6 +2,10 @@
 
 const LEAGUE_STANDINGS_SELECTED_KEY = 'hammerschachLeagueStandingsSelectedV1';
 const LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE = 'Ligasaison 2026/27';
+const LEAGUE_STANDINGS_ALLOWED_HOSTS = new Set([
+  'ergebnisdienst.svr-schach.de',
+  'ergebnisdienst.schachbund.de'
+]);
 let leagueStandingsData = [];
 let leagueStandingsSelectedId = '';
 let leagueStandingsMax = 15;
@@ -24,7 +28,7 @@ function leagueStandingsDate(value){
 function leagueStandingsSafeLink(value){
   try{
     const url = new URL(String(value || ''));
-    return url.protocol === 'https:' && url.hostname === 'ergebnisdienst.svr-schach.de' ? url.toString() : '';
+    return url.protocol === 'https:' && LEAGUE_STANDINGS_ALLOWED_HOSTS.has(url.hostname.toLowerCase()) ? url.toString() : '';
   }catch(_){
     return '';
   }
@@ -235,7 +239,7 @@ function renderLeagueStandingsAdmin(){
     urlField.appendChild(Object.assign(document.createElement('span'),{textContent:'Adresse der Ranglistentabelle'}));
     const urlInput=document.createElement('input');
     urlInput.type='url';urlInput.maxLength=500;urlInput.value=draft.sourceUrl;
-    urlInput.placeholder='https://ergebnisdienst.svr-schach.de/…?view=rangliste&liga=…';
+    urlInput.placeholder='https://ergebnisdienst.…/Adresse-der-Ligatabelle';
     urlInput.spellcheck=false;
     urlField.appendChild(urlInput);
 
