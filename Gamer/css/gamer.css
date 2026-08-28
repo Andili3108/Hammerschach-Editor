@@ -1415,6 +1415,43 @@
   .league-standings-table a{display:inline-flex;align-items:center;min-height:27px;color:#843f46;font-weight:900;text-decoration:none;}
   .league-standings-table a:hover{text-decoration:underline;}
   .league-standings-meta{padding:0 16px 14px;color:#777;font-family:Arial,sans-serif;font-size:11px;font-weight:800;text-align:right;}
+  .league-standings-rounds{padding:18px;border-top:1px solid rgba(132,63,70,.14);background:linear-gradient(145deg,#fcfaf7 0%,#f8f4ee 100%);}
+  .league-standings-rounds[hidden]{display:none!important;}
+  .league-standings-rounds-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:13px;}
+  .league-standings-rounds-head h4{margin:3px 0 0;color:#2e2729;font-size:22px;line-height:1.2;}
+  .league-standings-rounds-count{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:4px 10px;border:1px solid rgba(132,63,70,.14);border-radius:999px;background:#fff;color:#6b5558;font-family:Arial,sans-serif;font-size:11px;font-weight:900;white-space:nowrap;}
+  .league-standings-rounds-notice{margin:0 0 12px;}
+  .league-standings-rounds-list{display:flex;flex-direction:column;gap:9px;}
+  .league-standings-round{overflow:hidden;border:1px solid rgba(132,63,70,.14);border-radius:14px;background:#fff;box-shadow:0 5px 14px rgba(53,40,42,.055);}
+  .league-standings-round[open]{border-color:rgba(132,63,70,.25);box-shadow:0 8px 20px rgba(53,40,42,.08);}
+  .league-standings-round-summary{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:54px;box-sizing:border-box;padding:10px 14px;cursor:pointer;list-style:none;}
+  .league-standings-round-summary::-webkit-details-marker{display:none;}
+  .league-standings-round-summary::after{content:'＋';flex:0 0 auto;color:#843f46;font:900 18px/1 Arial,sans-serif;}
+  .league-standings-round[open]>.league-standings-round-summary::after{content:'−';}
+  .league-standings-round-summary:hover{background:rgba(132,63,70,.035);}
+  .league-standings-round-summary:focus-visible{outline:3px solid rgba(132,63,70,.20);outline-offset:-3px;}
+  .league-standings-round-title{display:flex;align-items:baseline;gap:10px;min-width:0;color:#332b2d;font-family:Arial,sans-serif;}
+  .league-standings-round-title strong{font-size:15px;font-weight:900;}
+  .league-standings-round-date{color:#756d6f;font-size:12px;font-weight:800;}
+  .league-standings-round-match-count{flex:0 0 auto;margin-left:auto;color:#857d7f;font-family:Arial,sans-serif;font-size:11px;font-weight:850;white-space:nowrap;}
+  .league-standings-round-body{border-top:1px solid rgba(132,63,70,.11);}
+  .league-standings-round-link-row{display:flex;justify-content:flex-end;padding:9px 12px 0;}
+  .league-standings-round-link{color:#843f46;font-family:Arial,sans-serif;font-size:11px;font-weight:900;text-decoration:none;}
+  .league-standings-round-link:hover{text-decoration:underline;}
+  .league-standings-round-table-scroll{max-width:100%;overflow:auto;overscroll-behavior-inline:contain;padding:10px 12px 12px;}
+  .league-standings-round-table{width:100%;min-width:720px;border-collapse:separate;border-spacing:0;color:#30292b;font-family:Arial,sans-serif;font-size:12px;line-height:1.25;}
+  .league-standings-round-table th,.league-standings-round-table td{height:38px;box-sizing:border-box;padding:7px 8px;border-right:1px solid rgba(132,63,70,.09);border-bottom:1px solid rgba(132,63,70,.10);text-align:center;white-space:nowrap;}
+  .league-standings-round-table th:first-child,.league-standings-round-table td:first-child{border-left:1px solid rgba(132,63,70,.10);}
+  .league-standings-round-table thead th{background:#4a4244;color:#fff;border-color:rgba(255,255,255,.14);font-size:10px;font-weight:900;letter-spacing:.025em;}
+  .league-standings-round-table thead th:first-child{border-top-left-radius:9px;}
+  .league-standings-round-table thead th:last-child{border-top-right-radius:9px;}
+  .league-standings-round-table td{background:#fff;font-weight:800;}
+  .league-standings-round-table tr:nth-child(even) td{background:#faf8f5;}
+  .league-standings-round-table :is(th,td)[data-kind="team"]{min-width:185px;text-align:left;}
+  .league-standings-round-table td[data-kind="team"]{font-size:13px;font-weight:900;}
+  .league-standings-round-table :is(th,td)[data-kind="result"]{min-width:82px;font-size:13px;font-weight:900;}
+  .league-standings-round-table a{display:inline-flex;align-items:center;min-height:24px;color:#843f46;font-weight:900;text-decoration:none;}
+  .league-standings-round-table a:hover{text-decoration:underline;}
   .league-standings-admin{margin-top:20px;padding:18px;border:1px solid rgba(132,63,70,.18);border-radius:18px;background:#f7f4f1;}
   .league-standings-admin[hidden]{display:none!important;}
   .league-standings-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:13px;}
@@ -1455,6 +1492,12 @@
     .league-standings-table{font-size:12px;}
     .league-standings-table th,.league-standings-table td{height:39px;padding:7px 8px;}
     .league-standings-table :is(th,td)[data-kind="team"]{min-width:180px;}
+    .league-standings-rounds{padding:14px 12px;}
+    .league-standings-rounds-head{align-items:flex-start;}
+    .league-standings-round-title{flex-direction:column;gap:2px;}
+    .league-standings-round-summary{gap:9px;padding:9px 11px;}
+    .league-standings-round-match-count{display:none;}
+    .league-standings-round-table-scroll{padding:8px;}
     .league-standings-admin{padding:12px;}
     .league-standings-admin-item-foot,.league-standings-admin-actions{flex-direction:column;align-items:stretch;}
     .league-standings-admin-item-foot button,.league-standings-admin-actions button{width:100%!important;}
@@ -1538,19 +1581,31 @@
   html.dark-mode .tv-admin-subtitle,html.dark-mode .tv-field label,html.dark-mode .tv-enabled-label,html.dark-mode .tv-mode-help,html.dark-mode .tv-admin-status{color:#bfc3ca;}
   html.dark-mode .tv-input,html.dark-mode .tv-select,html.dark-mode .tv-textarea{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
   html.dark-mode .league-standings-stage{background:linear-gradient(145deg,#1d2025,#17191d);}
-  html.dark-mode .league-standings-head h2,html.dark-mode .league-standings-card-head h3,html.dark-mode .league-standings-admin-title{color:#f1f2f4;}
+  html.dark-mode .league-standings-head h2,html.dark-mode .league-standings-card-head h3,html.dark-mode .league-standings-rounds-head h4,html.dark-mode .league-standings-admin-title{color:#f1f2f4;}
   html.dark-mode .league-standings-admin-subtitle,html.dark-mode .league-standings-meta,html.dark-mode .league-standings-admin-status{color:#b7bbc2;}
   html.dark-mode .league-standings-tab{background:#2b2f36!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.11)!important;}
   html.dark-mode .league-standings-tab.active{background:linear-gradient(135deg,#8e5d16,#b47a24)!important;color:#fff!important;border-color:rgba(235,190,102,.24)!important;}
   html.dark-mode .league-standings-status,html.dark-mode .league-standings-admin-empty{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.14);color:#b8bdc6;}
   html.dark-mode .league-standings-card,html.dark-mode .league-standings-admin-item{background:#22262c;border-color:rgba(255,255,255,.09);box-shadow:0 12px 28px rgba(0,0,0,.32);}
   html.dark-mode .league-standings-card-head{background:linear-gradient(135deg,rgba(226,151,160,.08),rgba(196,143,41,.08));border-color:rgba(255,255,255,.08);}
-  html.dark-mode .league-standings-source-link,html.dark-mode .league-standings-table a{color:#efb5bc;}
+  html.dark-mode .league-standings-source-link,html.dark-mode .league-standings-table a,html.dark-mode .league-standings-round-link,html.dark-mode .league-standings-round-table a{color:#efb5bc;}
   html.dark-mode .league-standings-notice{background:#2f3030;color:#d9d4c8;}
   html.dark-mode .league-standings-notice.warning{background:#3b3420;color:#f0d98c;border-color:rgba(236,197,79,.18);}
   html.dark-mode .league-standings-table thead th{background:#74343c;color:#fff;}
   html.dark-mode .league-standings-table td{background:#22262c;color:#eef0f2;border-color:rgba(255,255,255,.075);}
   html.dark-mode .league-standings-table td.alternate{background:#292d33;}
+  html.dark-mode .league-standings-rounds{background:linear-gradient(145deg,#1f2329,#1b1e23);border-color:rgba(255,255,255,.08);}
+  html.dark-mode .league-standings-rounds-count{background:#292d33;color:#c9cdd3;border-color:rgba(255,255,255,.10);}
+  html.dark-mode .league-standings-round{background:#252930;border-color:rgba(255,255,255,.09);box-shadow:0 6px 16px rgba(0,0,0,.22);}
+  html.dark-mode .league-standings-round[open]{border-color:rgba(226,151,160,.22);}
+  html.dark-mode .league-standings-round-summary:hover{background:rgba(255,255,255,.035);}
+  html.dark-mode .league-standings-round-summary::after{color:#efb5bc;}
+  html.dark-mode .league-standings-round-title{color:#f0f1f3;}
+  html.dark-mode .league-standings-round-date,html.dark-mode .league-standings-round-match-count{color:#b7bbc2;}
+  html.dark-mode .league-standings-round-body{border-color:rgba(255,255,255,.08);}
+  html.dark-mode .league-standings-round-table thead th{background:#61363c;color:#fff;}
+  html.dark-mode .league-standings-round-table td{background:#252930;color:#eef0f2;border-color:rgba(255,255,255,.075);}
+  html.dark-mode .league-standings-round-table tr:nth-child(even) td{background:#2b3037;}
   html.dark-mode .league-standings-admin{background:#1d2025;border-color:rgba(255,255,255,.10);}
   html.dark-mode .league-standings-field,html.dark-mode .league-standings-enabled,html.dark-mode .league-standings-admin-item-foot,html.dark-mode .league-standings-admin-actions{color:#bfc3ca;}
   html.dark-mode .league-standings-field input{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
