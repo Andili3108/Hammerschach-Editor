@@ -20,7 +20,7 @@ function cleanText(value, maxLength = 160) {
 
 function decodeHtmlEntities(value) {
   const named = {
-    amp:'&', apos:"'", gt:'>', lt:'<', nbsp:' ', quot:'"',
+    amp:'&', apos:"'", gt:'>', lt:'<', nbsp:' ', quot:'"', minus:'−', ndash:'–', mdash:'—',
     auml:'ä', Auml:'Ä', ouml:'ö', Ouml:'Ö', uuml:'ü', Uuml:'Ü', szlig:'ß'
   };
   return String(value || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
@@ -97,7 +97,7 @@ function cellKind(className, headerText) {
   if (classes.includes('rnd') || /^\d+$/.test(header)) return 'round';
   if (classes.includes('mp') || header === 'mp') return 'match-points';
   if (classes.includes('bp') || header === 'bp' || header === 'divgl') return 'board-points';
-  if (header === 'ergebnis') return 'result';
+  if (header === 'ergebnis' || header === '−' || header === '-') return 'result';
   if (header === 'paar') return 'pairing';
   if (header === 'tln') return 'participant';
   if (header === 'dwz') return 'rating';
@@ -136,6 +136,16 @@ function germanRoundDateIso(value) {
     juli:7, august:8, september:9, oktober:10, november:11, dezember:12
   };
   const normalized = cleanText(value, 80).toLowerCase();
+  const numeric = normalized.match(/\b(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})\b/);
+  if (numeric) {
+    const day = Number(numeric[1]);
+    const month = Number(numeric[2]);
+    const shortYear = Number(numeric[3]);
+    const year = numeric[3].length === 2 ? 2000 + shortYear : shortYear;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 2000 && year <= 2200) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
   const match = normalized.match(/\b(\d{1,2})\.\s*([a-zäöü]+)\s+(\d{4})\b/i);
   if (!match) return '';
   const month = months[match[2]];
@@ -149,9 +159,26 @@ function leagueRoundsSourceUrl(sourceUrl) {
   const source = normalizeSourceUrl(sourceUrl);
   if (!source) return '';
   const url = new URL(source);
+  if (url.hostname.toLowerCase() === 'ergebnisdienst.schachbund.de' && /\/bedh\.php$/i.test(url.pathname)) {
+    url.pathname = url.pathname.replace(/bedh\.php$/i, 'bedt.php');
+    ['view', 'layout', 'format', 'runde', 'dg', 'tlnr', 'nummer'].forEach(name => url.searchParams.delete(name));
+    return normalizeSourceUrl(url.toString());
+  }
   url.searchParams.set('view', 'paarungsliste');
   ['layout', 'format', 'runde', 'dg', 'tlnr'].forEach(name => url.searchParams.delete(name));
   return normalizeSourceUrl(url.toString());
+}
+
+function leagueRoundDetailUrl(roundsSourceUrl, number) {
+  const source = normalizeSourceUrl(roundsSourceUrl);
+  if (!source || !Number.isInteger(number) || number < 1) return '';
+  const url = new URL(source);
+  if (url.hostname.toLowerCase() === 'ergebnisdienst.schachbund.de' && /\/bedt\.php$/i.test(url.pathname)) {
+    url.pathname = url.pathname.replace(/bedt\.php$/i, 'bede.php');
+    url.searchParams.set('runde', String(number));
+    return normalizeSourceUrl(url.toString());
+  }
+  return '';
 }
 
 export function parseLeagueStandingsHtml(html, sourceUrl) {
@@ -201,6 +228,53 @@ export function parseLeagueRoundsHtml(html, sourceUrl) {
   let tableMatch;
   while ((tableMatch = tablePattern.exec(documentText)) && tables.length < 80) {
     const rawRows = parseHtmlTableRows(tableMatch[2], source);
+    const scheduleHeaderIndex = rawRows.findIndex(row => {
+      const headers = row.filter(cell => cell.header).map(cell => cleanText(cell.text, 40).toLowerCase());
+      return headers.includes('tag') && headers.includes('datum') && headers.includes('uhrzeit') && headers.includes('heim') && headers.includes('gast');
+    });
+    if (scheduleHeaderIndex >= 0) {
+      const headers = rawRows[scheduleHeaderIndex].map(cell => cleanText(cell.text, 40));
+      const dateColumn = headers.findIndex(header => header.toLowerCase() === 'datum');
+      let currentRound = null;
+      const finishRound = () => {
+        if (!currentRound || !currentRound.rows.length) return;
+        currentRound.date = dateColumn >= 0 ? cleanText(currentRound.rows[0].cells[dateColumn].text, 80) : '';
+        currentRound.dateIso = germanRoundDateIso(currentRound.date);
+        currentRound.matchCount = currentRound.rows.length;
+        tables.push(currentRound);
+      };
+      rawRows.slice(scheduleHeaderIndex + 1).forEach(row => {
+        const separator = row.length === 1 ? cleanText(row[0].text, 80).match(/^(\d+)\.\s*Runde$/i) : null;
+        if (separator) {
+          finishRound();
+          const number = Number(separator[1]);
+          currentRound = {
+            number,
+            label:`Runde ${number}`,
+            date:'',
+            dateIso:'',
+            href:leagueRoundDetailUrl(source, number),
+            headers,
+            rows:[],
+            matchCount:0
+          };
+          return;
+        }
+        if (!currentRound || row.length < 2 || !row.some(cell => cell.text)) return;
+        currentRound.rows.push({
+          cells:headers.map((header, index) => {
+            const cell = row[index] || {text:'', href:'', className:''};
+            return {
+              text:cleanText(cell.text, 180),
+              href:cell.href || '',
+              kind:cellKind(cell.className, header)
+            };
+          })
+        });
+      });
+      finishRound();
+      if (tables.length) continue;
+    }
     const headerIndex = rawRows.findIndex(row => {
       const headers = row.filter(cell => cell.header).map(cell => cleanText(cell.text, 40).toLowerCase());
       return headers.includes('paar') && headers.includes('heim') && headers.includes('gast') && headers.includes('ergebnis');
