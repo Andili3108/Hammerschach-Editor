@@ -358,7 +358,7 @@
         <div class="league-standings-head">
           <div>
             <div class="league-standings-kicker">Hammerschach Ergebnisdienst</div>
-            <h2>Ligatabellen</h2>
+            <h2 id="leagueStandingsPageTitle">Ligasaison 2026/27</h2>
             <p>Die aktuellen Ranglisten werden automatisch vom Ergebnisdienst des Schachverbands Ruhrgebiet übernommen.</p>
           </div>
           <button id="leagueStandingsReloadBtn" class="button-flat league-standings-reload" type="button">↻ Tabellen neu laden</button>
@@ -390,6 +390,10 @@
             </div>
             <button id="leagueStandingsAddBtn" class="button-flat" type="button">＋ Tabelle hinzufügen</button>
           </div>
+          <label class="league-standings-field league-standings-admin-page-title" for="leagueStandingsPageTitleInput">
+            <span>Seitenüberschrift</span>
+            <input id="leagueStandingsPageTitleInput" type="text" maxlength="80" value="Ligasaison 2026/27" placeholder="z. B. Ligasaison 2027/28">
+          </label>
           <div id="leagueStandingsAdminList" class="league-standings-admin-list"></div>
           <div class="league-standings-admin-actions">
             <span id="leagueStandingsAdminCount">0 von 15 Plätzen belegt</span>
@@ -715,7 +719,7 @@
 
           <h4>24. Ergebnisdienst und Ligatabellen</h4>
           <p>Über <strong>„♟️ Bereiche“ → „Ergebnisse“ → „📊 Ergebnisdienst“</strong> öffnest du die freigeschalteten Ligatabellen im Gamer-Look. Anzahl der Mannschaften und Rundenspalten werden automatisch aus der jeweiligen Rangliste übernommen. Vereinsnamen und vorhandene Ergebnislinks führen in einem neuen Browser-Tab zur zugehörigen Originalseite des Ergebnisdienstes. Der Gamer aktualisiert die Tabellen regelmäßig; falls die Quelle vorübergehend nicht erreichbar ist, bleibt die zuletzt erfolgreich geladene Tabelle sichtbar.</p>
-          <p>Der Administrator kann bis zu 15 Tabellen anlegen, frei benennen, sortieren sowie einzeln ein- oder ausschalten. Zu einer neuen Saison müssen lediglich Überschrift und Adresse der Ranglistenseite angepasst werden. Mit <strong>„Jetzt prüfen / aktualisieren“</strong> lässt sich jede gespeicherte Tabelle sofort kontrollieren.</p>
+          <p>Der Administrator kann die gemeinsame Saisonüberschrift zentral ändern und bis zu 15 Tabellen anlegen, frei benennen, sortieren sowie einzeln ein- oder ausschalten. Zu einer neuen Saison müssen anschließend nur noch die Überschrift und die Adressen der Ranglistenseiten angepasst werden. Mit <strong>„Jetzt prüfen / aktualisieren“</strong> lässt sich jede gespeicherte Tabelle sofort kontrollieren.</p>
 
           <h4>25. Neue Partie und Rückkehr zur Lobby</h4>
           <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule, Hammerschach TV oder den Ligatabellen steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
