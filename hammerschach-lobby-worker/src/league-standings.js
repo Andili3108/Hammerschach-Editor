@@ -1,7 +1,11 @@
 const LEAGUE_STANDINGS_MAX = 15;
 const LEAGUE_STANDINGS_REFRESH_MS = 5 * 60 * 1000;
 const LEAGUE_STANDINGS_MAX_HTML_BYTES = 1_500_000;
-const LEAGUE_STANDINGS_ALLOWED_HOST = 'ergebnisdienst.svr-schach.de';
+const LEAGUE_STANDINGS_ALLOWED_HOSTS = new Set([
+  'ergebnisdienst.svr-schach.de',
+  'ergebnisdienst.schachbund.de'
+]);
+const LEAGUE_STANDINGS_ALLOWED_HOST_HINT = Array.from(LEAGUE_STANDINGS_ALLOWED_HOSTS).join(' oder ');
 const LEAGUE_STANDINGS_DEFAULT_PAGE_TITLE = 'Ligasaison 2026/27';
 
 let leagueStandingsTablesReady = false;
@@ -50,7 +54,7 @@ function attributeValue(attributes, name) {
 function normalizeSourceUrl(value) {
   try {
     const url = new URL(String(value || '').trim());
-    if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== LEAGUE_STANDINGS_ALLOWED_HOST || url.username || url.password) return '';
+    if (url.protocol !== 'https:' || !LEAGUE_STANDINGS_ALLOWED_HOSTS.has(url.hostname.toLowerCase()) || url.username || url.password) return '';
     if (url.port && url.port !== '443') return '';
     url.hash = '';
     return url.toString();
@@ -62,7 +66,10 @@ function normalizeSourceUrl(value) {
 function safeSourceLink(value, sourceUrl) {
   try {
     const link = new URL(decodeHtmlEntities(value), sourceUrl);
-    if (link.protocol !== 'https:' || link.hostname.toLowerCase() !== LEAGUE_STANDINGS_ALLOWED_HOST) return '';
+    const source = new URL(sourceUrl);
+    const sourceHost = source.hostname.toLowerCase();
+    if (link.protocol !== 'https:' || link.hostname.toLowerCase() !== sourceHost || !LEAGUE_STANDINGS_ALLOWED_HOSTS.has(sourceHost)) return '';
+    if (link.username || link.password) return '';
     if (link.port && link.port !== '443') return '';
     link.username = '';
     link.password = '';
@@ -97,7 +104,7 @@ export function parseLeagueStandingsHtml(html, sourceUrl) {
   const source = normalizeSourceUrl(sourceUrl);
   if (!source) throw new Error('Die Ergebnisdienst-Adresse ist ungültig.');
   const documentText = String(html || '');
-  const tableMatch = documentText.match(/<table\b([^>]*\bclass\s*=\s*(?:"[^"]*\brangliste\b[^"]*"|'[^']*\brangliste\b[^']*'|[^\s>]*\brangliste\b[^\s>]*))[^>]*>([^]*?)<\/table>/i);
+  const tableMatch = documentText.match(/<table\b([^>]*\bclass\s*=\s*(?:"[^"]*\b(?:rangliste|kreuztab)\b[^"]*"|'[^']*\b(?:rangliste|kreuztab)\b[^']*'|[^\s>]*\b(?:rangliste|kreuztab)\b[^\s>]*))[^>]*>([^]*?)<\/table>/i);
   if (!tableMatch) throw new Error('Auf der Seite wurde keine Ranglistentabelle gefunden.');
 
   const rawRows = [];
@@ -343,7 +350,7 @@ function normalizeIncomingLeagues(value) {
     let id = leagueId(item.id) || newLeagueId();
     while (ids.has(id)) id = newLeagueId();
     if (!title) return {ok:false, message:`Liga ${index + 1}: Bitte eine Überschrift eintragen.`};
-    if (!sourceUrl) return {ok:false, message:`${title}: Bitte eine gültige HTTPS-Adresse von ${LEAGUE_STANDINGS_ALLOWED_HOST} eintragen.`};
+    if (!sourceUrl) return {ok:false, message:`${title}: Bitte eine gültige HTTPS-Adresse von ${LEAGUE_STANDINGS_ALLOWED_HOST_HINT} eintragen.`};
     ids.add(id);
     leagues.push({id, title, sourceUrl, enabled:item.enabled !== false, order:index});
   }
