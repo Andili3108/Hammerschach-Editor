@@ -1377,14 +1377,13 @@
   html.league-standings-tool-active .member-lobby,
   html.league-standings-tool-active .top-layout{display:none!important;}
   .league-standings-stage{padding:22px;background:linear-gradient(145deg,#fff 0%,#fbf8f2 100%);}
-  .league-standings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px;}
-  .league-standings-kicker,.league-standings-card-kicker{color:#843f46;font-family:Arial,sans-serif;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;}
-  .league-standings-head h2{margin:4px 0 5px;color:#282124;font-size:30px;line-height:1.1;}
-  .league-standings-head p{max-width:760px;margin:0;color:#666;font-family:Arial,sans-serif;font-size:13px;font-weight:700;line-height:1.45;}
+  .league-standings-head{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px;}
+  .league-standings-card-kicker{color:#843f46;font-family:Arial,sans-serif;font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;}
+  .league-standings-head h2{margin:0;color:#282124;font-size:30px;line-height:1.1;}
   .league-standings-reload{flex:0 0 auto;min-height:40px!important;white-space:nowrap;}
-  .league-standings-tabs{display:flex;gap:8px;overflow-x:auto;margin:0 0 14px;padding:2px 2px 6px;scrollbar-width:thin;}
+  .league-standings-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;width:min(100%,1050px);margin:0 0 14px;padding:2px;}
   .league-standings-tabs[hidden]{display:none!important;}
-  .league-standings-tab{flex:0 0 auto;width:auto!important;min-height:40px!important;padding:8px 14px!important;border-radius:999px!important;background:#f0ece7!important;color:#5d4d45!important;border-color:rgba(132,63,70,.14)!important;box-shadow:none!important;font-family:Arial,sans-serif!important;font-size:12px!important;font-weight:900!important;white-space:nowrap;}
+  .league-standings-tab{width:100%!important;min-width:0;min-height:36px!important;padding:6px 9px!important;border-radius:12px!important;background:#f0ece7!important;color:#5d4d45!important;border-color:rgba(132,63,70,.14)!important;box-shadow:none!important;font-family:Arial,sans-serif!important;font-size:11px!important;font-weight:900!important;line-height:1.2;white-space:normal;overflow-wrap:anywhere;}
   .league-standings-tab.active{background:linear-gradient(135deg,#843f46,#a6535d)!important;color:#fff!important;border-color:#843f46!important;}
   .league-standings-status{padding:28px 16px;border:1px dashed rgba(132,63,70,.24);border-radius:15px;background:rgba(132,63,70,.035);color:#666;font-family:Arial,sans-serif;font-size:14px;font-weight:800;text-align:center;}
   .league-standings-status[hidden]{display:none!important;}
@@ -1442,6 +1441,7 @@
   .league-standings-admin-status{min-height:18px;margin-top:9px;color:#666;font-family:Arial,sans-serif;font-size:12px;font-weight:850;}
   .league-standings-admin-status.error{color:#9a2d33;}.league-standings-admin-status.success{color:#226b36;}
   @media (max-width:900px){
+    .league-standings-tabs{grid-template-columns:repeat(3,minmax(0,1fr));}
     .league-standings-admin-fields{grid-template-columns:1fr;}
     .league-standings-enabled{white-space:normal;}
   }
@@ -1458,6 +1458,12 @@
     .league-standings-admin{padding:12px;}
     .league-standings-admin-item-foot,.league-standings-admin-actions{flex-direction:column;align-items:stretch;}
     .league-standings-admin-item-foot button,.league-standings-admin-actions button{width:100%!important;}
+  }
+  @media (max-width:620px){
+    .league-standings-tabs{grid-template-columns:repeat(2,minmax(0,1fr));}
+  }
+  @media (max-width:380px){
+    .league-standings-tabs{grid-template-columns:1fr;}
   }
   .next-daily-game-box{border-radius:13px;background:rgba(132,63,70,.045);border:1px solid rgba(132,63,70,.13);padding:7px 10px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;min-height:0;}
   .next-daily-game-box[hidden]{display:none!important;}
@@ -1533,7 +1539,7 @@
   html.dark-mode .tv-input,html.dark-mode .tv-select,html.dark-mode .tv-textarea{background:#171a1f;color:#f2f3f5;border-color:rgba(255,255,255,.14);}
   html.dark-mode .league-standings-stage{background:linear-gradient(145deg,#1d2025,#17191d);}
   html.dark-mode .league-standings-head h2,html.dark-mode .league-standings-card-head h3,html.dark-mode .league-standings-admin-title{color:#f1f2f4;}
-  html.dark-mode .league-standings-head p,html.dark-mode .league-standings-admin-subtitle,html.dark-mode .league-standings-meta,html.dark-mode .league-standings-admin-status{color:#b7bbc2;}
+  html.dark-mode .league-standings-admin-subtitle,html.dark-mode .league-standings-meta,html.dark-mode .league-standings-admin-status{color:#b7bbc2;}
   html.dark-mode .league-standings-tab{background:#2b2f36!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.11)!important;}
   html.dark-mode .league-standings-tab.active{background:linear-gradient(135deg,#8e5d16,#b47a24)!important;color:#fff!important;border-color:rgba(235,190,102,.24)!important;}
   html.dark-mode .league-standings-status,html.dark-mode .league-standings-admin-empty{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.14);color:#b8bdc6;}
