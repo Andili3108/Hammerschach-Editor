@@ -55,8 +55,6 @@
   .header-top-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:9px;align-items:center;}
   .logo-slot{width:150px;height:120px;flex:0 0 150px;min-height:0;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(244,244,244,.94));box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(0,0,0,.04), 0 8px 18px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--andili-rot);font-size:18px;font-weight:900;text-align:center;}
   .logo-slot img{width:100%;height:100%;object-fit:contain;display:block;transform:none;}
-  .brand-tv-btn{position:absolute;z-index:3;right:-3px;bottom:3px;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;border-radius:999px!important;font-size:19px!important;line-height:1!important;}
-  .brand-tv-btn[hidden]{display:none!important;}
   .brand-title{display:flex;flex-direction:column;justify-content:center;line-height:1.02;font-size:28px;font-weight:900;color:#222;letter-spacing:.01em;}
   .brand-title span:last-child{color:var(--andili-rot);}
   .player-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -1256,8 +1254,10 @@
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:0;}
   .header-people-actions>.header-menu>.header-menu-button,.header-profile-btn,.private-messages-header-btn{min-height:40px!important;padding:7px 11px!important;border-radius:14px!important;font-size:13px!important;line-height:1.1!important;}
   .header-people-actions .player-menu-popup{left:auto;right:0;transform:none;width:250px;}
-  .theme-toggle-btn{position:absolute;z-index:4;top:7px;right:8px;width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important;box-sizing:border-box;padding:0!important;border-radius:999px!important;font-size:15px!important;line-height:1!important;opacity:.78;box-shadow:0 3px 9px rgba(0,0,0,.10)!important;}
+  .theme-toggle-btn{position:absolute;z-index:4;top:7px;right:16px;width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important;box-sizing:border-box;padding:0!important;border-radius:999px!important;font-size:15px!important;line-height:1!important;opacity:.78;box-shadow:0 3px 9px rgba(0,0,0,.10)!important;}
   .theme-toggle-btn:hover{opacity:1;}
+  .gamer-tv-nav-btn{padding-inline:9px!important;}
+  .gamer-tv-nav-btn[hidden]{display:none!important;}
   @media (min-width:761px){html.member-lobby-view #tournamentsOpenBtn{display:none!important;}}
   .learning-tool-view,.analyzer-tool-view,.trainer-tool-view,.schachlabor-tool-view,.openings-tool-view,.fairplay-tool-view,.reader-tool-view,.tv-tool-view,.league-standings-view{width:100%;min-width:0;}
   html.trainer-tool-active,html.trainer-tool-active body{overflow-anchor:none;}
@@ -2601,8 +2601,6 @@ html.mobile-nav-test-active .mobile-nav-test-header,html.desktop-board-header-ac
 .mobile-nav-test-drawer-brand span{min-width:0;display:flex;flex-direction:column;}
 .mobile-nav-test-drawer-brand strong{overflow:hidden;color:#843f46;font-size:19px;text-overflow:ellipsis;white-space:nowrap;}
 .mobile-nav-test-drawer-brand small{margin-top:3px;color:#665d60;font:900 11px Arial,sans-serif;}
-.mobile-nav-drawer-tv{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;display:grid!important;place-items:center;padding:0!important;border-radius:999px!important;font-size:18px!important;line-height:1!important;}
-.mobile-nav-drawer-tv[hidden]{display:none!important;}
 .mobile-nav-test-close{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:13px!important;font-size:25px!important;}
 .mobile-nav-test-list{min-height:0;overflow:auto;padding:10px 2px;overscroll-behavior:contain;}
 .mobile-nav-test-list section{display:grid;gap:6px;margin-bottom:14px;}
