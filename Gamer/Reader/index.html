@@ -1008,12 +1008,14 @@ label, input, textarea, select, option, button, .moves, .moves-pre, .mv-table, .
 
 <style id="reader-analyzer-alignment-css">
 /* Brettwerkzeuge entsprechen bewusst dem Analyzer und dem Gamer. */
-.board-tools{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-width:0;white-space:nowrap}
-.reader-board-nav{display:flex;align-items:center;justify-content:center;gap:4px;flex:0 0 auto}
-.reader-board-nav-btn{width:36px!important;height:40px!important;min-width:36px!important;min-height:40px!important;padding:0!important;border-radius:12px!important;font-size:20px!important;line-height:1!important}
+.board-tools{display:flex;align-items:center;justify-content:center;gap:7px 6px;width:100%;min-width:0;white-space:nowrap;flex-wrap:wrap}
+.reader-board-nav{display:flex;align-items:center;justify-content:center;gap:5px;flex:0 0 100%;width:100%;padding:5px;border:1px solid rgba(132,63,70,.20);border-radius:17px;background:rgba(132,63,70,.065);box-shadow:0 8px 18px rgba(74,33,38,.12)}
+.reader-board-nav-btn{width:52px!important;height:48px!important;min-width:52px!important;min-height:48px!important;padding:0!important;border-radius:13px!important;font-size:27px!important;line-height:1!important}
 .reader-icon-btn{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;padding:0!important;border-radius:999px!important;font-size:21px!important;line-height:1!important}
 .reader-action-btn{width:auto!important;min-width:0!important;height:40px!important;min-height:40px!important;padding:7px 12px!important;border-radius:13px!important;font-size:13px!important;line-height:1.08!important;white-space:nowrap!important}
 .board-tools button{background:#f4f4f5!important;color:#843f46!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08)!important}
+.board-tools .reader-board-nav-btn{background:linear-gradient(180deg,#9b4b54 0%,#843f46 100%)!important;color:#fff!important;border-color:#71353c!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 5px 12px rgba(87,37,43,.25)!important;text-shadow:0 1px 1px rgba(0,0,0,.20)}
+.board-tools .reader-board-nav-btn:hover,.board-tools .reader-board-nav-btn:focus-visible{background:linear-gradient(180deg,#aa5962 0%,#8d424a 100%)!important;transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 16px rgba(87,37,43,.30)!important}
 .board-tools .reader-board-color-wrap{position:relative;width:auto;display:flex;justify-content:center}
 .board-tools .reader-board-color-popup{left:50%;right:auto;top:auto;bottom:calc(100% + 12px);transform:translateX(-50%);width:238px;background:rgba(255,255,255,.99);border:1px solid rgba(132,63,70,.22);box-shadow:0 18px 42px rgba(0,0,0,.20)}
 .board-tools .reader-board-color-option{min-height:38px;background:#f4f4f5!important;color:#222!important;box-shadow:none!important}
@@ -1085,20 +1087,20 @@ html,body{margin:0;min-height:100%;background:transparent;color:#111;font-family
 .engine-pv-list{min-height:120px;max-height:none;background:#fff;border-color:rgba(132,63,70,.15)}
 .pv-row.main{background:rgba(132,63,70,.055);border-color:rgba(132,63,70,.16)}
 
-#readerGamePanel{overflow:auto}
-.reader-game-actions{display:grid;grid-template-columns:1fr;gap:7px;margin:0 0 12px}
-.reader-game-actions button{width:100%;min-height:42px;border-radius:12px;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 5px 12px rgba(0,0,0,.09)!important}
-.archive-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:end;margin:0 0 12px}
+#readerGamePanel{overflow:hidden;scrollbar-gutter:auto}
+.reader-game-actions{display:grid;grid-template-columns:1fr;gap:5px;margin:0 0 7px}
+.reader-game-actions button{width:100%;min-height:36px;border-radius:11px;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 4px 10px rgba(0,0,0,.08)!important}
+.archive-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 7px;align-items:end;margin:0 0 7px}
 .archive-field{gap:4px}
 .archive-field span{font-family:"Times New Roman",Times,serif;font-size:12px;font-weight:900;color:#555}
-.archive-field select{width:100%;min-width:0;min-height:40px;padding:7px 9px;border:1px solid rgba(132,63,70,.20);border-radius:10px;background:#f7f7f9;color:#222;font:800 14px "Times New Roman",Times,serif}
-#archiveReloadBtn{width:40px;min-width:40px;height:40px;padding:0!important;border-radius:12px!important;font-size:19px!important;color:var(--andili-rot)!important;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;border-color:rgba(0,0,0,.14)!important}
-.archive-status{grid-column:1/-1;min-height:16px;color:#666;font-size:12px;font-weight:800;line-height:1.35}
-.reader-game-subtitle{margin:2px 0 8px;color:#222;font-size:16px;font-weight:900}
-.header-grid{display:grid;grid-template-columns:1fr;gap:7px}
-.header-item{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:8px;min-width:0}
-.header-item label{margin:0;color:#555;font-size:12px;font-weight:900;white-space:nowrap}
-.header-item input[type="text"]{width:100%;min-width:0;min-height:38px;padding:7px 9px;border:1px solid rgba(132,63,70,.16);border-radius:10px;background:#f7f7f9;color:#333;font:800 14px "Times New Roman",Times,serif}
+.archive-field select{width:100%;min-width:0;min-height:36px;padding:5px 8px;border:1px solid rgba(132,63,70,.20);border-radius:10px;background:#f7f7f9;color:#222;font:800 13px "Times New Roman",Times,serif}
+#archiveReloadBtn{width:36px;min-width:36px;height:36px;padding:0!important;border-radius:11px!important;font-size:18px!important;color:var(--andili-rot)!important;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;border-color:rgba(0,0,0,.14)!important}
+.archive-status{grid-column:1/-1;min-height:14px;color:#666;font-size:11px;font-weight:800;line-height:1.2}
+.reader-game-subtitle{margin:0 0 5px;color:#222;font-size:15px;font-weight:900}
+.header-grid{display:grid;grid-template-columns:1fr;gap:4px}
+.header-item{display:grid;grid-template-columns:70px minmax(0,1fr);align-items:center;gap:7px;min-width:0}
+.header-item label{margin:0;color:#555;font-size:11px;font-weight:900;white-space:nowrap}
+.header-item input[type="text"]{width:100%;min-width:0;min-height:32px;padding:5px 8px;border:1px solid rgba(132,63,70,.16);border-radius:9px;background:#f7f7f9;color:#333;font:800 13px "Times New Roman",Times,serif}
 
 #gameListBackdrop{align-items:flex-start!important;overflow:auto!important;padding:18px 12px!important;box-sizing:border-box;background:rgba(0,0,0,.46)!important;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 #gameListBackdrop>div{width:760px!important;max-width:calc(100vw - 24px)!important;height:min(680px,calc(100dvh - 36px))!important;max-height:min(680px,calc(100dvh - 36px))!important;background:rgba(255,255,255,.99)!important;border:1px solid rgba(132,63,70,.18);border-radius:18px!important;box-shadow:0 22px 54px rgba(0,0,0,.32)!important;overflow:hidden}
@@ -1132,17 +1134,13 @@ html.dark-mode #gameSearch,html.dark-mode #gameListBody button{background:#25293
 }
 @media(max-width:520px){
   .board-tools{gap:4px}
-  .reader-board-nav{gap:3px}
-  .reader-board-nav-btn{width:32px!important;height:36px!important;min-width:32px!important;min-height:36px!important;font-size:18px!important}
+  .reader-board-nav{padding:4px;gap:4px}
+  .reader-board-nav-btn{width:44px!important;height:42px!important;min-width:44px!important;min-height:42px!important;font-size:23px!important}
   .reader-icon-btn{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:19px!important}
   .reader-action-btn{height:36px!important;min-height:36px!important;padding:5px 7px!important;font-size:11px!important}
   .reader-side-tabs{gap:5px}
   .reader-side-tab{padding:7px 3px!important;font-size:12px!important}
   .engine-grid,.engine-kpis,.engine-meta-row{grid-template-columns:1fr}
-}
-@media(max-width:380px){
-  .board-tools{flex-wrap:wrap}
-  .reader-board-nav{flex:0 0 100%}
 }
 </style>
 
