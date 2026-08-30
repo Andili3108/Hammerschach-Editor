@@ -3629,7 +3629,7 @@ renderBoardFromView();
     if(targetOrigin()!=='*'&&event.origin!==targetOrigin())return;
     const message=event.data&&typeof event.data==='object'?event.data:{};
     if(settle(message))return;
-    if(message.type==='hammerschach-reader-context'){applyContext(message);if(message.loggedIn&&!archives.length)loadArchives();return;}
+    if(message.type==='hammerschach-reader-context'){applyContext(message);if(!archives.length)loadArchives();return;}
     if(message.type==='hammerschach-reader-refresh-archives'){loadArchives();return;}
     if(message.type==='hammerschach-reader-visibility'){
       if(!message.visible&&typeof stopEngineAnalysis==='function')stopEngineAnalysis(true);
