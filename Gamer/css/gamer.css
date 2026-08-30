@@ -157,14 +157,19 @@
   html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
   html.visitor-start-view .board-tools{display:none!important;}
   html.visitor-start-view #newGameMenu,html.visitor-start-view #newGameOpenBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
-  html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);}
+  html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);width:min(748px,calc(100% - 48px));margin-inline:auto;}
   html.visitor-start-view .header-status{grid-column:1 / -1;}
+  html.visitor-header-view .header-people-actions{display:none!important;}
   html.visitor-header-view .match-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:12px;}
-  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorTrainerOpenBtn):not(#visitorTrainerProgressHeaderBtn):not(#visitorPublicGamesOpenBtn):not(#visitorLeagueStandingsOpenBtn):not(#infoMenu):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerProgressHeaderBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#visitorLeagueStandingsOpenBtn,html.visitor-header-view .match-actions>#infoMenu{width:178px!important;min-width:178px!important;max-width:178px!important;flex:0 0 178px;}
+  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#visitorLearningOpenBtn):not(#visitorTrainerOpenBtn):not(#visitorTrainerProgressHeaderBtn):not(#visitorPublicGamesOpenBtn):not(#clubChessMenu):not(#infoMenu):not(#trainerBeginnerHeaderBtn):not(#trainerFreeHeaderBtn):not(#trainerProgressHeaderBtn){display:none!important;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerProgressHeaderBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#clubChessMenu,html.visitor-header-view .match-actions>#infoMenu{width:178px!important;min-width:178px!important;max-width:178px!important;flex:0 0 178px;}
   html.visitor-header-view .match-actions>#roomLobbyBtn{width:auto!important;min-width:0!important;max-width:none!important;flex:0 0 auto;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#visitorLeagueStandingsOpenBtn,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
-  html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{width:100%;}
+  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorLearningOpenBtn,html.visitor-header-view .match-actions>#visitorTrainerOpenBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#clubChessMenu>.header-menu-button,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
+  html.visitor-header-view .match-actions>#clubChessMenu>.header-menu-button,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{width:100%;}
+  html.visitor-start-view #visitorLearningOpenBtn{order:1;}
+  html.visitor-start-view #visitorTrainerOpenBtn{order:2;}
+  html.visitor-start-view #visitorPublicGamesOpenBtn{order:3;}
+  html.visitor-start-view #clubChessMenu{order:4;}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
   .dark{background:var(--dark-square);}
@@ -2682,6 +2687,7 @@ html.dark-mode .game-start-summary-moves{color:#e2e4e7}
 
 /* Persönliche Nachrichten */
 .private-messages-header-btn{position:relative;width:auto!important;min-width:65px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:5px;}
+.private-messages-header-btn[hidden]{display:none!important;}
 .private-messages-label{font-size:13px;font-weight:900;line-height:1;}
 .private-messages-badge{position:absolute;right:-6px;top:-7px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border:2px solid #fff;border-radius:999px;background:#2b9a4b;color:#fff;font:900 10px/1 Arial,sans-serif;box-sizing:border-box;}
 .private-messages-badge[hidden]{display:none!important;}
