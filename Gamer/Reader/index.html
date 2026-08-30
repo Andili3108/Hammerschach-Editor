@@ -1021,7 +1021,12 @@ label, input, textarea, select, option, button, .moves, .moves-pre, .mv-table, .
 .board-tools .reader-board-color-option{min-height:38px;background:#f4f4f5!important;color:#222!important;box-shadow:none!important}
 .board-tools .reader-board-color-option.active{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important}
 .reader-piece-set-preview{flex:0 0 auto;width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.18))}
-html.dark-mode .board-tools button{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.10)!important;box-shadow:none!important}
+html.dark-mode,html.dark-mode body{background:#111317!important;color:#f2f3f5}
+html.dark-mode .reader-shell,html.dark-mode .page,html.dark-mode .board-column{background:transparent!important}
+html.dark-mode .reader-board-nav{background:linear-gradient(135deg,#24282e,#1b1e23);border-color:rgba(226,151,160,.18);box-shadow:0 9px 22px rgba(0,0,0,.34)}
+html.dark-mode .board-tools button{background:linear-gradient(180deg,#393e46 0%,#292d33 100%)!important;color:#eef0f2!important;border-color:rgba(255,255,255,.11)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 5px 12px rgba(0,0,0,.28)!important}
+html.dark-mode .board-tools .reader-board-nav-btn{background:linear-gradient(180deg,#a85862 0%,#843f46 100%)!important;color:#fff!important;border-color:rgba(226,151,160,.28)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 6px 14px rgba(0,0,0,.34)!important}
+html.dark-mode .board-tools .reader-board-nav-btn:hover,html.dark-mode .board-tools .reader-board-nav-btn:focus-visible{background:linear-gradient(180deg,#b6656e 0%,#934851 100%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 9px 18px rgba(0,0,0,.42)!important}
 html.dark-mode .board-tools .reader-board-color-popup{background:#1c1f24;border-color:rgba(255,255,255,.12);box-shadow:0 18px 42px rgba(0,0,0,.48)}
 html.dark-mode .board-tools .reader-board-color-option{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important}
 html.dark-mode .board-tools .reader-board-color-option.active{background:#9f4d56!important;color:#fff!important}
