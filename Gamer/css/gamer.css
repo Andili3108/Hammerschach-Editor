@@ -535,6 +535,16 @@
   .admin-overview-status.success{color:#226b36;}
   .admin-overview-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px;}
   .admin-overview-actions button{border-radius:12px;min-height:38px;}
+  .admin-reader-archives-modal{width:920px;max-width:100%;max-height:90vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 18px 46px rgba(0,0,0,.30);padding:18px 20px;box-sizing:border-box;border:1px solid rgba(132,63,70,.18);}
+  .admin-reader-archives-modal h3{margin:0 0 5px;font-size:24px;color:#222;}
+  .admin-reader-archives-modal>p{margin:0 0 14px;color:#555;font-size:14px;font-weight:700;line-height:1.4;}
+  .admin-reader-archives-list{display:grid;gap:8px;max-height:58vh;overflow:auto;padding-right:4px;}
+  .admin-reader-archive-row{display:grid;grid-template-columns:64px minmax(150px,1fr) minmax(180px,1fr) auto;gap:9px;align-items:end;padding:10px;border:1px solid rgba(0,0,0,.10);border-radius:12px;background:#fbfbfc;}
+  .admin-reader-archive-slot{align-self:center;font-size:12px;font-weight:900;color:#843f46;}
+  .admin-reader-archive-field{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12px;font-weight:800;color:#555;}
+  .admin-reader-archive-field input{width:100%;min-height:40px;border:1px solid rgba(132,63,70,.22);border-radius:10px;background:#fff;color:#222;padding:8px 10px;font:700 14px Tahoma,Arial,sans-serif;box-sizing:border-box;}
+  .admin-reader-archive-enabled{display:flex;align-items:center;gap:6px;min-height:40px;font-size:12px;font-weight:800;white-space:nowrap;}
+  @media(max-width:700px){.admin-reader-archive-row{grid-template-columns:1fr}.admin-reader-archive-enabled{min-height:auto}.admin-reader-archives-modal{padding:14px}}
   .admin-member-message-open-btn{margin-right:auto;background:linear-gradient(180deg,#fff7e7 0%,#f0dfb8 100%)!important;color:#6b4a10!important;border-color:rgba(107,74,16,.26)!important;}
   .admin-member-delete-open-btn,.admin-delete-btn{background:linear-gradient(180deg,#f3f3f3 0%,#dedfe2 100%)!important;color:#555!important;border-color:rgba(0,0,0,.14)!important;}
   .admin-delete-confirm-btn{background:#843f46!important;color:#fff!important;border-color:rgba(132,63,70,.55)!important;}
@@ -2737,6 +2747,10 @@ html.dark-mode .private-messages-reader,html.dark-mode .private-message-row{back
 html.dark-mode .private-message-row.unread{background:rgba(43,154,75,.12)!important;border-color:rgba(76,190,103,.30)!important;}
 html.dark-mode .private-message-row:hover{background:#2b3037!important;}
 html.dark-mode .private-message-row-preview,html.dark-mode .private-message-row-time,html.dark-mode .private-message-reader-time,html.dark-mode .private-messages-compose-meta,html.dark-mode .private-messages-status{color:#b9bec6;}
+html.dark-mode .admin-reader-archives-modal,html.dark-mode .admin-reader-archive-row{background:#252930;color:#eef0f2;border-color:rgba(255,255,255,.09);}
+html.dark-mode .admin-reader-archives-modal h3{color:#f3f4f6;}
+html.dark-mode .admin-reader-archives-modal>p,html.dark-mode .admin-reader-archive-field{color:#b8bdc6;}
+html.dark-mode .admin-reader-archive-field input{background:#1b1e23;color:#f3f4f6;border-color:rgba(255,255,255,.14);}
 html.dark-mode .private-message-reader-text{color:#f3f4f6;}
 html.dark-mode .private-message-reader-sender{color:#efb5bc;}
 html.dark-mode .private-messages-compose .identity-label{color:#d8dbe0;}
