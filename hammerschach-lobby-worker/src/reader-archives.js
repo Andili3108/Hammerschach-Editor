@@ -105,11 +105,9 @@ function memberArchiveDto(config) {
 }
 
 export async function handleReaderArchivesApi(request, env, url, helpers) {
-  const {json, lookupAuthSession, bearerTokenFromRequest, requireAdminSession, readJsonBody} = helpers;
+  const {json, requireAdminSession, readJsonBody} = helpers;
 
   if (url.pathname === '/api/reader/archives' && request.method === 'GET') {
-    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Das Partienarchiv ist nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
     const config = await loadReaderArchiveConfig(env);
     return json({ok:true, max:READER_ARCHIVES_MAX, archives:memberArchiveDto(config)});
   }
