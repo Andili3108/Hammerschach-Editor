@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
     :root{
-      --board-size: min(640px, 90vw);
+      --board-size: min(760px, 90vw);
       --accent: #0b63d4;
       --bg: #f3f4f7;
     }
@@ -799,12 +799,12 @@ label, input, textarea, select, option, button, .moves, .moves-pre, .mv-table, .
 </style>
 
 
-<style id="reader-640-layout">
-/* Desktop-Layout: Brett bis 640×640 px, Gesamtbreite weiterhin max. 1100 px */
+<style id="reader-canonical-layout-base">
+/* Gemeinsame Basismaße von Analyzer und Trainer. */
 :root{
-  --board-size: min(640px, 90vw);
+  --board-size: min(760px, 90vw);
   --reader-gap:16px;
-  --reader-sidebar-width:396px;
+  --reader-sidebar-width:324px;
 }
 
 .reader-shell{
@@ -833,14 +833,14 @@ label, input, textarea, select, option, button, .moves, .moves-pre, .mv-table, .
 }
 
 .controls{
-  width:min(640px, 100%);
+  width:min(760px, 100%);
   max-width:var(--board-size);
 }
 
 /* Unterhalb der Desktop-Breite bleibt das Layout responsiv und stapelt sich sauber. */
 @media (max-width:980px){
   :root{
-    --board-size:min(640px, calc(100vw - 24px));
+    --board-size:min(760px, calc(100vw - 24px));
   }
 
   .page{
@@ -1037,40 +1037,126 @@ html[data-board-material="onyx-elegance"] #board{border-color:var(--board-frame-
 }
 </style>
 
+<style id="reader-gamer-family-layout-css">
+/* Gemeinsame Hammerschach-Brettarchitektur: identisch zu Analyzer und Trainer. */
+:root{
+  --board-max:760px;
+  --reader-sidebar-width:324px;
+  --reader-gap:16px;
+  --board-size:min(var(--board-max),calc(100vw - var(--reader-sidebar-width) - var(--reader-gap)));
+}
+html,body{margin:0;min-height:100%;background:transparent;color:#111;font-family:"Times New Roman",Times,serif;overflow-x:hidden}
+.reader-shell{width:100%;max-width:1100px;margin:0 auto;padding:0 0 4px;display:block}
+.page{width:100%;max-width:none;margin:0;padding:0;display:flex;align-items:flex-start;justify-content:center;gap:var(--reader-gap)!important;flex-wrap:nowrap}
+.board-column{width:var(--board-size);max-width:100%;display:flex;flex:0 0 var(--board-size);flex-direction:column;align-items:center;gap:12px;position:relative}
+.reader-board-wrapper{position:relative;width:var(--board-size);max-width:100%;aspect-ratio:1/1}
+#board{width:100%;height:100%;box-sizing:border-box;border:4px solid var(--dark-square);border-radius:10px;box-shadow:0 14px 36px rgba(0,0,0,.16);background:#eee}
+.board-illegal-flash{inset:0}
+.board-tools{margin:0}
+.status{width:100%;box-sizing:border-box;min-height:44px;padding:9px 16px!important;border-radius:999px!important;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(246,238,240,.98))!important;border:1px solid rgba(132,63,70,.18)!important;box-shadow:0 8px 20px rgba(0,0,0,.10)!important;color:#111;font-size:18px;font-weight:900;line-height:1.2;text-align:center}
+
+.sidebar{width:var(--reader-sidebar-width);max-width:100%;min-width:0;flex:0 0 var(--reader-sidebar-width);display:block}
+.reader-side-panel{width:100%;height:var(--board-size);min-height:var(--board-size);padding:12px 14px!important;display:flex;flex-direction:column;overflow:hidden;background:rgba(255,255,255,.98)!important;border:1px solid rgba(132,63,70,.16)!important;border-radius:18px!important;box-shadow:0 14px 32px rgba(0,0,0,.12)!important}
+.reader-side-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;flex:0 0 auto}
+.reader-side-tab{min-width:0!important;min-height:40px!important;padding:8px 5px!important;border-radius:12px!important;background:#f7f7f9!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.08)!important;font-size:13px!important;font-weight:900!important}
+.reader-side-tab.active{background:var(--andili-rot)!important;color:#fff!important;border-color:rgba(132,63,70,.45)!important}
+.reader-side-content{min-height:0;flex:1;overflow:auto;scrollbar-gutter:stable}
+.reader-side-content[hidden]{display:none!important}
+.reader-panel-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;color:#222;font-size:18px;font-weight:900}
+
+#readerMovesPanel{display:flex;flex-direction:column;overflow:hidden}
+#readerMovesPanel[hidden],#readerEnginePanel[hidden],#readerGamePanel[hidden]{display:none!important}
+#moveBox{min-height:0;flex:1;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+#movesPre{height:100%;max-height:none;overflow-y:auto;padding-right:5px;font-family:"Times New Roman",Times,serif!important;font-size:15px;line-height:1.42}
+.mv-table{grid-template-columns:34px 1fr 1fr;gap:5px 4px;align-content:start;padding:0;border:0;border-radius:0;box-shadow:none}
+.mv-num{color:var(--andili-rot);padding:1px 3px}
+.mv-cell{min-height:24px;padding:1px 3px}
+.mv.active{background:rgba(132,63,70,.12);outline:1px solid rgba(132,63,70,.24)}
+.mv:hover{background:rgba(132,63,70,.08)}
+
+#readerEnginePanel{overflow:auto}
+#engineBox{margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
+.engine-title{font-size:18px;color:#222}
+.engine-controls{gap:6px;margin-bottom:10px}
+.engine-grid{gap:7px}
+.engine-grid input,.engine-grid select{min-height:38px;border-radius:10px;background:#f7f7f9;border-color:rgba(132,63,70,.18)}
+.engine-kpis,.engine-meta-row{gap:7px}
+.engine-kpi,.engine-mini{background:#f7f7f9;border-color:rgba(0,0,0,.08);border-radius:10px}
+.engine-pv-list{min-height:120px;max-height:none;background:#fff;border-color:rgba(132,63,70,.15)}
+.pv-row.main{background:rgba(132,63,70,.055);border-color:rgba(132,63,70,.16)}
+
+#readerGamePanel{overflow:auto}
+.reader-game-actions{display:grid;grid-template-columns:1fr;gap:7px;margin:0 0 12px}
+.reader-game-actions button{width:100%;min-height:42px;border-radius:12px;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 5px 12px rgba(0,0,0,.09)!important}
+.archive-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:end;margin:0 0 12px}
+.archive-field{gap:4px}
+.archive-field span{font-family:"Times New Roman",Times,serif;font-size:12px;font-weight:900;color:#555}
+.archive-field select{width:100%;min-width:0;min-height:40px;padding:7px 9px;border:1px solid rgba(132,63,70,.20);border-radius:10px;background:#f7f7f9;color:#222;font:800 14px "Times New Roman",Times,serif}
+#archiveReloadBtn{width:40px;min-width:40px;height:40px;padding:0!important;border-radius:12px!important;font-size:19px!important;color:var(--andili-rot)!important;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;border-color:rgba(0,0,0,.14)!important}
+.archive-status{grid-column:1/-1;min-height:16px;color:#666;font-size:12px;font-weight:800;line-height:1.35}
+.reader-game-subtitle{margin:2px 0 8px;color:#222;font-size:16px;font-weight:900}
+.header-grid{display:grid;grid-template-columns:1fr;gap:7px}
+.header-item{display:grid;grid-template-columns:76px minmax(0,1fr);align-items:center;gap:8px;min-width:0}
+.header-item label{margin:0;color:#555;font-size:12px;font-weight:900;white-space:nowrap}
+.header-item input[type="text"]{width:100%;min-width:0;min-height:38px;padding:7px 9px;border:1px solid rgba(132,63,70,.16);border-radius:10px;background:#f7f7f9;color:#333;font:800 14px "Times New Roman",Times,serif}
+
+#gameListBackdrop{align-items:flex-start!important;overflow:auto!important;padding:18px 12px!important;box-sizing:border-box;background:rgba(0,0,0,.46)!important;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#gameListBackdrop>div{width:760px!important;max-width:calc(100vw - 24px)!important;height:min(680px,calc(100dvh - 36px))!important;max-height:min(680px,calc(100dvh - 36px))!important;background:rgba(255,255,255,.99)!important;border:1px solid rgba(132,63,70,.18);border-radius:18px!important;box-shadow:0 22px 54px rgba(0,0,0,.32)!important;overflow:hidden}
+#gameListBackdrop>div>div:first-child{padding:13px 16px!important;border-color:rgba(132,63,70,.14)!important;background:linear-gradient(135deg,rgba(132,63,70,.055),rgba(255,255,255,.96))}
+#gameListBackdrop h3{color:#222;font-size:18px!important;font-weight:900}
+#gameListClose{min-height:36px;padding:7px 13px!important;border-radius:12px!important;background:linear-gradient(180deg,#fff 0%,#ececef 100%)!important;color:#333!important;border:1px solid rgba(0,0,0,.14)!important;box-shadow:0 5px 12px rgba(0,0,0,.09)!important;font-weight:900}
+#gameSearch{min-height:42px;padding:9px 36px 9px 11px!important;border:1px solid rgba(132,63,70,.20)!important;border-radius:11px!important;background:#f7f7f9;font-family:"Times New Roman",Times,serif;font-size:14px!important;font-weight:700}
+#gameListBody button{min-height:38px;margin:4px 0!important;padding:8px 10px!important;border-radius:10px!important;background:#fff!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-family:"Times New Roman",Times,serif!important;font-weight:700!important}
+#gameListBody button:hover{background:rgba(132,63,70,.055)!important;border-color:rgba(132,63,70,.18)!important}
+
+html.dark-mode .reader-side-panel{background:#1b1e23!important;border-color:rgba(255,255,255,.10)!important;box-shadow:0 16px 38px rgba(0,0,0,.42)!important}
+html.dark-mode .reader-side-tab{background:linear-gradient(180deg,#393e46 0%,#292d33 100%)!important;color:#e7e8eb!important;border-color:rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 11px rgba(0,0,0,.25)!important}
+html.dark-mode .reader-side-tab.active{background:#9f4d56!important;color:#fff!important}
+html.dark-mode .reader-panel-title,html.dark-mode .reader-game-subtitle,html.dark-mode .engine-title{color:#f3f4f6}
+html.dark-mode .archive-field span,html.dark-mode .header-item label,html.dark-mode .archive-status{color:#b8bdc6}
+html.dark-mode .archive-field select,html.dark-mode .header-item input[type="text"],html.dark-mode .engine-grid input,html.dark-mode .engine-grid select,html.dark-mode .engine-kpi,html.dark-mode .engine-mini,html.dark-mode .engine-pv-list{background:#252930;color:#eef0f2;border-color:rgba(255,255,255,.10)}
+html.dark-mode .status{background:linear-gradient(135deg,#272b31,#211d20)!important;border-color:rgba(226,151,160,.20)!important;color:#f6f6f7!important;box-shadow:0 8px 20px rgba(0,0,0,.30)!important}
+html.dark-mode #gameListBackdrop>div{background:#1b1e23!important;border-color:rgba(255,255,255,.10)}
+html.dark-mode #gameListBackdrop>div>div:first-child{background:linear-gradient(135deg,rgba(159,77,86,.14),rgba(27,30,35,.96));border-color:rgba(255,255,255,.09)!important}
+html.dark-mode #gameListBackdrop h3{color:#f3f4f6}
+html.dark-mode #gameSearch,html.dark-mode #gameListBody button{background:#252930!important;color:#eef0f2!important;border-color:rgba(255,255,255,.10)!important}
+
+@media(max-width:980px){
+  :root{--board-size:min(var(--board-max),calc(100vw - 24px))}
+  .reader-shell{width:calc(100vw - 24px);display:flex;flex-direction:column;align-items:center}
+  .page{flex-direction:column;align-items:center;gap:12px!important}
+  .board-column,.sidebar{width:var(--board-size);flex:0 1 auto}
+  .reader-side-panel{height:auto;min-height:0;max-height:none}
+  .reader-side-content{max-height:none;overflow:visible}
+  #movesPre{max-height:480px;overflow:auto}
+}
+@media(max-width:520px){
+  .board-tools{gap:4px}
+  .reader-board-nav{gap:3px}
+  .reader-board-nav-btn{width:32px!important;height:36px!important;min-width:32px!important;min-height:36px!important;font-size:18px!important}
+  .reader-icon-btn{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;font-size:19px!important}
+  .reader-action-btn{height:36px!important;min-height:36px!important;padding:5px 7px!important;font-size:11px!important}
+  .reader-side-tabs{gap:5px}
+  .reader-side-tab{padding:7px 3px!important;font-size:12px!important}
+  .engine-grid,.engine-kpis,.engine-meta-row{grid-template-columns:1fr}
+}
+@media(max-width:380px){
+  .board-tools{flex-wrap:wrap}
+  .reader-board-nav{flex:0 0 100%}
+}
+</style>
+
 </head>
 <body>
   <div class="reader-shell">
-    <div class="box top-header-box" id="headerBox">
-      <div class="archive-toolbar">
-        <label class="archive-field" for="archiveSelect"><span>Partienarchiv</span><select id="archiveSelect" disabled><option value="">Archive werden geladen …</option></select></label>
-        <button id="archiveReloadBtn" type="button" class="ghost" disabled>↻ Neu laden</button>
-        <div id="archiveStatus" class="archive-status" aria-live="polite"></div>
-      </div>
-      <div class="top-header-layout">
-        <div class="header-grid">
-          <div class="header-item"><label for="hdrEvent">Event</label><input id="hdrEvent" type="text" value="?" readonly></div>
-          <div class="header-item"><label for="hdrSite">Site</label><input id="hdrSite" type="text" value="?" readonly></div>
-          <div class="header-item"><label for="hdrDate">Date</label><input id="hdrDate" type="text" value="????.??.??" readonly></div>
-          <div class="header-item"><label for="hdrRound">Round</label><input id="hdrRound" type="text" value="?" readonly></div>
-
-          <div class="header-item"><label for="hdrWhite">White</label><input id="hdrWhite" type="text" value="?" readonly></div>
-          <div class="header-item"><label for="hdrBlack">Black</label><input id="hdrBlack" type="text" value="?" readonly></div>
-          <div class="header-item"><label for="hdrResult">Result</label><input id="hdrResult" type="text" value="*" readonly></div>
-          <div class="header-item"><label for="hdrECO">ECO</label><input id="hdrECO" type="text" value="?" readonly></div>
-
-          <div class="header-item"><label for="hdrWhiteElo">WhiteElo</label><input id="hdrWhiteElo" type="text" value="?" readonly></div>
-          <div class="header-item"><label for="hdrBlackElo">BlackElo</label><input id="hdrBlackElo" type="text" value="?" readonly></div>
-          <div class="header-item"><label for="hdrPlyCount">PlyCount</label><input id="hdrPlyCount" type="text" value="0" readonly></div>
-        </div>
-      </div>
-    </div>
-
     <div class="page">
       <div class="board-column">
-        <div id="board"></div>
+        <div class="reader-board-wrapper">
+          <div id="board" aria-label="Schachbrett"></div>
+          <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
+        </div>
 
         <div class="board-tools" aria-label="Brett- und Partieaktionen">
-          <button class="reader-action-btn" id="btnGames" type="button" title="Partieliste öffnen">📄 Partien</button>
           <div class="reader-board-nav" aria-label="Zugnavigation unter dem Brett">
             <button class="reader-board-nav-btn" id="btnStart" type="button" title="Zum Anfang" aria-label="Zum Anfang">&laquo;</button>
             <button class="reader-board-nav-btn" id="btnBack" type="button" title="Einen Zug zurück" aria-label="Zurück">&lsaquo;</button>
@@ -1111,12 +1197,26 @@ html[data-board-material="onyx-elegance"] #board{border-color:var(--board-frame-
           <button class="reader-action-btn" id="btnExport" type="button" title="Aktuelle Partie als PGN exportieren">💾 PGN</button>
         </div>
 
-        <div class="box status" id="status">Weiß am Zug</div>
-        <div id="illegalFlash" class="board-illegal-flash" aria-hidden="true"></div>
+        <div class="status" id="status">Weiß am Zug</div>
       </div>
 
       <aside class="sidebar">
-        <div class="box engine-box" id="engineBox">
+        <div class="box reader-side-panel">
+          <div class="reader-side-tabs" role="tablist" aria-label="Reader-Bereich umschalten">
+            <button id="showReaderMovesBtn" class="reader-side-tab" type="button" role="tab" aria-selected="false" aria-controls="readerMovesPanel">Zugliste</button>
+            <button id="showReaderEngineBtn" class="reader-side-tab" type="button" role="tab" aria-selected="false" aria-controls="readerEnginePanel">Engine</button>
+            <button id="showReaderGameBtn" class="reader-side-tab active" type="button" role="tab" aria-selected="true" aria-controls="readerGamePanel">Partie</button>
+          </div>
+
+          <section id="readerMovesPanel" class="reader-side-content" role="tabpanel" aria-labelledby="showReaderMovesBtn" hidden>
+            <div class="reader-panel-title">Zugliste</div>
+            <div class="moves" id="moveBox">
+              <div class="moves-pre" id="movesPre">Noch keine Züge.</div>
+            </div>
+          </section>
+
+          <section id="readerEnginePanel" class="reader-side-content" role="tabpanel" aria-labelledby="showReaderEngineBtn" hidden>
+            <div class="box engine-box" id="engineBox">
           <div class="engine-head">
             <div class="engine-title">Engine-Analyse</div>
             <div class="engine-status" id="engineStatus">Engine wird geladen…</div>
@@ -1173,10 +1273,34 @@ html[data-board-material="onyx-elegance"] #board{border-color:var(--board-frame-
 
           <div class="engine-bestmove-line"><strong>Bestzug:</strong> <span id="engineBestMove">–</span></div>
           <div class="engine-pv-list" id="enginePvList">Noch keine Analyse.</div>
-        </div>
+            </div>
+          </section>
 
-        <div class="moves box" id="moveBox">
-          <div class="moves-pre" id="movesPre">Noch keine Züge.</div>
+          <section id="readerGamePanel" class="reader-side-content" role="tabpanel" aria-labelledby="showReaderGameBtn">
+            <div class="reader-panel-title">Partie verwalten</div>
+            <div class="archive-toolbar">
+              <label class="archive-field" for="archiveSelect"><span>Partienarchiv</span><select id="archiveSelect" disabled><option value="">Archive werden geladen …</option></select></label>
+              <button id="archiveReloadBtn" type="button" class="ghost" disabled title="Archiv neu laden" aria-label="Archiv neu laden">↻</button>
+              <div id="archiveStatus" class="archive-status" aria-live="polite"></div>
+            </div>
+            <div class="reader-game-actions">
+              <button id="btnGames" type="button" title="Partienarchiv öffnen">📚 Partienarchiv</button>
+            </div>
+            <div class="reader-game-subtitle">Partiedaten</div>
+            <div class="header-grid">
+              <div class="header-item"><label for="hdrEvent">Event</label><input id="hdrEvent" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrSite">Site</label><input id="hdrSite" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrDate">Date</label><input id="hdrDate" type="text" value="????.??.??" readonly></div>
+              <div class="header-item"><label for="hdrRound">Round</label><input id="hdrRound" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrWhite">White</label><input id="hdrWhite" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrBlack">Black</label><input id="hdrBlack" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrResult">Result</label><input id="hdrResult" type="text" value="*" readonly></div>
+              <div class="header-item"><label for="hdrECO">ECO</label><input id="hdrECO" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrWhiteElo">WhiteElo</label><input id="hdrWhiteElo" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrBlackElo">BlackElo</label><input id="hdrBlackElo" type="text" value="?" readonly></div>
+              <div class="header-item"><label for="hdrPlyCount">PlyCount</label><input id="hdrPlyCount" type="text" value="0" readonly></div>
+            </div>
+          </section>
         </div>
       </aside>
     </div>
@@ -1571,17 +1695,18 @@ function buildGameFromHistory(n){
 }
 
 function updateStatusFromGame(g){
+  const gameSuffix=(currentGameIndex>=0&&importedGames.length)?' — Partie '+(currentGameIndex+1).toLocaleString('de-DE')+' von '+importedGames.length.toLocaleString('de-DE'):'';
   const go = g.gameOver();
   if(go){
     if(go.type === 'checkmate'){
-      statusEl.textContent = 'Schachmatt — ' + (go.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt';
+      statusEl.textContent = 'Schachmatt — ' + (go.winner === 'w' ? 'Weiß' : 'Schwarz') + ' gewinnt' + gameSuffix;
     } else {
-      statusEl.textContent = 'Patt — Unentschieden';
+      statusEl.textContent = 'Patt — Unentschieden' + gameSuffix;
     }
   } else {
     let t = (g.turn === 'w') ? 'Weiß am Zug' : 'Schwarz am Zug';
     if(g.inCheck(g.turn)) t += ' — Schach!';
-    statusEl.textContent = t;
+    statusEl.textContent = t + gameSuffix;
   }
 }
 
@@ -2292,7 +2417,7 @@ function openGameListModal(){
   modal.style.flexDirection = 'column';
   modal.innerHTML = `
     <div style="padding:12px 16px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="margin:0;font-size:1rem;">📄 Partieliste</h3>
+      <h3 style="margin:0;font-size:1rem;">📚 Partienarchiv</h3>
       <button id="gameListClose" style="padding:4px 14px;border-radius:999px;border:1px solid #3b6ea7;background:#3b6ea7;color:#fff;cursor:pointer;font-size:0.85rem;">Schließen</button>
     </div>
     <div style="padding:10px 16px 12px;overflow-y:auto;flex:1;">
@@ -3241,56 +3366,37 @@ renderBoardFromView();
 
 <script defer="" id="iframe-perfect-fit">
 (function(){
-  function fitLayout(){
-    try{
-      var mgmt = document.querySelector('.mgmt');
-      var controls = document.querySelector('.controls');
-      var status = document.getElementById('status');
-      var footer = document.querySelector('footer');
-      var vpad = 20; // small extra breathing space
+  /* Die Brettgröße wird wie bei Analyzer und Trainer ausschließlich vom
+     gemeinsamen 760/324/16-Layout bestimmt. Alte Inline-Werte entfernen. */
+  document.documentElement.style.removeProperty('--board-size');
+})();
+</script>
 
-      var mgmtH = mgmt ? mgmt.offsetHeight : 0;
-      var controlsH = controls ? controls.offsetHeight : 0;
-      var statusH = status ? status.offsetHeight : 0;
-      var footerH = footer ? footer.offsetHeight : 0;
-
-      var avail = window.innerHeight - (mgmtH + controlsH + statusH + footerH + vpad);
-
-      // Ziel: bis zu 640px Brettgröße, ohne die Gesamtbreite von 1100px zu sprengen.
-      var maxBoard = 640;
-      var minBoard = 320;
-      var isStacked = window.matchMedia && window.matchMedia('(max-width: 980px)').matches;
-
-      // Desktop: reader-shell hat 12px Innenabstand links/rechts,
-      // rechte Spalte 396px und 16px Abstand zum Brett.
-      var horizontalReserve = isStacked ? 24 : (24 + 396 + 16);
-      var availWidth = window.innerWidth - horizontalReserve;
-
-      if(isStacked){
-        availWidth = Math.min(window.innerWidth * 0.96, maxBoard);
-      }
-
-      var size = Math.max(minBoard, Math.min(maxBoard, avail, availWidth));
-
-      // If the host iframe is extremely small, still avoid negative sizes
-      if(!isFinite(size) || size < minBoard) size = minBoard;
-
-      document.documentElement.style.setProperty('--board-size', size + 'px');
-
-      var sidebar = document.querySelector('.sidebar');
-      // sidebar height fix removed
-    }catch(e){
-      // Non-blocking
-      console && console.warn && console.warn('fitLayout failed', e);
-    }
+<script id="reader-side-tabs-js">
+(function(){
+  const buttons={
+    moves:document.getElementById('showReaderMovesBtn'),
+    engine:document.getElementById('showReaderEngineBtn'),
+    game:document.getElementById('showReaderGameBtn')
+  };
+  const panels={
+    moves:document.getElementById('readerMovesPanel'),
+    engine:document.getElementById('readerEnginePanel'),
+    game:document.getElementById('readerGamePanel')
+  };
+  function showReaderPanel(name){
+    if(!buttons[name]||!panels[name])name='game';
+    Object.keys(buttons).forEach(key=>{
+      const active=key===name;
+      buttons[key].classList.toggle('active',active);
+      buttons[key].setAttribute('aria-selected',active?'true':'false');
+      panels[key].hidden=!active;
+    });
+    if(name==='engine'&&typeof requestEngineAnalysis==='function')requestEngineAnalysis(false);
   }
-  window.addEventListener('resize', fitLayout);
-  document.addEventListener('DOMContentLoaded', fitLayout);
-  // in case the module script renders later, run again after a tick
-  setTimeout(fitLayout, 120);
-
-      // sync sidebar removed for correct layout
-
+  Object.keys(buttons).forEach(key=>buttons[key]&&buttons[key].addEventListener('click',()=>showReaderPanel(key)));
+  showReaderPanel('game');
+  window.hammerschachReaderShowPanel=showReaderPanel;
 })();
 </script>
 
