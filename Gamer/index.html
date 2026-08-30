@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260828-6" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260830-1" />
 </head>
 <body>
 <div class="app" role="main">
@@ -255,7 +255,7 @@
     </section>
 
     <section id="readerToolView" class="reader-tool-view" hidden aria-label="Hammerschach-Partienarchiv">
-      <iframe id="readerToolFrame" class="reader-tool-frame" title="Hammerschach-Partienarchiv" data-src="./Reader/" loading="lazy"></iframe>
+      <iframe id="readerToolFrame" class="reader-tool-frame" title="Hammerschach-Partienarchiv" data-src="./Reader/?v=20260830-1" loading="lazy"></iframe>
     </section>
 
     <section id="tvToolView" class="tv-tool-view" hidden aria-label="Hammerschach TV">
@@ -1141,10 +1141,25 @@
           <button id="adminTickerOpenBtn" class="button-flat admin-ticker-open-btn" type="button">Lobby-Ticker verwalten</button>
           <button id="adminInfoCenterOpenBtn" class="button-flat admin-info-center-open-btn" type="button">Info-Center verwalten</button>
           <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
+          <button id="adminReaderArchivesOpenBtn" class="button-flat" type="button">Partienarchive verwalten</button>
           <button id="adminFairplayOpenBtn" class="button-flat" type="button">Fairplay-Prüfung öffnen</button>
           <button id="adminMemberDeleteOpenBtn" class="admin-member-delete-open-btn" type="button">Mitglieder löschen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminReaderArchivesBackdrop" class="identity-backdrop" hidden>
+      <div class="admin-reader-archives-modal" role="dialog" aria-modal="true" aria-labelledby="adminReaderArchivesTitle">
+        <h3 id="adminReaderArchivesTitle">Partienarchive verwalten</h3>
+        <p>Bis zu 15 Archive können für Mitglieder freigeschaltet werden. Trage den sichtbaren Namen und den Dateinamen aus dem Ordner <strong>Gamer/Reader</strong> ein.</p>
+        <div id="adminReaderArchivesList" class="admin-reader-archives-list"></div>
+        <div id="adminReaderArchivesStatus" class="admin-overview-status" aria-live="polite"></div>
+        <div class="admin-overview-actions">
+          <button id="adminReaderArchivesReloadBtn" class="button-flat" type="button">Neu laden</button>
+          <button id="adminReaderArchivesCloseBtn" class="button-flat" type="button">Schließen</button>
+          <button id="adminReaderArchivesSaveBtn" type="button">Archivkonfiguration speichern</button>
         </div>
       </div>
     </div>
@@ -2341,13 +2356,14 @@
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260828-2"></script>
 <script src="js/header-ui.js?v=20260828-1"></script>
-<script src="js/dialog-ui-state.js?v=20260819-2"></script>
+<script src="js/dialog-ui-state.js?v=20260830-1"></script>
 <script src="js/hammerschach-tv.js?v=20260804-1"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
 <script src="js/embedded-tools.js?v=20260828-2"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
+<script src="js/admin-reader-archives.js?v=20260830-1"></script>
 <script src="js/admin-ticker.js?v=20260804-1"></script>
 <script src="js/admin-member-delete.js?v=20260804-1"></script>
 <script src="js/admin-messaging.js?v=20260804-1"></script>
