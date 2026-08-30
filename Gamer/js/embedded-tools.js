@@ -100,7 +100,7 @@ function updateAnalyzerToolAvailability(){
   if(trainerToolBtn){trainerToolBtn.hidden=!trainerNavigable;trainerToolBtn.title=trainerAvailable?'Hammerschach-Trainer öffnen':'Spielraum verlassen und den Hammerschach-Trainer öffnen';}
   if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Hammerschach-Schachlabor');}
   if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Hammerschach-Eröffnungsschule');}
-  if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer TV'));}
+  if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer-TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer-TV'));}
   if(readerToolBtn){readerToolBtn.hidden=!navigable;readerToolBtn.title=titleFor('Partienarchiv');}
   if(leagueStandingsToolBtn){leagueStandingsToolBtn.hidden=!navigable;leagueStandingsToolBtn.title=titleFor('Ergebnisdienst');}
   if(visitorLeagueStandingsOpenBtn){

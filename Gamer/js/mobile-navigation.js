@@ -211,7 +211,7 @@
       const reader = root.classList.contains('reader-tool-active');
       const tv = root.classList.contains('tv-tool-active');
       const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (leagueStandings ? 'Ergebnisdienst' : (reader ? 'Partienarchiv' : (tv ? 'Gamer TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))));
+      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (leagueStandings ? 'Ergebnisdienst' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))));
     }
   }
 
