@@ -81,8 +81,7 @@
   }
 
   function desktopRoomHeaderWanted(){
-    return desktopGameRoomContext()
-      && window.matchMedia('(min-width: 1101px) and (hover: hover) and (pointer: fine)').matches;
+    return false;
   }
 
   function compactHeaderActive(){
@@ -209,8 +208,10 @@
       const learning = root.classList.contains('learning-tool-active');
       const trainer = root.classList.contains('trainer-tool-active');
       const leagueStandings = root.classList.contains('league-standings-tool-active');
-      const area = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active') || root.classList.contains('reader-tool-active') || root.classList.contains('tv-tool-active');
-      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (leagueStandings ? 'Ergebnisdienst' : (area ? 'Bereich' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))));
+      const reader = root.classList.contains('reader-tool-active');
+      const tv = root.classList.contains('tv-tool-active');
+      const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
+      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (leagueStandings ? 'Ergebnisdienst' : (reader ? 'Partienarchiv' : (tv ? 'Gamer TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))));
     }
   }
 
@@ -345,7 +346,7 @@
   if(root&&root.nodeType===Node.ELEMENT_NODE)rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
   [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,sourceTournamentsNewBadge,
     document.getElementById('trainerBeginnerMenu'),document.getElementById('gamesMenu'),document.getElementById('playerMenu'),
-    document.getElementById('toolsMenu'),document.getElementById('infoMenu'),
+    document.getElementById('clubChessMenu'),document.getElementById('toolsMenu'),
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
     document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn'),document.getElementById('visitorLeagueStandingsOpenBtn')]
     .filter(element=>element&&element.nodeType===Node.ELEMENT_NODE).forEach(element => {

@@ -19,6 +19,11 @@ let hammerschachTvYoutubePlayerGeneration = 0;
 const HAMMERSCHACH_TV_SLOT_IDS = ['tv1','tv2','tv3'];
 const HAMMERSCHACH_TV_SELECTED_SLOT_KEY = 'hammerschachTvSelectedSlot';
 
+function gamerTvVisibleTitle(value){
+  const title = String(value || '').trim();
+  return !title || title === 'Hammerschach TV' ? 'Gamer TV' : title;
+}
+
 function tvSlotNumber(slotId){
   const match = String(slotId || '').toLowerCase().match(/^tv([1-3])$/);
   return match ? Number(match[1]) : 1;
@@ -35,7 +40,7 @@ function normalizeTvSlots(tv){
       slotNumber:index+1,
       enabled:found.enabled == null ? index===0 : found.enabled === true,
       mode:found.mode || 'channel',
-      title:found.title || 'Hammerschach TV',
+      title:gamerTvVisibleTitle(found.title),
       eventName:found.eventName || '',
       description:found.description || '',
       channelName:found.channelName || '',
@@ -114,7 +119,7 @@ function tvAdminDraft(slotId){
     slotNumber:tvSlotNumber(slotId),
     enabled:false,
     mode:'channel',
-    title:'Hammerschach TV',
+    title:'Gamer TV',
     eventName:'',
     description:'',
     channelName:'',
@@ -149,7 +154,7 @@ function populateTvAdminForm(tv){
   if(!slot) return;
   if(tvModeSelect) tvModeSelect.value = slot.mode || 'channel';
   if(tvEnabledInput) tvEnabledInput.checked = slot.enabled === true;
-  if(tvTitleInput) tvTitleInput.value = slot.title || 'Hammerschach TV';
+  if(tvTitleInput) tvTitleInput.value = gamerTvVisibleTitle(slot.title);
   if(tvEventInput) tvEventInput.value = slot.eventName || '';
   if(tvChannelNameInput) tvChannelNameInput.value = slot.channelName || '';
   if(tvChannelIdInput) tvChannelIdInput.value = slot.channelId || '';
@@ -470,7 +475,7 @@ function renderTvPlaylistVideoList(data,stream){
   }
   if(tvPlaylistModalSubtitle){
     tvPlaylistModalSubtitle.textContent = items.length
-      ? `${items.length} Videos stehen zur Auswahl. Vorschaubild anklicken und direkt in Hammerschach TV ansehen.`
+      ? `${items.length} Videos stehen zur Auswahl. Vorschaubild anklicken und direkt in Gamer TV ansehen.`
       : String(stream && stream.playlistItemsMessage || 'Für diese Playlist ist momentan keine Videoliste verfügbar.');
   }
   if(!items.length){
@@ -486,7 +491,7 @@ function renderTvPlaylistVideoList(data,stream){
     button.className = 'tv-playlist-video-card';
     const active = !!(selected && selected.videoId === item.videoId);
     button.classList.toggle('active',active);
-    button.setAttribute('aria-label',`${item.title} in Hammerschach TV ansehen`);
+    button.setAttribute('aria-label',`${item.title} in Gamer TV ansehen`);
     if(active) button.setAttribute('aria-current','true');
 
     const image = document.createElement('img');
@@ -551,7 +556,7 @@ function selectTvPlaylistVideo(data,stream,item){
   if(hammerschachTvYoutubePlayerReady && hammerschachTvYoutubePlayer){
     try{hammerschachTvYoutubePlayer.playVideoAt(item.position);}catch(_){}
   }
-  if(tvPlayerFrame) tvPlayerFrame.title = `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'} – ${item.title}`;
+  if(tvPlayerFrame) tvPlayerFrame.title = `${data.slotId ? data.slotId.toUpperCase() : 'Gamer TV'} – ${item.title}`;
   renderTvPlaylistToolbar(stream);
   if(tvPlaylistOpenBtn) tvPlaylistOpenBtn.focus();
 }
@@ -599,8 +604,8 @@ function renderSelectedTvSlot(){
       delete tvPlayerFrame.dataset.pendingStreamKey;
     }
     tvPlayerFrame.title = selectedPlaylistItem
-      ? `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'} – ${selectedPlaylistItem.title}`
-      : `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'}${tvSlotDisplayName(data) ? ` – ${tvSlotDisplayName(data)}` : ''}`;
+      ? `${data.slotId ? data.slotId.toUpperCase() : 'Gamer TV'} – ${selectedPlaylistItem.title}`
+      : `${data.slotId ? data.slotId.toUpperCase() : 'Gamer TV'}${tvSlotDisplayName(data) ? ` – ${tvSlotDisplayName(data)}` : ''}`;
     tvPlayerFrame.hidden = false;
     if(tvPlayerPlaceholder) tvPlayerPlaceholder.hidden = true;
   }else{
@@ -620,7 +625,7 @@ function renderSelectedTvSlot(){
     if(tvPlayerPlaceholder) tvPlayerPlaceholder.hidden = false;
   }
   if(tvPlaceholderTitle) tvPlaceholderTitle.textContent = !data.enabled
-    ? `${data.slotId ? data.slotId.toUpperCase() : 'Hammerschach TV'} ist ausgeschaltet`
+    ? `${data.slotId ? data.slotId.toUpperCase() : 'Gamer TV'} ist ausgeschaltet`
     : 'Noch keine Übertragung';
   if(tvPlaceholderText) tvPlaceholderText.textContent = !data.enabled
     ? 'Die TV-Regie hat diesen Senderplatz momentan ausgeschaltet.'
@@ -694,7 +699,7 @@ async function loadHammerschachTv(options){
     const data = await authApi('/api/tv');
     renderHammerschachTv(data.tv, {populateAdmin:!(options && options.keepAdminValues)});
   }catch(error){
-    if(tvPlaceholderText) tvPlaceholderText.textContent = error && error.message ? error.message : 'Hammerschach TV konnte nicht geladen werden.';
+    if(tvPlaceholderText) tvPlaceholderText.textContent = error && error.message ? error.message : 'Gamer TV konnte nicht geladen werden.';
     if(tvAdminStatus && onlineAuthUser && onlineAuthUser.isAdmin === true){
       tvAdminStatus.textContent = error && error.message ? error.message : 'TV-Daten konnten nicht geladen werden.';
       tvAdminStatus.className = 'tv-admin-status error';
@@ -741,7 +746,7 @@ function tvAdminPayloadSlot(slotId){
     slotId,
     enabled:draft.enabled === true,
     mode:draft.mode || 'channel',
-    title:draft.title || 'Hammerschach TV',
+    title:gamerTvVisibleTitle(draft.title),
     eventName:draft.eventName || '',
     description:draft.description || '',
     channelName:draft.channelName || '',
@@ -768,7 +773,7 @@ async function saveHammerschachTv(){
     hammerschachTvAdminDirty = false;
     renderHammerschachTv(data.tv);
     if(tvAdminStatus){
-      tvAdminStatus.textContent = data.message || 'Hammerschach TV wurde gespeichert.';
+      tvAdminStatus.textContent = data.message || 'Gamer TV wurde gespeichert.';
       tvAdminStatus.className = 'tv-admin-status success';
     }
   }catch(error){

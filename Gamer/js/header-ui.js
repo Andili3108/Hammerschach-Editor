@@ -110,12 +110,14 @@ const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, 
 const trainerBeginnerMenuController = registerHeaderMenu(trainerBeginnerMenuEl, trainerBeginnerMenuBtn, trainerBeginnerMenuPopup, 'Anfängertraining-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
 const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Spieler-Menü');
-const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Bereiche-Menü');
+const clubChessMenuController = registerHeaderMenu(clubChessMenuEl, clubChessMenuBtn, clubChessMenuPopup, 'Vereinsschach-Menü');
+const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Werkstatt-Menü');
 const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeTrainerBeginnerMenu(){ if(trainerBeginnerMenuController) trainerBeginnerMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }
 function closePlayerMenu(){ if(playerMenuController) playerMenuController.close(); }
+function closeClubChessMenu(){ if(clubChessMenuController) clubChessMenuController.close(); }
 function closeToolsMenu(){ if(toolsMenuController) toolsMenuController.close(); }
 function closeInfoMenu(){ if(infoMenuController) infoMenuController.close(); }
 document.addEventListener('click', event => {
@@ -137,10 +139,10 @@ const COLOR_SCHEME_STORAGE_KEY = 'hammerschachGamerColorScheme';
 let darkModeEnabled = document.documentElement.classList.contains('dark-mode');
 function updateThemeToggleUi(){
   if(!themeToggleBtn) return;
-  themeToggleBtn.textContent = darkModeEnabled ? '☀️ Hell' : '🌙 Dunkel';
+  themeToggleBtn.textContent = darkModeEnabled ? '☀️' : '🌙';
   themeToggleBtn.setAttribute('aria-pressed', darkModeEnabled ? 'true' : 'false');
   themeToggleBtn.setAttribute('aria-label', darkModeEnabled ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren');
-  themeToggleBtn.title = darkModeEnabled ? 'Zum hellen Modus wechseln' : 'Dark Mode aktivieren';
+  themeToggleBtn.title = darkModeEnabled ? 'Zur hellen Darstellung wechseln' : 'Zur dunklen Darstellung wechseln';
   if(themeColorMeta) themeColorMeta.setAttribute('content', darkModeEnabled ? '#111317' : '#843f46');
 }
 function setDarkMode(enabled){

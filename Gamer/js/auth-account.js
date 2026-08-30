@@ -209,6 +209,7 @@ function updateAuthUi(){
     if(!loggedIn) closePlayerMenu();
   }
   if(profileOpenBtn){
+    profileOpenBtn.hidden = !loggedIn;
     profileOpenBtn.disabled = !loggedIn;
     profileOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — Accountverwaltung und Logout öffnen.' : '';
   }
