@@ -8841,7 +8841,7 @@ function defaultTvConfig(slotNumber = 1) {
     slotNumber:number,
     enabled:number === 1,
     mode:'channel',
-    title:'Gamer TV',
+    title:'Gamer-TV',
     eventName:'',
     description:'Schach-Livestreams direkt im Hammerschach-Gamer.',
     channelName:'',
@@ -8855,13 +8855,13 @@ function defaultTvConfig(slotNumber = 1) {
 function normalizeTvConfig(value, slotNumber = 1) {
   const source = value && typeof value === 'object' ? value : {};
   const number = tvSlotNumber(source.slotId, slotNumber);
-  const cleanedTitle = cleanTvText(source.title || 'Gamer TV', 90) || 'Gamer TV';
+  const cleanedTitle = cleanTvText(source.title || 'Gamer-TV', 90) || 'Gamer-TV';
   return {
     slotId:tvSlotId(number),
     slotNumber:number,
     enabled:source.enabled == null ? number === 1 : source.enabled === true,
     mode:normalizeTvMode(source.mode),
-    title:cleanedTitle === 'Hammerschach TV' ? 'Gamer TV' : cleanedTitle,
+    title:cleanedTitle === 'Hammerschach TV' || cleanedTitle === 'Gamer TV' ? 'Gamer-TV' : cleanedTitle,
     eventName:cleanTvText(source.eventName, 120),
     description:cleanTvText(source.description || 'Schach-Livestreams direkt im Hammerschach-Gamer.', 600),
     channelName:cleanTvText(source.channelName, 90),
@@ -10251,14 +10251,14 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/tv' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Gamer TV ist nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Gamer-TV ist nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
     try {
       const config = await loadTvConfig(env);
       const resolved = await resolveTvConfigSet(env, config);
       return json({ok:true, tv:tvSetDto(config, resolved)});
     } catch (error) {
       console.error('Hammerschach TV load failed', error && error.message ? error.message : String(error || 'unknown'));
-      return json({ok:false, code:'HAMMERSCHACH_TV_UNAVAILABLE', message:'Gamer TV konnte momentan nicht geladen werden.'}, {status:500});
+      return json({ok:false, code:'HAMMERSCHACH_TV_UNAVAILABLE', message:'Gamer-TV konnte momentan nicht geladen werden.'}, {status:500});
     }
   }
 
@@ -10271,7 +10271,7 @@ async function handleAuthApi(request, env, url) {
       const saved = await saveTvConfig(env, body, admin.session.user);
       if (!saved.ok) return json({ok:false, code:saved.code, message:saved.message}, {status:saved.status || 400});
       const resolved = await resolveTvConfigSet(env, saved.config, {forceAll:true});
-      return json({ok:true, tv:tvSetDto(saved.config, resolved), message:'Die drei Senderplätze von Gamer TV wurden gespeichert.'});
+      return json({ok:true, tv:tvSetDto(saved.config, resolved), message:'Die drei Senderplätze von Gamer-TV wurden gespeichert.'});
     } catch (error) {
       console.error('Hammerschach TV save failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'HAMMERSCHACH_TV_SAVE_FAILED', message:'Die TV-Einstellungen konnten nicht gespeichert werden.'}, {status:500});
