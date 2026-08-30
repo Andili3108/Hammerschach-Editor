@@ -38,8 +38,8 @@
   html.hammerschach-standalone body::before{left:0;background-position:center top;}
   html.hammerschach-standalone body::after{right:0;background-position:center -165px;transform:scaleX(-1);}
   .box{background:rgba(255,255,255,.98);border:1px solid rgba(132,63,70,.16);border-radius:18px;box-shadow:0 14px 32px rgba(0,0,0,.12);box-sizing:border-box;}
-  .header{display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;padding:12px 16px;align-items:center;}
-  .header-brand{min-width:0;display:flex;align-items:center;justify-content:center;}
+  .header{position:relative;display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;padding:12px 16px;align-items:center;}
+  .header-brand{position:relative;min-width:0;display:flex;align-items:center;justify-content:center;}
   .brand-link{display:flex;align-items:center;justify-content:center;text-decoration:none;color:inherit;min-width:0;}
   .brand-link:focus-visible{outline:3px solid rgba(132,63,70,.28);outline-offset:4px;border-radius:18px;}
   .brand-origin-line{grid-column:1 / -1;justify-self:stretch;width:100%;display:flex;align-items:center;justify-content:flex-end;gap:10px;max-width:100%;box-sizing:border-box;color:#555;font-size:15px;font-weight:900;line-height:1.15;white-space:nowrap;}
@@ -51,10 +51,12 @@
   .brand-origin-button:hover{transform:translateY(-1px);background:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 5px 10px rgba(0,0,0,.11);}
   .brand-origin-button:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.08),0 1px 4px rgba(0,0,0,.08);}
   .brand-origin-button:focus-visible{outline:3px solid rgba(132,63,70,.22);outline-offset:2px;}
-  .header-main{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:10px;}
+  .header-main{min-width:0;height:120px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;}
   .header-top-row{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:9px;align-items:center;}
   .logo-slot{width:150px;height:120px;flex:0 0 150px;min-height:0;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(244,244,244,.94));box-shadow:inset 0 1px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(0,0,0,.04), 0 8px 18px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--andili-rot);font-size:18px;font-weight:900;text-align:center;}
   .logo-slot img{width:100%;height:100%;object-fit:contain;display:block;transform:none;}
+  .brand-tv-btn{position:absolute;z-index:3;right:-3px;bottom:3px;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;border-radius:999px!important;font-size:19px!important;line-height:1!important;}
+  .brand-tv-btn[hidden]{display:none!important;}
   .brand-title{display:flex;flex-direction:column;justify-content:center;line-height:1.02;font-size:28px;font-weight:900;color:#222;letter-spacing:.01em;}
   .brand-title span:last-child{color:var(--andili-rot);}
   .player-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -90,7 +92,7 @@
   .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(132,63,70,.22),0 8px 18px rgba(0,0,0,.14)!important;}
   .header-menu-popup{position:absolute;z-index:2600;top:calc(100% + 9px);left:50%;transform:translateX(-50%);width:238px;box-sizing:border-box;padding:8px;border:1px solid rgba(132,63,70,.20);border-radius:15px;background:rgba(255,255,255,.99);box-shadow:0 18px 42px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:6px;}
   .new-game-menu .header-menu-popup{left:0;transform:none;}
-  .tools-menu .header-menu-popup,.info-menu .header-menu-popup{left:auto;right:0;transform:none;}
+  .tools-menu .header-menu-popup,.club-chess-menu .header-menu-popup,.info-menu .header-menu-popup{left:auto;right:0;transform:none;}
   .tools-menu .areas-menu-popup{width:264px;}
   .header-menu-section-label{padding:6px 8px 1px;color:#746a6d;font-family:Arial,sans-serif;font-size:9px;font-weight:900;letter-spacing:.10em;text-transform:uppercase;}
   .header-menu-section-label:not(:first-child){margin-top:3px;padding-top:8px;border-top:1px solid rgba(132,63,70,.12);}
@@ -193,7 +195,6 @@
   .board-illegal-flash.active{box-shadow:0 0 0 6px rgba(132,63,70,.22),0 0 30px rgba(132,63,70,.18);}
   .status{width:100%;box-sizing:border-box;text-align:center;font-weight:900;font-size:18px;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(246,238,240,.98));border:1px solid rgba(132,63,70,.18);box-shadow:0 8px 20px rgba(0,0,0,.10);}
   .header-status{align-self:center;max-width:none;margin:0;width:100%;}
-  .info-open-btn{width:110px!important;min-width:110px!important;box-sizing:border-box;padding-inline:20px!important;}
   .time-setup-box{padding:13px 16px;display:flex;flex-direction:column;gap:10px;}
   .time-setup-box[hidden]{display:none!important;}
   .player-time-setup{border-radius:16px;background:#f7f7f9;border:1px solid rgba(0,0,0,.10);padding:12px;box-shadow:none;}
@@ -1252,8 +1253,12 @@
   .admin-report-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
   .admin-report-actions button{min-height:32px;border-radius:10px;padding:6px 8px;font-size:11px;}
 
-  .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
-  .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
+  .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:0;}
+  .header-people-actions>.header-menu>.header-menu-button,.header-profile-btn,.private-messages-header-btn{min-height:40px!important;padding:7px 11px!important;border-radius:14px!important;font-size:13px!important;line-height:1.1!important;}
+  .header-people-actions .player-menu-popup{left:auto;right:0;transform:none;width:250px;}
+  .theme-toggle-btn{position:absolute;z-index:4;top:7px;right:8px;width:31px!important;min-width:31px!important;height:31px!important;min-height:31px!important;box-sizing:border-box;padding:0!important;border-radius:999px!important;font-size:15px!important;line-height:1!important;opacity:.78;box-shadow:0 3px 9px rgba(0,0,0,.10)!important;}
+  .theme-toggle-btn:hover{opacity:1;}
+  @media (min-width:761px){html.member-lobby-view #tournamentsOpenBtn{display:none!important;}}
   .learning-tool-view,.analyzer-tool-view,.trainer-tool-view,.schachlabor-tool-view,.openings-tool-view,.fairplay-tool-view,.reader-tool-view,.tv-tool-view,.league-standings-view{width:100%;min-width:0;}
   html.trainer-tool-active,html.trainer-tool-active body{overflow-anchor:none;}
   html.trainer-tool-active .trainer-tool-view,html.trainer-tool-active .trainer-tool-frame{overflow-anchor:none;}
@@ -2263,8 +2268,7 @@
     .brand-origin-site-button{width:138px;min-width:138px;flex-basis:138px;min-height:28px;padding:4px 11px 4px 9px;font-size:12px;}
     .status{font-size:15px;padding:7px 11px;min-height:42px;display:flex;align-items:center;justify-content:center;}
     .header-utility-actions{gap:6px;}
-    .theme-toggle-btn{width:108px!important;min-width:108px!important;}
-    .info-open-btn{width:104px!important;min-width:104px!important;padding-inline:13px!important;}
+    .theme-toggle-btn{width:31px!important;min-width:31px!important;}
     .match-actions{gap:5px;}
     .match-actions>button,.match-actions>.header-menu>.header-menu-button{min-height:40px;font-size:12px;padding:7px 7px;}
   }
@@ -2592,11 +2596,13 @@ html.mobile-nav-test-active .mobile-nav-test-header,html.desktop-board-header-ac
 .mobile-nav-test-backdrop{position:fixed;z-index:5000;inset:0;display:flex;justify-content:flex-end;background:rgba(20,15,17,.50);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .mobile-nav-test-drawer{width:min(390px,92vw);height:100vh;height:100dvh;display:flex;flex-direction:column;box-sizing:border-box;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) 10px;border-left:1px solid rgba(132,63,70,.17);background:linear-gradient(180deg,rgba(255,255,255,.99),#f3f1f2);box-shadow:-18px 0 44px rgba(0,0,0,.30);}
 .mobile-nav-test-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 2px 11px;border-bottom:1px solid rgba(132,63,70,.16);}
-.mobile-nav-test-drawer-brand{min-width:0;display:flex;align-items:center;gap:9px;}
+.mobile-nav-test-drawer-brand{min-width:0;flex:1 1 auto;display:flex;align-items:center;gap:9px;}
 .mobile-nav-test-drawer-brand img{width:48px;height:48px;object-fit:contain;border-radius:11px;background:#fff;}
 .mobile-nav-test-drawer-brand span{min-width:0;display:flex;flex-direction:column;}
 .mobile-nav-test-drawer-brand strong{overflow:hidden;color:#843f46;font-size:19px;text-overflow:ellipsis;white-space:nowrap;}
 .mobile-nav-test-drawer-brand small{margin-top:3px;color:#665d60;font:900 11px Arial,sans-serif;}
+.mobile-nav-drawer-tv{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;display:grid!important;place-items:center;padding:0!important;border-radius:999px!important;font-size:18px!important;line-height:1!important;}
+.mobile-nav-drawer-tv[hidden]{display:none!important;}
 .mobile-nav-test-close{width:46px!important;height:46px!important;min-width:46px!important;min-height:46px!important;padding:0!important;border-radius:13px!important;font-size:25px!important;}
 .mobile-nav-test-list{min-height:0;overflow:auto;padding:10px 2px;overscroll-behavior:contain;}
 .mobile-nav-test-list section{display:grid;gap:6px;margin-bottom:14px;}
@@ -2677,7 +2683,8 @@ html.dark-mode .game-start-summary-moves{color:#e2e4e7}
 
 
 /* Persönliche Nachrichten */
-.private-messages-header-btn{position:relative;min-width:40px!important;width:40px;padding:7px 8px!important;font-size:18px!important;line-height:1!important;}
+.private-messages-header-btn{position:relative;width:auto!important;min-width:65px!important;display:inline-flex!important;align-items:center;justify-content:center;gap:5px;}
+.private-messages-label{font-size:13px;font-weight:900;line-height:1;}
 .private-messages-badge{position:absolute;right:-6px;top:-7px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border:2px solid #fff;border-radius:999px;background:#2b9a4b;color:#fff;font:900 10px/1 Arial,sans-serif;box-sizing:border-box;}
 .private-messages-badge[hidden]{display:none!important;}
 .private-messages-modal{width:min(920px,96vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;}
