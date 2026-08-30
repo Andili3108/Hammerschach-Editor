@@ -59,8 +59,14 @@ function leagueStandingsToolAvailable(){
 function leagueStandingsToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
+function readerToolAvailable(){
+  return !!(!onlineRoomId && !hasOnlineTargetInAddress());
+}
+function readerToolNavigable(){
+  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
+}
 function protectedEmbeddedToolActive(){
-  return analyzerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tvToolActive;
+  return analyzerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;
 }
 function memberEmbeddedToolActive(){
   return analyzerToolActive || trainerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tvToolActive || leagueStandingsToolActive;
@@ -89,10 +95,11 @@ function updateAnalyzerToolAvailability(){
   const trainerNavigable = trainerToolNavigable();
   const leagueStandingsAvailable = leagueStandingsToolAvailable();
   const leagueStandingsNavigable = leagueStandingsToolNavigable();
-  const visitor = !(onlineAuthToken && onlineAuthUser);
+  const readerAvailable = readerToolAvailable();
+  const readerNavigable = readerToolNavigable();
   const fairplayAvailable = available && !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
-  if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && learningToolActive) || (!trainerAvailable && trainerToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive)) setEmbeddedToolActive('');
+  if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && learningToolActive) || (!trainerAvailable && trainerToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive) || (!readerAvailable && readerToolActive)) setEmbeddedToolActive('');
   if(!fairplayAvailable && fairplayToolActive) setEmbeddedToolActive('');
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
   if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Hammerschach-Grundkurs öffnen':'Spielraum verlassen und den Hammerschach-Grundkurs öffnen';}
@@ -101,23 +108,17 @@ function updateAnalyzerToolAvailability(){
   if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Hammerschach-Schachlabor');}
   if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Hammerschach-Eröffnungsschule');}
   if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer-TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer-TV'));}
-  if(readerToolBtn){readerToolBtn.hidden=!navigable;readerToolBtn.title=titleFor('Partienarchiv');}
-  if(leagueStandingsToolBtn){leagueStandingsToolBtn.hidden=!navigable;leagueStandingsToolBtn.title=titleFor('Ergebnisdienst');}
-  if(visitorLeagueStandingsOpenBtn){
-    visitorLeagueStandingsOpenBtn.hidden=!visitor||!leagueStandingsNavigable;
-    visitorLeagueStandingsOpenBtn.title=leagueStandingsAvailable?'Ergebnisdienst öffnen':'Spielraum verlassen und den Ergebnisdienst öffnen';
-    visitorLeagueStandingsOpenBtn.classList.toggle('active',visitor&&leagueStandingsToolActive);
-    if(visitor&&leagueStandingsToolActive)visitorLeagueStandingsOpenBtn.setAttribute('aria-current','page');else visitorLeagueStandingsOpenBtn.removeAttribute('aria-current');
-  }
+  if(readerToolBtn){readerToolBtn.hidden=!readerNavigable;readerToolBtn.title=readerAvailable?'Partienarchiv öffnen':'Spielraum verlassen und das Partienarchiv öffnen';}
+  if(leagueStandingsToolBtn){leagueStandingsToolBtn.hidden=!leagueStandingsNavigable;leagueStandingsToolBtn.title=leagueStandingsAvailable?'Ergebnisdienst öffnen':'Spielraum verlassen und den Ergebnisdienst öffnen';}
   if(toolsMenuEl){
     toolsMenuEl.hidden = !navigable && !learningNavigable && !trainerNavigable;
     if(toolsMenuEl.hidden) closeToolsMenu();
   }
   if(clubChessMenuEl){
-    clubChessMenuEl.hidden = !navigable;
+    clubChessMenuEl.hidden = !leagueStandingsNavigable && !readerNavigable;
     if(clubChessMenuEl.hidden) closeClubChessMenu();
   }
-  if(available || learningAvailable || trainerAvailable || leagueStandingsAvailable){
+  if(available || learningAvailable || trainerAvailable || leagueStandingsAvailable || readerAvailable){
     let pending='';
     let remembered='';
     try{
@@ -125,7 +126,7 @@ function updateAnalyzerToolAvailability(){
       remembered=String(sessionStorage.getItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY)||'');
       sessionStorage.removeItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY);
     }catch(_){}
-    const canRestore=tool=>tool==='learning'?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='league-standings'?leagueStandingsAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool))));
+    const canRestore=tool=>tool==='learning'?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))));
     const restorePending=NAVIGABLE_EMBEDDED_TOOLS.has(pending)&&canRestore(pending)?pending:'';
     const restoreRemembered=!embeddedToolActive()&&RESTORABLE_EMBEDDED_TOOLS.has(remembered)&&
       canRestore(remembered)&&(remembered!=='fairplay'||fairplayAvailable)?remembered:'';
@@ -282,10 +283,10 @@ function setEmbeddedToolActive(toolName){
   if(toolName==='learning'&&learningToolAvailable())requested='learning';
   else if(toolName==='trainer'&&trainerToolAvailable())requested='trainer';
   else if(toolName==='league-standings'&&leagueStandingsToolAvailable())requested='league-standings';
+  else if(toolName==='reader'&&readerToolAvailable())requested='reader';
   else if(embeddedToolsAvailable()){
     if(toolName==='tv')requested='tv';
     else if(toolName==='fairplay'&&fairplayAllowed)requested='fairplay';
-    else if(toolName==='reader')requested='reader';
     else if(toolName==='openings')requested='openings';
     else if(toolName==='schachlabor')requested='schachlabor';
     else if(toolName==='analyzer')requested='analyzer';
@@ -415,8 +416,9 @@ function openEmbeddedToolFromCurrentContext(toolName){
   const isLearning=requested==='learning';
   const isTrainer=requested==='trainer';
   const isLeagueStandings=requested==='league-standings';
-  const navigable=isLearning?learningToolNavigable():(isTrainer?trainerToolNavigable():(isLeagueStandings?leagueStandingsToolNavigable():embeddedToolsNavigable()));
-  const available=isLearning?learningToolAvailable():(isTrainer?trainerToolAvailable():(isLeagueStandings?leagueStandingsToolAvailable():embeddedToolsAvailable()));
+  const isReader=requested==='reader';
+  const navigable=isLearning?learningToolNavigable():(isTrainer?trainerToolNavigable():(isLeagueStandings?leagueStandingsToolNavigable():(isReader?readerToolNavigable():embeddedToolsNavigable())));
+  const available=isLearning?learningToolAvailable():(isTrainer?trainerToolAvailable():(isLeagueStandings?leagueStandingsToolAvailable():(isReader?readerToolAvailable():embeddedToolsAvailable())));
   if(!requested||!navigable)return;
   if(available){
     setEmbeddedToolActive(requested);
@@ -505,7 +507,6 @@ if(openingsToolBtn)openingsToolBtn.addEventListener('click',openOpeningsToolDebo
 if(readerToolBtn)readerToolBtn.addEventListener('click',openReaderToolDebounced);
 if(tvToolBtn)tvToolBtn.addEventListener('click',openTvToolDebounced);
 if(leagueStandingsToolBtn)leagueStandingsToolBtn.addEventListener('click',openLeagueStandingsToolDebounced);
-if(visitorLeagueStandingsOpenBtn)visitorLeagueStandingsOpenBtn.addEventListener('click',openLeagueStandingsToolDebounced);
 if(learningToolFrame)learningToolFrame.addEventListener('load',()=>{
   postLearningToolContext();
   postLearningToolMessage({type:'hammerschach-learning-visibility',visible:learningToolActive});
@@ -568,10 +569,6 @@ window.addEventListener('message',async event=>{
       return;
     }
     if(message.type==='hammerschach-reader-request-archives'){
-      if(!onlineAuthToken||!onlineAuthUser){
-        postReaderToolMessage({type:'hammerschach-reader-archives-result',requestId,ok:false,message:'Bitte zuerst im Gamer einloggen.',archives:[]});
-        return;
-      }
       try{
         const data=await authApi('/api/reader/archives');
         postReaderToolMessage({type:'hammerschach-reader-archives-result',requestId,ok:true,archives:Array.isArray(data.archives)?data.archives:[],max:Number(data.max||15)});

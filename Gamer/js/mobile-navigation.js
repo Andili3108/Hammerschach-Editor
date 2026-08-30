@@ -348,7 +348,7 @@
     document.getElementById('trainerBeginnerMenu'),document.getElementById('gamesMenu'),document.getElementById('playerMenu'),
     document.getElementById('clubChessMenu'),document.getElementById('toolsMenu'),
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
-    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn'),document.getElementById('visitorLeagueStandingsOpenBtn')]
+    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn')]
     .filter(element=>element&&element.nodeType===Node.ELEMENT_NODE).forEach(element => {
     const observer = new MutationObserver(refresh);
     observer.observe(element, {attributes:true, childList:true, characterData:true, subtree:true});
