@@ -1244,11 +1244,11 @@
 
   .header-utility-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
   .theme-toggle-btn{width:118px!important;min-width:118px!important;box-sizing:border-box;padding-inline:13px!important;}
-  .learning-tool-view,.analyzer-tool-view,.trainer-tool-view,.schachlabor-tool-view,.openings-tool-view,.fairplay-tool-view,.tv-tool-view,.league-standings-view{width:100%;min-width:0;}
+  .learning-tool-view,.analyzer-tool-view,.trainer-tool-view,.schachlabor-tool-view,.openings-tool-view,.fairplay-tool-view,.reader-tool-view,.tv-tool-view,.league-standings-view{width:100%;min-width:0;}
   html.trainer-tool-active,html.trainer-tool-active body{overflow-anchor:none;}
   html.trainer-tool-active .trainer-tool-view,html.trainer-tool-active .trainer-tool-frame{overflow-anchor:none;}
-  .learning-tool-view[hidden],.analyzer-tool-view[hidden],.trainer-tool-view[hidden],.schachlabor-tool-view[hidden],.openings-tool-view[hidden],.fairplay-tool-view[hidden],.tv-tool-view[hidden],.league-standings-view[hidden]{display:none!important;}
-  .learning-tool-frame,.analyzer-tool-frame,.trainer-tool-frame,.schachlabor-tool-frame,.openings-tool-frame,.fairplay-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
+  .learning-tool-view[hidden],.analyzer-tool-view[hidden],.trainer-tool-view[hidden],.schachlabor-tool-view[hidden],.openings-tool-view[hidden],.fairplay-tool-view[hidden],.reader-tool-view[hidden],.tv-tool-view[hidden],.league-standings-view[hidden]{display:none!important;}
+  .learning-tool-frame,.analyzer-tool-frame,.trainer-tool-frame,.schachlabor-tool-frame,.openings-tool-frame,.fairplay-tool-frame,.reader-tool-frame{display:block;width:100%;height:980px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
   .tv-stage{overflow:visible;padding:0;background:transparent;border:0;box-shadow:none;}
   .tv-content{padding:0;}
   .tv-layout{display:block;width:100%;margin-inline:auto;}
@@ -1372,6 +1372,8 @@
   html.openings-tool-active .top-layout,
   html.fairplay-tool-active .member-lobby,
   html.fairplay-tool-active .top-layout,
+  html.reader-tool-active .member-lobby,
+  html.reader-tool-active .top-layout,
   html.tv-tool-active .member-lobby,
   html.tv-tool-active .top-layout,
   html.league-standings-tool-active .member-lobby,
