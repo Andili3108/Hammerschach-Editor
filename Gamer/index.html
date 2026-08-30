@@ -38,18 +38,20 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260830-1" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260830-3" />
 </head>
 <body>
 <div class="app" role="main">
   <div class="shell">
     <header class="box header">
+      <button id="themeToggleBtn" class="button-flat theme-toggle-btn" type="button" aria-pressed="false" aria-label="Dunkle Darstellung aktivieren" title="Darstellung wechseln">🌙</button>
       <div class="header-brand">
         <a class="brand-link" href="https://www.andili.de" target="hammerschach-andili" rel="opener" aria-label="Zum bereits geöffneten Andili-Tab wechseln" title="Zur Hammerschach-Startseite">
           <div class="logo-slot" aria-label="Hammerschach-Gamer Logo">
             <img src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" onerror="this.style.display='none'; this.parentNode.textContent='Hammerschach';" />
           </div>
         </a>
+        <button id="tvToolBtn" class="button-flat brand-tv-btn" type="button" aria-controls="tvToolView" aria-label="Gamer TV öffnen" title="Gamer TV" hidden>📺</button>
       </div>
       <div class="header-main">
         <div class="online-panel" aria-label="Online-Lobby Status" hidden>
@@ -61,19 +63,21 @@
         </div>
         <div class="header-top-row">
           <div class="status header-status" id="status">Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.</div>
-          <div class="header-utility-actions" aria-label="Darstellung, Nachrichten und Hilfe">
-            <button id="privateMessagesOpenBtn" class="button-flat name-action-btn private-messages-header-btn" type="button" aria-haspopup="dialog" aria-controls="privateMessagesBackdrop" aria-label="Persönliche Nachrichten öffnen" title="Persönliche Nachrichten" hidden><span aria-hidden="true">✉️</span><span id="privateMessagesUnreadCount" class="private-messages-badge" hidden>0</span></button>
-            <button id="themeToggleBtn" class="button-flat name-action-btn theme-toggle-btn" type="button" aria-pressed="false">🌙 Dunkel</button>
-            <div id="infoMenu" class="header-menu info-menu">
-              <button id="infoMenuBtn" class="button-flat name-action-btn info-open-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="infoMenuPopup">
-                <span>ℹ️ Info</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+          <div class="header-utility-actions header-people-actions" aria-label="Mitglieder, Profil und persönliche Nachrichten">
+            <div id="playerMenu" class="header-menu player-menu" hidden>
+              <button id="playerMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="playerMenuPopup">
+                <span>👥 Mitglieder</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
               </button>
-              <div id="infoMenuPopup" class="header-menu-popup" role="menu" aria-label="Informationen" hidden>
+              <div id="playerMenuPopup" class="header-menu-popup" role="menu" aria-label="Mitglieder und Informationen" hidden>
+                <button id="membersOpenBtn" class="header-menu-item" type="button" role="menuitem">👥 Mitgliederliste</button>
+                <div class="header-menu-section-label">Informationen</div>
                 <button id="firstStepsOpenBtn" class="header-menu-item" type="button" role="menuitem">🚀 Erste Schritte</button>
                 <button id="infoGuideOpenBtn" class="header-menu-item" type="button" role="menuitem">📖 Handbuch</button>
                 <button id="leitbildOpenBtn" class="header-menu-item" type="button" role="menuitem">🤝 Unser Leitbild</button>
               </div>
             </div>
+            <button id="profileOpenBtn" class="button-flat name-action-btn header-profile-btn" type="button" hidden>👤 Mein Profil</button>
+            <button id="privateMessagesOpenBtn" class="button-flat name-action-btn private-messages-header-btn" type="button" aria-haspopup="dialog" aria-controls="privateMessagesBackdrop" aria-label="Persönliche Nachrichten öffnen" title="Persönliche Nachrichten" hidden><span aria-hidden="true">✉️</span><span class="private-messages-label">PN</span><span id="privateMessagesUnreadCount" class="private-messages-badge" hidden>0</span></button>
           </div>
         </div>
         <div class="actions match-actions" aria-label="Hauptnavigation">
@@ -101,13 +105,13 @@
             </div>
           </div>
           <button id="tournamentsOpenBtn" class="button-flat name-action-btn tournaments-open-btn" type="button" aria-disabled="true">🏆 Turniere <span id="tournamentsNewBadge" class="tournaments-new-badge" hidden>NEU</span></button>
-          <div id="playerMenu" class="header-menu player-menu" hidden>
-            <button id="playerMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="playerMenuPopup">
-              <span>👥 Mitglieder</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+          <div id="clubChessMenu" class="header-menu club-chess-menu" hidden>
+            <button id="clubChessMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="clubChessMenuPopup">
+              <span>♜ Vereinsschach</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
             </button>
-            <div id="playerMenuPopup" class="header-menu-popup" role="menu" aria-label="Mitglieder" hidden>
-              <button id="membersOpenBtn" class="header-menu-item" type="button" role="menuitem">👥 Liste</button>
-              <button id="profileOpenBtn" class="header-menu-item" type="button" role="menuitem">👤 Mein Profil</button>
+            <div id="clubChessMenuPopup" class="header-menu-popup" role="menu" aria-label="Vereinsschach" hidden>
+              <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
+              <button id="readerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="readerToolView" hidden>📚 Partienarchiv</button>
             </div>
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
@@ -118,9 +122,9 @@
           <button id="visitorLeagueStandingsOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
           <div id="toolsMenu" class="header-menu tools-menu" hidden>
             <button id="toolsMenuBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="toolsMenuPopup">
-              <span>♟️ Bereiche</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+              <span>🔧 Werkstatt</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
             </button>
-            <div id="toolsMenuPopup" class="header-menu-popup areas-menu-popup" role="menu" aria-label="Hammerschach-Bereiche" hidden>
+            <div id="toolsMenuPopup" class="header-menu-popup areas-menu-popup" role="menu" aria-label="Werkstatt" hidden>
               <div class="header-menu-section-label">Lernen &amp; Trainieren</div>
               <button id="learningToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="learningToolView">🎓 Schach lernen</button>
               <button id="trainerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="trainerToolView">🎯 Trainer</button>
@@ -128,11 +132,6 @@
               <div class="header-menu-section-label analysis-menu-label">Analysieren</div>
               <button id="analyzerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="analyzerToolView">🧠 Analyzer</button>
               <button id="schachlaborToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="schachlaborToolView">🧪 Schachlabor</button>
-              <div class="header-menu-section-label">Zuschauen</div>
-              <button id="tvToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="tvToolView" hidden>📺 Hammerschach TV</button>
-              <div class="header-menu-section-label">Ergebnisse u. Partien</div>
-              <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
-              <button id="readerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="readerToolView" hidden>📚 Partienarchiv</button>
             </div>
           </div>
         </div>
@@ -154,6 +153,7 @@
       <aside id="mobileNavTestDrawer" class="mobile-nav-test-drawer" role="dialog" aria-modal="true" aria-label="Hammerschach-Menü">
         <div class="mobile-nav-test-drawer-head">
           <div class="mobile-nav-test-drawer-brand"><img src="Gamer-Logo.png" alt="" /><span><strong>Hammerschach</strong><small>Gamer-Menü</small></span></div>
+          <button id="mobileNavTvItem" class="mobile-nav-drawer-tv" type="button" data-mobile-nav-target="tvToolBtn" aria-label="Gamer TV öffnen" title="Gamer TV" hidden>📺</button>
           <button id="mobileNavTestClose" class="mobile-nav-test-close" type="button" aria-label="Menü schließen">×</button>
         </div>
         <nav class="mobile-nav-test-list" aria-label="Mobile Gamer-Navigation">
@@ -165,6 +165,25 @@
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerProgressHeaderBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Lernstand</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLeagueStandingsOpenBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Ergebnisdienst</strong></button>
+          </section>
+          <section id="mobileNavTechnicalSection">
+            <h2>Darstellung</h2>
+            <button id="mobileNavTestTheme" class="mobile-nav-test-item" type="button"><span>🌙</span><strong>Dunkle Darstellung</strong></button>
+          </section>
+          <section id="mobileNavPeopleSection">
+            <h2>Personen und Kommunikation</h2>
+            <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="playerMenu" hidden>
+              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavMembersPanel"><span>👥</span><strong>Mitglieder</strong><i aria-hidden="true">▾</i></button>
+              <div id="mobileNavMembersPanel" class="mobile-nav-accordion-panel" hidden>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="membersOpenBtn"><span>👥</span><strong>Mitgliederliste</strong></button>
+                <div class="mobile-nav-accordion-label">Informationen</div>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="firstStepsOpenBtn"><span>🚀</span><strong>Erste Schritte</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="infoGuideOpenBtn"><span>📖</span><strong>Handbuch</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leitbildOpenBtn"><span>🤝</span><strong>Unser Leitbild</strong></button>
+              </div>
+            </div>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="profileOpenBtn"><span>👤</span><strong>Mein Profil</strong></button>
+            <button id="mobileNavMessagesItem" class="mobile-nav-test-item" type="button" data-mobile-nav-target="privateMessagesOpenBtn" hidden><span>✉️</span><strong>PN</strong><b id="mobileNavMessagesCount" hidden>0</b></button>
           </section>
           <section id="mobileNavMainSection">
             <h2>Hauptnavigation</h2>
@@ -187,16 +206,16 @@
               </div>
             </div>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="tournamentsOpenBtn"><span>🏆</span><strong>Turniere</strong><b id="mobileNavTournamentsNewBadge" class="mobile-nav-tournaments-new" hidden>NEU</b></button>
-            <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="playerMenu" hidden>
-              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavMembersPanel"><span>👥</span><strong>Mitglieder</strong><i aria-hidden="true">▾</i></button>
-              <div id="mobileNavMembersPanel" class="mobile-nav-accordion-panel" hidden>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="membersOpenBtn"><span>👥</span><strong>Liste</strong></button>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="profileOpenBtn"><span>👤</span><strong>Mein Profil</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="authOpenBtn"><span>👤</span><strong>Registrierung / Login</strong></button>
+            <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="clubChessMenu" hidden>
+              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavClubChessPanel"><span>♜</span><strong>Vereinsschach</strong><i aria-hidden="true">▾</i></button>
+              <div id="mobileNavClubChessPanel" class="mobile-nav-accordion-panel" hidden>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn"><span>📊</span><strong>Ergebnisdienst</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="readerToolBtn"><span>📚</span><strong>Partienarchiv</strong></button>
               </div>
             </div>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="authOpenBtn"><span>👤</span><strong>Registrierung / Login</strong></button>
             <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="toolsMenu" hidden>
-              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavAreasPanel"><span>♟️</span><strong>Bereiche</strong><i aria-hidden="true">▾</i></button>
+              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavAreasPanel"><span>🔧</span><strong>Werkstatt</strong><i aria-hidden="true">▾</i></button>
               <div id="mobileNavAreasPanel" class="mobile-nav-accordion-panel" hidden>
                 <div class="mobile-nav-accordion-label">Lernen &amp; Trainieren</div>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn"><span>🎓</span><strong>Schach lernen</strong></button>
@@ -205,24 +224,6 @@
                 <div class="mobile-nav-accordion-label">Analysieren</div>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="analyzerToolBtn"><span>🧠</span><strong>Analyzer</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="schachlaborToolBtn"><span>🧪</span><strong>Schachlabor</strong></button>
-                <div class="mobile-nav-accordion-label">Zuschauen</div>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="tvToolBtn"><span>📺</span><strong>Hammerschach TV</strong></button>
-                <div class="mobile-nav-accordion-label">Ergebnisse u. Partien</div>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn"><span>📊</span><strong>Ergebnisdienst</strong></button>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="readerToolBtn"><span>📚</span><strong>Partienarchiv</strong></button>
-              </div>
-            </div>
-          </section>
-          <section id="mobileNavUtilitySection">
-            <h2>Darstellung, Nachrichten und Hilfe</h2>
-            <button id="mobileNavMessagesItem" class="mobile-nav-test-item" type="button" data-mobile-nav-target="privateMessagesOpenBtn" hidden><span>✉️</span><strong>Nachrichten</strong><b id="mobileNavMessagesCount" hidden>0</b></button>
-            <button id="mobileNavTestTheme" class="mobile-nav-test-item" type="button"><span>🌙</span><strong>Dunkle Darstellung</strong></button>
-            <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="infoMenu">
-              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavInfoPanel"><span>ℹ️</span><strong>Info</strong><i aria-hidden="true">▾</i></button>
-              <div id="mobileNavInfoPanel" class="mobile-nav-accordion-panel" hidden>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="firstStepsOpenBtn"><span>🚀</span><strong>Erste Schritte</strong></button>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="infoGuideOpenBtn"><span>📖</span><strong>Handbuch</strong></button>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leitbildOpenBtn"><span>🤝</span><strong>Unser Leitbild</strong></button>
               </div>
             </div>
           </section>
@@ -258,11 +259,11 @@
       <iframe id="readerToolFrame" class="reader-tool-frame" title="Hammerschach-Partienarchiv" data-src="./Reader/?v=20260830-4" loading="lazy"></iframe>
     </section>
 
-    <section id="tvToolView" class="tv-tool-view" hidden aria-label="Hammerschach TV">
+    <section id="tvToolView" class="tv-tool-view" hidden aria-label="Gamer TV">
       <div class="box tv-stage">
         <div class="tv-content">
           <div class="tv-layout">
-            <div id="tvChannelSwitcher" class="tv-channel-switcher" role="tablist" aria-label="Hammerschach-TV-Sender" hidden>
+            <div id="tvChannelSwitcher" class="tv-channel-switcher" role="tablist" aria-label="Gamer-TV-Sender" hidden>
               <button class="tv-channel-button" type="button" role="tab" data-tv-slot="tv1" aria-selected="false">
                 <span class="tv-channel-number">TV 1</span>
                 <span class="tv-channel-event">Sender 1</span>
@@ -288,7 +289,7 @@
             </div>
             <div class="tv-player-card">
               <div class="tv-player-wrap">
-                <iframe id="tvPlayerFrame" title="YouTube-Livestream bei Hammerschach TV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen hidden></iframe>
+                <iframe id="tvPlayerFrame" title="YouTube-Livestream bei Gamer TV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen hidden></iframe>
                 <div id="tvPlayerPlaceholder" class="tv-player-placeholder">
                   <div class="tv-placeholder-icon" aria-hidden="true">♜</div>
                   <div id="tvPlaceholderTitle" class="tv-placeholder-title">Noch keine Übertragung</div>
@@ -323,7 +324,7 @@
               <label class="tv-enabled-label"><input id="tvEnabledInput" type="checkbox" checked> Diesen Senderplatz für Mitglieder einschalten</label>
               <div class="tv-field">
                 <label for="tvTitleInput">Seitentitel</label>
-                <input id="tvTitleInput" class="tv-input" type="text" maxlength="90" value="Hammerschach TV">
+                <input id="tvTitleInput" class="tv-input" type="text" maxlength="90" value="Gamer TV">
               </div>
               <div class="tv-field">
                 <label for="tvEventInput">Aktuelles Event</label>
@@ -535,11 +536,11 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„♟️ Bereiche“</strong> führen zu den weiteren Angeboten; unter <strong>„♟️ Bereiche“ → „Zuschauen“</strong> öffnet <strong>„📺 Hammerschach TV“</strong> den TV-Bereich. Der kleine <strong>Briefumschlag ✉️</strong> oben rechts öffnet deine persönlichen Nachrichten; eine grüne Zahl zeigt ungelesene Nachrichten an. Im Nachrichtenfenster kannst du Nachrichten lesen, direkt antworten oder unter <strong>„Neue Nachricht“</strong> eine oder mehrere Personen gleichzeitig anschreiben. Über <strong>„ℹ️ Info“</strong> bleiben Erste Schritte, Handbuch und Leitbild erreichbar; <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselt die Darstellung.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Vereinsschach“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong> und <strong>„📚 Partienarchiv“</strong>; in der <strong>„🔧 Werkstatt“</strong> findest du Schach lernen, Trainer, Eröffnungsschule, Analyzer und Schachlabor. <strong>„📺 Gamer TV“</strong> öffnest du über das kleine TV-Symbol direkt beim Logo. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
-          <p>Alternativ wählst du unter <strong>„👥 Mitglieder“ → „👥 Liste“</strong> zuerst deinen Gegner aus. <strong>„Zur Partie einladen“</strong> öffnet dann dasselbe Einstellungsfenster bereits mit festem Empfänger und einem Feld für deine persönliche Nachricht. Ein Spielraum entsteht auch auf diesem Weg erst mit <strong>„Einladung senden“</strong>; ein Abbruch hinterlässt keine offene Einladung.</p>
+          <p>Alternativ wählst du unter <strong>„👥 Mitglieder“ → „👥 Mitgliederliste“</strong> zuerst deinen Gegner aus. <strong>„Zur Partie einladen“</strong> öffnet dann dasselbe Einstellungsfenster bereits mit festem Empfänger und einem Feld für deine persönliche Nachricht. Ein Spielraum entsteht auch auf diesem Weg erst mit <strong>„Einladung senden“</strong>; ein Abbruch hinterlässt keine offene Einladung.</p>
           <p>Im Spielraum stehen Gegner und Uhr direkt über dem Brett, dein eigener Name und deine Uhr direkt darunter. Unter dem jeweiligen Namen erscheinen die geschlagenen gegnerischen Figuren und – falls vorhanden – der Materialvorteil als <strong>„+…“</strong>. Auf größeren Bildschirmen werden die Spielerangaben kompakt dargestellt. Unmittelbar danach folgen die Brett- und Partieaktionen. Rechts wechselst du nur noch zwischen <strong>„Zugliste“</strong> und <strong>„Chat“</strong>.</p>
           <p><strong>Remis:</strong> Bei <strong>Daily Chess</strong> führst du zuerst deinen gewünschten Zug nur als Vorschau aus. In diesem Bestätigungszustand werden unter dem Brett ausschließlich <strong>„↩“</strong>, <strong>„½ Remis“</strong> und <strong>„✓ Zug bestätigen“</strong> angezeigt; „Variante“ und „Aufgeben“ kehren nach dem Zurücknehmen wieder zurück. Möchtest du Remis anbieten, aktiviere „½ Remis“ und sende anschließend <strong>„✓ Zug bestätigen + Remis“</strong>. Bei <strong>Live-Partien</strong> wird der Zug sofort ausgeführt; danach kannst du „½ Remis“ anklicken, solange der Gegner am Zug ist. Ein gegnerisches Remisangebot wird deutlich mit <strong>„Remis annehmen“</strong> und <strong>„Ablehnen“</strong> angezeigt.</p>
 
@@ -551,7 +552,7 @@
           <p><strong>Bei Daily Chess läuft die serverseitige Zugfrist auch ohne geöffnete Seite weiter.</strong> Melde dich später mit demselben Account an und öffne die Partie über „Meine Partien“ erneut.</p>
 
           <h4>Mehr erfahren</h4>
-          <p>Ausführliche Erklärungen zu Live- und Daily-Partien, Turnieren, Ratings, Chats, Analyzer, Trainer, Eröffnungsschule und allen weiteren Funktionen findest du jederzeit unter <strong>„ℹ️ Info“ → „📖 Handbuch“</strong>.</p>
+          <p>Ausführliche Erklärungen zu Live- und Daily-Partien, Turnieren, Ratings, Chats, Analyzer, Trainer, Eröffnungsschule und allen weiteren Funktionen findest du jederzeit unter <strong>„👥 Mitglieder“ → „INFORMATIONEN“ → „📖 Handbuch“</strong>.</p>
         </div>
         <div class="info-actions">
           <button id="firstStepsCloseBtn" class="button-flat" type="button">Schließen</button>
@@ -566,14 +567,14 @@
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
           <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein; die Zuschauerfreigabe lässt sich im Spielraum verwalten. Öffnest du einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
-          <p>Das öffentliche Dropdown <strong>„ℹ️ Info“</strong> enthält <strong>„🚀 Erste Schritte“</strong>, das ausführliche <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Alle drei Texte sind bereits vor dem Login für Gäste lesbar. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
+          <p>Im Dropdown <strong>„👥 Mitglieder“</strong> stehen unter der Überschrift <strong>„INFORMATIONEN“</strong> die Punkte <strong>„🚀 Erste Schritte“</strong>, <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
           <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby mit dem festen <strong>Hammerschach-Mitglieder-Chat</strong>. Über <strong>„♟️ Neue Partie“</strong> im Header öffnest du die Partievorbereitung als eigenes Fenster. Dadurch bleibt die Lobby auch auf Smartphones kompakt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
-          <p>Die aktuelle Header-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>; daneben führen <strong>„🏆 Turniere“</strong>, <strong>„👥 Mitglieder“</strong> und <strong>„♟️ Bereiche“</strong> zu den übrigen Angeboten. Hammerschach TV findest du unter <strong>„♟️ Bereiche“ → „Zuschauen“ → „📺 Hammerschach TV“</strong>. <strong>„ℹ️ Info“</strong> öffnet Erste Schritte, Handbuch und Leitbild. Mit <strong>„🌙 Dunkel“</strong> beziehungsweise <strong>„☀️ Hell“</strong> wechselst du das Farbschema. In einem Spielraum oder einem integrierten Bereich ersetzt <strong>„↩️ Zur Lobby“</strong> die Schaltfläche für eine neue Partie.</p>
+          <p>Die aktuelle Desktop-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. Unter <strong>„♜ Vereinsschach“</strong> liegen Ergebnisdienst und Partienarchiv; die <strong>„🔧 Werkstatt“</strong> enthält ausschließlich Lern-, Trainings- und Analysefunktionen. <strong>„📺 Gamer TV“</strong> sitzt als eigener Zugang beim Logo. Mitglieder, Mein Profil und persönliche Nachrichten bilden eine separate Personenreihe; Erste Schritte, Handbuch und Leitbild liegen unter <strong>„👥 Mitglieder“ → „INFORMATIONEN“</strong>. Der kleine Schalter oben rechts wechselt das Farbschema. In der Desktop-Lobby ist der doppelte Turnierzugang im Header ausgeblendet; in einem Spielraum oder integrierten Bereich bleibt <strong>„🏆 Turniere“</strong> an seiner bisherigen Position. Dort ersetzt <strong>„↩️ Zur Lobby“</strong> außerdem die Schaltfläche für eine neue Partie.</p>
           <p>Auf dem Spielbrett kannst du eine Figur entweder wie bisher antippen und anschließend das Zielfeld wählen oder sie direkt mit Maus beziehungsweise Finger dorthin ziehen. Beim Ziehen dient das gesamte Feld der Figur als großzügige Grifffläche. Ein ungültiger Ablageversuch verändert die Stellung nicht; die Figur bleibt ausgewählt und die erlaubten Zielfelder werden weiterhin angezeigt.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
@@ -617,7 +618,7 @@
           <p>In einem Daily-Spielraum erscheint unter den Brettaktionen die Schaltfläche <strong>„Nächste fällige Partie“</strong>, sobald tatsächlich eine weitere Daily-Partie auf deinen Zug wartet. Sie führt im aktuellen Tab direkt zu dieser Partie; maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, wird der Bereich platzsparend ausgeblendet.</p>
 
           <h4>9. Mitglieder finden, einladen oder eine Partie offen anbieten</h4>
-          <p>Über <strong>„👥 Mitglieder“ → „👥 Liste“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Aktivitätsstatus der Mitglieder. Die Liste kann nach <strong>Online</strong>, <strong>innerhalb von 24 Stunden</strong> oder <strong>innerhalb von 7 Tagen</strong> gefiltert und nach letzter Aktivität oder Name sortiert werden. Konten mit noch unbestätigter Mailadresse bleiben als grauer Hinweis sichtbar und tragen den Vermerk <strong>„Anmeldung noch nicht abgeschlossen“</strong>. Ihr Profil kann angesehen werden; Einladungen, Nachrichten und Favoritenaktionen sind bis zur Bestätigung deaktiviert. Mit dem Stern am Namen markierst du ein vollständig angemeldetes Mitglied privat als <strong>Lieblingsmitglied</strong>. Favoriten stehen in beiden Sortierungen zuerst und lassen sich über <strong>„Favoriten“</strong> allein anzeigen; andere Mitglieder sehen diese persönliche Auswahl nicht. Im selben Dropdown führt <strong>„👤 Mein Profil“</strong> zur eigenen Accountverwaltung. Über <strong>„Profil“</strong> in der Mitgliederliste öffnest du das Mitgliederprofil mit Profilbild beziehungsweise Buchstaben-Avatar, Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Im Global Chat öffnet ein Klick auf einen Namen unter <strong>„Gerade online“</strong> dasselbe Mitgliederprofil. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby öffnet <strong>„Zur Partie einladen“</strong> die Partievorbereitung mit dem ausgewählten Mitglied als festem Empfänger. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
+          <p>Über <strong>„👥 Mitglieder“ → „👥 Mitgliederliste“</strong> im Header öffnest du unabhängig vom Einladungsfenster die Mitgliederliste. Sie ist ausschließlich für eingeloggte Mitglieder sichtbar; Gäste erhalten weder die Namen noch den Aktivitätsstatus der Mitglieder. Die Liste kann nach <strong>Online</strong>, <strong>innerhalb von 24 Stunden</strong> oder <strong>innerhalb von 7 Tagen</strong> gefiltert und nach letzter Aktivität oder Name sortiert werden. Konten mit noch unbestätigter Mailadresse bleiben als grauer Hinweis sichtbar und tragen den Vermerk <strong>„Anmeldung noch nicht abgeschlossen“</strong>. Ihr Profil kann angesehen werden; Einladungen, Nachrichten und Favoritenaktionen sind bis zur Bestätigung deaktiviert. Mit dem Stern am Namen markierst du ein vollständig angemeldetes Mitglied privat als <strong>Lieblingsmitglied</strong>. Favoriten stehen in beiden Sortierungen zuerst und lassen sich über <strong>„Favoriten“</strong> allein anzeigen; andere Mitglieder sehen diese persönliche Auswahl nicht. <strong>„👤 Mein Profil“</strong> steht als eigener Direktbutton neben dem Mitglieder-Menü und führt zur eigenen Accountverwaltung. Über <strong>„Profil“</strong> in der Mitgliederliste öffnest du das Mitgliederprofil mit Profilbild beziehungsweise Buchstaben-Avatar, Mitgliedszeitraum, allen sechs Hammerschach-Ratings sowie freiwilligen Angaben zu echtem Namen, Schachverein, DWZ und „Über mich“. Die DWZ ist eine ungeprüfte Selbstauskunft. Leere freiwillige Felder werden nicht angezeigt. Im Global Chat öffnet ein Klick auf einen Namen unter <strong>„Gerade online“</strong> dasselbe Mitgliederprofil. Die Liste selbst erzeugt noch keinen Spielraum. In der Mitglieder-Lobby öffnet <strong>„Zur Partie einladen“</strong> die Partievorbereitung mit dem ausgewählten Mitglied als festem Empfänger. Während du dich in einem Spielraum befindest, bleibt die Liste zum Nachsehen erreichbar, eine neue Einladung wird jedoch erst wieder in der Lobby vorbereitet.</p>
           <p>Bei einer direkten Einladung über die Mitgliederliste legst du zunächst Farbe, Spielmodus, Bedenkzeit und Wertung fest und kannst im selben Fenster eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen ergänzen. Erst <strong>„Einladung senden“</strong> erstellt den privaten Spielraum und verschickt die Einladung; <strong>„Abbrechen“</strong> hinterlässt weder einen Spielraum noch eine offene Daily-Einladung. Über die allgemeine Partievorbereitung kannst du weiterhin einen Einladungslink oder den vollständigen Einladungstext erzeugen und anschließend ein registriertes Mitglied auswählen. Online-Mitglieder werden grün markiert; standardmäßig folgen danach die zuletzt aktiven Mitglieder.</p>
           <p>Über <strong>„Partie anbieten“</strong> wird die vorbereitete Partie stattdessen unter <strong>„Offene Partien“</strong> veröffentlicht. Dort sehen andere eingeloggte Mitglieder Spielmodus, Bedenkzeit, Variante, Wertung und die noch freie Farbe und können das Angebot eindeutig annehmen. Das eigene Angebot ist ebenfalls sichtbar und kann über <strong>„Angebot zurückziehen“</strong> entfernt werden, solange noch niemand angenommen hat. Nach der Annahme verschwindet es sofort aus der Übersicht. Bei einer offenen Daily-Partie erhält der Anbieter eine E-Mail, sobald der Gegner beigetreten und die Partie automatisch gestartet ist. Ist der Anbieter mit Weiß am Zug, wird dies in derselben Nachricht mitgeteilt.</p>
           <p>Beim Einladen eines registrierten Mitglieds versendet der Hammerschach-Gamer die Partieeinladung automatisch von <strong>hammerschach-gamer@online.de</strong> an die im Account hinterlegte Mailadresse. Eine persönliche Nachricht des Einladenden erscheint vollständig in der Mail und bei Daily Chess zusätzlich auf der Einladungskarte unter <strong>„Meine Partien“</strong>. Bei einer Daily-Einladung öffnet die rote Mail-Schaltfläche nur diese Einladung; sie nimmt sie nicht automatisch an. Erst <strong>„Annehmen“</strong> startet die Partie. Die Mailadresse des Mitglieds bleibt dabei im Worker verborgen und wird nicht an den Browser übertragen.</p>
@@ -667,20 +668,20 @@
           <p>Direkt unter der unteren Spielerleiste führen dich <strong>«</strong>, <strong>‹</strong>, <strong>›</strong> und <strong>»</strong> zum Anfang, einen Halbzug zurück, einen Halbzug vor oder zur letzten Stellung. Daneben kannst du das gerade sichtbare Brett drehen, die Brettfarbe und den Figurensatz ändern sowie den Ton ein- oder ausschalten. Beim geöffneten Variantenbrett arbeiten Navigation und Drehschaltfläche automatisch mit der Variante.</p>
           <p>Auf ausreichend großen Desktopbildschirmen erscheint in einer geöffneten Partie zusätzlich die Schaltfläche <strong>„↔“</strong>. Sie öffnet die Auswahl für ein größeres Schachbrett. Du kannst zwischen Standard, Groß und Sehr groß wählen oder die gewünschte Größe mit dem Regler und den Tasten <strong>−</strong> und <strong>+</strong> fein einstellen. Die Standardgröße beträgt 760 Pixel; <strong>„Standard wiederherstellen“</strong> setzt sie jederzeit zurück. Der Größenwunsch wird nur auf dem jeweiligen Gerät gespeichert und beim nächsten Öffnen einer Partie wieder verwendet. In der Lobby gilt weiterhin die gewohnte, höchstens 1100 Pixel breite Grundansicht.</p>
           <p>Bei einem großen Brett wechselt der Gamer automatisch in eine kompakte Spielkopfzeile. Dort bleibt <strong>„↔“</strong> sichtbar, damit das Brett auch dann jederzeit wieder verkleinert werden kann. Nach dem Verlassen der Partie erscheint wieder der vollständige Header. Reicht der verfügbare Platz eines Fensters nicht für die gespeicherte Wunschgröße, begrenzt der Gamer das Brett vorübergehend; auf einem größeren Bildschirm wird die Wunschgröße wieder genutzt. Auf Smartphones, Tablets, kleinen Desktopfenstern und Geräten ohne präzise Mausbedienung wird die Schaltfläche nicht angeboten – dort passt sich das Brett weiterhin automatisch an.</p>
-          <p>Über <strong>„🌙 Dunkel“</strong> im Header aktivierst du den Dark Mode für den gesamten Gamer. Die Auswahl wird auf dem Gerät gespeichert und beim nächsten Aufruf automatisch wiederhergestellt. Mit <strong>„☀️ Hell“</strong> wechselst du zurück zur hellen Darstellung.</p>
+          <p>Über den kleinen <strong>„🌙“</strong>-Schalter ganz oben rechts aktivierst du den Dark Mode für den gesamten Gamer. Die Auswahl wird auf dem Gerät gespeichert und beim nächsten Aufruf automatisch wiederhergestellt. Im dunklen Modus zeigt der Schalter <strong>„☀️“</strong> und wechselt zurück zur hellen Darstellung.</p>
 
           <h4>17. PGN-Datei</h4>
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
           <h4>18. Schach lernen</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „🎓 Schach lernen“</strong> öffnest du den Hammerschach-Grundkurs direkt innerhalb des Gamers. Die zehn Lektionen behandeln Brett und Figuren, sämtliche Figurenzüge, Figurenwerte, Rochade sowie Schach, Matt und Patt. Die Videos von TheBigGreek starten nicht automatisch. Jede Lektion kann nach dem Ansehen als erledigt markiert werden; Kursstand und zuletzt geöffnete Lektion werden ausschließlich auf diesem Gerät gespeichert.</p>
+          <p>Über <strong>„🔧 Werkstatt“ → „🎓 Schach lernen“</strong> öffnest du den Hammerschach-Grundkurs direkt innerhalb des Gamers. Die zehn Lektionen behandeln Brett und Figuren, sämtliche Figurenzüge, Figurenwerte, Rochade sowie Schach, Matt und Patt. Die Videos von TheBigGreek starten nicht automatisch. Jede Lektion kann nach dem Ansehen als erledigt markiert werden; Kursstand und zuletzt geöffnete Lektion werden ausschließlich auf diesem Gerät gespeichert.</p>
           <p>Nach Abschluss aller zehn Lektionen führt <strong>„🎯 Anfängertraining starten“</strong> ohne Umweg in den geführten Lernpfad. Der Trainer beginnt mit Matt in einem Zug und steigert die Anforderungen blockweise.</p>
           <p>Der Grundkurs steht auch ohne Registrierung zur Verfügung. Der Gamer-Header bleibt sichtbar. Besucher kehren mit <strong>„↩️ Zur Startseite“</strong> zurück; angemeldete Mitglieder schließen den Lernbereich mit <strong>„↩️ Zur Lobby“</strong>. Während eines geöffneten Spiel- oder Zuschauerraums wird der Lernkurs nicht parallel eingeblendet.</p>
 
           <h4>19. Der integrierte Analyzer</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
-          <p>Analyzer, Schachlabor und Eröffnungsschule sind ausschließlich für eingeloggte Mitglieder verfügbar; der Grundkurs „Schach lernen“ und das Anfängertraining sind davon ausgenommen. Wird ein Mitgliederbereich aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch den gewählten Bereich. Die Partie bleibt serverseitig bestehen; der Bereich wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt den gerade aktiven Bereich wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Im Zuschauermodus bleibt das Bereiche-Menü ausgeblendet. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
+          <p>Über <strong>„🔧 Werkstatt“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
+          <p>Analyzer, Schachlabor und Eröffnungsschule sind ausschließlich für eingeloggte Mitglieder verfügbar; der Grundkurs „Schach lernen“ und das Anfängertraining sind davon ausgenommen. Wird eine geschützte Werkstatt-Funktion aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch die gewählte Funktion. Die Partie bleibt serverseitig bestehen; die Funktion wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt die gerade aktive Funktion wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Im Zuschauermodus bleibt die Werkstatt ausgeblendet. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, eine Brettfarbe wählen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Die Brettfarbe wird auf dem Gerät gespeichert. Der Dark Mode wird automatisch vom Gamer übernommen.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
@@ -695,7 +696,7 @@
           </ul>
 
           <h4>20. Der integrierte Trainer</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „🎯 Trainer“</strong> öffnest du das Training direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Anfängertraining und lokaler Lernfortschritt stehen auch ohne Registrierung zur Verfügung.</p>
+          <p>Über <strong>„🔧 Werkstatt“ → „🎯 Trainer“</strong> öffnest du das Training direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Anfängertraining und lokaler Lernfortschritt stehen auch ohne Registrierung zur Verfügung.</p>
           <ul>
             <li><strong>Anfänger-Lernpfad:</strong> Sechs aufeinander aufbauende Blöcke führen durch Matt in 1, Ein-Zug-Taktik, Gabeln, Fesselung und Spieß, Matt in 2 sowie eine gemischte Abschlussprüfung. Der nächste Block wird nach dem sicheren Abschluss freigeschaltet.</li>
             <li><strong>Fehlertraining:</strong> Falsch gelöste oder über die Lösung angezeigte Aufgaben landen automatisch in einer persönlichen Wiederholungsliste. Erst eine fehlerfreie Wiederholung gilt als gemeistert.</li>
@@ -708,7 +709,7 @@
           </ul>
 
           <h4>21. Das integrierte Schachlabor</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „🧪 Schachlabor“</strong> öffnest du als eingeloggtes Mitglied eine freie Werkstatt für Standard- und Freestyle-Schach. Du kannst Figuren beliebig aufstellen, das Zugrecht, Rochaderechte und ein En-passant-Feld festlegen, eine FEN laden oder kopieren und anschließend in <strong>„Play &amp; Analyze“</strong> legal weiterspielen. Bei Freestyle wird die Chess960-Stellung über ihre offizielle Nummer erzeugt; die Rochade verwendet dieselbe Chess960-Regellogik wie Gamer-Partien.</p>
+          <p>Über <strong>„🔧 Werkstatt“ → „🧪 Schachlabor“</strong> öffnest du als eingeloggtes Mitglied eine freie Werkstatt für Standard- und Freestyle-Schach. Du kannst Figuren beliebig aufstellen, das Zugrecht, Rochaderechte und ein En-passant-Feld festlegen, eine FEN laden oder kopieren und anschließend in <strong>„Play &amp; Analyze“</strong> legal weiterspielen. Bei Freestyle wird die Chess960-Stellung über ihre offizielle Nummer erzeugt; die Rochade verwendet dieselbe Chess960-Regellogik wie Gamer-Partien.</p>
           <ul>
             <li><strong>Stockfish:</strong> Manuelle oder automatische Analyse mit MultiPV zeigt Bewertung, WDL, Bestzug, Tiefe und mehrere Hauptvarianten. Im Freestyle-Modus wird Stockfish mit <code>UCI_Chess960</code> betrieben.</li>
             <li><strong>Training:</strong> Wähle, ob die Engine Weiß oder Schwarz spielt. Vor deinem Zug berechnet Stockfish die Kandidaten verdeckt; erst danach wird dein Zug mit den berechneten Hauptkandidaten verglichen.</li>
@@ -718,7 +719,7 @@
           </ul>
 
           <h4>22. Die integrierte Eröffnungsschule</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „📘 Eröffnungsschule“</strong> öffnest du die Hammerschach-Eröffnungsschule. Sie enthält 140 vorbereitete Eröffnungseinträge mit ECO-Code, Zugfolge und strategischer Grundidee. Wie Analyzer und Trainer steht sie eingeloggten Mitgliedern außerhalb eines laufenden oder als Zuschauer geöffneten Spielraums zur Verfügung.</p>
+          <p>Über <strong>„🔧 Werkstatt“ → „📘 Eröffnungsschule“</strong> öffnest du die Hammerschach-Eröffnungsschule. Sie enthält 140 vorbereitete Eröffnungseinträge mit ECO-Code, Zugfolge und strategischer Grundidee. Wie Analyzer und Trainer steht sie eingeloggten Mitgliedern außerhalb eines laufenden oder als Zuschauer geöffneten Spielraums zur Verfügung.</p>
           <ul>
             <li><strong>Entdecken:</strong> Wähle eine Eröffnung nach Name, ECO-Code oder Zugfolge und spiele sie mit den Pfeiltasten oder einem Klick auf einen Zug vor und zurück. Die ausführliche strategische Grundidee öffnet platzsparend in einem eigenen Beschreibungsfenster.</li>
             <li><strong>Lernen:</strong> Entscheide dich für Weiß, Schwarz oder beide Seiten. Die jeweils andere Seite zieht automatisch; falsche Züge verändern die Stellung nicht.</li>
@@ -728,17 +729,17 @@
             <li><strong>Darstellung:</strong> Brettfarbe und Figurensatz werden gemeinsam mit Gamer, Analyzer und Trainer verwendet. Der Dark Mode wird automatisch übernommen.</li>
           </ul>
 
-          <h4>23. Hammerschach TV</h4>
-          <p>Über <strong>„♟️ Bereiche“ → „Zuschauen“ → „📺 Hammerschach TV“</strong> öffnest du ausgewählte Schach-Livestreams direkt innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Hammerschach TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
+          <h4>23. Gamer TV</h4>
+          <p>Über das kleine <strong>„📺“</strong>-Symbol direkt beim Hammerschach-Logo öffnest du <strong>Gamer TV</strong> mit ausgewählten Schach-Livestreams innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Gamer TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>24. Ergebnisdienst und Partienarchiv</h4>
-          <p>Besucher öffnen die freigeschalteten Ligatabellen direkt über <strong>„📊 Ergebnisdienst“</strong>; angemeldete Mitglieder finden sie zusätzlich unter <strong>„♟️ Bereiche“ → „Ergebnisse u. Partien“</strong>. Anzahl der Mannschaften und Rundenspalten werden automatisch aus der jeweiligen Rangliste übernommen. Unter jeder Tabelle erscheint außerdem die vollständige Rundenübersicht mit allen vom Ergebnisdienst angebotenen Spieltagen; die nächste Runde ist beim Öffnen bereits ausgeklappt. Vereinsnamen sowie vorhandene Ergebnis- und Rundenlinks führen in einem neuen Browser-Tab zur zugehörigen Originalseite des Ergebnisdienstes. Der Gamer aktualisiert die Ligadaten regelmäßig; falls die Quelle vorübergehend nicht erreichbar ist, bleiben die zuletzt erfolgreich geladenen Daten sichtbar.</p>
+          <p>Besucher öffnen die freigeschalteten Ligatabellen direkt über <strong>„📊 Ergebnisdienst“</strong>; angemeldete Mitglieder finden sie zusätzlich unter <strong>„♜ Vereinsschach“ → „📊 Ergebnisdienst“</strong>. Anzahl der Mannschaften und Rundenspalten werden automatisch aus der jeweiligen Rangliste übernommen. Unter jeder Tabelle erscheint außerdem die vollständige Rundenübersicht mit allen vom Ergebnisdienst angebotenen Spieltagen; die nächste Runde ist beim Öffnen bereits ausgeklappt. Vereinsnamen sowie vorhandene Ergebnis- und Rundenlinks führen in einem neuen Browser-Tab zur zugehörigen Originalseite des Ergebnisdienstes. Der Gamer aktualisiert die Ligadaten regelmäßig; falls die Quelle vorübergehend nicht erreichbar ist, bleiben die zuletzt erfolgreich geladenen Daten sichtbar.</p>
           <p>Der Administrator kann die gemeinsame Saisonüberschrift zentral ändern und bis zu 15 Tabellen anlegen, frei benennen, sortieren sowie einzeln ein- oder ausschalten. Zu einer neuen Saison müssen anschließend nur noch die Überschrift und die Adressen der Ranglistenseiten angepasst werden. Mit <strong>„Jetzt prüfen / aktualisieren“</strong> lässt sich jede gespeicherte Tabelle sofort kontrollieren.</p>
           <p>Das <strong>„📚 Partienarchiv“</strong> steht ausschließlich eingeloggten Mitgliedern zur Verfügung. Bis zu 15 vom Administrator benannte PGN-Sammlungen können ausgewählt, durchsucht und Partie für Partie nachgespielt werden. Klassische und Freestyle-Partien werden einschließlich ihrer Startstellung unterstützt; Stockfish analysiert die sichtbare Stellung direkt im Reader. Die aktuelle Partie kann jederzeit wieder als PGN gespeichert werden.</p>
 
           <h4>25. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule, dem Partienarchiv, Hammerschach TV oder den Ligatabellen steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
+          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule, dem Partienarchiv, Gamer TV oder den Ligatabellen steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
 
           <h4>26. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -860,7 +861,7 @@
 
           <h4>9. Technischer Betrieb und externe Inhalte</h4>
           <p>Der Gamer wird mit Cloudflare-Technik betrieben. Dabei kommen insbesondere Worker, eine D1-Datenbank, Durable Objects für dauerhaft erreichbare Spielräume und ein privater R2-Bucket für freiwillige Profilbilder zum Einsatz. Bei der Nutzung werden die technisch notwendigen Verbindungsdaten durch die beteiligten Server verarbeitet.</p>
-          <p>Die Lernvideos und Übertragungen von Hammerschach TV werden über eingebettete YouTube-Player geladen. Erst beim Aufruf eines solchen Bereichs kann dadurch eine Verbindung zu YouTube beziehungsweise Google entstehen; dabei gelten die Datenschutzbestimmungen des jeweiligen Anbieters. Die Videos starten nicht ungefragt mit Ton.</p>
+          <p>Die Lernvideos und Übertragungen von Gamer TV werden über eingebettete YouTube-Player geladen. Erst beim Aufruf eines solchen Bereichs kann dadurch eine Verbindung zu YouTube beziehungsweise Google entstehen; dabei gelten die Datenschutzbestimmungen des jeweiligen Anbieters. Die Videos starten nicht ungefragt mit Ton.</p>
           <p>Die Schachfiguren werden als lokale Bilddateien des Gamers geladen; hierfür wird keine Verbindung zu einem externen Bildserver hergestellt. Das Gamer-Logo in HTML-Mails kann als externes Bild eingebunden sein; manche Mailprogramme laden solche Bilder erst nach Zustimmung.</p>
 
           <h4>10. Rechtsgrundlagen und Zwecke</h4>
@@ -2354,12 +2355,12 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260828-2"></script>
-<script src="js/header-ui.js?v=20260828-1"></script>
+<script src="js/online-ui-elements.js?v=20260830-2"></script>
+<script src="js/header-ui.js?v=20260830-2"></script>
 <script src="js/dialog-ui-state.js?v=20260830-1"></script>
-<script src="js/hammerschach-tv.js?v=20260804-1"></script>
+<script src="js/hammerschach-tv.js?v=20260830-2"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
-<script src="js/embedded-tools.js?v=20260828-2"></script>
+<script src="js/embedded-tools.js?v=20260830-2"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2377,7 +2378,7 @@
 <script src="js/admin-info-center.js?v=20260819-2"></script>
 <script src="js/account-profile.js?v=20260811-2"></script>
 <script src="js/auth-recovery.js?v=20260804-1"></script>
-<script src="js/auth-account.js?v=20260825-2"></script>
+<script src="js/auth-account.js?v=20260830-2"></script>
 <script src="js/tournament-themes.js?v=20260826-2"></script>
 <script src="js/tournament-setup.js?v=20260821-2"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
@@ -2392,7 +2393,7 @@
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
-<script src="js/online-ui-state.js?v=20260828-1"></script>
+<script src="js/online-ui-state.js?v=20260830-2"></script>
 <script src="js/member-directory.js?v=20260827-1"></script>
 <script src="js/direct-messages.js?v=20260827-1"></script>
 <script src="js/game-invitations.js?v=20260827-1"></script>
@@ -2420,6 +2421,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260828-1"></script>
 <script src="js/board-size-control.js?v=20260828-1"></script>
-<script src="js/mobile-navigation.js?v=20260828-2"></script>
+<script src="js/mobile-navigation.js?v=20260830-3"></script>
 </body>
 </html>
