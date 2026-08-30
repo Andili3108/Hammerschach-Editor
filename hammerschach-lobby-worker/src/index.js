@@ -1,6 +1,7 @@
 // BUILD: GAMER-SCHACHLABOR-20260823-4
 import { connect } from 'cloudflare:sockets';
 import { handleLeagueStandingsApi } from './league-standings.js';
+import { handleReaderArchivesApi } from './reader-archives.js';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
 const FAIRPLAY_RAW_DATA_VERSION = 1;
@@ -10211,6 +10212,15 @@ async function applyModerationAction(env,adminUser,body){
 
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
+
+  const readerArchivesResponse = await handleReaderArchivesApi(request, env, url, {
+    json,
+    lookupAuthSession,
+    bearerTokenFromRequest,
+    requireAdminSession,
+    readJsonBody
+  });
+  if (readerArchivesResponse) return readerArchivesResponse;
 
   const leagueStandingsResponse = await handleLeagueStandingsApi(request, env, url, {
     json,
