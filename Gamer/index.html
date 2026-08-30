@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260830-3" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260830-4" />
 </head>
 <body>
 <div class="app" role="main">
@@ -51,7 +51,6 @@
             <img src="Gamer-Logo.png" alt="Hammerschach-Gamer Logo" onerror="this.style.display='none'; this.parentNode.textContent='Hammerschach';" />
           </div>
         </a>
-        <button id="tvToolBtn" class="button-flat brand-tv-btn" type="button" aria-controls="tvToolView" aria-label="Gamer TV öffnen" title="Gamer TV" hidden>📺</button>
       </div>
       <div class="header-main">
         <div class="online-panel" aria-label="Online-Lobby Status" hidden>
@@ -134,6 +133,7 @@
               <button id="schachlaborToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="schachlaborToolView">🧪 Schachlabor</button>
             </div>
           </div>
+          <button id="tvToolBtn" class="button-flat name-action-btn header-direct-action gamer-tv-nav-btn" type="button" aria-controls="tvToolView" aria-label="Gamer-TV öffnen" title="Gamer-TV" hidden>📺 Gamer-TV</button>
         </div>
       </div>
     </header>
@@ -153,7 +153,6 @@
       <aside id="mobileNavTestDrawer" class="mobile-nav-test-drawer" role="dialog" aria-modal="true" aria-label="Hammerschach-Menü">
         <div class="mobile-nav-test-drawer-head">
           <div class="mobile-nav-test-drawer-brand"><img src="Gamer-Logo.png" alt="" /><span><strong>Hammerschach</strong><small>Gamer-Menü</small></span></div>
-          <button id="mobileNavTvItem" class="mobile-nav-drawer-tv" type="button" data-mobile-nav-target="tvToolBtn" aria-label="Gamer TV öffnen" title="Gamer TV" hidden>📺</button>
           <button id="mobileNavTestClose" class="mobile-nav-test-close" type="button" aria-label="Menü schließen">×</button>
         </div>
         <nav class="mobile-nav-test-list" aria-label="Mobile Gamer-Navigation">
@@ -226,6 +225,7 @@
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="schachlaborToolBtn"><span>🧪</span><strong>Schachlabor</strong></button>
               </div>
             </div>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="tvToolBtn"><span>📺</span><strong>Gamer-TV</strong></button>
           </section>
         </nav>
       </aside>
@@ -259,7 +259,7 @@
       <iframe id="readerToolFrame" class="reader-tool-frame" title="Hammerschach-Partienarchiv" data-src="./Reader/?v=20260830-4" loading="lazy"></iframe>
     </section>
 
-    <section id="tvToolView" class="tv-tool-view" hidden aria-label="Gamer TV">
+    <section id="tvToolView" class="tv-tool-view" hidden aria-label="Gamer-TV">
       <div class="box tv-stage">
         <div class="tv-content">
           <div class="tv-layout">
@@ -289,7 +289,7 @@
             </div>
             <div class="tv-player-card">
               <div class="tv-player-wrap">
-                <iframe id="tvPlayerFrame" title="YouTube-Livestream bei Gamer TV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen hidden></iframe>
+                <iframe id="tvPlayerFrame" title="YouTube-Livestream bei Gamer-TV" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen hidden></iframe>
                 <div id="tvPlayerPlaceholder" class="tv-player-placeholder">
                   <div class="tv-placeholder-icon" aria-hidden="true">♜</div>
                   <div id="tvPlaceholderTitle" class="tv-placeholder-title">Noch keine Übertragung</div>
@@ -324,7 +324,7 @@
               <label class="tv-enabled-label"><input id="tvEnabledInput" type="checkbox" checked> Diesen Senderplatz für Mitglieder einschalten</label>
               <div class="tv-field">
                 <label for="tvTitleInput">Seitentitel</label>
-                <input id="tvTitleInput" class="tv-input" type="text" maxlength="90" value="Gamer TV">
+                <input id="tvTitleInput" class="tv-input" type="text" maxlength="90" value="Gamer-TV">
               </div>
               <div class="tv-field">
                 <label for="tvEventInput">Aktuelles Event</label>
@@ -536,7 +536,7 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Vereinsschach“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong> und <strong>„📚 Partienarchiv“</strong>; in der <strong>„🔧 Werkstatt“</strong> findest du Schach lernen, Trainer, Eröffnungsschule, Analyzer und Schachlabor. <strong>„📺 Gamer TV“</strong> öffnest du über das kleine TV-Symbol direkt beim Logo. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Vereinsschach“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong> und <strong>„📚 Partienarchiv“</strong>; in der <strong>„🔧 Werkstatt“</strong> findest du Schach lernen, Trainer, Eröffnungsschule, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
@@ -574,7 +574,7 @@
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
           <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby mit dem festen <strong>Hammerschach-Mitglieder-Chat</strong>. Über <strong>„♟️ Neue Partie“</strong> im Header öffnest du die Partievorbereitung als eigenes Fenster. Dadurch bleibt die Lobby auch auf Smartphones kompakt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
-          <p>Die aktuelle Desktop-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. Unter <strong>„♜ Vereinsschach“</strong> liegen Ergebnisdienst und Partienarchiv; die <strong>„🔧 Werkstatt“</strong> enthält ausschließlich Lern-, Trainings- und Analysefunktionen. <strong>„📺 Gamer TV“</strong> sitzt als eigener Zugang beim Logo. Mitglieder, Mein Profil und persönliche Nachrichten bilden eine separate Personenreihe; Erste Schritte, Handbuch und Leitbild liegen unter <strong>„👥 Mitglieder“ → „INFORMATIONEN“</strong>. Der kleine Schalter oben rechts wechselt das Farbschema. In der Desktop-Lobby ist der doppelte Turnierzugang im Header ausgeblendet; in einem Spielraum oder integrierten Bereich bleibt <strong>„🏆 Turniere“</strong> an seiner bisherigen Position. Dort ersetzt <strong>„↩️ Zur Lobby“</strong> außerdem die Schaltfläche für eine neue Partie.</p>
+          <p>Die aktuelle Desktop-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. Unter <strong>„♜ Vereinsschach“</strong> liegen Ergebnisdienst und Partienarchiv; die <strong>„🔧 Werkstatt“</strong> enthält ausschließlich Lern-, Trainings- und Analysefunktionen. <strong>„📺 Gamer-TV“</strong> folgt als eigener Zugang direkt rechts neben der Werkstatt. Mitglieder, Mein Profil und persönliche Nachrichten bilden eine separate Personenreihe; Erste Schritte, Handbuch und Leitbild liegen unter <strong>„👥 Mitglieder“ → „INFORMATIONEN“</strong>. Der kleine Schalter oben rechts wechselt das Farbschema. In der Desktop-Lobby ist der doppelte Turnierzugang im Header ausgeblendet; in einem Spielraum oder integrierten Bereich bleibt <strong>„🏆 Turniere“</strong> an seiner bisherigen Position. Dort ersetzt <strong>„↩️ Zur Lobby“</strong> außerdem die Schaltfläche für eine neue Partie.</p>
           <p>Auf dem Spielbrett kannst du eine Figur entweder wie bisher antippen und anschließend das Zielfeld wählen oder sie direkt mit Maus beziehungsweise Finger dorthin ziehen. Beim Ziehen dient das gesamte Feld der Figur als großzügige Grifffläche. Ein ungültiger Ablageversuch verändert die Stellung nicht; die Figur bleibt ausgewählt und die erlaubten Zielfelder werden weiterhin angezeigt.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
@@ -729,8 +729,8 @@
             <li><strong>Darstellung:</strong> Brettfarbe und Figurensatz werden gemeinsam mit Gamer, Analyzer und Trainer verwendet. Der Dark Mode wird automatisch übernommen.</li>
           </ul>
 
-          <h4>23. Gamer TV</h4>
-          <p>Über das kleine <strong>„📺“</strong>-Symbol direkt beim Hammerschach-Logo öffnest du <strong>Gamer TV</strong> mit ausgewählten Schach-Livestreams innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Gamer TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
+          <h4>23. Gamer-TV</h4>
+          <p>Über <strong>„📺 Gamer-TV“</strong> direkt rechts neben der Werkstatt öffnest du ausgewählte Schach-Livestreams innerhalb des Gamers. Die TV-Regie kann bis zu drei parallel laufende Ereignisse als <strong>TV 1</strong>, <strong>TV 2</strong> und <strong>TV 3</strong> bereitstellen. Sind mehrere Sender aktiv, wechselst du unmittelbar oberhalb des Videofensters zwischen ihnen; der zuletzt auf diesem Gerät gewählte Sender wird beim nächsten Öffnen wiederhergestellt. Für jeden Senderplatz kann ein YouTube-Kanal einmalig hinterlegt werden; automatisch angezeigt wird zuerst der laufende Stream, danach die nächste angekündigte Übertragung und andernfalls die zuletzt beendete Übertragung als Replay. Bei einer YouTube-Playlist öffnet <strong>„📋 Videos dieser Playlist“</strong> eine übersichtliche, nummerierte Videoliste mit Vorschaubildern. Ein Klick auf einen Eintrag spielt die gewählte Übertragung direkt in Gamer-TV ab. Die Liste wird ohne zusätzlichen API-Schlüssel unmittelbar aus dem YouTube-Player übernommen. Nicht belegte Senderplätze bleiben ausgeblendet. Ist momentan keine Übertragung vorhanden, zeigt der gewählte Sender eine klare Sendepause statt eines leeren Videofensters.</p>
           <p>Der Stream startet nicht ungefragt mit Ton. Mit <strong>„↩️ Zur Lobby“</strong> wird die Wiedergabe beendet und die Mitglieder-Lobby ohne Neuladen wiederhergestellt.</p>
 
           <h4>24. Ergebnisdienst und Partienarchiv</h4>
@@ -739,7 +739,7 @@
           <p>Das <strong>„📚 Partienarchiv“</strong> steht ausschließlich eingeloggten Mitgliedern zur Verfügung. Bis zu 15 vom Administrator benannte PGN-Sammlungen können ausgewählt, durchsucht und Partie für Partie nachgespielt werden. Klassische und Freestyle-Partien werden einschließlich ihrer Startstellung unterstützt; Stockfish analysiert die sichtbare Stellung direkt im Reader. Die aktuelle Partie kann jederzeit wieder als PGN gespeichert werden.</p>
 
           <h4>25. Neue Partie und Rückkehr zur Lobby</h4>
-          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule, dem Partienarchiv, Gamer TV oder den Ligatabellen steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
+          <p>In der Lobby öffnet <strong>„♟️ Neue Partie“</strong> im Header ein eigenes Fenster mit allen Einstellungen. Dort kannst du die vorbereitete Partie über <strong>„♟️ Partie anbieten“</strong> offen veröffentlichen oder mit <strong>„✉️ Mitglied einladen“</strong> gezielt anbieten. Auf Smartphones nutzt die Partievorbereitung den gesamten Bildschirm und lässt sich unabhängig von der Lobby scrollen. Sobald du dich in einem Spielraum befindest, wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Auch bei geöffnetem Grundkurs, Analyzer, Trainer, Schachlabor, der Eröffnungsschule, dem Partienarchiv, Gamer-TV oder den Ligatabellen steht dort <strong>„↩️ Zur Lobby“</strong>; hier schließt die Schaltfläche den Bereich direkt und stellt die Lobby beziehungsweise die vorherige Startansicht ohne Neuladen wieder her. Beim Verlassen eines Spielraums wird die Mitglieder-Lobby immer im aktuellen Browser-Tab geöffnet – sowohl innerhalb der Andili-Seite als auch beim direkten Aufruf des Gamers.</p>
 
           <h4>26. Verbindung und Wiederaufnahme</h4>
           <p>Wenn eine Verbindung kurz unterbrochen wird, versucht die Lobby den Raumzustand automatisch neu zu laden. Bei einer Live-Partie hilft gegebenenfalls das erneute Öffnen des Einladungslinks oder ein Neuladen der Seite.</p>
@@ -861,7 +861,7 @@
 
           <h4>9. Technischer Betrieb und externe Inhalte</h4>
           <p>Der Gamer wird mit Cloudflare-Technik betrieben. Dabei kommen insbesondere Worker, eine D1-Datenbank, Durable Objects für dauerhaft erreichbare Spielräume und ein privater R2-Bucket für freiwillige Profilbilder zum Einsatz. Bei der Nutzung werden die technisch notwendigen Verbindungsdaten durch die beteiligten Server verarbeitet.</p>
-          <p>Die Lernvideos und Übertragungen von Gamer TV werden über eingebettete YouTube-Player geladen. Erst beim Aufruf eines solchen Bereichs kann dadurch eine Verbindung zu YouTube beziehungsweise Google entstehen; dabei gelten die Datenschutzbestimmungen des jeweiligen Anbieters. Die Videos starten nicht ungefragt mit Ton.</p>
+          <p>Die Lernvideos und Übertragungen von Gamer-TV werden über eingebettete YouTube-Player geladen. Erst beim Aufruf eines solchen Bereichs kann dadurch eine Verbindung zu YouTube beziehungsweise Google entstehen; dabei gelten die Datenschutzbestimmungen des jeweiligen Anbieters. Die Videos starten nicht ungefragt mit Ton.</p>
           <p>Die Schachfiguren werden als lokale Bilddateien des Gamers geladen; hierfür wird keine Verbindung zu einem externen Bildserver hergestellt. Das Gamer-Logo in HTML-Mails kann als externes Bild eingebunden sein; manche Mailprogramme laden solche Bilder erst nach Zustimmung.</p>
 
           <h4>10. Rechtsgrundlagen und Zwecke</h4>
@@ -2358,9 +2358,9 @@
 <script src="js/online-ui-elements.js?v=20260830-2"></script>
 <script src="js/header-ui.js?v=20260830-2"></script>
 <script src="js/dialog-ui-state.js?v=20260830-1"></script>
-<script src="js/hammerschach-tv.js?v=20260830-2"></script>
+<script src="js/hammerschach-tv.js?v=20260830-3"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
-<script src="js/embedded-tools.js?v=20260830-2"></script>
+<script src="js/embedded-tools.js?v=20260830-3"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2393,7 +2393,7 @@
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
-<script src="js/online-ui-state.js?v=20260830-2"></script>
+<script src="js/online-ui-state.js?v=20260830-3"></script>
 <script src="js/member-directory.js?v=20260827-1"></script>
 <script src="js/direct-messages.js?v=20260827-1"></script>
 <script src="js/game-invitations.js?v=20260827-1"></script>
@@ -2421,6 +2421,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260828-1"></script>
 <script src="js/board-size-control.js?v=20260828-1"></script>
-<script src="js/mobile-navigation.js?v=20260830-3"></script>
+<script src="js/mobile-navigation.js?v=20260830-4"></script>
 </body>
 </html>
