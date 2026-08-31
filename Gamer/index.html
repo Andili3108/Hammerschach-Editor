@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-MATTBILDER-SCHULE-20260831-3 -->
+<!-- BUILD: GAMER-BESUCHER-WERKSTATT-20260831-4 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260831-1" />
+<link rel="stylesheet" href="css/gamer.css?v=20260831-2" />
 </head>
 <body>
 <div class="app" role="main">
@@ -116,7 +116,7 @@
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
           <button id="visitorLearningOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="learningToolView" hidden>🎓 Schach lernen</button>
-          <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Anfängertraining</button>
+          <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Trainer</button>
           <button id="visitorTrainerProgressHeaderBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>📊 Lernstand · 0/65</button>
           <button id="visitorPublicGamesOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-haspopup="dialog" aria-controls="publicGamesBackdrop" hidden>👁️ Laufende Partien</button>
           <div id="toolsMenu" class="header-menu tools-menu" hidden>
@@ -160,9 +160,15 @@
           <section id="mobileNavVisitorSection" hidden>
             <h2>Navigation</h2>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="roomLobbyBtn" data-mobile-nav-visitor-only><span>↩️</span><strong>Zur Startseite</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorLearningOpenBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schach lernen</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerOpenBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Anfängertraining</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorTrainerProgressHeaderBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Lernstand</strong></button>
+            <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="toolsMenu" hidden>
+              <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavVisitorToolsPanel"><span>🔧</span><strong>Werkstatt</strong><i aria-hidden="true">▾</i></button>
+              <div id="mobileNavVisitorToolsPanel" class="mobile-nav-accordion-panel" hidden>
+                <div class="mobile-nav-accordion-label">Lernen &amp; Trainieren</div>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schach lernen</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="trainerToolBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Trainer</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="mateSchoolToolBtn" data-mobile-nav-visitor-only><span>🧩</span><strong>Mattbilder-Schule</strong></button>
+              </div>
+            </div>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="visitorPublicGamesOpenBtn" data-mobile-nav-visitor-only><span>👁️</span><strong>Laufende Partien</strong></button>
             <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="clubChessMenu" hidden>
               <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavVisitorClubChessPanel"><span>♜</span><strong>Vereinsschach</strong><i aria-hidden="true">▾</i></button>
@@ -579,7 +585,7 @@
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
-          <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login stehen dort Schach lernen, Anfängertraining, laufende Partien sowie unter <strong>„♜ Vereinsschach“</strong> der <strong>Ergebnisdienst</strong> und das <strong>Partienarchiv</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein; die Zuschauerfreigabe lässt sich im Spielraum verwalten. Öffnest du einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
+          <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login enthält die <strong>„🔧 Werkstatt“</strong> die Bereiche <strong>„🎓 Schach lernen“</strong>, <strong>„🎯 Trainer“</strong> und <strong>„🧩 Mattbilder-Schule“</strong>. Außerdem stehen laufende Partien sowie unter <strong>„♜ Vereinsschach“</strong> der <strong>Ergebnisdienst</strong> und das <strong>Partienarchiv</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein; die Zuschauerfreigabe lässt sich im Spielraum verwalten. Öffnest du einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
           <p>Im Dropdown <strong>„👥 Mitglieder“</strong> stehen unter der Überschrift <strong>„INFORMATIONEN“</strong> die Punkte <strong>„🚀 Erste Schritte“</strong>, <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
@@ -690,12 +696,12 @@
           <h4>18. Schach lernen</h4>
           <p>Über <strong>„🔧 Werkstatt“ → „🎓 Schach lernen“</strong> öffnest du den Hammerschach-Grundkurs direkt innerhalb des Gamers. Die zehn Lektionen behandeln Brett und Figuren, sämtliche Figurenzüge, Figurenwerte, Rochade sowie Schach, Matt und Patt. Die Videos von TheBigGreek starten nicht automatisch. Jede Lektion kann nach dem Ansehen als erledigt markiert werden; Kursstand und zuletzt geöffnete Lektion werden ausschließlich auf diesem Gerät gespeichert.</p>
           <p>Nach Abschluss aller zehn Lektionen führt <strong>„🎯 Anfängertraining starten“</strong> ohne Umweg in den geführten Lernpfad. Der Trainer beginnt mit Matt in einem Zug und steigert die Anforderungen blockweise.</p>
-          <p>Die <strong>„🧩 Mattbilder-Schule“</strong> ist für Mitglieder sowohl über das Anfängertraining als auch unter <strong>„🔧 Werkstatt“ → „Lernen &amp; Trainieren“</strong> erreichbar. Sie überträgt 30 klassische Mattmotive in 150 spielbare Aufgaben. Zu jedem Motiv stehen fünf Stellungen bereit; Hinweise, Lösung und der lokal gespeicherte Lernfortschritt helfen beim Wiederholen.</p>
+          <p>Die <strong>„🧩 Mattbilder-Schule“</strong> liegt für Besucher und Mitglieder unter <strong>„🔧 Werkstatt“ → „Lernen &amp; Trainieren“</strong>. Besucher erhalten die ersten 10 Mattmotive mit 50 Aufgaben; angemeldeten Mitgliedern stehen alle 30 Motive mit insgesamt 150 Aufgaben zur Verfügung. Hinweise, Lösung und der lokal gespeicherte Lernfortschritt helfen beim Wiederholen.</p>
           <p>Der Grundkurs steht auch ohne Registrierung zur Verfügung. Der Gamer-Header bleibt sichtbar. Besucher kehren mit <strong>„↩️ Zur Startseite“</strong> zurück; angemeldete Mitglieder schließen den Lernbereich mit <strong>„↩️ Zur Lobby“</strong>. Während eines geöffneten Spiel- oder Zuschauerraums wird der Lernkurs nicht parallel eingeblendet.</p>
 
           <h4>19. Der integrierte Analyzer</h4>
           <p>Über <strong>„🔧 Werkstatt“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
-          <p>Analyzer, Mattbilder-Schule, Schachlabor und Eröffnungsschule sind ausschließlich für eingeloggte Mitglieder verfügbar; der Grundkurs „Schach lernen“ und das Anfängertraining sind davon ausgenommen. Wird eine geschützte Werkstatt-Funktion aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch die gewählte Funktion. Die Partie bleibt serverseitig bestehen; die Funktion wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt die gerade aktive Funktion wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Im Zuschauermodus bleibt die Werkstatt ausgeblendet. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
+          <p>Schach lernen, der Trainer und die ersten 10 Motive der Mattbilder-Schule stehen auch Besuchern zur Verfügung. Analyzer, Schachlabor, Eröffnungsschule und die vollständige Mattbilder-Sammlung bleiben eingeloggten Mitgliedern vorbehalten. Wird eine geschützte Werkstatt-Funktion aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch die gewählte Funktion. Die Partie bleibt serverseitig bestehen; die Funktion wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt die gerade aktive Funktion wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, eine Brettfarbe wählen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Die Brettfarbe wird auf dem Gerät gespeichert. Der Dark Mode wird automatisch vom Gamer übernommen.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
@@ -710,7 +716,7 @@
           </ul>
 
           <h4>20. Der integrierte Trainer</h4>
-          <p>Über <strong>„🔧 Werkstatt“ → „🎯 Trainer“</strong> öffnest du das Training direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Anfängertraining und lokaler Lernfortschritt stehen auch ohne Registrierung zur Verfügung.</p>
+          <p>Über <strong>„🔧 Werkstatt“ → „🎯 Trainer“</strong> öffnest du das Training direkt innerhalb des Hammerschach-Gamers. Der Gamer-Header bleibt sichtbar, das Statusfeld zeigt <strong>„Hammerschach - Trainer“</strong> und über <strong>„↩️ Zur Lobby“</strong> kehrst du ohne Neuladen zurück. Besucher erhalten die Anfängeraufgaben und ihren lokalen Lernfortschritt; angemeldete Mitglieder können zusätzlich das vollständige Training verwenden.</p>
           <ul>
             <li><strong>Anfänger-Lernpfad:</strong> Sechs aufeinander aufbauende Blöcke führen durch Matt in 1, Ein-Zug-Taktik, Gabeln, Fesselung und Spieß, Matt in 2 sowie eine gemischte Abschlussprüfung. Der nächste Block wird nach dem sicheren Abschluss freigeschaltet.</li>
             <li><strong>Fehlertraining:</strong> Falsch gelöste oder über die Lösung angezeigte Aufgaben landen automatisch in einer persönlichen Wiederholungsliste. Erst eine fehlerfreie Wiederholung gilt als gemeistert.</li>
@@ -2373,7 +2379,7 @@
 <script src="js/dialog-ui-state.js?v=20260830-1"></script>
 <script src="js/hammerschach-tv.js?v=20260830-3"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
-<script src="js/embedded-tools.js?v=20260831-2"></script>
+<script src="js/embedded-tools.js?v=20260831-3"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
@@ -2434,6 +2440,6 @@
 <script src="js/time-controls.js?v=20260818-1"></script>
 <script src="js/app-startup.js?v=20260828-1"></script>
 <script src="js/board-size-control.js?v=20260831-1"></script>
-<script src="js/mobile-navigation.js?v=20260831-2"></script>
+<script src="js/mobile-navigation.js?v=20260831-3"></script>
 </body>
 </html>
