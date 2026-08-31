@@ -128,7 +128,7 @@
     lessonMemory.textContent=motif.memory;
     lessonClues.textContent='';
     motif.clues.forEach(clue=>{const item=document.createElement('li');item.textContent=clue;lessonClues.appendChild(item);});
-    lessonOrigin.textContent='Andili-Vorlage · Lichess-Beispiel '+task.sourceGame+' · '+task.variant;
+    lessonOrigin.textContent='Quelle: Lichess-Beispiel '+task.sourceGame+' · '+task.variant;
     turnBadge.textContent=(side==='w'?'Weiß':'Schwarz')+' am Zug';
     boardPrompt.textContent='Finde den Mattzug!';
     const complete=state.completed.includes(task.id);
