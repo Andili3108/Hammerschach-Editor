@@ -14,6 +14,10 @@ function updateSiteFootnotePlacement(){
     if(siteFootnoteEl.parentNode!==trainerToolView)trainerToolView.appendChild(siteFootnoteEl);
     return;
   }
+  if(mateSchoolToolActive&&mateSchoolToolView){
+    if(siteFootnoteEl.parentNode!==mateSchoolToolView)mateSchoolToolView.appendChild(siteFootnoteEl);
+    return;
+  }
   if(schachlaborToolActive&&schachlaborToolView){
     if(siteFootnoteEl.parentNode!==schachlaborToolView)schachlaborToolView.appendChild(siteFootnoteEl);
     return;
@@ -153,6 +157,7 @@ function setDarkMode(enabled){
   postLearningToolContext();
   postAnalyzerToolContext();
   postTrainerToolContext();
+  postMateSchoolToolContext();
   postSchachlaborToolContext();
   postOpeningsToolContext();
   postReaderToolContext();

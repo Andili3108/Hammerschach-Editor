@@ -463,6 +463,7 @@ function saveAuthState(token, user){
   postLearningToolContext();
   postAnalyzerToolContext();
   postTrainerToolContext();
+  postMateSchoolToolContext();
   postSchachlaborToolContext();
   postOpeningsToolContext();
   postReaderToolContext();

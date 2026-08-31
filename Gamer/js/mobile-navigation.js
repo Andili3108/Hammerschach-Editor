@@ -34,7 +34,7 @@
   const accordionToggles = accordions.map(accordion => accordion.querySelector('.mobile-nav-accordion-toggle')).filter(Boolean);
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
-  const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn',...visitorInfoTargets]);
+  const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn','visitorMattbilderOpenBtn',...visitorInfoTargets]);
   let refreshFrame = 0;
   let lastFocus = null;
   let drawerScrollY = 0;
@@ -66,7 +66,7 @@
   }
 
   function embeddedToolContext(){
-    return ['learning-tool-active','analyzer-tool-active','trainer-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tv-tool-active','league-standings-tool-active']
+    return ['learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tv-tool-active','league-standings-tool-active']
       .some(className => root.classList.contains(className));
   }
 
@@ -207,11 +207,12 @@
     if(testContext){
       const learning = root.classList.contains('learning-tool-active');
       const trainer = root.classList.contains('trainer-tool-active');
+      const mateSchool = root.classList.contains('mate-school-tool-active');
       const leagueStandings = root.classList.contains('league-standings-tool-active');
       const reader = root.classList.contains('reader-tool-active');
       const tv = root.classList.contains('tv-tool-active');
       const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (leagueStandings ? 'Ergebnisdienst' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))));
+      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer'))))))));
     }
   }
 
@@ -348,7 +349,8 @@
     document.getElementById('trainerBeginnerMenu'),document.getElementById('gamesMenu'),document.getElementById('playerMenu'),
     document.getElementById('clubChessMenu'),document.getElementById('toolsMenu'),
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
-    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn')]
+    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn'),document.getElementById('visitorMattbilderOpenBtn'),
+    document.getElementById('trainerMattbilderHeaderBtn'),document.getElementById('mateSchoolToolBtn')]
     .filter(element=>element&&element.nodeType===Node.ELEMENT_NODE).forEach(element => {
     const observer = new MutationObserver(refresh);
     observer.observe(element, {attributes:true, childList:true, characterData:true, subtree:true});

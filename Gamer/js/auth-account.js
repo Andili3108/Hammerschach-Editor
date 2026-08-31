@@ -144,6 +144,7 @@ function updateVisitorLandingUi(){
   if(visitorLearningOpenBtn) visitorLearningOpenBtn.hidden = !visitorHeaderActive;
   if(visitorTrainerOpenBtn) visitorTrainerOpenBtn.hidden = !visitorHeaderActive;
   if(visitorTrainerProgressHeaderBtn) visitorTrainerProgressHeaderBtn.hidden = !visitorHeaderActive || !trainerToolActive;
+  if(visitorMattbilderOpenBtn) visitorMattbilderOpenBtn.hidden = !visitorHeaderActive;
   if(visitorPublicGamesOpenBtn) visitorPublicGamesOpenBtn.hidden = !visitorHeaderActive;
   updateAnalyzerToolAvailability();
 
@@ -183,6 +184,11 @@ if(visitorTrainerOpenBtn){
 if(visitorTrainerProgressHeaderBtn){
   visitorTrainerProgressHeaderBtn.addEventListener('click', () => {
     postTrainerToolMessage({type:'hammerschach-trainer-open-progress'});
+  });
+}
+if(visitorMattbilderOpenBtn){
+  visitorMattbilderOpenBtn.addEventListener('click', () => {
+    if(mateSchoolToolBtn && !mateSchoolToolBtn.disabled) mateSchoolToolBtn.click();
   });
 }
 if(visitorPublicGamesOpenBtn){
