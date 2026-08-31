@@ -1,0 +1,90 @@
+<!doctype html>
+<!-- BUILD: MATTBILDER-SCHULE-20260831-1 -->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mattbilder-Schule · Hammerschach</title>
+  <script>
+    try{
+      if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
+        document.documentElement.classList.add('dark-mode');
+      }
+    }catch(_){ }
+  </script>
+  <link rel="stylesheet" href="mattbilder.css?v=20260831-1">
+</head>
+<body>
+  <main class="mate-school">
+    <section class="school-head" aria-labelledby="schoolTitle">
+      <div>
+        <div class="eyebrow">Gamer-Anfängertraining</div>
+        <h1 id="schoolTitle">🧩 Mattbilder-Schule</h1>
+        <p>Matt nicht nur finden, sondern wiedererkennen: Lerne die wichtigsten Muster, spiele den Schlusszug selbst und festige deinen Schachblick.</p>
+      </div>
+      <div class="progress-card" aria-label="Lernfortschritt">
+        <div class="progress-copy"><strong id="progressValue">0 von 10</strong><span>Mattbilder gemeistert</span></div>
+        <div class="progress-track" role="progressbar" aria-label="Gemeisterte Mattbilder" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><span id="progressBar"></span></div>
+      </div>
+    </section>
+
+    <section class="school-layout">
+      <aside class="pattern-panel" aria-labelledby="patternListTitle">
+        <div class="panel-head">
+          <div><div class="eyebrow">Dein Lernpfad</div><h2 id="patternListTitle">Mattmuster</h2></div>
+          <button id="resetProgressBtn" class="quiet-button" type="button">Neu beginnen</button>
+        </div>
+        <div class="path-legend"><span><i class="dot core"></i> Grundlagen</span><span><i class="dot special"></i> Spezialmuster</span></div>
+        <nav id="patternList" class="pattern-list" aria-label="Mattbilder auswählen"></nav>
+      </aside>
+
+      <section class="lesson-stage" aria-labelledby="lessonTitle">
+        <div class="lesson-toolbar">
+          <div>
+            <div id="lessonStep" class="eyebrow">Mattbild 1 von 10</div>
+            <h2 id="lessonTitle" tabindex="-1">Grundreihenmatt</h2>
+          </div>
+          <span id="lessonState" class="lesson-state">Offen</span>
+        </div>
+
+        <div class="lesson-grid">
+          <div class="board-column">
+            <div class="board-status">
+              <span id="turnBadge">Weiß am Zug</span>
+              <strong id="boardPrompt">Finde den Mattzug!</strong>
+            </div>
+            <div id="board" class="chessboard" role="grid" aria-label="Schachaufgabe"></div>
+            <div id="feedback" class="feedback" aria-live="polite">Wähle die Figur und anschließend ihr Zielfeld.</div>
+            <div class="board-actions">
+              <button id="resetBoardBtn" class="quiet-button" type="button">↩ Stellung zurück</button>
+              <button id="showHintBtn" class="quiet-button" type="button">💡 Hinweis</button>
+              <button id="showSolutionBtn" class="solution-button" type="button">👁 Lösung zeigen</button>
+            </div>
+          </div>
+
+          <article class="explanation-card">
+            <div id="lessonIcon" class="pattern-icon" aria-hidden="true">▰</div>
+            <p id="lessonSummary" class="lesson-summary"></p>
+            <div class="memory-card"><strong>Merksatz</strong><p id="lessonMemory"></p></div>
+            <div class="checklist-card">
+              <strong>Daran erkennst du es</strong>
+              <ul id="lessonClues"></ul>
+            </div>
+            <p id="lessonOrigin" class="lesson-origin"></p>
+            <div class="lesson-nav">
+              <button id="previousLessonBtn" class="quiet-button" type="button">← Zurück</button>
+              <button id="nextLessonBtn" class="next-button" type="button">Nächstes Mattbild →</button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="collection-note">
+      <div><div class="eyebrow">Aus der Andili-Sammlung</div><h2>Vom Anschauen zum Können</h2></div>
+      <p>Die neue Schule übernimmt die stärksten Ideen der bisherigen Mattbilder-Seiten. Historische Partien und Videos bleiben wertvolles Zusatzmaterial; hier steht das aktive Erkennen und Ausführen im Mittelpunkt.</p>
+    </section>
+  </main>
+  <script src="mattbilder.js?v=20260831-1"></script>
+</body>
+</html>
