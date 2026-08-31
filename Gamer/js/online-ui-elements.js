@@ -137,7 +137,6 @@ const visitorBoardLoginBtn = document.getElementById('visitorBoardLoginBtn');
 const visitorLearningOpenBtn = document.getElementById('visitorLearningOpenBtn');
 const visitorTrainerOpenBtn = document.getElementById('visitorTrainerOpenBtn');
 const visitorTrainerProgressHeaderBtn = document.getElementById('visitorTrainerProgressHeaderBtn');
-const visitorMattbilderOpenBtn = document.getElementById('visitorMattbilderOpenBtn');
 const visitorPublicGamesOpenBtn = document.getElementById('visitorPublicGamesOpenBtn');
 const dailyGamesOpenBtn = document.getElementById('dailyGamesOpenBtn');
 const dailyGamesTurnCount = document.getElementById('dailyGamesTurnCount');

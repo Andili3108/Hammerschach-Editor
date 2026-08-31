@@ -57,10 +57,10 @@ function trainerToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function mateSchoolToolAvailable(){
-  return !!(!onlineRoomId && !hasOnlineTargetInAddress());
+  return embeddedToolsAvailable();
 }
 function mateSchoolToolNavigable(){
-  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
+  return embeddedToolsNavigable();
 }
 function leagueStandingsToolAvailable(){
   return !!(!onlineRoomId && !hasOnlineTargetInAddress());

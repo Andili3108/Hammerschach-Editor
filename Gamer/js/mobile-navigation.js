@@ -34,7 +34,7 @@
   const accordionToggles = accordions.map(accordion => accordion.querySelector('.mobile-nav-accordion-toggle')).filter(Boolean);
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
-  const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn','visitorMattbilderOpenBtn',...visitorInfoTargets]);
+  const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn',...visitorInfoTargets]);
   let refreshFrame = 0;
   let lastFocus = null;
   let drawerScrollY = 0;
@@ -349,7 +349,7 @@
     document.getElementById('trainerBeginnerMenu'),document.getElementById('gamesMenu'),document.getElementById('playerMenu'),
     document.getElementById('clubChessMenu'),document.getElementById('toolsMenu'),
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
-    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn'),document.getElementById('visitorMattbilderOpenBtn'),
+    document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn'),
     document.getElementById('trainerMattbilderHeaderBtn'),document.getElementById('mateSchoolToolBtn')]
     .filter(element=>element&&element.nodeType===Node.ELEMENT_NODE).forEach(element => {
     const observer = new MutationObserver(refresh);
