@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: MATTBILDER-SCHULE-20260831-1 -->
+<!-- BUILD: MATTBILDER-SCHULE-20260831-2 -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -12,7 +12,7 @@
       }
     }catch(_){ }
   </script>
-  <link rel="stylesheet" href="mattbilder.css?v=20260831-1">
+  <link rel="stylesheet" href="mattbilder.css?v=20260831-2">
 </head>
 <body>
   <main class="mate-school">
@@ -20,11 +20,12 @@
       <div>
         <div class="eyebrow">Gamer-Anfängertraining</div>
         <h1 id="schoolTitle">🧩 Mattbilder-Schule</h1>
-        <p>Matt nicht nur finden, sondern wiedererkennen: Lerne die wichtigsten Muster, spiele den Schlusszug selbst und festige deinen Schachblick.</p>
+        <p>Matt nicht nur finden, sondern wiedererkennen: Lerne die klassischen Andili-Mattmotive, spiele den Schlusszug selbst und festige deinen Schachblick.</p>
       </div>
       <div class="progress-card" aria-label="Lernfortschritt">
-        <div class="progress-copy"><strong id="progressValue">0 von 10</strong><span>Mattbilder gemeistert</span></div>
-        <div class="progress-track" role="progressbar" aria-label="Gemeisterte Mattbilder" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><span id="progressBar"></span></div>
+        <div class="progress-copy"><strong id="progressValue">0 von 50</strong><span>Aufgaben gemeistert</span></div>
+        <div class="progress-track" role="progressbar" aria-label="Gemeisterte Mattaufgaben" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0"><span id="progressBar"></span></div>
+        <div class="access-copy"><span id="accessText">10 Mattmotive · 50 Aufgaben</span><strong id="accessBadge" class="access-badge">Besucherbereich</strong></div>
       </div>
     </section>
 
@@ -34,14 +35,14 @@
           <div><div class="eyebrow">Dein Lernpfad</div><h2 id="patternListTitle">Mattmuster</h2></div>
           <button id="resetProgressBtn" class="quiet-button" type="button">Neu beginnen</button>
         </div>
-        <div class="path-legend"><span><i class="dot core"></i> Grundlagen</span><span><i class="dot special"></i> Spezialmuster</span></div>
+        <div class="path-legend"><span><i class="dot core"></i> Erste 10</span><span><i class="dot special"></i> Mitglieder-Motive</span></div>
         <nav id="patternList" class="pattern-list" aria-label="Mattbilder auswählen"></nav>
       </aside>
 
       <section class="lesson-stage" aria-labelledby="lessonTitle">
         <div class="lesson-toolbar">
           <div>
-            <div id="lessonStep" class="eyebrow">Mattbild 1 von 10</div>
+            <div id="lessonStep" class="eyebrow">Mattmotiv 1 von 10 · Aufgabe 1 von 5</div>
             <h2 id="lessonTitle" tabindex="-1">Grundreihenmatt</h2>
           </div>
           <span id="lessonState" class="lesson-state">Offen</span>
@@ -53,6 +54,7 @@
               <span id="turnBadge">Weiß am Zug</span>
               <strong id="boardPrompt">Finde den Mattzug!</strong>
             </div>
+            <div id="taskPicker" class="task-picker" role="group" aria-label="Aufgabe innerhalb des Mattmotivs auswählen"></div>
             <div id="board" class="chessboard" role="grid" aria-label="Schachaufgabe"></div>
             <div id="feedback" class="feedback" aria-live="polite">Wähle die Figur und anschließend ihr Zielfeld.</div>
             <div class="board-actions">
@@ -72,8 +74,8 @@
             </div>
             <p id="lessonOrigin" class="lesson-origin"></p>
             <div class="lesson-nav">
-              <button id="previousLessonBtn" class="quiet-button" type="button">← Zurück</button>
-              <button id="nextLessonBtn" class="next-button" type="button">Nächstes Mattbild →</button>
+              <button id="previousLessonBtn" class="quiet-button" type="button">← Vorige Aufgabe</button>
+              <button id="nextLessonBtn" class="next-button" type="button">Nächste Aufgabe →</button>
             </div>
           </article>
         </div>
@@ -82,9 +84,10 @@
 
     <section class="collection-note">
       <div><div class="eyebrow">Aus der Andili-Sammlung</div><h2>Vom Anschauen zum Können</h2></div>
-      <p>Die neue Schule übernimmt die stärksten Ideen der bisherigen Mattbilder-Seiten. Historische Partien und Videos bleiben wertvolles Zusatzmaterial; hier steht das aktive Erkennen und Ausführen im Mittelpunkt.</p>
+      <p>Die Schule überträgt alle 30 Mattmotive der bisherigen Andili-Sammlung in aktives Training. Zu jedem Motiv stehen fünf Aufgaben bereit; die ersten zehn Motive bilden den Besucherumfang, Mitglieder erhalten die vollständige Sammlung.</p>
     </section>
   </main>
-  <script src="mattbilder.js?v=20260831-1"></script>
+  <script src="mattbilder-data.js?v=20260831-2"></script>
+  <script src="mattbilder.js?v=20260831-2"></script>
 </body>
 </html>
