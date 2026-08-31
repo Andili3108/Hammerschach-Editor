@@ -57,10 +57,10 @@ function trainerToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function mateSchoolToolAvailable(){
-  return embeddedToolsAvailable();
+  return !!(!onlineRoomId && !hasOnlineTargetInAddress());
 }
 function mateSchoolToolNavigable(){
-  return embeddedToolsNavigable();
+  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function leagueStandingsToolAvailable(){
   return !!(!onlineRoomId && !hasOnlineTargetInAddress());
@@ -541,7 +541,13 @@ function openLeagueStandingsToolDebounced(){
 }
 if(learningToolBtn)learningToolBtn.addEventListener('click',openLearningToolDebounced);
 if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebounced);
-if(trainerToolBtn)trainerToolBtn.addEventListener('click',openTrainerToolDebounced);
+if(trainerToolBtn)trainerToolBtn.addEventListener('click',()=>{
+  if(!(onlineAuthToken&&onlineAuthUser)){
+    pendingTrainerStartMode='coach';
+    try{sessionStorage.setItem('hammerschachTrainerRequestedMode','coach');}catch(_){ }
+  }
+  openTrainerToolDebounced();
+});
 if(mateSchoolToolBtn)mateSchoolToolBtn.addEventListener('click',openMateSchoolToolDebounced);
 if(trainerBeginnerHeaderBtn)trainerBeginnerHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'coach'}));
 if(trainerFreeHeaderBtn)trainerFreeHeaderBtn.addEventListener('click',()=>postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'free'}));

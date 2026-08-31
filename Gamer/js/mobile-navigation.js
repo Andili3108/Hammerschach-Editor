@@ -34,7 +34,6 @@
   const accordionToggles = accordions.map(accordion => accordion.querySelector('.mobile-nav-accordion-toggle')).filter(Boolean);
   const navigationSections = Array.from(document.querySelectorAll('.mobile-nav-test-list section'));
   const visitorInfoTargets = new Set(['firstStepsOpenBtn','infoGuideOpenBtn','leitbildOpenBtn']);
-  const visitorTrainerAllowedTargets = new Set(['roomLobbyBtn','visitorTrainerOpenBtn','visitorTrainerProgressHeaderBtn',...visitorInfoTargets]);
   let refreshFrame = 0;
   let lastFocus = null;
   let drawerScrollY = 0;
@@ -148,12 +147,10 @@
     const targetId = button.dataset.mobileNavTarget || '';
     const source = document.getElementById(targetId);
     const visitor = root.classList.contains('visitor-header-view');
-    const trainerContext = root.classList.contains('trainer-tool-active');
     const visitorOnly = button.hasAttribute('data-mobile-nav-visitor-only');
     const visitorBlocked = visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly;
-    const trainerBlocked = visitor && trainerContext && !visitorTrainerAllowedTargets.has(targetId);
-    const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked || trainerBlocked;
-    button.hidden = !source || source.hidden || visitorBlocked || trainerBlocked;
+    const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked;
+    button.hidden = !source || source.hidden || visitorBlocked;
     button.disabled = unavailable;
     if(source){
       const current = source.getAttribute('aria-current');
