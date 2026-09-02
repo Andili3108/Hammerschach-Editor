@@ -11731,7 +11731,12 @@ async function handleAuthApi(request, env, url) {
       }
       try { await recordAuthSecurityEvent(env, request, 'email_correction', 'success', { context:rate.context, userId:user.id, detailCode:'CORRECTION_SENT' }); } catch (_) {}
       await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
-      return json({ ok:true, message:'Die neue Bestätigungsmail wurde versendet. Frühere Bestätigungslinks sind jetzt ungültig.' });
+      return json({
+        ok:true,
+        username:user.username,
+        email:newEmail,
+        message:'Die neue Bestätigungsmail wurde versendet. Frühere Bestätigungslinks sind jetzt ungültig.'
+      });
     } catch (error) {
       if (/unique|constraint/i.test(String(error && error.message || ''))) {
         try { await recordAuthSecurityEvent(env, request, 'email_correction', 'rejected', { context:rate.context, userId:user.id, detailCode:'EMAIL_NOT_AVAILABLE' }); } catch (_) {}
@@ -11942,6 +11947,8 @@ async function handleAuthApi(request, env, url) {
       ok:true,
       verificationRequired:true,
       mailSent:!!(mailResult && mailResult.ok && !mailResult.skipped),
+      username,
+      email,
       message:mailResult && mailResult.ok
         ? 'Account wurde angelegt. Bitte bestätige jetzt deine Mailadresse über den zugesandten Link.'
         : 'Account wurde angelegt. Die Bestätigungsmail konnte nicht versendet werden; nutze im Login „Bestätigungsmail erneut senden“.'
@@ -12013,7 +12020,14 @@ async function handleAuthApi(request, env, url) {
     if (!emailSecurity.emailVerified) {
       try { await recordAuthSecurityEvent(env, request, 'login', 'blocked', { context:rate.context, userId:user.id, detailCode:'EMAIL_NOT_VERIFIED' }); } catch (_) {}
       await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
-      return json({ ok:false, code:'EMAIL_NOT_VERIFIED', message:'Bitte bestätige zuerst deine Mailadresse. Im Login kannst du die Bestätigungsmail erneut anfordern.' }, { status:403 });
+      return json({
+        ok:false,
+        code:'EMAIL_NOT_VERIFIED',
+        verificationRequired:true,
+        username:user.username,
+        email:normalizeEmail(user.email),
+        message:'Bitte bestätige zuerst deine Mailadresse. Prüfe die unten angezeigte Adresse oder fordere die Bestätigungsmail erneut an.'
+      }, { status:403 });
     }
 
     await ensureRatingRowsForUser(env, user.id);
