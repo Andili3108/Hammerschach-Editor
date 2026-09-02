@@ -471,8 +471,23 @@
   .auth-inline-link{display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent!important;box-shadow:none!important;color:#843f46!important;padding:4px 2px!important;min-height:28px!important;text-decoration:underline;font-size:13px;font-weight:900;}
   .auth-inline-link:hover:not(:disabled){transform:none!important;box-shadow:none!important;filter:none!important;text-decoration:none;}
   .auth-login-help{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap;margin-top:7px;}
+  .auth-login-help[hidden]{display:none!important;}
   .auth-verification-help{display:flex;align-items:center;justify-content:flex-end;gap:4px 10px;flex-wrap:wrap;font-size:13px;color:#666;}
   .auth-verification-help>span{font-weight:800;}
+  .auth-verification-notice{margin-top:12px;border-radius:14px;background:rgba(218,171,32,.10);border:1px solid rgba(180,131,20,.30);padding:12px 13px;color:#333;line-height:1.35;}
+  .auth-verification-notice[hidden]{display:none!important;}
+  .auth-verification-notice-title{font-size:13px;font-weight:900;color:#665017;}
+  .auth-verification-notice-email{display:block;margin-top:3px;font-size:16px;color:#843f46;overflow-wrap:anywhere;}
+  .auth-verification-notice p{margin:7px 0 0;font-size:13px;font-weight:800;color:#555;}
+  .auth-verification-notice-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .auth-verification-notice-actions button{min-height:34px!important;padding:7px 10px!important;border-radius:10px!important;font-size:12px!important;}
+  .auth-verification-notice-status{min-height:0;margin-top:7px;font-size:12px;font-weight:900;color:#666;}
+  .auth-verification-notice-status:empty{display:none;}
+  .auth-verification-notice-status.error{color:#9A2D33;}
+  .auth-verification-notice-status.success{color:#226b36;}
+  .auth-email-domain-hint{display:flex;align-items:center;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;margin:-1px 0 2px;border-radius:10px;background:rgba(218,171,32,.11);border:1px solid rgba(180,131,20,.26);padding:6px 9px;font-size:12px;font-weight:900;color:#665017;}
+  .auth-email-domain-hint[hidden]{display:none!important;}
+  .auth-email-domain-hint .auth-inline-link{min-height:24px!important;font-size:12px!important;padding:1px 2px!important;}
   .recovery-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
   .recovery-status.error{color:#9A2D33;}
   .recovery-status.success{color:#226b36;}
@@ -1758,6 +1773,12 @@
   html.dark-mode :is(.member-result-card,.daily-games-empty,.open-offers-empty,.public-games-empty,.auth-email-option,.auth-email-state-badge,.admin-message-audience,.admin-message-confirm,.player-rating-line,.privacy-storage-list dt){background:#252930;border-color:rgba(255,255,255,.09);}
   html.dark-mode .admin-message-recipient-box{background:rgba(62,154,88,.12);border-color:rgba(92,190,119,.24);}
   html.dark-mode .admin-message-recipient-hint{color:#b8c9bd;}
+  html.dark-mode .auth-verification-notice,html.dark-mode .auth-email-domain-hint{background:rgba(218,171,32,.12);border-color:rgba(233,197,88,.25);}
+  html.dark-mode .auth-verification-notice-title,html.dark-mode .auth-email-domain-hint{color:#ead47f;}
+  html.dark-mode .auth-verification-notice-email{color:#efb5bc;}
+  html.dark-mode .auth-verification-notice p,html.dark-mode .auth-verification-notice-status{color:#c4c8cf;}
+  html.dark-mode .auth-verification-notice-status.error{color:#ef9fa8;}
+  html.dark-mode .auth-verification-notice-status.success{color:#8bd69e;}
   html.dark-mode :is(.brand-origin-line,.new-game-modal-intro,.online-label,.time-lock-note,.public-visibility-hint,.daily-games-section-title,.chat-message-meta,.global-chat-message-time,.auth-email-state,.auth-email-option,.auth-account-protection-note,.registration-privacy-note,.account-privacy-note,.admin-message-inline-option){color:#b8bdc6!important;}
   html.dark-mode :is(.online-value,.chat-message-text,.global-chat-message-text,.admin-message-preview-body,.admin-backup-text,.admin-event-main,.member-result-name,.daily-game-title,.open-offer-title,.public-game-title){color:#eef0f2!important;}
   html.dark-mode .admin-delete-name{color:#eef0f2!important;}
