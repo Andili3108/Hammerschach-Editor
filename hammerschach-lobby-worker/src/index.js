@@ -2639,6 +2639,43 @@ async function createAccountActionToken(env, userId, purpose, email, ttlMs) {
   return { token:rawToken, expiresAt:expires.toISOString(), email:normalizedEmail, purpose:action };
 }
 
+async function createPreVerificationEmailCorrectionToken(env, userId, email, ttlMs) {
+  if (!(await ensureAccountSecurityTables(env))) throw new Error('Account-Sicherheit ist momentan nicht verfügbar.');
+  const uid = String(userId || '').trim();
+  const normalizedEmail = normalizeEmail(email);
+  if (!uid || !normalizedEmail) throw new Error('Token-Daten sind unvollständig.');
+  const rawToken = randomBase64Url(32);
+  const tokenHash = await sha256Hex(rawToken);
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const expires = new Date(now.getTime() + Math.max(5 * 60 * 1000, Number(ttlMs || 0)));
+  await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE account_action_tokens SET used_at = ?
+        WHERE user_id = ? AND purpose IN ('verify_registration', 'email_change') AND used_at IS NULL`
+    ).bind(nowIso, uid),
+    env.DB.prepare(`UPDATE users SET email = ?, email_lc = ? WHERE id = ?`).bind(normalizedEmail, normalizedEmail, uid),
+    env.DB.prepare(
+      `INSERT INTO user_email_status (user_id, email, verified, verified_at, updated_at)
+       VALUES (?, ?, 0, NULL, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         email = excluded.email,
+         verified = 0,
+         verified_at = NULL,
+         updated_at = excluded.updated_at`
+    ).bind(uid, normalizedEmail, nowIso),
+    env.DB.prepare(
+      `INSERT INTO account_action_tokens (id, user_id, purpose, token_hash, email, created_at, expires_at, used_at)
+       VALUES (?, ?, 'verify_registration', ?, ?, ?, ?, NULL)`
+    ).bind(crypto.randomUUID(), uid, tokenHash, normalizedEmail, nowIso, expires.toISOString())
+  ]);
+  try {
+    const pruneBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare(`DELETE FROM account_action_tokens WHERE expires_at < ? OR (used_at IS NOT NULL AND used_at < ?)`).bind(nowIso, pruneBefore).run();
+  } catch (_) {}
+  return { token:rawToken, expiresAt:expires.toISOString(), email:normalizedEmail, purpose:'verify_registration' };
+}
+
 async function loadValidAccountActionToken(env, token, allowedPurposes) {
   if (!(await ensureAccountSecurityTables(env))) return null;
   const raw = String(token || '').trim();
@@ -2922,6 +2959,27 @@ async function sendRegistrationVerificationEmail(env, user, request = null) {
     expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
   });
   return sendInvitationEmail(env, { preparedMail:mail, mailType:'email_verification' });
+}
+
+async function sendPreVerificationEmailCorrectionEmail(env, user, correctedEmail, request = null) {
+  const email = normalizeEmail(correctedEmail);
+  if (!user || !email) return { ok:false, code:'INVALID_USER_EMAIL' };
+  if (request && !(await claimAuthMailRequest(env, request, 'email_correction', user.id))) {
+    return { ok:true, skipped:true, reason:'rate_limited' };
+  }
+  const action = await createPreVerificationEmailCorrectionToken(env, user.id, email, EMAIL_VERIFICATION_TTL_MS);
+  const actionUrl = publicActionUrl(env, 'verifyEmail', action.token);
+  const mail = prepareSecurityActionEmail({
+    recipientEmail:email,
+    recipientName:user.username,
+    mailType:'email_correction_verification',
+    title:'Korrigierte Hammerschach-Mailadresse bestätigen',
+    intro:`Bitte bestätige, dass ${email} als Mailadresse für deinen neu angelegten Hammerschach-Account verwendet werden soll. Frühere Bestätigungslinks sind nicht mehr gültig.`,
+    actionUrl,
+    actionLabel:'Korrigierte Mailadresse bestätigen',
+    expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
+  });
+  return sendInvitationEmail(env, { preparedMail:mail, mailType:'email_correction_verification' });
 }
 
 async function sendPasswordResetEmail(env, user, request) {
@@ -11588,6 +11646,105 @@ async function handleAuthApi(request, env, url) {
     return json({ ok:true, message:'Das Kennwort wurde geändert. Bitte melde dich neu an.' });
   }
 
+  if (url.pathname === '/api/auth/email-correction' && request.method === 'POST') {
+    const startedAt = Date.now();
+    const body = await readJsonBody(request);
+    const rawUsername = body ? String(body.username || '').trim() : '';
+    const rate = await checkAuthRateLimit(env, request, 'email_correction', rawUsername, LOGIN_RATE_POLICY);
+    if (!rate.allowed) {
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return authRateLimitResponse('Zu viele fehlgeschlagene Versuche. Bitte warte kurz und versuche es erneut.', rate.retryAfterSeconds);
+    }
+    if (!body) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'email_correction', 'failure', { context:rate.context, detailCode:'BAD_JSON' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'BAD_JSON', message:'Die Angaben konnten nicht gelesen werden.' }, { status:400 });
+    }
+
+    const username = cleanUsername(body.username);
+    const password = String(body.password || '');
+    const newEmail = normalizeEmail(body.newEmail);
+    if (!username || !password || password.length > 128) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'email_correction', 'failure', { context:rate.context, detailCode:'INVALID_CREDENTIALS' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'INVALID_CREDENTIALS', message:'Benutzername oder Kennwort ist nicht korrekt.' }, { status:401 });
+    }
+    if (!newEmail) {
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'rejected', { context:rate.context, detailCode:'INVALID_EMAIL' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'INVALID_EMAIL', message:'Bitte eine gültige neue E-Mail-Adresse eingeben.' }, { status:400 });
+    }
+
+    const user = await env.DB.prepare(`SELECT * FROM users WHERE username_lc = ? LIMIT 1`).bind(username.toLowerCase()).first();
+    const validPassword = await verifyPasswordConstantTime(password, user);
+    if (!validPassword || !user) {
+      try {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await recordAuthSecurityEvent(env, request, 'email_correction', 'failure', { context:rate.context, detailCode:'INVALID_CREDENTIALS' });
+      } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'INVALID_CREDENTIALS', message:'Benutzername oder Kennwort ist nicht korrekt.' }, { status:401 });
+    }
+    try { await clearAuthSubjectFailures(env, 'email_correction', rate.context.subjectHash); } catch (_) {}
+    if (user.disabled === 1 || user.disabled === true || user.deleted_at) {
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'blocked', { context:rate.context, userId:user.id, detailCode:'ACCOUNT_DISABLED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'ACCOUNT_DISABLED', message:'Dieser Account ist deaktiviert.' }, { status:403 });
+    }
+
+    const state = await getUserEmailSecurityState(env, user);
+    if (state.emailVerified) {
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'rejected', { context:rate.context, userId:user.id, detailCode:'ACCOUNT_ALREADY_VERIFIED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'ACCOUNT_ALREADY_VERIFIED', message:'Dieser Account ist bereits bestätigt. Melde dich bitte an und ändere die Adresse in der Accountverwaltung.' }, { status:409 });
+    }
+    if (newEmail === normalizeEmail(user.email)) {
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'rejected', { context:rate.context, userId:user.id, detailCode:'EMAIL_UNCHANGED' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'EMAIL_UNCHANGED', message:'Diese Adresse ist bereits hinterlegt. Nutze bitte „Bestätigungsmail erneut senden“.' }, { status:400 });
+    }
+    const existing = await env.DB.prepare(`SELECT id FROM users WHERE email_lc = ? AND id <> ? LIMIT 1`).bind(newEmail, user.id).first();
+    if (existing) {
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'rejected', { context:rate.context, userId:user.id, detailCode:'EMAIL_NOT_AVAILABLE' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'EMAIL_NOT_AVAILABLE', message:'Diese E-Mail-Adresse kann nicht verwendet werden.' }, { status:409 });
+    }
+
+    try {
+      const result = await sendPreVerificationEmailCorrectionEmail(env, user, newEmail, request);
+      if (result && result.skipped) {
+        try { await recordAuthSecurityEvent(env, request, 'email_correction', 'throttled', { context:rate.context, userId:user.id, detailCode:'MAIL_RATE_LIMITED' }); } catch (_) {}
+        await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+        return json({ ok:false, code:'EMAIL_RATE_LIMITED', message:'Es wurden bereits mehrere Bestätigungsmails angefordert. Bitte warte eine Weile und versuche es dann erneut.' }, { status:429 });
+      }
+      if (!result || !result.ok) {
+        try { await recordAuthSecurityEvent(env, request, 'email_correction', 'error', { context:rate.context, userId:user.id, detailCode:result && result.code || 'EMAIL_SEND_FAILED' }); } catch (_) {}
+        await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+        return json({ ok:false, code:result && result.code || 'EMAIL_SEND_FAILED', message:'Die Adresse wurde korrigiert, aber die Bestätigungsmail konnte nicht versendet werden. Nutze bitte „Erneut senden“.' }, { status:result && result.status || 502 });
+      }
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'success', { context:rate.context, userId:user.id, detailCode:'CORRECTION_SENT' }); } catch (_) {}
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:true, message:'Die neue Bestätigungsmail wurde versendet. Frühere Bestätigungslinks sind jetzt ungültig.' });
+    } catch (error) {
+      if (/unique|constraint/i.test(String(error && error.message || ''))) {
+        try { await recordAuthSecurityEvent(env, request, 'email_correction', 'rejected', { context:rate.context, userId:user.id, detailCode:'EMAIL_NOT_AVAILABLE' }); } catch (_) {}
+        await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+        return json({ ok:false, code:'EMAIL_NOT_AVAILABLE', message:'Diese E-Mail-Adresse kann nicht verwendet werden.' }, { status:409 });
+      }
+      try { await recordAuthSecurityEvent(env, request, 'email_correction', 'error', { context:rate.context, userId:user.id, detailCode:'INTERNAL_ERROR' }); } catch (_) {}
+      console.error('Email correction failed', error && error.message ? error.message : String(error || 'unknown'));
+      await waitForMinimumResponseTime(startedAt, AUTH_LOGIN_MIN_RESPONSE_MS);
+      return json({ ok:false, code:'EMAIL_CORRECTION_FAILED', message:'Die E-Mail-Adresse konnte momentan nicht korrigiert werden. Bitte versuche es später erneut.' }, { status:500 });
+    }
+  }
+
   if (url.pathname === '/api/auth/email-verification/request' && request.method === 'POST') {
     const startedAt = Date.now();
     const body = await readJsonBody(request);
@@ -11604,7 +11761,9 @@ async function handleAuthApi(request, env, url) {
       if (user && !(user.disabled === 1 || user.disabled === true || user.deleted_at)) {
         const state = await getUserEmailSecurityState(env, user);
         if (!state.emailVerified) {
-          const result = await sendRegistrationVerificationEmail(env, user, request);
+          const result = state.pendingEmail
+            ? await sendPreVerificationEmailCorrectionEmail(env, user, state.pendingEmail, request)
+            : await sendRegistrationVerificationEmail(env, user, request);
           const outcome = result && result.ok && !result.skipped ? 'accepted' : result && result.skipped ? 'skipped' : 'error';
           try { await recordAuthSecurityEvent(env, request, 'email_verification_request', outcome, { context:rate.context, userId:user.id, detailCode:result && (result.reason || result.code) }); } catch (_) {}
           if (!result.ok) console.error('Verification resend failed', result.code || '', result.message || '');
@@ -18701,8 +18860,8 @@ export default {
     return json({
       ok: true,
       service: 'hammerschach-gamer-lobby',
-      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', 'GET /api/chess-chronicle', '/api/my-live-games', 'POST /api/schachlabor/fairplay-check', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-moments/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
-      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_game_moments', 'private_game_moment_notes', 'personal_chess_chronicle', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
+      endpoints: ['/health', '/api/register', '/api/login', 'POST /api/auth/password-reset/request', 'POST /api/auth/password-reset/confirm', 'POST /api/auth/email-correction', 'POST /api/auth/email-verification/request', 'POST /api/auth/email-verification/confirm', '/api/logout', '/api/me', 'POST /api/account/leitbild', 'POST /api/account/username', 'POST /api/account/profile', 'POST /api/account/email', 'POST /api/account/email/resend', 'POST /api/account/notifications', 'POST /api/account/password', 'DELETE /api/account', '/api/presence', 'GET /api/lobby-ticker', 'GET /api/info-center', 'GET /api/info-center/ID', 'GET /api/info-center/attachments/ID', 'GET /api/tournaments', 'POST /api/tournaments', 'POST /api/tournaments/ID/publish', 'POST /api/tournaments/ID/join', 'DELETE /api/tournaments/ID/join', 'POST /api/tournaments/ID/start', '/api/public-games', 'GET /api/chess-chronicle', '/api/my-live-games', 'POST /api/schachlabor/fairplay-check', '/api/open-offers', 'POST /api/open-offers/ROOM_ID', 'DELETE /api/open-offers/ROOM_ID', '/api/daily-games', 'POST /api/daily-games/ROOM_ID/invitation', '/api/daily-games/ROOM_ID/pgn', 'DELETE /api/daily-games/ROOM_ID/history', 'DELETE /api/daily-games/ROOM_ID', 'POST /api/game-moments/ROOM_ID', 'POST /api/game-reactions/ROOM_ID', '/api/members/search?q=NAME', '/api/members/list', 'GET /api/private-messages', 'POST /api/private-messages', 'POST /api/private-messages/MESSAGE_ID/read', 'GET /api/private-messages/conversation/USER_ID', 'POST /api/private-messages/conversation/USER_ID/read', 'GET /api/members/USER_ID/profile', 'POST /api/members/USER_ID/favorite', 'POST /api/invitations/email', '/api/stats', '/api/stats/visit', 'POST /api/moderation/report', 'POST /api/moderation/global-chat-report', 'GET /api/admin/moderation/reports', 'POST /api/admin/moderation/action', 'POST /api/admin/moderation/resolve', 'GET /api/admin/overview', 'GET /api/admin/fairplay/games', 'GET /api/admin/fairplay/games/ROOM_ID', 'GET /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker', 'POST /api/admin/lobby-ticker/ID/status', 'DELETE /api/admin/lobby-ticker/ID', 'GET /api/admin/info-center', 'POST /api/admin/info-center', 'DELETE /api/admin/info-center/ID', 'GET /api/admin/member-message/audience', 'GET /api/admin/member-message/recipients', 'POST /api/admin/member-message/test', 'POST /api/admin/member-message/send', 'POST /api/admin/backup-mark', 'GET /api/admin/users', 'DELETE /api/admin/users/USER_ID', '/global-chat', '/ws?room=ROOM_ID', '/watch?game=PUBLIC_WATCH_ID'],
+      features: ['lobby', 'lobby_event_ticker', 'automatic_tournament_ticker', 'thematic_tournaments', 'automatic_verified_member_welcome', 'admin_ticker_scheduling', 'lobby_info_center', 'info_center_read_state', 'info_center_r2_attachments', 'info_center_optional_email', 'roles', 'invite_color_choice', 'guest_display_names', 'accounts_d1', 'account_self_service', 'account_leitbild_onboarding', 'member_search', 'member_list', 'member_public_profiles', 'member_presence', 'member_last_activity', 'member_activity_filters', 'member_activity_privacy', 'private_member_favorites', 'daily_opponent_presence', 'in_game_presence', 'admin_user_delete', 'admin_user_delete_reauthentication', 'smtp_email_invitations', 'mailjet_email_fallback', 'personal_invitation_messages', 'daily_invitation_response_messages', 'time_control', 'game_start', 'move_sync', 'server_clock', 'server_move_validation', 'draw_offer', 'resignation', 'direct_rematch', 'private_game_moments', 'private_game_moment_notes', 'personal_chess_chronicle', 'private_post_game_reactions', 'daily_game_start_summary', 'head_to_head_by_rating_pool', 'secure_seat_tokens', 'server_time_finalization', 'durable_object_clock_alarm', 'daily_chess', 'daily_game_list', 'daily_game_history', 'daily_history_archive', 'daily_pgn_download', 'daily_invitation_accept_decline', 'daily_invitation_cancel', 'daily_open_offer_acceptance_email', 'cancelled_room_tombstone', 'registered_account_seat_reclaim', 'member_only_room_creation', 'guest_live_invite_join', 'public_running_games', 'completed_game_archive', 'public_game_archive', 'archive_favorites', 'archive_retention_cron', 'open_game_offers', 'atomic_open_offer_acceptance', 'open_offer_withdrawal', 'runtime_public_visibility_toggle', 'spectator_only_links', 'private_player_chat', 'persistent_room_chat', 'member_global_chat', 'global_chat_presence', 'global_chat_reporting', 'global_chat_admin_delete', 'freestyle960', 'glicko2_ratings', 'six_separate_rating_pools', 'creator_rating_choice', 'provisional_rating_marker', 'verified_email_accounts', 'password_reset_by_email', 'verified_email_change', 'preverification_email_correction', 'auth_rate_limiting', 'constant_time_login', 'auth_security_event_log', 'admin_system_overview', 'mail_delivery_log', 'admin_member_messages', 'admin_personal_member_messages', 'member_news_opt_in', 'branded_html_mail', 'admin_mail_attachments', 'manual_backup_marker', 'player_reporting', 'local_chat_mute', 'admin_moderation', 'chat_blocking', 'temporary_account_suspension', 'permanent_account_ban', 'fairplay_timing_archive', 'fairplay_admin_read'],
       note: 'Diese Stufe erlaubt neue Spielräume nur für eingeloggte Mitglieder, lässt eingeladene Gäste bei Live-Partien weiterhin zu, bietet eine öffentliche Liste freigegebener Live- und Daily-Partien mit abgesichertem Zuschauerzugang und synchronisiert Lobby, Rollen, Gast-/Account-Anzeigenamen, Mitgliedersuche, Mitgliederliste mit freiwilligen Mitgliederprofilen und Online-Status, Daily-Partienübersicht, persönliche Accountverwaltung, sechs getrennte Glicko-2-Ratings, kennwortbestätigte Admin-Userlöschung, automatisch versendete SMTP-Einladungen über das Gamer-Postfach, bestätigte Mailadressen, sichere Kennwort-Wiederherstellung, gestuftes Rate-Limiting und protokollierte Sicherheitsereignisse, Bedenkzeit, Partiestart, Züge, eine servergeführte Uhr, einen dauerhaft gespeicherten Raum-Chat, einen moderierten Mitglieder-Global-Chat und prüft Züge serverseitig auf Legalität.'
     });
   },
