@@ -193,15 +193,20 @@ h1 {
 
 .photo-credit {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
+  top: 18px;
   right: 18px;
-  bottom: 16px;
-  padding: 5px 9px;
+  bottom: auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.34);
   border-radius: 999px;
-  background: rgba(17, 14, 14, .58);
-  color: rgba(255,255,255,.88);
-  font-size: 11px;
-  backdrop-filter: blur(6px);
+  background: rgba(17, 14, 14, .86);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.2;
+  box-shadow: 0 6px 18px rgba(0,0,0,.28);
+  backdrop-filter: blur(8px);
 }
 
 .content-shell {
@@ -277,17 +282,6 @@ h1 {
 .story p { margin: 0 0 22px; }
 
 .story strong { color: var(--wine-deep); }
-
-.home-highlight-copy {
-  margin: 35px 0 !important;
-  padding: 24px 26px;
-  border-left: 5px solid var(--gold);
-  border-radius: 0 16px 16px 0;
-  background: linear-gradient(110deg, rgba(170,116,31,.13), rgba(132,63,70,.06));
-  font-family: Inter, ui-sans-serif, sans-serif;
-  font-size: 17px;
-  font-weight: 620;
-}
 
 .report-aside {
   position: sticky;
@@ -449,9 +443,6 @@ td:nth-child(2) { font-weight: 720; }
 
 .winner-row { background: rgba(170,116,31,.085); }
 .winner-row td:nth-child(2)::after { content: "  🏆"; }
-.home-row { background: rgba(132,63,70,.105); box-shadow: inset 4px 0 0 var(--wine); }
-.home-badge { display: inline-flex; margin-left: 7px; padding: 2px 7px; border-radius: 999px; background: var(--wine); color: #fff; font-size: 9px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; }
-
 .results-note {
   margin: 20px 0 0;
   padding: 15px 18px;
@@ -501,7 +492,6 @@ html.dark-mode .all-results-link { box-shadow: 0 5px 14px rgba(0,0,0,.20); }
 html.dark-mode .source-link { color: #fff; background: linear-gradient(135deg, #914b54, #71343c); }
 html.dark-mode .story strong { color: #efc1c7; }
 html.dark-mode .winner-row { background: rgba(215,169,83,.09); }
-html.dark-mode .home-row { background: rgba(221,161,169,.10); }
 html.dark-mode tbody tr:hover { background: rgba(215,169,83,.08); }
 html.dark-mode .group-jumps { background: linear-gradient(180deg, var(--paper) 78%, transparent); }
 
@@ -521,14 +511,13 @@ html.dark-mode .group-jumps { background: linear-gradient(180deg, var(--paper) 7
   .back-link { width: 42px; padding: 0; }
   .hero { width: calc(100% - 20px); min-height: 560px; margin-top: 10px; border-radius: 22px; }
   .hero-content { padding: 27px 22px 46px; }
-  .photo-credit { right: 12px; bottom: 10px; }
+  .photo-credit { top: 12px; right: 12px; max-width: calc(100% - 24px); font-size: 10px; }
   .content-shell { width: calc(100% - 24px); }
   .stat-grid { gap: 8px; margin-top: -20px; margin-bottom: 42px; }
   .stat-card { min-height: 105px; padding: 17px; }
   .stat-card strong { font-size: 29px; }
   .story { font-size: 17px; }
   .story > p:first-child::first-letter { font-size: 62px; }
-  .home-highlight-copy { padding: 20px; }
   .results-section { margin-top: 60px; }
   .result-group summary { padding: 13px; gap: 10px; }
   .group-letter { width: 40px; height: 40px; }
