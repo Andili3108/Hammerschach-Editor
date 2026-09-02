@@ -50,6 +50,7 @@ function openAuthRecoveryDialog(mode, token){
   if(authEmailCorrectionPasswordInput) authEmailCorrectionPasswordInput.value = '';
   if(authEmailCorrectionEmailInput) authEmailCorrectionEmailInput.value = '';
   if(authEmailCorrectionEmailRepeatInput) authEmailCorrectionEmailRepeatInput.value = '';
+  if(typeof refreshEmailDomainHints === 'function') refreshEmailDomainHints();
   setAuthRecoveryStatus('', '');
   if(authRecoveryBackdrop) authRecoveryBackdrop.hidden = false;
   setTimeout(() => {
@@ -93,6 +94,10 @@ async function submitAuthRecovery(){
       if(newEmail.toLowerCase() !== repeatEmail.toLowerCase()) throw new Error('Die neuen E-Mail-Adressen stimmen nicht überein.');
       const data = await authApi('/api/auth/email-correction', {method:'POST', body:JSON.stringify({username, password, newEmail})});
       if(authEmailCorrectionPasswordInput) authEmailCorrectionPasswordInput.value = '';
+      if(loginIdentifierInput) loginIdentifierInput.value = data.username || username;
+      if(typeof showAuthVerificationNotice === 'function'){
+        showAuthVerificationNotice({username:data.username || username, email:data.email || newEmail, mailSent:true, source:'registration'});
+      }
       setAuthRecoveryStatus(data.message || 'Die neue Bestätigungsmail wurde versendet.', 'success');
     } else {
       const identifier = String(authRecoveryIdentifierInput ? authRecoveryIdentifierInput.value : '').trim();

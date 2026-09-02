@@ -1,5 +1,124 @@
 'use strict';
 
+let authVerificationNoticeState = null;
+const COMMON_EMAIL_DOMAIN_CORRECTIONS = Object.freeze({
+  'gamil.com':'gmail.com',
+  'gmial.com':'gmail.com',
+  'gmail.con':'gmail.com',
+  'gmx.d':'gmx.de',
+  'gmx.dee':'gmx.de',
+  'gmx.con':'gmx.com',
+  'outlok.com':'outlook.com',
+  'outlook.con':'outlook.com',
+  't-onlien.de':'t-online.de',
+  't-onlinee.de':'t-online.de',
+  'web.d':'web.de',
+  'web.dee':'web.de',
+  'yahoo.con':'yahoo.com'
+});
+
+function suggestedEmailAddress(value){
+  const email = String(value || '').trim();
+  const at = email.lastIndexOf('@');
+  if(at <= 0 || at === email.length - 1) return '';
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1).toLowerCase();
+  const correctedDomain = COMMON_EMAIL_DOMAIN_CORRECTIONS[domain] || '';
+  return correctedDomain && correctedDomain !== domain ? local + '@' + correctedDomain : '';
+}
+function renderEmailDomainHint(input, hint, textEl){
+  const suggestion = suggestedEmailAddress(input ? input.value : '');
+  if(hint) hint.hidden = !suggestion;
+  if(textEl) textEl.textContent = suggestion ? ('Meintest du „' + suggestion + '“?') : '';
+  return suggestion;
+}
+function refreshEmailDomainHints(){
+  renderEmailDomainHint(registerEmailInput, registerEmailDomainHint, registerEmailDomainHintText);
+  renderEmailDomainHint(authEmailCorrectionEmailInput, authEmailCorrectionDomainHint, authEmailCorrectionDomainHintText);
+}
+function applySuggestedEmail(input, repeatInput){
+  if(!input) return;
+  const previous = String(input.value || '').trim();
+  const suggestion = suggestedEmailAddress(previous);
+  if(!suggestion) return;
+  input.value = suggestion;
+  if(repeatInput && String(repeatInput.value || '').trim().toLowerCase() === previous.toLowerCase()) repeatInput.value = suggestion;
+  refreshEmailDomainHints();
+  input.focus();
+}
+function setAuthVerificationNoticeStatus(message, kind){
+  if(!authVerificationNoticeStatus) return;
+  authVerificationNoticeStatus.textContent = message || '';
+  authVerificationNoticeStatus.classList.toggle('error', kind === 'error');
+  authVerificationNoticeStatus.classList.toggle('success', kind === 'success');
+}
+function renderAuthVerificationNotice(){
+  if(!authVerificationNotice) return;
+  const loggedIn = !!(onlineAuthToken && onlineAuthUser);
+  const state = authVerificationNoticeState;
+  const visible = !!(state && !loggedIn && authMode === 'login' && state.email);
+  authVerificationNotice.hidden = !visible;
+  if(authLoginHelp) authLoginHelp.hidden = visible;
+  if(!visible) return;
+  if(authVerificationNoticeTitle){
+    authVerificationNoticeTitle.textContent = state.mailSent === false
+      ? 'Account angelegt mit dieser Mailadresse'
+      : state.source === 'login'
+        ? 'Bestätigung noch ausstehend für'
+        : 'Bestätigungsmail versendet an';
+  }
+  if(authVerificationNoticeEmail) authVerificationNoticeEmail.textContent = state.email;
+  if(authVerificationNoticeText){
+    authVerificationNoticeText.textContent = state.mailSent === false
+      ? 'Der erste Versand ist fehlgeschlagen. Prüfe die Adresse und fordere anschließend eine neue Bestätigungsmail an.'
+      : 'Bitte prüfe, ob diese Adresse richtig geschrieben ist. Sie kann vor der ersten Bestätigung noch korrigiert werden.';
+  }
+}
+function scrollAuthDialogToTop(){
+  try{
+    const modal = authBackdrop ? authBackdrop.querySelector('.identity-modal') : null;
+    if(modal) modal.scrollTop = 0;
+  } catch(_){}
+}
+function showAuthVerificationNotice(details){
+  const source = details && details.source === 'login' ? 'login' : 'registration';
+  authVerificationNoticeState = {
+    username:String(details && details.username || '').trim(),
+    email:String(details && details.email || '').trim(),
+    mailSent:details && details.mailSent === false ? false : true,
+    source
+  };
+  setAuthVerificationNoticeStatus('', '');
+  renderAuthVerificationNotice();
+  setTimeout(scrollAuthDialogToTop, 0);
+}
+function clearAuthVerificationNotice(){
+  authVerificationNoticeState = null;
+  setAuthVerificationNoticeStatus('', '');
+  renderAuthVerificationNotice();
+}
+function openAuthEmailCorrectionFromNotice(){
+  const state = authVerificationNoticeState || {};
+  if(loginIdentifierInput && state.username) loginIdentifierInput.value = state.username;
+  openAuthRecoveryDialog('email-correction');
+  if(authEmailCorrectionUsernameInput && state.username) authEmailCorrectionUsernameInput.value = state.username;
+}
+async function resendAuthVerificationFromNotice(){
+  const state = authVerificationNoticeState || {};
+  const identifier = String(state.username || state.email || '').trim();
+  if(!identifier){ openAuthRecoveryDialog('verification-request'); return; }
+  if(authVerificationResendBtn) authVerificationResendBtn.disabled = true;
+  setAuthVerificationNoticeStatus('Neue Bestätigungsmail wird angefordert…', '');
+  try{
+    const data = await authApi('/api/auth/email-verification/request', {method:'POST', body:JSON.stringify({identifier})});
+    setAuthVerificationNoticeStatus(data.message || 'Die Anfrage wurde verarbeitet.', 'success');
+  } catch(err){
+    setAuthVerificationNoticeStatus(err && err.message ? err.message : 'Die Bestätigungsmail konnte nicht angefordert werden.', 'error');
+  } finally {
+    if(authVerificationResendBtn) authVerificationResendBtn.disabled = false;
+  }
+}
+
 function openAuthDialog(mode){
   authMode = mode === 'register' ? 'register' : 'login';
   updateAuthUi();
@@ -252,6 +371,7 @@ function updateAuthUi(){
   if(authRegisterTab) authRegisterTab.classList.toggle('active', authMode === 'register');
   if(authLoginForm) authLoginForm.hidden = loggedIn || authMode !== 'login';
   if(authRegisterForm) authRegisterForm.hidden = loggedIn || authMode !== 'register';
+  renderAuthVerificationNotice();
   if(authAccountName) authAccountName.textContent = loggedIn ? (onlineAuthUser.username || '—') : '—';
   if(authAccountEmail) authAccountEmail.textContent = loggedIn ? (onlineAuthUser.email || '—') : '—';
   const emailVerified = !loggedIn || onlineAuthUser.emailVerified !== false;
@@ -346,8 +466,11 @@ async function submitAuthDialog(){
     if(authMode === 'register'){
       const username = cleanDisplayName(registerUsernameInput ? registerUsernameInput.value : '');
       const email = String(registerEmailInput ? registerEmailInput.value : '').trim();
+      const emailRepeat = String(registerEmailRepeatInput ? registerEmailRepeatInput.value : '').trim();
       const password = String(registerPasswordInput ? registerPasswordInput.value : '');
       const passwordRepeat = String(registerPasswordRepeatInput ? registerPasswordRepeatInput.value : '');
+      if(!email || !email.includes('@')) throw new Error('Bitte eine gültige Mailadresse eingeben.');
+      if(email.toLowerCase() !== emailRepeat.toLowerCase()) throw new Error('Die Mailadressen stimmen nicht überein.');
       if(password.length < 8 || password.length > 128) throw new Error('Das Kennwort muss 8 bis 128 Zeichen haben.');
       if(password !== passwordRepeat) throw new Error('Die Kennwörter stimmen nicht überein.');
       payload = {username, email, password};
@@ -358,19 +481,31 @@ async function submitAuthDialog(){
         authError.style.color = '#226b36';
         authError.textContent = data.message || 'Account wurde angelegt. Bitte Mailadresse bestätigen.';
       }
-      if(loginIdentifierInput) loginIdentifierInput.value = email || username;
+      if(loginIdentifierInput) loginIdentifierInput.value = data.username || username || email;
+      showAuthVerificationNotice({
+        username:data.username || username,
+        email:data.email || email,
+        mailSent:data.mailSent !== false,
+        source:'registration'
+      });
       return;
     } else {
       const identifier = String(loginIdentifierInput ? loginIdentifierInput.value : '').trim();
       const password = String(loginPasswordInput ? loginPasswordInput.value : '');
       payload = {identifier, password};
       const data = await authApi('/api/login', {method:'POST', body:JSON.stringify(payload)});
+      clearAuthVerificationNotice();
       saveAuthState(data.sessionToken, data.user);
     }
     applyLoggedInUserToOnlineRoom();
     closeAuthDialog();
   } catch(err){
     authError.textContent = err && err.message ? err.message : 'Anmeldung fehlgeschlagen.';
+    const errorData = err && err.data && typeof err.data === 'object' ? err.data : null;
+    if(authMode === 'login' && errorData && errorData.code === 'EMAIL_NOT_VERIFIED' && errorData.email){
+      if(loginIdentifierInput && errorData.username) loginIdentifierInput.value = errorData.username;
+      showAuthVerificationNotice({username:errorData.username, email:errorData.email, mailSent:true, source:'login'});
+    }
   } finally {
     authSubmitBtn.disabled = false;
   }
@@ -398,3 +533,10 @@ async function logoutAuth(){
 function hasTournamentAdminAccess(){
   return !!(onlineAuthToken && onlineAuthUser && onlineAuthUser.isAdmin === true);
 }
+
+if(registerEmailInput) registerEmailInput.addEventListener('input', refreshEmailDomainHints);
+if(authEmailCorrectionEmailInput) authEmailCorrectionEmailInput.addEventListener('input', refreshEmailDomainHints);
+if(registerEmailDomainApplyBtn) registerEmailDomainApplyBtn.addEventListener('click', () => applySuggestedEmail(registerEmailInput, registerEmailRepeatInput));
+if(authEmailCorrectionDomainApplyBtn) authEmailCorrectionDomainApplyBtn.addEventListener('click', () => applySuggestedEmail(authEmailCorrectionEmailInput, authEmailCorrectionEmailRepeatInput));
+if(authVerificationCorrectBtn) authVerificationCorrectBtn.addEventListener('click', openAuthEmailCorrectionFromNotice);
+if(authVerificationResendBtn) authVerificationResendBtn.addEventListener('click', resendAuthVerificationFromNotice);
