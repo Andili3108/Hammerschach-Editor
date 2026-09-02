@@ -146,20 +146,7 @@
   .visitor-board-logo{display:block;width:min(270px,78%);max-height:190px;object-fit:contain;filter:drop-shadow(0 8px 13px rgba(0,0,0,.13));}
   .visitor-board-title{font-size:clamp(21px,3.2vw,30px);font-weight:900;color:#222;line-height:1.08;}
   .visitor-board-slogan{max-width:100%;margin-top:2px;font-size:clamp(11px,3.4vw,17px);font-weight:800;color:var(--aktion-gold-dunkel);line-height:1.2;letter-spacing:.015em;white-space:nowrap;}
-  .visitor-board-login-btn{min-width:210px;min-height:44px;border-radius:14px;background:linear-gradient(135deg,#e3151d 0%,#be0009 54%,#910007 100%)!important;color:#fff!important;border:1px solid #780006!important;font-size:15px;text-shadow:0 1px 1px rgba(60,0,0,.62);box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -1px 0 rgba(66,0,0,.38),0 7px 16px rgba(128,0,7,.28)!important;}
-  .visitor-board-login-btn:hover:not(:disabled){background:linear-gradient(135deg,#f1262e 0%,#d00812 54%,#a40009 100%)!important;border-color:#6d0005!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.40),inset 0 -1px 0 rgba(66,0,0,.32),0 10px 20px rgba(128,0,7,.35)!important;filter:none;}
-  .visitor-board-login-btn:active:not(:disabled){background:linear-gradient(135deg,#c9000a 0%,#a80008 100%)!important;box-shadow:inset 0 3px 7px rgba(74,0,4,.34),0 3px 8px rgba(128,0,7,.24)!important;}
-  .visitor-board-login-btn:focus-visible{outline:3px solid rgba(190,0,9,.30);outline-offset:3px;}
-  .visitor-board-family{max-width:340px;margin-top:-2px;color:#4b4b4b;font-family:Arial,sans-serif;font-size:12px;font-weight:500;line-height:1.35;letter-spacing:.005em;text-wrap:balance;}
-  @media (max-width:460px){
-    .visitor-board-overlay{padding:10px;}
-    .visitor-board-welcome{width:94%;gap:6px;padding:12px;border-radius:18px;}
-    .visitor-board-logo{width:min(104px,42%);max-height:104px;}
-    .visitor-board-title{font-size:clamp(17px,5.4vw,21px);}
-    .visitor-board-slogan{font-size:clamp(10px,3.2vw,13px);white-space:normal;}
-    .visitor-board-login-btn{width:min(210px,100%);min-width:0;min-height:42px;padding:8px 12px;font-size:14px;}
-    .visitor-board-family{max-width:260px;margin-top:0;font-size:11px;line-height:1.25;}
-  }
+  .visitor-board-login-btn{min-width:210px;min-height:44px;border-radius:14px;background:linear-gradient(135deg,var(--aktion-gold-dunkel),var(--aktion-gold-hell))!important;color:#fff!important;border-color:rgba(168,111,22,.58)!important;font-size:15px;}
   html.visitor-start-view .moves-right{display:none!important;}
   html.visitor-start-view .header{grid-template-columns:minmax(0,1fr);}
   html.visitor-start-view .header-brand{display:none!important;}
@@ -483,7 +470,9 @@
   .auth-email-state-action{min-height:31px!important;padding:5px 9px!important;border-radius:10px!important;font-size:11px!important;}
   .auth-inline-link{display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent!important;box-shadow:none!important;color:#843f46!important;padding:4px 2px!important;min-height:28px!important;text-decoration:underline;font-size:13px;font-weight:900;}
   .auth-inline-link:hover:not(:disabled){transform:none!important;box-shadow:none!important;filter:none!important;text-decoration:none;}
-  .auth-login-help{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:7px;}
+  .auth-login-help{display:flex;justify-content:space-between;align-items:flex-start;gap:8px 16px;flex-wrap:wrap;margin-top:7px;}
+  .auth-verification-help{display:flex;align-items:center;justify-content:flex-end;gap:4px 10px;flex-wrap:wrap;font-size:13px;color:#666;}
+  .auth-verification-help>span{font-weight:800;}
   .recovery-status{min-height:18px;margin-top:8px;font-size:13px;font-weight:800;color:#666;line-height:1.35;}
   .recovery-status.error{color:#9A2D33;}
   .recovery-status.success{color:#226b36;}
@@ -1737,7 +1726,6 @@
   html.dark-mode .premove-cancel{background:rgba(255,229,160,.12)!important;color:#ffe5a0!important;border-color:rgba(255,229,160,.18)!important;}
   html.dark-mode .visitor-board-welcome{background:rgba(27,30,35,.91);border-color:rgba(226,151,160,.24);box-shadow:0 20px 48px rgba(0,0,0,.46);}
   html.dark-mode .visitor-board-slogan{color:#e2b55d;}
-  html.dark-mode .visitor-board-family{color:#b8bdc6;}
   html.dark-mode .leitbild-kicker{background:rgba(159,77,86,.18);border-color:rgba(226,151,160,.24);color:#efb5bc;}
   html.dark-mode .leitbild-status{color:#b8bdc6;}
   html.dark-mode .promo-backdrop,
@@ -1810,6 +1798,7 @@
   html.dark-mode .privacy-external-link,
   html.dark-mode .privacy-open-inline,
   html.dark-mode .auth-inline-link{color:#e5a5ad!important;}
+  html.dark-mode .auth-verification-help{color:#bfc3ca;}
   /* Anleitung und Datenschutz im Dark Mode: Jede Textebene erhält
      eine helle Grundfarbe, damit auch verschachtelte Listen, Hinweise
      und später ergänzte Elemente sicher lesbar bleiben. */
