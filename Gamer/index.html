@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: GAMER-BESUCHER-WERKSTATT-20260831-5 -->
+<!-- BUILD: GAMER-TURNIERBERICHTE-20260902-1 -->
 <html lang="de">
 <head>
 <meta charset="utf-8" />
@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260902-6" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260902-7" />
 </head>
 <body>
 <div class="app" role="main">
@@ -112,6 +112,8 @@
             <div id="clubChessMenuPopup" class="header-menu-popup" role="menu" aria-label="Vereinsschach" hidden>
               <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
               <button id="readerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="readerToolView" hidden>📚 Partienarchiv</button>
+              <div class="header-menu-section-label tournament-reports-label">Turnierberichte</div>
+              <a class="header-menu-item header-menu-link tournament-report-link" href="Turnierberichte/quick-round-robin-2026/" role="menuitem">🏆 Quick-Round-Robin 2026</a>
             </div>
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
@@ -225,6 +227,8 @@
               <div id="mobileNavClubChessPanel" class="mobile-nav-accordion-panel" hidden>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn"><span>📊</span><strong>Ergebnisdienst</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="readerToolBtn"><span>📚</span><strong>Partienarchiv</strong></button>
+                <div class="mobile-nav-accordion-label tournament-reports-label">Turnierberichte</div>
+                <a class="mobile-nav-test-item mobile-nav-accordion-item mobile-nav-report-link tournament-report-link" href="Turnierberichte/quick-round-robin-2026/"><span>🏆</span><strong>Quick-Round-Robin 2026</strong></a>
               </div>
             </div>
             <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="toolsMenu" hidden>
