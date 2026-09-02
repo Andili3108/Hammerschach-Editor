@@ -3102,3 +3102,392 @@ html.dark-mode .tournament-bracket-slot.winner .tournament-bracket-score{color:#
   .private-messages-footer{margin-top:8px;padding-top:8px;}
   #privateMessagesCloseBtn{display:none;}
 }
+
+
+/* Hammerschach Button-System 2026-09-02
+   Gold markiert Auswahl, Rubin die wichtigste Aktion, Gruen bestaetigt
+   positive Entscheidungen und Rot bleibt gefaehrlichen Aktionen vorbehalten. */
+:root{
+  --button-neutral-top:#ffffff;
+  --button-neutral-bottom:#e9eaed;
+  --button-neutral-text:#303238;
+  --button-neutral-border:rgba(35,38,43,.16);
+  --button-primary-start:#9b3640;
+  --button-primary-end:#76232c;
+  --button-primary-border:#641a22;
+  --button-primary-shadow:rgba(117,35,44,.24);
+  --button-selected-start:#fff8e9;
+  --button-selected-end:#f0ddb8;
+  --button-selected-text:#66400c;
+  --button-selected-border:#b7791d;
+  --button-selected-shadow:rgba(145,94,17,.15);
+  --button-success-start:#347b4a;
+  --button-success-end:#245f38;
+  --button-success-border:#1e512f;
+  --button-success-shadow:rgba(31,95,54,.22);
+  --button-danger-start:#9f3039;
+  --button-danger-end:#741c25;
+  --button-danger-border:#64141d;
+  --button-focus:#3b6ea7;
+}
+
+button{
+  background:linear-gradient(180deg,var(--button-neutral-top) 0%,var(--button-neutral-bottom) 100%);
+  color:var(--button-neutral-text);
+  border-color:var(--button-neutral-border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.94),0 4px 11px rgba(28,31,36,.10);
+}
+button:hover:not(:disabled){
+  filter:none;
+  border-color:rgba(132,63,70,.30);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 7px 16px rgba(28,31,36,.14);
+}
+button:active:not(:disabled){
+  box-shadow:inset 0 2px 5px rgba(27,29,34,.12),0 2px 6px rgba(28,31,36,.10);
+}
+:is(button,a,[role="button"]):focus-visible{
+  outline:3px solid rgba(59,110,167,.42);
+  outline-offset:2px;
+}
+.button-flat{
+  background:linear-gradient(180deg,var(--button-neutral-top) 0%,var(--button-neutral-bottom) 100%)!important;
+  color:var(--button-neutral-text)!important;
+  border-color:var(--button-neutral-border)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.94),0 4px 11px rgba(28,31,36,.09)!important;
+}
+.button-flat:hover:not(:disabled){
+  background:#fff!important;
+  border-color:rgba(132,63,70,.30)!important;
+  box-shadow:inset 0 1px 0 #fff,0 7px 15px rgba(28,31,36,.13)!important;
+}
+
+/* Aktive Karteien, Umschalter und Auswahlfelder: bewusst helles Gold statt CTA-Fuellung. */
+body :is(
+  .auth-tab.active,
+  .time-kind-option.active,
+  .time-control-select.active,
+  .invite-color-option.active,
+  .variant-option.active,
+  .rating-option.active,
+  .side-toggle-btn.active,
+  .board-color-option.active,
+  .board-size-preset.active,
+  .tournament-selection-tab.active,
+  .tournament-tab.active,
+  .tournament-type-option.active,
+  .theme-picker-item.active,
+  .private-messages-tab.active,
+  .daily-games-tab.active,
+  .game-archive-tab.active,
+  .members-filter-btn.active,
+  .league-standings-tab.active,
+  .tv-channel-button.active,
+  .tv-admin-slot-tab.active,
+  .trainer-header-action.active,
+  .trainer-beginner-menu .header-menu-item.active,
+  .mobile-nav-test-item.active,
+  .mobile-nav-test-item[aria-current="page"],
+  .game-moment-room-toggle.selected,
+  .game-moment-toggle.selected
+){
+  background:linear-gradient(135deg,var(--button-selected-start),var(--button-selected-end))!important;
+  color:var(--button-selected-text)!important;
+  border-color:var(--button-selected-border)!important;
+  text-shadow:none!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.54),0 4px 11px var(--button-selected-shadow)!important;
+}
+body :is(
+  .auth-tab.active,
+  .time-kind-option.active,
+  .invite-color-option.active,
+  .variant-option.active,
+  .rating-option.active,
+  .side-toggle-btn.active,
+  .board-color-option.active,
+  .board-size-preset.active,
+  .tournament-selection-tab.active,
+  .tournament-tab.active,
+  .tournament-type-option.active,
+  .private-messages-tab.active,
+  .daily-games-tab.active,
+  .game-archive-tab.active,
+  .members-filter-btn.active,
+  .league-standings-tab.active,
+  .tv-channel-button.active,
+  .tv-admin-slot-tab.active
+):hover:not(:disabled){
+  background:linear-gradient(135deg,#fff4de,#ead19f)!important;
+  border-color:#a86f16!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.62),0 7px 15px rgba(145,94,17,.19)!important;
+}
+body :is(.tournament-selection-tab.active,.private-messages-tab.active) :is(.tournament-selection-count,.private-messages-tab-count),
+body .daily-games-tab.active .daily-games-tab-count{
+  background:rgba(102,64,12,.12)!important;
+  color:#5b390a!important;
+}
+
+/* Primaere Aktionen: maximal eine dominante rubinrote Aktion je Arbeitsbereich. */
+body :is(
+  .new-game-open-btn,
+  .member-lobby-invite-action,
+  .live-start-btn,
+  .board-daily-confirm-btn,
+  .rematch-btn,
+  .chat-send-btn,
+  .global-chat-send,
+  .conditional-move-save-btn,
+  .admin-message-send-btn,
+  .tournament-create-btn,
+  .mobile-nav-test-item.primary,
+  .next-daily-game-btn,
+  .tv-playlist-open-btn,
+  .game-moment-note-save,
+  #authSubmitBtn,
+  #authRecoverySubmitBtn,
+  #accountEditSubmitBtn,
+  #emailNotificationsSaveBtn,
+  #adminReaderArchivesSaveBtn,
+  #adminInfoCenterSaveBtn,
+  #adminTickerWelcomeSaveBtn,
+  #adminTickerSaveBtn,
+  #moderationReportSubmitBtn,
+  #globalChatReportSubmitBtn,
+  #privateMessagesSendBtn,
+  #tournamentPublishBtn,
+  #tournamentStartBtn,
+  #tournamentCreatePreviewBtn,
+  #themePickerApplyBtn,
+  #invitationMessageSendBtn,
+  #dailyInvitationResponseConfirmBtn,
+  #playerNameSaveBtn,
+  #memberProfileInviteBtn,
+  #gameMomentSaveBtn,
+  #tvSaveBtn,
+  #leagueStandingsSaveBtn
+){
+  background:linear-gradient(135deg,var(--button-primary-start),var(--button-primary-end))!important;
+  color:#fff!important;
+  border-color:var(--button-primary-border)!important;
+  text-shadow:0 1px 1px rgba(54,8,14,.34)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 14px var(--button-primary-shadow)!important;
+}
+body :is(
+  .new-game-open-btn,
+  .member-lobby-invite-action,
+  .live-start-btn,
+  .board-daily-confirm-btn,
+  .rematch-btn,
+  .chat-send-btn,
+  .global-chat-send,
+  .conditional-move-save-btn,
+  .admin-message-send-btn,
+  .tournament-create-btn,
+  .mobile-nav-test-item.primary,
+  .next-daily-game-btn,
+  .tv-playlist-open-btn,
+  #authSubmitBtn,
+  #accountEditSubmitBtn,
+  #privateMessagesSendBtn,
+  #invitationMessageSendBtn
+):hover:not(:disabled){
+  background:linear-gradient(135deg,#ae4651,#842933)!important;
+  border-color:#641a22!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 9px 19px rgba(117,35,44,.30)!important;
+}
+body .member-lobby-offer-action{
+  background:linear-gradient(180deg,#fff 0%,#f4eee4 100%)!important;
+  color:#704813!important;
+  border-color:rgba(168,111,22,.46)!important;
+  box-shadow:inset 0 1px 0 #fff,0 4px 10px rgba(112,72,19,.10)!important;
+}
+
+/* Positive Entscheidungen duerfen sofort als sicher und bestaetigend lesbar sein. */
+body :is(
+  .draw-offer-accept-btn,
+  .daily-invitation-accept-btn,
+  .daily-game-accept-btn,
+  .leitbild-accept-btn,
+  #tournamentJoinBtn,
+  #tournamentCheckInBtn,
+  #tournamentArenaJoinBtn
+){
+  background:linear-gradient(135deg,var(--button-success-start),var(--button-success-end))!important;
+  color:#fff!important;
+  border-color:var(--button-success-border)!important;
+  text-shadow:0 1px 1px rgba(7,45,23,.32)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 6px 14px var(--button-success-shadow)!important;
+}
+body :is(.draw-offer-accept-btn,.daily-invitation-accept-btn,.daily-game-accept-btn,.leitbild-accept-btn,#tournamentJoinBtn,#tournamentCheckInBtn,#tournamentArenaJoinBtn):hover:not(:disabled){
+  background:linear-gradient(135deg,#3b8251,#296b40)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 9px 18px rgba(31,95,54,.27)!important;
+}
+
+/* Gefahr: volle Warnfarbe nur bei der endgueltigen Bestaetigung. */
+body :is(.resign-confirm-btn,.admin-delete-confirm-btn,.account-edit-submit-danger){
+  background:linear-gradient(135deg,var(--button-danger-start),var(--button-danger-end))!important;
+  color:#fff!important;
+  border-color:var(--button-danger-border)!important;
+  text-shadow:0 1px 1px rgba(58,4,10,.36)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.19),0 6px 14px rgba(116,28,37,.24)!important;
+}
+body :is(
+  .conditional-move-delete-btn,
+  .daily-game-delete-btn,
+  .daily-game-history-delete-btn,
+  .open-offer-withdraw-btn,
+  .auth-account-delete-btn,
+  .admin-member-delete-open-btn,
+  .admin-delete-btn,
+  .global-chat-message-delete,
+  #accountProfileAvatarRemoveBtn,
+  #gameMomentRemoveBtn,
+  #tournamentWithdrawBtn
+){
+  background:linear-gradient(180deg,#fffafa,#f4e7e9)!important;
+  color:#842f39!important;
+  border-color:rgba(132,47,57,.30)!important;
+  text-shadow:none!important;
+  box-shadow:inset 0 1px 0 #fff,0 3px 9px rgba(116,28,37,.08)!important;
+}
+
+/* Der Variantenmodus bleibt als einziges kraeftiges Orange eindeutig erkennbar. */
+body .variation-open-btn.active,
+body .variation-open-btn[aria-pressed="true"]{
+  background:linear-gradient(135deg,#b45309,#92400e)!important;
+  color:#fff!important;
+  border-color:#78350f!important;
+  box-shadow:inset 0 2px 5px rgba(68,29,5,.18),0 4px 10px rgba(120,53,15,.20)!important;
+}
+
+button:disabled,
+body :is(button,.button-flat):disabled{
+  opacity:.52;
+  filter:saturate(.55);
+  cursor:not-allowed;
+  box-shadow:none!important;
+  transform:none!important;
+}
+
+/* Dunkelmodus: eigene Oberflaechen und Kontraste statt bloss abgedunkelter Hellwerte. */
+html.dark-mode{
+  --button-neutral-top:#3b4048;
+  --button-neutral-bottom:#292e35;
+  --button-neutral-text:#f0f2f5;
+  --button-neutral-border:rgba(255,255,255,.14);
+  --button-primary-start:#b84c58;
+  --button-primary-end:#87303a;
+  --button-primary-border:#d1737d;
+  --button-primary-shadow:rgba(0,0,0,.34);
+  --button-selected-start:#493919;
+  --button-selected-end:#342a18;
+  --button-selected-text:#f5d58c;
+  --button-selected-border:#b9822d;
+  --button-selected-shadow:rgba(0,0,0,.28);
+  --button-success-start:#387c4e;
+  --button-success-end:#2b6b41;
+  --button-success-border:#62ad78;
+  --button-success-shadow:rgba(0,0,0,.34);
+  --button-danger-start:#bd4e59;
+  --button-danger-end:#862832;
+  --button-danger-border:#d6757e;
+  --button-focus:#8fc7f4;
+}
+html.dark-mode button{
+  background:linear-gradient(180deg,var(--button-neutral-top),var(--button-neutral-bottom));
+  color:var(--button-neutral-text);
+  border-color:var(--button-neutral-border);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 5px 13px rgba(0,0,0,.29);
+}
+html.dark-mode button:hover:not(:disabled){
+  background:linear-gradient(180deg,#464c55,#30353d);
+  border-color:rgba(226,151,160,.30);
+  filter:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 8px 18px rgba(0,0,0,.38);
+}
+html.dark-mode :is(button,a,[role="button"]):focus-visible{outline-color:rgba(143,199,244,.62);}
+html.dark-mode .button-flat{
+  background:linear-gradient(180deg,var(--button-neutral-top),var(--button-neutral-bottom))!important;
+  color:var(--button-neutral-text)!important;
+  border-color:var(--button-neutral-border)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 5px 12px rgba(0,0,0,.27)!important;
+}
+html.dark-mode .button-flat:hover:not(:disabled){
+  background:linear-gradient(180deg,#474d56,#31363e)!important;
+  border-color:rgba(226,151,160,.30)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 17px rgba(0,0,0,.36)!important;
+}
+html.dark-mode body :is(
+  .auth-tab.active,
+  .time-kind-option.active,
+  .time-control-select.active,
+  .invite-color-option.active,
+  .variant-option.active,
+  .rating-option.active,
+  .side-toggle-btn.active,
+  .board-color-option.active,
+  .board-size-preset.active,
+  .tournament-selection-tab.active,
+  .tournament-tab.active,
+  .tournament-type-option.active,
+  .theme-picker-item.active,
+  .private-messages-tab.active,
+  .daily-games-tab.active,
+  .game-archive-tab.active,
+  .members-filter-btn.active,
+  .league-standings-tab.active,
+  .tv-channel-button.active,
+  .tv-admin-slot-tab.active,
+  .trainer-header-action.active,
+  .trainer-beginner-menu .header-menu-item.active,
+  .mobile-nav-test-item.active,
+  .mobile-nav-test-item[aria-current="page"],
+  .game-moment-room-toggle.selected,
+  .game-moment-toggle.selected
+){
+  background:linear-gradient(135deg,var(--button-selected-start),var(--button-selected-end))!important;
+  color:var(--button-selected-text)!important;
+  border-color:var(--button-selected-border)!important;
+  text-shadow:none!important;
+  box-shadow:inset 0 0 0 1px rgba(255,220,150,.05),0 5px 13px var(--button-selected-shadow)!important;
+}
+html.dark-mode body :is(.tournament-selection-tab.active,.private-messages-tab.active) :is(.tournament-selection-count,.private-messages-tab-count),
+html.dark-mode body .daily-games-tab.active .daily-games-tab-count{
+  background:rgba(245,213,140,.13)!important;
+  color:#f7dda1!important;
+}
+html.dark-mode body .member-lobby-offer-action{
+  background:linear-gradient(180deg,#3b3831,#2e2c28)!important;
+  color:#f0ce86!important;
+  border-color:rgba(225,178,82,.32)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 4px 11px rgba(0,0,0,.25)!important;
+}
+html.dark-mode body :is(
+  .conditional-move-delete-btn,
+  .daily-game-delete-btn,
+  .daily-game-history-delete-btn,
+  .open-offer-withdraw-btn,
+  .auth-account-delete-btn,
+  .admin-member-delete-open-btn,
+  .admin-delete-btn,
+  .global-chat-message-delete,
+  #accountProfileAvatarRemoveBtn,
+  #gameMomentRemoveBtn,
+  #tournamentWithdrawBtn
+){
+  background:linear-gradient(180deg,#3b2d31,#2d2528)!important;
+  color:#f0aab2!important;
+  border-color:rgba(226,122,134,.30)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 4px 10px rgba(0,0,0,.25)!important;
+}
+html.dark-mode body .variation-open-btn.active,
+html.dark-mode body .variation-open-btn[aria-pressed="true"]{
+  background:linear-gradient(135deg,#a94d0b,#7d350c)!important;
+  color:#fff!important;
+  border-color:#d18442!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 5px 13px rgba(0,0,0,.32)!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  button,.button-flat,.daily-game-open-btn{transition:none!important;}
+  button:hover:not(:disabled),.button-flat:hover:not(:disabled),.daily-game-open-btn:hover{transform:none!important;}
+}
