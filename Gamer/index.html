@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-<link rel="stylesheet" href="css/gamer.css?v=20260902-1" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260902-3" />
 </head>
 <body>
 <div class="app" role="main">
@@ -551,7 +551,7 @@
           <p>Klicke oben auf <strong>„👤 Registrierung / Login“</strong> und wähle im geöffneten Fenster den Reiter <strong>„Registrierung“</strong>. Trage deinen gewünschten Benutzernamen, deine Mailadresse und zweimal dasselbe Kennwort ein. Das Kennwort muss mindestens acht Zeichen lang sein. Schließe den Vorgang mit <strong>„Registrieren“</strong> ab.</p>
 
           <h4>2. Mailadresse bestätigen</h4>
-          <p>Du erhältst eine Bestätigungsmail. Öffne sie und klicke auf den enthaltenen Link. <strong>Erst nach dieser Bestätigung ist der Login möglich.</strong> Falls die Mail nicht ankommt, prüfe bitte auch den Spam- oder Junk-Ordner. Im Login-Fenster kannst du über <strong>„Bestätigungsmail erneut senden“</strong> eine neue Mail anfordern.</p>
+          <p>Du erhältst eine Bestätigungsmail. Öffne sie und klicke auf den enthaltenen Link. <strong>Erst nach dieser Bestätigung ist der Login möglich.</strong> Nach der Registrierung zeigt der Gamer noch einmal deutlich an, an welche Adresse die Mail versendet wurde. Falls du einen Tippfehler entdeckst oder die Mail nicht ankommt, kannst du die Adresse direkt korrigieren beziehungsweise die Bestätigungsmail erneut senden.</p>
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
@@ -588,7 +588,7 @@
           <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login enthält die <strong>„🔧 Werkstatt“</strong> die Bereiche <strong>„🎓 Schach lernen“</strong>, <strong>„🎯 Trainer“</strong> und <strong>„🧩 Mattbilder-Schule“</strong>. Außerdem stehen laufende Partien sowie unter <strong>„♜ Vereinsschach“</strong> der <strong>Ergebnisdienst</strong> und das <strong>Partienarchiv</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein; die Zuschauerfreigabe lässt sich im Spielraum verwalten. Öffnest du einen gültigen Partie- oder Zuschauerlink, wird der benötigte Spielraum auch ohne vorherigen Login direkt angezeigt.</p>
           <p>Im Dropdown <strong>„👥 Mitglieder“</strong> stehen unter der Überschrift <strong>„INFORMATIONEN“</strong> die Punkte <strong>„🚀 Erste Schritte“</strong>, <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
-          <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Falls die Mail nicht erscheint, prüfe bitte auch den Spam- oder Junk-Ordner; im Login kann eine neue Bestätigungsmail angefordert werden.</p>
+          <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Der Gamer zeigt die Empfängeradresse nach der Registrierung und nach einem wegen ausstehender Bestätigung abgewiesenen Login erneut an. Dort kann eine fehlerhafte Adresse korrigiert oder eine neue Bestätigungsmail angefordert werden.</p>
           <p>Nach dem Login kannst du über die Account-Schaltfläche deinen Benutzernamen, deine Mailadresse und dein Kennwort ändern. Zum Schutz ist jeweils das aktuelle Kennwort erforderlich. Eine neue Mailadresse wird erst übernommen, nachdem sie über den zugesandten Link bestätigt wurde; bis dahin bleibt die bisherige Adresse aktiv. Über <strong>„Kennwort vergessen?“</strong> kann ein zeitlich begrenzter Einmal-Link angefordert werden. Ein normaler Account kann außerdem gelöscht werden, sofern keine laufende Live- oder Daily-Partie mehr besteht. Offene, noch nicht angenommene Daily-Einladungen werden dabei zurückgezogen; beendete Partien bleiben als gemeinsame Partiedokumentation erhalten und werden auf der Seite des gelöschten Accounts anonymisiert. Der Administrator-Account kann weder umbenannt noch selbst gelöscht werden.</p>
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
@@ -937,7 +937,7 @@
             <input id="loginIdentifierInput" class="identity-input" type="text" autocomplete="username" placeholder="z. B. Andi" />
             <label class="identity-label" for="loginPasswordInput">Kennwort</label>
             <input id="loginPasswordInput" class="identity-input" type="password" autocomplete="current-password" minlength="8" />
-            <div class="auth-login-help">
+            <div id="authLoginHelp" class="auth-login-help">
               <button id="forgotPasswordBtn" class="auth-inline-link" type="button">Kennwort vergessen?</button>
               <div class="auth-verification-help">
                 <span>Bestätigungsmail nicht erhalten?</span>
@@ -945,13 +945,29 @@
                 <button id="correctRegistrationEmailBtn" class="auth-inline-link" type="button">E-Mail-Adresse korrigieren</button>
               </div>
             </div>
+            <div id="authVerificationNotice" class="auth-verification-notice" hidden>
+              <div id="authVerificationNoticeTitle" class="auth-verification-notice-title">Bestätigungsmail versendet an</div>
+              <strong id="authVerificationNoticeEmail" class="auth-verification-notice-email"></strong>
+              <p id="authVerificationNoticeText">Bitte prüfe, ob diese Adresse richtig geschrieben ist.</p>
+              <div class="auth-verification-notice-actions">
+                <button id="authVerificationCorrectBtn" class="button-flat" type="button">E-Mail-Adresse korrigieren</button>
+                <button id="authVerificationResendBtn" type="button">Bestätigungsmail erneut senden</button>
+              </div>
+              <div id="authVerificationNoticeStatus" class="auth-verification-notice-status" aria-live="polite"></div>
+            </div>
           </div>
 
           <div id="authRegisterForm" class="auth-form" hidden>
             <label class="identity-label" for="registerUsernameInput">Benutzername</label>
             <input id="registerUsernameInput" class="identity-input" type="text" autocomplete="username" maxlength="24" placeholder="z. B. Andi" />
             <label class="identity-label" for="registerEmailInput">Mailadresse</label>
-            <input id="registerEmailInput" class="identity-input" type="email" autocomplete="email" placeholder="name@example.de" />
+            <input id="registerEmailInput" class="identity-input" type="email" autocomplete="email" maxlength="254" inputmode="email" spellcheck="false" placeholder="name@example.de" />
+            <label class="identity-label" for="registerEmailRepeatInput">Mailadresse wiederholen</label>
+            <input id="registerEmailRepeatInput" class="identity-input" type="email" autocomplete="off" maxlength="254" inputmode="email" spellcheck="false" placeholder="name@example.de" />
+            <div id="registerEmailDomainHint" class="auth-email-domain-hint" hidden>
+              <span id="registerEmailDomainHintText"></span>
+              <button id="registerEmailDomainApplyBtn" class="auth-inline-link" type="button">Vorschlag übernehmen</button>
+            </div>
             <label class="identity-label" for="registerPasswordInput">Kennwort</label>
             <input id="registerPasswordInput" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" />
             <label class="identity-label" for="registerPasswordRepeatInput">Kennwort wiederholen</label>
@@ -1041,6 +1057,10 @@
           <input id="authEmailCorrectionPasswordInput" class="identity-input" type="password" autocomplete="current-password" minlength="8" maxlength="128" />
           <label class="identity-label" for="authEmailCorrectionEmailInput">Neue E-Mail-Adresse</label>
           <input id="authEmailCorrectionEmailInput" class="identity-input" type="email" autocomplete="email" maxlength="254" />
+          <div id="authEmailCorrectionDomainHint" class="auth-email-domain-hint" hidden>
+            <span id="authEmailCorrectionDomainHintText"></span>
+            <button id="authEmailCorrectionDomainApplyBtn" class="auth-inline-link" type="button">Vorschlag übernehmen</button>
+          </div>
           <label class="identity-label" for="authEmailCorrectionEmailRepeatInput">Neue E-Mail-Adresse wiederholen</label>
           <input id="authEmailCorrectionEmailRepeatInput" class="identity-input" type="email" autocomplete="email" maxlength="254" />
           <div class="account-edit-hint">Nur für noch nicht bestätigte Accounts. Frühere Bestätigungslinks werden ungültig.</div>
@@ -2391,7 +2411,7 @@
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260831-2"></script>
 <script src="js/header-ui.js?v=20260831-1"></script>
-<script src="js/dialog-ui-state.js?v=20260902-1"></script>
+<script src="js/dialog-ui-state.js?v=20260902-3"></script>
 <script src="js/hammerschach-tv.js?v=20260830-3"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
 <script src="js/embedded-tools.js?v=20260831-3"></script>
@@ -2411,8 +2431,8 @@
 <script src="js/info-center.js?v=20260819-2"></script>
 <script src="js/admin-info-center.js?v=20260819-2"></script>
 <script src="js/account-profile.js?v=20260811-2"></script>
-<script src="js/auth-recovery.js?v=20260902-1"></script>
-<script src="js/auth-account.js?v=20260831-2"></script>
+<script src="js/auth-recovery.js?v=20260902-2"></script>
+<script src="js/auth-account.js?v=20260902-3"></script>
 <script src="js/tournament-themes.js?v=20260826-2"></script>
 <script src="js/tournament-setup.js?v=20260821-2"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
