@@ -101,6 +101,9 @@
   .tournaments-new-badge[hidden],.header-menu-count[hidden]{display:none!important;}
   .header-menu-popup[hidden]{display:none!important;}
   .header-menu-item{width:100%!important;min-width:0!important;min-height:40px!important;display:flex!important;align-items:center;justify-content:flex-start;text-align:left;padding:8px 11px!important;border-radius:11px!important;background:#f4f4f5!important;color:#333!important;border:1px solid rgba(0,0,0,.09)!important;box-shadow:none!important;font-size:14px!important;line-height:1.15!important;white-space:nowrap!important;}
+  .header-menu-link{text-decoration:none;box-sizing:border-box;}
+  html.visitor-header-view .tournament-reports-label,
+  html.visitor-header-view .tournament-report-link{display:none!important;}
   .header-menu-item[hidden]{display:none!important;}
   .header-menu-item:hover:not(:disabled){transform:none!important;background:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.10)!important;}
   .header-menu-item:focus-visible{outline:3px solid rgba(132,63,70,.18);outline-offset:1px;}
@@ -1623,6 +1626,7 @@
   html.dark-mode .header-menu-section-label{color:#aeb2b9;border-color:rgba(255,255,255,.09);}
   html.dark-mode .header-menu-item{background:#2b2f36!important;color:#eef0f2!important;border-color:rgba(255,255,255,.08)!important;}
   html.dark-mode .header-menu-item:hover:not(:disabled){background:#353a42!important;box-shadow:none!important;}
+  .mobile-nav-report-link{text-decoration:none;box-sizing:border-box;}
   html.dark-mode .trainer-beginner-menu .header-menu-item.active{color:#fff!important;background:linear-gradient(180deg,#a95660,#74343c)!important;border-color:#bc737b!important;}
   html.dark-mode .header-menu.open .header-menu-button{box-shadow:inset 0 0 0 2px rgba(226,151,160,.22),0 8px 18px rgba(0,0,0,.34)!important;}
   html.dark-mode .tv-stage{background:transparent;}
