@@ -39,7 +39,7 @@ let pendingAnalyzerArchivePgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
 const PENDING_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachPendingEmbeddedToolV1';
 const ACTIVE_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachActiveEmbeddedToolV1';
-const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','trainer','schachlabor','openings','reader','tournament-report','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -60,10 +60,10 @@ function trainerToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function mateSchoolToolAvailable(){
-  return !!(!onlineRoomId && !hasOnlineTargetInAddress());
+  return false;
 }
 function mateSchoolToolNavigable(){
-  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
+  return false;
 }
 function leagueStandingsToolAvailable(){
   return !!(!onlineRoomId && !hasOnlineTargetInAddress());
