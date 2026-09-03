@@ -2,6 +2,10 @@
   const root = document.documentElement;
   const toggle = document.getElementById('themeToggle');
   const meta = document.getElementById('themeColorMeta');
+  const visitorGate = document.getElementById('visitorReportGate');
+  const visitorReturn = document.getElementById('visitorReportReturnBtn');
+  const parentOrigin = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*';
+  let roundResultsRendered = false;
 
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"]/g, (character) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'
@@ -9,6 +13,8 @@
   const displayName = (value) => String(value ?? '').replace(/,(\S)/g, ', $1');
 
   function renderRoundResults() {
+    if (roundResultsRendered) return;
+    roundResultsRendered = true;
     const data = window.QRR2026_RESULTS || {};
     Object.entries(data).forEach(([group, rounds]) => {
       const groupElement = document.getElementById(`gruppe-${group.toLowerCase()}`);
@@ -63,11 +69,25 @@
   window.addEventListener('message', (event) => {
     if (event.source !== window.parent || !event.data || typeof event.data !== 'object') return;
     if (event.data.type === 'hammerschach-tournament-report-context') {
+      const loggedIn = !!event.data.loggedIn;
       root.classList.toggle('dark-mode', !!event.data.darkMode);
+      root.classList.toggle('visitor-preview', !loggedIn);
+      if (visitorGate) visitorGate.hidden = loggedIn;
+      if (loggedIn) renderRoundResults();
       refreshThemeControls();
     }
   });
 
-  renderRoundResults();
+  if (visitorReturn) {
+    visitorReturn.addEventListener('click', () => {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'hammerschach-tournament-report-return' }, parentOrigin);
+      } else {
+        window.location.href = '../../index.html';
+      }
+    });
+  }
+
+  if (root.classList.contains('hammerschach-standalone')) renderRoundResults();
   refreshThemeControls();
 })();
