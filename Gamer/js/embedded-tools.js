@@ -39,7 +39,7 @@ let pendingAnalyzerArchivePgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
 const PENDING_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachPendingEmbeddedToolV1';
 const ACTIVE_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachActiveEmbeddedToolV1';
-const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','trainer','schachlabor','openings','reader','tournament-report','tv','league-standings']);
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -60,10 +60,10 @@ function trainerToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function mateSchoolToolAvailable(){
-  return false;
+  return !!(!onlineRoomId && !hasOnlineTargetInAddress());
 }
 function mateSchoolToolNavigable(){
-  return false;
+  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function leagueStandingsToolAvailable(){
   return !!(!onlineRoomId && !hasOnlineTargetInAddress());
@@ -259,11 +259,19 @@ function postTrainerToolContext(){
   });
 }
 function postMateSchoolToolContext(){
+  let boardColor='basis';
+  let pieceSet='cburnett';
+  try{
+    boardColor=localStorage.getItem('hammerschachBoardColor')||'basis';
+    pieceSet=localStorage.getItem('hammerschachPieceSet')||'cburnett';
+  }catch(_){}
   postMateSchoolToolMessage({
     type:'hammerschach-mate-school-context',
     darkMode:!!darkModeEnabled,
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
-    username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
+    username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : '',
+    boardColor,
+    pieceSet
   });
 }
 function postSchachlaborToolContext(){
