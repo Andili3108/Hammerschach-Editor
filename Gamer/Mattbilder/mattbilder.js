@@ -83,6 +83,12 @@
     clues:document.getElementById('lessonClues'),
     origin:document.getElementById('lessonOrigin'),
     memory:document.getElementById('lessonMemory'),
+    diagramStateTitle:document.getElementById('diagramStateTitle'),
+    diagramCaption:document.getElementById('diagramCaption'),
+    moveButton:document.getElementById('mateMoveBtn'),
+    moveSymbol:document.querySelector('#mateMoveBtn .mate-move-symbol'),
+    moveSquares:document.getElementById('mateMoveSquares'),
+    moveLabel:document.getElementById('mateMoveLabel'),
     networkButton:document.getElementById('networkToggle'),
     networkLegend:document.getElementById('networkLegend'),
     previous:document.getElementById('previousLessonBtn'),
@@ -95,6 +101,8 @@
   let networkVisible=false;
   let currentBoard=null;
   let currentMover='w';
+  let matePlayed=false;
+  let moveAnimating=false;
   let pieceSetId='cburnett';
   let chapterReturnFocus=null;
 
@@ -104,7 +112,7 @@
       if(state&&typeof state==='object'){
         const byId=motifs.findIndex(motif=>motif.id===state.motifId);
         if(byId>=0)currentIndex=byId;
-        networkVisible=state.networkVisible===true;
+        networkVisible=false;
       }
       const hashId=decodeURIComponent(location.hash.replace(/^#/,''));
       const byHash=motifs.findIndex(motif=>motif.id===hashId);
@@ -233,21 +241,29 @@
     const task=motif.tasks&&motif.tasks[0];
     if(!task)return;
     const start=parseFen(task.fen);
+    const finish=applyMove(start,task.solution);
     currentMover=start.side;
-    currentBoard=applyMove(start,task.solution).board;
+    currentBoard=(matePlayed?finish:start).board;
     const orientationWhite=currentMover==='w';
-    const network=analyseMattNetwork(currentBoard,currentMover);
+    const network=analyseMattNetwork(finish.board,currentMover);
+    const moveFrom=task.solution.slice(0,2);
+    const moveTo=task.solution.slice(2,4);
     elements.board.innerHTML='';
-    elements.board.classList.toggle('network-visible',networkVisible);
-    elements.board.setAttribute('aria-label','Fertige Mattstellung zum '+motif.title+'. '+(currentMover==='w'?'Schwarz':'Weiß')+' ist matt.');
+    elements.board.classList.toggle('network-visible',matePlayed&&networkVisible);
+    elements.board.classList.toggle('mate-complete',matePlayed);
+    elements.board.setAttribute('aria-label',matePlayed?'Fertige Mattstellung zum '+motif.title+'. '+(currentMover==='w'?'Schwarz':'Weiß')+' ist matt.':'Stellung zum '+motif.title+' unmittelbar vor dem Mattzug.');
 
     for(let displayY=0;displayY<8;displayY++)for(let displayX=0;displayX<8;displayX++){
       const x=orientationWhite?displayX:7-displayX;
       const y=orientationWhite?displayY:7-displayY;
+      const squareName=files[x]+String(8-y);
       const piece=currentBoard[y][x];
       const square=document.createElement('div');
       square.className='square '+((x+y)%2===0?'light':'dark');
+      square.dataset.square=squareName;
       if(piece!=='.')square.classList.add('has-piece');
+      if(matePlayed&&squareName===moveFrom)square.classList.add('last-move-from');
+      if(matePlayed&&squareName===moveTo)square.classList.add('last-move-to');
       if(x===network.king[0]&&y===network.king[1])square.classList.add('mated-king');
       if(network.netPieces.includes(x+','+y))square.classList.add('net-piece');
       const escape=network.adjacent.find(item=>item.x===x&&item.y===y);
@@ -276,6 +292,88 @@
       }
       elements.board.appendChild(square);
     }
+  }
+
+  function updateMateControls(){
+    const motif=motifs[currentIndex];
+    const task=motif.tasks&&motif.tasks[0];
+    const move=task&&task.solution?task.solution:'';
+    const moveText=move.length>=4?move.slice(0,2)+' → '+move.slice(2,4):'Mattzug';
+    elements.diagramStateTitle.textContent=matePlayed?'Die fertige Mattstellung':'Ein Zug vor dem Matt';
+    elements.diagramCaption.textContent=matePlayed?'Matt! Der entscheidende Zug ist ausgeführt. Mit dem Rückpfeil kannst du die Ausgangsstellung erneut ansehen.':'Die Stellung steht unmittelbar vor dem Matt. Löse den entscheidenden Zug mit dem Pfeil aus.';
+    elements.moveButton.classList.toggle('is-played',matePlayed);
+    elements.moveButton.disabled=moveAnimating;
+    elements.moveButton.setAttribute('aria-pressed',String(matePlayed));
+    elements.moveSymbol.textContent=matePlayed?'↺':'→';
+    elements.moveSquares.textContent=matePlayed?'Mattstellung':moveText;
+    elements.moveLabel.textContent=matePlayed?'Stellung zurücksetzen':'Mattzug zeigen';
+    if(!matePlayed)networkVisible=false;
+    elements.networkButton.disabled=!matePlayed;
+    elements.networkButton.setAttribute('aria-pressed',String(matePlayed&&networkVisible));
+    elements.networkButton.innerHTML='<span aria-hidden="true">◎</span> '+(!matePlayed?'Nach dem Mattzug':networkVisible?'Mattnetz ausblenden':'Mattnetz anzeigen');
+    elements.networkLegend.hidden=!(matePlayed&&networkVisible);
+  }
+
+  function finishMateMove(){
+    if(!moveAnimating)return;
+    matePlayed=true;
+    moveAnimating=false;
+    networkVisible=false;
+    renderBoard();
+    updateMateControls();
+    saveState();
+    requestAnimationFrame(reportHeight);
+  }
+
+  function animateMateMove(){
+    if(moveAnimating)return;
+    if(matePlayed){
+      matePlayed=false;
+      networkVisible=false;
+      renderBoard();
+      updateMateControls();
+      saveState();
+      requestAnimationFrame(reportHeight);
+      return;
+    }
+    const motif=motifs[currentIndex];
+    const task=motif.tasks&&motif.tasks[0];
+    const move=task&&task.solution?task.solution:'';
+    if(move.length<4)return;
+    const sourceSquare=elements.board.querySelector('[data-square="'+move.slice(0,2)+'"]');
+    const targetSquare=elements.board.querySelector('[data-square="'+move.slice(2,4)+'"]');
+    const sourcePiece=sourceSquare&&sourceSquare.querySelector('.piece-img,.piece-fallback');
+    if(!sourceSquare||!targetSquare||!sourcePiece||window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      moveAnimating=true;
+      finishMateMove();
+      return;
+    }
+
+    moveAnimating=true;
+    updateMateControls();
+    sourceSquare.classList.add('move-start');
+    targetSquare.classList.add('move-target');
+    const capturedPiece=targetSquare.querySelector('.piece-img,.piece-fallback');
+    const boardRect=elements.board.getBoundingClientRect();
+    const sourceRect=sourcePiece.getBoundingClientRect();
+    const targetRect=targetSquare.getBoundingClientRect();
+    const flyer=sourcePiece.cloneNode(true);
+    flyer.classList.add('piece-in-flight');
+    flyer.style.left=(sourceRect.left-boardRect.left)+'px';
+    flyer.style.top=(sourceRect.top-boardRect.top)+'px';
+    flyer.style.width=sourceRect.width+'px';
+    flyer.style.height=sourceRect.height+'px';
+    flyer.style.transform='translate3d(0,0,0)';
+    sourcePiece.style.visibility='hidden';
+    if(capturedPiece)capturedPiece.style.opacity='0';
+    elements.board.appendChild(flyer);
+    const targetX=targetRect.left-boardRect.left+(targetRect.width-sourceRect.width)/2;
+    const targetY=targetRect.top-boardRect.top+(targetRect.height-sourceRect.height)/2;
+    const deltaX=targetX-(sourceRect.left-boardRect.left);
+    const deltaY=targetY-(sourceRect.top-boardRect.top);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{flyer.style.transform='translate3d('+deltaX+'px,'+deltaY+'px,0) scale(1.04)';}));
+    flyer.addEventListener('transitionend',finishMateMove,{once:true});
+    window.setTimeout(finishMateMove,620);
   }
 
   function renderChapterList(){
@@ -312,9 +410,7 @@
     elements.origin.textContent=origins[motif.id]||'Der Name beschreibt die typische Figurenstellung dieses Mattbildes.';
     elements.memory.textContent=motif.memory;
     elements.mobileTitle.textContent=(currentIndex+1)+' · '+motif.title;
-    elements.networkButton.setAttribute('aria-pressed',String(networkVisible));
-    elements.networkButton.innerHTML='<span aria-hidden="true">◎</span> '+(networkVisible?'Mattnetz ausblenden':'Mattnetz anzeigen');
-    elements.networkLegend.hidden=!networkVisible;
+    updateMateControls();
     elements.previous.disabled=!previous;
     elements.next.disabled=!next;
     elements.previousName.textContent=previous?previous.title:'Anfang';
@@ -328,6 +424,9 @@
 
   function selectLesson(index,moveFocus=false){
     currentIndex=Math.max(0,Math.min(motifs.length-1,Number(index)||0));
+    matePlayed=false;
+    moveAnimating=false;
+    networkVisible=false;
     closeChapterPanel(false);
     renderLesson();
     if(moveFocus){
@@ -362,7 +461,8 @@
   }
 
   readState();
-  elements.networkButton.addEventListener('click',()=>{networkVisible=!networkVisible;renderLesson();});
+  elements.moveButton.addEventListener('click',animateMateMove);
+  elements.networkButton.addEventListener('click',()=>{if(!matePlayed)return;networkVisible=!networkVisible;renderBoard();updateMateControls();saveState();requestAnimationFrame(reportHeight);});
   elements.previous.addEventListener('click',()=>{if(currentIndex>0)selectLesson(currentIndex-1,true);});
   elements.next.addEventListener('click',()=>{if(currentIndex<motifs.length-1)selectLesson(currentIndex+1,true);});
   elements.menuButton.addEventListener('click',openChapterPanel);

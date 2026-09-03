@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: MATTBILDER-FIBEL-20260904-2 -->
+<!-- BUILD: MATTBILDER-FIBEL-20260904-3 -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -10,7 +10,7 @@
       if(localStorage.getItem('hammerschachGamerColorScheme')==='dark')document.documentElement.classList.add('dark-mode');
     }catch(_){ }
   </script>
-  <link rel="stylesheet" href="mattbilder.css?v=20260904-2">
+  <link rel="stylesheet" href="mattbilder.css?v=20260904-3">
 </head>
 <body>
   <main class="school-shell">
@@ -58,7 +58,7 @@
             <div class="diagram-heading">
               <div>
                 <span class="diagram-kicker">Brettdiagramm</span>
-                <strong>Die fertige Mattstellung</strong>
+                <strong id="diagramStateTitle">Ein Zug vor dem Matt</strong>
               </div>
               <button id="networkToggle" class="network-toggle" type="button" aria-pressed="false">
                 <span aria-hidden="true">◎</span> Mattnetz anzeigen
@@ -67,8 +67,12 @@
             <div class="board-frame">
               <div id="board" class="chessboard" role="img" aria-label="Brettdiagramm"></div>
             </div>
+            <button id="mateMoveBtn" class="mate-move-button" type="button" aria-live="polite">
+              <span class="mate-move-symbol" aria-hidden="true">→</span>
+              <span class="mate-move-copy"><small id="mateMoveSquares">Mattzug</small><strong id="mateMoveLabel">Mattzug zeigen</strong></span>
+            </button>
             <figcaption>
-              <span>Der entscheidende Mattzug ist bereits ausgeführt.</span>
+              <span id="diagramCaption">Die Stellung steht unmittelbar vor dem Matt. Löse den entscheidenden Zug mit dem Pfeil aus.</span>
               <span id="networkLegend" class="network-legend" hidden><i class="legend-attacker"></i> beteiligte Figur <i class="legend-control"></i> kontrolliertes Fluchtfeld <i class="legend-blocked"></i> eigenes Hindernis</span>
             </figcaption>
           </figure>
@@ -117,6 +121,6 @@
   <button id="chapterBackdrop" class="chapter-backdrop" type="button" aria-label="Kapitelübersicht schließen" hidden></button>
 
   <script src="mattbilder-data.js?v=20260831-3"></script>
-  <script src="mattbilder.js?v=20260904-2"></script>
+  <script src="mattbilder.js?v=20260904-3"></script>
 </body>
 </html>

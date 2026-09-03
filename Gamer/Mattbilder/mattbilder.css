@@ -67,14 +67,20 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 .diagram-kicker{color:var(--muted);font:900 10px/1.2 Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase}
 .network-toggle{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 11px;border:1px solid rgba(132,63,70,.20);border-radius:12px;background:#fff;color:var(--wine-dark);font-weight:900}
 .network-toggle[aria-pressed="true"]{border-color:var(--wine);background:var(--wine);color:#fff}
+.network-toggle:disabled{opacity:.48;cursor:not-allowed}
 .board-frame{position:relative;width:100%;aspect-ratio:1;border:6px solid var(--board-frame-mid);border-radius:14px;overflow:hidden;background:var(--board-frame-dark);outline:1px solid var(--board-frame-dark);outline-offset:1px;isolation:isolate;box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 1px 0 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.34),inset -2px 0 0 rgba(0,0,0,.22),0 2px 2px rgba(0,0,0,.20),0 8px 14px rgba(0,0,0,.16),0 22px 42px rgba(36,20,22,.24)}
 .board-frame::after{content:"";position:absolute;inset:0;z-index:8;pointer-events:none;border-radius:8px;background:radial-gradient(ellipse at 18% 10%,rgba(255,255,255,.085),transparent 43%),linear-gradient(135deg,rgba(255,255,255,.025),transparent 48%,rgba(0,0,0,.075));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),inset 0 0 24px rgba(0,0,0,.09)}
-.chessboard{width:100%;height:100%;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));user-select:none}
+.chessboard{position:relative;width:100%;height:100%;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));user-select:none}
 .square{position:relative;min-width:0;min-height:0;display:grid;place-items:center;background-color:var(--board-light);background-image:radial-gradient(circle at 24% 16%,rgba(255,255,255,.30),transparent 52%),linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.045) 43%,rgba(0,0,0,.085)),repeating-linear-gradient(14deg,rgba(255,255,255,.016) 0 1px,rgba(0,0,0,.012) 1px 3px);overflow:hidden}
 .square.dark{background-color:var(--board-dark);background-image:radial-gradient(circle at 24% 16%,rgba(255,255,255,.18),transparent 51%),linear-gradient(145deg,rgba(255,255,255,.115),rgba(255,255,255,.015) 42%,rgba(0,0,0,.17)),repeating-linear-gradient(14deg,rgba(255,255,255,.014) 0 1px,rgba(0,0,0,.018) 1px 3px)}
 .square.has-piece::before{content:"";position:absolute;z-index:1;left:16%;right:16%;bottom:7%;height:17%;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,.28),rgba(0,0,0,.14) 40%,transparent 73%);opacity:.8}
 .piece-img{position:relative;z-index:3;width:88%;height:88%;object-fit:contain;pointer-events:none;transform:translateY(-1.5%);filter:drop-shadow(0 1px 0 rgba(255,255,255,.24)) drop-shadow(0 3px 2px rgba(0,0,0,.26)) drop-shadow(0 6px 5px rgba(0,0,0,.11))}
 .piece-fallback{position:relative;z-index:3;font-size:clamp(28px,6vw,64px);line-height:1;text-shadow:0 2px 2px rgba(0,0,0,.24)}
+.piece-in-flight{position:absolute!important;z-index:20!important;margin:0!important;pointer-events:none!important;transition:transform .48s cubic-bezier(.22,.78,.24,1);will-change:transform;filter:drop-shadow(0 3px 2px rgba(0,0,0,.26)) drop-shadow(0 12px 9px rgba(0,0,0,.25))}
+.square.move-start{box-shadow:inset 0 0 0 5px rgba(181,138,67,.86),inset 0 0 24px rgba(181,138,67,.28)}
+.square.move-target{box-shadow:inset 0 0 0 5px rgba(132,63,70,.92),inset 0 0 28px rgba(132,63,70,.38)}
+.square.last-move-from{box-shadow:inset 0 0 0 4px rgba(181,138,67,.62)}
+.square.last-move-to{box-shadow:inset 0 0 0 5px rgba(132,63,70,.88),inset 0 0 25px rgba(132,63,70,.30);animation:mate-arrival .68s ease-out}
 .coord{position:absolute;z-index:5;font:900 clamp(8px,1.35vw,11px)/1 Arial,sans-serif;letter-spacing:.01em;opacity:.90;pointer-events:none}
 .coord.rank{top:4px;left:4px}.coord.file{right:4px;bottom:3px}
 .square:not(.dark) .coord{color:var(--board-coord-dark);text-shadow:0 1px 0 rgba(255,255,255,.48)}
@@ -84,6 +90,18 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 .network-visible .square.controlled::after,.network-visible .square.blocked-own::after{content:"";position:absolute;z-index:6;width:27%;height:27%;border-radius:50%;pointer-events:none}
 .network-visible .square.controlled::after{background:rgba(45,109,177,.72);box-shadow:0 0 0 5px rgba(255,255,255,.28)}
 .network-visible .square.blocked-own::after{width:31%;height:31%;border:3px solid rgba(181,138,67,.92);background:linear-gradient(45deg,transparent 43%,rgba(181,138,67,.95) 44% 56%,transparent 57%),linear-gradient(-45deg,transparent 43%,rgba(181,138,67,.95) 44% 56%,transparent 57%)}
+.mate-move-button{width:100%;min-height:64px;display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;gap:11px;margin:13px 0 0;padding:7px 13px;border:1px solid var(--wine-dark);border-radius:15px;background:linear-gradient(135deg,var(--wine),var(--wine-dark));box-shadow:0 9px 20px rgba(93,40,48,.24);color:#fff;text-align:left;transition:transform .16s ease,box-shadow .16s ease,background .16s ease}
+.mate-move-button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 24px rgba(93,40,48,.30)}
+.mate-move-button:active:not(:disabled){transform:translateY(1px)}
+.mate-move-button:disabled{cursor:wait;opacity:.82}
+.mate-move-symbol{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:#fff;color:var(--wine-dark);font:900 29px/1 Arial,sans-serif;box-shadow:0 3px 9px rgba(30,12,15,.22)}
+.mate-move-copy{min-width:0;display:block}
+.mate-move-copy small,.mate-move-copy strong{display:block}
+.mate-move-copy small{margin-bottom:2px;color:#f2d7ba;font:900 10px/1.2 Arial,sans-serif;letter-spacing:.10em;text-transform:uppercase}
+.mate-move-copy strong{font-size:18px;line-height:1.1}
+.mate-move-button.is-played{border-color:rgba(132,63,70,.28);background:linear-gradient(135deg,#fff9ef,#f3e4df);box-shadow:0 7px 17px rgba(60,36,39,.12);color:var(--wine-dark)}
+.mate-move-button.is-played .mate-move-symbol{background:var(--wine);color:#fff}
+.mate-move-button.is-played .mate-move-copy small{color:var(--wine)}
 .diagram-card figcaption{display:flex;flex-direction:column;gap:7px;margin:10px 2px 0;color:var(--muted);font-size:12px;line-height:1.35}
 .network-legend{display:flex;align-items:center;flex-wrap:wrap;gap:5px 8px;color:#5f5559}
 .network-legend i{width:12px;height:12px;display:inline-block;border-radius:50%}
@@ -123,6 +141,8 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 .dark-mode .chapter-number{background:#3a3033;color:#e4aab0}
 .dark-mode .diagram-card{background:linear-gradient(#292d33,#211e20)}
 .dark-mode .network-toggle,.dark-mode .icon-button,.dark-mode .explanation-section,.dark-mode .nav-button{background:#2c3036;color:#eef0f2}
+.dark-mode .mate-move-button.is-played{border-color:rgba(255,255,255,.15);background:linear-gradient(135deg,#342d2f,#26292e);color:#f1e9e2}
+.dark-mode .mate-move-button.is-played .mate-move-copy small{color:#e2a8ad}
 .dark-mode .explanation-section p,.dark-mode .clue-list li{color:#d8dbe0}
 .dark-mode .mechanism-section{background:linear-gradient(135deg,#2c3036,#30272a)}
 .dark-mode .origin-section{background:linear-gradient(135deg,#2c3036,#352d22)}
@@ -169,6 +189,9 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
   .diagram-heading strong{font-size:15px}
   .network-toggle{width:auto;min-height:44px;flex:0 0 auto;padding:7px 9px;font-size:13px}
   .board-frame{border-width:5px;border-radius:11px}
+  .mate-move-button{min-height:60px;margin-top:10px;border-radius:13px;padding:6px 10px}
+  .mate-move-symbol{width:43px;height:43px}
+  .mate-move-copy strong{font-size:17px}
   .lesson-copy{margin-top:12px;gap:9px}
   .explanation-section{grid-template-columns:34px minmax(0,1fr);gap:8px;padding:12px 11px}
   .section-number{width:31px;height:31px}
@@ -198,3 +221,9 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 }
 
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+@keyframes mate-arrival{
+  0%{filter:brightness(1.34)}
+  45%{box-shadow:inset 0 0 0 7px rgba(181,138,67,.96),inset 0 0 34px rgba(181,138,67,.48)}
+  100%{filter:none}
+}
