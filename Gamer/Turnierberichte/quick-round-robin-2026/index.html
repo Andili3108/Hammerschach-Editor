@@ -13,8 +13,9 @@
         document.documentElement.classList.add('dark-mode');
       }
     } catch (_) { }
+    document.documentElement.classList.add(window.self === window.top ? 'hammerschach-standalone' : 'hammerschach-embedded');
   </script>
-  <link rel="stylesheet" href="report.css?v=20260903-2">
+  <link rel="stylesheet" href="report.css?v=20260903-3">
 </head>
 <body>
   <header class="site-header">
@@ -60,6 +61,13 @@
           <h2>Entscheidungen im direkten Duell</h2>
           <p>Mehrere Gruppen blieben bis zur letzten Runde offen. In Gruppe D kamen Jonathan Winkens und Leah Schmidt beide auf vier Punkte, in Gruppe I teilten Elena Koldunov und Jonas Roßmeyer dieselbe Ausbeute. Auch Gruppe L endete an der Spitze punktgleich. Erst die Feinwertung entschied dort über Pokal und Rangfolge.</p>
 
+          <h2>Dreikampf bis zum Schluss in Gruppe E</h2>
+          <p>Besonders eng verlief Gruppe E: Norbert Driesner, Andreas Lipske und Mikail Basara beendeten ihre fünf Partien allesamt mit drei Punkten. Damit entschied nicht mehr die reine Punktausbeute, sondern erst die Sonneborn-Berger-Wertung über die Reihenfolge. Driesner lag mit 7,75 knapp vor Lipske mit 6,50 und Basara mit 6,25. Drei punktgleiche Spieler auf den ersten drei Plätzen – spannender hätte das Rennen um den Gruppensieg kaum enden können.</p>
+          <figure class="story-photo">
+            <img src="assets/quick-round-robin-2026-group-e.jpg" alt="Die drei Erstplatzierten der Gruppe E bei der Siegerehrung" loading="lazy">
+            <figcaption>Das Siegerfoto der Gruppe E</figcaption>
+          </figure>
+
           <h2>Ein Turnier für die ganze Schachfamilie</h2>
           <p>Das Teilnehmerfeld reichte von jungen Talenten bis zu langjährig erfahrenen Senioren. Gerade diese Mischung zeigte, wie selbstverständlich Schach Generationen zusammenbringen kann. Sieben von acht bislang noch wertungslosen Aktiven erspielten sich über das Wochenende ihre erste DWZ – für viele ein besonderer Schritt in das organisierte Turnierschach.</p>
           <p>Nach 210 Partien, zahlreichen knappen Entscheidungen und 13 verdienten Gruppensiegen blieb vor allem der Eindruck eines harmonischen Wettkampfs. Unter der Schirmherrschaft des Schachbezirks Hamm gelang Hammer SC und SV Bönen 49 damit eine ebenso sportliche wie gemeinschaftliche Generalprobe für die neue Saison 2026/27.</p>
@@ -81,10 +89,9 @@
       <section class="results-section" id="abschlusstabellen" aria-labelledby="resultsTitle">
         <div class="results-heading">
           <div>
-            <h2 id="resultsTitle">Die Abschlusstabellen</h2>
-            <p>Alle 13 Gruppen im Überblick. Die Tabellen lassen sich einzeln ein- und ausklappen; auf kleinen Bildschirmen können sie seitlich bewegt werden.</p>
+            <h2 id="resultsTitle">Tabellen &amp; Einzelergebnisse</h2>
+            <p>Alle 13 Abschlusstabellen und sämtliche 210 Partien im Überblick. Gruppen und einzelne Runden lassen sich bequem ein- und ausklappen.</p>
           </div>
-          <a class="all-results-link" href="https://www.sv49.de/?p=6603#gruppe-a" target="_blank" rel="noopener noreferrer">Einzelergebnisse ↗</a>
         </div>
 
         <nav class="group-jumps" aria-label="Direkt zu einer Gruppe">
@@ -262,27 +269,7 @@
     Turnierbericht im Hammerschach-Gamer · Daten und Titelbild nach <a href="https://www.sv49.de/?p=6603" target="_blank" rel="noopener noreferrer">SV Bönen 49</a>
   </footer>
 
-  <script>
-    (() => {
-      const root = document.documentElement;
-      const toggle = document.getElementById('themeToggle');
-      const meta = document.getElementById('themeColorMeta');
-      const refresh = () => {
-        const dark = root.classList.contains('dark-mode');
-        toggle.textContent = dark ? '☀️' : '🌙';
-        toggle.setAttribute('aria-label', dark ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren');
-        toggle.title = dark ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren';
-        meta.setAttribute('content', dark ? '#15171a' : '#843f46');
-      };
-      toggle.addEventListener('click', () => {
-        root.classList.toggle('dark-mode');
-        try {
-          localStorage.setItem('hammerschachGamerColorScheme', root.classList.contains('dark-mode') ? 'dark' : 'light');
-        } catch (_) { }
-        refresh();
-      });
-      refresh();
-    })();
-  </script>
+  <script src="results-data.js?v=20260903-1"></script>
+  <script src="report.js?v=20260903-1"></script>
 </body>
 </html>
