@@ -75,17 +75,14 @@
     panelClose:document.getElementById('chapterPanelClose'),
     backdrop:document.getElementById('chapterBackdrop'),
     menuButton:document.getElementById('chapterMenuBtn'),
-    allButton:document.getElementById('allLessonsBtn'),
     mobileTitle:document.getElementById('mobileChapterTitle'),
     kicker:document.getElementById('lessonKicker'),
     title:document.getElementById('lessonTitle'),
     icon:document.getElementById('lessonIcon'),
-    lead:document.getElementById('lessonLead'),
     mechanism:document.getElementById('lessonMechanism'),
     clues:document.getElementById('lessonClues'),
     origin:document.getElementById('lessonOrigin'),
     memory:document.getElementById('lessonMemory'),
-    source:document.getElementById('sourceLink'),
     networkButton:document.getElementById('networkToggle'),
     networkLegend:document.getElementById('networkLegend'),
     previous:document.getElementById('previousLessonBtn'),
@@ -309,15 +306,12 @@
     elements.kicker.textContent=motif.group+' · Mattbild '+(currentIndex+1)+' von '+motifs.length;
     elements.title.textContent=motif.title;
     elements.icon.textContent=motif.icon||'♜';
-    elements.lead.textContent=motif.summary;
     elements.mechanism.textContent=motif.summary;
     elements.clues.innerHTML='';
     (motif.clues||[]).forEach(clue=>{const item=document.createElement('li');item.textContent=clue;elements.clues.appendChild(item);});
     elements.origin.textContent=origins[motif.id]||'Der Name beschreibt die typische Figurenstellung dieses Mattbildes.';
     elements.memory.textContent=motif.memory;
     elements.mobileTitle.textContent=(currentIndex+1)+' · '+motif.title;
-    elements.source.href=motif.sourceUrl||'#';
-    elements.source.hidden=!motif.sourceUrl;
     elements.networkButton.setAttribute('aria-pressed',String(networkVisible));
     elements.networkButton.innerHTML='<span aria-hidden="true">◎</span> '+(networkVisible?'Mattnetz ausblenden':'Mattnetz anzeigen');
     elements.networkLegend.hidden=!networkVisible;
@@ -372,7 +366,6 @@
   elements.previous.addEventListener('click',()=>{if(currentIndex>0)selectLesson(currentIndex-1,true);});
   elements.next.addEventListener('click',()=>{if(currentIndex<motifs.length-1)selectLesson(currentIndex+1,true);});
   elements.menuButton.addEventListener('click',openChapterPanel);
-  elements.allButton.addEventListener('click',openChapterPanel);
   elements.panelClose.addEventListener('click',()=>closeChapterPanel(true));
   elements.backdrop.addEventListener('click',()=>closeChapterPanel(true));
   document.addEventListener('keydown',event=>{

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: MATTBILDER-FIBEL-20260904-1 -->
+<!-- BUILD: MATTBILDER-FIBEL-20260904-2 -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -10,7 +10,7 @@
       if(localStorage.getItem('hammerschachGamerColorScheme')==='dark')document.documentElement.classList.add('dark-mode');
     }catch(_){ }
   </script>
-  <link rel="stylesheet" href="mattbilder.css?v=20260904-1">
+  <link rel="stylesheet" href="mattbilder.css?v=20260904-2">
 </head>
 <body>
   <main class="school-shell">
@@ -52,8 +52,6 @@
           </div>
           <div id="lessonIcon" class="lesson-icon" aria-hidden="true">▰</div>
         </header>
-
-        <p id="lessonLead" class="lesson-lead"></p>
 
         <div class="lesson-grid">
           <figure class="diagram-card">
@@ -105,13 +103,11 @@
               <p id="lessonMemory"></p>
             </blockquote>
 
-            <a id="sourceLink" class="source-link" href="#" target="_blank" rel="noopener noreferrer">Weiterführende Erklärung auf Andili.de <span aria-hidden="true">↗</span></a>
           </div>
         </div>
 
         <nav class="lesson-nav" aria-label="Zwischen Mattbildern wechseln">
           <button id="previousLessonBtn" class="nav-button previous" type="button"><span aria-hidden="true">‹</span><span><small>Vorheriges Mattbild</small><strong id="previousLessonName">–</strong></span></button>
-          <button id="allLessonsBtn" class="all-lessons-button" type="button">Alle 30</button>
           <button id="nextLessonBtn" class="nav-button next" type="button"><span><small>Nächstes Mattbild</small><strong id="nextLessonName">–</strong></span><span aria-hidden="true">›</span></button>
         </nav>
       </article>
@@ -121,6 +117,6 @@
   <button id="chapterBackdrop" class="chapter-backdrop" type="button" aria-label="Kapitelübersicht schließen" hidden></button>
 
   <script src="mattbilder-data.js?v=20260831-3"></script>
-  <script src="mattbilder.js?v=20260904-1"></script>
+  <script src="mattbilder.js?v=20260904-2"></script>
 </body>
 </html>
