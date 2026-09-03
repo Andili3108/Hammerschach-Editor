@@ -388,15 +388,6 @@ h1 {
   box-shadow: 0 10px 24px rgba(99, 45, 52, .22);
 }
 
-.visitor-report-gate-kicker {
-  margin: 0 0 5px !important;
-  color: var(--wine);
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-}
-
 .visitor-report-gate h2 {
   margin: 0;
   font-family: Inter, ui-sans-serif, sans-serif;
@@ -429,14 +420,6 @@ h1 {
 .visitor-report-return:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 30px rgba(99, 45, 52, .28);
-}
-
-.visitor-report-gate > small {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
 }
 
 html.visitor-preview .member-report-only { display: none !important; }
@@ -752,7 +735,6 @@ html.hammerschach-embedded .result-group { scroll-margin-top: 64px; }
   .visitor-report-gate { grid-template-columns: 1fr; margin: 42px 0 54px; padding: 22px 18px; }
   .visitor-report-gate-icon { grid-row: auto; width: 50px; height: 50px; border-radius: 15px; }
   .visitor-report-return { grid-column: 1; font-size: 14px; }
-  .visitor-report-gate > small { grid-column: 1; }
   .results-section { margin-top: 60px; }
   .result-group summary { padding: 13px; gap: 10px; }
   .group-letter { width: 40px; height: 40px; }
