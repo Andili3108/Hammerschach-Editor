@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- BUILD: OPENINGS-PREMIUM-BOARD-20260730-1 -->
+<!-- BUILD: OPENINGS-PREMIUM-BOARD-20260904-1 -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
@@ -296,6 +296,60 @@
         0 10px 18px rgba(0,0,0,.34),
         0 26px 52px rgba(0,0,0,.44);
     }
+
+    /* Die zwei Edelbretter entsprechen den Material-Presets des Gamers. */
+    html[data-board-material="royal-walnut"] #board .square.light{
+      background-color:var(--board-light);
+      background-image:
+        linear-gradient(115deg,transparent 0 34%,rgba(135,96,52,.08) 35%,transparent 37% 68%,rgba(255,248,232,.20) 69%,transparent 71%),
+        linear-gradient(25deg,transparent 0 53%,rgba(118,92,61,.06) 54%,transparent 56%),
+        repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,rgba(111,76,44,.020) 1px 3px),
+        radial-gradient(circle at 22% 14%,rgba(255,255,255,.25),rgba(255,255,255,0) 50%);
+    }
+    html[data-board-material="royal-walnut"] #board .square.dark{
+      background-color:var(--board-dark);
+      background-image:
+        linear-gradient(115deg,transparent 0 31%,rgba(255,231,193,.07) 32%,transparent 34% 64%,rgba(51,29,12,.13) 65%,transparent 67%),
+        linear-gradient(22deg,transparent 0 49%,rgba(54,32,18,.15) 50%,transparent 52%),
+        repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,rgba(46,29,15,.028) 1px 3px),
+        radial-gradient(circle at 24% 15%,rgba(255,244,221,.08),rgba(255,255,255,0) 49%);
+    }
+    html[data-board-material="royal-walnut"] .board-wrap{
+      border-color:var(--board-frame-mid);
+      outline-color:var(--board-frame-dark);
+      box-shadow:
+        inset 0 0 0 1px rgba(200,156,102,.28),
+        inset 0 1px 0 rgba(255,248,236,.18),
+        inset 0 -2px 0 rgba(66,38,17,.34),
+        0 2px 3px rgba(57,35,17,.18),
+        0 10px 20px rgba(57,35,17,.16),
+        0 22px 44px rgba(57,35,17,.20);
+    }
+    html[data-board-material="onyx-elegance"] #board .square.light{
+      background-color:var(--board-light);
+      background-image:
+        linear-gradient(116deg,transparent 0 35%,rgba(167,137,91,.09) 36%,transparent 38% 68%,rgba(255,255,255,.17) 69%,transparent 71%),
+        linear-gradient(26deg,transparent 0 56%,rgba(118,94,61,.05) 57%,transparent 59%),
+        radial-gradient(circle at 22% 14%,rgba(255,255,255,.26),rgba(255,255,255,0) 50%);
+    }
+    html[data-board-material="onyx-elegance"] #board .square.dark{
+      background-color:var(--board-dark);
+      background-image:
+        linear-gradient(113deg,transparent 0 31%,rgba(181,138,67,.070) 32%,transparent 34% 63%,rgba(255,255,255,.040) 64%,transparent 66%),
+        linear-gradient(24deg,transparent 0 49%,rgba(0,0,0,.18) 50%,transparent 52%),
+        radial-gradient(circle at 24% 15%,rgba(255,255,255,.08),rgba(255,255,255,0) 49%);
+    }
+    html[data-board-material="onyx-elegance"] .board-wrap{
+      border-color:var(--board-frame-mid);
+      outline-color:var(--board-frame-dark);
+      box-shadow:
+        inset 0 0 0 1px rgba(181,138,67,.34),
+        inset 0 1px 0 rgba(255,255,255,.20),
+        inset 0 -2px 0 rgba(0,0,0,.42),
+        0 2px 3px rgba(0,0,0,.24),
+        0 10px 20px rgba(0,0,0,.20),
+        0 24px 48px rgba(0,0,0,.24);
+    }
     @media(hover:hover) and (pointer:fine){
       #board .square:hover .piece-img:not(.piece-drag-source){
         transform:translateY(-3%) scale(1.018);
@@ -457,10 +511,12 @@
     const PROGRESS_STORAGE_KEY='hammerschachOpeningProgressV1';
     const SESSION_STORAGE_KEY='hammerschachOpeningSessionV1';
     const boardColorPresets=[
-      {id:'basis',name:'Hammerschach Rubin',light:'#f0d9b5',dark:'#843f46'},
-      {id:'braun',name:'Walnuss',light:'#f3ddb7',dark:'#b4875e'},
-      {id:'grau',name:'Schiefer',light:'#eeeeee',dark:'#9b9b9b'},
-      {id:'gruen',name:'Turniergrün',light:'#eeeed2',dark:'#769656'}
+      {id:'basis',name:'Hammerschach Rubin',light:'#f0d9b5',dark:'#843f46',material:'classic'},
+      {id:'braun',name:'Walnuss',light:'#f3ddb7',dark:'#b4875e',material:'classic'},
+      {id:'grau',name:'Schiefer',light:'#eeeeee',dark:'#9b9b9b',material:'classic'},
+      {id:'gruen',name:'Turniergrün',light:'#eeeed2',dark:'#769656',material:'classic'},
+      {id:'onyx-elegance',name:'Premium · Warm',light:'#f2e7d2f0',dark:'#7f8389d0',material:'onyx-elegance',frameDark:'#2a2f34',frameMid:'#50555c',frameLight:'#b58a43',coordLight:'#fff1d4',coordDark:'#0d0e10'},
+      {id:'royal-walnut',name:'Royal Walnut · Holz',light:'#d9c29e',dark:'#8a6845',material:'royal-walnut',frameDark:'#5e4228',frameMid:'#8b6945',frameLight:'#c89c66',coordLight:'#fff3df',coordDark:'#1b1008'}
     ];
     const pieceSetPresets=[
       {id:'cburnett',name:'Cburnett · Standard',paths:{P:'../assets/pieces/Chess_plt45.svg',R:'../assets/pieces/Chess_rlt45.svg',N:'../assets/pieces/Chess_nlt45.svg',B:'../assets/pieces/Chess_blt45.svg',Q:'../assets/pieces/Chess_qlt45.svg',K:'../assets/pieces/Chess_klt45.svg',p:'../assets/pieces/Chess_pdt45.svg',r:'../assets/pieces/Chess_rdt45.svg',n:'../assets/pieces/Chess_ndt45.svg',b:'../assets/pieces/Chess_bdt45.svg',q:'../assets/pieces/Chess_qdt45.svg',k:'../assets/pieces/Chess_kdt45.svg'}},
@@ -627,7 +683,7 @@
     function closePopovers(){colorPopover.hidden=true;piecePopover.hidden=true;document.getElementById('colorBtn').setAttribute('aria-expanded','false');document.getElementById('pieceBtn').setAttribute('aria-expanded','false')}
     function boardRgbFromHex(value){
       const normalized=String(value||'').trim().replace(/^#/,'');
-      const full=normalized.length===3?normalized.split('').map(char=>char+char).join(''):normalized;
+      const full=normalized.length===3?normalized.split('').map(char=>char+char).join(''):normalized.slice(0,6);
       if(!/^[0-9a-f]{6}$/i.test(full))return{r:0,g:0,b:0};
       return{r:parseInt(full.slice(0,2),16),g:parseInt(full.slice(2,4),16),b:parseInt(full.slice(4,6),16)};
     }
@@ -638,19 +694,22 @@
     }
     function applyBoardMaterialVariables(preset){
       const root=document.documentElement.style;
-      root.setProperty('--board-frame-dark',mixBoardHex(preset.dark,'#000000',.62));
-      root.setProperty('--board-frame-mid',mixBoardHex(preset.dark,'#000000',.31));
-      root.setProperty('--board-frame-light',mixBoardHex(preset.dark,'#ffffff',.24));
-      root.setProperty('--board-coord-dark',mixBoardHex(preset.dark,'#000000',.58));
-      root.setProperty('--board-coord-light',mixBoardHex(preset.light,'#ffffff',.56));
+      root.setProperty('--board-frame-dark',preset.frameDark||mixBoardHex(preset.dark,'#000000',.62));
+      root.setProperty('--board-frame-mid',preset.frameMid||mixBoardHex(preset.dark,'#000000',.31));
+      root.setProperty('--board-frame-light',preset.frameLight||mixBoardHex(preset.dark,'#ffffff',.24));
+      root.setProperty('--board-coord-dark',preset.coordDark||mixBoardHex(preset.dark,'#000000',.58));
+      root.setProperty('--board-coord-light',preset.coordLight||mixBoardHex(preset.light,'#ffffff',.56));
+      document.documentElement.dataset.boardMaterial=preset.material||'classic';
     }
     function applyBoardColor(id,persist=true){
-      const preset=boardColorPresets.find(item=>item.id===id)||boardColorPresets[0];activeBoardColor=preset.id;document.documentElement.style.setProperty('--board-light',preset.light);document.documentElement.style.setProperty('--board-dark',preset.dark);
+      const normalizedId=id==='metal-prestige'?'onyx-elegance':id;
+      const preset=boardColorPresets.find(item=>item.id===normalizedId)||boardColorPresets[0];activeBoardColor=preset.id;document.documentElement.style.setProperty('--board-light',preset.light);document.documentElement.style.setProperty('--board-dark',preset.dark);
       applyBoardMaterialVariables(preset);
       if(persist)try{localStorage.setItem(BOARD_COLOR_STORAGE_KEY,preset.id)}catch(_){}renderColorPopover();
     }
     function applyPieceSet(id,persist=true){
-      const preset=pieceSetPresets.find(item=>item.id===id)||pieceSetPresets[0];activePieceSetId=preset.id;piecePaths={...preset.paths};if(persist)try{localStorage.setItem(PIECE_SET_STORAGE_KEY,preset.id)}catch(_){}renderPiecePopover();renderBoard();
+      const normalizedId=id==='rhosgfx'?'merida':id;
+      const preset=pieceSetPresets.find(item=>item.id===normalizedId)||pieceSetPresets[0];activePieceSetId=preset.id;piecePaths={...preset.paths};if(persist)try{localStorage.setItem(PIECE_SET_STORAGE_KEY,preset.id)}catch(_){}renderPiecePopover();renderBoard();
     }
     function renderColorPopover(){
       colorPopover.innerHTML='';boardColorPresets.forEach(preset=>{const button=document.createElement('button');button.type='button';button.innerHTML='<span>'+(preset.id===activeBoardColor?'✓ ':'')+preset.name+'</span><span class="swatch"><i style="background:'+preset.light+'"></i><i style="background:'+preset.dark+'"></i></span>';button.onclick=()=>{applyBoardColor(preset.id);closePopovers()};colorPopover.appendChild(button)});
@@ -798,7 +857,7 @@
     window.addEventListener('storage',event=>{if(event.key===BOARD_COLOR_STORAGE_KEY&&event.newValue)applyBoardColor(event.newValue,false);if(event.key===PIECE_SET_STORAGE_KEY&&event.newValue)applyPieceSet(event.newValue,false)});
     window.addEventListener('message',event=>{
       if(event.source!==window.parent)return;if(location.origin!=='null'&&event.origin!==location.origin)return;const message=event.data&&typeof event.data==='object'?event.data:{};
-      if(message.type==='hammerschach-openings-context'){document.documentElement.classList.toggle('dark-mode',!!message.darkMode);if(Array.isArray(message.openingCatalog))parentFallbackCatalog=message.openingCatalog;if(pgnLoadSettled&&!openings.length&&parentFallbackCatalog){openings=fallbackFromCatalog(parentFallbackCatalog);finishLibraryLoad('Die PGN-Datei war nicht erreichbar; der integrierte Eröffnungsbestand wird verwendet.')}reportHeight()}
+      if(message.type==='hammerschach-openings-context'){document.documentElement.classList.toggle('dark-mode',!!message.darkMode);if(typeof message.boardColor==='string'&&message.boardColor)applyBoardColor(message.boardColor,false);if(typeof message.pieceSet==='string'&&message.pieceSet)applyPieceSet(message.pieceSet,false);if(Array.isArray(message.openingCatalog))parentFallbackCatalog=message.openingCatalog;if(pgnLoadSettled&&!openings.length&&parentFallbackCatalog){openings=fallbackFromCatalog(parentFallbackCatalog);finishLibraryLoad('Die PGN-Datei war nicht erreichbar; der integrierte Eröffnungsbestand wird verwendet.')}reportHeight()}
     });
     if(window.ResizeObserver)new ResizeObserver(reportHeight).observe(document.body);window.addEventListener('load',reportHeight);
 
