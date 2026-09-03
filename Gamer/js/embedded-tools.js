@@ -284,12 +284,20 @@ function postSchachlaborToolContext(){
   });
 }
 function postOpeningsToolContext(){
+  let boardColor='basis';
+  let pieceSet='cburnett';
+  try{
+    boardColor=localStorage.getItem('hammerschachBoardColor')||'basis';
+    pieceSet=localStorage.getItem('hammerschachPieceSet')||'cburnett';
+  }catch(_){}
   postOpeningsToolMessage({
     type:'hammerschach-openings-context',
     darkMode:!!darkModeEnabled,
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : '',
-    openingCatalog:Array.isArray(TOURNAMENT_THEME_CATALOG) ? TOURNAMENT_THEME_CATALOG : []
+    openingCatalog:Array.isArray(TOURNAMENT_THEME_CATALOG) ? TOURNAMENT_THEME_CATALOG : [],
+    boardColor,
+    pieceSet
   });
 }
 function postFairplayToolContext(){
