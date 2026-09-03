@@ -78,10 +78,10 @@ function readerToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function tournamentReportToolAvailable(){
-  return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
+  return !!(!onlineRoomId && !hasOnlineTargetInAddress());
 }
 function tournamentReportToolNavigable(){
-  return !!(onlineAuthToken && onlineAuthUser && !onlineSpectatorOnly);
+  return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function protectedEmbeddedToolActive(){
   return analyzerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;
@@ -658,6 +658,15 @@ window.addEventListener('message',async event=>{
   if(embeddedToolTargetOrigin()!=='*'&&event.origin!==embeddedToolTargetOrigin())return;
   const message=event.data&&typeof event.data==='object'?event.data:{};
   if(fromTournamentReport){
+    if(message.type==='hammerschach-tournament-report-return'){
+      closeEmbeddedTools();
+      requestAnimationFrame(()=>{
+        window.scrollTo({top:0,left:0,behavior:'auto'});
+        if(authOpenBtn&&!authOpenBtn.hidden){
+          try{authOpenBtn.focus({preventScroll:true});}catch(_){authOpenBtn.focus();}
+        }
+      });
+    }
     return;
   }
   if(fromMateSchool){
