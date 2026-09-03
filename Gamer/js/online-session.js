@@ -467,6 +467,7 @@ function saveAuthState(token, user){
   postSchachlaborToolContext();
   postOpeningsToolContext();
   postReaderToolContext();
+  postTournamentReportToolContext();
   postFairplayToolContext();
   setTimeout(maybeOpenLeitbildAfterLogin, 80);
 }

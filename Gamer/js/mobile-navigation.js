@@ -65,7 +65,7 @@
   }
 
   function embeddedToolContext(){
-    return ['learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tv-tool-active','league-standings-tool-active']
+    return ['learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tournament-report-tool-active','tv-tool-active','league-standings-tool-active']
       .some(className => root.classList.contains(className));
   }
 
@@ -207,9 +207,10 @@
       const mateSchool = root.classList.contains('mate-school-tool-active');
       const leagueStandings = root.classList.contains('league-standings-tool-active');
       const reader = root.classList.contains('reader-tool-active');
+      const tournamentReport = root.classList.contains('tournament-report-tool-active');
       const tv = root.classList.contains('tv-tool-active');
       const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer'))))))));
+      testContext.textContent = learning ? 'Schach lernen' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))))));
     }
   }
 

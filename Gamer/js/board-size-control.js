@@ -67,7 +67,7 @@
   function roomContext(){
     const roomClass = root.classList.contains('hammerschach-room-view');
     const roomButtonVisible = !!(roomLobbyButton && !roomLobbyButton.hidden);
-    const embeddedTool = ['learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tv-tool-active']
+    const embeddedTool = ['learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tournament-report-tool-active','tv-tool-active']
       .some(className => root.classList.contains(className));
     return (roomClass || roomButtonVisible)
       && !root.classList.contains('member-lobby-view')
