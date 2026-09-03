@@ -1,289 +1,407 @@
 'use strict';
 
 (function initialiseMateSchool(){
-  const STORAGE_KEY='hammerschachMateSchoolProgressV2';
   const catalogue=window.HAMMERSCHACH_MATTBILDER_DATA;
   if(!catalogue||!Array.isArray(catalogue.motifs)||catalogue.motifs.length!==30){
     document.body.textContent='Die Mattbilder-Sammlung konnte nicht geladen werden.';
     return;
   }
 
-  const allMotifs=catalogue.motifs;
-  const pieces={
-    P:'Chess_plt45.svg',R:'Chess_rlt45.svg',N:'Chess_nlt45.svg',B:'Chess_blt45.svg',Q:'Chess_qlt45.svg',K:'Chess_klt45.svg',
-    p:'Chess_pdt45.svg',r:'Chess_rdt45.svg',n:'Chess_ndt45.svg',b:'Chess_bdt45.svg',q:'Chess_qdt45.svg',k:'Chess_kdt45.svg'
+  const STORAGE_KEY='hammerschachMateSchoolReaderV1';
+  const PIECE_SET_KEY='hammerschachPieceSet';
+  const COLOR_SCHEME_KEY='hammerschachGamerColorScheme';
+  const motifs=catalogue.motifs;
+  const files=['a','b','c','d','e','f','g','h'];
+  const glyph={P:'♙',R:'♖',N:'♘',B:'♗',Q:'♕',K:'♔',p:'♟',r:'♜',n:'♞',b:'♝',q:'♛',k:'♚'};
+
+  const origins={
+    grundreihe:'Der Name beschreibt den Schauplatz: Der König wird auf seiner eigenen Grundreihe mattgesetzt. Meist bilden die eigenen Bauern davor eine Wand, sodass ein Turm oder eine Dame auf der letzten Reihe ungehindert zuschlagen kann.',
+    haken:'Turm, Springer und Bauer greifen wie die Teile eines Hakens ineinander. Der Turm gibt Matt, der Springer deckt ihn und sperrt ein Fluchtfeld, während der Bauer wiederum den Springer schützt.',
+    anastasia:'Der Name geht auf Wilhelm Heinses Roman „Anastasia und das Schachspiel“ von 1803 zurück. Darin wurde eine Stellung mit diesem charakteristischen Zusammenspiel von Springer und Schwerfigur bekannt gemacht.',
+    'blindes-schwein':'Die Bezeichnung wird dem polnischen Meister Dawid Janowski zugeschrieben, der weit vorgedrungene Türme auf der siebten Reihe als „Schweine“ bezeichnete. Zwei solcher Türme beherrschen die Reihe gemeinsam und lassen dem König kaum noch Luft.',
+    erstickt:'Der König ist von seinen eigenen Figuren vollständig „erstickt“. Weil ihm kein freies Feld bleibt, kann ein Springer mattsetzen, obwohl er den König nicht auf einer offenen Linie angreift.',
+    doppellaeufer:'Der sachliche Name nennt die beiden Hauptdarsteller: Zwei Läufer schneiden dem König auf benachbarten oder gekreuzten Diagonalen sämtliche Fluchtwege ab.',
+    boden:'Das Muster ist nach dem englischen Meister Samuel Boden benannt. Berühmt wurde es durch seine Partie gegen R. Schulder in London 1853, in der zwei Läufer den König auf gekreuzten Diagonalen einschlossen.',
+    balestra:'„Balestra“ ist das italienische Wort für Armbrust. Dame und Läufer erinnern an eine gespannte Armbrust: Die Dame hält die Fluchtfelder fest, der Läufer liefert den entscheidenden Schuss.',
+    arabisch:'Dieses Matt gehört zu den ältesten überlieferten Mattbildern. Eine Stellung mit Turm und Springer ist bereits aus alten arabischen Schachhandschriften bekannt – daher der Name.',
+    eck:'Der Name ist wörtlich zu verstehen: Der König sitzt in einer Brettecke fest. Eine Linienfigur hält ihn dort, während meist ein Springer das letzte Mattfeld erreicht.',
+    opera:'Das Opera-Matt wurde durch Paul Morphys berühmte „Opernpartie“ von 1858 in Paris bekannt. Morphy spielte sie während einer Opernaufführung gegen den Herzog von Braunschweig und Graf Isouard.',
+    morphy:'Dieses Mattbild trägt den Namen des amerikanischen Genies Paul Morphy. Typisch ist das Zusammenspiel von Läufer und Turm gegen einen am Rand oder hinter eigenen Bauern eingeengten König.',
+    pillsbury:'Das Muster ist nach dem amerikanischen Meister Harry Nelson Pillsbury benannt. Ein Läufer nimmt dem rochierten König das Eckfeld, sodass ein Turm auf der offenen Linie mattsetzen kann.',
+    damiano:'Benannt ist das Motiv nach Pedro Damiano, einem der frühen europäischen Schachautoren des 16. Jahrhunderts. In der typischen Form wird die Dame von einem Läufer oder Bauern gedeckt und setzt aus unmittelbarer Nähe matt.',
+    lolli:'Der Name erinnert an den italienischen Schachtheoretiker Giambattista Lolli. Kennzeichnend ist eine weit vorgedrungene Dame, die zusammen mit einem Bauern in die geschwächte Königsstellung eindringt.',
+    anderssen:'Das Matt ist nach Adolf Anderssen benannt, einem der berühmtesten Angriffsspieler des 19. Jahrhunderts. Bekannt ist das Motiv aus seiner Partie gegen Johannes Zukertort von 1869.',
+    schwalbenschwanz:'Die eigenen Figuren hinter dem König bilden in der Schlussstellung ein V. Diese Form erinnert an den gegabelten Schwanz einer Schwalbe und gibt dem Mattbild seinen anschaulichen Namen.',
+    gueridon:'„Guéridon“ bezeichnet im Französischen einen kleinen Beistell- oder Säulentisch. Die Stellung der blockierenden Figuren neben beziehungsweise hinter dem König erinnert an dessen symmetrische Form.',
+    epaulette:'Epauletten sind Schulterstücke einer Uniform. Die beiden eigenen Figuren unmittelbar links und rechts neben dem König sehen wie solche Schulterstücke aus – und versperren ihm zugleich die Flucht.',
+    bauern:'Hier erhält die kleinste Figur die Hauptrolle: Ein Bauer gibt den letzten Mattstoß. Der schlichte Name betont, dass auch ein Bauer einen König bezwingen kann, wenn die übrigen Figuren seine Flucht verhindern.',
+    greco:'Das Motiv trägt den Namen Gioachino Grecos, eines bedeutenden italienischen Schachautors des 17. Jahrhunderts. Seine Partien und Aufzeichnungen machten zahlreiche frühe Angriffsmuster bekannt.',
+    'max-lange':'Benannt ist das Muster nach dem deutschen Meister und Schachautor Max Lange. Bekannt wurde es durch seine Partie gegen Adolf Anderssen 1859, in der Dame und Läufer das Mattnetz bildeten.',
+    'kill-box':'Der englische Name bedeutet sinngemäß „Mattbox“. Dame und Turm schließen den König in einem kleinen, meist drei mal drei Felder großen Käfig ein, aus dem es keinen Ausgang gibt.',
+    dreieck:'Dame, Turm und gegnerischer König bilden in der typischen Schlussstellung optisch ein Dreieck. Der Turm deckt dabei die Dame, die aus nächster Nähe mattsetzt.',
+    blackburne:'Das seltene Mattbild ist nach dem englischen Meister Joseph Henry Blackburne benannt. Zwei Läufer und ein Springer errichten dabei ein besonders harmonisches Netz um den König.',
+    reti:'Der Name erinnert an Richard Réti und seine Kurzpartie gegen Savielly Tartakower in Wien 1910. Ein Läufer setzte den von eigenen Figuren umstellten König matt und wurde dabei von einer Schwerfigur gedeckt.',
+    vukovic:'Benannt ist das Motiv nach dem kroatischen Meister und Schachautor Vladimir Vuković, dem Verfasser des Klassikers „Die Kunst des Angriffs im Schach“. Ein gedeckter Turm setzt am Rand matt, während meist ein Springer die Ausgänge nimmt.',
+    legal:'Das Muster geht auf den französischen Meister François Antoine de Légal de Kermeur zurück. Berühmt ist die dazugehörige Eröffnungsfalle, bei der ein scheinbares Damenopfer den Weg für das Matt der Leichtfiguren freimacht.',
+    narren:'Das Narrenmatt ist das schnellstmögliche Matt einer normalen Schachpartie. Der drastische Name spielt darauf an, dass es nur nach zwei sehr unvorsichtigen weißen Bauernzügen möglich wird.',
+    schaefer:'Der deutsche Name geht auf den französischen Ausdruck „coup du berger“, also „Schäferzug“, zurück. In anderen Sprachen heißt dasselbe Motiv etwa Schüler-, Kinder- oder Schustermatt und gilt überall als typische Anfängerfalle.'
   };
-  const pieceNames={P:'weißer Bauer',R:'weißer Turm',N:'weißer Springer',B:'weißer Läufer',Q:'weiße Dame',K:'weißer König',p:'schwarzer Bauer',r:'schwarzer Turm',n:'schwarzer Springer',b:'schwarzer Läufer',q:'schwarze Dame',k:'schwarzer König'};
 
-  const boardEl=document.getElementById('board');
-  const listEl=document.getElementById('patternList');
-  const taskPicker=document.getElementById('taskPicker');
-  const lessonStep=document.getElementById('lessonStep');
-  const lessonTitle=document.getElementById('lessonTitle');
-  const lessonState=document.getElementById('lessonState');
-  const lessonIcon=document.getElementById('lessonIcon');
-  const lessonSummary=document.getElementById('lessonSummary');
-  const lessonMemory=document.getElementById('lessonMemory');
-  const lessonClues=document.getElementById('lessonClues');
-  const lessonOrigin=document.getElementById('lessonOrigin');
-  const turnBadge=document.getElementById('turnBadge');
-  const boardPrompt=document.getElementById('boardPrompt');
-  const feedback=document.getElementById('feedback');
-  const progressValue=document.getElementById('progressValue');
-  const progressBar=document.getElementById('progressBar');
-  const progressTrack=document.querySelector('.progress-track');
-  const accessText=document.getElementById('accessText');
-  const accessBadge=document.getElementById('accessBadge');
-  const previousButton=document.getElementById('previousLessonBtn');
-  const nextButton=document.getElementById('nextLessonBtn');
-  const resetBoardButton=document.getElementById('resetBoardBtn');
-  const hintButton=document.getElementById('showHintBtn');
-  const solutionButton=document.getElementById('showSolutionBtn');
-  const resetProgressButton=document.getElementById('resetProgressBtn');
+  const pieceSets={
+    cburnett:{
+      P:'../assets/pieces/Chess_plt45.svg',R:'../assets/pieces/Chess_rlt45.svg',N:'../assets/pieces/Chess_nlt45.svg',B:'../assets/pieces/Chess_blt45.svg',Q:'../assets/pieces/Chess_qlt45.svg',K:'../assets/pieces/Chess_klt45.svg',
+      p:'../assets/pieces/Chess_pdt45.svg',r:'../assets/pieces/Chess_rdt45.svg',n:'../assets/pieces/Chess_ndt45.svg',b:'../assets/pieces/Chess_bdt45.svg',q:'../assets/pieces/Chess_qdt45.svg',k:'../assets/pieces/Chess_kdt45.svg'
+    },
+    merida:{P:'../assets/pieces/merida/wP.svg',R:'../assets/pieces/merida/wR.svg',N:'../assets/pieces/merida/wN.svg',B:'../assets/pieces/merida/wB.svg',Q:'../assets/pieces/merida/wQ.svg',K:'../assets/pieces/merida/wK.svg',p:'../assets/pieces/merida/bP.svg',r:'../assets/pieces/merida/bR.svg',n:'../assets/pieces/merida/bN.svg',b:'../assets/pieces/merida/bB.svg',q:'../assets/pieces/merida/bQ.svg',k:'../assets/pieces/merida/bK.svg'},
+    chessnut:{P:'../assets/pieces/chessnut/wP.svg',R:'../assets/pieces/chessnut/wR.svg',N:'../assets/pieces/chessnut/wN.svg',B:'../assets/pieces/chessnut/wB.svg',Q:'../assets/pieces/chessnut/wQ.svg',K:'../assets/pieces/chessnut/wK.svg',p:'../assets/pieces/chessnut/bP.svg',r:'../assets/pieces/chessnut/bR.svg',n:'../assets/pieces/chessnut/bN.svg',b:'../assets/pieces/chessnut/bB.svg',q:'../assets/pieces/chessnut/bQ.svg',k:'../assets/pieces/chessnut/bK.svg'},
+    fantasy:{P:'../assets/pieces/fantasy/wP.svg',R:'../assets/pieces/fantasy/wR.svg',N:'../assets/pieces/fantasy/wN.svg',B:'../assets/pieces/fantasy/wB.svg',Q:'../assets/pieces/fantasy/wQ.svg',K:'../assets/pieces/fantasy/wK.svg',p:'../assets/pieces/fantasy/bP.svg',r:'../assets/pieces/fantasy/bR.svg',n:'../assets/pieces/fantasy/bN.svg',b:'../assets/pieces/fantasy/bB.svg',q:'../assets/pieces/fantasy/bQ.svg',k:'../assets/pieces/fantasy/bK.svg'},
+    'merida-silversteel':{},
+    'merida-royalwood':{}
+  };
 
-  let loggedIn=false;
-  let state=loadState();
-  let position={};
-  let side='w';
-  let selected='';
-  let solved=false;
-  let showingSolution=false;
+  for(const id of['merida-silversteel','merida-royalwood']){
+    const paths={};
+    for(const piece of Object.keys(glyph)){
+      const color=piece===piece.toUpperCase()?'w':'b';
+      paths[piece]='../assets/pieces/'+id+'/'+color+piece.toLowerCase()+'.png?v=20260808-1';
+    }
+    pieceSets[id]=paths;
+  }
 
-  function blankCursor(){return{motif:0,task:0};}
-  function loadState(){
+  const elements={
+    board:document.getElementById('board'),
+    list:document.getElementById('chapterList'),
+    panel:document.getElementById('chapterPanel'),
+    panelClose:document.getElementById('chapterPanelClose'),
+    backdrop:document.getElementById('chapterBackdrop'),
+    menuButton:document.getElementById('chapterMenuBtn'),
+    allButton:document.getElementById('allLessonsBtn'),
+    mobileTitle:document.getElementById('mobileChapterTitle'),
+    kicker:document.getElementById('lessonKicker'),
+    title:document.getElementById('lessonTitle'),
+    icon:document.getElementById('lessonIcon'),
+    lead:document.getElementById('lessonLead'),
+    mechanism:document.getElementById('lessonMechanism'),
+    clues:document.getElementById('lessonClues'),
+    origin:document.getElementById('lessonOrigin'),
+    memory:document.getElementById('lessonMemory'),
+    source:document.getElementById('sourceLink'),
+    networkButton:document.getElementById('networkToggle'),
+    networkLegend:document.getElementById('networkLegend'),
+    previous:document.getElementById('previousLessonBtn'),
+    next:document.getElementById('nextLessonBtn'),
+    previousName:document.getElementById('previousLessonName'),
+    nextName:document.getElementById('nextLessonName')
+  };
+
+  let currentIndex=0;
+  let networkVisible=false;
+  let currentBoard=null;
+  let currentMover='w';
+  let pieceSetId='cburnett';
+  let chapterReturnFocus=null;
+
+  function readState(){
     try{
-      const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-      if(stored&&stored.version===2){
-        return{
-          version:2,
-          visitor:stored.visitor&&typeof stored.visitor==='object'?stored.visitor:blankCursor(),
-          member:stored.member&&typeof stored.member==='object'?stored.member:blankCursor(),
-          completed:[...new Set(Array.isArray(stored.completed)?stored.completed:[])]
-        };
+      const state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+      if(state&&typeof state==='object'){
+        const byId=motifs.findIndex(motif=>motif.id===state.motifId);
+        if(byId>=0)currentIndex=byId;
+        networkVisible=state.networkVisible===true;
       }
+      const hashId=decodeURIComponent(location.hash.replace(/^#/,''));
+      const byHash=motifs.findIndex(motif=>motif.id===hashId);
+      if(byHash>=0)currentIndex=byHash;
+      const storedPieces=localStorage.getItem(PIECE_SET_KEY)||'cburnett';
+      pieceSetId=storedPieces==='rhosgfx'?'merida':storedPieces;
+      if(!pieceSets[pieceSetId])pieceSetId='cburnett';
     }catch(_){ }
-    return{version:2,visitor:blankCursor(),member:blankCursor(),completed:[]};
   }
+
   function saveState(){
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(_){ }
-    reportHeight();
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify({motifId:motifs[currentIndex].id,networkVisible}));}catch(_){ }
   }
-  function availableMotifs(){return loggedIn?allMotifs:allMotifs.slice(0,10);}
-  function cursor(){return loggedIn?state.member:state.visitor;}
-  function clampCursor(){
-    const current=cursor();
-    const motifs=availableMotifs();
-    current.motif=Math.max(0,Math.min(motifs.length-1,Number(current.motif)||0));
-    const tasks=motifs[current.motif]&&Array.isArray(motifs[current.motif].tasks)?motifs[current.motif].tasks:[];
-    current.task=Math.max(0,Math.min(Math.max(0,tasks.length-1),Number(current.task)||0));
+
+  function parentMessage(message){
+    try{window.parent.postMessage(message,location.origin==='null'?'*':location.origin);}catch(_){ }
   }
-  function activeMotif(){clampCursor();return availableMotifs()[cursor().motif];}
-  function activeTask(){const motif=activeMotif();return motif.tasks[cursor().task];}
-  function allAvailableTasks(){return availableMotifs().flatMap(motif=>motif.tasks);}
+
+  function reportHeight(){
+    parentMessage({type:'hammerschach-mate-school-height',height:Math.ceil(document.documentElement.scrollHeight)});
+  }
 
   function parseFen(fen){
     const parts=String(fen||'').trim().split(/\s+/);
-    const next={};
-    parts[0].split('/').forEach((rankText,row)=>{
-      let file=0;
-      [...rankText].forEach(token=>{
-        if(/\d/.test(token)){file+=Number(token);return;}
-        next['abcdefgh'[file]+String(8-row)]=token;file+=1;
-      });
-    });
-    return{position:next,side:parts[1]==='b'?'b':'w'};
-  }
-  function applyMove(target,uci){
-    const from=uci.slice(0,2);const to=uci.slice(2,4);const promotion=uci.slice(4,5);
-    const piece=target[from];
-    if(!piece)return;
-    delete target[from];
-    if((piece==='P'||piece==='p')&&from[0]!==to[0]&&!target[to])delete target[to[0]+from[1]];
-    if((piece==='K'||piece==='k')&&Math.abs('abcdefgh'.indexOf(from[0])-'abcdefgh'.indexOf(to[0]))===2){
-      const kingSide=to[0]==='g';
-      const rookFrom=(kingSide?'h':'a')+from[1];
-      const rookTo=(kingSide?'f':'d')+from[1];
-      if(target[rookFrom]){target[rookTo]=target[rookFrom];delete target[rookFrom];}
-    }
-    target[to]=promotion?(piece===piece.toUpperCase()?promotion.toUpperCase():promotion.toLowerCase()):piece;
-  }
-  function setupTask(){
-    const task=activeTask();
-    const parsed=parseFen(task.fen);
-    position=parsed.position;
-    side=parsed.side;
-    selected='';solved=false;showingSolution=false;
-    renderLesson();renderBoard();
-    setFeedback('Wähle die Figur und anschließend ihr Zielfeld.','');
-  }
-  function renderLesson(){
-    const motifs=availableMotifs();
-    const current=cursor();
-    const motif=activeMotif();
-    const task=activeTask();
-    lessonStep.textContent='Mattmotiv '+(current.motif+1)+' von '+motifs.length+' · Aufgabe '+(current.task+1)+' von '+motif.tasks.length+' · '+motif.group;
-    lessonTitle.textContent=motif.title;
-    lessonIcon.textContent=motif.icon;
-    lessonSummary.textContent=motif.summary;
-    lessonMemory.textContent=motif.memory;
-    lessonClues.textContent='';
-    motif.clues.forEach(clue=>{const item=document.createElement('li');item.textContent=clue;lessonClues.appendChild(item);});
-    lessonOrigin.textContent='Quelle: Lichess-Beispiel '+task.sourceGame+' · '+task.variant;
-    turnBadge.textContent=(side==='w'?'Weiß':'Schwarz')+' am Zug';
-    boardPrompt.textContent='Finde den Mattzug!';
-    const complete=state.completed.includes(task.id);
-    lessonState.textContent=complete?'Gemeistert ✓':'Offen';
-    lessonState.classList.toggle('complete',complete);
-    const globalIndex=current.motif*5+current.task;
-    const total=motifs.length*5;
-    previousButton.disabled=globalIndex===0;
-    nextButton.textContent=globalIndex===total-1?'Zur ersten Aufgabe ↻':'Nächste Aufgabe →';
-    accessText.textContent=motifs.length+' Mattmotive · '+total+' Aufgaben';
-    accessBadge.textContent=loggedIn?'Mitgliederbereich':'Besucherbereich';
-    accessBadge.classList.toggle('member',loggedIn);
-    renderList();renderTaskPicker();renderProgress();
-  }
-  function renderList(){
-    const motifs=availableMotifs();
-    const current=cursor();
-    listEl.textContent='';
-    motifs.forEach((motif,index)=>{
-      const completed=motif.tasks.filter(task=>state.completed.includes(task.id)).length;
-      const button=document.createElement('button');
-      button.type='button';
-      button.className='pattern-item'+(index===current.motif?' active':'')+(completed===motif.tasks.length?' complete':'');
-      button.setAttribute('aria-current',index===current.motif?'step':'false');
-      button.innerHTML='<span class="pattern-number">'+(index+1)+'</span><span class="pattern-copy"><strong></strong><small></small></span><span class="pattern-check">'+(completed===motif.tasks.length?'✓':'')+'</span>';
-      button.querySelector('strong').textContent=motif.title;
-      button.querySelector('small').textContent=completed+'/'+motif.tasks.length+' Aufgaben';
-      button.addEventListener('click',()=>selectMotif(index,true));
-      listEl.appendChild(button);
-    });
-  }
-  function renderTaskPicker(){
-    const motif=activeMotif();
-    const current=cursor();
-    taskPicker.textContent='';
-    motif.tasks.forEach((task,index)=>{
-      const button=document.createElement('button');
-      const complete=state.completed.includes(task.id);
-      button.type='button';
-      button.className='task-choice'+(index===current.task?' active':'')+(complete?' complete':'');
-      button.textContent=complete?'✓ '+(index+1):'Aufgabe '+(index+1);
-      button.setAttribute('aria-pressed',index===current.task?'true':'false');
-      button.addEventListener('click',()=>selectTask(index,true));
-      taskPicker.appendChild(button);
-    });
-  }
-  function renderProgress(){
-    const tasks=allAvailableTasks();
-    const count=tasks.filter(task=>state.completed.includes(task.id)).length;
-    progressValue.textContent=count+' von '+tasks.length;
-    progressBar.style.width=(tasks.length?((count/tasks.length)*100):0)+'%';
-    progressTrack.setAttribute('aria-valuemax',String(tasks.length));
-    progressTrack.setAttribute('aria-valuenow',String(count));
-  }
-  function squareOrder(){
-    const files=side==='w'?'abcdefgh':'hgfedcba';
-    const ranks=side==='w'?'87654321':'12345678';
-    const fields=[];
-    for(const rank of ranks)for(const file of files)fields.push(file+rank);
-    return fields;
-  }
-  function renderBoard(){
-    boardEl.textContent='';
-    const task=activeTask();
-    const solutionFrom=task.solution.slice(0,2);const solutionTo=task.solution.slice(2,4);
-    const bottomRank=side==='w'?'1':'8';
-    const sideFile=side==='w'?'a':'h';
-    squareOrder().forEach(field=>{
-      const fileIndex='abcdefgh'.indexOf(field[0]);const rankIndex=Number(field[1])-1;
-      const square=document.createElement('button');
-      square.type='button';square.className='square'+(((fileIndex+rankIndex)%2===0)?' dark':'');
-      if(field===selected)square.classList.add('selected');
-      if(selected===solutionFrom&&field===solutionTo)square.classList.add('target');
-      if(showingSolution&&(field===solutionFrom||field===solutionTo))square.classList.add('focus');
-      square.dataset.square=field;square.setAttribute('role','gridcell');square.setAttribute('aria-label',field+(position[field]?' '+pieceNames[position[field]]:''));
-      if(position[field]){
-        const image=document.createElement('img');image.className='piece';image.src='../assets/pieces/'+pieces[position[field]];image.alt=pieceNames[position[field]];square.appendChild(image);
+    const rows=parts[0].split('/');
+    const board=Array.from({length:8},()=>Array(8).fill('.'));
+    rows.forEach((row,y)=>{
+      let x=0;
+      for(const char of row){
+        if(/\d/.test(char))x+=Number(char);
+        else if(x<8)board[y][x++]=char;
       }
-      if(field[0]===sideFile){const label=document.createElement('span');label.className='coord rank';label.textContent=field[1];square.appendChild(label);}
-      if(field[1]===bottomRank){const label=document.createElement('span');label.className='coord file';label.textContent=field[0];square.appendChild(label);}
-      square.addEventListener('click',()=>handleSquare(field,square));
-      boardEl.appendChild(square);
     });
-  }
-  function handleSquare(field,square){
-    if(solved)return;
-    const task=activeTask();
-    const ownPiece=position[field]&&(side==='w'?position[field]===position[field].toUpperCase():position[field]===position[field].toLowerCase());
-    if(!selected){
-      if(!ownPiece){setFeedback('Wähle zuerst eine eigene Figur.','error');shake(square);return;}
-      selected=field;renderBoard();return;
-    }
-    if(ownPiece){selected=field;renderBoard();return;}
-    const attempt=selected+field;
-    selected='';
-    if(attempt!==task.solution){setFeedback('Noch nicht – prüfe alle Schachgebote und die Fluchtfelder des Königs.','error');shake(square);renderBoard();return;}
-    applyMove(position,task.solution);solved=true;
-    if(!state.completed.includes(task.id))state.completed.push(task.id);
-    saveState();renderBoard();renderLesson();
-    setFeedback('Schachmatt! Genau dieses Muster solltest du dir merken. ✓','success');
-  }
-  function shake(square){square.classList.add('wrong');setTimeout(()=>square.classList.remove('wrong'),350);}
-  function setFeedback(message,type){feedback.textContent=message;feedback.className='feedback'+(type?' '+type:'');}
-  function selectMotif(index,focus){cursor().motif=Math.max(0,Math.min(availableMotifs().length-1,index));cursor().task=0;saveState();setupTask();focusTitle(focus);}
-  function selectTask(index,focus){cursor().task=Math.max(0,Math.min(activeMotif().tasks.length-1,index));saveState();setupTask();focusTitle(focus);}
-  function focusTitle(focus){if(!focus)return;try{lessonTitle.focus({preventScroll:true});}catch(_){ }}
-  function moveTask(delta){
-    const motifs=availableMotifs();
-    const current=cursor();
-    const total=motifs.length*5;
-    let index=current.motif*5+current.task+delta;
-    if(index>=total)index=0;
-    if(index<0)index=0;
-    current.motif=Math.floor(index/5);current.task=index%5;
-    saveState();setupTask();focusTitle(true);
-  }
-  function showHint(){showingSolution=false;setFeedback(activeMotif().hint,'hint');}
-  function showSolution(){
-    const task=activeTask();showingSolution=true;selected='';renderBoard();
-    setFeedback('Lösung: '+task.solution.slice(0,2)+' → '+task.solution.slice(2,4)+'. Setze die Stellung zurück und spiele den Zug selbst.','hint');
-  }
-  function resetProgress(){
-    const label=loggedIn?'der gesamten Mitglieder-Sammlung':'des Besucherumfangs';
-    if(!window.confirm('Möchtest du den Fortschritt '+label+' wirklich zurücksetzen?'))return;
-    const ids=new Set(allAvailableTasks().map(task=>task.id));
-    state.completed=state.completed.filter(id=>!ids.has(id));
-    cursor().motif=0;cursor().task=0;saveState();setupTask();
-    setFeedback('Der Lernpfad beginnt wieder bei der ersten Aufgabe.','hint');
-  }
-  function setLoggedIn(active){
-    const next=active===true;
-    if(next===loggedIn)return;
-    loggedIn=next;clampCursor();saveState();setupTask();
-  }
-  function reportHeight(){
-    try{window.parent.postMessage({type:'hammerschach-mate-school-height',height:Math.ceil(document.documentElement.scrollHeight)},window.location.origin&&window.location.origin!=='null'?window.location.origin:'*');}catch(_){ }
+    return{board,side:parts[1]==='b'?'b':'w'};
   }
 
-  previousButton.addEventListener('click',()=>moveTask(-1));
-  nextButton.addEventListener('click',()=>moveTask(1));
-  resetBoardButton.addEventListener('click',setupTask);
-  hintButton.addEventListener('click',showHint);
-  solutionButton.addEventListener('click',showSolution);
-  resetProgressButton.addEventListener('click',resetProgress);
-  window.addEventListener('message',event=>{
-    if(window.location.origin!=='null'&&event.origin!==window.location.origin)return;
-    const message=event.data&&typeof event.data==='object'?event.data:{};
-    if(message.type==='hammerschach-mate-school-context'){
-      document.documentElement.classList.toggle('dark-mode',message.darkMode===true);
-      setLoggedIn(message.loggedIn===true);
+  function squareFromAlgebraic(square){
+    return[files.indexOf(square[0]),8-Number(square[1])];
+  }
+
+  function applyMove(position,uci){
+    const move=String(uci||'');
+    if(move.length<4)return position;
+    const from=squareFromAlgebraic(move.slice(0,2));
+    const to=squareFromAlgebraic(move.slice(2,4));
+    const board=position.board.map(row=>row.slice());
+    let piece=board[from[1]][from[0]];
+    board[from[1]][from[0]]='.';
+    if((piece==='P'||piece==='p')&&from[0]!==to[0]&&board[to[1]][to[0]]==='.')board[from[1]][to[0]]='.';
+    if((piece==='K'||piece==='k')&&Math.abs(to[0]-from[0])===2){
+      const rookFrom=to[0]>from[0]?7:0;
+      const rookTo=to[0]>from[0]?to[0]-1:to[0]+1;
+      board[to[1]][rookTo]=board[to[1]][rookFrom];
+      board[to[1]][rookFrom]='.';
+    }
+    if(move[4])piece=piece===piece.toUpperCase()?move[4].toUpperCase():move[4].toLowerCase();
+    board[to[1]][to[0]]=piece;
+    return{board,side:position.side};
+  }
+
+  function pieceColor(piece){
+    if(!piece||piece==='.')return'';
+    return piece===piece.toUpperCase()?'w':'b';
+  }
+
+  function pathClear(board,fromX,fromY,toX,toY){
+    const stepX=Math.sign(toX-fromX),stepY=Math.sign(toY-fromY);
+    let x=fromX+stepX,y=fromY+stepY;
+    while(x!==toX||y!==toY){
+      if(board[y][x]!=='.')return false;
+      x+=stepX;y+=stepY;
+    }
+    return true;
+  }
+
+  function attacksSquare(board,piece,fromX,fromY,toX,toY){
+    const dx=toX-fromX,dy=toY-fromY,absX=Math.abs(dx),absY=Math.abs(dy);
+    if(!dx&&!dy)return false;
+    switch(piece.toLowerCase()){
+      case'p':return absX===1&&dy===(piece==='P'?-1:1);
+      case'n':return(absX===1&&absY===2)||(absX===2&&absY===1);
+      case'b':return absX===absY&&pathClear(board,fromX,fromY,toX,toY);
+      case'r':return(dx===0||dy===0)&&pathClear(board,fromX,fromY,toX,toY);
+      case'q':return(absX===absY||dx===0||dy===0)&&pathClear(board,fromX,fromY,toX,toY);
+      case'k':return Math.max(absX,absY)===1;
+      default:return false;
+    }
+  }
+
+  function squareAttacked(board,x,y,attackerColor){
+    for(let fromY=0;fromY<8;fromY++)for(let fromX=0;fromX<8;fromX++){
+      const piece=board[fromY][fromX];
+      if(pieceColor(piece)===attackerColor&&attacksSquare(board,piece,fromX,fromY,x,y))return true;
+    }
+    return false;
+  }
+
+  function analyseMattNetwork(board,mover){
+    const defender=mover==='w'?'b':'w';
+    const kingPiece=defender==='w'?'K':'k';
+    let king=[-1,-1];
+    for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(board[y][x]===kingPiece)king=[x,y];
+    const adjacent=[];
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+      if(!dx&&!dy)continue;
+      const x=king[0]+dx,y=king[1]+dy;
+      if(x<0||x>7||y<0||y>7)continue;
+      const occupiedByDefender=pieceColor(board[y][x])===defender;
+      adjacent.push({x,y,blocked:occupiedByDefender,controlled:!occupiedByDefender&&squareAttacked(board,x,y,mover)});
+    }
+    const netPieces=[];
+    for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+      const piece=board[y][x];
+      if(pieceColor(piece)!==mover)continue;
+      if(attacksSquare(board,piece,x,y,king[0],king[1])||adjacent.some(square=>attacksSquare(board,piece,x,y,square.x,square.y)))netPieces.push(x+','+y);
+    }
+    return{king,adjacent,netPieces};
+  }
+
+  function pieceImage(piece){
+    return(pieceSets[pieceSetId]||pieceSets.cburnett)[piece]||pieceSets.cburnett[piece];
+  }
+
+  function renderBoard(){
+    const motif=motifs[currentIndex];
+    const task=motif.tasks&&motif.tasks[0];
+    if(!task)return;
+    const start=parseFen(task.fen);
+    currentMover=start.side;
+    currentBoard=applyMove(start,task.solution).board;
+    const orientationWhite=currentMover==='w';
+    const network=analyseMattNetwork(currentBoard,currentMover);
+    elements.board.innerHTML='';
+    elements.board.classList.toggle('network-visible',networkVisible);
+    elements.board.setAttribute('aria-label','Fertige Mattstellung zum '+motif.title+'. '+(currentMover==='w'?'Schwarz':'Weiß')+' ist matt.');
+
+    for(let displayY=0;displayY<8;displayY++)for(let displayX=0;displayX<8;displayX++){
+      const x=orientationWhite?displayX:7-displayX;
+      const y=orientationWhite?displayY:7-displayY;
+      const piece=currentBoard[y][x];
+      const square=document.createElement('div');
+      square.className='square '+((x+y)%2===0?'light':'dark');
+      if(piece!=='.')square.classList.add('has-piece');
+      if(x===network.king[0]&&y===network.king[1])square.classList.add('mated-king');
+      if(network.netPieces.includes(x+','+y))square.classList.add('net-piece');
+      const escape=network.adjacent.find(item=>item.x===x&&item.y===y);
+      if(escape&&escape.blocked)square.classList.add('blocked-own');
+      else if(escape&&escape.controlled)square.classList.add('controlled');
+
+      if(piece!=='.'){
+        const image=document.createElement('img');
+        image.className='piece-img';
+        image.src=pieceImage(piece);
+        image.alt='';
+        image.draggable=false;
+        image.addEventListener('error',()=>{
+          const fallback=document.createElement('span');
+          fallback.className='piece-fallback';
+          fallback.textContent=glyph[piece]||'';
+          image.replaceWith(fallback);
+        },{once:true});
+        square.appendChild(image);
+      }
+      if(displayX===0){
+        const rank=document.createElement('span');rank.className='coord rank';rank.textContent=String(8-y);square.appendChild(rank);
+      }
+      if(displayY===7){
+        const file=document.createElement('span');file.className='coord file';file.textContent=files[x];square.appendChild(file);
+      }
+      elements.board.appendChild(square);
+    }
+  }
+
+  function renderChapterList(){
+    elements.list.innerHTML='';
+    let group='';
+    motifs.forEach((motif,index)=>{
+      if(motif.group!==group){
+        group=motif.group;
+        const heading=document.createElement('div');
+        heading.className='chapter-group';
+        heading.textContent=group;
+        elements.list.appendChild(heading);
+      }
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='chapter-item'+(index===currentIndex?' active':'');
+      button.setAttribute('aria-current',index===currentIndex?'page':'false');
+      button.innerHTML='<span class="chapter-number">'+String(index+1).padStart(2,'0')+'</span><strong>'+motif.title+'</strong>';
+      button.addEventListener('click',()=>selectLesson(index,true));
+      elements.list.appendChild(button);
+    });
+  }
+
+  function renderLesson(){
+    const motif=motifs[currentIndex];
+    const previous=motifs[currentIndex-1];
+    const next=motifs[currentIndex+1];
+    elements.kicker.textContent=motif.group+' · Mattbild '+(currentIndex+1)+' von '+motifs.length;
+    elements.title.textContent=motif.title;
+    elements.icon.textContent=motif.icon||'♜';
+    elements.lead.textContent=motif.summary;
+    elements.mechanism.textContent=motif.summary;
+    elements.clues.innerHTML='';
+    (motif.clues||[]).forEach(clue=>{const item=document.createElement('li');item.textContent=clue;elements.clues.appendChild(item);});
+    elements.origin.textContent=origins[motif.id]||'Der Name beschreibt die typische Figurenstellung dieses Mattbildes.';
+    elements.memory.textContent=motif.memory;
+    elements.mobileTitle.textContent=(currentIndex+1)+' · '+motif.title;
+    elements.source.href=motif.sourceUrl||'#';
+    elements.source.hidden=!motif.sourceUrl;
+    elements.networkButton.setAttribute('aria-pressed',String(networkVisible));
+    elements.networkButton.innerHTML='<span aria-hidden="true">◎</span> '+(networkVisible?'Mattnetz ausblenden':'Mattnetz anzeigen');
+    elements.networkLegend.hidden=!networkVisible;
+    elements.previous.disabled=!previous;
+    elements.next.disabled=!next;
+    elements.previousName.textContent=previous?previous.title:'Anfang';
+    elements.nextName.textContent=next?next.title:'Ende';
+    renderChapterList();
+    renderBoard();
+    try{history.replaceState(null,'','#'+encodeURIComponent(motif.id));}catch(_){ }
+    saveState();
+    requestAnimationFrame(reportHeight);
+  }
+
+  function selectLesson(index,moveFocus=false){
+    currentIndex=Math.max(0,Math.min(motifs.length-1,Number(index)||0));
+    closeChapterPanel(false);
+    renderLesson();
+    if(moveFocus){
+      try{elements.title.focus({preventScroll:true});}catch(_){elements.title.focus();}
+      window.scrollTo({top:0,left:0,behavior:'auto'});
+    }
+  }
+
+  function openChapterPanel(){
+    chapterReturnFocus=document.activeElement;
+    document.body.classList.add('chapter-panel-open');
+    elements.backdrop.hidden=false;
+    elements.menuButton.setAttribute('aria-expanded','true');
+    requestAnimationFrame(()=>{
+      const active=elements.list.querySelector('.chapter-item.active');
+      if(active){active.focus();active.scrollIntoView({block:'nearest'});}
+    });
+  }
+
+  function closeChapterPanel(restoreFocus=true){
+    document.body.classList.remove('chapter-panel-open');
+    elements.backdrop.hidden=true;
+    elements.menuButton.setAttribute('aria-expanded','false');
+    if(restoreFocus&&chapterReturnFocus&&typeof chapterReturnFocus.focus==='function')chapterReturnFocus.focus();
+    chapterReturnFocus=null;
+  }
+
+  function applyPieceSet(id){
+    const normalized=id==='rhosgfx'?'merida':id;
+    pieceSetId=pieceSets[normalized]?normalized:'cburnett';
+    renderBoard();
+  }
+
+  readState();
+  elements.networkButton.addEventListener('click',()=>{networkVisible=!networkVisible;renderLesson();});
+  elements.previous.addEventListener('click',()=>{if(currentIndex>0)selectLesson(currentIndex-1,true);});
+  elements.next.addEventListener('click',()=>{if(currentIndex<motifs.length-1)selectLesson(currentIndex+1,true);});
+  elements.menuButton.addEventListener('click',openChapterPanel);
+  elements.allButton.addEventListener('click',openChapterPanel);
+  elements.panelClose.addEventListener('click',()=>closeChapterPanel(true));
+  elements.backdrop.addEventListener('click',()=>closeChapterPanel(true));
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&document.body.classList.contains('chapter-panel-open'))closeChapterPanel(true);
+    if(!document.body.classList.contains('chapter-panel-open')&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement&&document.activeElement.tagName)){
+      if(event.key==='ArrowLeft'&&currentIndex>0)selectLesson(currentIndex-1,true);
+      if(event.key==='ArrowRight'&&currentIndex<motifs.length-1)selectLesson(currentIndex+1,true);
     }
   });
-  window.addEventListener('resize',reportHeight,{passive:true});
-  if(typeof ResizeObserver==='function')new ResizeObserver(reportHeight).observe(document.body);
-  setupTask();
-  try{window.parent.postMessage({type:'hammerschach-mate-school-ready'},window.location.origin&&window.location.origin!=='null'?window.location.origin:'*');}catch(_){ }
-  reportHeight();
-}());
+
+  window.addEventListener('storage',event=>{
+    if(event.key===PIECE_SET_KEY&&event.newValue)applyPieceSet(event.newValue);
+    if(event.key===COLOR_SCHEME_KEY)document.documentElement.classList.toggle('dark-mode',event.newValue==='dark');
+  });
+
+  window.addEventListener('message',event=>{
+    if(event.source!==window.parent)return;
+    if(location.origin!=='null'&&event.origin!==location.origin)return;
+    const message=event.data&&typeof event.data==='object'?event.data:{};
+    if(message.type==='hammerschach-mate-school-context'){
+      document.documentElement.classList.toggle('dark-mode',!!message.darkMode);
+      if(typeof message.pieceSet==='string'&&message.pieceSet)applyPieceSet(message.pieceSet);
+      reportHeight();
+    }
+    if(message.type==='hammerschach-mate-school-visibility'&&message.visible)reportHeight();
+  });
+
+  if(window.ResizeObserver)new ResizeObserver(reportHeight).observe(document.body);
+  window.addEventListener('load',reportHeight);
+  renderLesson();
+  parentMessage({type:'hammerschach-mate-school-ready'});
+})();

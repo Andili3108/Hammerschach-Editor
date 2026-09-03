@@ -1,93 +1,126 @@
 <!doctype html>
-<!-- BUILD: MATTBILDER-SCHULE-20260831-3 -->
+<!-- BUILD: MATTBILDER-FIBEL-20260904-1 -->
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>Mattbilder-Schule · Hammerschach</title>
   <script>
     try{
-      if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
-        document.documentElement.classList.add('dark-mode');
-      }
+      if(localStorage.getItem('hammerschachGamerColorScheme')==='dark')document.documentElement.classList.add('dark-mode');
     }catch(_){ }
   </script>
-  <link rel="stylesheet" href="mattbilder.css?v=20260831-2">
+  <link rel="stylesheet" href="mattbilder.css?v=20260904-1">
 </head>
 <body>
-  <main class="mate-school">
-    <section class="school-head" aria-labelledby="schoolTitle">
-      <div>
-        <div class="eyebrow">Gamer-Anfängertraining</div>
-        <h1 id="schoolTitle">🧩 Mattbilder-Schule</h1>
-        <p>Matt nicht nur finden, sondern wiedererkennen: Lerne die klassischen Mattmotive, spiele den Schlusszug selbst und festige deinen Schachblick.</p>
+  <main class="school-shell">
+    <header class="school-masthead">
+      <div class="masthead-copy">
+        <div class="eyebrow">Klassische Schachschule im Gamer</div>
+        <h1>Mattbilder-Schule</h1>
+        <p>30 berühmte Mattbilder als moderne Schachfibel: anschauen, verstehen und wiedererkennen.</p>
       </div>
-      <div class="progress-card" aria-label="Lernfortschritt">
-        <div class="progress-copy"><strong id="progressValue">0 von 50</strong><span>Aufgaben gemeistert</span></div>
-        <div class="progress-track" role="progressbar" aria-label="Gemeisterte Mattaufgaben" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0"><span id="progressBar"></span></div>
-        <div class="access-copy"><span id="accessText">10 Mattmotive · 50 Aufgaben</span><strong id="accessBadge" class="access-badge">Besucherbereich</strong></div>
+      <div class="masthead-mark" aria-label="30 Mattbilder">
+        <strong>30</strong>
+        <span>Mattbilder</span>
       </div>
-    </section>
+    </header>
 
-    <section class="school-layout">
-      <aside class="pattern-panel" aria-labelledby="patternListTitle">
-        <div class="panel-head">
-          <div><div class="eyebrow">Dein Lernpfad</div><h2 id="patternListTitle">Mattmuster</h2></div>
-          <button id="resetProgressBtn" class="quiet-button" type="button">Neu beginnen</button>
+    <button id="chapterMenuBtn" class="chapter-menu-button" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="chapterPanel">
+      <span aria-hidden="true">☰</span>
+      <span><small>Kapitelübersicht</small><strong id="mobileChapterTitle">1 · Grundreihenmatt</strong></span>
+      <span aria-hidden="true">›</span>
+    </button>
+
+    <div class="school-layout">
+      <aside id="chapterPanel" class="chapter-panel" aria-labelledby="chapterPanelTitle">
+        <div class="chapter-panel-head">
+          <div>
+            <div class="eyebrow">Inhaltsverzeichnis</div>
+            <h2 id="chapterPanelTitle">Die 30 Mattbilder</h2>
+          </div>
+          <button id="chapterPanelClose" class="icon-button chapter-panel-close" type="button" aria-label="Kapitelübersicht schließen">×</button>
         </div>
-        <div class="path-legend"><span><i class="dot core"></i> Erste 10</span><span><i class="dot special"></i> Mitglieder-Motive</span></div>
-        <nav id="patternList" class="pattern-list" aria-label="Mattbilder auswählen"></nav>
+        <nav id="chapterList" class="chapter-list" aria-label="Mattbild auswählen"></nav>
       </aside>
 
-      <section class="lesson-stage" aria-labelledby="lessonTitle">
-        <div class="lesson-toolbar">
+      <article class="lesson" aria-labelledby="lessonTitle">
+        <header class="lesson-head">
           <div>
-            <div id="lessonStep" class="eyebrow">Mattmotiv 1 von 10 · Aufgabe 1 von 5</div>
+            <div id="lessonKicker" class="eyebrow">Grundlagen · Mattbild 1 von 30</div>
             <h2 id="lessonTitle" tabindex="-1">Grundreihenmatt</h2>
           </div>
-          <span id="lessonState" class="lesson-state">Offen</span>
-        </div>
+          <div id="lessonIcon" class="lesson-icon" aria-hidden="true">▰</div>
+        </header>
+
+        <p id="lessonLead" class="lesson-lead"></p>
 
         <div class="lesson-grid">
-          <div class="board-column">
-            <div class="board-status">
-              <span id="turnBadge">Weiß am Zug</span>
-              <strong id="boardPrompt">Finde den Mattzug!</strong>
+          <figure class="diagram-card">
+            <div class="diagram-heading">
+              <div>
+                <span class="diagram-kicker">Brettdiagramm</span>
+                <strong>Die fertige Mattstellung</strong>
+              </div>
+              <button id="networkToggle" class="network-toggle" type="button" aria-pressed="false">
+                <span aria-hidden="true">◎</span> Mattnetz anzeigen
+              </button>
             </div>
-            <div id="taskPicker" class="task-picker" role="group" aria-label="Aufgabe innerhalb des Mattmotivs auswählen"></div>
-            <div id="board" class="chessboard" role="grid" aria-label="Schachaufgabe"></div>
-            <div id="feedback" class="feedback" aria-live="polite">Wähle die Figur und anschließend ihr Zielfeld.</div>
-            <div class="board-actions">
-              <button id="resetBoardBtn" class="quiet-button" type="button">↩ Stellung zurück</button>
-              <button id="showHintBtn" class="quiet-button" type="button">💡 Hinweis</button>
-              <button id="showSolutionBtn" class="solution-button" type="button">👁 Lösung zeigen</button>
+            <div class="board-frame">
+              <div id="board" class="chessboard" role="img" aria-label="Brettdiagramm"></div>
             </div>
+            <figcaption>
+              <span>Der entscheidende Mattzug ist bereits ausgeführt.</span>
+              <span id="networkLegend" class="network-legend" hidden><i class="legend-attacker"></i> beteiligte Figur <i class="legend-control"></i> kontrolliertes Fluchtfeld <i class="legend-blocked"></i> eigenes Hindernis</span>
+            </figcaption>
+          </figure>
+
+          <div class="lesson-copy">
+            <section class="explanation-section mechanism-section" aria-labelledby="mechanismTitle">
+              <div class="section-number">01</div>
+              <div>
+                <h3 id="mechanismTitle">So funktioniert das Mattbild</h3>
+                <p id="lessonMechanism"></p>
+              </div>
+            </section>
+
+            <section class="explanation-section" aria-labelledby="cluesTitle">
+              <div class="section-number">02</div>
+              <div>
+                <h3 id="cluesTitle">Daran erkennst du es</h3>
+                <ul id="lessonClues" class="clue-list"></ul>
+              </div>
+            </section>
+
+            <section class="explanation-section origin-section" aria-labelledby="originTitle">
+              <div class="section-number">03</div>
+              <div>
+                <h3 id="originTitle">Woher kommt der Name?</h3>
+                <p id="lessonOrigin"></p>
+              </div>
+            </section>
+
+            <blockquote class="memory-card">
+              <span>Merksatz</span>
+              <p id="lessonMemory"></p>
+            </blockquote>
+
+            <a id="sourceLink" class="source-link" href="#" target="_blank" rel="noopener noreferrer">Weiterführende Erklärung auf Andili.de <span aria-hidden="true">↗</span></a>
           </div>
-
-          <article class="explanation-card">
-            <div id="lessonIcon" class="pattern-icon" aria-hidden="true">▰</div>
-            <p id="lessonSummary" class="lesson-summary"></p>
-            <div class="memory-card"><strong>Merksatz</strong><p id="lessonMemory"></p></div>
-            <div class="checklist-card">
-              <strong>Daran erkennst du es</strong>
-              <ul id="lessonClues"></ul>
-            </div>
-            <p id="lessonOrigin" class="lesson-origin"></p>
-            <div class="lesson-nav">
-              <button id="previousLessonBtn" class="quiet-button" type="button">← Vorige Aufgabe</button>
-              <button id="nextLessonBtn" class="next-button" type="button">Nächste Aufgabe →</button>
-            </div>
-          </article>
         </div>
-      </section>
-    </section>
 
-    <section class="collection-note">
-      <div><div class="eyebrow">30 klassische Mattmotive</div><h2>Vom Anschauen zum Können</h2></div>
-      <p>Die Schule überträgt 30 klassische Mattmotive in aktives Training. Zu jedem Motiv stehen fünf Aufgaben bereit; die ersten zehn Motive bilden den Besucherumfang, Mitglieder erhalten die vollständige Sammlung.</p>
-    </section>
+        <nav class="lesson-nav" aria-label="Zwischen Mattbildern wechseln">
+          <button id="previousLessonBtn" class="nav-button previous" type="button"><span aria-hidden="true">‹</span><span><small>Vorheriges Mattbild</small><strong id="previousLessonName">–</strong></span></button>
+          <button id="allLessonsBtn" class="all-lessons-button" type="button">Alle 30</button>
+          <button id="nextLessonBtn" class="nav-button next" type="button"><span><small>Nächstes Mattbild</small><strong id="nextLessonName">–</strong></span><span aria-hidden="true">›</span></button>
+        </nav>
+      </article>
+    </div>
   </main>
+
+  <button id="chapterBackdrop" class="chapter-backdrop" type="button" aria-label="Kapitelübersicht schließen" hidden></button>
+
   <script src="mattbilder-data.js?v=20260831-3"></script>
-  <script src="mattbilder.js?v=20260831-3"></script>
+  <script src="mattbilder.js?v=20260904-1"></script>
 </body>
 </html>
