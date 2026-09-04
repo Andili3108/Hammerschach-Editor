@@ -153,6 +153,26 @@
     return[files.indexOf(square[0]),8-Number(square[1])];
   }
 
+  function mateMoveNotation(task){
+    const move=String(task&&task.solution||'');
+    if(move.length<4)return'Mattzug';
+    const fromName=move.slice(0,2);
+    const toName=move.slice(2,4);
+    const from=squareFromAlgebraic(fromName);
+    const to=squareFromAlgebraic(toName);
+    const start=parseFen(task.fen);
+    const piece=start.board[from[1]]&&start.board[from[1]][from[0]];
+    if(!piece||piece==='.')return fromName+' → '+toName;
+    const pieceType=piece.toLowerCase();
+    if(pieceType==='k'&&Math.abs(from[0]-to[0])===2)return(to[0]>from[0]?'0–0':'0–0–0')+'#';
+    const pieceLetter={k:'K',q:'D',r:'T',b:'L',n:'S',p:''}[pieceType]||'';
+    const target=start.board[to[1]]&&start.board[to[1]][to[0]];
+    const isPawnCapture=pieceType==='p'&&from[0]!==to[0];
+    const separator=(target&&target!=='.')||isPawnCapture?'x':'–';
+    const promotion=move[4]?`=${({q:'D',r:'T',b:'L',n:'S'}[move[4].toLowerCase()]||move[4].toUpperCase())}`:'';
+    return pieceLetter+fromName+separator+toName+promotion+'#';
+  }
+
   function applyMove(position,uci){
     const move=String(uci||'');
     if(move.length<4)return position;
@@ -297,8 +317,7 @@
   function updateMateControls(){
     const motif=motifs[currentIndex];
     const task=motif.tasks&&motif.tasks[0];
-    const move=task&&task.solution?task.solution:'';
-    const moveText=move.length>=4?move.slice(0,2)+' → '+move.slice(2,4):'Mattzug';
+    const moveText=mateMoveNotation(task);
     elements.diagramStateTitle.textContent=matePlayed?'Die fertige Mattstellung':'Ein Zug vor dem Matt';
     elements.diagramCaption.textContent=matePlayed?'Matt! Der entscheidende Zug ist ausgeführt. Mit dem Rückpfeil kannst du die Ausgangsstellung erneut ansehen.':'Die Stellung steht unmittelbar vor dem Matt. Löse den entscheidenden Zug mit dem Pfeil aus.';
     elements.moveButton.classList.toggle('is-played',matePlayed);
