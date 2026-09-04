@@ -135,6 +135,13 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 .dark-mode body{background:#111317;color:var(--ink)}
 .dark-mode .school-masthead{background:linear-gradient(135deg,#292d33,#251f21 58%,#3b272b)}
 .dark-mode .school-masthead p{color:#dddfe3}
+.dark-mode .school-masthead h1,
+.dark-mode .eyebrow,
+.dark-mode .chapter-panel h2,
+.dark-mode .lesson-head h2,
+.dark-mode .diagram-heading strong,
+.dark-mode .explanation-section h3,
+.dark-mode .memory-card span{color:#e7a1aa}
 .dark-mode .masthead-mark{background:rgba(20,22,26,.55);border-color:rgba(255,255,255,.12)}
 .dark-mode .chapter-panel,.dark-mode .lesson{background:#22262c}
 .dark-mode .chapter-item{color:#eef0f2}.dark-mode .chapter-item:hover{background:rgba(255,255,255,.06)}
@@ -144,6 +151,7 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 .dark-mode .mate-move-button.is-played{border-color:rgba(255,255,255,.15);background:linear-gradient(135deg,#342d2f,#26292e);color:#f1e9e2}
 .dark-mode .mate-move-button.is-played .mate-move-copy small{color:#e2a8ad}
 .dark-mode .explanation-section p,.dark-mode .clue-list li{color:#d8dbe0}
+.dark-mode .clue-list li::before{border-color:#dc828c}
 .dark-mode .mechanism-section{background:linear-gradient(135deg,#2c3036,#30272a)}
 .dark-mode .origin-section{background:linear-gradient(135deg,#2c3036,#352d22)}
 .dark-mode .memory-card{background:linear-gradient(135deg,#403623,#32291d);color:#f2e7d5}
@@ -218,6 +226,13 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
   .lesson-icon{width:46px;height:46px}
   .diagram-card{padding:6px}
   .nav-button strong{max-width:28vw}
+}
+
+@media (hover:none) and (pointer:coarse) and (orientation:portrait){
+  .board-frame{padding-bottom:2px}
+  .coord.file{bottom:7px}
+  .square:nth-last-child(-n+8) .piece-img{transform:translateY(-5%)}
+  .square:nth-last-child(-n+8) .piece-fallback{transform:translateY(-5%)}
 }
 
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
