@@ -2,6 +2,7 @@
 
 let learningToolActive = false;
 let analyzerToolActive = false;
+let playerToolActive = false;
 let trainerToolActive = false;
 let mateSchoolToolActive = false;
 let schachlaborToolActive = false;
@@ -13,6 +14,7 @@ let tvToolActive = false;
 let leagueStandingsToolActive = false;
 let learningToolFrameStarted = false;
 let analyzerToolFrameStarted = false;
+let playerToolFrameStarted = false;
 let trainerToolFrameStarted = false;
 let mateSchoolToolFrameStarted = false;
 let schachlaborToolFrameStarted = false;
@@ -23,6 +25,7 @@ let tournamentReportToolFrameStarted = false;
 let tournamentReportCurrentId = 'unna-open-2025';
 let learningToolLastOpenAt = 0;
 let analyzerToolLastOpenAt = 0;
+let playerToolLastOpenAt = 0;
 let trainerToolLastOpenAt = 0;
 let mateSchoolToolLastOpenAt = 0;
 let schachlaborToolLastOpenAt = 0;
@@ -44,7 +47,7 @@ const TOURNAMENT_REPORTS = Object.freeze({
   'unna-open-2025':{title:'Unna Open 2025',src:'./Turnierberichte/unna-open-2025/?embedded=1'},
   'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1'}
 });
-const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -89,10 +92,10 @@ function tournamentReportToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function protectedEmbeddedToolActive(){
-  return analyzerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;
+  return analyzerToolActive || playerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;
 }
 function memberEmbeddedToolActive(){
-  return analyzerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive;
+  return analyzerToolActive || playerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive;
 }
 function embeddedToolActive(){
   return learningToolActive || memberEmbeddedToolActive();
@@ -109,6 +112,7 @@ function embeddedToolStatusText(){
   if(schachlaborToolActive) return 'Hammerschach - Schachlabor';
   if(trainerToolActive) return 'Hammerschach - Trainer';
   if(analyzerToolActive) return 'Hammerschach - Analyzer';
+  if(playerToolActive) return 'Hammerschach - Player';
   return '';
 }
 function updateAnalyzerToolAvailability(){
@@ -133,6 +137,7 @@ function updateAnalyzerToolAvailability(){
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
   if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Hammerschach-Grundkurs öffnen':'Spielraum verlassen und den Hammerschach-Grundkurs öffnen';}
   if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Hammerschach-Analyzer');}
+  if(playerToolBtn){playerToolBtn.hidden=!navigable;playerToolBtn.title=titleFor('Hammerschach-Player');}
   if(trainerToolBtn){trainerToolBtn.hidden=!trainerNavigable;trainerToolBtn.title=trainerAvailable?'Hammerschach-Trainer öffnen':'Spielraum verlassen und den Hammerschach-Trainer öffnen';}
   if(mateSchoolToolBtn){mateSchoolToolBtn.hidden=!mateSchoolNavigable;mateSchoolToolBtn.title=mateSchoolAvailable?'Hammerschach-Mattbilder-Schule öffnen':'Spielraum verlassen und die Mattbilder-Schule öffnen';}
   if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Hammerschach-Schachlabor');}
@@ -177,6 +182,10 @@ function postLearningToolMessage(message){
 function postAnalyzerToolMessage(message){
   if(!analyzerToolFrameStarted || !analyzerToolFrame || !analyzerToolFrame.contentWindow) return;
   try{ analyzerToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
+}
+function postPlayerToolMessage(message){
+  if(!playerToolFrameStarted || !playerToolFrame || !playerToolFrame.contentWindow) return;
+  try{ playerToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
 }
 function postTrainerToolMessage(message){
   if(!trainerToolFrameStarted || !trainerToolFrame || !trainerToolFrame.contentWindow) return;
@@ -252,6 +261,14 @@ function postAnalyzerToolContext(){
     darkMode:!!darkModeEnabled,
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
+  });
+}
+function postPlayerToolContext(){
+  let boardColor='basis',pieceSet='cburnett';
+  try{boardColor=localStorage.getItem('hammerschachBoardColor')||'basis';pieceSet=localStorage.getItem('hammerschachPieceSet')||'cburnett';}catch(_){ }
+  postPlayerToolMessage({
+    type:'hammerschach-player-context',darkMode:!!darkModeEnabled,
+    loggedIn:!!(onlineAuthToken&&onlineAuthUser),username:onlineAuthUser?cleanDisplayName(onlineAuthUser.username||''):'',boardColor,pieceSet
   });
 }
 function postTrainerToolContext(){
@@ -387,6 +404,7 @@ function setEmbeddedToolActive(toolName){
     else if(toolName==='openings')requested='openings';
     else if(toolName==='schachlabor')requested='schachlabor';
     else if(toolName==='analyzer')requested='analyzer';
+    else if(toolName==='player')requested='player';
   }
   try{
     if(requested)sessionStorage.setItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY,requested);
@@ -394,6 +412,7 @@ function setEmbeddedToolActive(toolName){
   }catch(_){}
   learningToolActive=requested==='learning';
   analyzerToolActive=requested==='analyzer';
+  playerToolActive=requested==='player';
   trainerToolActive=requested==='trainer';
   mateSchoolToolActive=requested==='mate-school';
   schachlaborToolActive=requested==='schachlabor';
@@ -407,6 +426,7 @@ function setEmbeddedToolActive(toolName){
   leagueStandingsToolActive=requested==='league-standings';
   document.documentElement.classList.toggle('learning-tool-active',learningToolActive);
   document.documentElement.classList.toggle('analyzer-tool-active',analyzerToolActive);
+  document.documentElement.classList.toggle('player-tool-active',playerToolActive);
   document.documentElement.classList.toggle('trainer-tool-active',trainerToolActive);
   document.documentElement.classList.toggle('mate-school-tool-active',mateSchoolToolActive);
   document.documentElement.classList.toggle('schachlabor-tool-active',schachlaborToolActive);
@@ -419,6 +439,7 @@ function setEmbeddedToolActive(toolName){
   updateTrainerHeaderActions();
   if(learningToolView)learningToolView.hidden=!learningToolActive;
   if(analyzerToolView)analyzerToolView.hidden=!analyzerToolActive;
+  if(playerToolView)playerToolView.hidden=!playerToolActive;
   if(trainerToolView)trainerToolView.hidden=!trainerToolActive;
   if(mateSchoolToolView)mateSchoolToolView.hidden=!mateSchoolToolActive;
   if(schachlaborToolView)schachlaborToolView.hidden=!schachlaborToolActive;
@@ -442,6 +463,10 @@ function setEmbeddedToolActive(toolName){
   if(analyzerToolActive&&analyzerToolFrame&&!analyzerToolFrameStarted){
     analyzerToolFrameStarted=true;
     analyzerToolFrame.src=analyzerToolFrame.dataset.src||'./Analyzer/';
+  }
+  if(playerToolActive&&playerToolFrame&&!playerToolFrameStarted){
+    playerToolFrameStarted=true;
+    playerToolFrame.src=playerToolFrame.dataset.src||'./Player/';
   }
   if(trainerToolActive&&trainerToolFrame&&!trainerToolFrameStarted){
     trainerToolFrameStarted=true;
@@ -486,6 +511,7 @@ function setEmbeddedToolActive(toolName){
   }
   postLearningToolMessage({type:'hammerschach-learning-visibility',visible:learningToolActive});
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility',visible:analyzerToolActive});
+  postPlayerToolMessage({type:'hammerschach-player-visibility',visible:playerToolActive});
   postTrainerToolMessage({type:'hammerschach-trainer-visibility',visible:trainerToolActive});
   postMateSchoolToolMessage({type:'hammerschach-mate-school-visibility',visible:mateSchoolToolActive});
   postSchachlaborToolMessage({type:'hammerschach-schachlabor-visibility',visible:schachlaborToolActive});
@@ -495,6 +521,7 @@ function setEmbeddedToolActive(toolName){
   postTournamentReportToolMessage({type:'hammerschach-tournament-report-visibility',visible:tournamentReportToolActive});
   if(learningToolActive)postLearningToolContext();
   if(analyzerToolActive)postAnalyzerToolContext();
+  if(playerToolActive)postPlayerToolContext();
   if(trainerToolActive)postTrainerToolContext();
   if(mateSchoolToolActive)postMateSchoolToolContext();
   if(schachlaborToolActive)postSchachlaborToolContext();
@@ -519,6 +546,7 @@ function setEmbeddedToolActive(toolName){
 }
 function setLearningToolActive(active){setEmbeddedToolActive(active?'learning':'');}
 function setAnalyzerToolActive(active){setEmbeddedToolActive(active?'analyzer':'');}
+function setPlayerToolActive(active){setEmbeddedToolActive(active?'player':'');}
 function setTrainerToolActive(active){setEmbeddedToolActive(active?'trainer':'');}
 function setMateSchoolToolActive(active){setEmbeddedToolActive(active?'mate-school':'');}
 function setSchachlaborToolActive(active){setEmbeddedToolActive(active?'schachlabor':'');}
@@ -569,6 +597,12 @@ function openAnalyzerToolDebounced(){
   if(now-analyzerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   analyzerToolLastOpenAt=now;
   openEmbeddedToolFromCurrentContext('analyzer');
+}
+function openPlayerToolDebounced(){
+  const now=Date.now();
+  if(now-playerToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
+  playerToolLastOpenAt=now;
+  openEmbeddedToolFromCurrentContext('player');
 }
 function openTrainerToolDebounced(){
   const now=Date.now();
@@ -630,6 +664,7 @@ function openLeagueStandingsToolDebounced(){
 }
 if(learningToolBtn)learningToolBtn.addEventListener('click',openLearningToolDebounced);
 if(analyzerToolBtn)analyzerToolBtn.addEventListener('click',openAnalyzerToolDebounced);
+if(playerToolBtn)playerToolBtn.addEventListener('click',openPlayerToolDebounced);
 if(trainerToolBtn)trainerToolBtn.addEventListener('click',()=>{
   if(!(onlineAuthToken&&onlineAuthUser)){
     pendingTrainerStartMode='coach';
@@ -657,6 +692,10 @@ if(learningToolFrame)learningToolFrame.addEventListener('load',()=>{
 if(analyzerToolFrame)analyzerToolFrame.addEventListener('load',()=>{
   postAnalyzerToolContext();
   postAnalyzerToolMessage({type:'hammerschach-analyzer-visibility',visible:analyzerToolActive});
+});
+if(playerToolFrame)playerToolFrame.addEventListener('load',()=>{
+  postPlayerToolContext();
+  postPlayerToolMessage({type:'hammerschach-player-visibility',visible:playerToolActive});
 });
 if(trainerToolFrame)trainerToolFrame.addEventListener('load',()=>{
   postTrainerToolContext();
@@ -696,6 +735,7 @@ if(tournamentReportToolFrame)tournamentReportToolFrame.addEventListener('load',(
 window.addEventListener('message',async event=>{
   const fromLearning=!!(learningToolFrame&&event.source===learningToolFrame.contentWindow);
   const fromAnalyzer=!!(analyzerToolFrame&&event.source===analyzerToolFrame.contentWindow);
+  const fromPlayer=!!(playerToolFrame&&event.source===playerToolFrame.contentWindow);
   const fromTrainer=!!(trainerToolFrame&&event.source===trainerToolFrame.contentWindow);
   const fromMateSchool=!!(mateSchoolToolFrame&&event.source===mateSchoolToolFrame.contentWindow);
   const fromSchachlabor=!!(schachlaborToolFrame&&event.source===schachlaborToolFrame.contentWindow);
@@ -703,9 +743,20 @@ window.addEventListener('message',async event=>{
   const fromFairplay=!!(fairplayToolFrame&&event.source===fairplayToolFrame.contentWindow);
   const fromReader=!!(readerToolFrame&&event.source===readerToolFrame.contentWindow);
   const fromTournamentReport=!!(tournamentReportToolFrame&&event.source===tournamentReportToolFrame.contentWindow);
-  if(!fromLearning&&!fromAnalyzer&&!fromTrainer&&!fromMateSchool&&!fromSchachlabor&&!fromOpenings&&!fromFairplay&&!fromReader&&!fromTournamentReport)return;
+  if(!fromLearning&&!fromAnalyzer&&!fromPlayer&&!fromTrainer&&!fromMateSchool&&!fromSchachlabor&&!fromOpenings&&!fromFairplay&&!fromReader&&!fromTournamentReport)return;
   if(embeddedToolTargetOrigin()!=='*'&&event.origin!==embeddedToolTargetOrigin())return;
   const message=event.data&&typeof event.data==='object'?event.data:{};
+  if(fromPlayer){
+    if(message.type==='hammerschach-player-ready'){
+      postPlayerToolContext();postPlayerToolMessage({type:'hammerschach-player-visibility',visible:playerToolActive});return;
+    }
+    if(message.type==='hammerschach-player-height'){
+      const requested=Math.ceil(Number(message.height||0));
+      if(Number.isFinite(requested)&&requested>0){playerToolFrame.style.height=Math.max(720,Math.min(3600,requested+4))+'px';hammerschachScheduleHeightReport(true);}
+      return;
+    }
+    return;
+  }
   if(fromTournamentReport){
     if(message.type==='hammerschach-tournament-report-return'){
       closeEmbeddedTools();

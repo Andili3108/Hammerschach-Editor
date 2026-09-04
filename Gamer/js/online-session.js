@@ -462,6 +462,7 @@ function saveAuthState(token, user){
   if(inviteBackdrop && !inviteBackdrop.hidden) updateInviteDialog();
   postLearningToolContext();
   postAnalyzerToolContext();
+  postPlayerToolContext();
   postTrainerToolContext();
   postMateSchoolToolContext();
   postSchachlaborToolContext();

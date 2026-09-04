@@ -160,6 +160,7 @@ function setDarkMode(enabled){
   updateThemeToggleUi();
   postLearningToolContext();
   postAnalyzerToolContext();
+  postPlayerToolContext();
   postTrainerToolContext();
   postMateSchoolToolContext();
   postSchachlaborToolContext();
