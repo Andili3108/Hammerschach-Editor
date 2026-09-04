@@ -99,7 +99,7 @@ button:focus-visible,a:focus-visible{outline:3px solid rgba(181,138,67,.48);outl
 .mate-move-symbol{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:#fff;color:var(--wine-dark);font:900 29px/1 Arial,sans-serif;box-shadow:0 3px 9px rgba(30,12,15,.22)}
 .mate-move-copy{min-width:0;display:block}
 .mate-move-copy small,.mate-move-copy strong{display:block}
-.mate-move-copy small{margin-bottom:2px;color:#f2d7ba;font:900 10px/1.2 Arial,sans-serif;letter-spacing:.10em;text-transform:uppercase}
+.mate-move-copy small{margin-bottom:2px;color:#f2d7ba;font:900 10px/1.2 Arial,sans-serif;letter-spacing:.10em}
 .mate-move-copy strong{font-size:18px;line-height:1.1}
 .mate-move-button.is-played{border-color:rgba(132,63,70,.28);background:linear-gradient(135deg,#fff9ef,#f3e4df);box-shadow:0 7px 17px rgba(60,36,39,.12);color:var(--wine-dark)}
 .mate-move-button.is-played .mate-move-symbol{background:var(--wine);color:#fff}
