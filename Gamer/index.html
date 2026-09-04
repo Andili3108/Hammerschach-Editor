@@ -112,8 +112,7 @@
             <div id="clubChessMenuPopup" class="header-menu-popup" role="menu" aria-label="Vereinsschach" hidden>
               <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
               <button id="readerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="readerToolView" hidden>📚 Partienarchiv</button>
-              <div class="header-menu-section-label tournament-reports-label">Turnierberichte</div>
-              <button id="tournamentReportToolBtn" class="header-menu-item tournament-report-link" type="button" role="menuitem" aria-controls="tournamentReportToolView" hidden>🏆 Quick-Round-Robin 2026</button>
+              <button id="tournamentReportToolBtn" class="header-menu-item tournament-report-link" type="button" role="menuitem" aria-controls="tournamentReportToolView" hidden>🏆 Turnierberichte</button>
             </div>
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
@@ -177,8 +176,7 @@
               <div id="mobileNavVisitorClubChessPanel" class="mobile-nav-accordion-panel" hidden>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn" data-mobile-nav-visitor-only><span>📊</span><strong>Ergebnisdienst</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="readerToolBtn" data-mobile-nav-visitor-only><span>📚</span><strong>Partienarchiv</strong></button>
-                <div class="mobile-nav-accordion-label tournament-reports-label">Turnierberichte</div>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item mobile-nav-report-link tournament-report-link" type="button" data-mobile-nav-target="tournamentReportToolBtn" data-mobile-nav-visitor-only><span>🏆</span><strong>Quick-Round-Robin 2026</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item mobile-nav-report-link tournament-report-link" type="button" data-mobile-nav-target="tournamentReportToolBtn" data-mobile-nav-visitor-only><span>🏆</span><strong>Turnierberichte</strong></button>
               </div>
             </div>
           </section>
@@ -229,8 +227,7 @@
               <div id="mobileNavClubChessPanel" class="mobile-nav-accordion-panel" hidden>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn"><span>📊</span><strong>Ergebnisdienst</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="readerToolBtn"><span>📚</span><strong>Partienarchiv</strong></button>
-                <div class="mobile-nav-accordion-label tournament-reports-label">Turnierberichte</div>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item mobile-nav-report-link tournament-report-link" type="button" data-mobile-nav-target="tournamentReportToolBtn"><span>🏆</span><strong>Quick-Round-Robin 2026</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item mobile-nav-report-link tournament-report-link" type="button" data-mobile-nav-target="tournamentReportToolBtn"><span>🏆</span><strong>Turnierberichte</strong></button>
               </div>
             </div>
             <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="toolsMenu" hidden>
@@ -284,8 +281,15 @@
       <iframe id="readerToolFrame" class="reader-tool-frame" title="Hammerschach-Partienarchiv" data-src="./Reader/?v=20260830-5" loading="lazy"></iframe>
     </section>
 
-    <section id="tournamentReportToolView" class="tournament-report-tool-view" hidden aria-label="Turnierbericht Quick-Round-Robin 2026">
-      <iframe id="tournamentReportToolFrame" class="tournament-report-tool-frame" title="Turnierbericht Quick-Round-Robin 2026" data-src="./Turnierberichte/quick-round-robin-2026/?embedded=1" loading="lazy"></iframe>
+    <section id="tournamentReportToolView" class="tournament-report-tool-view" hidden aria-label="Turnierberichte">
+      <nav id="tournamentReportSwitcher" class="tournament-report-switcher" aria-label="Turnierbericht auswählen">
+        <span class="tournament-report-switcher-title"><span aria-hidden="true">🏆</span><strong>Turnierberichte</strong></span>
+        <span class="tournament-report-switcher-links">
+          <button id="tournamentReportUnnaBtn" class="tournament-report-switcher-btn active" type="button" aria-pressed="true">Unna Open 2025</button>
+          <button id="tournamentReportQuickBtn" class="tournament-report-switcher-btn" type="button" aria-pressed="false">Quick-Round-Robin 2026</button>
+        </span>
+      </nav>
+      <iframe id="tournamentReportToolFrame" class="tournament-report-tool-frame" title="Turnierbericht Unna Open 2025" data-src="./Turnierberichte/unna-open-2025/?embedded=1" loading="lazy"></iframe>
     </section>
 
     <section id="tvToolView" class="tv-tool-view" hidden aria-label="Gamer-TV">
@@ -2429,12 +2433,12 @@
 <script src="js/board-ui-elements.js?v=20260817-3"></script>
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
-<script src="js/online-ui-elements.js?v=20260903-1"></script>
+<script src="js/online-ui-elements.js?v=20260904-2"></script>
 <script src="js/header-ui.js?v=20260903-1"></script>
 <script src="js/dialog-ui-state.js?v=20260902-3"></script>
 <script src="js/hammerschach-tv.js?v=20260830-3"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
-<script src="js/embedded-tools.js?v=20260904-1"></script>
+<script src="js/embedded-tools.js?v=20260904-2"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
