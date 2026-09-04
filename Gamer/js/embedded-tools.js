@@ -20,6 +20,7 @@ let openingsToolFrameStarted = false;
 let fairplayToolFrameStarted = false;
 let readerToolFrameStarted = false;
 let tournamentReportToolFrameStarted = false;
+let tournamentReportCurrentId = 'unna-open-2025';
 let learningToolLastOpenAt = 0;
 let analyzerToolLastOpenAt = 0;
 let trainerToolLastOpenAt = 0;
@@ -39,6 +40,10 @@ let pendingAnalyzerArchivePgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
 const PENDING_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachPendingEmbeddedToolV1';
 const ACTIVE_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachActiveEmbeddedToolV1';
+const TOURNAMENT_REPORTS = Object.freeze({
+  'unna-open-2025':{title:'Unna Open 2025',src:'./Turnierberichte/unna-open-2025/?embedded=1'},
+  'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1'}
+});
 const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
@@ -97,7 +102,7 @@ function embeddedToolStatusText(){
   if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
   if(tvToolActive) return 'Hammerschach - TV';
   if(fairplayToolActive) return 'Hammerschach - Fairplay-Prüfung';
-  if(tournamentReportToolActive) return 'Turnierbericht Quick-Round-Robin 2026';
+  if(tournamentReportToolActive) return 'Turnierbericht '+(TOURNAMENT_REPORTS[tournamentReportCurrentId]||TOURNAMENT_REPORTS['unna-open-2025']).title;
   if(readerToolActive) return 'Hammerschach - Partienarchiv';
   if(openingsToolActive) return 'Hammerschach - Eröffnungsschule';
   if(mateSchoolToolActive) return 'Hammerschach - Mattbilder-Schule';
@@ -341,6 +346,31 @@ function postTournamentReportToolContext(){
     loggedIn:!!(onlineAuthToken && onlineAuthUser)
   });
 }
+function updateTournamentReportSwitcher(){
+  const current=TOURNAMENT_REPORTS[tournamentReportCurrentId]||TOURNAMENT_REPORTS['unna-open-2025'];
+  [[tournamentReportUnnaBtn,'unna-open-2025'],[tournamentReportQuickBtn,'quick-round-robin-2026']].forEach(([button,id])=>{
+    if(!button)return;
+    const active=id===tournamentReportCurrentId;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',active?'true':'false');
+  });
+  if(tournamentReportToolFrame){
+    tournamentReportToolFrame.title='Turnierbericht '+current.title;
+    tournamentReportToolFrame.dataset.src=current.src;
+  }
+  if(tournamentReportToolView)tournamentReportToolView.setAttribute('aria-label','Turnierbericht '+current.title);
+}
+function selectTournamentReport(reportId){
+  if(!TOURNAMENT_REPORTS[reportId])return;
+  const changed=tournamentReportCurrentId!==reportId;
+  tournamentReportCurrentId=reportId;
+  updateTournamentReportSwitcher();
+  if(tournamentReportToolFrame&&tournamentReportToolActive&&(changed||!tournamentReportToolFrameStarted)){
+    tournamentReportToolFrameStarted=true;
+    tournamentReportToolFrame.src=TOURNAMENT_REPORTS[reportId].src;
+  }
+  if(tournamentReportToolActive&&statusEl)statusEl.textContent=embeddedToolStatusText();
+}
 function setEmbeddedToolActive(toolName){
   const trainerWasActive=trainerToolActive;
   const fairplayAllowed=!!(onlineAuthUser && onlineAuthUser.isAdmin === true);
@@ -439,7 +469,8 @@ function setEmbeddedToolActive(toolName){
   }
   if(tournamentReportToolActive&&tournamentReportToolFrame&&!tournamentReportToolFrameStarted){
     tournamentReportToolFrameStarted=true;
-    tournamentReportToolFrame.src=tournamentReportToolFrame.dataset.src||'./Turnierberichte/quick-round-robin-2026/?embedded=1';
+    updateTournamentReportSwitcher();
+    tournamentReportToolFrame.src=tournamentReportToolFrame.dataset.src||TOURNAMENT_REPORTS['unna-open-2025'].src;
   }
   if(tvToolActive){
     loadHammerschachTv();
@@ -615,6 +646,8 @@ if(schachlaborToolBtn)schachlaborToolBtn.addEventListener('click',openSchachlabo
 if(openingsToolBtn)openingsToolBtn.addEventListener('click',openOpeningsToolDebounced);
 if(readerToolBtn)readerToolBtn.addEventListener('click',openReaderToolDebounced);
 if(tournamentReportToolBtn)tournamentReportToolBtn.addEventListener('click',openTournamentReportToolDebounced);
+if(tournamentReportUnnaBtn)tournamentReportUnnaBtn.addEventListener('click',()=>selectTournamentReport('unna-open-2025'));
+if(tournamentReportQuickBtn)tournamentReportQuickBtn.addEventListener('click',()=>selectTournamentReport('quick-round-robin-2026'));
 if(tvToolBtn)tvToolBtn.addEventListener('click',openTvToolDebounced);
 if(leagueStandingsToolBtn)leagueStandingsToolBtn.addEventListener('click',openLeagueStandingsToolDebounced);
 if(learningToolFrame)learningToolFrame.addEventListener('load',()=>{
