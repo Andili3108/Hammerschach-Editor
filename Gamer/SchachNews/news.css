@@ -1,0 +1,86 @@
+/* Schach-News: gemeinsame Farben und Oberflächen der bestehenden Turnierberichte. */
+html{scroll-behavior:smooth}
+body{min-width:0;font-family:"Times New Roman",Times,serif}
+button,a{font-family:inherit}
+[hidden]{display:none!important}
+.skip-link{position:absolute;top:-100px;left:12px;z-index:100;padding:10px;background:var(--surface);color:var(--ink)}
+.skip-link:focus{top:8px}
+a:focus-visible,button:focus-visible{outline:3px solid #3b6ea7;outline-offset:3px}
+.news-page{max-width:1100px;margin:0 auto;padding:18px 16px 0;overflow:visible}
+.news-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;align-items:center;padding:clamp(24px,4vw,46px);border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,#632d34,#843f46);color:#fff;overflow:hidden}
+.news-kicker{margin:0 0 16px;color:#f0d9b5;font-size:12px;font-family:Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.news-hero h1{font-size:clamp(35px,4.8vw,56px);line-height:1.06;letter-spacing:-.025em;margin:0 0 20px;text-wrap:balance}
+.news-lead{font-size:19px;line-height:1.5;margin:0;max-width:39em}
+.news-meta{font-family:Arial,sans-serif;font-size:11px;color:#efdee0;line-height:1.8;margin:22px 0 0}
+.hero-art{margin:0;min-width:0}
+.hero-art img{display:block;width:100%;height:auto}
+.hero-art figcaption{font:11px/1.5 Arial,sans-serif;color:#efdee0;text-align:center}
+.freestyle-emblem{text-align:center;color:#f0d9b5;padding:20px}
+.freestyle-emblem>span{display:block;font-size:clamp(96px,15vw,180px);line-height:1;font-weight:bold;letter-spacing:-.08em}
+.freestyle-emblem small{display:block;margin-top:18px;font-size:23px;line-height:1.35}
+.news-layout{display:grid;grid-template-columns:minmax(0,740px) minmax(170px,1fr);gap:36px;padding:34px 10px}
+.news-story{min-width:0;font-size:19px;line-height:1.72}
+.news-story p{margin:0 0 20px}
+.news-story h2{font-size:28px;line-height:1.2;color:var(--wine-deep);margin:36px 0 15px;scroll-margin-top:20px;text-wrap:balance}
+.news-story .opening{font-size:21px;line-height:1.65}
+.news-story .closing{border-left:3px solid var(--gold);padding-left:18px;margin-top:22px}
+.citation{font:12px Arial,sans-serif;vertical-align:super;color:var(--wine);text-decoration:none;white-space:nowrap}
+.citation:hover{text-decoration:underline}
+.editorial-note{padding:20px 23px;margin:28px 0;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:0 14px 14px 0}
+.editorial-note>strong{font:700 12px Arial,sans-serif;color:var(--wine);letter-spacing:.06em;text-transform:uppercase}
+.editorial-note p{margin:10px 0 0;font-size:18px}
+.news-aside{align-self:start;position:sticky;top:90px;border-top:3px solid var(--wine);padding-top:14px}
+.aside-label{font:700 11px Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.news-aside nav{display:grid}
+.news-aside a{font-size:16px;line-height:1.4;padding:10px 0;border-bottom:1px solid var(--line);text-decoration:none}
+.news-aside a:hover{color:var(--wine);text-decoration:underline}
+.public-note{font-size:14px;color:var(--muted);line-height:1.6;margin-top:22px}
+.inline-figure{margin:28px 0}
+.inline-figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:14px;background:#f7f4f0}
+.inline-figure figcaption{font:12px/1.6 Arial,sans-serif;color:var(--muted);margin-top:10px}
+.news-sources{border-top:1px solid var(--line);margin-top:36px;padding-top:4px}
+.news-sources h2{font-size:23px}
+.news-sources p,.news-sources li{font-size:14px;line-height:1.6}
+.news-sources ol{padding-left:23px}
+.news-sources li{padding:5px 0;scroll-margin-top:24px;overflow-wrap:anywhere}
+.news-sources a{color:var(--wine)}
+.art-credit{color:var(--muted)}
+.next-article{display:block;margin-top:30px;padding:18px 22px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-decoration:none}
+.next-article small{display:block;color:var(--muted);font:11px Arial,sans-serif;margin-bottom:7px}
+.next-article strong{font-size:21px;color:var(--wine-deep)}
+.news-footer{max-width:1068px;margin:0 auto;padding:20px 16px 30px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:18px;color:var(--muted);font-size:14px}
+html.hammerschach-embedded .news-page{padding-top:0}
+html.hammerschach-embedded .news-aside{top:18px}
+html.hammerschach-embedded .news-footer{margin-bottom:10px}
+html.dark-mode .news-story h2,html.dark-mode .next-article strong{color:#efc1c7}
+html.dark-mode .citation,html.dark-mode .news-sources a,html.dark-mode .editorial-note>strong{color:#efc1c7}
+html.dark-mode .news-hero{background:linear-gradient(135deg,#301e24,#632d34)}
+@media(max-width:760px){
+.news-page{padding:10px 8px 0}
+.news-hero{grid-template-columns:1fr;gap:18px;padding:25px 22px}
+.news-lead{font-size:18px}
+.hero-art{max-width:350px;margin:0 auto}
+.freestyle-emblem{display:none}
+.news-layout{grid-template-columns:minmax(0,1fr);padding:25px 12px;gap:0}
+.news-aside{display:none}
+.news-story{font-size:18px}
+.news-story .opening{font-size:19px}
+.news-story h2{font-size:25px}
+.news-footer{flex-direction:column}
+.site-header-inner{flex-wrap:wrap;padding:10px 0}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+body{background:#fff!important;color:#000!important}
+.site-header,.news-aside,.news-footer,.next-article,.skip-link{display:none!important}
+.news-page{padding:0}
+.news-hero{color:#000;background:#fff;border:0;padding:0;display:block}
+.news-kicker,.news-meta{color:#444}
+.hero-art,.freestyle-emblem{display:none}
+.news-layout{display:block;padding:15px 0}
+.news-story{font-size:12pt}
+.news-story h2{color:#000;break-after:avoid}
+.news-hero h1{font-size:28pt}
+.news-lead,.news-story .opening{font-size:13pt}
+.inline-figure,.editorial-note{break-inside:avoid}
+}
