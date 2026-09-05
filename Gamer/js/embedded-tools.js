@@ -22,7 +22,7 @@ let openingsToolFrameStarted = false;
 let fairplayToolFrameStarted = false;
 let readerToolFrameStarted = false;
 let tournamentReportToolFrameStarted = false;
-let tournamentReportCurrentId = 'unna-open-2025';
+let tournamentReportCurrentId = 'quick-round-robin-2026';
 let schachCurrentCategory = 'reports';
 let schachNewsCurrentId = 'schulbrett-weltspitze';
 let learningToolLastOpenAt = 0;
@@ -55,7 +55,7 @@ const SCHACH_NEWS = Object.freeze({
 });
 const SCHACH_CURRENT_STORAGE_KEY = 'hammerschachSchachAktuellSelectionV1';
 try{
-  const saved=JSON.parse(sessionStorage.getItem(SCHACH_CURRENT_STORAGE_KEY)||'null');
+  const saved=JSON.parse(localStorage.getItem(SCHACH_CURRENT_STORAGE_KEY)||'null');
   if(saved && Object.hasOwn(TOURNAMENT_REPORTS,saved.reportId)) tournamentReportCurrentId=saved.reportId;
   if(saved && Object.hasOwn(SCHACH_NEWS,saved.newsId)) schachNewsCurrentId=saved.newsId;
   if(saved && saved.category==='news') schachCurrentCategory='news';
@@ -412,8 +412,9 @@ function selectSchachNews(newsId){
   loadCurrentSchachArticle(changed);
 }
 function loadCurrentSchachArticle(changed){
-  try{sessionStorage.setItem(SCHACH_CURRENT_STORAGE_KEY,JSON.stringify({category:schachCurrentCategory,reportId:tournamentReportCurrentId,newsId:schachNewsCurrentId}));}catch(_){}
+  try{localStorage.setItem(SCHACH_CURRENT_STORAGE_KEY,JSON.stringify({category:schachCurrentCategory,reportId:tournamentReportCurrentId,newsId:schachNewsCurrentId}));}catch(_){}
   updateTournamentReportSwitcher();
+  if(changed&&!tournamentReportToolActive)tournamentReportToolFrameStarted=false;
   if(tournamentReportToolFrame&&tournamentReportToolActive&&(changed||!tournamentReportToolFrameStarted)){
     tournamentReportToolFrameStarted=true;
     tournamentReportToolFrame.src=currentSchachArticle().src;
@@ -527,7 +528,7 @@ function setEmbeddedToolActive(toolName){
   if(tournamentReportToolActive&&tournamentReportToolFrame&&!tournamentReportToolFrameStarted){
     tournamentReportToolFrameStarted=true;
     updateTournamentReportSwitcher();
-    tournamentReportToolFrame.src=tournamentReportToolFrame.dataset.src||TOURNAMENT_REPORTS['unna-open-2025'].src;
+    tournamentReportToolFrame.src=tournamentReportToolFrame.dataset.src||TOURNAMENT_REPORTS['quick-round-robin-2026'].src;
   }
   if(tvToolActive){
     loadHammerschachTv();
@@ -680,6 +681,7 @@ function openTournamentReportToolDebounced(){
   const now=Date.now();
   if(now-tournamentReportToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   tournamentReportToolLastOpenAt=now;
+  loadCurrentSchachArticle(false);
   openEmbeddedToolFromCurrentContext('tournament-report');
 }
 function openTvToolDebounced(){
