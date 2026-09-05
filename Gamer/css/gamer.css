@@ -1302,16 +1302,21 @@
   .tournament-report-tool-frame{height:clamp(620px,calc(100dvh - 300px),920px);min-height:620px;overflow:auto;box-shadow:0 12px 34px rgba(0,0,0,.08);-webkit-overflow-scrolling:touch;}
   .tournament-report-switcher{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(132,63,70,.16);border-radius:16px;background:linear-gradient(135deg,#fff 0%,#fbf7f2 100%);box-shadow:0 8px 22px rgba(59,42,45,.08);font-family:Arial,sans-serif;}
   .tournament-report-switcher-title{display:inline-flex;align-items:center;gap:8px;color:#6a3239;font-size:14px;white-space:nowrap;}
+  .tournament-report-switcher-content{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-width:0;}
   .tournament-report-switcher-links{display:flex;align-items:center;gap:7px;min-width:0;overflow-x:auto;padding:2px;scrollbar-width:thin;}
   .tournament-report-switcher-btn{flex:0 0 auto;min-height:38px;padding:7px 12px;border:1px solid rgba(132,63,70,.16);border-radius:11px;background:#f0ece7;color:#5d4d45;font-family:Arial,sans-serif;font-size:13px;font-weight:900;cursor:pointer;box-shadow:none;}
   .tournament-report-switcher-btn:hover{border-color:rgba(132,63,70,.38);background:#f7f1ec;}
   .tournament-report-switcher-btn.active{border-color:#843f46;background:linear-gradient(135deg,#843f46,#a6535d);color:#fff;}
+  .tournament-report-switcher-btn:disabled{cursor:not-allowed;opacity:.48;filter:grayscale(1);}
+  .tournament-report-switcher-btn:disabled:hover{border-color:rgba(132,63,70,.16);background:#f0ece7;}
   html.dark-mode .tournament-report-switcher{border-color:#4b4145;background:linear-gradient(135deg,#25272c,#202227);box-shadow:0 8px 22px rgba(0,0,0,.22);}
   html.dark-mode .tournament-report-switcher-title{color:#efc1c7;}
   html.dark-mode .tournament-report-switcher-btn{border-color:#4b4145;background:#32343a;color:#eee;}
   html.dark-mode .tournament-report-switcher-btn.active{border-color:#dda1a9;background:linear-gradient(135deg,#914b54,#71343c);color:#fff;}
+  html.dark-mode .tournament-report-switcher-btn:disabled:hover{border-color:#4b4145;background:#32343a;}
   @media (max-width:760px){
     .tournament-report-switcher{align-items:flex-start;flex-direction:column;gap:7px;margin-bottom:8px;padding:9px;}
+    .tournament-report-switcher-content{align-items:stretch;flex-direction:column;gap:4px;width:100%;}
     .tournament-report-switcher-links{width:100%;}
     .tournament-report-switcher-btn{min-height:36px;font-size:12px;}
   }
