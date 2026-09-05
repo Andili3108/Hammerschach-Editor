@@ -1304,15 +1304,16 @@
   .tournament-report-switcher-title{display:inline-flex;align-items:center;gap:8px;color:#6a3239;font-size:14px;white-space:nowrap;}
   .tournament-report-switcher-content{grid-column:2;display:flex;align-items:stretch;justify-content:center;flex-wrap:wrap;gap:6px;min-width:0;max-width:100%;justify-self:center;}
   .tournament-report-switcher-content>.header-menu{width:auto;}
-  .tournament-reports-menu .header-menu-popup{width:280px;max-width:calc(100vw - 48px);}
-  .tournament-reports-menu .header-menu-item{white-space:normal!important;line-height:1.35!important;}
-  .tournament-reports-menu .header-menu-item[aria-current="page"]::after{content:'✓';margin-left:auto;padding-left:8px;}
+  .tournament-reports-menu .header-menu-popup,.schach-news-menu .header-menu-popup{width:280px;max-width:calc(100vw - 48px);}
+  .tournament-reports-menu .header-menu-item,.schach-news-menu .header-menu-item{white-space:normal!important;line-height:1.35!important;}
+  .tournament-reports-menu .header-menu-item[aria-current="page"]::after,.schach-news-menu .header-menu-item[aria-current="page"]::after{content:'✓';margin-left:auto;padding-left:8px;}
   html.dark-mode .tournament-report-switcher{border-color:#4b4145;background:linear-gradient(135deg,#25272c,#202227);box-shadow:0 8px 22px rgba(0,0,0,.22);}
   html.dark-mode .tournament-report-switcher-title{color:#efc1c7;}
   @media (max-width:760px){
     .tournament-report-switcher{grid-template-columns:minmax(0,1fr);gap:9px;margin-bottom:8px;padding:9px;}
     .tournament-report-switcher-content{grid-column:1;}
     .tournament-reports-menu .header-menu-popup{left:0;right:auto;transform:none;}
+    .schach-news-menu .header-menu-popup{left:auto;right:0;transform:none;}
   }
   .tv-stage{overflow:visible;padding:0;background:transparent;border:0;box-shadow:none;}
   .tv-content{padding:0;}
