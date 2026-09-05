@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260904-3" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260905-schach-dropdowns" />
 </head>
 <body>
 <div class="app" role="main">
@@ -295,16 +295,20 @@
     <section id="tournamentReportToolView" class="tournament-report-tool-view" hidden aria-label="Schach aktuell">
       <nav id="tournamentReportSwitcher" class="tournament-report-switcher" aria-label="Schach aktuell auswählen">
         <span class="tournament-report-switcher-title"><span aria-hidden="true">📰</span><strong>Schach aktuell</strong></span>
-        <span class="tournament-report-switcher-content">
-          <span class="tournament-report-switcher-links tournament-report-category-links" role="tablist" aria-label="Format auswählen">
-            <button id="tournamentReportsCategoryBtn" class="tournament-report-switcher-btn active" type="button" role="tab" aria-selected="true">🏆 Turnierberichte</button>
-            <button id="schachNewsCategoryBtn" class="tournament-report-switcher-btn" type="button" role="tab" aria-selected="false" disabled aria-disabled="true" title="Schach-News folgt später">📰 Schach-News</button>
-          </span>
-          <span class="tournament-report-switcher-links tournament-report-selection-links" aria-label="Turnierbericht auswählen">
-          <button id="tournamentReportUnnaBtn" class="tournament-report-switcher-btn active" type="button" aria-pressed="true">Unna Open 2025</button>
-          <button id="tournamentReportQuickBtn" class="tournament-report-switcher-btn" type="button" aria-pressed="false">Quick-Round-Robin 2026</button>
-          </span>
-        </span>
+        <div class="tournament-report-switcher-content">
+          <div id="tournamentReportsMenu" class="header-menu tournament-reports-menu">
+            <button id="tournamentReportsCategoryBtn" class="header-menu-button tournament-report-switcher-btn active" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="tournamentReportsMenuPopup">
+              <span><span aria-hidden="true">🏆</span> Turnierberichte</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="tournamentReportsMenuPopup" class="header-menu-popup" role="menu" aria-label="Turnierbericht auswählen" hidden>
+              <button id="tournamentReportUnnaBtn" class="header-menu-item active" type="button" role="menuitem" aria-current="page">Unna Open 2025</button>
+              <button id="tournamentReportQuickBtn" class="header-menu-item" type="button" role="menuitem">Quick-Round-Robin 2026</button>
+            </div>
+          </div>
+          <button id="schachNewsCategoryBtn" class="header-menu-button tournament-report-switcher-btn" type="button" aria-haspopup="menu" aria-expanded="false" disabled aria-disabled="true" title="Schach-News folgt später">
+            <span><span aria-hidden="true">📰</span> Schach-News</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+          </button>
+        </div>
       </nav>
       <iframe id="tournamentReportToolFrame" class="tournament-report-tool-frame" title="Turnierbericht Unna Open 2025" data-src="./Turnierberichte/unna-open-2025/?embedded=1" loading="lazy"></iframe>
     </section>
@@ -2460,11 +2464,11 @@
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260904-3"></script>
-<script src="js/header-ui.js?v=20260904-2"></script>
+<script src="js/header-ui.js?v=20260905-schach-dropdowns"></script>
 <script src="js/dialog-ui-state.js?v=20260902-3"></script>
 <script src="js/hammerschach-tv.js?v=20260830-3"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
-<script src="js/embedded-tools.js?v=20260904-3"></script>
+<script src="js/embedded-tools.js?v=20260905-schach-dropdowns"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
