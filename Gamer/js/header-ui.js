@@ -118,7 +118,7 @@ const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, 
 const trainerBeginnerMenuController = registerHeaderMenu(trainerBeginnerMenuEl, trainerBeginnerMenuBtn, trainerBeginnerMenuPopup, 'Anfängertraining-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
 const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Spieler-Menü');
-const clubChessMenuController = registerHeaderMenu(clubChessMenuEl, clubChessMenuBtn, clubChessMenuPopup, 'Vereinsschach-Menü');
+const clubChessMenuController = registerHeaderMenu(clubChessMenuEl, clubChessMenuBtn, clubChessMenuPopup, 'Schachgeschehen-Menü');
 const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Werkstatt-Menü');
 const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }

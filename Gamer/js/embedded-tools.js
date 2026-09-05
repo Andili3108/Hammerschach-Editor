@@ -144,7 +144,7 @@ function updateAnalyzerToolAvailability(){
   if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Hammerschach-Eröffnungsschule');}
   if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer-TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer-TV'));}
   if(readerToolBtn){readerToolBtn.hidden=!readerNavigable;readerToolBtn.title=readerAvailable?'Partienarchiv öffnen':'Spielraum verlassen und das Partienarchiv öffnen';}
-  if(tournamentReportToolBtn){tournamentReportToolBtn.hidden=!tournamentReportNavigable;tournamentReportToolBtn.title=tournamentReportAvailable?'Turnierbericht öffnen':'Spielraum verlassen und den Turnierbericht öffnen';}
+  if(tournamentReportToolBtn){tournamentReportToolBtn.hidden=!tournamentReportNavigable;tournamentReportToolBtn.title=tournamentReportAvailable?'Schach aktuell öffnen':'Spielraum verlassen und Schach aktuell öffnen';}
   if(leagueStandingsToolBtn){leagueStandingsToolBtn.hidden=!leagueStandingsNavigable;leagueStandingsToolBtn.title=leagueStandingsAvailable?'Ergebnisdienst öffnen':'Spielraum verlassen und den Ergebnisdienst öffnen';}
   if(toolsMenuEl){
     toolsMenuEl.hidden = !navigable && !learningNavigable && !trainerNavigable && !mateSchoolNavigable;
@@ -375,7 +375,7 @@ function updateTournamentReportSwitcher(){
     tournamentReportToolFrame.title='Turnierbericht '+current.title;
     tournamentReportToolFrame.dataset.src=current.src;
   }
-  if(tournamentReportToolView)tournamentReportToolView.setAttribute('aria-label','Turnierbericht '+current.title);
+  if(tournamentReportToolView)tournamentReportToolView.setAttribute('aria-label','Schach aktuell – Turnierbericht '+current.title);
 }
 function selectTournamentReport(reportId){
   if(!TOURNAMENT_REPORTS[reportId])return;
