@@ -38,7 +38,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260905-schach-lobby-design" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260905-schach-news-1" />
 </head>
 <body>
 <div class="app" role="main">
@@ -305,9 +305,15 @@
               <button id="tournamentReportQuickBtn" class="header-menu-item" type="button" role="menuitem">Quick-Round-Robin 2026</button>
             </div>
           </div>
-          <button id="schachNewsCategoryBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" disabled aria-disabled="true" title="Schach-News folgt später">
-            <span><span aria-hidden="true">📰</span> Schach-News</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
-          </button>
+          <div id="schachNewsMenu" class="header-menu schach-news-menu">
+            <button id="schachNewsCategoryBtn" class="button-flat name-action-btn header-menu-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="schachNewsMenuPopup">
+              <span><span aria-hidden="true">📰</span> Schach-News</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="schachNewsMenuPopup" class="header-menu-popup" role="menu" aria-label="Schach-News auswählen" hidden>
+              <button class="header-menu-item" type="button" role="menuitem" data-schach-news-id="schulbrett-weltspitze">Vom Schulbrett zur Weltspitze</button>
+              <button class="header-menu-item" type="button" role="menuitem" data-schach-news-id="freestyle-neu-denken">Freestyle: Schach neu denken</button>
+            </div>
+          </div>
         </div>
       </nav>
       <iframe id="tournamentReportToolFrame" class="tournament-report-tool-frame" title="Turnierbericht Unna Open 2025" data-src="./Turnierberichte/unna-open-2025/?embedded=1" loading="lazy"></iframe>
@@ -590,7 +596,8 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Schachgeschehen“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong>, <strong>„📚 Partienarchiv“</strong> und <strong>„📰 Schach aktuell“</strong>; dort kannst du zwischen Turnierberichten und den später ergänzten Schach-News unterscheiden. In der <strong>„🔧 Werkstatt“</strong> findest du Schach lernen, Trainer, Mattbilder-Schule, Eröffnungsschule, den Player, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Schachgeschehen“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong>, <strong>„📚 Partienarchiv“</strong> und <strong>„📰 Schach aktuell“</strong>; dort kannst du zwischen Turnierberichten und den Schach-News unterscheiden. In der <strong>„🔧 Werkstatt“</strong> findest du Schach lernen, Trainer, Mattbilder-Schule, Eröffnungsschule, den Player, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
+          <p>Die Schach-News sind für Besucher vollständig und ohne Registrierung lesbar. Im mittig angeordneten Dropdown „Schach-News“ wählst du den gewünschten Artikel aus.</p>
 
           <h4>4. Eine Partie beginnen</h4>
           <p>Klicke oben im Header auf <strong>„♟️ Neue Partie“</strong>. Im geöffneten Fenster wählst du Spielmodus, Farbe, Bedenkzeit und Wertung. Mit <strong>„♟️ Partie anbieten“</strong> stellst du die Partie für alle Mitglieder bereit. Über <strong>„✉️ Mitglied einladen“</strong> lädst du gezielt ein Mitglied ein. Vor dem Versand kannst du eine freiwillige persönliche Nachricht mit bis zu 300 Zeichen hinzufügen. Sie erscheint in der Einladungsmail und bei Daily Chess zusätzlich unter <strong>„Meine Partien“</strong>. Offene Angebote findest du direkt über <strong>„🔎 Angebote“</strong> im Header. Eine goldene Zahl zeigt dir, wie viele fremde Angebote du aktuell annehmen kannst; dein eigenes Angebot wird dabei nicht mitgezählt.</p>
@@ -628,7 +635,8 @@
           <p>Login, Registrierung und Wiederherstellungsfunktionen sind gegen automatisierte Serienversuche begrenzt. Nach mehreren fehlgeschlagenen Versuchen kann deshalb vorübergehend eine kurze Wartezeit erscheinen. Sicherheitsrelevante Vorgänge werden ohne Speicherung der Klartext-IP-Adresse protokolliert, damit auffällige Zugriffe später nachvollzogen werden können.</p>
 
           <p>Nach dem Login erscheint auf der Startseite die Mitglieder-Lobby mit dem festen <strong>Hammerschach-Mitglieder-Chat</strong>. Über <strong>„♟️ Neue Partie“</strong> im Header öffnest du die Partievorbereitung als eigenes Fenster. Dadurch bleibt die Lobby auch auf Smartphones kompakt. Erst beim Öffnen einer Partie oder eines Zuschauerlinks erscheint wieder die vollständige Spielansicht mit Brett und rechter Spalte.</p>
-          <p>Die aktuelle Desktop-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. Unter <strong>„♜ Schachgeschehen“</strong> liegen Ergebnisdienst, Partienarchiv und <strong>„📰 Schach aktuell“</strong>; der redaktionelle Bereich unterscheidet zwischen Turnierberichten und den später ergänzten Schach-News. Die <strong>„🔧 Werkstatt“</strong> enthält ausschließlich Lern-, Trainings- und Analysefunktionen. <strong>„📺 Gamer-TV“</strong> folgt als eigener Zugang direkt rechts neben der Werkstatt. Mitglieder, Mein Profil und persönliche Nachrichten bilden eine separate Personenreihe; Erste Schritte, Handbuch und Leitbild liegen unter <strong>„👥 Mitglieder“ → „INFORMATIONEN“</strong>. Der kleine Schalter oben rechts wechselt das Farbschema. In der Desktop-Lobby ist der doppelte Turnierzugang im Header ausgeblendet; in einem Spielraum oder integrierten Bereich bleibt <strong>„🏆 Turniere“</strong> an seiner bisherigen Position. Dort ersetzt <strong>„↩️ Zur Lobby“</strong> außerdem die Schaltfläche für eine neue Partie.</p>
+          <p>Die aktuelle Desktop-Navigation hält häufig genutzte Ziele direkt bereit: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. <strong>„♟️ Alle Partien“</strong> bündelt <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. Unter <strong>„♜ Schachgeschehen“</strong> liegen Ergebnisdienst, Partienarchiv und <strong>„📰 Schach aktuell“</strong>; der redaktionelle Bereich unterscheidet zwischen Turnierberichten und den Schach-News. Die <strong>„🔧 Werkstatt“</strong> enthält ausschließlich Lern-, Trainings- und Analysefunktionen. <strong>„📺 Gamer-TV“</strong> folgt als eigener Zugang direkt rechts neben der Werkstatt. Mitglieder, Mein Profil und persönliche Nachrichten bilden eine separate Personenreihe; Erste Schritte, Handbuch und Leitbild liegen unter <strong>„👥 Mitglieder“ → „INFORMATIONEN“</strong>. Der kleine Schalter oben rechts wechselt das Farbschema. In der Desktop-Lobby ist der doppelte Turnierzugang im Header ausgeblendet; in einem Spielraum oder integrierten Bereich bleibt <strong>„🏆 Turniere“</strong> an seiner bisherigen Position. Dort ersetzt <strong>„↩️ Zur Lobby“</strong> außerdem die Schaltfläche für eine neue Partie.</p>
+          <p>Die Schach-News sind für Besucher vollständig und ohne Registrierung lesbar. Im mittig angeordneten Dropdown „Schach-News“ wählst du den gewünschten Artikel aus.</p>
           <p>Auf dem Spielbrett kannst du eine Figur entweder wie bisher antippen und anschließend das Zielfeld wählen oder sie direkt mit Maus beziehungsweise Finger dorthin ziehen. Beim Ziehen dient das gesamte Feld der Figur als großzügige Grifffläche. Ein ungültiger Ablageversuch verändert die Stellung nicht; die Figur bleibt ausgewählt und die erlaubten Zielfelder werden weiterhin angezeigt.</p>
 
           <h4>2. Vor der Einladung oder dem Partieangebot einstellen</h4>
@@ -2464,11 +2472,11 @@
 <script src="js/game-chat.js?v=20260822-1"></script>
 <script src="js/game-setup-ui.js?v=20260804-1"></script>
 <script src="js/online-ui-elements.js?v=20260904-3"></script>
-<script src="js/header-ui.js?v=20260905-schach-dropdowns"></script>
+<script src="js/header-ui.js?v=20260905-schach-news-1"></script>
 <script src="js/dialog-ui-state.js?v=20260902-3"></script>
 <script src="js/hammerschach-tv.js?v=20260830-3"></script>
 <script src="js/league-standings.js?v=20260828-3"></script>
-<script src="js/embedded-tools.js?v=20260905-schach-dropdowns"></script>
+<script src="js/embedded-tools.js?v=20260905-schach-news-1"></script>
 <script src="js/member-avatars.js?v=20260804-1"></script>
 <script src="js/global-chat-lobby.js?v=20260811-2"></script>
 <script src="js/admin-overview.js?v=20260804-1"></script>
