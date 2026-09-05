@@ -121,6 +121,17 @@ const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, pla
 const clubChessMenuController = registerHeaderMenu(clubChessMenuEl, clubChessMenuBtn, clubChessMenuPopup, 'Schachgeschehen-Menü');
 const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Werkstatt-Menü');
 const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
+const tournamentReportsMenuController = registerHeaderMenu(
+  document.getElementById('tournamentReportsMenu'),
+  document.getElementById('tournamentReportsCategoryBtn'),
+  document.getElementById('tournamentReportsMenuPopup'),
+  'Turnierberichte'
+);
+if(tournamentReportsMenuController){
+  tournamentReportsMenuController.menuPopup.addEventListener('click', event => {
+    if(event.target.closest('[role="menuitem"]')) tournamentReportsMenuController.menuBtn.focus();
+  });
+}
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeTrainerBeginnerMenu(){ if(trainerBeginnerMenuController) trainerBeginnerMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }

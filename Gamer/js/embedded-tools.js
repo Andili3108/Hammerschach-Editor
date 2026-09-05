@@ -369,7 +369,7 @@ function updateTournamentReportSwitcher(){
     if(!button)return;
     const active=id===tournamentReportCurrentId;
     button.classList.toggle('active',active);
-    button.setAttribute('aria-pressed',active?'true':'false');
+    if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
   if(tournamentReportToolFrame){
     tournamentReportToolFrame.title='Turnierbericht '+current.title;
