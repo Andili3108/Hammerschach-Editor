@@ -67,7 +67,7 @@
   .actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
   .actions button{min-height:44px;white-space:nowrap;}
   .match-actions{display:flex;flex-direction:row;flex-wrap:nowrap;gap:6px;justify-content:flex-start;align-items:stretch;}
-  .match-actions>button,.match-actions>.header-menu>.header-menu-button{width:auto;min-width:0;font-size:13px;padding:8px 10px;min-height:42px;line-height:1.10;white-space:nowrap;overflow-wrap:normal;border-radius:14px;}
+  .match-actions>button,.match-actions>.header-menu>.header-menu-button,.tournament-report-switcher-content>button,.tournament-report-switcher-content>.header-menu>.header-menu-button{width:auto;min-width:0;font-size:13px;padding:8px 10px;min-height:42px;line-height:1.10;white-space:nowrap;overflow-wrap:normal;border-radius:14px;}
   .match-actions>button,.match-actions>.header-menu{flex:0 0 auto;}
   .match-actions .name-action-btn{min-width:0;}
   .header-direct-action{display:inline-flex;align-items:center;justify-content:center;gap:4px;}
@@ -1300,29 +1300,19 @@
   .learning-tool-view[hidden],.analyzer-tool-view[hidden],.player-tool-view[hidden],.trainer-tool-view[hidden],.mate-school-tool-view[hidden],.schachlabor-tool-view[hidden],.openings-tool-view[hidden],.fairplay-tool-view[hidden],.reader-tool-view[hidden],.tournament-report-tool-view[hidden],.tv-tool-view[hidden],.league-standings-view[hidden]{display:none!important;}
   .learning-tool-frame,.analyzer-tool-frame,.player-tool-frame,.trainer-tool-frame,.mate-school-tool-frame,.schachlabor-tool-frame,.openings-tool-frame,.fairplay-tool-frame,.reader-tool-frame,.tournament-report-tool-frame{display:block;width:100%;height:1120px;min-height:720px;border:0;border-radius:18px;background:transparent;overflow:hidden;}
   .tournament-report-tool-frame{height:clamp(620px,calc(100dvh - 300px),920px);min-height:620px;overflow:auto;box-shadow:0 12px 34px rgba(0,0,0,.08);-webkit-overflow-scrolling:touch;}
-  .tournament-report-switcher{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(132,63,70,.16);border-radius:16px;background:linear-gradient(135deg,#fff 0%,#fbf7f2 100%);box-shadow:0 8px 22px rgba(59,42,45,.08);font-family:Arial,sans-serif;}
+  .tournament-report-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(132,63,70,.16);border-radius:16px;background:linear-gradient(135deg,#fff 0%,#fbf7f2 100%);box-shadow:0 8px 22px rgba(59,42,45,.08);}
   .tournament-report-switcher-title{display:inline-flex;align-items:center;gap:8px;color:#6a3239;font-size:14px;white-space:nowrap;}
-  .tournament-report-switcher-content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0;width:400px;max-width:100%;}
-  .tournament-report-switcher-content .tournament-report-switcher-btn{width:100%;min-width:0;justify-content:space-between;white-space:nowrap;}
-  .tournament-reports-menu .header-menu-popup{left:auto;right:0;transform:none;width:300px;max-width:calc(100vw - 48px);}
+  .tournament-report-switcher-content{grid-column:2;display:flex;align-items:stretch;justify-content:center;flex-wrap:wrap;gap:6px;min-width:0;max-width:100%;justify-self:center;}
+  .tournament-report-switcher-content>.header-menu{width:auto;}
+  .tournament-reports-menu .header-menu-popup{width:280px;max-width:calc(100vw - 48px);}
   .tournament-reports-menu .header-menu-item{white-space:normal!important;line-height:1.35!important;}
-  .tournament-reports-menu .header-menu-item.active{background:#f5e5e7!important;color:#6a3239!important;border-color:#b77981!important;font-weight:900;}
-  .tournament-report-switcher-btn{flex:0 0 auto;min-height:38px;padding:7px 12px;border:1px solid rgba(132,63,70,.16);border-radius:11px;background:#f0ece7;color:#5d4d45;font-family:Arial,sans-serif;font-size:13px;font-weight:900;cursor:pointer;box-shadow:none;}
-  .tournament-report-switcher-btn:hover{border-color:rgba(132,63,70,.38);background:#f7f1ec;}
-  .tournament-report-switcher-btn.active{border-color:#843f46;background:linear-gradient(135deg,#843f46,#a6535d);color:#fff;}
-  .tournament-report-switcher-btn:disabled{cursor:not-allowed;opacity:.48;filter:grayscale(1);}
-  .tournament-report-switcher-btn:disabled:hover{border-color:rgba(132,63,70,.16);background:#f0ece7;}
+  .tournament-reports-menu .header-menu-item[aria-current="page"]::after{content:'✓';margin-left:auto;padding-left:8px;}
   html.dark-mode .tournament-report-switcher{border-color:#4b4145;background:linear-gradient(135deg,#25272c,#202227);box-shadow:0 8px 22px rgba(0,0,0,.22);}
   html.dark-mode .tournament-report-switcher-title{color:#efc1c7;}
-  html.dark-mode .tournament-report-switcher-btn{border-color:#4b4145;background:#32343a;color:#eee;}
-  html.dark-mode .tournament-report-switcher-btn.active{border-color:#dda1a9;background:linear-gradient(135deg,#914b54,#71343c);color:#fff;}
-  html.dark-mode .tournament-report-switcher-btn:disabled:hover{border-color:#4b4145;background:#32343a;}
-  html.dark-mode .tournament-reports-menu .header-menu-item.active{background:#493137!important;color:#f6d5da!important;border-color:#ae7480!important;}
   @media (max-width:760px){
-    .tournament-report-switcher{align-items:flex-start;flex-direction:column;gap:7px;margin-bottom:8px;padding:9px;}
-    .tournament-report-switcher-content{gap:7px;width:100%;}
-    .tournament-report-switcher-btn{min-height:42px;padding:7px 8px;font-size:12px;}
-    .tournament-reports-menu .header-menu-popup{left:0;right:auto;}
+    .tournament-report-switcher{grid-template-columns:minmax(0,1fr);gap:9px;margin-bottom:8px;padding:9px;}
+    .tournament-report-switcher-content{grid-column:1;}
+    .tournament-reports-menu .header-menu-popup{left:0;right:auto;transform:none;}
   }
   .tv-stage{overflow:visible;padding:0;background:transparent;border:0;box-shadow:none;}
   .tv-content{padding:0;}
