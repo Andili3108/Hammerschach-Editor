@@ -1,0 +1,45 @@
+.board-size-wrap{position:relative;width:auto;display:flex;justify-content:center;}
+.board-size-wrap[hidden],.compact-board-size-btn[hidden],.board-size-popup[hidden]{display:none!important;}
+.board-size-btn[aria-expanded="true"],.compact-board-size-btn[aria-expanded="true"]{box-shadow:0 0 0 3px rgba(132,63,70,.16),0 8px 18px rgba(0,0,0,.14)!important;}
+.board-size-popup{position:fixed;z-index:4800;width:min(340px,calc(100vw - 24px));box-sizing:border-box;padding:14px;border:1px solid rgba(132,63,70,.22);border-radius:16px;background:rgba(255,255,255,.98);box-shadow:0 20px 48px rgba(0,0,0,.28);white-space:normal;overflow-wrap:anywhere;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);}
+.board-size-popup-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:11px;color:#222;font-size:18px;}
+.board-size-close-btn{display:grid!important;place-items:center;width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;padding:0!important;border-radius:10px!important;font-size:20px!important;line-height:1!important;}
+.board-size-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+.board-size-preset{min-width:0!important;min-height:36px!important;padding:6px 7px!important;border-radius:10px!important;font-size:11px!important;white-space:nowrap;}
+.board-size-preset.active{background:linear-gradient(135deg,#843f46,#a96970)!important;border-color:#843f46!important;color:#fff!important;}
+.board-size-slider-row{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;align-items:center;gap:9px;margin-top:13px;}
+.board-size-slider-row input{width:100%;margin:0;accent-color:#843f46;cursor:pointer;}
+.board-size-step-btn{display:grid!important;place-items:center;width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;padding:0!important;border-radius:11px!important;font-size:22px!important;line-height:1!important;}
+.board-size-reading{display:flex;justify-content:space-between;gap:10px;margin-top:9px;color:#555;font-size:12px;font-weight:800;line-height:1.3;}
+.board-size-reading strong{color:#843f46;}
+.board-size-effective{color:#6b6f75;}
+.board-size-hint{min-width:0;max-width:100%;margin:9px 0 11px;color:#666;font-size:11px;font-weight:700;line-height:1.4;white-space:normal;overflow-wrap:anywhere;}
+.board-size-reset-btn{width:100%!important;min-height:36px!important;padding:7px 10px!important;border-radius:11px!important;font-size:12px!important;}
+.compact-board-size-btn{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;display:grid!important;place-items:center;padding:0!important;border-radius:12px!important;background:linear-gradient(135deg,#f7f2e9,#ead9bd)!important;border-color:rgba(132,63,70,.20)!important;color:#843f46!important;font:900 21px/1 Arial,sans-serif!important;}
+
+html.dark-mode .board-size-popup{border-color:rgba(255,255,255,.12);background:rgba(32,35,41,.98);box-shadow:0 20px 48px rgba(0,0,0,.48);}
+html.dark-mode .board-size-popup-head{color:#f3f4f6;}
+html.dark-mode .board-size-reading,html.dark-mode .board-size-hint{color:#b9bec6;}
+html.dark-mode .board-size-reading strong{color:#efb5bc;}
+html.dark-mode .compact-board-size-btn{background:linear-gradient(135deg,#353039,#2b2f35)!important;border-color:rgba(255,255,255,.12)!important;color:#f3d59a!important;}
+
+/* Standalone tools and embedded tools share the same controls. */
+[data-board-size-tool] .board-size-btn{width:40px;min-width:40px;height:40px;padding:0;display:grid;place-items:center;border:1px solid rgba(132,63,70,.22);border-radius:11px;background:#f4f4f5;color:#843f46;font:900 21px/1 Arial,sans-serif;cursor:pointer}
+[data-board-size-tool] .board-size-popup{font-family:Arial,sans-serif;text-align:left;line-height:1.4}
+[data-board-size-tool] .board-size-popup button{cursor:pointer;border:1px solid rgba(132,63,70,.22);background:#f4f4f5;color:#843f46;font-family:Arial,sans-serif;font-weight:700}
+[data-board-size-tool] .board-size-popup button:disabled{opacity:.4;cursor:default}
+[data-board-size-tool].dark-mode .board-size-popup button,[data-board-size-tool].dark-mode .board-size-btn{background:#353039;color:#f3d59a;border-color:rgba(255,255,255,.16)}
+[data-board-size-tool]:not(.shared-desktop-board) .board-size-wrap{display:none!important}
+/* Remove the old independent desktop caps. Mobile layouts retain their own rules. */
+[data-board-size-tool].shared-desktop-board :is(.analyzer-shell,.trainer-shell,.player-shell,.reader-shell){max-width:calc(var(--board-max) + 340px)}
+[data-board-size-tool="openings"].shared-desktop-board .tool-layout{width:min(calc(var(--board-max) + 340px),100%)}
+[data-board-size-tool="schachlabor"].shared-desktop-board .labor-shell{width:min(calc(var(--board-max) + 340px),100%)}
+[data-board-size-tool="schachlabor"].shared-desktop-board .board-column{max-width:var(--board-max)}
+/* The lesson text goes below its large diagram; chapters remain alongside it. */
+[data-board-size-tool="mate-school"].shared-desktop-board .school-shell{width:min(calc(var(--board-max) + 340px),100%)}
+[data-board-size-tool="mate-school"].shared-desktop-board .lesson-grid{grid-template-columns:minmax(0,1fr)}
+[data-board-size-tool="mate-school"].shared-desktop-board .diagram-card{width:100%;max-width:calc(var(--board-max) + 28px)}
+/* Give the analysis board a full row with engine information beside it. */
+[data-board-size-tool="fairplay"].shared-desktop-board .fairplay-app{max-width:calc(var(--board-max) + 340px);margin-inline:auto}
+[data-board-size-tool="fairplay"].shared-desktop-board .workspace{grid-template-columns:minmax(0,1fr)}
+[data-board-size-tool="fairplay"].shared-desktop-board .analysis-shell{grid-template-columns:minmax(0,var(--board-max)) 280px}
