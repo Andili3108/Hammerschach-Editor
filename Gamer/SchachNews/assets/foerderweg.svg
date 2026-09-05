@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" role="img" aria-labelledby="title desc">
+<title id="title">Vom Schulbrett zur Weltspitze</title><desc id="desc">Vier aufsteigende Stationen verbinden Schule, Verein, Talentförderung und Weltspitze. Schematische Illustration, kein garantierter Karriereweg.</desc>
+<defs><pattern id="board" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#fff" opacity=".07"/><rect x="40" y="40" width="40" height="40" fill="#fff" opacity=".07"/></pattern></defs>
+<rect x="20" y="25" width="760" height="450" rx="35" fill="url(#board)"/>
+<path d="M100 390H245V295H420V195H610V85" fill="none" stroke="#f0d9b5" stroke-width="5" stroke-dasharray="8 9"/>
+<g fill="#f7f4f0" stroke="#f0d9b5" stroke-width="3">
+<circle cx="100" cy="390" r="37"/><circle cx="245" cy="295" r="37"/><circle cx="420" cy="195" r="37"/><circle cx="610" cy="85" r="37"/>
+</g>
+<g fill="#843f46" font-family="Georgia,serif" font-size="37" font-weight="bold" text-anchor="middle">
+<text x="100" y="403">1</text><text x="245" y="308">2</text><text x="420" y="208">3</text><text x="610" y="98">4</text>
+</g>
+<g fill="#fff" font-family="Georgia,serif" font-size="25" text-anchor="middle">
+<text x="100" y="455">Schule</text><text x="245" y="360">Verein</text><text x="430" y="260">Talentförderung</text><text x="625" y="150">Weltspitze</text>
+</g>
+</svg>
