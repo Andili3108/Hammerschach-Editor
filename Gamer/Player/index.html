@@ -435,7 +435,7 @@
 }
 
 </style>
-<link rel="stylesheet" href="player.css?v=20260904-1" />
+<link rel="stylesheet" href="player.css?v=20260905-1" />
 </head>
 <body>
 <main class="player-shell" role="main">
@@ -458,9 +458,9 @@
           <button id="boardNavForward" class="button-flat" type="button" title="Einen Zug vor" aria-label="Einen Zug vor">›</button>
           <button id="boardNavEnd" class="button-flat" type="button" title="Zum Ende" aria-label="Zum Ende">»</button>
         </div>
-        <button id="btnFlip" class="button-flat icon-btn" type="button" title="Brett drehen" aria-label="Brett drehen">↻</button>
+        <button id="btnFlip" class="button-flat icon-btn" type="button" title="Brett drehen" aria-label="Brett drehen"><span class="icon-label">↻</span></button>
         <div class="board-color-wrap" id="boardColorWrap">
-          <button id="btnBoardColor" class="button-flat icon-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe">🎨</button>
+          <button id="btnBoardColor" class="button-flat icon-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe"><span class="icon-label">🎨</span></button>
           <div id="boardColorPopup" class="board-color-popup" hidden>
             <div class="board-color-popup-title">Brettfarbe wählen</div>
             <div class="board-color-options">
@@ -475,7 +475,7 @@
           </div>
         </div>
         <div class="board-color-wrap" id="pieceSetWrap">
-          <button id="btnPieceSet" class="button-flat icon-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Figurensatz" aria-label="Figurensatz">♞</button>
+          <button id="btnPieceSet" class="button-flat icon-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Figurensatz" aria-label="Figurensatz"><span class="icon-label">♞</span></button>
           <div id="pieceSetPopup" class="board-color-popup" hidden>
             <div class="board-color-popup-title">Figurensatz wählen</div>
             <div class="board-color-options">
@@ -489,8 +489,7 @@
             <div class="board-color-current">Aktuell: <span id="pieceSetCurrent">Cburnett · Standard</span></div>
           </div>
         </div>
-        <button id="soundToggleBtn" class="button-flat icon-btn sound-btn" type="button" aria-pressed="true" title="Töne ausschalten" aria-label="Töne ausschalten">🔊</button>
-        <button id="newGameBtn" class="primary-btn" type="button">♟️ Neue Partie</button>
+        <button id="soundToggleBtn" class="button-flat icon-btn sound-btn" type="button" aria-pressed="true" title="Töne ausschalten" aria-label="Töne ausschalten"><span class="icon-label">🔊</span></button>
       </div>
 
       <div id="playerClockCard" class="clock-card">
@@ -1182,7 +1181,9 @@ function updateNavControls(){
   navBackBtn.disabled    = (total === 0 || current === 0);
   navForwardBtn.disabled = (total === 0 || current === total);
   navEndBtn.disabled     = (total === 0 || current === total);
-  [['boardNavStart',navStartBtn.disabled],['boardNavBack',navBackBtn.disabled],['boardNavForward',navForwardBtn.disabled],['boardNavEnd',navEndBtn.disabled]].forEach(([id,disabled])=>{const button=document.getElementById(id);if(button)button.disabled=disabled;});
+  // Wie im Analyzer bleiben die Bedienelemente unter dem Brett optisch aktiv.
+  // Ohne passende Zielstellung bewirken ihre gekoppelten Aktionen einfach nichts.
+  ['boardNavStart','boardNavBack','boardNavForward','boardNavEnd'].forEach(id=>{const button=document.getElementById(id);if(button)button.disabled=false;});
   const infoEl = document.getElementById('movesInfo');
   if(infoEl){
     infoEl.textContent = total === 0 ? '0/0' : `${current}/${total}`;
@@ -2155,7 +2156,7 @@ document.querySelectorAll('[data-board-color]').forEach(button=>button.addEventL
 document.querySelectorAll('[data-piece-set]').forEach(button=>button.addEventListener('click',()=>{applyPieceSet(button.dataset.pieceSet);document.getElementById('pieceSetPopup').hidden=true;}));
 
 const soundToggleBtn=document.getElementById('soundToggleBtn');
-function updateSoundButton(){soundToggleBtn.textContent=soundEnabled?'🔊':'🔇';soundToggleBtn.setAttribute('aria-pressed',soundEnabled?'true':'false');soundToggleBtn.title=soundEnabled?'Töne ausschalten':'Töne einschalten';soundToggleBtn.setAttribute('aria-label',soundToggleBtn.title);}
+function updateSoundButton(){const label=soundToggleBtn.querySelector('.icon-label')||soundToggleBtn;label.textContent=soundEnabled?'🔊':'🔇';soundToggleBtn.setAttribute('aria-pressed',soundEnabled?'true':'false');soundToggleBtn.title=soundEnabled?'Töne ausschalten':'Töne einschalten';soundToggleBtn.setAttribute('aria-label',soundToggleBtn.title);}
 soundToggleBtn.addEventListener('click',()=>{soundEnabled=!soundEnabled;try{localStorage.setItem('hammerschachSoundEnabled',soundEnabled?'true':'false');}catch(_){ }updateSoundButton();if(soundEnabled)safePlay(sndPickup);});
 
 function restorePlayerSettings(){
