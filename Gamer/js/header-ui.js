@@ -127,11 +127,17 @@ const tournamentReportsMenuController = registerHeaderMenu(
   document.getElementById('tournamentReportsMenuPopup'),
   'Turnierberichte'
 );
-if(tournamentReportsMenuController){
-  tournamentReportsMenuController.menuPopup.addEventListener('click', event => {
-    if(event.target.closest('[role="menuitem"]')) tournamentReportsMenuController.menuBtn.focus();
+const schachNewsMenuController = registerHeaderMenu(
+  document.getElementById('schachNewsMenu'),
+  document.getElementById('schachNewsCategoryBtn'),
+  document.getElementById('schachNewsMenuPopup'),
+  'Schach-News'
+);
+[tournamentReportsMenuController, schachNewsMenuController].filter(Boolean).forEach(controller => {
+  controller.menuPopup.addEventListener('click', event => {
+    if(event.target.closest('[role="menuitem"]')) controller.menuBtn.focus();
   });
-}
+});
 function closeNewGameMenu(){ if(newGameMenuController) newGameMenuController.close(); }
 function closeTrainerBeginnerMenu(){ if(trainerBeginnerMenuController) trainerBeginnerMenuController.close(); }
 function closeGamesMenu(){ if(gamesMenuController) gamesMenuController.close(); }

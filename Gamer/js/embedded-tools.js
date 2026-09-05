@@ -23,6 +23,8 @@ let fairplayToolFrameStarted = false;
 let readerToolFrameStarted = false;
 let tournamentReportToolFrameStarted = false;
 let tournamentReportCurrentId = 'unna-open-2025';
+let schachCurrentCategory = 'reports';
+let schachNewsCurrentId = 'schulbrett-weltspitze';
 let learningToolLastOpenAt = 0;
 let analyzerToolLastOpenAt = 0;
 let playerToolLastOpenAt = 0;
@@ -47,6 +49,20 @@ const TOURNAMENT_REPORTS = Object.freeze({
   'unna-open-2025':{title:'Unna Open 2025',src:'./Turnierberichte/unna-open-2025/?embedded=1'},
   'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1'}
 });
+const SCHACH_NEWS = Object.freeze({
+  'schulbrett-weltspitze':{title:'Vom Schulbrett zur Weltspitze',src:'./SchachNews/schulbrett-weltspitze.html'},
+  'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html'}
+});
+const SCHACH_CURRENT_STORAGE_KEY = 'hammerschachSchachAktuellSelectionV1';
+try{
+  const saved=JSON.parse(sessionStorage.getItem(SCHACH_CURRENT_STORAGE_KEY)||'null');
+  if(saved && Object.hasOwn(TOURNAMENT_REPORTS,saved.reportId)) tournamentReportCurrentId=saved.reportId;
+  if(saved && Object.hasOwn(SCHACH_NEWS,saved.newsId)) schachNewsCurrentId=saved.newsId;
+  if(saved && saved.category==='news') schachCurrentCategory='news';
+}catch(_){}
+function currentSchachArticle(){
+  return schachCurrentCategory==='news' ? SCHACH_NEWS[schachNewsCurrentId] : TOURNAMENT_REPORTS[tournamentReportCurrentId];
+}
 const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
@@ -105,7 +121,7 @@ function embeddedToolStatusText(){
   if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
   if(tvToolActive) return 'Hammerschach - TV';
   if(fairplayToolActive) return 'Hammerschach - Fairplay-Prüfung';
-  if(tournamentReportToolActive) return 'Turnierbericht '+(TOURNAMENT_REPORTS[tournamentReportCurrentId]||TOURNAMENT_REPORTS['unna-open-2025']).title;
+  if(tournamentReportToolActive) return (schachCurrentCategory==='news'?'Schach-News · ':'Turnierbericht ')+currentSchachArticle().title;
   if(readerToolActive) return 'Hammerschach - Partienarchiv';
   if(openingsToolActive) return 'Hammerschach - Eröffnungsschule';
   if(mateSchoolToolActive) return 'Hammerschach - Mattbilder-Schule';
@@ -364,27 +380,43 @@ function postTournamentReportToolContext(){
   });
 }
 function updateTournamentReportSwitcher(){
-  const current=TOURNAMENT_REPORTS[tournamentReportCurrentId]||TOURNAMENT_REPORTS['unna-open-2025'];
+  const current=currentSchachArticle();
   [[tournamentReportUnnaBtn,'unna-open-2025'],[tournamentReportQuickBtn,'quick-round-robin-2026']].forEach(([button,id])=>{
     if(!button)return;
-    const active=id===tournamentReportCurrentId;
+    const active=schachCurrentCategory==='reports' && id===tournamentReportCurrentId;
     button.classList.toggle('active',active);
     if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
+  document.querySelectorAll('[data-schach-news-id]').forEach(button=>{
+    const active=schachCurrentCategory==='news' && button.dataset.schachNewsId===schachNewsCurrentId;
+    if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+  });
   if(tournamentReportToolFrame){
-    tournamentReportToolFrame.title='Turnierbericht '+current.title;
+    tournamentReportToolFrame.title=(schachCurrentCategory==='news'?'Schach-News · ':'Turnierbericht ')+current.title;
     tournamentReportToolFrame.dataset.src=current.src;
   }
-  if(tournamentReportToolView)tournamentReportToolView.setAttribute('aria-label','Schach aktuell – Turnierbericht '+current.title);
+  if(tournamentReportToolView)tournamentReportToolView.setAttribute('aria-label','Schach aktuell – '+current.title);
 }
 function selectTournamentReport(reportId){
-  if(!TOURNAMENT_REPORTS[reportId])return;
-  const changed=tournamentReportCurrentId!==reportId;
+  if(!Object.hasOwn(TOURNAMENT_REPORTS,reportId))return;
+  const changed=schachCurrentCategory!=='reports'||tournamentReportCurrentId!==reportId;
+  schachCurrentCategory='reports';
   tournamentReportCurrentId=reportId;
+  loadCurrentSchachArticle(changed);
+}
+function selectSchachNews(newsId){
+  if(!Object.hasOwn(SCHACH_NEWS,newsId))return;
+  const changed=schachCurrentCategory!=='news'||schachNewsCurrentId!==newsId;
+  schachCurrentCategory='news';
+  schachNewsCurrentId=newsId;
+  loadCurrentSchachArticle(changed);
+}
+function loadCurrentSchachArticle(changed){
+  try{sessionStorage.setItem(SCHACH_CURRENT_STORAGE_KEY,JSON.stringify({category:schachCurrentCategory,reportId:tournamentReportCurrentId,newsId:schachNewsCurrentId}));}catch(_){}
   updateTournamentReportSwitcher();
   if(tournamentReportToolFrame&&tournamentReportToolActive&&(changed||!tournamentReportToolFrameStarted)){
     tournamentReportToolFrameStarted=true;
-    tournamentReportToolFrame.src=TOURNAMENT_REPORTS[reportId].src;
+    tournamentReportToolFrame.src=currentSchachArticle().src;
   }
   if(tournamentReportToolActive&&statusEl)statusEl.textContent=embeddedToolStatusText();
 }
@@ -683,6 +715,7 @@ if(readerToolBtn)readerToolBtn.addEventListener('click',openReaderToolDebounced)
 if(tournamentReportToolBtn)tournamentReportToolBtn.addEventListener('click',openTournamentReportToolDebounced);
 if(tournamentReportUnnaBtn)tournamentReportUnnaBtn.addEventListener('click',()=>selectTournamentReport('unna-open-2025'));
 if(tournamentReportQuickBtn)tournamentReportQuickBtn.addEventListener('click',()=>selectTournamentReport('quick-round-robin-2026'));
+document.querySelectorAll('[data-schach-news-id]').forEach(button=>button.addEventListener('click',()=>selectSchachNews(button.dataset.schachNewsId)));
 if(tvToolBtn)tvToolBtn.addEventListener('click',openTvToolDebounced);
 if(leagueStandingsToolBtn)leagueStandingsToolBtn.addEventListener('click',openLeagueStandingsToolDebounced);
 if(learningToolFrame)learningToolFrame.addEventListener('load',()=>{
@@ -758,6 +791,10 @@ window.addEventListener('message',async event=>{
     return;
   }
   if(fromTournamentReport){
+    if(message.type==='hammerschach-news-select' && schachCurrentCategory==='news'){
+      selectSchachNews(message.newsId);
+      return;
+    }
     if(message.type==='hammerschach-tournament-report-return'){
       closeEmbeddedTools();
       requestAnimationFrame(()=>{
