@@ -34,6 +34,10 @@ function updateSiteFootnotePlacement(){
     if(siteFootnoteEl.parentNode!==readerToolView)readerToolView.appendChild(siteFootnoteEl);
     return;
   }
+  if(mediathekToolActive&&mediathekToolView){
+    if(siteFootnoteEl.parentNode!==mediathekToolView)mediathekToolView.appendChild(siteFootnoteEl);
+    return;
+  }
   if(tournamentReportToolActive&&tournamentReportToolView){
     if(siteFootnoteEl.parentNode!==tournamentReportToolView)tournamentReportToolView.appendChild(siteFootnoteEl);
     return;
@@ -184,6 +188,7 @@ function setDarkMode(enabled){
   postOpeningsToolContext();
   postReaderToolContext();
   postTournamentReportToolContext();
+  postMediathekToolContext();
   postFairplayToolContext();
   hammerschachScheduleHeightReport(true);
 }

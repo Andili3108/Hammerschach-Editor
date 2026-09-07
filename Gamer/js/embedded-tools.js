@@ -63,7 +63,7 @@ try{
 function currentSchachArticle(){
   return schachCurrentCategory==='news' ? SCHACH_NEWS[schachNewsCurrentId] : TOURNAMENT_REPORTS[tournamentReportCurrentId];
 }
-const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','tv','league-standings']);
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','mediathek','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -114,9 +114,10 @@ function memberEmbeddedToolActive(){
   return analyzerToolActive || playerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive;
 }
 function embeddedToolActive(){
-  return learningToolActive || memberEmbeddedToolActive();
+  return learningToolActive || mediathekToolActive || memberEmbeddedToolActive();
 }
 function embeddedToolStatusText(){
+  if(mediathekToolActive) return 'Mediathek · '+mediathekSelectionTitle();
   if(learningToolActive) return 'Hammerschach - Schach lernen';
   if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
   if(tvToolActive) return 'Hammerschach - TV';
@@ -144,11 +145,13 @@ function updateAnalyzerToolAvailability(){
   const leagueStandingsNavigable = leagueStandingsToolNavigable();
   const readerAvailable = readerToolAvailable();
   const readerNavigable = readerToolNavigable();
+  const mediathekAvailable = mediathekToolAvailable();
+  const mediathekNavigable = mediathekToolNavigable();
   const tournamentReportAvailable = tournamentReportToolAvailable();
   const tournamentReportNavigable = tournamentReportToolNavigable();
   const fairplayAvailable = available && !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
-  if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && learningToolActive) || (!trainerAvailable && trainerToolActive) || (!mateSchoolAvailable && mateSchoolToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive) || (!readerAvailable && readerToolActive) || (!tournamentReportAvailable && tournamentReportToolActive)) setEmbeddedToolActive('');
+  if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && learningToolActive) || (!trainerAvailable && trainerToolActive) || (!mateSchoolAvailable && mateSchoolToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive) || (!readerAvailable && readerToolActive) || (!tournamentReportAvailable && tournamentReportToolActive) || (!mediathekAvailable && mediathekToolActive)) setEmbeddedToolActive('');
   if(!fairplayAvailable && fairplayToolActive) setEmbeddedToolActive('');
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
   if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Hammerschach-Grundkurs öffnen':'Spielraum verlassen und den Hammerschach-Grundkurs öffnen';}
@@ -161,16 +164,17 @@ function updateAnalyzerToolAvailability(){
   if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer-TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer-TV'));}
   if(readerToolBtn){readerToolBtn.hidden=!readerNavigable;readerToolBtn.title=readerAvailable?'Partienarchiv öffnen':'Spielraum verlassen und das Partienarchiv öffnen';}
   if(tournamentReportToolBtn){tournamentReportToolBtn.hidden=!tournamentReportNavigable;tournamentReportToolBtn.title=tournamentReportAvailable?'Schach aktuell öffnen':'Spielraum verlassen und Schach aktuell öffnen';}
+  if(mediathekToolBtn){mediathekToolBtn.hidden=!mediathekNavigable;mediathekToolBtn.title=mediathekAvailable?'Mediathek öffnen':'Spielraum verlassen und die Mediathek öffnen';}
   if(leagueStandingsToolBtn){leagueStandingsToolBtn.hidden=!leagueStandingsNavigable;leagueStandingsToolBtn.title=leagueStandingsAvailable?'Ergebnisdienst öffnen':'Spielraum verlassen und den Ergebnisdienst öffnen';}
   if(toolsMenuEl){
     toolsMenuEl.hidden = !navigable && !learningNavigable && !trainerNavigable && !mateSchoolNavigable;
     if(toolsMenuEl.hidden) closeToolsMenu();
   }
   if(clubChessMenuEl){
-    clubChessMenuEl.hidden = !leagueStandingsNavigable && !readerNavigable && !tournamentReportNavigable;
+    clubChessMenuEl.hidden = !leagueStandingsNavigable && !readerNavigable && !tournamentReportNavigable && !mediathekNavigable;
     if(clubChessMenuEl.hidden) closeClubChessMenu();
   }
-  if(available || learningAvailable || trainerAvailable || mateSchoolAvailable || leagueStandingsAvailable || readerAvailable || tournamentReportAvailable){
+  if(available || learningAvailable || trainerAvailable || mateSchoolAvailable || leagueStandingsAvailable || readerAvailable || tournamentReportAvailable || mediathekAvailable){
     let pending='';
     let remembered='';
     try{
@@ -178,7 +182,7 @@ function updateAnalyzerToolAvailability(){
       remembered=String(sessionStorage.getItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY)||'');
       sessionStorage.removeItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY);
     }catch(_){}
-    const canRestore=tool=>tool==='learning'?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='mate-school'?mateSchoolAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(tool==='tournament-report'?tournamentReportAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))))));
+    const canRestore=tool=>tool==='mediathek'?mediathekAvailable:tool==='learning'?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='mate-school'?mateSchoolAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(tool==='tournament-report'?tournamentReportAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))))));
     const restorePending=NAVIGABLE_EMBEDDED_TOOLS.has(pending)&&canRestore(pending)?pending:'';
     const restoreRemembered=!embeddedToolActive()&&RESTORABLE_EMBEDDED_TOOLS.has(remembered)&&
       canRestore(remembered)&&(remembered!=='fairplay'||fairplayAvailable)?remembered:'';
@@ -425,7 +429,8 @@ function setEmbeddedToolActive(toolName){
   const trainerWasActive=trainerToolActive;
   const fairplayAllowed=!!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   let requested='';
-  if(toolName==='learning'&&learningToolAvailable())requested='learning';
+  if(toolName==='mediathek'&&mediathekToolAvailable())requested='mediathek';
+  else if(toolName==='learning'&&learningToolAvailable())requested='learning';
   else if(toolName==='trainer'&&trainerToolAvailable())requested='trainer';
   else if(toolName==='mate-school'&&mateSchoolToolAvailable())requested='mate-school';
   else if(toolName==='league-standings'&&leagueStandingsToolAvailable())requested='league-standings';
@@ -443,6 +448,8 @@ function setEmbeddedToolActive(toolName){
     if(requested)sessionStorage.setItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY,requested);
     else sessionStorage.removeItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY);
   }catch(_){}
+  const mediathekWasActive=mediathekToolActive;
+  mediathekToolActive=requested==='mediathek';
   learningToolActive=requested==='learning';
   analyzerToolActive=requested==='analyzer';
   playerToolActive=requested==='player';
@@ -457,6 +464,7 @@ function setEmbeddedToolActive(toolName){
   tvToolActive=requested==='tv';
   const leagueStandingsWasActive=leagueStandingsToolActive;
   leagueStandingsToolActive=requested==='league-standings';
+  document.documentElement.classList.toggle('mediathek-tool-active',mediathekToolActive);
   document.documentElement.classList.toggle('learning-tool-active',learningToolActive);
   document.documentElement.classList.toggle('analyzer-tool-active',analyzerToolActive);
   document.documentElement.classList.toggle('player-tool-active',playerToolActive);
@@ -470,6 +478,7 @@ function setEmbeddedToolActive(toolName){
   document.documentElement.classList.toggle('tv-tool-active',tvToolActive);
   document.documentElement.classList.toggle('league-standings-tool-active',leagueStandingsToolActive);
   updateTrainerHeaderActions();
+  if(mediathekToolView)mediathekToolView.hidden=!mediathekToolActive;
   if(learningToolView)learningToolView.hidden=!learningToolActive;
   if(analyzerToolView)analyzerToolView.hidden=!analyzerToolActive;
   if(playerToolView)playerToolView.hidden=!playerToolActive;
@@ -488,6 +497,18 @@ function setEmbeddedToolActive(toolName){
     closeGamesMenu();
     closeToolsMenu();
   }
+  if(mediathekToolActive && mediathekToolFrame && !mediathekToolFrameStarted){
+    updateMediathekSelection();
+    mediathekToolFrameReady=false;
+    mediathekToolFrameStarted=true;
+    mediathekToolFrame.src=mediathekToolFrame.dataset.src;
+  }else if(mediathekWasActive && !mediathekToolActive && mediathekToolFrame){
+    // Entfernen beendet auch Ton und Videos beim Verlassen sofort.
+    mediathekToolFrame.removeAttribute('src');
+    mediathekToolFrameStarted=false;
+    mediathekToolFrameReady=false;
+  }
+  if(mediathekToolActive)postMediathekToolContext();
   updateSiteFootnotePlacement();
   if(learningToolActive&&learningToolFrame&&!learningToolFrameStarted){
     learningToolFrameStarted=true;
@@ -598,8 +619,8 @@ function openEmbeddedToolFromCurrentContext(toolName){
   const isLeagueStandings=requested==='league-standings';
   const isReader=requested==='reader';
   const isTournamentReport=requested==='tournament-report';
-  const navigable=isLearning?learningToolNavigable():(isTrainer?trainerToolNavigable():(isMateSchool?mateSchoolToolNavigable():(isLeagueStandings?leagueStandingsToolNavigable():(isReader?readerToolNavigable():(isTournamentReport?tournamentReportToolNavigable():embeddedToolsNavigable())))));
-  const available=isLearning?learningToolAvailable():(isTrainer?trainerToolAvailable():(isMateSchool?mateSchoolToolAvailable():(isLeagueStandings?leagueStandingsToolAvailable():(isReader?readerToolAvailable():(isTournamentReport?tournamentReportToolAvailable():embeddedToolsAvailable())))));
+  const navigable=requested==='mediathek'?mediathekToolNavigable():isLearning?learningToolNavigable():(isTrainer?trainerToolNavigable():(isMateSchool?mateSchoolToolNavigable():(isLeagueStandings?leagueStandingsToolNavigable():(isReader?readerToolNavigable():(isTournamentReport?tournamentReportToolNavigable():embeddedToolsNavigable())))));
+  const available=requested==='mediathek'?mediathekToolAvailable():isLearning?learningToolAvailable():(isTrainer?trainerToolAvailable():(isMateSchool?mateSchoolToolAvailable():(isLeagueStandings?leagueStandingsToolAvailable():(isReader?readerToolAvailable():(isTournamentReport?tournamentReportToolAvailable():embeddedToolsAvailable())))));
   if(!requested||!navigable)return;
   if(available){
     setEmbeddedToolActive(requested);
