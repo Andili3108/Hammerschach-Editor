@@ -35,7 +35,7 @@ function updateMediathekSelection(){
   });
   if(mediathekToolFrame){
     mediathekToolFrame.title='Mediathek · '+mediathekSelectionTitle();
-    mediathekToolFrame.dataset.src='./Mediathek/?v=20260907-1#'+mediathekSelection;
+    mediathekToolFrame.dataset.src='./Mediathek/?v=20260907-2#'+mediathekSelection;
   }
   if(mediathekToolView)mediathekToolView.setAttribute('aria-label','Mediathek – '+mediathekSelectionTitle());
 }
