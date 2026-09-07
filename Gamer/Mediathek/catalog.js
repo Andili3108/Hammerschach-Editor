@@ -11,7 +11,7 @@ window.HAMMERSCHACH_MEDIATHEK = {
   entries: [
     {
       id:'bauernopfer',category:'filme',title:'Bauernopfer – Spiel der Könige',format:'Spielfilm · Trailer',
-      source:'bauernopfer-spiel-der-koenige',
+      
       lead:'Bobby Fischer und Boris Spasski: Ein Weltmeisterschaftskampf unter dem Druck des Kalten Krieges.',
       paragraphs:[
         'Der Film führt nach Reykjavík ins Jahr 1972. Bobby Fischer fordert Boris Spasski heraus, während die Öffentlichkeit in ihrem Duell weit mehr als einen sportlichen Wettkampf sieht. Vorbereitung, Rivalität und politischer Erwartungsdruck bestimmen das Geschehen.',
@@ -22,17 +22,17 @@ window.HAMMERSCHACH_MEDIATHEK = {
       videos:[['0ku4i19g2Gs','Bauernopfer – Spiel der Könige · Trailer']]
     },
     {
-      id:'die-schachspielerin',category:'filme',title:'Die Schachspielerin',format:'Spielfilm',source:'die-schachspielerin',
+      id:'die-schachspielerin',category:'filme',title:'Die Schachspielerin',format:'Spielfilm',
       lead:'Eine zufällige Begegnung mit dem Schach verändert Hélènes Alltag und eröffnet ihr neue Möglichkeiten.',
       paragraphs:[
         'Hélène entdeckt das Schachspiel und findet darin eine Herausforderung, die sie nicht mehr loslässt. Aus Neugier wird Ehrgeiz: Sie beginnt zu trainieren, erlebt Rückschläge und gewinnt mit ihren Fortschritten neues Selbstvertrauen.',
         'Das französisch-deutsche Drama von Caroline Bottaro stammt aus dem Jahr 2009. Sandrine Bonnaire und Kevin Kline spielen die Hauptrollen. Im Mittelpunkt stehen Hélènes Entwicklung und die Unterstützung durch einen erfahrenen Mentor.',
-        'Der ruhige Film erzählt vom Mut, etwas Neues zu beginnen und sich eine eigene Leidenschaft zu erlauben. Die auf Andili ausgewählte deutschsprachige Filmfassung ist unten eingebunden.'
+        'Der ruhige Film erzählt vom Mut, etwas Neues zu beginnen und sich eine eigene Leidenschaft zu erlauben. Die deutschsprachige Filmfassung ist unten eingebunden.'
       ],
       videos:[['X4EASD47kL0','Die Schachspielerin · deutschsprachige Filmfassung']]
     },
     {
-      id:'das-damengambit',category:'serien',title:'Das Damengambit',format:'Miniserie · Trailer',source:'das-damengambit',
+      id:'das-damengambit',category:'serien',title:'Das Damengambit',format:'Miniserie · Trailer',
       lead:'Beth Harmon entdeckt ihr Talent im Waisenhaus und kämpft sich in die internationale Schachelite.',
       paragraphs:[
         'Die Netflix-Miniserie folgt der fiktiven Schachspielerin Elizabeth „Beth“ Harmon. Ihre ersten Partien spielt sie in einem Waisenhaus in Kentucky. Aus dem außergewöhnlichen Talent entwickelt sich eine ehrgeizige Turnierspielerin, die sich in einer von Männern geprägten Schachwelt behauptet.',
@@ -43,7 +43,7 @@ window.HAMMERSCHACH_MEDIATHEK = {
       videos:[['gijHVZ5YW4g','Das Damengambit · Trailer']]
     },
     {
-      id:'queen-of-chess',category:'dokus',title:'Queen of Chess',format:'Dokumentarfilm · Trailer',source:'queen-of-chess',
+      id:'queen-of-chess',category:'dokus',title:'Queen of Chess',format:'Dokumentarfilm · Trailer',
       lead:'Judit Polgárs Weg an die Weltspitze – und ihr langer Kampf gegen Vorurteile im Schach.',
       image:{url:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Judit_Polgar.jpg/330px-Judit_Polgar.jpg',alt:'Judit Polgár',author:'Stefan64',source:'https://commons.wikimedia.org/wiki/File:Judit_Polgar.jpg',license:'CC BY-SA 3.0',licenseUrl:'https://creativecommons.org/licenses/by-sa/3.0/'},
       paragraphs:[
@@ -56,7 +56,7 @@ window.HAMMERSCHACH_MEDIATHEK = {
       videos:[['mKtU_0D4_oA','Queen of Chess · Trailer']]
     },
     {
-      id:'mozart-des-schachs',category:'dokus',title:'Magnus – Der Mozart des Schachs',format:'Dokumentarfilm · Trailer',source:'mozart-des-schachs',
+      id:'mozart-des-schachs',category:'dokus',title:'Magnus – Der Mozart des Schachs',format:'Dokumentarfilm · Trailer',
       lead:'Vom jungen Schachtalent zum Weltmeister: Benjamin Rees Dokumentarfilm über Magnus Carlsen.',
       paragraphs:[
         'Der Dokumentarfilm aus dem Jahr 2016 begleitet Magnus Carlsens Entwicklung bis zum Gewinn des klassischen Weltmeistertitels 2013. Private Aufnahmen und Archivmaterial geben Einblicke in seine Kindheit, das Familienleben und den Weg in den Spitzensport.',
@@ -67,27 +67,27 @@ window.HAMMERSCHACH_MEDIATHEK = {
       videos:[['29C7FqQP7Vk','Magnus – Der Mozart des Schachs · Trailer']]
     },
     {
-      id:'rebell-und-koenig',category:'dokus',title:'Garri Kasparow – Rebell und König des Schachspiels',menuTitle:'Rebell und König',format:'Dokumentation · ARTE',source:'garri-kasparow-rebell-und-koenig',
+      id:'rebell-und-koenig',category:'dokus',title:'Garri Kasparow – Rebell und König des Schachspiels',menuTitle:'Rebell und König',format:'Dokumentation · ARTE',
       lead:'Kasparows Aufstieg, seine Duelle mit Karpow und der Schritt vom Schachbrett in die öffentliche Debatte.',
       paragraphs:[
-        'Die auf Andili ausgewählte ARTE-Dokumentation porträtiert Garri Kasparow als Schachspieler und öffentliche Persönlichkeit. Sie zeichnet seinen Weg vom Nachwuchstalent zum Weltmeister nach und beleuchtet seinen Ehrgeiz und seine intensive Vorbereitung.',
+        'Die ARTE-Dokumentation porträtiert Garri Kasparow als Schachspieler und öffentliche Persönlichkeit. Sie zeichnet seinen Weg vom Nachwuchstalent zum Weltmeister nach und beleuchtet seinen Ehrgeiz und seine intensive Vorbereitung.',
         'Die Weltmeisterschaftskämpfe gegen Anatoli Karpow gehören zu den prägenden Stationen dieser Laufbahn. Auch die Begegnungen mit IBMs Schachcomputer Deep Blue zeigen, wie eng Kasparows Geschichte mit den Veränderungen des Schachs verbunden ist.',
         'Das Porträt geht über die Turnierkarriere hinaus und behandelt auch Kasparows politische Positionierung. Sportliche Leistung und sein Wirken außerhalb des Schachs werden gemeinsam betrachtet.'
       ],
       videos:[['77P-Sv2mnq8','Garri Kasparow – Rebell und König des Schachspiels']]
     },
     {
-      id:'bobby-fischer',category:'dokus',title:'Bobby Fischer',format:'Dokumentation · ARTE',source:'bobby-fischer',
+      id:'bobby-fischer',category:'dokus',title:'Bobby Fischer',format:'Dokumentation · ARTE',
       lead:'Aufstieg, Weltmeisterschaft und Rückzug: ein Porträt einer widersprüchlichen Schachpersönlichkeit.',
       paragraphs:[
         'Bobby Fischer sorgte bereits als Jugendlicher für Aufsehen. Sein Weg führte ihn 1972 zum Weltmeisterschaftskampf gegen Boris Spasski in Reykjavík – einem sportlichen Ereignis, das im Kalten Krieg weltweite Aufmerksamkeit erhielt.',
-        'Die auf Andili ausgewählte Dokumentation blickt auf Fischers Karriere und seine Persönlichkeit. Historische Aufnahmen und die Geschichte seiner Wettkämpfe vermitteln ein Bild der Konzentration und Entschlossenheit, mit denen er das Schach verfolgte.',
+        'Die Dokumentation blickt auf Fischers Karriere und seine Persönlichkeit. Historische Aufnahmen und die Geschichte seiner Wettkämpfe vermitteln ein Bild der Konzentration und Entschlossenheit, mit denen er das Schach verfolgte.',
         'Zu seinem Leben gehören auch Rückzug und öffentliche Konflikte. Das Porträt bietet damit einen anderen Zugang als der Spielfilm Bauernopfer: Es beschäftigt sich mit dem Menschen hinter der historischen Schachfigur.'
       ],
       videos:[['2rshakiq6tc','Bobby Fischer · Dokumentation']]
     },
     {
-      id:'magnus-carlsen',category:'streamer',title:'Magnus Carlsen',format:'Porträt · Videos',source:'magnus-carlsen',
+      id:'magnus-carlsen',category:'streamer',title:'Magnus Carlsen',format:'Porträt · Videos',
       lead:'Blitzpartien, ungewöhnliche Herausforderungen und Schachunterhaltung mit Magnus Carlsen.',
       image:{url:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Magnus_Carlsen_in_2025.jpg/250px-Magnus_Carlsen_in_2025.jpg',alt:'Magnus Carlsen',author:'Miroslav.vajdic',source:'https://commons.wikimedia.org/wiki/File:Magnus_Carlsen_in_2025.jpg',license:'CC BY 4.0',licenseUrl:'https://creativecommons.org/licenses/by/4.0/'},
       paragraphs:[
@@ -111,7 +111,7 @@ window.HAMMERSCHACH_MEDIATHEK = {
       ]
     },
     {
-      id:'anna-cramling',category:'streamer',title:'Anna Cramling',format:'Porträt · Videos',source:'anna-cramling',
+      id:'anna-cramling',category:'streamer',title:'Anna Cramling',format:'Porträt · Videos',
       lead:'Turniererfahrung, Parkschach und humorvolle Begegnungen mit Großmeistern.',
       image:{url:'https://upload.wikimedia.org/wikipedia/commons/2/21/Anna_Cramling_Tata_2023_-_43.jpg',alt:'Anna Cramling',author:'Frans Peeters Photography',source:'https://commons.wikimedia.org/wiki/File:Anna_Cramling_Tata_2023_-_43.jpg',license:'CC BY-SA 2.0',licenseUrl:'https://creativecommons.org/licenses/by-sa/2.0/'},
       paragraphs:[
@@ -122,7 +122,7 @@ window.HAMMERSCHACH_MEDIATHEK = {
       videos:[['hGEH21o0YOI','Anna gegen den blind spielenden Magnus Carlsen'],['IRIiFdw9N7c','Eine Partie gegen Magnus Carlsen im Retiro-Park'],['D19ctG4_rV4','Pia Cramling wird beim Parkschach unterschätzt']]
     },
     {
-      id:'botezlive',category:'streamer',title:'BotezLive',format:'Porträt · Videos',source:'botezlive',
+      id:'botezlive',category:'streamer',title:'BotezLive',format:'Porträt · Videos',
       lead:'Alexandra und Andrea Botez verbinden Schachpartien, Challenges und Begegnungen am Brett.',
       image:{url:'https://upload.wikimedia.org/wikipedia/commons/a/ac/AlexandraBotez_Trivia.png',alt:'Alexandra Botez',author:'Optic Gaming',source:'https://commons.wikimedia.org/wiki/File:AlexandraBotez_Trivia.png',license:'CC BY 3.0',licenseUrl:'https://creativecommons.org/licenses/by/3.0/'},
       paragraphs:[
