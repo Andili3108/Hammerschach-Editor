@@ -10084,6 +10084,88 @@ async function incrementGamerStat(env, name) {
   return true;
 }
 
+// Tageszähler im bestehenden D1: keine IPs, Namen oder dauerhaften Browserkennungen.
+function gamerStatsDays(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone:'Europe/Berlin', year:'numeric', month:'2-digit', day:'2-digit'
+  }).formatToParts(now);
+  const part = type => parts.find(item => item.type === type).value;
+  const today = `${part('year')}-${part('month')}-${part('day')}`;
+  // Vom Kalenderdatum subtrahieren, damit auch Zeitumstellungen korrekt bleiben.
+  const yesterday = new Date(Date.parse(today + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10);
+  return {today, yesterday};
+}
+
+async function ensureDailyStatsTables(env) {
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS gamer_daily_stats_days (
+      day TEXT PRIMARY KEY, salt TEXT NOT NULL
+    )`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS gamer_daily_stats_visitors (
+      day TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK (kind IN ('member', 'visitor')),
+      identity_hash TEXT NOT NULL,
+      PRIMARY KEY (day, kind, identity_hash)
+    )`)
+  ]);
+}
+
+async function pruneDailyGamerStats(env, days = gamerStatsDays()) {
+  await ensureDailyStatsTables(env);
+  await env.DB.batch([
+    env.DB.prepare(`DELETE FROM gamer_daily_stats_visitors WHERE day < ?`).bind(days.yesterday),
+    env.DB.prepare(`DELETE FROM gamer_daily_stats_days WHERE day < ?`).bind(days.yesterday)
+  ]);
+}
+
+async function readDailyGamerStats(env, days = gamerStatsDays()) {
+  await pruneDailyGamerStats(env, days);
+  const result = await env.DB.prepare(
+    `SELECT day, kind, COUNT(*) AS total FROM gamer_daily_stats_visitors
+     WHERE day IN (?, ?) GROUP BY day, kind`
+  ).bind(days.today, days.yesterday).all();
+  const stats = {
+    timeZone:'Europe/Berlin',
+    today:{date:days.today, members:0, visitors:0},
+    yesterday:{date:days.yesterday, members:0, visitors:0}
+  };
+  for (const row of result.results || []) {
+    const counts = row.day === days.today ? stats.today : stats.yesterday;
+    counts[row.kind === 'member' ? 'members' : 'visitors'] = Math.max(0, Number(row.total) || 0);
+  }
+  return stats;
+}
+
+async function recordDailyGamerVisit(env, days, kind, identity) {
+  await ensureDailyStatsTables(env);
+  // INSERT OR IGNORE und der zusammengesetzte Primärschlüssel verhindern
+  // Doppelzählungen auch bei gleichzeitigen Tabs, Geräten und Wiederholungen.
+  await env.DB.prepare(`INSERT OR IGNORE INTO gamer_daily_stats_days (day, salt) VALUES (?, ?)`)
+    .bind(days.today, randomBase64Url(32)).run();
+  const daily = await env.DB.prepare(`SELECT salt FROM gamer_daily_stats_days WHERE day = ?`).bind(days.today).first();
+  const identityHash = await sha256Hex(daily.salt + ':' + days.today + ':' + kind + ':' + identity);
+  await env.DB.prepare(`INSERT OR IGNORE INTO gamer_daily_stats_visitors (day, kind, identity_hash) VALUES (?, ?, ?)`)
+    .bind(days.today, kind, identityHash).run();
+}
+
+async function handleDailyGamerStats(request, env) {
+  const headers = {'cache-control':'no-store, max-age=0'};
+  if (request.method === 'GET') return json({ok:true, stats:await readDailyGamerStats(env)}, {headers});
+  const body = await readJsonBody(request);
+  const token = bearerTokenFromRequest(request);
+  const session = token ? await lookupAuthSession(env, token) : null;
+  // Abgelaufene Anmeldungen nicht versehentlich als zusätzliche Besucher zählen.
+  if (token && !session) return json({ok:false, code:'NOT_AUTHENTICATED'}, {status:401, headers});
+  const days = gamerStatsDays();
+  if (!body || body.day !== days.today) return json({ok:false, code:'STATS_DAY_CHANGED'}, {status:409, headers});
+  const visitorToken = String(body.visitorToken || '');
+  if (!session && !/^[a-f0-9]{32}$/.test(visitorToken)) {
+    return json({ok:false, code:'INVALID_VISITOR_TOKEN'}, {status:400, headers});
+  }
+  await recordDailyGamerVisit(env, days, session ? 'member' : 'visitor', session ? String(session.user.id) : visitorToken);
+  return json({ok:true, stats:await readDailyGamerStats(env)}, {headers});
+}
+
 async function createSession(env, userId) {
   const token = randomBase64Url(32);
   const tokenHash = await sha256Hex(token);
@@ -10289,6 +10371,10 @@ async function handleAuthApi(request, env, url) {
     readJsonBody
   });
   if (leagueStandingsResponse) return leagueStandingsResponse;
+
+  if (url.pathname === '/api/stats/daily' && (request.method === 'GET' || request.method === 'POST')) {
+    return handleDailyGamerStats(request, env);
+  }
 
   if (url.pathname === '/api/stats' && request.method === 'GET') {
     const stats = await readGamerStats(env);
@@ -18882,6 +18968,8 @@ export default {
 
   async scheduled(_event, env, ctx) {
     const maintenance = (async () => {
+      try { await pruneDailyGamerStats(env); }
+      catch (error) { console.error('Scheduled daily stats cleanup failed'); }
       try {
         await backfillChessChronicleMetadata(env);
         await backfillChessChronicleOpenings(env, 500);
