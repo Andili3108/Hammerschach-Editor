@@ -104,11 +104,11 @@
     .panel-title{font-size:18px;font-weight:900;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#222}
 
     .moves-panel{display:flex;flex-direction:column;overflow:hidden}
-    .moves-pre{min-height:0;flex:1;overflow-y:auto;padding-right:5px;font-size:15px;line-height:1.42}
-    .mv-table{display:grid;grid-template-columns:34px 1fr 1fr 34px 1fr 1fr;gap:5px 4px;align-content:start}
+    .moves-pre{container:move-notation / inline-size;min-height:0;flex:1;overflow-y:auto;padding-right:5px;font-size:15px;line-height:1.42}
+    .mv-table{display:grid;grid-template-columns:2.5em repeat(2,minmax(0,5.5em));grid-auto-rows:minmax(30px,max-content);gap:4px;align-content:start;justify-content:start}
     .mv-row{display:contents}
     .mv-num{color:var(--andili-rot);font-weight:900;text-align:right;padding:1px 3px;display:flex;align-items:center;justify-content:flex-end}
-    .mv-cell{display:flex;align-items:center;min-width:0;min-height:24px;border-radius:6px;padding:1px 3px;position:relative;user-select:none}
+    .mv-cell{display:flex;align-items:center;min-width:0;min-height:30px;border-radius:6px;padding:2px 3px;position:relative;user-select:none}
     .mv{display:block;min-width:0;max-width:100%;padding:1px 2px;border-radius:6px;cursor:pointer;overflow-wrap:anywhere}
     .mv:hover{background:rgba(132,63,70,.08)}
     .mv.active{background:rgba(132,63,70,.12);font-weight:900;outline:1px solid rgba(132,63,70,.24)}
@@ -398,10 +398,13 @@
       .board-action-btn{min-height:36px!important;padding:5px 7px!important;font-size:11px!important}
       .side-toggle-row{gap:5px}
       .side-toggle-btn{padding:7px 3px;font-size:12px}
-      .mv-table{grid-template-columns:38px 1fr 1fr}
       .engine-grid,.engine-kpis,.engine-meta-row{grid-template-columns:1fr}
       .game-row{grid-template-columns:1fr}
       .game-row .game-meta{white-space:normal}
+    }
+    /* Breite Zuglisten nutzen zwei kompakte Zugpaare. */
+    @container move-notation (min-width:420px){
+      .mv-table{grid-template-columns:2.5em repeat(2,minmax(0,5.5em)) 3.5em repeat(2,minmax(0,5.5em))}
     }
     @media (max-width:380px){
       .board-tools{flex-wrap:wrap}
