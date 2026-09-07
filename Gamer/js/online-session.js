@@ -362,23 +362,78 @@ function formatStatsNumber(value){
   if(!Number.isFinite(number)) return '0';
   try{ return Math.max(0, Math.floor(number)).toLocaleString('de-DE'); } catch(_){ return String(Math.max(0, Math.floor(number))); }
 }
+let siteStatsRequestId = 0;
+let siteStatsCountedIdentity = '';
 function renderSiteStats(stats){
-  if(!siteStatsEl || !stats) return;
-  const visits = formatStatsNumber(stats.visits ?? stats.pageViews ?? stats.page_views ?? 0);
-  const games = formatStatsNumber(stats.gamesPlayed ?? stats.games_played ?? 0);
-  siteStatsEl.textContent = 'Gamer-Aufrufe: ' + visits + ' · Gespielte Online-Partien: ' + games;
+  if(!siteStatsEl || !stats || !stats.today || !stats.yesterday) return;
+  const label = counts => formatStatsNumber(counts.members) + ' Mitglieder · ' + formatStatsNumber(counts.visitors) + ' Besucher';
+  siteStatsEl.textContent = 'Heute: ' + label(stats.today) + ' | Gestern: ' + label(stats.yesterday);
   siteStatsEl.hidden = false;
+}
+async function dailyVisitorToken(day){
+  const getToken = () => {
+    try{
+      const prefix = 'hammerschach_daily_visitor_';
+      const key = prefix + day;
+      let token = localStorage.getItem(key);
+      if(!/^[a-f0-9]{32}$/.test(token || '')){
+        const bytes = crypto.getRandomValues(new Uint8Array(16));
+        token = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem(key, token);
+      }
+      // Nur die heutige Zufallskennung bleibt im Browser gespeichert.
+      for(let i = localStorage.length - 1; i >= 0; i--){
+        const oldKey = localStorage.key(i);
+        if(oldKey && oldKey.startsWith(prefix) && oldKey !== key) localStorage.removeItem(oldKey);
+      }
+      return token;
+    } catch(_){ return ''; } // Ohne dauerhafte Kennung keine wiederholten Gastzählungen.
+  };
+  // Gleichzeitige erste Aufrufe in mehreren Tabs teilen dieselbe Kennung.
+  if(navigator.locks && navigator.locks.request){
+    return navigator.locks.request('hammerschach-daily-visitor', getToken);
+  }
+  return getToken();
 }
 async function refreshSiteStats(countVisit){
   if(!siteStatsEl) return;
+  const requestId = ++siteStatsRequestId;
+  const authToken = onlineAuthToken || '';
   try{
-    const response = await fetch(onlineApiBaseUrl() + (countVisit ? '/api/stats/visit' : '/api/stats'), {method: countVisit ? 'POST' : 'GET'});
-    const data = await response.json();
-    if(response.ok && data && data.ok) renderSiteStats(data.stats || data);
+    const endpoint = onlineApiBaseUrl() + '/api/stats/daily';
+    const response = await fetch(endpoint, {cache:'no-store'});
+    let data = await response.json();
+    if(requestId !== siteStatsRequestId) return;
+    if(!response.ok || !data || !data.ok) throw new Error('Tageszähler nicht verfügbar');
+    const day = data.stats && data.stats.today && data.stats.today.date;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) throw new Error('Ungültiger Zählertag');
+    const identity = day + ':' + (authToken ? 'member:' + String(onlineAuthUser && onlineAuthUser.id || authToken) : 'visitor');
+    if(countVisit && identity !== siteStatsCountedIdentity){
+      const visitorToken = authToken ? '' : await dailyVisitorToken(day);
+      if(requestId !== siteStatsRequestId) return;
+      if(authToken || visitorToken){
+        const headers = {'content-type':'application/json'};
+        if(authToken) headers.authorization = 'Bearer ' + authToken;
+        const counted = await fetch(endpoint, {
+          method:'POST', cache:'no-store', headers,
+          body:JSON.stringify({day, visitorToken})
+        });
+        const countedData = await counted.json();
+        if(requestId !== siteStatsRequestId) return;
+        if(!counted.ok || !countedData || !countedData.ok) throw new Error('Tageszählung nicht verfügbar');
+        data = countedData;
+        siteStatsCountedIdentity = identity;
+      }
+    }
+    renderSiteStats(data.stats);
   } catch(_){
-    /* Statistik bleibt ausgeblendet, wenn der Worker/D1 gerade nicht erreichbar ist. */
+    // Keine alten Tageswerte oder erfundenen Nullen bei Verbindungsproblemen anzeigen.
+    if(requestId === siteStatsRequestId) siteStatsEl.hidden = true;
   }
 }
+// Auch eine über Mitternacht geöffnete Seite erhält den neuen Kalendertag.
+setInterval(() => { if(!document.hidden) refreshSiteStats(true); }, 60000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) refreshSiteStats(true); });
 function loadAuthState(){
   try{
     onlineAuthToken = localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY) || '';
@@ -471,6 +526,7 @@ function saveAuthState(token, user){
   postTournamentReportToolContext();
   postFairplayToolContext();
   setTimeout(maybeOpenLeitbildAfterLogin, 80);
+  refreshSiteStats(true);
 }
 async function authApi(path, options){
   const headers = {'content-type':'application/json'};
