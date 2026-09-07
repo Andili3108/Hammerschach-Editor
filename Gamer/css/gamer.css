@@ -3513,3 +3513,15 @@ html.dark-mode body .variation-open-btn[aria-pressed="true"]{
   button,.button-flat,.daily-game-open-btn{transition:none!important;}
   button:hover:not(:disabled),.button-flat:hover:not(:disabled),.daily-game-open-btn:hover{transform:none!important;}
 }
+
+/* Mediathek verwendet die vorhandene Schach-aktuell-Menügestaltung. */
+html.mediathek-tool-active .member-lobby,
+html.mediathek-tool-active .top-layout{display:none!important;}
+.mediathek-overview-button{border:0;background:transparent;padding:0;cursor:pointer;font-family:inherit;text-align:left;}
+.mediathek-overview-button:focus-visible{outline:3px solid var(--andili-blau);outline-offset:4px;border-radius:4px;}
+@media(max-width:760px){
+  .mediathek-switcher .tournament-report-switcher-content{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;}
+  .mediathek-switcher .header-menu-button{width:100%!important;}
+  .mediathek-category-menu:nth-child(odd) .header-menu-popup{left:0;right:auto;transform:none;}
+  .mediathek-category-menu:nth-child(even) .header-menu-popup{left:auto;right:0;transform:none;}
+}
