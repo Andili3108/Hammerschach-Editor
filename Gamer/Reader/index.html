@@ -1075,9 +1075,9 @@ html,body{margin:0;min-height:100%;background:transparent;color:#111;font-family
 #readerMovesPanel[hidden],#readerEnginePanel[hidden],#readerGamePanel[hidden]{display:none!important}
 #moveBox{min-height:0;flex:1;margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none}
 #movesPre{height:100%;max-height:none;overflow-y:auto;padding-right:5px;font-family:"Times New Roman",Times,serif!important;font-size:15px;line-height:1.42}
-.mv-table{grid-template-columns:34px 1fr 1fr;gap:5px 4px;align-content:start;padding:0;border:0;border-radius:0;box-shadow:none}
+.mv-table{grid-template-columns:2.5em repeat(2,minmax(0,5.5em));grid-auto-rows:minmax(30px,max-content);gap:4px;align-content:start;justify-content:start;padding:0;border:0;border-radius:0;box-shadow:none}
 .mv-num{color:var(--andili-rot);padding:1px 3px}
-.mv-cell{min-height:24px;padding:1px 3px}
+.mv-cell{min-width:0;min-height:30px;padding:2px 3px}
 .mv.active{background:rgba(132,63,70,.12);outline:1px solid rgba(132,63,70,.24)}
 .mv:hover{background:rgba(132,63,70,.08)}
 
