@@ -2915,7 +2915,7 @@ html.dark-mode .compact-board-size-btn{background:linear-gradient(135deg,#353039
   }
 
 /* Persönliche Schachchronik – integriert in „Meine Partien → Beendet“ */
-.daily-games-completed-filters{display:grid;gap:10px;margin:-3px 0 10px;}
+.daily-games-completed-filters{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;align-self:stretch;min-width:0;gap:10px;margin:-3px 0 10px;}
 .daily-games-completed-filters[hidden]{display:none!important;}
 .daily-games-chronicle-summary-row{display:flex;align-items:stretch;gap:9px;}
 .chess-chronicle-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;flex:1;min-width:0;}
@@ -2926,7 +2926,7 @@ html.dark-mode .compact-board-size-btn{background:linear-gradient(135deg,#353039
 .daily-games-chronicle-filter-row{display:flex;align-items:end;gap:7px;flex-wrap:wrap;padding:8px;border-radius:12px;background:rgba(125,42,55,.035);border:1px solid rgba(125,42,55,.10);}
 .daily-games-opponent-filter{display:grid;gap:3px;flex:1 1 190px;min-width:160px;}
 .daily-games-opponent-filter span{font-size:10px;font-weight:900;color:#666;}
-.daily-games-opponent-filter input{width:100%;height:34px;border:1px solid rgba(0,0,0,.16);border-radius:9px;background:#fff;color:#222;padding:6px 10px;font:inherit;font-size:12px;font-weight:750;outline:none;}
+.daily-games-opponent-filter input{box-sizing:border-box;width:100%;min-width:0;height:34px;border:1px solid rgba(0,0,0,.16);border-radius:9px;background:#fff;color:#222;padding:6px 10px;font:inherit;font-size:12px;font-weight:750;outline:none;}
 .daily-games-opponent-filter input:focus{border-color:#843f46;box-shadow:0 0 0 2px rgba(132,63,70,.10);}
 .daily-games-result-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
 .daily-games-result-filter,.daily-games-moments-filter{min-height:34px!important;border-radius:9px!important;padding:6px 9px!important;font-size:11px!important;font-weight:900!important;white-space:nowrap;}
@@ -2936,6 +2936,12 @@ html.dark-mode .compact-board-size-btn{background:linear-gradient(135deg,#353039
 .daily-games-result-filter.loss.active{background:#f9e9eb!important;color:#8d2930!important;border-color:rgba(154,45,51,.28)!important;}
 .daily-games-moments-filter.active{background:#f9e9eb!important;color:#843f46!important;border-color:rgba(132,63,70,.25)!important;}
 .daily-games-list.chronicle-view{gap:10px;}
+/* Nur beendete Partien: Inhalt und anschließende Aktionen nutzen die Kartenbreite. */
+#dailyGamesList .daily-game-card.completed{grid-template-columns:minmax(0,1fr);align-items:stretch;}
+#dailyGamesList .daily-game-card.completed > *{min-width:0;}
+#dailyGamesList .daily-game-card.completed > .daily-game-actions{justify-content:flex-start;width:100%;}
+#dailyGamesList .daily-game-card.completed .daily-game-history-delete-btn{margin-left:auto;}
+
 .chess-chronicle-month{position:sticky;top:0;z-index:3;width:fit-content;margin:3px 0 0;padding:4px 9px;border-radius:999px;background:#843f46;color:#fff;font-size:11px;font-weight:950;letter-spacing:.02em;box-shadow:0 3px 8px rgba(0,0,0,.10);}
 .chess-chronicle-milestones{display:grid;gap:4px;margin:0 0 0 12px;padding:1px 0 1px 12px;border-left:2px solid rgba(199,149,45,.55);}
 .chess-chronicle-milestone{display:flex;align-items:center;gap:7px;width:fit-content;max-width:calc(100% - 4px);padding:1px 0;background:transparent;border:0;color:#6b4a10;font-size:11.5px;line-height:1.3;}
