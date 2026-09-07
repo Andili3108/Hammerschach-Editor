@@ -1,0 +1,68 @@
+/* Inhalt im bestehenden Schach-News-Stil; das Menü liegt im Gamer-Header. */
+body{min-width:0;font-family:"Times New Roman",Times,serif;line-height:1.6;}
+main.media-page{overflow:visible;}
+.media-page{max-width:1100px;margin:0 auto;padding:18px 20px 32px;box-sizing:border-box;}
+.media-page h1{font-family:inherit;font-size:clamp(30px,4vw,42px);line-height:1.12;letter-spacing:0;max-width:none;}
+.media-page h2{font-size:26px;line-height:1.25;color:var(--wine-deep);margin:26px 0 14px;}
+.media-page p{font-size:18px;}
+.media-intro{margin-bottom:26px;}
+.media-intro p{margin:12px 0 0;color:var(--muted);}
+.media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.media-card{display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 22px rgba(59,42,45,.08);}
+.media-card-image{display:block;width:100%;height:180px;object-fit:contain;background:var(--surface-soft);}
+.media-card-copy{display:flex;flex-direction:column;flex:1;padding:20px;}
+.media-card h3{font-size:23px;line-height:1.25;color:var(--wine-deep);margin:8px 0 12px;}
+.media-card p{margin:0 0 18px;}
+.media-card .back-link{align-self:flex-start;margin-top:auto;}
+.media-format{font-family:Arial,sans-serif;font-size:13px;color:var(--muted);line-height:1.5;}
+.media-category{margin-top:30px;}
+.media-breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:15px;margin:0 0 20px;color:var(--muted);}
+.media-breadcrumb a{color:var(--wine);text-decoration:underline;}
+.media-detail{max-width:900px;margin:0 auto;}
+.media-detail-header{margin:0 0 26px;padding-bottom:22px;border-bottom:1px solid var(--line);}
+.media-detail-header.has-portrait{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:28px;align-items:start;}
+.media-detail-header .media-format{display:block;margin-bottom:12px;}
+.media-lead{font-size:21px!important;line-height:1.5;margin-bottom:0;}
+.media-portrait{margin:0;}
+.media-portrait img{display:block;width:100%;max-height:250px;object-fit:contain;border-radius:14px;background:var(--surface-soft);}
+.media-credit{font:12px/1.5 Arial,sans-serif;color:var(--muted);margin-top:8px;}
+.media-story{max-width:740px;}
+.media-story p{font-size:19px;line-height:1.7;margin:0 0 18px;}
+.media-providers{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 10px;}
+.media-provider-note{font-size:14px!important;color:var(--muted);}
+.media-video{margin:24px 0;}
+.media-video h3{font-size:22px;line-height:1.3;margin:0 0 12px;}
+.media-player{position:relative;aspect-ratio:16/9;background:#202227;border-radius:16px;overflow:hidden;color:#fff;}
+.media-player iframe{display:block;width:100%;height:100%;border:0;}
+.media-video-start{width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;border:1px solid var(--line);border-radius:16px;padding:24px;background:linear-gradient(135deg,#632d34,#843f46);color:#fff;cursor:pointer;font-family:inherit;font-size:21px;}
+.media-video-start:hover{background:#632d34;}
+.media-play-symbol{display:grid;place-items:center;width:52px;height:52px;border:1px solid rgba(255,255,255,.6);border-radius:50%;font-size:26px;}
+.media-video-start small{font:14px/1.5 Arial,sans-serif;max-width:32em;color:#f3e4e6;}
+.media-video-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4;pointer-events:none;}
+.media-video-label{position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;text-shadow:0 1px 4px #000;}
+.media-video-credit{font:13px/1.5 Arial,sans-serif!important;color:var(--muted);margin:8px 0 0;}
+.media-fallback{padding:20px;display:flex;height:100%;box-sizing:border-box;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+.media-fallback a{color:#fff;text-decoration:underline;font-size:18px;}
+.media-more{border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin-top:26px;background:var(--surface);}
+.media-more summary{font-size:18px;font-weight:bold;color:var(--wine-deep);cursor:pointer;}
+.media-sources{margin-top:30px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--muted);}
+.media-sources p{font-size:14px;margin:8px 0;}
+.media-sources a{overflow-wrap:anywhere;}
+.media-standalone-nav{display:flex;flex-wrap:wrap;gap:18px;max-width:1060px;margin:18px auto;padding:0 20px;font-size:16px;}
+.media-page a:focus-visible,.media-page button:focus-visible,.media-page summary:focus-visible{outline:3px solid #3b6ea7;outline-offset:4px;}
+.media-page:focus{outline:none;}
+html.hammerschach-embedded .media-standalone-nav{display:none;}
+html.hammerschach-embedded .media-page{padding-top:18px;}
+html.dark-mode .media-page h2,html.dark-mode .media-page h3,html.dark-mode .media-more summary,html.dark-mode .media-breadcrumb a{color:#efc1c7;}
+html.dark-mode .media-card{box-shadow:0 8px 22px rgba(0,0,0,.22);}
+html.dark-mode .media-video-start{background:linear-gradient(135deg,#301e24,#632d34);}
+@media(max-width:600px){
+  .media-page{padding:16px 12px 26px;}
+  .media-grid{grid-template-columns:1fr;}
+  .media-detail-header.has-portrait{grid-template-columns:1fr;gap:20px;}
+  .media-portrait{max-width:180px;}
+  .media-card-copy{padding:18px;}
+  .media-video-start{font-size:18px;padding:12px;gap:8px;}
+  .media-video-start small{font-size:12px;}
+  .media-play-symbol{width:38px;height:38px;font-size:21px;}
+}

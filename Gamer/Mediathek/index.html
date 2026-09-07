@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Filme, Serien, Dokumentationen und Streamer rund um Schach. Die Mediathek des Hammerschach-Gamers ist ohne Anmeldung zugänglich.">
+<meta name="theme-color" content="#843f46" id="themeColorMeta">
+<title>Mediathek · Hammerschach-Gamer</title>
+<link rel="icon" href="../Gamer-Logo.png">
+<script>
+try{if(localStorage.getItem('hammerschachGamerColorScheme')==='dark')document.documentElement.classList.add('dark-mode');}catch(_){}
+document.documentElement.classList.add(window.self===window.top?'hammerschach-standalone':'hammerschach-embedded');
+</script>
+<link rel="stylesheet" href="../Turnierberichte/quick-round-robin-2026/report.css?v=20260903-6">
+<link rel="stylesheet" href="../SchachNews/news.css?v=20260905-1">
+<link rel="stylesheet" href="mediathek.css?v=20260907-1">
+<script defer src="catalog.js?v=20260907-1"></script>
+<script defer src="mediathek.js?v=20260907-1"></script>
+</head>
+<body>
+<a class="skip-link" href="#mediathekContent">Zum Inhalt</a>
+<header class="site-header"><div class="site-header-inner">
+  <a class="brand" href="../index.html"><img src="../Gamer-Logo.png" width="42" height="42" alt=""><span>Hammerschach-Gamer<small>Mediathek</small></span></a>
+  <div class="header-actions"><a class="back-link" href="../index.html">Zum Gamer</a><button id="themeToggle" class="theme-toggle" type="button" aria-label="Darstellung wechseln">🌙</button></div>
+</div></header>
+<nav class="media-standalone-nav" aria-label="Mediathek"><a href="#uebersicht">Mediathek</a><a href="#filme">Filme</a><a href="#serien">Serien</a><a href="#dokus">Dokus</a><a href="#streamer">Streamer</a></nav>
+<main id="mediathekContent" class="media-page" tabindex="-1"></main>
+<noscript><p class="media-page">Bitte aktiviere JavaScript, um Beiträge und Videos auszuwählen. Die ursprünglichen Beiträge findest du in der <a href="https://www.andili.de/page-hammerschach-medien-anna-cramling.html">Andili-Mediathek</a>.</p></noscript>
+</body>
+</html>
