@@ -12,13 +12,13 @@
 .mv-table {
   box-sizing: border-box;
   min-width: 0;
-  grid-template-columns: 2.5em repeat(2, minmax(0, 1fr));
+  grid-template-columns: var(--notation-columns, 2.5em repeat(2, minmax(0, 1fr)));
   grid-auto-rows: minmax(30px, max-content);
   align-content: start;
   align-items: stretch;
   justify-content: stretch;
   gap: 4px;
-  font-size: 15px;
+  font-size: var(--notation-font-size, 15px);
   line-height: 1.42;
 }
 
@@ -30,7 +30,7 @@
   box-sizing: border-box;
   min-width: 0;
   min-height: 30px;
-  padding: 4px;
+  padding: 4px 3px;
   white-space: nowrap;
   overflow-wrap: normal;
   word-break: normal;
@@ -38,7 +38,7 @@
 
 /* Replace the Gamer's old extra padding on every second move number. */
 #moveList > .move-cell:nth-child(6n + 4):not(.move-result) {
-  padding: 4px;
+  padding: 4px 3px;
 }
 
 #moveList > .move-cell:nth-child(3n + 1):not(.move-result),
@@ -50,6 +50,7 @@
 }
 
 .mv-table .mv {
+  padding-inline: 0;
   white-space: nowrap;
   overflow-wrap: normal;
   word-break: normal;
@@ -61,28 +62,5 @@
   grid-column: 1 / -1;
 }
 
-/* Compact six-column layout. Leave room for long SAN and bold selection. */
-@container move-notation (min-width: 380px) {
-  #moveList,
-  .variation-moves,
-  .mv-table {
-    grid-template-columns: 2.5em repeat(2, minmax(0, 1fr)) 3em repeat(2, minmax(0, 1fr));
-    font-size: 14px;
-  }
-}
-
-@container move-notation (min-width: 420px) {
-  #moveList,
-  .variation-moves,
-  .mv-table {
-    font-size: 15px;
-  }
-}
-
-@container move-notation (max-width: 379.98px) {
-  #moveList,
-  .variation-moves,
-  .mv-table {
-    font-size: 14px;
-  }
-}
+/* The fitting script measures all moves in bold at 15 and 14px, including
+   padding and the actual scrollbar width, before enabling six columns. */
