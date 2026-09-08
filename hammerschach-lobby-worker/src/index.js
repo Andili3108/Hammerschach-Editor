@@ -11117,6 +11117,22 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  if (url.pathname === '/api/my-game-preview' && request.method === 'GET') {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, message:'Bitte zuerst einloggen.'}, {status:401});
+    const roomId = cleanRoomId(url.searchParams.get('room'));
+    if (!roomId) return json({ok:false, message:'Ungültiger Spielraum.'}, {status:400});
+    try {
+      const id = env.GAME_ROOM.idFromName(roomId);
+      const response = await gameRoomStub(env, id).fetch(new Request('https://game-room.internal/account-game-preview?room=' + encodeURIComponent(roomId), {
+        method:'POST', headers:{'x-hammerschach-user-id':String(session.user.id)}
+      }));
+      return json(await response.json(), {status:response.status, headers:{'Cache-Control':'no-store'}});
+    } catch (_) {
+      return json({ok:false, message:'Stellung momentan nicht abrufbar.'}, {status:503});
+    }
+  }
+
   if (url.pathname === '/api/my-live-games' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
@@ -15901,6 +15917,11 @@ export class GameRoom {
       return json({ok:true,reportedUserId:target.userId||'',reportedName:profile.displayName||profile.name||(reportedRole==='w'?'Weiß':'Schwarz'),chatSnapshot:(Array.isArray(chats)?chats.slice(-30):[]).map(c=>({senderName:c.senderName||c.name||'',role:c.role||'',text:c.text||'',sentAt:c.sentAt||''})),gameSnapshot:{started:!!game.started,ended:!!game.ended,result:game.result||'*',timeControl,gameSetup}});
     }
 
+    if (request.method === 'POST' && url.pathname === '/account-game-preview') {
+      const result = await this.accountGamePreview(request.headers.get('x-hammerschach-user-id') || '');
+      return json(result, {status:result.status || 200, headers:{'Cache-Control':'no-store'}});
+    }
+
     if (request.method === 'POST' && url.pathname === '/account-game-summary') {
       const result = await this.accountGameSummary(request.headers.get('x-hammerschach-user-id') || '');
       return json(result, {status:result.status || (result.ok ? 200 : 400)});
@@ -16041,6 +16062,29 @@ export class GameRoom {
     } catch (_) {
       // Der Raumindex unterstützt die spätere Account-Anonymisierung, darf aber niemals den Spielbeitritt blockieren.
       return false;
+    }
+  }
+
+  async accountGamePreview(requestingUserId) {
+    const userId = String(requestingUserId || '').trim();
+    if (!userId) return {ok:false, status:401};
+    const players = await this.getSecurePlayers();
+    const role = players.white && String(players.white.userId || '') === userId ? 'w'
+      : players.black && String(players.black.userId || '') === userId ? 'b' : '';
+    if (!role) return {ok:false, status:403, message:'Diese Partie gehört nicht zu deinem Account.'};
+    // Read a single snapshot: no room join, seat change, clock action or move.
+    const snapshot = await this.state.storage.get(['game', 'gameSetup', 'moves', 'cancelled']);
+    const game = snapshot.get('game') || {};
+    if (!game.started || (snapshot.get('cancelled') || {}).cancelled) return {ok:false, status:404};
+    const setup = cleanGameSetup(snapshot.get('gameSetup') || game.gameSetup || null);
+    const moves = snapshot.get('moves') || [];
+    try {
+      const current = buildServerHistoryState(moves, setup).game;
+      const last = moves.length ? moves[moves.length - 1] : null;
+      return {ok:true, role, board:current.board, turn:current.turn, ended:!!game.ended,
+        lastMove:last ? {from:last.from, to:last.to} : null};
+    } catch (_) {
+      return {ok:false, status:503, message:'Stellung momentan nicht abrufbar.'};
     }
   }
 
