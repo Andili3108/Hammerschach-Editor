@@ -9,6 +9,7 @@
   const footer = column && column.querySelector('.site-footnote');
   const navigation = document.getElementById('roomGamesNavigation');
   const openButton = document.getElementById('roomMyGamesBtn');
+  const nextBox = document.getElementById('nextDailyGameBox');
   if(!layout || !column || !board || !side || !navigation || !openButton) return;
   openButton.addEventListener('click', () => openDailyGamesDialog(false, {running:true}));
   let scheduled = 0;
@@ -17,7 +18,15 @@
     const room = !!onlineRoomId && !onlineRoomCancelled;
     const member = !!onlineAuthToken && !!onlineAuthUser;
     navigation.hidden = !room || !member;
-    const stacked = window.matchMedia('(max-width:980px)').matches || document.documentElement.classList.contains('mobile-nav-test-active');
+    // A compact tablet header does not imply a stacked board layout. Measure
+    // the actual columns so landscape, rotation and split view use one rule.
+    const boardRect = board.getBoundingClientRect();
+    const sideRect = side.getBoundingClientRect();
+    const stacked = getComputedStyle(layout).flexDirection === 'column' ||
+      (boardRect.width > 0 && sideRect.left < boardRect.right - 1);
+    // Keep the original button (and its click listener) in the same navigation
+    // group, including when it becomes visible after a move or reconnection.
+    if(nextBox && (nextBox.parentElement !== navigation || nextBox.previousElementSibling !== openButton)) openButton.after(nextBox);
     layout.classList.toggle('room-board-aligned', room && !stacked);
     layout.classList.toggle('room-board-stacked', room && stacked);
     if(stacked && room){
@@ -48,6 +57,8 @@
   new MutationObserver(schedule).observe(document.getElementById('playersPanel'),{attributes:true,attributeFilter:['hidden']});
   new MutationObserver(schedule).observe(document.getElementById('nextDailyGameBox'),{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true,characterData:true});
   window.addEventListener('resize',schedule,{passive:true});
+  window.addEventListener('orientationchange',schedule,{passive:true});
+  window.addEventListener('pageshow',schedule,{passive:true});
   // The online state refresh also runs on login, room entry and reconnection.
   const previousRefresh = refreshNextDailyGameButton;
   refreshNextDailyGameButton = function(options){ schedule(); return previousRefresh(options); };
