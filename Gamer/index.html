@@ -40,6 +40,7 @@
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
   <link rel="stylesheet" href="css/gamer.css?v=20260907-zugliste-scroll-2" />
 <link rel="stylesheet" href="css/move-notation.css?v=20260908-2">
+<link rel="stylesheet" href="css/my-games-overview.css?v=20260908-1">
 <script defer src="js/move-notation.js?v=20260908-2"></script>
 </head>
 <body>
@@ -2257,10 +2258,7 @@
         </div>
         <div id="playersPanel" class="board-room-controls" hidden>
           <div id="roomRatingStatus" class="room-rating-status" hidden>Ungewertet</div>
-          <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
-            <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
-            <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
-          </div>
+
           <div id="roomPublicVisibilityBox" class="public-visibility-box player-time-setup" hidden>
             <div class="clock-title">Zuschauerfreigabe</div>
             <label class="public-visibility-label" for="roomPublicGameCheckbox">
@@ -2310,6 +2308,14 @@
       </div>
 
       <aside class="moves-right">
+        <nav id="roomGamesNavigation" class="room-games-navigation" aria-label="Meine Partien wechseln" hidden>
+          <button id="roomMyGamesBtn" class="button-flat room-my-games-btn" type="button" aria-haspopup="dialog" aria-controls="dailyGamesBackdrop">📋 Meine Partien</button>
+          <div id="nextDailyGameBox" class="next-daily-game-box" hidden>
+            <button id="nextDailyGameBtn" class="next-daily-game-btn" type="button" disabled>Weitere fällige Partie wird gesucht…</button>
+            <div id="nextDailyGameHint" class="next-daily-game-hint" aria-live="polite"></div>
+          </div>
+        </nav>
+
         <div id="mainSidePanel" class="side-panel box">
           <div id="preRoomSetupPanel" class="side-content setup-panel">
             <div id="inviteColorBox" class="invite-color-box player-time-setup">
@@ -2517,7 +2523,8 @@
 <script src="js/tournament-detail.js?v=20260820-2"></script>
 <script src="js/tournament-management.js?v=20260820-1"></script>
 <script src="js/tournament-actions.js?v=20260820-1"></script>
-  <script src="js/daily-games.js?v=20260818-2"></script>
+  <script src="js/daily-games.js?v=20260908-1"></script>
+<script src="js/my-games-overview.js?v=20260908-1"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
 <script src="js/public-games.js?v=20260804-1"></script>
 <script src="js/game-archive.js?v=20260821-1"></script>
@@ -2553,5 +2560,6 @@
 <script src="js/app-startup.js?v=20260828-1"></script>
 <script src="js/board-size-control.js?v=20260905-3"></script>
 <script src="js/mobile-navigation.js?v=20260907-mediathek-1"></script>
+<script src="js/room-games-layout.js?v=20260908-1"></script>
 </body>
 </html>
