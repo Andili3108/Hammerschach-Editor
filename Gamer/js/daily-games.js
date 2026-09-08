@@ -826,7 +826,8 @@ function appendMixedGameCards(items, emptyText){
     return;
   }
   items.forEach(item => {
-    if(item.kind === 'live-running') dailyGamesListEl.appendChild(createMyLiveRunningCard(item.game));
+    if(dailyGamesActiveTab === 'running') dailyGamesListEl.appendChild(createRunningGamePreviewCard(item.game, item.kind));
+    else if(item.kind === 'live-running') dailyGamesListEl.appendChild(createMyLiveRunningCard(item.game));
     else if(item.kind === 'live-offer') dailyGamesListEl.appendChild(createMyLiveOpenOfferCard(item.game));
     else if(item.kind === 'live-completed') dailyGamesListEl.appendChild(createMyLiveCompletedCard(item.game));
     else dailyGamesListEl.appendChild(createDailyGameCard(item.game));
@@ -834,7 +835,10 @@ function appendMixedGameCards(items, emptyText){
 }
 function renderDailyGames(games){
   if(!dailyGamesListEl) return;
+  if(typeof resetRunningGamePreviews === 'function') resetRunningGamePreviews();
   dailyGamesListEl.innerHTML = '';
+  dailyGamesListEl.classList.toggle('running-grid', dailyGamesActiveTab === 'running');
+  dailyGamesListEl.closest('.daily-games-modal').classList.toggle('has-running-grid', dailyGamesActiveTab === 'running');
   dailyGamesListEl.classList.toggle('chronicle-view', dailyGamesActiveTab === 'completed');
   const groups = dailyGamesGroups(games);
   updateDailyGamesTabCounts(groups);
@@ -955,6 +959,13 @@ function renderDailyGames(games){
     ...groups.runningDaily.map(game => ({kind:'daily', game, attention:!!(game.incomingDrawOffer || game.drawClaimAvailable), myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''})),
     ...groups.runningLive.map(game => ({kind:'live-running', game, myTurn:!!game.isMyTurn, date:game.updatedAt || game.startedAt || ''}))
   ]);
+  runningItems.sort((a,b) => {
+    if(!!a.myTurn !== !!b.myTurn) return a.myTurn ? -1 : 1;
+    const deadline = nextDailyDeadlineTimestamp(a.game.deadlineAt) - nextDailyDeadlineTimestamp(b.game.deadlineAt);
+    if(deadline && !Number.isNaN(deadline)) return deadline;
+    if(!!a.attention !== !!b.attention) return a.attention ? -1 : 1;
+    return 0;
+  });
   appendMixedGameCards(runningItems, dailyGamesTournamentOnly ? 'Du hast derzeit keine laufende Turnierpartie.' : 'Du hast derzeit keine laufende Partie.');
 }
 let nextDailyGameTarget = null;
@@ -1168,11 +1179,14 @@ function startDailyGamesPresenceRefresh(){
 function stopDailyGamesPresenceRefresh(){
   if(dailyGamesPresenceRefreshTimer){ clearInterval(dailyGamesPresenceRefreshTimer); dailyGamesPresenceRefreshTimer = null; }
 }
-function openDailyGamesDialog(tournamentOnly){
+let dailyGamesReturnFocus = null;
+function openDailyGamesDialog(tournamentOnly, options){
+  options = options || {};
+  dailyGamesReturnFocus = document.activeElement;
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   dailyGamesTournamentOnly = tournamentOnly === true;
   const invitationFromAddress = !!dailyInvitationRoomFromAddress() || !!rematchInvitationFromAddress();
-  setDailyGamesActiveTab(invitationFromAddress ? 'open' : 'running', {render:false});
+  setDailyGamesActiveTab(options.running ? 'running' : (invitationFromAddress ? 'open' : 'running'), {render:false});
   if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Partien';
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
     ? 'Deine Daily- und Live-Turnierpartien nach Status. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
@@ -1180,10 +1194,14 @@ function openDailyGamesDialog(tournamentOnly){
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
   loadDailyGames();
   startDailyGamesPresenceRefresh();
+  const closeButton = dailyGamesBackdrop && dailyGamesBackdrop.querySelector('[data-dialog-close-target]');
+  if(closeButton) closeButton.focus({preventScroll:true});
 }
 function closeDailyGamesDialog(){
+  if(typeof resetRunningGamePreviews === 'function') resetRunningGamePreviews();
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = true;
   stopDailyGamesPresenceRefresh();
+  if(dailyGamesReturnFocus && dailyGamesReturnFocus.isConnected) dailyGamesReturnFocus.focus({preventScroll:true});
 }
 dailyGamesTabButtons.forEach(button => button.addEventListener('click', () => setDailyGamesActiveTab(button.dataset.dailyGamesTab)));
 if(dailyGamesMomentsOnlyBtn) dailyGamesMomentsOnlyBtn.addEventListener('click', () => {
