@@ -41,6 +41,7 @@
   <link rel="stylesheet" href="css/gamer.css?v=20260909-phone-layout-3" />
 <link rel="stylesheet" href="css/move-notation.css?v=20260908-2">
 <link rel="stylesheet" href="css/my-games-overview.css?v=20260909-remis-actions-2">
+<link rel="stylesheet" href="css/member-games.css?v=20260909-member-games-1">
 <script defer src="js/move-notation.js?v=20260908-2"></script>
 </head>
 <body>
@@ -689,6 +690,8 @@
           <p>Bei laufenden Partien werden Gegner, Spielmodus, gewählte Zugfrist, Wertung, der aktuelle Zugstatus und das Ende der aktuellen Zugfrist angezeigt. Zusätzlich zeigt <strong>„Online“</strong> an, dass der Gegner innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv war. Partien, in denen du am Zug bist, erhalten einen dezenten grünen Hintergrund, eine grüne Akzentkante und das gut sichtbare Kennzeichen <strong>„Du bist am Zug“</strong>. Ein eingegangenes Remisangebot wird dort ebenfalls hervorgehoben; ist bei Daily Chess eine dreifache Stellungswiederholung oder die 50-Züge-Regel reklamierbar, erscheint bereits in der Übersicht der Hinweis <strong>„½ Remis reklamierbar“</strong>. Mit <strong>„Partie öffnen“</strong>, <strong>„Remisangebot öffnen“</strong> oder <strong>„Remis reklamieren“</strong> gelangst du direkt zurück in den betreffenden Raum.</p>
           <p>Beendete Partien werden innerhalb der Schachchronik nach ihrem Endzeitpunkt sortiert. Solange die vollständige Partie noch in der zentralen Partiechronik verfügbar ist, bleiben die gewohnten Partiekarten mit Ergebnis, Beendigungsgrund, Endzeitpunkt und den vorhandenen Aktionen erhalten. Über <strong>„Partie ansehen“</strong> kannst du den Raum erneut öffnen; mit <strong>„PGN“</strong> lädst du die Partie direkt als PGN-Datei herunter. Wird eine ältere Partie später nicht mehr in der zentralen Partiechronik geführt, bleibt ihr kompakter Chronikeintrag mit den wesentlichen Eckdaten weiterhin Bestandteil deiner persönlichen Schachgeschichte. <strong>„Aus Verlauf entfernen“</strong> entfernt bei Daily-Partien die ausführliche Verlaufskarte aus deiner persönlichen Daily-Übersicht; der dauerhafte Chronikeintrag bleibt erhalten. Beim Gegner und im Spielraum wird dadurch nichts gelöscht. Nach dem Partieende erhalten beide Spieler – sofern aktiviert – einmalig eine Ergebnis-Mail.</p>
           <p>Eine selbst erstellte Daily-Einladung kann über <strong>„Einladung löschen“</strong> zurückgezogen werden, solange der Gegner den zweiten Spielerplatz noch nicht angenommen hat. Der alte Einladungslink ist danach dauerhaft gesperrt und zeigt beim Öffnen den Hinweis, dass die Einladung zurückgezogen wurde.</p>
+          <p>In der <strong>Mitgliederliste</strong> öffnet ein Klick auf die linke Fläche mit Avatar, Name und Aktivitätsstatus das Profil. Der Favoritenstern bleibt separat bedienbar. Über <strong>„👁 Partien“</strong> gelangst du direkt zu den laufenden öffentlich freigegebenen Partien dieses Mitglieds.</p>
+          <p><strong>„Laufende öffentliche Partien“</strong> und <strong>„Partien von …“</strong> verwenden dieselbe grafische Übersicht mit Miniaturbrettern. Bei einer Mitgliederauswahl spielt dieses Mitglied in der Vorschau von unten; <strong>„Alle anzeigen“</strong> hebt die Auswahl auf. <strong>„Zuschauen“</strong> öffnet eine fremde Partie im selben Tab. Oberhalb des Brettes führt <strong>„← Partien von …“</strong> beziehungsweise <strong>„← Laufende öffentliche Partien“</strong> zur vorherigen Auswahl zurück. Auch der Browser-Zurückknopf stellt die Übersicht wieder her; die Scrollposition wird im jeweiligen Tab gespeichert. Die Übersicht aktualisiert sich alle 30 Sekunden. Eigene öffentliche Partien öffnen sich weiterhin mit deinem Spielerplatz.</p>
           <p>Der Ersteller kann eine laufende Live- oder Daily-Partie über die kompakte <strong>„Zuschauerfreigabe“</strong> unter dem Brett nachträglich öffentlich freigeben oder die Freigabe wieder entziehen. Beim Entziehen verschwindet die Partie sofort aus der öffentlichen Übersicht, bereits verbundene Zuschauer werden getrennt und der bisherige Zuschauerzugang wird ungültig. Öffnest du unter <strong>„Laufende Partien“</strong> eine eigene öffentliche Partie, wird sie als <strong>„Deine Partie“</strong> gekennzeichnet und über <strong>„Partie öffnen“</strong> mit deinem Spielerplatz geöffnet; nur fremde Partien tragen die Schaltfläche <strong>„Zuschauen“</strong>.</p>
           <p>Wenn du dich auf einem anderen Gerät mit demselben Account anmeldest, kann der Worker deinen Spielerplatz und deinen persönlichen Partieverlauf wieder zuordnen. Die Schaltfläche <strong>„Aktualisieren“</strong> lädt den neuesten Stand.</p>
           <p>In einem Daily-Spielraum erscheint unter den Brettaktionen die Schaltfläche <strong>„Nächste fällige Partie“</strong>, sobald tatsächlich eine weitere Daily-Partie auf deinen Zug wartet. Sie führt im aktuellen Tab direkt zu dieser Partie; maßgeblich ist die zuerst ablaufende Zugfrist. Gibt es keine weitere fällige Partie, wird der Bereich platzsparend ausgeblendet.</p>
@@ -1601,13 +1604,15 @@
     </div>
 
     <div id="publicGamesBackdrop" class="identity-backdrop" hidden>
-      <div class="public-games-modal" role="dialog" aria-modal="true" aria-labelledby="publicGamesTitle">
+      <div class="public-games-modal member-games-modal" role="dialog" aria-modal="true" aria-labelledby="publicGamesTitle" aria-describedby="memberGamesHint">
         <div class="list-dialog-title-row">
-          <h3 id="publicGamesTitle">Laufende öffentliche Partien</h3>
-          <button class="button-flat list-dialog-close-icon" type="button" aria-label="Laufende Partien schließen" data-dialog-close-target="publicGamesCloseBtn">×</button>
+          <h3 id="publicGamesTitle">Mitgliederpartien</h3>
+          <button id="memberGamesCloseIcon" class="button-flat list-dialog-close-icon" type="button" aria-label="Partienübersicht schließen">×</button>
         </div>
-        <div id="publicGamesList" class="public-games-list" aria-live="polite"><div class="public-games-empty">Noch keine Partien geladen.</div></div>
-        <div id="publicGamesStatus" class="public-games-status" aria-live="polite"></div>
+        <div class="member-games-filter-row"><button id="memberGamesAllBtn" class="button-flat" type="button" hidden>Alle anzeigen</button></div>
+        <p id="memberGamesHint">Laufende öffentlich freigegebene Partien. Das ausgewählte Mitglied spielt auf den Vorschaubrettern von unten.</p>
+        <div id="publicGamesList" class="member-games-grid"></div>
+        <div id="publicGamesStatus" class="public-games-status" role="status"></div>
         <div class="public-games-actions">
           <button id="publicGamesRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="publicGamesCloseBtn" type="button">Schließen</button>
@@ -2122,6 +2127,7 @@
 
     <div class="top-layout">
       <div class="board-column">
+        <button id="memberGamesReturnBtn" class="button-flat member-games-return" type="button" hidden></button>
         <div id="boardPlayerTop" class="board-player-strip board-player-strip-top" aria-label="Spieler oberhalb des Brettes" hidden>
           <div class="player-clock-card" id="clockCardB">
             <div class="player-clock-head">
@@ -2529,13 +2535,14 @@
   <script src="js/daily-games.js?v=20260908-1"></script>
 <script src="js/my-games-overview.js?v=20260908-1"></script>
 <script src="js/open-offers.js?v=20260809-9"></script>
-<script src="js/public-games.js?v=20260804-1"></script>
+<script src="js/public-games.js?v=20260909-member-games-1"></script>
 <script src="js/game-archive.js?v=20260821-1"></script>
 <script src="js/info-dialogs.js?v=20260804-1"></script>
 <script src="js/policy-dialogs.js?v=20260804-1"></script>
 <script src="js/online-room-utils.js?v=20260804-1"></script>
 <script src="js/online-ui-state.js?v=20260909-remis-actions-2"></script>
-<script src="js/member-directory.js?v=20260827-1"></script>
+<script src="js/member-directory.js?v=20260909-member-games-1"></script>
+<script src="js/member-games.js?v=20260909-member-games-1"></script>
 <script src="js/direct-messages.js?v=20260827-1"></script>
 <script src="js/game-invitations.js?v=20260827-1"></script>
 <script src="js/online-sync-state.js?v=20260817-3"></script>
