@@ -55,7 +55,7 @@ html.room-actions-active .header #dailyGamesOpenBtn{display:none!important;}
 .room-games-navigation{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-height:48px;}
 .room-default-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px;align-items:stretch;min-height:48px;}
 .room-default-actions[hidden],.room-default-actions>button[hidden]{display:none!important;}
-.room-default-actions:has(>button[hidden]){grid-template-columns:minmax(0,1fr);}
+.room-default-actions:not(.room-draw-response):has(>button[hidden]){grid-template-columns:minmax(0,1fr);}
 .room-default-actions>button{width:100%!important;min-height:48px!important;margin:0;box-sizing:border-box;}
 .room-default-actions .room-my-games-btn{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;font-size:13px!important;}
 .room-default-actions .daily-games-turn-count{flex:0 0 auto;}
@@ -70,3 +70,7 @@ html.room-actions-active .header #dailyGamesOpenBtn{display:none!important;}
 .daily-move-dialog::backdrop{background:rgba(0,0,0,.08);}
 html.dark-mode .daily-move-dialog{background:#292b30;color:#f3f4f6;border-color:#87636a;}
 .room-games-navigation .board-daily-draw-btn.active,.daily-move-dialog .board-daily-draw-btn.active{border-color:var(--andili-rot)!important;box-shadow:inset 0 0 0 2px rgba(132,63,70,.35)!important;}
+
+/* An incoming draw offer uses the same row and retains the resign action. */
+.room-default-actions.room-draw-response{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1.15fr);gap:6px;}
+.room-default-actions.room-draw-response>.board-action-btn{min-width:0!important;padding:6px!important;white-space:normal!important;line-height:1.15!important;font-size:13px!important;}
