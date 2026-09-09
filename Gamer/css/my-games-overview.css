@@ -37,21 +37,36 @@ html.dark-mode .running-game-board:not(.preview-ready){background:#34363b;color:
 @media(max-width:850px){#dailyGamesList.running-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:520px){#dailyGamesList.running-grid{grid-template-columns:minmax(0,1fr);gap:14px;} .daily-games-modal.has-running-grid{padding:14px;}}
 
-/* Room navigation is beside the top player on desktop, below the bottom player on mobile. */
-.room-games-navigation{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center;gap:8px;min-width:0;box-sizing:border-box;}
+/* Room actions align with the upper player; the move list aligns with the board. */
+.room-games-navigation{box-sizing:border-box;min-width:0;}
 .room-games-navigation[hidden]{display:none!important;}
-.room-games-navigation>button,.room-games-navigation>.next-daily-game-box{flex:1;min-width:0;}
-.room-games-navigation .room-my-games-btn,.room-games-navigation .next-daily-game-btn{width:100%;min-height:42px;padding:7px 5px!important;border-radius:12px;font-size:13px!important;line-height:1.2;white-space:normal;}
-.room-games-navigation .next-daily-game-box{padding:0;border:0;background:none;display:block;}
-.room-games-navigation .next-daily-game-hint{display:none;}
 .room-board-aligned>.moves-right{position:relative;padding-top:var(--room-board-offset);box-sizing:border-box;}
-.room-board-aligned>.moves-right>.room-games-navigation{position:absolute;top:0;left:0;right:0;height:max(42px,calc(var(--room-board-offset) - 10px));}
+.room-board-aligned>.moves-right>.room-games-navigation{position:absolute;top:0;left:0;right:0;height:max(48px,calc(var(--room-board-offset) - 10px));}
 .room-board-aligned>.moves-right>.side-panel{box-sizing:border-box;height:var(--room-board-height);min-height:0;max-height:var(--room-board-height);margin:0;}
-.room-board-aligned .moves-panel{max-height:none;}
+.room-board-aligned .moves-panel,.room-board-stacked .moves-panel{max-height:none;}
 .room-board-stacked>.moves-right>.side-panel{box-sizing:border-box;height:clamp(380px,65dvh,540px);min-height:0;max-height:none;margin:0;}
-.room-board-stacked .moves-panel{max-height:none;}
 .room-board-stacked .room-games-navigation{width:100%;margin:0;}
-
+.room-board-stacked>.site-footnote{width:var(--board-size);max-width:100%;box-sizing:border-box;}
 .game-preview-square .preview-rank{top:2px;bottom:auto;}
 .game-preview-square .preview-file{left:auto;right:2px;}
-.room-board-stacked>.site-footnote{width:var(--board-size);max-width:100%;box-sizing:border-box;}
+
+/* One stable action row: navigation before a move, confirmation after it. */
+html.room-actions-active .header #dailyGamesOpenBtn{display:none!important;}
+.room-games-navigation{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-height:48px;}
+.room-default-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px;align-items:stretch;min-height:48px;}
+.room-default-actions[hidden],.room-default-actions>button[hidden]{display:none!important;}
+.room-default-actions:has(>button[hidden]){grid-template-columns:minmax(0,1fr);}
+.room-default-actions>button{width:100%!important;min-height:48px!important;margin:0;box-sizing:border-box;}
+.room-default-actions .room-my-games-btn{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px;font-size:13px!important;}
+.room-default-actions .daily-games-turn-count{flex:0 0 auto;}
+.room-default-actions .resign-btn{font-size:13px!important;}
+.room-games-navigation .board-daily-actions,.daily-move-dialog .board-daily-actions{display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,1fr);gap:6px;width:100%;min-height:48px;align-items:stretch;box-sizing:border-box;}
+.room-games-navigation .board-daily-actions[hidden],.daily-move-dialog .board-daily-actions[hidden]{display:none!important;}
+.room-games-navigation .board-daily-actions .board-action-btn,.daily-move-dialog .board-action-btn{width:100%!important;min-width:0!important;min-height:48px!important;padding:6px!important;font-size:13px!important;white-space:normal!important;line-height:1.15!important;box-sizing:border-box;}
+.room-games-navigation .board-daily-actions .board-daily-cancel-btn,.daily-move-dialog .board-daily-cancel-btn{font-size:22px!important;}
+.room-board-stacked .room-games-navigation{min-height:48px;}
+.daily-move-dialog{position:fixed;inset:auto;margin:0;transform:translate(-50%,-50%);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:12px;box-sizing:border-box;border:1px solid rgba(132,63,70,.4);border-radius:18px;background:#faf9f8;color:#282522;box-shadow:0 12px 40px #0005;overflow:auto;}
+.daily-move-dialog:not([open]){display:none;}
+.daily-move-dialog::backdrop{background:rgba(0,0,0,.08);}
+html.dark-mode .daily-move-dialog{background:#292b30;color:#f3f4f6;border-color:#87636a;}
+.room-games-navigation .board-daily-draw-btn.active,.daily-move-dialog .board-daily-draw-btn.active{border-color:var(--andili-rot)!important;box-shadow:inset 0 0 0 2px rgba(132,63,70,.35)!important;}
