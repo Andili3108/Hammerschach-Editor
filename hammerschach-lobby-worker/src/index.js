@@ -7113,7 +7113,7 @@ async function ensurePublicGamesTable(env) {
   return true;
 }
 
-async function listPublicGames(env, sessionUser = null) {
+async function listPublicGames(env, sessionUser = null, memberId = '') {
   if (!(await ensurePublicGamesTable(env))) return [];
   const result = await env.DB.prepare(
     `SELECT public_games.room_id,
@@ -7131,9 +7131,10 @@ async function listPublicGames(env, sessionUser = null) {
        LEFT JOIN users black_account ON black_account.id = public_games.black_user_id
       WHERE public_games.public_game = 1
         AND public_games.ended = 0
-      ORDER BY public_games.updated_at DESC
-      LIMIT 100`
-  ).all();
+        ${memberId ? 'AND (public_games.white_user_id = ? OR public_games.black_user_id = ?)' : ''}
+      ORDER BY ${memberId ? 'public_games.started_at DESC, public_games.room_id' : 'public_games.updated_at DESC'}
+      ${memberId ? '' : 'LIMIT 100'}`
+  ).bind(...(memberId ? [memberId, memberId] : [])).all();
   const currentUserId = sessionUser && sessionUser.id ? String(sessionUser.id) : '';
   return (result && result.results ? result.results : []).map(row => {
     const whiteUserId = String(row.white_user_id || '');
@@ -7149,6 +7150,7 @@ async function listPublicGames(env, sessionUser = null) {
       roomId: isParticipant ? cleanRoomId(row.room_id) : '',
       isParticipant,
       participantRole,
+      ...(memberId ? {memberRole:memberId === whiteUserId ? 'w' : 'b'} : {}),
       whiteName: cleanDisplayName(row.white_name) || 'Weiß',
       blackName: cleanDisplayName(row.black_name) || 'Schwarz',
       mode: row.mode === 'daily' ? 'daily' : 'live',
@@ -11117,6 +11119,24 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  if (url.pathname === '/api/public-game-preview' && request.method === 'GET') {
+    const watchId = cleanPublicWatchId(url.searchParams.get('watch'));
+    if (!watchId) return json({ok:false, message:'Ungültiger Zuschauerzugang.'}, {status:400});
+    try {
+      await ensurePublicGamesTable(env);
+      const row = await env.DB.prepare(`SELECT room_id FROM public_games
+        WHERE spectator_id = ? AND public_game = 1 AND ended = 0 LIMIT 1`).bind(watchId).first();
+      if (!row) return json({ok:false, message:'Diese Partie ist nicht mehr öffentlich verfügbar.'}, {status:404});
+      const id = env.GAME_ROOM.idFromName(row.room_id);
+      const response = await gameRoomStub(env, id).fetch(new Request('https://game-room.internal/public-game-preview?room=' + encodeURIComponent(row.room_id), {
+        method:'POST', headers:{'x-hammerschach-watch-id':watchId}
+      }));
+      return json(await response.json(), {status:response.status, headers:{'Cache-Control':'no-store'}});
+    } catch (_) {
+      return json({ok:false, message:'Stellung momentan nicht abrufbar.'}, {status:503});
+    }
+  }
+
   if (url.pathname === '/api/my-game-preview' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ok:false, message:'Bitte zuerst einloggen.'}, {status:401});
@@ -11236,8 +11256,13 @@ async function handleAuthApi(request, env, url) {
   if (url.pathname === '/api/public-games' && request.method === 'GET') {
     try {
       const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-      const games = await listPublicGames(env, session ? session.user : null);
-      return json({ ok: true, games, serverNow: Date.now() });
+      const memberId = cleanPublicProfileUserId(url.searchParams.get('member'));
+      if (url.searchParams.has('member') && !memberId) return json({ok:false, message:'Ungültiges Mitglied.'}, {status:400});
+      if (memberId && !session) return json({ok:false, message:'Mitgliederpartien sind nur nach Login verfügbar.'}, {status:401});
+      const member = memberId ? await env.DB.prepare('SELECT id, username FROM users WHERE id = ? LIMIT 1').bind(memberId).first() : null;
+      if (memberId && !member) return json({ok:false, message:'Das Mitglied wurde nicht gefunden.'}, {status:404});
+      const games = await listPublicGames(env, session ? session.user : null, memberId);
+      return json({ ok: true, games, ...(member ? {member:{id:member.id, username:member.username}} : {}), serverNow: Date.now() }, {headers:{'Cache-Control':'no-store'}});
     } catch (_) {
       return json({ ok: false, code: 'PUBLIC_GAMES_UNAVAILABLE', message: 'Öffentliche Partien konnten nicht geladen werden.' }, { status: 500 });
     }
@@ -15635,6 +15660,11 @@ export class GameRoom {
     const room = cleanRoomId(url.searchParams.get('room'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
 
+    if (request.method === 'POST' && url.pathname === '/public-game-preview') {
+      const result = await this.publicGamePreview(request.headers.get('x-hammerschach-watch-id') || '');
+      return json(result, {status:result.status || 200, headers:{'Cache-Control':'no-store'}});
+    }
+
     await this.state.storage.put('roomId', room);
 
     if (request.method === 'POST' && (url.pathname === '/reaction-updated' || url.pathname === '/moment-updated')) {
@@ -16062,6 +16092,28 @@ export class GameRoom {
     } catch (_) {
       // Der Raumindex unterstützt die spätere Account-Anonymisierung, darf aber niemals den Spielbeitritt blockieren.
       return false;
+    }
+  }
+
+  async publicGamePreview(requestedWatchId) {
+    // Recheck the room's current permission and token in the same snapshot as the board.
+    // A stale public index must never bypass a revoked spectator permission.
+    const snapshot = await this.state.storage.get(['publicGame', 'publicWatchId', 'game', 'gameSetup', 'moves', 'cancelled']);
+    const game = snapshot.get('game') || {};
+    const token = cleanPublicWatchId(requestedWatchId);
+    if (!token || snapshot.get('publicGame') !== true || token !== snapshot.get('publicWatchId') ||
+        !game.started || game.ended || (snapshot.get('cancelled') || {}).cancelled) {
+      return {ok:false, status:404, message:'Diese Partie ist nicht mehr öffentlich verfügbar.'};
+    }
+    try {
+      const moves = snapshot.get('moves') || [];
+      const setup = cleanGameSetup(snapshot.get('gameSetup') || game.gameSetup || null);
+      const current = buildServerHistoryState(moves, setup).game;
+      const last = moves.length ? moves[moves.length - 1] : null;
+      return {ok:true, board:current.board, turn:current.turn, ended:false,
+        lastMove:last ? {from:last.from, to:last.to} : null};
+    } catch (_) {
+      return {ok:false, status:503, message:'Stellung momentan nicht abrufbar.'};
     }
   }
 
