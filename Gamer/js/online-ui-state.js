@@ -93,9 +93,8 @@ function canOfferLiveDrawNow(){
   }
 }
 function updateGameActionButtons(){
-  const live = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
+  const live = !!(onlineRoomId && !onlineRoomCancelled && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
   const dailyMovePending = !!(live && isDailyTimeControl() && pendingDailyMove);
-  if(gameActionsEl) gameActionsEl.hidden = !live || dailyMovePending;
   if(resignBtn) resignBtn.hidden = !live || dailyMovePending;
   if(!live && resignBackdropEl && !resignBackdropEl.hidden) closeResignDialog({restoreFocus:false});
   if(!offerDrawBtn || !resignBtn) return;
@@ -105,10 +104,30 @@ function updateGameActionButtons(){
   const drawAgreementAvailable = actualMoveCount() >= 2;
   const liveDrawOfferAvailable = !!(!daily && canOfferLiveDrawNow());
   const dailyClaimAvailable = !!(daily && onlineDrawClaims && onlineDrawClaims.claimantRole === onlineRoleCode && (onlineDrawClaims.threefold || onlineDrawClaims.fiftyMove));
-  offerDrawBtn.hidden = !!(live && daily && !incomingDrawOffer && !outgoingDrawOffer && !dailyClaimAvailable);
+  const incomingActions = live && incomingDrawOffer;
+  const roomActions = document.getElementById('roomDefaultActions');
+  const myGamesButton = document.getElementById('roomMyGamesBtn');
+  if(roomActions && gameActionsEl){
+    // Move the original controls so their existing confirmation and response
+    // handlers remain intact. The default order is accept, decline, resign.
+    roomActions.classList.toggle('room-draw-response', incomingActions);
+    if(incomingActions){
+      if(offerDrawBtn.parentElement !== roomActions) roomActions.insertBefore(offerDrawBtn, resignBtn);
+      if(declineDrawBtn && declineDrawBtn.parentElement !== roomActions) roomActions.insertBefore(declineDrawBtn, resignBtn);
+    } else {
+      if(offerDrawBtn.parentElement !== gameActionsEl) gameActionsEl.appendChild(offerDrawBtn);
+      if(declineDrawBtn && declineDrawBtn.parentElement !== gameActionsEl) gameActionsEl.appendChild(declineDrawBtn);
+    }
+    if(myGamesButton) myGamesButton.hidden = incomingActions || !onlineAuthToken || !onlineAuthUser;
+  }
+  // An outgoing offer is already explained by the status field. Keep only
+  // actionable draw controls; live offers and existing claims remain available.
+  offerDrawBtn.hidden = !live || dailyMovePending || outgoingDrawOffer ||
+    (daily && !incomingDrawOffer && !dailyClaimAvailable);
+  if(gameActionsEl) gameActionsEl.hidden = !live || dailyMovePending || incomingActions || offerDrawBtn.hidden;
   offerDrawBtn.classList.toggle('draw-offer-accept-btn', incomingDrawOffer || dailyClaimAvailable);
   if(declineDrawBtn){
-    declineDrawBtn.hidden = !incomingDrawOffer;
+    declineDrawBtn.hidden = !incomingActions || dailyMovePending;
     declineDrawBtn.disabled = !live || variationModeActive || !incomingDrawOffer;
     declineDrawBtn.title = incomingDrawOffer ? 'Remisangebot ablehnen und die Partie fortsetzen.' : '';
   }

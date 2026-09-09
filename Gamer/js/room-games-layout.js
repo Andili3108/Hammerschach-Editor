@@ -72,7 +72,7 @@
     const player = onlineRoleCode === 'w' || onlineRoleCode === 'b';
     const pending = room && !confirmation.hidden;
     navigation.hidden = !room || (!member && !player);
-    openButton.hidden = !member;
+    openButton.hidden = !member || defaults.classList.contains('room-draw-response');
     defaults.hidden = pending;
     navigation.classList.toggle('room-confirming', pending);
     // Hide only the desktop presentation, not the source control: the mobile
