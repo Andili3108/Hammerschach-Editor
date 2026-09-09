@@ -1,0 +1,31 @@
+/* The profile hit area and favorite are separate native buttons. */
+.member-profile-area{position:relative;border-radius:10px;align-self:stretch;padding:4px;}
+.member-profile-area:hover{background:rgba(185,140,20,.07);}
+.member-profile-area .member-profile-hit{position:absolute;inset:0;z-index:1;width:100%;height:100%;min-height:0;padding:0;margin:0;border:0;border-radius:10px;background:transparent;box-shadow:none;cursor:pointer;}
+.member-profile-area .member-profile-hit:hover{background:transparent;box-shadow:none;transform:none;}
+.member-profile-area .member-profile-hit:focus-visible{outline:3px solid var(--andili-rot,#843f46);outline-offset:2px;}
+.member-profile-area .member-favorite-btn{position:relative;z-index:2;}
+.member-games-modal{width:1000px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;max-height:calc(100dvh - 24px);box-sizing:border-box;}
+#publicGamesBackdrop .member-games-modal{max-height:calc(100dvh - 36px);overflow:hidden;}
+#publicGamesBackdrop .member-games-modal>.member-games-grid{flex:1 1 auto;min-height:0;overflow:auto;}
+.member-games-filter-row:has(>button[hidden]){display:none;}
+.member-games-filter-row{margin-bottom:10px;}
+#memberGamesHint{font-size:14px;line-height:1.4;margin:0 0 12px;color:#6a6258;}
+.member-games-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;overflow:auto;min-height:0;align-items:start;padding:5px 7px 10px 4px;overscroll-behavior:contain;}
+.member-games-grid>.public-games-empty{grid-column:1/-1;}
+.member-game-card{display:flex;flex-direction:column;gap:9px;min-width:0;padding:10px;border:1px solid #d9d5cf;border-radius:16px;color:#282522;text-decoration:none;background:#f4f2ef;box-shadow:0 3px 10px #0000000a;}
+.member-game-card:hover{border-color:#a86f16;box-shadow:0 5px 18px #704a2224;}
+.member-game-card:focus-visible{outline:3px solid #843f46;outline-offset:2px;}
+.member-game-card.current-game{border-color:#bd831e;background:#fff7e4;}
+.member-game-card.mine{border-color:rgba(132,63,70,.45);}
+.member-game-card.mine .running-game-open{font-weight:900;}
+.member-game-names{font-size:17px;line-height:1.3;overflow-wrap:anywhere;}
+.member-game-meta{font-size:12px;line-height:1.5;overflow-wrap:anywhere;}
+.member-game-card .running-game-turn{margin:0;}
+.member-games-return{width:100%;min-height:42px;margin:0 0 10px;white-space:normal;overflow-wrap:anywhere;}
+.member-games-return[hidden]{display:none!important;}
+html.dark-mode .member-game-card{background:#292b30;border-color:#4d4942;color:#f3f4f6;}
+html.dark-mode .member-game-card.current-game{background:#3d3424;border-color:#d6a143;}
+html.dark-mode #memberGamesHint{color:#c9c1b4;}
+@media(max-width:850px){.member-games-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:520px){.member-games-grid{grid-template-columns:minmax(0,1fr);gap:14px;}.member-games-modal{padding:14px;}#publicGamesTitle{font-size:21px;overflow-wrap:anywhere;}}
