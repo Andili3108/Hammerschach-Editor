@@ -167,13 +167,13 @@ function renderBoard(){
   updateStatus(g);
   if(pendingDailyMove){
     if(pendingDailyMove.claimDraw){
-      statusEl.textContent = 'Zugvorschau — mit „Zug bestätigen + Remis reklamieren“ wird der Zug serverseitig geprüft und bei gültigem Anspruch sofort als Remis beendet.';
+      statusEl.textContent = 'Zugvorschau — mit „Bestätigen“ wird der Zug serverseitig geprüft und bei gültigem Anspruch sofort als Remis beendet.';
     } else if(pendingDailyMove.offerDraw){
-      statusEl.textContent = 'Zugvorschau — mit „Zug bestätigen + Remis“ wird das Remisangebot gemeinsam mit dem Zug gesendet.';
+      statusEl.textContent = 'Zugvorschau — mit „Bestätigen“ wird das Remisangebot gemeinsam mit dem Zug gesendet.';
     } else if(pendingDailyMove.claimDrawReason){
       statusEl.textContent = 'Zugvorschau — dieser Zug ermöglicht eine Remisreklamation (' + (pendingDailyMove.claimDrawReason === 'threefold_repetition' ? 'dreifache Stellungswiederholung' : '50-Züge-Regel') + ').';
     } else {
-      statusEl.textContent = 'Zugvorschau — rechts „Zug bestätigen“, optional „½ Remis“, oder „Zug zurücknehmen“ wählen.';
+      statusEl.textContent = 'Zugvorschau — „Bestätigen“, optional „½ Remis“, oder „Zug zurücknehmen“ wählen.';
     }
   }
   updatePremoveUi();
@@ -362,8 +362,15 @@ function updateDailyMoveConfirmationUi(){
     onlineRoleCode === g.turn
   );
   dailyMoveConfirmationEl.hidden = !visible;
-  const boardTools = dailyMoveConfirmationEl.closest('.board-tools');
-  if(boardTools) boardTools.classList.toggle('daily-move-pending', visible);
+  const boardTools = document.querySelector('.board-tools');
+  if(boardTools){
+    if(visible && !boardTools.classList.contains('daily-move-pending')){
+      boardTools.style.minHeight = boardTools.getBoundingClientRect().height + 'px';
+    } else if(!visible){
+      boardTools.style.removeProperty('min-height');
+    }
+    boardTools.classList.toggle('daily-move-pending', visible);
+  }
   if(dailyMoveCancelBtn) dailyMoveCancelBtn.disabled = !visible;
   if(dailyMoveDrawBtn){
     const offerWithMove = !!(visible && pendingDailyMove && pendingDailyMove.offerDraw);
@@ -392,11 +399,14 @@ function updateDailyMoveConfirmationUi(){
   }
   if(dailyMoveConfirmBtn){
     dailyMoveConfirmBtn.disabled = !visible;
-    dailyMoveConfirmBtn.textContent = visible && pendingDailyMove && pendingDailyMove.claimDraw
-      ? '✓ Zug bestätigen + Remis reklamieren'
+    dailyMoveConfirmBtn.textContent = '✓ Bestätigen';
+    const actionLabel = visible && pendingDailyMove && pendingDailyMove.claimDraw
+      ? 'Zug und Remisreklamation bestätigen'
       : (visible && pendingDailyMove && pendingDailyMove.offerDraw
-          ? '✓ Zug bestätigen + Remis'
-          : '✓ Zug bestätigen');
+          ? 'Zug und Remisangebot bestätigen'
+          : 'Zug bestätigen');
+    dailyMoveConfirmBtn.setAttribute('aria-label', actionLabel);
+    dailyMoveConfirmBtn.title = actionLabel;
   }
 }
 function stageDailyMove(found, promotion){

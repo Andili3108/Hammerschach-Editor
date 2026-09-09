@@ -96,6 +96,7 @@ function updateGameActionButtons(){
   const live = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost && (onlineRoleCode === 'w' || onlineRoleCode === 'b'));
   const dailyMovePending = !!(live && isDailyTimeControl() && pendingDailyMove);
   if(gameActionsEl) gameActionsEl.hidden = !live || dailyMovePending;
+  if(resignBtn) resignBtn.hidden = !live || dailyMovePending;
   if(!live && resignBackdropEl && !resignBackdropEl.hidden) closeResignDialog({restoreFocus:false});
   if(!offerDrawBtn || !resignBtn) return;
   const incomingDrawOffer = !!(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode);
@@ -142,7 +143,7 @@ function updateGameActionButtons(){
     offerDrawBtn.textContent = '½ Remis';
     offerDrawBtn.disabled = daily || !liveDrawOfferAvailable;
     offerDrawBtn.title = daily
-      ? 'Bei Daily Chess wird das Remisangebot nach der Zugauswahl zusammen mit „Zug bestätigen“ gesendet.'
+      ? 'Bei Daily Chess wird das Remisangebot nach der Zugauswahl zusammen mit „Bestätigen“ gesendet.'
       : !drawAgreementAvailable
         ? 'Ein Remis durch Vereinbarung ist erst möglich, nachdem beide Spieler mindestens einen Zug gemacht haben.'
         : liveDrawOfferAvailable

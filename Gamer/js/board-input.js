@@ -3,7 +3,7 @@
 function onSquareClick(x,y){
   if(gameEnded) return;
   if(pendingDailyMove){
-    statusEl.textContent = 'Zugvorschau aktiv — bitte unter dem Brett bestätigen oder zurücknehmen.';
+    statusEl.textContent = 'Zugvorschau aktiv — bitte bestätigen oder zurücknehmen.';
     return;
   }
   const g = buildGameFromHistory(masterHistory.length);
