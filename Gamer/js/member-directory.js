@@ -371,7 +371,14 @@ function renderStandaloneMemberResults(users, options){
     card.className = 'member-result-card' + (user.favorite ? ' favorite' : '') + (registrationComplete ? '' : ' registration-pending');
 
     const main = document.createElement('div');
-    main.className = 'member-result-main';
+    main.className = 'member-result-main member-profile-area';
+    const profileHit = document.createElement('button');
+    profileHit.type = 'button';
+    profileHit.className = 'member-profile-hit';
+    profileHit.setAttribute('aria-label', 'Profil von ' + (user.username || 'Mitglied') + ' ansehen');
+    profileHit.title = 'Profil ansehen';
+    profileHit.addEventListener('click', () => openMemberProfile(user, 'standalone'));
+    main.appendChild(profileHit);
     const avatar = createMemberAvatarElement(user, 'profile-avatar-small');
     const info = document.createElement('div');
     info.className = 'member-result-info';
@@ -407,13 +414,13 @@ function renderStandaloneMemberResults(users, options){
 
     const actions = document.createElement('div');
     actions.className = 'member-result-actions';
-    const profileBtn = document.createElement('button');
-    profileBtn.type = 'button';
-    profileBtn.className = 'button-flat';
-    profileBtn.textContent = '👤 Profil';
-    profileBtn.title = 'Mitgliederprofil und Ratings anzeigen';
-    profileBtn.addEventListener('click', ev => { ev.stopPropagation(); openMemberProfile(user, 'standalone'); });
-    actions.appendChild(profileBtn);
+    const gamesBtn = document.createElement('button');
+    gamesBtn.type = 'button';
+    gamesBtn.className = 'button-flat';
+    gamesBtn.textContent = '👁 Partien';
+    gamesBtn.title = 'Laufende öffentliche Partien von ' + (user.username || 'diesem Mitglied');
+    gamesBtn.addEventListener('click', ev => { ev.stopPropagation(); openMemberGamesDialog(user); });
+    actions.appendChild(gamesBtn);
     if(onlineAuthUser && user.id && user.id !== onlineAuthUser.id){
       const messageBtn = document.createElement('button');
       messageBtn.type = 'button';
@@ -538,8 +545,8 @@ async function openMembersDialog(){
   updateMemberDirectoryControls();
   if(membersSearchHint){
     membersSearchHint.textContent = standaloneInvitationAvailable()
-      ? 'Wähle ein Mitglied aus. Danach legst du die Partieeinstellungen und eine optionale persönliche Nachricht fest. Noch wird kein Spielraum erstellt.'
-      : 'Du kannst die Mitglieder und ihren freigegebenen Aktivitätsstatus ansehen. Für eine neue Einladung kehrst du anschließend zur Mitglieder-Lobby zurück.';
+      ? 'Klicke links auf Name oder Avatar, um das Profil anzusehen. „Partien“ zeigt öffentliche laufende Partien; „Zur Partie einladen“ öffnet die Partievorbereitung.'
+      : 'Klicke links auf Name oder Avatar für das Profil oder auf „Partien“ zum Zuschauen. Für eine neue Einladung kehrst du zur Mitglieder-Lobby zurück.';
   }
   if(membersBackdrop) membersBackdrop.hidden = false;
   await loadStandaloneMemberList();
