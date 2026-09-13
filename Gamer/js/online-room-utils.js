@@ -63,7 +63,7 @@ function sendSeatClaim(){
       authToken:onlineAuthToken || '',
       spectatorOnly:!!onlineSpectatorOnly,
       publicWatchId:onlinePublicWatchId || '',
-      publicGame:!!onlineDesiredPublicGameForNewRoom,
+      publicGame:true,
       openOffer:!!onlineDesiredOpenOfferForNewRoom,
       ratedRequested:!!ratingPreference
     }));

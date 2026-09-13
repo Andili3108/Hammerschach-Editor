@@ -34,10 +34,10 @@ async function createNewOnlineRoom(opts){
     const selectedGameSetupForRoom = currentGameSetupPayload();
     onlineSpectatorOnly = false;
     onlinePublicWatchId = '';
-    onlineDesiredPublicGameForNewRoom = !!publicGamePreference;
+    onlineDesiredPublicGameForNewRoom = true;
     onlineDesiredOpenOfferForNewRoom = opts.openOffer === true;
     onlineRatedRequested = !!ratingPreference;
-    onlinePublicGame = !!publicGamePreference;
+    onlinePublicGame = true;
     onlineOpenOffer = onlineDesiredOpenOfferForNewRoom;
     onlineOpenOfferStatus = onlineDesiredOpenOfferForNewRoom ? 'open' : 'none';
     closeOnlineSocket();

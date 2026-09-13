@@ -207,7 +207,7 @@ function connectOnlineRoom(roomId, opts){
       handled = true;
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'publicGame')){
-      onlinePublicGame = !!msg.publicGame;
+      onlinePublicGame = true;
       handled = true;
     }
     if(Object.prototype.hasOwnProperty.call(msg, 'openOffer')){
@@ -387,7 +387,7 @@ function connectOnlineRoom(roomId, opts){
       if(incomingTimeControl.updatedByRole && incomingTimeControl.updatedByRole === onlineRoleCode) onlineLastMessage = 'Bedenkzeit wurde bestätigt und an die Lobby verteilt.';
       else onlineLastMessage = 'Bedenkzeit aus der Lobby wurde übernommen.';
     } else if(msg.type === 'time_control_ack') onlineLastMessage = 'Bedenkzeit vom Server bestätigt.';
-    else if(msg.type === 'public_game_ack') onlineLastMessage = onlinePublicGame ? 'Zuschauerfreigabe wurde aktiviert.' : 'Zuschauerfreigabe wurde aufgehoben.';
+    else if(msg.type === 'public_game_ack') onlineLastMessage = 'Die Partie ist öffentlich.';
     else if(onlineGameEnded || gameEnded || timeLost) onlineLastMessage = formatOnlineEndMessage({result:onlineGameResult, endReason:onlineGameEndReason, winner:onlineGameWinner});
     else if(onlineGameStarted) onlineLastMessage = 'Online-Partie läuft.';
     else if(isOnlineSideConnected('w') && isOnlineSideConnected('b')) onlineLastMessage = 'Beide Spieler sind in der Lobby.';

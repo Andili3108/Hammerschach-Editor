@@ -32,10 +32,10 @@ const ONLINE_SEAT_STORAGE_PREFIX = 'hammerschachGamerSeat:';
 const ONLINE_LAST_ROOM_STORAGE_KEY = 'hammerschachGamerLastActiveRoom';
 const ONLINE_PUBLIC_GAME_STORAGE_KEY = 'hammerschachGamerPublicGamePreference';
 let inviteColorPreference = 'w';
-let publicGamePreference = false;
+let publicGamePreference = true;
 let ratingPreference = true;
 try{ inviteColorPreference = normalizeInviteColorPreference(localStorage.getItem(ONLINE_INVITE_COLOR_STORAGE_KEY) || 'w'); } catch(_){ inviteColorPreference = 'w'; }
-try{ publicGamePreference = localStorage.getItem(ONLINE_PUBLIC_GAME_STORAGE_KEY) === 'yes'; } catch(_){ publicGamePreference = false; }
+try{ localStorage.setItem(ONLINE_PUBLIC_GAME_STORAGE_KEY, 'yes'); } catch(_){ }
 let onlinePreferredRoleForNextConnect = '';
 let onlineCanSetTimeControl = false;
 let onlineSocket = null;

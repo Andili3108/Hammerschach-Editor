@@ -696,7 +696,7 @@ function openReadyRematchRoom(){
   onlineHeadToHead = null;
   onlineRematchState = null;
   onlineDesiredGameSetupForNewRoom = null;
-  onlineDesiredPublicGameForNewRoom = false;
+  onlineDesiredPublicGameForNewRoom = true;
   onlineDesiredOpenOfferForNewRoom = false;
   connectOnlineRoom(roomId, {reconnect:true, spectatorOnly:false});
 }

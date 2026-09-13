@@ -33,6 +33,13 @@ function setRatingPreference(rated){
   updateRatingPreferenceUi();
 }
 function updatePublicVisibilityUi(){
+  if(publicVisibilityBoxEl) publicVisibilityBoxEl.hidden = true;
+  if(roomPublicVisibilityBoxEl) roomPublicVisibilityBoxEl.hidden = true;
+  publicGamePreference = true;
+  onlinePublicGame = true;
+  return;
+  /* legacy visibility UI */
+/*
   const inRoom = !!onlineRoomId;
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const ended = !!(onlineGameEnded || gameEnded || timeLost);
@@ -82,14 +89,25 @@ function updatePublicVisibilityUi(){
         : 'Privat. Eine Freigabe erscheint erst nach dem Partiestart in der öffentlichen Übersicht.';
     }
   }
+}*/
 }
 function setPublicGamePreference(enabled){
+  publicGamePreference = true;
+  try{ localStorage.setItem(ONLINE_PUBLIC_GAME_STORAGE_KEY, 'yes'); } catch(_){ }
+  updatePublicVisibilityUi();
+  return;
+/*
   if(onlineRoomId){ updatePublicVisibilityUi(); return; }
   publicGamePreference = !!enabled;
   try{ localStorage.setItem(ONLINE_PUBLIC_GAME_STORAGE_KEY, publicGamePreference ? 'yes' : 'no'); } catch(_){}
   updatePublicVisibilityUi();
+}*/
 }
 function setCurrentRoomPublicGame(enabled){
+  onlinePublicGame = true;
+  updatePublicVisibilityUi();
+  return;
+/*
   if(!onlineRoomId || !onlineConnected || !onlineCreatedByMe || onlineRoleCode === 'spectator'){
     updatePublicVisibilityUi();
     return;
@@ -118,5 +136,6 @@ function setCurrentRoomPublicGame(enabled){
     requestOnlineState();
     onlineLastMessage = 'Zuschauerfreigabe wurde noch nicht bestätigt. Raumzustand wird aktualisiert.';
     updateOnlineUi();
-  }, 3500);
+}, 3500);
+}*/
 }
