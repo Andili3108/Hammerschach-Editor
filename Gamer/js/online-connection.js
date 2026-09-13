@@ -421,6 +421,10 @@ function connectOnlineRoom(roomId, opts){
       if(statusEl) statusEl.textContent = msg.message || 'Zum Erstellen einer Partie ist ein Mitglieder-Account erforderlich.';
       setTimeout(() => openAuthDialog('login'), 120);
     }
+    if(msg.type === 'hello' && msg.seatCode === 'LIVE_INVITATION_ACCOUNT_REQUIRED'){
+      if(statusEl) statusEl.textContent = msg.message || 'Bitte melde dich mit dem eingeladenen Account an.';
+      setTimeout(() => openAuthDialog('login'), 120);
+    }
     if(msg.type === 'hello' && msg.seatCode === 'INVITATION_ACCEPTANCE_REQUIRED'){
       if(statusEl) statusEl.textContent = msg.message || 'Bitte beantworte die Daily-Einladung unter „Meine Partien“.';
       setTimeout(() => {

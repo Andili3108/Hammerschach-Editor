@@ -137,6 +137,21 @@ function myGamesEndReasonLabel(reason){
   };
   return labels[String(reason || '')] || 'Partie beendet';
 }
+function createMyLiveInvitationCard(game){
+  const card = createMyLiveRunningCard(game);
+  card.classList.toggle('incoming-invitation', !!game.incomingInvitation);
+  card.querySelector('.daily-game-status').textContent = game.incomingInvitation
+    ? 'Du wurdest eingeladen · Partie noch nicht gestartet'
+    : 'Spielraum vorbereitet · Partie noch nicht gestartet';
+  const link = card.querySelector('.daily-game-open-btn');
+  link.textContent = 'Spielraum öffnen';
+  link.title = 'Diesen Spielraum mit deinem angemeldeten Account öffnen';
+  if(game.invitationMessage){
+    const message = createDailyInvitationMessageBox('Persönliche Nachricht', game.invitationMessage, false);
+    if(message) card.firstElementChild.appendChild(message);
+  }
+  return card;
+}
 function createMyLiveRunningCard(game){
   const card = document.createElement('div');
   card.className = 'daily-game-card' + (game && game.isMyTurn ? ' my-turn' : '') + (game && game.isTournamentGame ? ' tournament-game' : '');
@@ -741,6 +756,7 @@ function appendDailyGamesSection(titleText, games, emptyText, renderer){
 let dailyGamesTournamentOnly = false;
 let dailyGamesCache = [];
 let myLiveRunningGamesCache = [];
+let myLiveInvitationsCache = [];
 let myLiveOpenOffersCache = [];
 let myRematchOffersCache = [];
 let myLiveCompletedGamesCache = [];
@@ -751,7 +767,9 @@ function dailyGamesGroups(games){
   const sourceGames = Array.isArray(games) ? games : [];
   const allDailyGames = dailyGamesTournamentOnly ? sourceGames.filter(game => game.isTournamentGame) : sourceGames;
   const runningDaily = allDailyGames.filter(game => !game.ended && !!game.started);
-  const openDaily = allDailyGames.filter(game => !game.ended && !game.started);
+  const openDaily = allDailyGames.filter(game => !game.ended && !game.started).concat(
+    dailyGamesTournamentOnly ? myLiveInvitationsCache.filter(game => game.isTournamentGame) : myLiveInvitationsCache
+  );
   const completedDaily = allDailyGames.filter(game => !!game.ended);
   const runningLive = dailyGamesTournamentOnly ? myLiveRunningGamesCache.filter(game => game.isTournamentGame) : myLiveRunningGamesCache;
   const openLive = dailyGamesTournamentOnly ? [] : myLiveOpenOffersCache;
@@ -860,7 +878,7 @@ function renderDailyGames(games){
     dailyGamesListEl.appendChild(rematchSection);
     const incomingGames = groups.openDaily.filter(game => !!game.incomingInvitation);
     const ownDailyOpenGames = groups.openDaily.filter(game => !game.incomingInvitation);
-    appendDailyGamesSection('Einladungen', incomingGames, 'Du hast derzeit keine offene Einladung.');
+    appendDailyGamesSection('Einladungen', incomingGames, 'Du hast derzeit keine offene Einladung.', game => game.mode === 'live' ? createMyLiveInvitationCard(game) : createDailyGameCard(game));
     const ownOffers = [
       ...ownDailyOpenGames.map(game => ({kind:'daily', game})),
       ...groups.openLive.map(game => ({kind:'live-offer', game}))
@@ -878,7 +896,7 @@ function renderDailyGames(games){
     if(!ownOffers.length){
       const empty = document.createElement('div'); empty.className = 'daily-games-empty'; empty.textContent = 'Du hast derzeit kein eigenes offenes Angebot.'; offerSection.appendChild(empty);
     } else {
-      ownOffers.forEach(item => offerSection.appendChild(item.kind === 'live-offer' ? createMyLiveOpenOfferCard(item.game) : createDailyGameCard(item.game)));
+      ownOffers.forEach(item => offerSection.appendChild(item.kind === 'live-offer' ? createMyLiveOpenOfferCard(item.game) : item.game.mode === 'live' ? createMyLiveInvitationCard(item.game) : createDailyGameCard(item.game)));
     }
     dailyGamesListEl.appendChild(offerSection);
     return;
@@ -1113,6 +1131,7 @@ async function loadDailyGames(options){
     const games = dailyResult.status === 'fulfilled' && Array.isArray(dailyResult.value.games) ? dailyResult.value.games : [];
     dailyGamesCache = games;
     myLiveRunningGamesCache = liveResult.status === 'fulfilled' && Array.isArray(liveResult.value.games) ? liveResult.value.games : [];
+    myLiveInvitationsCache = liveResult.status === 'fulfilled' && Array.isArray(liveResult.value.openGames) ? liveResult.value.openGames : [];
     const liveArchiveData = archiveResult.status === 'fulfilled' ? archiveResult.value : {};
     myLiveCompletedGamesCache = Array.isArray(liveArchiveData.games) ? liveArchiveData.games : [];
     myLiveCompletedTotal = Math.max(myLiveCompletedGamesCache.length, Number(liveArchiveData.total || 0));
@@ -1159,6 +1178,7 @@ async function loadDailyGames(options){
     if(!silent){
       dailyGamesCache = [];
       myLiveRunningGamesCache = [];
+      myLiveInvitationsCache = [];
       myLiveOpenOffersCache = [];
       myRematchOffersCache = [];
       myLiveCompletedGamesCache = [];
@@ -1190,7 +1210,7 @@ function openDailyGamesDialog(tournamentOnly, options){
   if(dailyGamesTitle) dailyGamesTitle.textContent = dailyGamesTournamentOnly ? 'Meine Turnierpartien' : 'Meine Partien';
   if(dailyGamesIntro) dailyGamesIntro.textContent = dailyGamesTournamentOnly
     ? 'Deine Daily- und Live-Turnierpartien nach Status. Goldene Markierung kennzeichnet die Turnierzuordnung; ein grüner Zughinweis bleibt weiterhin vorrangig sichtbar.'
-    : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Offene Revanchen findest du im Bereich „Offen“.';
+    : 'Deine Live- und Daily-Partien an einem Ort: laufend, offen und beendet. Einladungen, vorbereitete Spielräume und Revanchen findest du im Bereich „Offen“.';
   if(dailyGamesBackdrop) dailyGamesBackdrop.hidden = false;
   loadDailyGames();
   startDailyGamesPresenceRefresh();
