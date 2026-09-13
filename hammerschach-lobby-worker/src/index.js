@@ -7829,17 +7829,22 @@ async function listMyRunningLiveGames(env, sessionUser) {
   await ensureAccountGameRoomIndex(env);
   await ensureCompletedGamesTable(env);
   await ensureDailyGamesTable(env);
-  const recentCutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+  await ensureInvitationEmailLogTable(env);
   const result = await env.DB.prepare(
-    `SELECT rooms.room_id, rooms.role, rooms.last_seen_at
-       FROM account_game_rooms rooms
-      WHERE rooms.user_id = ?
-        AND rooms.last_seen_at >= ?
+    `SELECT rooms.room_id, MAX(rooms.last_seen_at) AS last_seen_at
+       FROM (
+         SELECT room_id, last_seen_at FROM account_game_rooms WHERE user_id = ?
+         UNION ALL
+         SELECT room_id, sent_at AS last_seen_at FROM invitation_email_log
+          WHERE sender_user_id = ? OR recipient_user_id = ?
+       ) rooms
+      WHERE 1 = 1
         AND NOT EXISTS (SELECT 1 FROM completed_games completed WHERE completed.room_id = rooms.room_id)
         AND NOT EXISTS (SELECT 1 FROM daily_games daily WHERE daily.room_id = rooms.room_id)
-      ORDER BY rooms.last_seen_at DESC
-      LIMIT 40`
-  ).bind(userId, recentCutoff).all();
+      GROUP BY rooms.room_id
+      ORDER BY last_seen_at DESC
+      LIMIT 80`
+  ).bind(userId, userId, userId).all();
   const candidates = (result && result.results ? result.results : [])
     .map(row => cleanRoomId(row.room_id))
     .filter(Boolean);
@@ -7859,7 +7864,7 @@ async function listMyRunningLiveGames(env, sessionUser) {
       }));
       if (!response.ok) return null;
       const summary = await response.json();
-      if (!summary || !summary.ok || !summary.started || summary.ended || summary.mode !== 'live') return null;
+      if (!summary || !summary.ok || summary.ended || summary.mode !== 'live' || (!summary.started && !summary.pendingInvitation)) return null;
       return summary;
     } catch (_) {
       return null;
@@ -11157,8 +11162,8 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
     try {
-      const games = await listMyRunningLiveGames(env, session.user);
-      return json({ok:true, games, serverNow:Date.now()});
+      const summaries = await listMyRunningLiveGames(env, session.user);
+      return json({ok:true, games:summaries.filter(game => game.started), openGames:summaries.filter(game => !game.started), serverNow:Date.now()});
     } catch (error) {
       console.error('My live games list failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'MY_LIVE_GAMES_UNAVAILABLE', message:'Deine laufenden Live-Partien konnten nicht geladen werden.'}, {status:500});
@@ -12310,6 +12315,23 @@ async function handleAuthApi(request, env, url) {
       return json({ ok:false, code:'PUBLIC_URL_NOT_CONFIGURED', message:'Die öffentliche Gamer-Adresse ist im Worker nicht korrekt hinterlegt.' }, { status:503 });
     }
 
+    let liveRegistration = null;
+    if (!isDailyInvitation) {
+      try {
+        const response = await roomStub.fetch(new Request('https://game-room.internal/register-live-invitation?room=' + encodeURIComponent(roomId), {
+          method:'POST',
+          headers:{'content-type':'application/json', 'x-hammerschach-user-id':String(session.user.id)},
+          body:JSON.stringify({recipientUserId, recipientName:recipient.username, personalMessage:personalMessageResult.message})
+        }));
+        liveRegistration = await response.json();
+        if (!response.ok || !liveRegistration || !liveRegistration.ok) {
+          return json(liveRegistration || {ok:false, message:'Die Einladung konnte nicht gespeichert werden.'}, {status:response.status || 503});
+        }
+      } catch (_) {
+        return json({ok:false, code:'INVITATION_REGISTER_FAILED', message:'Die Einladung konnte nicht gespeichert werden. Bitte erneut versuchen.'}, {status:503});
+      }
+    }
+
     const mail = await sendInvitationEmail(env, {
       roomId,
       recipientEmail,
@@ -12323,7 +12345,7 @@ async function handleAuthApi(request, env, url) {
       personalMessage:personalMessageResult.message
     });
     if (!mail.ok) {
-      if (isDailyInvitation && dailyRegistration && dailyRegistration.invitationId) {
+      if ((dailyRegistration && dailyRegistration.invitationId) || (liveRegistration && liveRegistration.ok)) {
         return json({
           ok:true,
           emailSent:false,
@@ -12340,7 +12362,7 @@ async function handleAuthApi(request, env, url) {
     return json({
       ok:true,
       emailSent:true,
-      invitationStored:isDailyInvitation,
+      invitationStored:true,
       recipient:{ id:recipient.id, username:recipient.username },
       message:'Einladung an ' + (cleanDisplayName(recipient.username) || 'das Mitglied') + ' wurde versendet.'
     });
@@ -15182,6 +15204,58 @@ export class GameRoom {
     };
   }
 
+  async getLiveInvitation() {
+    const timeControl = cleanTimeControl((await this.state.storage.get('timeControl')) || null);
+    if (!timeControl || timeControl.mode !== 'live') return null;
+    const stored = await this.state.storage.get('liveInvitation');
+    if (stored) return stored;
+    const game = (await this.state.storage.get('game')) || {};
+    if (!timeControl || timeControl.mode !== 'live' || game.started || game.ended || !this.env.DB) return null;
+    const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const creatorUserId = String((await this.state.storage.get('createdByUserId')) || '');
+    if (!roomId || !creatorUserId) return null;
+    // Recover older mail-only invitations while their delivery record still exists.
+    await ensureInvitationEmailLogTable(this.env);
+    const row = await this.env.DB.prepare(
+      `SELECT recipient_user_id, sent_at FROM invitation_email_log
+        WHERE room_id = ? AND sender_user_id = ? ORDER BY sent_at DESC LIMIT 1`
+    ).bind(roomId, creatorUserId).first();
+    if (!row) return null;
+    const players = await this.getSecurePlayers();
+    const creatorRole = String((await this.state.storage.get('createdByRole')) || '');
+    if (creatorRole !== 'w' && creatorRole !== 'b') return null;
+    const opponent = creatorRole === 'w' ? players.black : players.white;
+    if (opponent && String(opponent.userId || '') !== String(row.recipient_user_id)) return null;
+    const invitation = {senderUserId:creatorUserId, recipientUserId:String(row.recipient_user_id), creatorRole, sentAt:row.sent_at, message:''};
+    await indexAccountGameRoom(this.env, invitation.recipientUserId, roomId, creatorRole === 'w' ? 'b' : 'w');
+    await this.state.storage.put('liveInvitation', invitation);
+    return invitation;
+  }
+
+  async registerLiveInvitationRecipient(requestingUserId, recipientUserId, recipientName, personalMessage = '') {
+    const context = await this.invitationEmailContext(requestingUserId);
+    if (!context.ok) return context;
+    if (context.timeControl.mode !== 'live') return {ok:false, status:400, code:'NOT_LIVE_INVITATION'};
+    const targetUserId = cleanInvitationRecipientUserId(recipientUserId);
+    if (!targetUserId || targetUserId === String(requestingUserId)) return {ok:false, status:400, code:'INVALID_INVITATION_RECIPIENT'};
+    const message = validateInvitationPersonalMessage(personalMessage, 'Die persönliche Nachricht');
+    if (!message.ok) return message;
+    const existing = await this.getLiveInvitation();
+    if (existing && existing.recipientUserId !== targetUserId) {
+      return {ok:false, status:409, code:'INVITATION_ALREADY_TARGETED', message:'Für diesen Spielraum besteht bereits eine Einladung an ein anderes Mitglied.'};
+    }
+    const invitation = {
+      senderUserId:String(requestingUserId), recipientUserId:targetUserId,
+      recipientName:cleanDisplayName(recipientName) || 'Mitglied', creatorRole:context.creatorRole,
+      sentAt:existing && existing.sentAt || new Date().toISOString(), message:message.message
+    };
+    await this.state.storage.put('liveInvitation', invitation);
+    // Await both indexes: successful delivery must also be discoverable on a new device.
+    await indexAccountGameRoom(this.env, targetUserId, context.roomId, context.creatorRole === 'w' ? 'b' : 'w');
+    await indexAccountGameRoom(this.env, requestingUserId, context.roomId, context.creatorRole);
+    return {ok:true, status:200, invitationStored:true};
+  }
+
   async registerDailyInvitationRecipient(requestingUserId, recipientUserId, recipientName, personalMessage = '') {
     const context = await this.invitationEmailContext(requestingUserId);
     if (!context.ok) return context;
@@ -15887,6 +15961,15 @@ export class GameRoom {
       }, { status:result.status || (result.ok ? 200 : 400) });
     }
 
+    if (request.method === 'POST' && url.pathname === '/register-live-invitation') {
+      const body = await readJsonBody(request);
+      const result = await this.registerLiveInvitationRecipient(
+        request.headers.get('x-hammerschach-user-id') || '',
+        body && body.recipientUserId, body && body.recipientName, body && body.personalMessage
+      );
+      return json(result, {status:result.status || (result.ok ? 200 : 400)});
+    }
+
     if (request.method === 'POST' && url.pathname === '/register-daily-invitation') {
       const body = await readJsonBody(request);
       const result = await this.registerDailyInvitationRecipient(
@@ -16150,20 +16233,26 @@ export class GameRoom {
     const players = await this.getSecurePlayers();
     const whiteUserId = players.white && players.white.userId ? String(players.white.userId) : '';
     const blackUserId = players.black && players.black.userId ? String(players.black.userId) : '';
-    const role = userId === whiteUserId ? 'w' : userId === blackUserId ? 'b' : '';
+    const invitation = await this.getLiveInvitation();
+    const seatedRole = userId === whiteUserId ? 'w' : userId === blackUserId ? 'b' : '';
+    const invitedRole = invitation && invitation.creatorRole === 'w' ? 'b' : 'w';
+    const targetSlot = invitedRole === 'w' ? players.white : players.black;
+    const incomingInvitation = !!(invitation && userId === invitation.recipientUserId && (!targetSlot || String(targetSlot.userId || '') === userId));
+    const role = seatedRole || (incomingInvitation ? invitedRole : '');
     if (!role) return {ok:false, status:403, code:'NOT_A_PLAYER', message:'Diese Partie gehört nicht zu deinem Account.'};
 
     const timed = await this.refreshTimedGameState(Date.now());
     const game = timed.game || {started:false, ended:false, result:'*'};
     const clock = timed.clock || (await this.state.storage.get('clock')) || null;
-    if (!game.started || game.ended) {
+    if (game.started && !seatedRole) return {ok:false, status:403, code:'NOT_A_PLAYER'};
+    if (game.ended || (!game.started && !invitation && (await this.state.storage.get('openOffer')) === true)) {
       return {ok:true, status:200, roomId:cleanRoomId((await this.state.storage.get('roomId')) || ''), mode:'live', started:!!game.started, ended:!!game.ended};
     }
 
     const profiles = (await this.state.storage.get('playerProfiles')) || {};
     const whitePlayerId = playerIdFromSlot(players.white);
     const blackPlayerId = playerIdFromSlot(players.black);
-    const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId]);
+    const accountNames = await this.getAccountNamesByUserIds([whiteUserId, blackUserId, invitation && invitation.recipientUserId]);
     const whiteName = cleanDisplayName(accountNames[whiteUserId] || '') || cleanDisplayName(whitePlayerId && profiles[whitePlayerId] && (profiles[whitePlayerId].displayName || profiles[whitePlayerId].name)) || 'Weiß';
     const blackName = cleanDisplayName(accountNames[blackUserId] || '') || cleanDisplayName(blackPlayerId && profiles[blackPlayerId] && (profiles[blackPlayerId].displayName || profiles[blackPlayerId].name)) || 'Schwarz';
     const setup = cleanGameSetup((await this.state.storage.get('gameSetup')) || (game && game.gameSetup) || null);
@@ -16182,16 +16271,21 @@ export class GameRoom {
       role,
       whiteName,
       blackName,
-      opponentName:role === 'w' ? blackName : whiteName,
+      opponentName:!game.started && invitation && userId === invitation.senderUserId
+        ? cleanDisplayName(accountNames[invitation.recipientUserId] || invitation.recipientName) || 'Mitglied'
+        : role === 'w' ? blackName : whiteName,
+      pendingInvitation:!game.started,
+      incomingInvitation:!game.started && incomingInvitation,
+      invitationMessage:!game.started && invitation ? invitation.message || '' : '',
       timeLabel:timeControl.label || 'Live',
       variant:setup.variant,
       positionId:setup.variant === GAME_VARIANT_FREESTYLE ? setup.positionId : null,
-      started:true,
+      started:!!game.started,
       startedAt:game.startedAt || null,
       updatedAt:new Date().toISOString(),
       ended:false,
       turn,
-      isMyTurn:turn === role,
+      isMyTurn:!!game.started && turn === role,
       movesCount:moves.length,
       lastMoveSan:lastMove && lastMove.san ? String(lastMove.san).slice(0,24) : '',
       rated,
@@ -16403,6 +16497,12 @@ export class GameRoom {
       await this.state.storage.put('players', players);
       await this.syncAccountRoomIndex(players);
       return { role, seatToken: rotatedToken, denied: false, reclaimed: true };
+    }
+
+    const liveInvitation = await this.getLiveInvitation();
+    if (liveInvitation && String(authUser && authUser.id || '') !== liveInvitation.recipientUserId) {
+      return {role:'spectator', seatToken:'', denied:true, code:authUser ? 'INVITATION_TARGETED' : 'LIVE_INVITATION_ACCOUNT_REQUIRED',
+        message:'Bitte melde dich mit dem eingeladenen Account an. Dieser Spielerplatz ist für das eingeladene Mitglied reserviert.'};
     }
 
     const invitedUserId = String((await this.state.storage.get('invitedUserId')) || '');
