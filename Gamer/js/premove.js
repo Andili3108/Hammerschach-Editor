@@ -10,7 +10,7 @@ function premoveLabel(move){
 function canQueuePremove(gameState){
   const g = gameState || buildGameFromHistory(masterHistory.length);
   return !!(
-    !isDailyTimeControl() && !variationModeActive && !pendingDailyMove &&
+    HammerschachPreferences.get('premoves') && !isDailyTimeControl() && !variationModeActive && !pendingDailyMove &&
     viewIndex === masterHistory.length && onlineRoomId && onlineConnected && onlineGameStarted &&
     !onlineGameEnded && !gameEnded && !timeLost &&
     (onlineRoleCode === 'w' || onlineRoleCode === 'b') &&
@@ -197,7 +197,7 @@ function executeQueuedPremove(){
   updatePremoveUi();
   const g = buildGameFromHistory(masterHistory.length);
   const ready = !!(
-    queued.role === onlineRoleCode && !isDailyTimeControl() &&
+    HammerschachPreferences.get('premoves') && queued.role === onlineRoleCode && !isDailyTimeControl() &&
     onlineRoomId && onlineConnected && onlineGameStarted &&
     !onlineGameEnded && !gameEnded && !timeLost &&
     viewIndex === masterHistory.length && g.turn === onlineRoleCode

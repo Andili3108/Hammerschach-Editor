@@ -234,6 +234,8 @@
     if(!popup.hidden && popupAnchor) requestAnimationFrame(() => positionPopup(popupAnchor));
   }
 
+  window.HammerschachBoardSize = {set:value=>setPreferredSize(value,true),get:()=>preferredSize,available:desktopViewport};
+  window.dispatchEvent(new Event('hammerschach:board-size-ready'));
   boardButton.addEventListener('click',() => togglePopup(boardButton));
   if(compactButton) compactButton.addEventListener('click',() => togglePopup(compactButton));
   if(closeButton) closeButton.addEventListener('click',() => closePopup(true));

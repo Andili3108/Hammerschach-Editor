@@ -1,6 +1,7 @@
 'use strict';
 
-function onSquareClick(x,y){
+function onSquareClick(x,y,fromDrag=false){
+  if(!fromDrag && HammerschachPreferences.get('moveMethod') === 'drag') return;
   if(gameEnded) return;
   if(pendingDailyMove){
     statusEl.textContent = 'Zugvorschau aktiv — bitte bestätigen oder zurücknehmen.';

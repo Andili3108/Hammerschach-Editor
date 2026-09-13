@@ -219,8 +219,8 @@
     const icon = themeButton.querySelector('span');
     const label = themeButton.querySelector('strong');
     const dark = root.classList.contains('dark-mode');
-    if(icon) icon.textContent = dark ? '☀️' : '🌙';
-    if(label) label.textContent = dark ? 'Helle Darstellung' : 'Dunkle Darstellung';
+    if(icon) icon.textContent = '⚙';
+    if(label) label.textContent = 'Einstellungen';
   }
 
   function syncTurnCount(){

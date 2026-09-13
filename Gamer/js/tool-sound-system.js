@@ -33,9 +33,10 @@
 
   function setEnabled(value){ enabled = !!value; }
   function play(key){
-    if(!enabled || !key || !players[key]) return false;
+    if(!enabled || !key || !players[key] || (window.HammerschachPreferences && !hammerschachSoundAllowed(key))) return false;
     const audio = players[key];
     try{
+      audio.volume = window.HammerschachPreferences ? HammerschachPreferences.get('volume')/100 : 1;
       audio.currentTime = 0;
       const promise = audio.play();
       if(promise && promise.catch) promise.catch(() => {});

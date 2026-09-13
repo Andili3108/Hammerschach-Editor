@@ -28,6 +28,7 @@ function syncMoveToOnline(mv, movedSide, options){
     payload.offerDraw = true;
   }
   if(sendOnlineMessage(payload)){
+    if(isDailyTimeControl() && HammerschachPreferences.get('dailyNext') === 'auto') window.hammerschachDailyAutoPending = {messageId,room:onlineRoomId};
     onlineMoveTimings.set(messageId,{sentAt:performance.now()});
     if(onlineMoveTimings.size > 12) onlineMoveTimings.delete(onlineMoveTimings.keys().next().value);
     onlineLastMessage = 'Zug wird übertragen...';
@@ -67,6 +68,7 @@ function commitHumanMove(found, promotion, options){
   scheduleBoardRender();
 }
 function showPromotionOverlay(color){
+  if(HammerschachPreferences.get('autoQueen') && !isDailyTimeControl() && onlineGameStarted && !variationModeActive) return Promise.resolve('Q');
   return new Promise(resolve => {
     const old = document.getElementById('promotionBackdrop');
     if(old) old.remove();

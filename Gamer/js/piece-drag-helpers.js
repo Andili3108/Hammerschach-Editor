@@ -106,6 +106,7 @@ function pieceDragSquareAtPoint(container,clientX,clientY){
 }
 
 function beginPiecePointer(event,container,mode){
+  if(mode !== 'variation' && HammerschachPreferences.get('moveMethod') === 'click') return;
   if(!container || activePieceDrag || event.isPrimary === false) return;
   if(event.pointerType === 'mouse' && event.button !== 0) return;
   const target = event.target instanceof Element ? event.target : null;
@@ -163,10 +164,10 @@ function endPiecePointer(event,shouldDrop){
 
   if(state.mode === 'variation'){
     variationSelected = state.from.slice();
-    onVariationSquareClick(target[0],target[1]);
+    onVariationSquareClick(target[0],target[1],true);
   } else {
     selected = state.from.slice();
-    onSquareClick(target[0],target[1]);
+    onSquareClick(target[0],target[1],true);
   }
 }
 

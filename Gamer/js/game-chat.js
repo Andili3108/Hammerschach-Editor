@@ -25,7 +25,7 @@ function syncBoardPlayerStrips(){
 
 function updateSidePanelLayout(){
   const inRoom = (typeof onlineRoomId !== 'undefined') && !!onlineRoomId;
-  const spectator = inRoom && onlineRoleCode === 'spectator';
+  const spectator = inRoom && (onlineRoleCode === 'spectator' || HammerschachPreferences.get('hideChat') || HammerschachPreferences.get('focus'));
   if(spectator && rightPanelMode === 'chat') rightPanelMode = 'moves';
   syncBoardPlayerStrips();
   if(boardPlayerTopEl) boardPlayerTopEl.hidden = !inRoom;

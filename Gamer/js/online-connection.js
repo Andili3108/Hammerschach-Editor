@@ -330,11 +330,14 @@ function connectOnlineRoom(roomId, opts){
 
     const incomingChatMessage = extractOnlineChatMessage(msg);
     if(incomingChatMessage){
+      const freshChat = !chatMessageIds.has(incomingChatMessage.id);
       appendChatMessage(incomingChatMessage);
+      if(freshChat && incomingChatMessage.role !== onlineRoleCode && !HammerschachPreferences.get('hideChat') && !HammerschachPreferences.get('focus')) playUiSound('chat');
       setChatStatus('Chat ist verbunden. Die letzten 80 Nachrichten bleiben gespeichert.', false);
       handled = true;
     }
 
+    if(msg.type === 'move_ack' && typeof hammerschachAfterDailyAck === 'function') hammerschachAfterDailyAck(msg);
     if(msg.type === 'game_setup_ack'){
       onlinePendingGameSetupMessageId = null;
       if(onlineDesiredGameSetupForNewRoom && sameGameSetup(currentGameSetup, onlineDesiredGameSetupForNewRoom)){

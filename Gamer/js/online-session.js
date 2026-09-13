@@ -455,6 +455,7 @@ function saveAuthState(token, user){
   const previousUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
   onlineAuthToken = token || '';
   onlineAuthUser = user || null;
+  window.dispatchEvent(new Event('hammerschach:auth-change'));
   const nextUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
   if(previousUserId !== nextUserId){
     leitbildOpenedForUserId = '';

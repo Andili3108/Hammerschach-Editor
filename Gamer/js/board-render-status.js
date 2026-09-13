@@ -344,7 +344,7 @@ function showIllegalMoveFeedback(message){
 function isDailyMoveConfirmationMode(gameState){
   const g = gameState || buildGameFromHistory(masterHistory.length);
   return !!(
-    isDailyTimeControl() &&
+    (isDailyTimeControl() ? HammerschachPreferences.get('confirmDaily') : HammerschachPreferences.get('confirmLive')) &&
     onlineRoomId && onlineConnected && onlineGameStarted &&
     !onlineGameEnded && !gameEnded && !timeLost &&
     (onlineRoleCode === 'w' || onlineRoleCode === 'b') &&
@@ -355,7 +355,7 @@ function updateDailyMoveConfirmationUi(){
   if(!dailyMoveConfirmationEl) return;
   const g = pendingDailyMove ? buildGameFromHistory(masterHistory.length) : null;
   const visible = !!(
-    pendingDailyMove && g && isDailyTimeControl() &&
+    pendingDailyMove && g &&
     onlineRoomId && onlineConnected && onlineGameStarted &&
     !onlineGameEnded && !gameEnded && !timeLost &&
     (onlineRoleCode === 'w' || onlineRoleCode === 'b') &&
@@ -432,8 +432,8 @@ function stageDailyMove(found, promotion){
     movedSide:before.turn,
     offerDraw:false,
     claimDraw:false,
-    claimDrawReason,
-    drawAgreementAvailable:actualMoveCount() + 1 >= 2 && !(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode),
+    claimDrawReason:isDailyTimeControl() ? claimDrawReason : null,
+    drawAgreementAvailable:isDailyTimeControl() &&actualMoveCount() + 1 >= 2 && !(onlineDrawOffer && onlineDrawOffer.byRole !== onlineRoleCode),
     previewRepetitionCount,
     previewHalfmove:preview.halfmove
   };
@@ -462,7 +462,7 @@ function confirmPendingDailyMove(){
   if(!pendingDailyMove) return;
   const pending = pendingDailyMove;
   const g = buildGameFromHistory(masterHistory.length);
-  if(!isDailyMoveConfirmationMode(g) || pending.movedSide !== g.turn){
+  if(onlineInteractionBlockReason(g) || pending.movedSide !== g.turn || onlineGameEnded || gameEnded || timeLost){
     pendingDailyMove = null;
     selected = null;
     renderBoard();

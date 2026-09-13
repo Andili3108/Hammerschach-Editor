@@ -1032,10 +1032,15 @@ async function refreshNextDailyGameButton(options){
   if(nextDailyGameHintEl) nextDailyGameHintEl.textContent = 'Deine Daily-Partien werden geprüft.';
   try{
     const data = await authApi('/api/daily-games');
+    if(context !== [String((onlineAuthUser && (onlineAuthUser.id || onlineAuthUser.userId || onlineAuthUser.username)) || 'user'), onlineRoomId, onlineGameStarted ? 'started' : 'waiting', onlineGameEnded ? 'ended' : 'active', masterHistory.length].join('|')) return;
     const currentRoom = cleanRoomId(onlineRoomId);
     const candidates = (Array.isArray(data.games) ? data.games : [])
       .filter(game => !game.ended && !!game.started && !!game.isMyTurn && cleanRoomId(game.roomId) && cleanRoomId(game.roomId) !== currentRoom)
       .sort((a,b) => {
+        if(HammerschachPreferences.get('dailyOrder') === 'oldest'){
+          const oldest = nextDailyDeadlineTimestamp(a.updatedAt || a.startedAt) - nextDailyDeadlineTimestamp(b.updatedAt || b.startedAt);
+          if(oldest) return oldest;
+        }
         const deadlineDiff = nextDailyDeadlineTimestamp(a.deadlineAt) - nextDailyDeadlineTimestamp(b.deadlineAt);
         if(deadlineDiff) return deadlineDiff;
         return String(a.roomId || '').localeCompare(String(b.roomId || ''));
@@ -1248,3 +1253,16 @@ document.addEventListener('keydown', ev => {
   if(dailyInvitationResponseBackdrop && !dailyInvitationResponseBackdrop.hidden) closeDailyInvitationResponseDialog(false);
   else if(dailyGamesBackdrop && !dailyGamesBackdrop.hidden) closeDailyGamesDialog();
 });
+
+async function hammerschachAfterDailyAck(msg){
+ const pending=window.hammerschachDailyAutoPending;
+ if(!pending || msg.ok!==true || msg.messageId!==pending.messageId)return;
+ window.hammerschachDailyAutoPending=null;
+ const user=onlineAuthUser?.id;
+ if(pending.room!==onlineRoomId||!isDailyTimeControl()||HammerschachPreferences.get('dailyNext')!=='auto')return;
+ // An in-flight list request must finish before a fresh post-ack query.
+ for(let i=0;nextDailyGameLoading&&i<40;i++)await new Promise(resolve=>setTimeout(resolve,100));
+ if(nextDailyGameLoading||pending.room!==onlineRoomId||user!==onlineAuthUser?.id)return;
+ await refreshNextDailyGameButton({force:true});
+ if(pending.room===onlineRoomId && user===onlineAuthUser?.id && !pendingDailyMove && !variationModeActive && HammerschachPreferences.get('dailyNext')==='auto' && buildGameFromHistory(masterHistory.length).turn!==onlineRoleCode)openNextDailyGame();
+}

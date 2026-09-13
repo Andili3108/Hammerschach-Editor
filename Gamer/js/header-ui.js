@@ -168,10 +168,11 @@ const COLOR_SCHEME_STORAGE_KEY = 'hammerschachGamerColorScheme';
 let darkModeEnabled = document.documentElement.classList.contains('dark-mode');
 function updateThemeToggleUi(){
   if(!themeToggleBtn) return;
-  themeToggleBtn.textContent = darkModeEnabled ? '☀️' : '🌙';
-  themeToggleBtn.setAttribute('aria-pressed', darkModeEnabled ? 'true' : 'false');
-  themeToggleBtn.setAttribute('aria-label', darkModeEnabled ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren');
-  themeToggleBtn.title = darkModeEnabled ? 'Zur hellen Darstellung wechseln' : 'Zur dunklen Darstellung wechseln';
+  themeToggleBtn.textContent = '⚙';
+  themeToggleBtn.removeAttribute('aria-pressed');
+  themeToggleBtn.setAttribute('aria-haspopup','dialog');
+  themeToggleBtn.setAttribute('aria-label', 'Einstellungen öffnen');
+  themeToggleBtn.title = 'Einstellungen';
   if(themeColorMeta) themeColorMeta.setAttribute('content', darkModeEnabled ? '#111317' : '#843f46');
 }
 function setDarkMode(enabled){
@@ -192,5 +193,5 @@ function setDarkMode(enabled){
   postFairplayToolContext();
   hammerschachScheduleHeightReport(true);
 }
-if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => setDarkMode(!darkModeEnabled));
+if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => window.HammerschachSettings?.open());
 updateThemeToggleUi();

@@ -4,6 +4,7 @@
 const HAMMERSCHACH_SOUND_VERSION = '20260816-3';
 const hammerschachSoundUrl = file => 'sounds/' + file + '?v=' + HAMMERSCHACH_SOUND_VERSION;
 const HAMMERSCHACH_SOUND_FILES = Object.freeze({
+  chat:hammerschachSoundUrl('pickup.mp3'),
   pickup:hammerschachSoundUrl('pickup.mp3'),
   moveSelf:hammerschachSoundUrl('move-self.mp3'),
   moveOpponent:hammerschachSoundUrl('move-opponent.mp3'),
@@ -90,7 +91,7 @@ function setSoundEnabled(enabled){
   updateSoundToggle();
 }
 function safePlay(key){
-  if(!soundEnabled || !key) return false;
+  if(!soundEnabled || !key || !hammerschachSoundAllowed(key)) return false;
   const context = getSoundAudioContext();
   const buffer = soundBuffers.get(key);
   if(context && context.state === 'running' && buffer){
@@ -98,7 +99,7 @@ function safePlay(key){
       const source = context.createBufferSource();
       const gain = context.createGain();
       source.buffer = buffer;
-      gain.gain.value = 1.0;
+      gain.gain.value = HammerschachPreferences.get('volume') / 100;
       source.connect(gain);
       gain.connect(context.destination);
       source.start(0);
@@ -108,6 +109,7 @@ function safePlay(key){
   const audio = soundFallbackPlayers[key];
   if(!audio) return false;
   try{
+    audio.volume = HammerschachPreferences.get('volume') / 100;
     audio.currentTime = 0;
     const playing = audio.play();
     if(playing && playing.catch) playing.catch(error => {
@@ -159,7 +161,7 @@ function playMoveSound(opts){
 }
 soundToggleBtn.addEventListener('click', () => {
   const enable = !soundEnabled;
-  setSoundEnabled(enable);
+  HammerschachPreferences.set('sound',enable);
   if(enable) playUiSound('pickup');
 });
 updateSoundToggle();
