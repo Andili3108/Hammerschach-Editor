@@ -7110,6 +7110,8 @@ async function ensurePublicGamesTable(env) {
      )`
   ).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_public_games_running ON public_games (public_game, ended, updated_at)`).run();
+  try { await env.DB.prepare(`UPDATE public_games SET public_game = 1`).run(); } catch (_) {}
+  try { await env.DB.prepare(`UPDATE completed_games SET public_game = 1, archive_visible = 1`).run(); } catch (_) {}
   publicGamesTableReady = true;
   return true;
 }
@@ -14853,7 +14855,7 @@ export class GameRoom {
           timeControl,
           gameSetup,
           ratedRequested:(await this.state.storage.get('ratedRequested')) !== false,
-          publicGame:(await this.state.storage.get('publicGame')) === true,
+          publicGame:true,
           createdByUserId:String(offer.requestedByUserId || '')
         })
       }));
@@ -15853,7 +15855,7 @@ export class GameRoom {
         [whitePlayerId]:{playerId:whitePlayerId, displayName:whiteName, name:whiteName, guest:false, userId:whiteUserId, username:whiteName, role:'w', updatedAt:now},
         [blackPlayerId]:{playerId:blackPlayerId, displayName:blackName, name:blackName, guest:false, userId:blackUserId, username:blackName, role:'b', updatedAt:now}
       };
-      const publicGame = body.publicGame === true;
+      const publicGame = true;
       const createdByUserId = String(body.createdByUserId || '');
       const createdByRole = createdByUserId === blackUserId ? 'b' : 'w';
       const values = {
@@ -16282,7 +16284,7 @@ export class GameRoom {
     const lastMove = moves.length ? moves[moves.length - 1] : null;
     const turn = clock && (clock.turn === 'w' || clock.turn === 'b') ? clock.turn : (moves.length % 2 ? 'b' : 'w');
     const tournamentMeta = (await this.state.storage.get('tournamentMeta')) || null;
-    const publicGame = (await this.state.storage.get('publicGame')) === true;
+    const publicGame = true;
     const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
     const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
     return {
@@ -16893,7 +16895,7 @@ export class GameRoom {
         await this.env.DB.prepare(`DELETE FROM public_games WHERE room_id = ?`).bind(roomId).run();
       };
       const cancellation = await this.state.storage.get('cancelled');
-      const isPublic = (await this.state.storage.get('publicGame')) === true;
+      const isPublic = true;
       const game = (await this.state.storage.get('game')) || { started:false, ended:false, result:'*' };
       if ((cancellation && cancellation.cancelled) || !isPublic || !game.started) {
         await removeFromIndex();
@@ -17071,7 +17073,7 @@ export class GameRoom {
       const mode = timeControl && timeControl.mode === 'daily' ? 'daily' : 'live';
       const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
       const ratingType = ratingTypeFromGame(timeControl, setup);
-      const isPublic = (await this.state.storage.get('publicGame')) === true;
+      const isPublic = true;
       const spectatorId = isPublic ? cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '') : '';
       const tournamentId = tournamentMeta && tournamentMeta.tournamentId ? String(tournamentMeta.tournamentId).slice(0, 128) : '';
       const tournamentName = tournamentMeta && tournamentMeta.tournamentName ? cleanTournamentName(tournamentMeta.tournamentName) : '';
@@ -17442,7 +17444,7 @@ export class GameRoom {
       .map(chat => safeChatForClient(chat, info))
       .filter(Boolean)
       .slice(-CHAT_HISTORY_MAX);
-    const publicGame = (await this.state.storage.get('publicGame')) === true;
+    const publicGame = true;
     const openOffer = (await this.state.storage.get('openOffer')) === true;
     const openOfferStatus = String((await this.state.storage.get('openOfferStatus')) || (openOffer ? 'open' : 'none'));
     const ratedRequested = (await this.state.storage.get('ratedRequested')) !== false;
@@ -17683,7 +17685,7 @@ export class GameRoom {
       const spectatorOnly = data.spectatorOnly === true || data.spectator_only === true || data.watchOnly === true || data.watch_only === true;
 
       if (spectatorOnly) {
-        const publicGame = (await this.state.storage.get('publicGame')) === true;
+        const publicGame = true;
         const publicGameState = (await this.state.storage.get('game')) || { started:false, ended:false };
         const storedWatchId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
         const routedWatchId = cleanPublicWatchId(info.publicWatchId || '');
@@ -17728,7 +17730,7 @@ export class GameRoom {
       }
 
       if (!roomAlreadyCreatedByMember && authUser) {
-        const publicGame = data.publicGame === true || data.public_game === true;
+        const publicGame = true;
         const openOffer = data.openOffer === true || data.open_offer === true;
         const ratedRequested = !(data.ratedRequested === false || data.rated_requested === false || data.rated === false || data.rated === 0 || data.rated === '0');
         await this.state.storage.put('publicGame', publicGame);
@@ -17928,7 +17930,7 @@ export class GameRoom {
         return;
       }
 
-      const publicGame = data.publicGame === true || data.public_game === true;
+      const publicGame = true;
       await this.state.storage.put('publicGame', publicGame);
       if (publicGame) {
         let publicWatchId = cleanPublicWatchId((await this.state.storage.get('publicWatchId')) || '');
