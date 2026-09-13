@@ -1,6 +1,6 @@
 // Account preferences: allowlisted fields, partial atomic updates, no device dimensions.
 const defaults={scheme:'light',board:'basis',pieces:'cburnett',coordinates:true,lastMove:true,legalMoves:true,reducedMotion:false,moveMethod:'both',confirmDaily:true,confirmLive:false,dailyNext:'manual',dailyOrder:'deadline',premoves:true,autoQueen:false,sound:true,moveSound:true,resultSound:true,chatSound:true,lowTimeSound:true,volume:80,hideChat:false,focus:false,invitations:'everyone'};
-const enums={scheme:['light','dark','system'],board:['basis','braun','grau','gruen','royal-walnut','onyx-elegance'],pieces:['cburnett','merida','chessnut','fantasy','merida-silversteel','merida-royalwood'],moveMethod:['both','click','drag'],dailyNext:['manual','auto'],dailyOrder:['deadline','oldest'],invitations:['everyone','favorites','nobody']};
+const enums={scheme:['light','dark'],board:['basis','braun','grau','gruen','royal-walnut','onyx-elegance'],pieces:['cburnett','merida','chessnut','fantasy','merida-silversteel','merida-royalwood'],moveMethod:['both','click','drag'],dailyNext:['manual','auto'],dailyOrder:['deadline','oldest'],invitations:['everyone','favorites','nobody']};
 export function validPreferencePatch(value){
  if(!value||typeof value!=='object'||Array.isArray(value))return null;
  const out={};
