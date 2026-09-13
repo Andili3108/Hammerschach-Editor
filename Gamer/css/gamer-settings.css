@@ -1,26 +1,67 @@
 /* Central settings and shared, board-only display preferences. */
 .central-settings #boardColorWrap,.central-settings #pieceSetWrap,.central-settings #boardSizeWrap,.central-settings #compactBoardSizeBtn,
 .central-settings .appearance-wrap,.central-settings #boardThemeWrap{display:none!important}
-.central-settings #themeToggleBtn{display:inline-grid!important;place-items:center;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;font-size:25px!important;opacity:1;z-index:20}
-#gamerSettings{--settings-bg:#fffaf5;--settings-ink:#30242a;--settings-line:#ddcfc9;color:var(--settings-ink);background:var(--settings-bg);width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 28px);padding:0;border:1px solid var(--settings-line);border-radius:22px;box-shadow:0 24px 90px #0006;box-sizing:border-box;font:15px/1.5 system-ui,sans-serif;overflow:auto}
-#gamerSettings::backdrop{background:#16111a99;backdrop-filter:blur(3px)}
-.dark-mode #gamerSettings{--settings-bg:#212126;--settings-ink:#f6ece7;--settings-line:#51454b}
-#gamerSettings .settings-head{display:flex;justify-content:space-between;align-items:center;padding:22px 24px 8px}
-#gamerSettings h2{font-size:28px;margin:0;color:inherit}#gamerSettings h3{font-size:17px;margin:16px 0 4px;color:inherit}
-.settings-eyebrow{font-size:10px;font-weight:800;letter-spacing:.16em;color:#b56c74}
-#gamerSettings button{font:inherit;cursor:pointer;border:1px solid var(--settings-line);border-radius:10px;padding:9px 12px;background:transparent;color:inherit;min-height:42px;box-sizing:border-box}
+/* Keep the gear in the free upper-right corner, above the utility row. */
+.central-settings #themeToggleBtn{display:inline-grid!important;place-items:center;top:2px;right:5px;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;font-size:23px!important;opacity:1;z-index:20}
+@media(min-width:761px){.central-settings .header{padding-top:24px}}
+#gamerSettings{--settings-bg:#fff;--settings-ink:#222;--settings-line:rgba(132,63,70,.18);--settings-field:linear-gradient(180deg,#fff,#ececef);color:var(--settings-ink);background:var(--settings-bg);width:min(780px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--settings-line);border-radius:18px;box-shadow:0 18px 48px #0004;box-sizing:border-box;font:15px/1.3 "Times New Roman",serif;overflow:hidden}
+#gamerSettings[open]{display:flex;flex-direction:column}
+#gamerSettings::backdrop{background:#16111a77}
+.dark-mode #gamerSettings{--settings-bg:#22252b;--settings-ink:#f0f0f2;--settings-line:rgba(255,255,255,.16);--settings-field:linear-gradient(180deg,#353942,#292c33)}
+#gamerSettings .settings-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 0;flex-shrink:0}
+#gamerSettings h2{font-size:23px;margin:0;color:inherit}
+#gamerSettings h3{font-size:16px;margin:0 0 6px;color:inherit}
+#gamerSettings button{font:inherit;font-weight:700;cursor:pointer;border:1px solid var(--settings-line);border-radius:9px;padding:6px 10px;background:var(--settings-field);color:inherit;min-height:34px;box-shadow:0 2px 5px #00000009;box-sizing:border-box}
 #gamerSettings button:disabled{opacity:.4;cursor:default}
-#gamerSettings .settings-close{font-size:26px;line-height:1;width:42px;padding:0}
-#gamerSettings .settings-intro{margin:0;padding:0 24px 16px;color:inherit;opacity:.75}
-#gamerSettings .settings-tabs{display:flex;gap:7px;position:sticky;top:0;padding:10px 24px;background:var(--settings-bg);z-index:2;border-bottom:1px solid var(--settings-line)}
-#gamerSettings button[aria-pressed=true]{background:#843f46;color:#fff;border-color:#843f46}
-#gamerSettings .settings-content{padding:0 24px 20px}.settings-row{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:13px 0;border-bottom:1px solid var(--settings-line)}
-.settings-row>span{flex:1;font-weight:600}.settings-row small{display:block;font-size:12px;font-weight:400;opacity:.75;margin-top:4px;line-height:1.5}
-#gamerSettings select{width:230px;max-width:48%;padding:10px;border:1px solid var(--settings-line);border-radius:9px;font:inherit;color:inherit;background:var(--settings-bg)}
-#gamerSettings input[type=checkbox]{width:23px;height:23px;flex:0 0 23px;accent-color:#843f46;cursor:pointer}
-#gamerSettings input[type=range]{accent-color:#843f46;max-width:48%}#gamerSettings footer{border-top:1px solid var(--settings-line);padding:12px 24px 20px}#gamerSettings footer p{font-size:12px;opacity:.8;margin:0 0 10px}
-#gamerSettings .settings-help{font-size:12px;opacity:.75;margin:5px 0 12px}.settings-preview{display:grid;grid-template-columns:repeat(8,1fr);width:100%;margin:16px 0;border-radius:8px;overflow:hidden}.settings-preview>span{aspect-ratio:1}.settings-preview img{width:100%;height:100%;object-fit:contain}.settings-size label{display:flex;justify-content:space-between}.settings-size-buttons{display:flex;gap:8px;margin:12px 0}.settings-size-buttons button{flex:1}.settings-range{display:flex;align-items:center;gap:12px}.settings-range input{flex:1;max-width:none!important}
-#gamerSettings [hidden]{display:none!important}#gamerSettings :focus-visible{outline:3px solid #c17a36;outline-offset:3px}
+#gamerSettings .settings-close{font-size:24px;line-height:1;width:34px;padding:0}
+#gamerSettings .settings-intro{margin:0;padding:2px 18px 10px;opacity:.7;font-size:13px;flex-shrink:0}
+#gamerSettings .settings-tabs{display:flex;gap:6px;padding:0 18px 10px;border-bottom:1px solid var(--settings-line);flex-shrink:0}
+#gamerSettings button[aria-pressed=true],#gamerSettings #settingsDone{background:#843f46;color:#fff;border-color:#843f46}
+#gamerSettings .settings-content{padding:14px 18px;overflow-y:auto;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;align-items:start;overscroll-behavior:contain}
+#gamerSettings .settings-content>section{min-width:0}
+#gamerSettings .settings-column{display:flex;flex-direction:column;gap:16px;min-width:0}
+#gamerSettings .settings-surface{grid-column:1;grid-row:1}
+#gamerSettings .settings-markings{grid-column:1;grid-row:2}
+#gamerSettings .settings-board{grid-column:2;grid-row:1 / 3;padding-left:22px;border-left:1px solid var(--settings-line)}
+#gamerSettings .settings-content[data-tab=sound]{grid-template-columns:1fr}
+#gamerSettings .settings-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--settings-line);min-height:36px;box-sizing:border-box}
+#gamerSettings .settings-row>span{flex:1;min-width:0;font-weight:700}
+#gamerSettings .settings-row small{display:block;font-size:12px;font-weight:400;opacity:.75;margin-top:3px;line-height:1.3}
+#gamerSettings select{width:185px;max-width:60%;min-width:0;min-height:34px;padding:6px 8px;border:1px solid var(--settings-line);border-radius:8px;font:inherit;color:inherit;background:var(--settings-bg);box-sizing:border-box}
+#gamerSettings .settings-content[data-tab=play] .settings-row:has(select){flex-wrap:wrap;gap:5px}
+#gamerSettings .settings-content[data-tab=play] select{width:100%;max-width:100%}
+#gamerSettings input[type=checkbox]{width:18px;height:18px;flex:0 0 18px;margin:4px 2px;accent-color:#843f46;cursor:pointer}
+#gamerSettings input[type=range]{accent-color:#843f46;max-width:48%;min-width:0}
+#gamerSettings footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;border-top:1px solid var(--settings-line);padding:10px 18px;flex-shrink:0}
+#gamerSettings footer p{font-size:12px;opacity:.75;margin:0;margin-right:auto;flex:1 1 190px}
+#gamerSettings #settingsReset{font-size:13px}
+#gamerSettings .settings-help{font-size:12px;opacity:.75;margin:4px 0 8px;line-height:1.3}
+#gamerSettings .settings-help:empty{display:none}
+#gamerSettings .settings-preview{display:grid;grid-template-columns:repeat(8,1fr);width:min(100%,280px);margin:10px auto 12px;border-radius:6px;overflow:hidden}
+#gamerSettings .settings-preview>span{aspect-ratio:1;min-width:0}
+#gamerSettings .settings-preview img{width:100%;height:100%;object-fit:contain;display:block}
+#gamerSettings .settings-size label{display:flex;justify-content:space-between;font-weight:700}
+#gamerSettings .settings-size-buttons{display:flex;gap:6px;margin:7px 0}
+#gamerSettings .settings-size-buttons button{flex:1;padding:5px;font-size:13px}
+#gamerSettings .settings-range{display:flex;align-items:center;gap:8px}
+#gamerSettings .settings-range input{flex:1;max-width:none}
+#gamerSettings [hidden]{display:none!important}
+#gamerSettings :focus-visible{outline:3px solid #c17a36;outline-offset:2px}
+@media(max-width:600px){
+ #gamerSettings{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);font-size:15px}
+ #gamerSettings .settings-content{display:flex;flex-direction:column;gap:16px;padding:12px 14px}
+ #gamerSettings .settings-content>section{width:100%}
+ #gamerSettings .settings-column{width:100%}
+ #gamerSettings .settings-board{border:0;padding:0}
+ #gamerSettings .settings-head{padding:10px 14px 0}
+ #gamerSettings .settings-intro{padding-left:14px;padding-right:14px}
+ #gamerSettings .settings-tabs{padding:0 14px 10px;gap:4px}
+ #gamerSettings .settings-tabs button{flex:1;padding:6px 4px;font-size:13px}
+ #gamerSettings button,#gamerSettings select{min-height:44px}
+ #gamerSettings .settings-row{min-height:44px}
+ #gamerSettings footer{padding:8px 14px;gap:6px}
+ #gamerSettings footer p{flex-basis:100%}
+}
 .central-settings .board-tools:not(.daily-move-pending){display:flex!important;align-items:center;justify-content:space-evenly;gap:12px;padding:10px 0;flex-wrap:wrap}
 .central-settings .board-tools:not(.daily-move-pending)>.gamer-board-nav{display:flex;flex:1;justify-content:center;gap:clamp(6px,2vw,20px);order:2}
 .central-settings #flipBoardBtn{order:1}.central-settings #soundToggleBtn{order:3}
@@ -32,7 +73,8 @@
 .prefs-no-legal .square.legal::before,.prefs-no-legal .square.legal::after,.prefs-no-legal .square.legal-move::after,.prefs-no-legal .square.premove-legal::before{display:none!important}
 .prefs-reduced-motion .square,.prefs-reduced-motion .piece-img,.prefs-reduced-motion .piece-drag-ghost{animation:none!important;transition:none!important}
 .prefs-hide-chat #chatPanel,.prefs-hide-chat #showChatPanelBtn,.prefs-focus.hammerschach-room-view #chatPanel,.prefs-focus.hammerschach-room-view #showChatPanelBtn,.prefs-focus.hammerschach-room-view #gameMomentDetails,.prefs-focus.hammerschach-room-view .room-my-games-overview,.prefs-focus.hammerschach-room-view .lobby-ticker{display:none!important}
-@media(max-width:520px){#gamerSettings .settings-head{padding:16px 16px 8px}#gamerSettings .settings-intro,#gamerSettings .settings-tabs{padding-left:16px;padding-right:16px}#gamerSettings .settings-content{padding:0 16px 16px}#gamerSettings .settings-tabs{gap:4px}#gamerSettings .settings-tabs button{font-size:12px;padding:8px 6px;flex:1}.settings-row{gap:10px}#gamerSettings select{font-size:12px}.central-settings .board-tools:not(.daily-move-pending){gap:6px}.central-settings .board-tools .gamer-board-nav{gap:5px!important}.central-settings .board-tools:not(.daily-move-pending) button:not([hidden]){min-width:38px!important;min-height:44px!important}}
+@media(max-width:520px){.central-settings .board-tools:not(.daily-move-pending){gap:6px}.central-settings .board-tools .gamer-board-nav{gap:5px!important}.central-settings .board-tools:not(.daily-move-pending) button:not([hidden]){min-width:38px!important;min-height:44px!important}}
+
 .central-settings .settings-migrated-control,.central-settings #boardThemeBtn,.central-settings #pieceSetBtn{display:none!important}
 .prefs-no-last-move .square.last-move-from:not(.selected),.prefs-no-last-move .square.last-move-to:not(.selected){box-shadow:none!important;animation:none!important}
 .prefs-no-legal .square.legal-target{box-shadow:none!important;outline:none!important}
