@@ -1,3 +1,4 @@
+import {getGamerPreferences, saveGamerPreferences, validPreferencePatch} from './gamer-preferences.js';
 // BUILD: GAMER-SCHACHLABOR-20260823-4
 import { connect } from 'cloudflare:sockets';
 import { handleLeagueStandingsApi } from './league-standings.js';
@@ -8173,6 +8174,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await deleteUserAvatar(env, target.id, {bestEffort:true}); } catch (_) {}
   try { if (await ensureUserPublicProfilesTable(env)) await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM gamer_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_onboarding WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM email_notification_log WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sender_user_id = ? OR recipient_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
@@ -10536,6 +10538,18 @@ async function handleAuthApi(request, env, url) {
     return json({ ok:true, user:await publicUserWithRatings(env, user || session.user), message:'Dein Profilbild wurde entfernt.' });
   }
 
+  if (url.pathname === '/api/account/preferences' && ['GET','POST'].includes(request.method)) {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
+    try {
+      if(request.method === 'GET') return json({ok:true, preferences:await getGamerPreferences(env,session.user.id)}, {headers:{'Cache-Control':'no-store'}});
+      const body = await readJsonBody(request);
+      const patch = validPreferencePatch(body && body.preferences);
+      if(!patch) return json({ok:false, code:'INVALID_PREFERENCES', message:'Ungültige Einstellungen.'}, {status:400});
+      return json({ok:true, preferences:await saveGamerPreferences(env,session.user.id,patch)}, {headers:{'Cache-Control':'no-store'}});
+    } catch (_) { return json({ok:false, code:'PREFERENCES_UNAVAILABLE', message:'Die Kontoeinstellungen sind vorübergehend nicht verfügbar.'}, {status:503}); }
+  }
+
   if (url.pathname === '/api/account/profile' && request.method === 'POST') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
@@ -12268,6 +12282,14 @@ async function handleAuthApi(request, env, url) {
     if (!recipientEmailSecurity.emailVerified) {
       return json({ ok:false, code:'RECIPIENT_EMAIL_NOT_VERIFIED', message:'Die Anmeldung dieses Mitglieds ist noch nicht abgeschlossen.' }, { status:409 });
     }
+
+    const invitationPrefs = await getGamerPreferences(env, recipientUserId);
+    let invitationAllowed = invitationPrefs.invitations !== 'nobody';
+    if(invitationPrefs.invitations === 'favorites') {
+      await ensureMemberFavoritesTable(env);
+      invitationAllowed = !!(await env.DB.prepare('SELECT 1 FROM member_favorites WHERE owner_user_id = ? AND favorite_user_id = ?').bind(String(recipientUserId),String(session.user.id)).first());
+    }
+    if(!invitationAllowed) return json({ok:false, code:'INVITATION_PREFERENCE', message:'Dieses Mitglied nimmt derzeit keine persönliche Einladung von dir an.'}, {status:403});
 
     const rate = await checkInvitationEmailRateLimit(env, String(session.user.id), recipientUserId, roomId);
     if (!rate.ok) return json({ ok:false, code:rate.code, message:rate.message }, { status:rate.status || 429 });
