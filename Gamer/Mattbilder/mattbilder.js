@@ -132,7 +132,12 @@
   }
 
   function reportHeight(){
-    parentMessage({type:'hammerschach-mate-school-height',height:Math.ceil(document.documentElement.scrollHeight)});
+    // Measure content, not the iframe viewport, so closing the chapter picker
+    // can shrink the embedded page again without a growing empty area.
+    const shell=document.querySelector('.school-shell');
+    const bottom=shell.getBoundingClientRect().bottom+window.scrollY;
+    const padding=parseFloat(getComputedStyle(document.body).paddingBottom)||0;
+    parentMessage({type:'hammerschach-mate-school-height',height:Math.ceil(bottom+padding)});
   }
 
   function parseFen(fen){
@@ -459,6 +464,7 @@
     document.body.classList.add('chapter-panel-open');
     elements.backdrop.hidden=false;
     elements.menuButton.setAttribute('aria-expanded','true');
+    requestAnimationFrame(reportHeight);
     requestAnimationFrame(()=>{
       const active=elements.list.querySelector('.chapter-item.active');
       if(active){active.focus();active.scrollIntoView({block:'nearest'});}
@@ -469,6 +475,7 @@
     document.body.classList.remove('chapter-panel-open');
     elements.backdrop.hidden=true;
     elements.menuButton.setAttribute('aria-expanded','false');
+    requestAnimationFrame(reportHeight);
     if(restoreFocus&&chapterReturnFocus&&typeof chapterReturnFocus.focus==='function')chapterReturnFocus.focus();
     chapterReturnFocus=null;
   }
@@ -484,7 +491,10 @@
   elements.networkButton.addEventListener('click',()=>{if(!matePlayed)return;networkVisible=!networkVisible;renderBoard();updateMateControls();saveState();requestAnimationFrame(reportHeight);});
   elements.previous.addEventListener('click',()=>{if(currentIndex>0)selectLesson(currentIndex-1,true);});
   elements.next.addEventListener('click',()=>{if(currentIndex<motifs.length-1)selectLesson(currentIndex+1,true);});
-  elements.menuButton.addEventListener('click',openChapterPanel);
+  elements.menuButton.addEventListener('click',()=>{
+    if(document.body.classList.contains('chapter-panel-open'))closeChapterPanel(true);
+    else openChapterPanel();
+  });
   elements.panelClose.addEventListener('click',()=>closeChapterPanel(true));
   elements.backdrop.addEventListener('click',()=>closeChapterPanel(true));
   document.addEventListener('keydown',event=>{
