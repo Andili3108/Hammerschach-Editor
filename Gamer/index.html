@@ -1855,7 +1855,7 @@
                   <div class="tournament-fact"><div class="tournament-fact-label">Turnierform</div><div id="tournamentFactMode" class="tournament-fact-value">Doppelrundenturnier</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Teilnehmer</div><div id="tournamentFactPlayers" class="tournament-fact-value">6</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Bedenkzeit</div><div id="tournamentFactClock" class="tournament-fact-value">24 Stunden/Zug</div></div>
-                  <div id="tournamentFactScheduleWrap" class="tournament-fact" hidden><div class="tournament-fact-label">Geplanter Start</div><div id="tournamentFactSchedule" class="tournament-fact-value">—</div></div>
+                  <div id="tournamentFactScheduleWrap" class="tournament-fact" hidden><div class="tournament-fact-label">Start</div><div id="tournamentFactSchedule" class="tournament-fact-value">—</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Variante</div><div id="tournamentFactVariant" class="tournament-fact-value">Klassisch</div></div>
                   <div id="tournamentFactThemeWrap" class="tournament-fact" hidden><div class="tournament-fact-label">Thementurnier</div><div id="tournamentFactTheme" class="tournament-fact-value">—</div></div>
                   <div class="tournament-fact"><div class="tournament-fact-label">Wertung</div><div id="tournamentFactRating" class="tournament-fact-value">Gewertet</div></div>
@@ -1974,8 +1974,9 @@
               </select>
             </div>
             <div id="tournamentScheduleField" class="tournament-field">
-              <label id="tournamentScheduleLabel" for="tournamentScheduleInput">Geplanter Start</label>
-              <input id="tournamentScheduleInput" class="tournament-input" type="datetime-local" required />
+              <label id="tournamentScheduleLabel" for="tournamentScheduleInput">Frühester Start (optional)</label>
+              <input id="tournamentScheduleInput" class="tournament-input" type="datetime-local" aria-describedby="tournamentScheduleHint" />
+              <small id="tournamentScheduleHint">Ohne Datum: automatischer Start bei voller Teilnehmerzahl.</small>
             </div>
             <div id="tournamentArenaDurationField" class="tournament-field" hidden>
               <label for="tournamentArenaDurationSelect">Arena-Dauer</label>
@@ -2521,11 +2522,11 @@
 <script src="js/auth-recovery.js?v=20260902-2"></script>
 <script src="js/auth-account.js?v=20260902-3"></script>
 <script src="js/tournament-themes.js?v=20260826-2"></script>
-<script src="js/tournament-setup.js?v=20260821-2"></script>
+<script src="js/tournament-setup.js?v=20260917-1"></script>
 <script src="js/live-tournaments.js?v=20260804-1"></script>
-<script src="js/tournament-list.js?v=20260804-1"></script>
-<script src="js/tournament-detail.js?v=20260820-2"></script>
-<script src="js/tournament-management.js?v=20260820-1"></script>
+<script src="js/tournament-list.js?v=20260917-1"></script>
+<script src="js/tournament-detail.js?v=20260917-1"></script>
+<script src="js/tournament-management.js?v=20260917-1"></script>
 <script src="js/tournament-actions.js?v=20260820-1"></script>
   <script src="js/daily-games.js?v=20260917-live-invitation-withdraw-1"></script>
 <script src="js/my-games-overview.js?v=20260908-1"></script>
