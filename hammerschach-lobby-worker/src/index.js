@@ -16287,6 +16287,14 @@ export class GameRoom {
     const publicGame = true;
     const rated = Number(game.ratingSystemVersion || 0) === RATING_SYSTEM_VERSION ? !!game.ratingRated : (await this.state.storage.get('ratedRequested')) !== false;
     const roomId = cleanRoomId((await this.state.storage.get('roomId')) || '');
+    const invitationState = await this.state.storage.get(['createdByRole', 'invitationStatus', 'openOffer']);
+    const storedCreatorRole = invitationState.get('createdByRole');
+    const creatorRole = storedCreatorRole === 'w' || storedCreatorRole === 'b' ? storedCreatorRole
+      : players.white && !players.black ? 'w' : players.black && !players.white ? 'b' : '';
+    const opponentSlot = creatorRole === 'w' ? players.black : creatorRole === 'b' ? players.white : null;
+    const canDeleteInvitation = !!seatedRole && seatedRole === creatorRole && !opponentSlot
+      && !game.started && !game.ended && !incomingInvitation && !(tournamentMeta && tournamentMeta.tournamentId)
+      && invitationState.get('invitationStatus') !== 'accepted' && invitationState.get('openOffer') !== true;
     return {
       ok:true,
       status:200,
@@ -16299,6 +16307,7 @@ export class GameRoom {
         ? cleanDisplayName(accountNames[invitation.recipientUserId] || invitation.recipientName) || 'Mitglied'
         : role === 'w' ? blackName : whiteName,
       pendingInvitation:!game.started,
+      canDeleteInvitation,
       incomingInvitation:!game.started && incomingInvitation,
       invitationMessage:!game.started && invitation ? invitation.message || '' : '',
       timeLabel:timeControl.label || 'Live',
