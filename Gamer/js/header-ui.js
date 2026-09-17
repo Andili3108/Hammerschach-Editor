@@ -173,12 +173,13 @@ function updateThemeToggleUi(){
   themeToggleBtn.setAttribute('aria-haspopup','dialog');
   themeToggleBtn.setAttribute('aria-label', 'Einstellungen öffnen');
   themeToggleBtn.title = 'Einstellungen';
-  if(themeColorMeta) themeColorMeta.setAttribute('content', darkModeEnabled ? '#111317' : '#843f46');
+  if(themeColorMeta) themeColorMeta.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--ui-page').trim() || '#843f46');
 }
-function setDarkMode(enabled){
-  darkModeEnabled = !!enabled;
-  document.documentElement.classList.toggle('dark-mode', darkModeEnabled);
-  try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, darkModeEnabled ? 'dark' : 'light'); } catch(_){ }
+function setColorScheme(scheme){
+  scheme = window.HammerschachAppearance.normalize(scheme);
+  darkModeEnabled = scheme === 'dark';
+  window.HammerschachAppearance.apply(scheme);
+  try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, scheme); } catch(_){ }
   updateThemeToggleUi();
   postLearningToolContext();
   postAnalyzerToolContext();
@@ -195,3 +196,5 @@ function setDarkMode(enabled){
 }
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => window.HammerschachSettings?.open());
 updateThemeToggleUi();
+
+function setDarkMode(enabled){ setColorScheme(enabled ? 'dark' : 'light'); }

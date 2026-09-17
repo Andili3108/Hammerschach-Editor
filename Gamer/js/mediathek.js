@@ -26,7 +26,7 @@ function postMediathekToolMessage(message){
   mediathekToolFrame.contentWindow.postMessage(message,embeddedToolTargetOrigin());
 }
 function postMediathekToolContext(){
-  postMediathekToolMessage({type:'hammerschach-mediathek-context',darkMode:!!darkModeEnabled,visible:mediathekToolActive});
+  postMediathekToolMessage({type:'hammerschach-mediathek-context',darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),visible:mediathekToolActive});
 }
 function updateMediathekSelection(){
   document.querySelectorAll('[data-mediathek-id]').forEach(button=>{

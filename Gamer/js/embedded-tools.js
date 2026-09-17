@@ -270,7 +270,7 @@ function postTournamentReportToolMessage(message){
 function postLearningToolContext(){
   postLearningToolMessage({
     type:'hammerschach-learning-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
   });
@@ -278,7 +278,7 @@ function postLearningToolContext(){
 function postAnalyzerToolContext(){
   postAnalyzerToolMessage({
     type:'hammerschach-analyzer-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
   });
@@ -287,14 +287,14 @@ function postPlayerToolContext(){
   let boardColor='basis',pieceSet='cburnett';
   try{boardColor=localStorage.getItem('hammerschachBoardColor')||'basis';pieceSet=localStorage.getItem('hammerschachPieceSet')||'cburnett';}catch(_){ }
   postPlayerToolMessage({
-    type:'hammerschach-player-context',darkMode:!!darkModeEnabled,
+    type:'hammerschach-player-context',darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken&&onlineAuthUser),username:onlineAuthUser?cleanDisplayName(onlineAuthUser.username||''):'',boardColor,pieceSet
   });
 }
 function postTrainerToolContext(){
   postTrainerToolMessage({
     type:'hammerschach-trainer-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     userId:onlineAuthUser ? String(onlineAuthUser.id || '') : '',
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
@@ -309,7 +309,7 @@ function postMateSchoolToolContext(){
   }catch(_){}
   postMateSchoolToolMessage({
     type:'hammerschach-mate-school-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : '',
     boardColor,
@@ -325,7 +325,7 @@ function postSchachlaborToolContext(){
   }catch(_){}
   postSchachlaborToolMessage({
     type:'hammerschach-schachlabor-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     userId:onlineAuthUser ? String(onlineAuthUser.id || '') : '',
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : '',
@@ -342,7 +342,7 @@ function postOpeningsToolContext(){
   }catch(_){}
   postOpeningsToolMessage({
     type:'hammerschach-openings-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : '',
     openingCatalog:Array.isArray(TOURNAMENT_THEME_CATALOG) ? TOURNAMENT_THEME_CATALOG : [],
@@ -353,7 +353,7 @@ function postOpeningsToolContext(){
 function postFairplayToolContext(){
   postFairplayToolMessage({
     type:'hammerschach-fairplay-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     isAdmin:!!(onlineAuthUser && onlineAuthUser.isAdmin === true),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
@@ -368,7 +368,7 @@ function postReaderToolContext(){
   }catch(_){}
   postReaderToolMessage({
     type:'hammerschach-reader-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     isAdmin:!!(onlineAuthUser && onlineAuthUser.isAdmin === true),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : '',
@@ -379,7 +379,7 @@ function postReaderToolContext(){
 function postTournamentReportToolContext(){
   postTournamentReportToolMessage({
     type:'hammerschach-tournament-report-context',
-    darkMode:!!darkModeEnabled,
+    darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser)
   });
 }
