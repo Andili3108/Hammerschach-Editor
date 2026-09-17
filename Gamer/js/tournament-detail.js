@@ -196,7 +196,7 @@ function renderTournamentDetail(tournament){
     const progress = tournament.status === 'running' ? (tournament.arena ? (' Die Arena läuft' + (tournament.arenaEndsAt ? ' bis ' + formatTournamentLocalDateTime(tournament.arenaEndsAt) : '') + '.') : (' Aktuell läuft ' + (current && current.label ? current.label : ('Runde ' + tournament.currentRound)) + ' von insgesamt ' + tournament.totalRounds + ' Runden.')) : '';
     const freestyle = tournament.variant === GAME_VARIANT_FREESTYLE ? (tournament.arena ? ' Jede Arena-Partie erhält serverseitig eine zufällige Chess960-Stellung.' : ' Jede Runde erhält serverseitig eine neue zufällige Chess960-Stellung; sie gilt für alle Begegnungen der Runde und wird erst beim Rundenstart sichtbar.') : '';
     const thematic = tournament.theme ? (' Thementurnier: Alle Partien beginnen nach „' + tournament.theme.name + '“ (' + tournament.theme.moveText + '). ' + themeSideToMoveLabel(tournament.theme)) : '';
-    const schedule = tournament.scheduledStartAt ? (' Geplanter automatischer Start: ' + formatTournamentLocalDateTime(tournament.scheduledStartAt) + '.' + (tournament.live ? ' Der Check-in öffnet eine Stunde vorher.' : '')) : '';
+    const schedule = ' ' + tournamentStartPlanText(tournament) + '.' + (tournament.live && !tournament.startedAt ? ' Der Check-in öffnet eine Stunde vorher.' : '');
     const flexibleField = mode === 'swiss';
     const capacity = tournament.arena ? 'mit offener Teilnehmerzahl' : ('für ' + (flexibleField ? ('bis zu ' + tournament.players) : tournament.players) + ' Teilnehmer');
     tournamentOverviewText.textContent = typeConfig.label + '-' + modeConfig.label + ' ' + capacity + '. ' + modeConfig.description + schedule + freestyle + thematic + progress;
@@ -215,8 +215,8 @@ function renderTournamentDetail(tournament){
     else tournamentFactPlayers.textContent = String(tournament.confirmedCount || 0) + ' / ' + String(tournament.players) + (mode === 'swiss' ? ' max.' : '') + (tournament.live ? (' · ' + String(tournament.checkedInCount || 0) + ' eingecheckt') : '');
   }
   if(tournamentFactClock) tournamentFactClock.textContent = tournament.timeLabel || (tournament.hours + ' Stunden/Zug');
-  if(tournamentFactScheduleWrap) tournamentFactScheduleWrap.hidden = !tournament.scheduledStartAt;
-  if(tournamentFactSchedule) tournamentFactSchedule.textContent = tournament.scheduledStartAt ? formatTournamentLocalDateTime(tournament.scheduledStartAt) : '—';
+  if(tournamentFactScheduleWrap) tournamentFactScheduleWrap.hidden = false;
+  if(tournamentFactSchedule) tournamentFactSchedule.textContent = tournamentStartPlanText(tournament);
   if(tournamentFactVariant) tournamentFactVariant.textContent = tournament.variant === GAME_VARIANT_FREESTYLE ? 'Freestyle (Chess960)' : 'Klassisch';
   if(tournamentFactThemeWrap) tournamentFactThemeWrap.hidden = !tournament.theme;
   if(tournamentFactTheme) tournamentFactTheme.textContent = tournament.theme ? (tournament.theme.name + ' · ' + tournament.theme.moveText) : '—';
@@ -238,7 +238,10 @@ function renderTournamentDetail(tournament){
   renderLiveTournamentWaiting(tournament);
   const admin = hasTournamentAdminAccess();
   const registered = ['confirmed','waiting','playing','finished'].includes(tournament.userState);
-  if(tournamentDetailEditBtn) tournamentDetailEditBtn.hidden = !(tournament.status === 'draft' && admin);
+  if(tournamentDetailEditBtn){
+    tournamentDetailEditBtn.hidden = !(['draft','open','full'].includes(tournament.status) && admin);
+    tournamentDetailEditBtn.textContent = tournament.status === 'draft' ? '✏️ Entwurf bearbeiten' : '✏️ Planung bearbeiten';
+  }
   if(tournamentPublishBtn){
     tournamentPublishBtn.hidden = !(tournament.status === 'draft' && admin);
     tournamentPublishBtn.disabled = false;

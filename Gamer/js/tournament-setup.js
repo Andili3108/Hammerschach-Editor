@@ -67,8 +67,12 @@ function updateTournamentCreationFieldVisibility(){
   if(tournamentPlayersField) tournamentPlayersField.hidden = arena;
   if(tournamentPlayersLabel) tournamentPlayersLabel.textContent = mode === 'swiss' ? 'Maximale Teilnehmerzahl' : 'Teilnehmerzahl';
   if(tournamentScheduleField) tournamentScheduleField.hidden = false;
-  if(tournamentScheduleInput) tournamentScheduleInput.required = true;
-  if(tournamentScheduleLabel) tournamentScheduleLabel.textContent = config.live ? 'Starttermin' : 'Geplanter Start';
+  if(tournamentScheduleInput) tournamentScheduleInput.required = !!config.live;
+  if(tournamentScheduleLabel) tournamentScheduleLabel.textContent = config.live ? 'Starttermin' : 'Frühester Start (optional)';
+  const hint = document.getElementById('tournamentScheduleHint');
+  if(hint) hint.textContent = config.live
+    ? 'Fester Termin erforderlich. Der Check-in öffnet eine Stunde vorher.'
+    : 'Leer lassen: automatischer Start bei voller Teilnehmerzahl. Mit Datum: Start frühestens ab diesem Zeitpunkt, sobald ' + (mode === 'swiss' ? 'mindestens vier Teilnehmer angemeldet sind. Ohne Datum kann der Admin auch manuell ab vier Teilnehmern starten.' : 'alle Plätze belegt sind.');
 }
 function updateTournamentModeUi(preferredPlayers){
   updateTournamentCreationFieldVisibility();
@@ -341,7 +345,7 @@ function tournamentDefaultScheduleValue(){
 }
 function tournamentScheduleInputValue(value){
   const date = value ? new Date(value) : null;
-  if(!date || Number.isNaN(date.getTime())) return tournamentDefaultScheduleValue();
+  if(!date || Number.isNaN(date.getTime())) return '';
   const offset = date.getTimezoneOffset() * 60000;
   return new Date(date.getTime() - offset).toISOString().slice(0,16);
 }
@@ -370,7 +374,7 @@ function updateTournamentTypeUi(typeValue, preferredPlayers, preferredTime, pref
       tournamentClockSelect.appendChild(option);
     });
   }
-  if(tournamentScheduleInput && !tournamentScheduleInput.value) tournamentScheduleInput.value = tournamentDefaultScheduleValue();
+  if(config.live && tournamentScheduleInput && !tournamentScheduleInput.value) tournamentScheduleInput.value = tournamentDefaultScheduleValue();
 }
 const TOURNAMENT_STATUS_CONFIG = Object.freeze({
   draft:{label:'Entwurf',className:'status-draft'},
@@ -402,3 +406,16 @@ let liveTournamentClockOffsetMs = 0;
 let liveTournamentWaitingTournamentId = '';
 let liveTournamentWaitingDismissedKey = '';
 
+
+function tournamentStartPlanText(tournament){
+  if(tournament.startedAt) return 'Gestartet: ' + formatTournamentLocalDateTime(tournament.startedAt);
+  const scheduled = tournament.scheduledStartAt;
+  const swiss = normalizeTournamentMode(tournament.mode) === 'swiss';
+  if(!scheduled) return 'Automatischer Start bei voller Teilnehmerzahl' + (swiss ? ' · Admin-Start ab 4 möglich' : '');
+  const date = formatTournamentLocalDateTime(scheduled);
+  if(['open','full'].includes(tournament.status) && Date.parse(scheduled) <= Date.now()){
+    return tournament.live ? 'Starttermin erreicht · wartet auf Startvoraussetzungen'
+      : (swiss ? 'Wartet auf mindestens 4 Teilnehmer' : 'Wartet auf vollständiges Teilnehmerfeld');
+  }
+  return (tournament.live ? 'Starttermin: ' : 'Frühestens: ') + date;
+}

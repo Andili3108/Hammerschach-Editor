@@ -142,11 +142,17 @@ async function openTournamentDialog(tournamentId){
 function openTournamentCreateDialog(tournamentId){
   if(!hasTournamentAdminAccess()) return;
   const requestedId = typeof tournamentId === 'string' ? tournamentId : '';
-  const draft = requestedId ? loadLocalTournamentList().find(item => item.id === requestedId && item.status === 'draft') : null;
+  const draft = requestedId ? loadLocalTournamentList().find(item => item.id === requestedId && ['draft','open','full'].includes(item.status)) : null;
+  if(requestedId && !draft) return;
+  const published = !!(draft && draft.status !== 'draft');
+  const form = document.getElementById('tournamentCreateForm');
+  if(form) form.querySelectorAll('input, select, textarea, button').forEach(field => { field.disabled = false; });
   const type = normalizeTournamentType(draft ? draft.tournamentType : 'daily');
   tournamentEditingId = draft ? draft.id : '';
-  if(tournamentCreateTitle) tournamentCreateTitle.textContent = draft ? 'Turnierentwurf bearbeiten' : 'Turnier erstellen';
-  if(tournamentCreateIntro) tournamentCreateIntro.textContent = draft
+  if(tournamentCreateTitle) tournamentCreateTitle.textContent = published ? 'Turnierplanung bearbeiten' : draft ? 'Turnierentwurf bearbeiten' : 'Turnier erstellen';
+  if(tournamentCreateIntro) tournamentCreateIntro.textContent = published
+    ? 'Beschreibung und Startplanung können bis zum Start geändert werden. Die Spielregeln bleiben verbindlich. Ohne Datum startet ein volles Daily-Turnier nach dem Speichern automatisch. Bei Live-Turnieren kann der Termin nur geändert werden, solange niemand eingecheckt ist.'
+    : draft
     ? 'Bearbeite diesen serverseitigen Entwurf. Mitglieder werden weiterhin nicht informiert und es entstehen noch keine Partien.'
     : 'Erstelle zunächst einen serverseitigen Entwurf. Erst die getrennte Veröffentlichung öffnet die Anmeldung und versendet die einmalige Turniermail.';
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.textContent = draft ? 'Änderungen speichern' : 'Entwurf speichern';
@@ -161,10 +167,13 @@ function openTournamentCreateDialog(tournamentId){
   updateTournamentThemeUi();
   if(tournamentRatingSelect) tournamentRatingSelect.value = draft && !draft.rated ? 'unrated' : 'rated';
   if(tournamentDescriptionInput) tournamentDescriptionInput.value = draft ? draft.description : '';
+  if(published && form) form.querySelectorAll('input, select, textarea, button').forEach(field => {
+    field.disabled = !['tournamentDescriptionInput','tournamentScheduleInput','tournamentCreatePreviewBtn','tournamentCreateCancelBtn'].includes(field.id);
+  });
   setTournamentCreateStatus('', '');
   if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = false;
   syncTournamentPageScrollLock();
-  setTimeout(() => { if(tournamentNameInput) tournamentNameInput.focus(); }, 0);
+  setTimeout(() => { if(published && tournamentDescriptionInput) tournamentDescriptionInput.focus(); else if(tournamentNameInput) tournamentNameInput.focus(); }, 0);
 }
 async function saveTournamentDraft(event){
   if(event) event.preventDefault();
@@ -189,17 +198,21 @@ async function saveTournamentDraft(event){
     openThemePicker();
     return;
   }
-  const scheduled = new Date(String(tournamentScheduleInput ? tournamentScheduleInput.value : ''));
-  if(Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now()){
+  const existing = tournamentEditingId ? loadLocalTournamentList().find(item => item.id === tournamentEditingId) : null;
+  const published = !!(existing && ['open','full'].includes(existing.status));
+  const scheduleValue = String(tournamentScheduleInput ? tournamentScheduleInput.value : '').trim();
+  const unchangedSchedule = published && scheduleValue === tournamentScheduleInputValue(existing.scheduledStartAt);
+  const scheduled = new Date(scheduleValue);
+  if(!unchangedSchedule && ((live && !scheduleValue) || (scheduleValue && (Number.isNaN(scheduled.getTime()) || scheduled.getTime() <= Date.now())))){
     setTournamentCreateStatus('Bitte einen zukünftigen geplanten Start wählen.', 'error');
     if(tournamentScheduleInput) tournamentScheduleInput.focus();
     return;
   }
-  const scheduledStartAt = scheduled.toISOString();
+  const scheduledStartAt = unchangedSchedule ? existing.scheduledStartAt : scheduleValue ? scheduled.toISOString() : null;
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.disabled = true;
-  setTournamentCreateStatus('Entwurf wird gespeichert…', '');
+  setTournamentCreateStatus('Turnier wird gespeichert…', '');
   try{
-    const data = await authApi('/api/tournaments', {
+    const data = await authApi(published ? '/api/tournaments/' + encodeURIComponent(tournamentEditingId) + '/planning' : '/api/tournaments', {
       method:'POST',
       body:JSON.stringify({
         id:tournamentEditingId || '',
@@ -220,7 +233,7 @@ async function saveTournamentDraft(event){
     tournamentEditingId = '';
     closeTournamentCreateDialog();
     await loadTournaments();
-    tournamentActiveListTab = 'drafts';
+    tournamentActiveListTab = published ? 'current' : 'drafts';
     if(data.tournament) openTournamentDetail(data.tournament.id);
     if(statusEl) statusEl.textContent = data.message || 'Turnierentwurf wurde gespeichert.';
   } catch(err){

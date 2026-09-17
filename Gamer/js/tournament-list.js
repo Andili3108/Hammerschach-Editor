@@ -37,6 +37,7 @@ function normalizeLocalTournament(value, index){
     timeKey:String(value.timeKey || ''),
     timeLabel:String(value.timeLabel || (live ? '' : (hours + ' Stunden pro Zug'))),
     scheduledStartAt:value.scheduledStartAt || null,
+    startedAt:value.startedAt || null,
     arena:mode === 'arena' || value.arena === true,
     arenaDurationMinutes:[60,90,120,180,240,1440].includes(Number(value.arenaDurationMinutes)) ? Number(value.arenaDurationMinutes) : (mode === 'arena' ? 90 : null),
     arenaEndsAt:value.arenaEndsAt || null,
@@ -146,7 +147,7 @@ function createTournamentListCard(tournament){
   appendTournamentMeta(meta, (tournament.tournamentType === 'blitz' ? '⚡ ' : tournament.tournamentType === 'rapid' ? '⏱️ ' : '⏳ ') + tournament.tournamentTypeLabel);
   appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer · offen') : (tournament.status === 'draft' ? ('👥 ' + (normalizeTournamentMode(tournament.mode) === 'swiss' ? 'max. ' : '') + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players + (normalizeTournamentMode(tournament.mode) === 'swiss' ? ' max.' : ''))));
   appendTournamentMeta(meta, '⏱ ' + (tournament.timeLabel || (tournament.hours + ' Std./Zug')));
-  if(tournament.scheduledStartAt) appendTournamentMeta(meta, '📅 ' + formatTournamentLocalDateTime(tournament.scheduledStartAt));
+  appendTournamentMeta(meta, '📅 ' + tournamentStartPlanText(tournament));
   if(tournament.arena) appendTournamentMeta(meta, '⌛ ' + (Number(tournament.arenaDurationMinutes) === 1440 ? '24 Stunden' : (tournament.arenaDurationMinutes + ' Minuten')));
   appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
   appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');
@@ -167,7 +168,7 @@ function createTournamentListCard(tournament){
   viewButton.textContent = 'Turnier ansehen';
   viewButton.addEventListener('click', () => openTournamentDetail(tournament.id));
   actions.appendChild(viewButton);
-  if(tournament.status === 'draft' && hasTournamentAdminAccess()){
+  if(['draft','open','full'].includes(tournament.status) && hasTournamentAdminAccess()){
     const editButton = document.createElement('button');
     editButton.type = 'button';
     editButton.textContent = '✏️ Bearbeiten';
