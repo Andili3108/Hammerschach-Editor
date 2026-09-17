@@ -1174,7 +1174,7 @@ html.dark-mode #gameSearch,html.dark-mode #gameListBody button{background:var(--
             <button class="reader-board-nav-btn" id="btnEnd" type="button" title="Zum Ende" aria-label="Zum Ende">&raquo;</button>
           </div>
           <button class="reader-icon-btn" id="btnFlip" type="button" title="Brett drehen" aria-label="Brett drehen">↻</button>
-          <div class="reader-board-color-wrap" id="readerBoardColorWrap">
+          <div class="reader-board-color-wrap appearance-wrap" id="readerBoardColorWrap">
             <button id="btnReaderBoardColor" type="button" class="reader-icon-btn" aria-haspopup="true" aria-expanded="false" title="Brettfarbe" aria-label="Brettfarbe">🎨</button>
             <div id="readerBoardColorPopup" class="reader-board-color-popup" hidden>
               <div class="reader-board-color-popup-title">Brettfarbe wählen</div>
@@ -1189,7 +1189,7 @@ html.dark-mode #gameSearch,html.dark-mode #gameListBody button{background:var(--
               <div class="reader-board-color-current">Aktuell: <span id="readerBoardColorCurrent">Hammerschach Rubin</span></div>
             </div>
           </div>
-          <div class="reader-board-color-wrap" id="readerPieceSetWrap">
+          <div class="reader-board-color-wrap appearance-wrap" id="readerPieceSetWrap">
             <button id="btnReaderPieceSet" type="button" class="reader-icon-btn" aria-haspopup="true" aria-expanded="false" title="Figurensatz" aria-label="Figurensatz">♞</button>
             <div id="readerPieceSetPopup" class="reader-board-color-popup" hidden>
               <div class="reader-board-color-popup-title">Figurensatz wählen</div>
@@ -3480,8 +3480,9 @@ renderBoardFromView();
     btnPieceSet.setAttribute('aria-expanded','true');
   }
 
-  function applyBoardColorPreset(id, closeAfterSelection){
-    const preset = boardColorPresets.find(p => p.id === id) || boardColorPresets[0];
+  function applyBoardColorPreset(id, closeAfterSelection=false, persist=true){
+    const normalized=id==='metal-prestige'?'onyx-elegance':id;
+    const preset = boardColorPresets.find(p => p.id === normalized) || boardColorPresets[0];
     document.documentElement.style.setProperty('--light-square', preset.light);
     document.documentElement.style.setProperty('--dark-square', preset.dark);
     applyBoardMaterialVariables(preset);
@@ -3489,20 +3490,21 @@ renderBoardFromView();
     boardColorOptions.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.boardColor === preset.id);
     });
-    try{ localStorage.setItem(BOARD_COLOR_STORAGE_KEY, preset.id); }catch(_e){}
+    if(persist)try{ localStorage.setItem(BOARD_COLOR_STORAGE_KEY, preset.id); }catch(_e){}
     if(closeAfterSelection) closeBoardColorPopup();
   }
-  function applyPieceSetPreset(id, closeAfterSelection){
+  function applyPieceSetPreset(id, closeAfterSelection=false, persist=true){
     const normalized=id==='rhosgfx'?'merida':id;
     const preset=typeof pieceSetPresets!=='undefined'?(pieceSetPresets.find(item=>item.id===normalized)||pieceSetPresets[0]):null;
     if(!preset||typeof pieceImg==='undefined')return;
+    const changed=Object.keys(preset.paths).some(key=>pieceImg[key]!==preset.paths[key]);
     if(typeof activePieceSetId!=='undefined')activePieceSetId=preset.id;
     document.documentElement.dataset.pieceSet=preset.id;
     Object.keys(pieceImg).forEach(key=>delete pieceImg[key]);Object.assign(pieceImg,preset.paths);
     if(pieceSetCurrent)pieceSetCurrent.textContent=preset.name;
     pieceSetOptions.forEach(btn=>btn.classList.toggle('active',btn.dataset.pieceSet===preset.id));
-    try{localStorage.setItem(PIECE_SET_STORAGE_KEY,preset.id);}catch(_e){}
-    if(typeof renderBoardFromView==='function')renderBoardFromView();
+    if(persist)try{localStorage.setItem(PIECE_SET_STORAGE_KEY,preset.id);}catch(_e){}
+    if(changed&&typeof renderBoardFromView==='function')renderBoardFromView();
     if(closeAfterSelection)closePieceSetPopup();
   }
 
@@ -3542,11 +3544,12 @@ renderBoardFromView();
 
   let savedBoardColorPreset = 'basis';
   try{ savedBoardColorPreset = localStorage.getItem(BOARD_COLOR_STORAGE_KEY) || 'basis'; }catch(_e){}
-  applyBoardColorPreset(savedBoardColorPreset, false);
+  applyBoardColorPreset(savedBoardColorPreset, false, false);
   let savedPieceSet='cburnett';try{savedPieceSet=localStorage.getItem(PIECE_SET_STORAGE_KEY)||'cburnett';}catch(_e){}
-  applyPieceSetPreset(savedPieceSet,false);
-  window.hammerschachReaderApplyBoardColor=applyBoardColorPreset;
-  window.hammerschachReaderApplyPieceSet=applyPieceSetPreset;
+  applyPieceSetPreset(savedPieceSet,false,false);
+  // Incoming settings only update the view; local selections above own persistence.
+  window.hammerschachReaderApplyBoardColor=(id,closeAfterSelection=false)=>applyBoardColorPreset(id,closeAfterSelection,false);
+  window.hammerschachReaderApplyPieceSet=(id,closeAfterSelection=false)=>applyPieceSetPreset(id,closeAfterSelection,false);
 })();
 </script>
 
@@ -3624,6 +3627,8 @@ renderBoardFromView();
   }
   function applyContext(context){
     currentContext=context||{};
+    // Once the Gamer supplies shared preferences, its legacy context is only metadata.
+    if(document.documentElement.classList.contains('central-settings'))return;
     document.documentElement.classList.toggle('dark-mode',!!currentContext.darkMode);
     if(typeof window.hammerschachReaderApplyBoardColor==='function')window.hammerschachReaderApplyBoardColor(String(currentContext.boardColor||'basis'),false);
     if(typeof window.hammerschachReaderApplyPieceSet==='function')window.hammerschachReaderApplyPieceSet(String(currentContext.pieceSet||'cburnett'),false);
@@ -3633,6 +3638,7 @@ renderBoardFromView();
   if(archiveSelect)archiveSelect.addEventListener('change',loadSelectedArchive);
   if(archiveReloadBtn)archiveReloadBtn.addEventListener('click',loadSelectedArchive);
   window.addEventListener('message',event=>{
+    if(window.parent===window||event.source!==window.parent)return;
     if(targetOrigin()!=='*'&&event.origin!==targetOrigin())return;
     const message=event.data&&typeof event.data==='object'?event.data:{};
     if(settle(message))return;
