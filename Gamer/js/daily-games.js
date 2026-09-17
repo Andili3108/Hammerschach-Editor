@@ -146,6 +146,15 @@ function createMyLiveInvitationCard(game){
   const link = card.querySelector('.daily-game-open-btn');
   link.textContent = 'Spielraum öffnen';
   link.title = 'Diesen Spielraum mit deinem angemeldeten Account öffnen';
+  if(game.canDeleteInvitation && !game.incomingInvitation && !game.started && !game.ended && !game.isTournamentGame){
+    const withdrawBtn = document.createElement('button');
+    withdrawBtn.type = 'button';
+    withdrawBtn.className = 'daily-game-delete-btn';
+    withdrawBtn.textContent = 'Angebot zurückziehen';
+    withdrawBtn.title = 'Diese Live-Einladung zurückziehen und den Einladungslink ungültig machen';
+    withdrawBtn.addEventListener('click', () => withdrawMyLiveInvitation(game, withdrawBtn));
+    card.querySelector('.daily-game-actions').appendChild(withdrawBtn);
+  }
   if(game.invitationMessage){
     const message = createDailyInvitationMessageBox('Persönliche Nachricht', game.invitationMessage, false);
     if(message) card.firstElementChild.appendChild(message);
@@ -190,6 +199,25 @@ function createMyLiveRunningCard(game){
   card.appendChild(content);
   card.appendChild(actions);
   return card;
+}
+async function withdrawMyLiveInvitation(game, button){
+  const roomId = cleanRoomId(game && game.roomId);
+  if(!roomId) return;
+  if(!window.confirm('Diese Live-Einladung wirklich zurückziehen?\n\nDer bisherige Einladungslink wird dauerhaft ungültig.')) return;
+  const oldText = button ? button.textContent : '';
+  if(button){ button.disabled = true; button.textContent = 'Wird zurückgezogen…'; }
+  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Live-Einladung wird zurückgezogen…';
+  try{
+    await cancelPreparedInvitationRoom(roomId);
+    if(roomId === onlineRoomId){
+      applyRoomCancelled('Diese Einladung wurde zurückgezogen. Der Spielraum ist nicht mehr verfügbar.');
+    }
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Live-Einladung wurde zurückgezogen. Der alte Link ist nicht mehr gültig.';
+    await loadDailyGames({silent:true});
+  }catch(err){
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Die Live-Einladung konnte nicht zurückgezogen werden.';
+    if(button){ button.disabled = false; button.textContent = oldText || 'Angebot zurückziehen'; }
+  }
 }
 async function withdrawMyLiveOffer(offer, button){
   const roomId = cleanRoomId(offer && offer.roomId);
