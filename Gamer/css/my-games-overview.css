@@ -2,11 +2,11 @@
 .daily-games-modal.has-running-grid{width:1000px;}
 #dailyGamesList.running-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;padding:4px 6px 8px 3px;}
 .running-grid>.daily-games-empty{grid-column:1/-1;}
-#dailyGamesList .running-game-preview-card{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0;padding:10px;border:1px solid #d9d5cf;border-radius:16px;color:#282522;text-decoration:none;background:#f4f2ef;box-shadow:0 3px 10px #0000000a;}
-#dailyGamesList .running-game-preview-card.my-turn{border:2px solid #bd831e;padding:9px;background:linear-gradient(140deg,#fffaf0,#f9edcf);box-shadow:0 0 0 2px #bd831e18,0 5px 14px #a86f1614;}
+#dailyGamesList .running-game-preview-card{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:0;padding:10px;border:1px solid var(--ui-line);border-radius:16px;color:var(--ui-text);text-decoration:none;background:var(--ui-surface-alt);box-shadow:0 3px 10px #0000000a;}
+#dailyGamesList .running-game-preview-card.my-turn{border:2px solid #bd831e;padding:9px;background:linear-gradient(140deg,var(--ui-surface),#f9edcf);box-shadow:0 0 0 2px #bd831e18,0 5px 14px #a86f1614;}
 #dailyGamesList .running-game-preview-card:hover{border-color:#a86f16;box-shadow:0 5px 18px #704a2224;}
 .running-game-preview-card:focus-visible{outline:3px solid #843f46;outline-offset:3px;}
-.running-game-board{aspect-ratio:1;display:grid;place-content:center;border-radius:8px;overflow:hidden;background:#e5dfd4;color:#665a48;font-size:15px;text-align:center;box-shadow:0 2px 7px #0002;}
+.running-game-board{aspect-ratio:1;display:grid;place-content:center;border-radius:8px;overflow:hidden;background:var(--ui-hover);color:var(--ui-muted);font-size:15px;text-align:center;box-shadow:0 2px 7px #0002;}
 .running-game-board.preview-ready{grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));place-content:normal;border:3px solid var(--board-frame-mid);box-sizing:border-box;}
 .running-game-preview-card:not(.my-turn) .preview-ready{filter:brightness(.87) saturate(.8);}
 .game-preview-square{position:relative;display:grid;place-items:center;min-width:0;min-height:0;}
@@ -20,20 +20,20 @@
 .running-game-details .daily-game-title{font-size:17px;line-height:1.25;gap:5px;}
 .running-game-details .daily-game-title-text{overflow-wrap:anywhere;}
 .running-game-details .presence-badge{font-size:10px;padding:2px 5px;}
-.running-game-turn{font-size:14px;font-weight:900;color:#655e55;margin:6px 0;}
+.running-game-turn{font-size:14px;font-weight:900;color:var(--ui-muted);margin:6px 0;}
 .my-turn .running-game-turn{color:#80500b;}
 .my-turn .running-game-turn::before{content:'●';color:#bd831e;margin-right:6px;}
 .running-game-deadline{font-size:13px;font-weight:800;margin:4px 0;color:#665135;}
 .running-game-details .daily-game-meta{font-size:12px;line-height:1.45;font-weight:600;}
-.running-game-open{font-size:13px;font-weight:800;color:#843f46;margin-top:auto;}
+.running-game-open{font-size:13px;font-weight:800;color:var(--ui-accent);margin-top:auto;}
 .current-game .running-game-open{border-top:1px solid #bd831e55;padding-top:7px;color:#80500b;}
 .running-game-board.preview-unavailable{padding:18px;box-sizing:border-box;}
-html.dark-mode #dailyGamesList .running-game-preview-card{background:#292b30;border-color:#4d4942;color:#f3f4f6;}
-html.dark-mode #dailyGamesList .running-game-preview-card.my-turn{background:linear-gradient(140deg,#3d3424,#302e2a);border-color:#d6a143;}
-html.dark-mode .running-game-turn,html.dark-mode .running-game-deadline{color:#c9c1b4;}
+html.dark-mode #dailyGamesList .running-game-preview-card{background:var(--ui-surface-alt);border-color:var(--ui-line);color:var(--ui-text);}
+html.dark-mode #dailyGamesList .running-game-preview-card.my-turn{background:linear-gradient(140deg,var(--ui-surface-alt),var(--ui-surface-alt));border-color:#d6a143;}
+html.dark-mode .running-game-turn,html.dark-mode .running-game-deadline{color:var(--ui-muted);}
 html.dark-mode .my-turn .running-game-turn,html.dark-mode .current-game .running-game-open{color:#edc779;}
 html.dark-mode .running-game-open{color:#efb5bc;}
-html.dark-mode .running-game-board:not(.preview-ready){background:#34363b;color:#d0c6b6;}
+html.dark-mode .running-game-board:not(.preview-ready){background:var(--ui-hover);color:var(--ui-muted);}
 @media(max-width:850px){#dailyGamesList.running-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:520px){#dailyGamesList.running-grid{grid-template-columns:minmax(0,1fr);gap:14px;} .daily-games-modal.has-running-grid{padding:14px;}}
 
@@ -65,10 +65,10 @@ html.room-actions-active .header #dailyGamesOpenBtn{display:none!important;}
 .room-games-navigation .board-daily-actions .board-action-btn,.daily-move-dialog .board-action-btn{width:100%!important;min-width:0!important;min-height:48px!important;padding:6px!important;font-size:13px!important;white-space:normal!important;line-height:1.15!important;box-sizing:border-box;}
 .room-games-navigation .board-daily-actions .board-daily-cancel-btn,.daily-move-dialog .board-daily-cancel-btn{font-size:22px!important;}
 .room-board-stacked .room-games-navigation{min-height:48px;}
-.daily-move-dialog{position:fixed;inset:auto;margin:0;transform:translate(-50%,-50%);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:12px;box-sizing:border-box;border:1px solid rgba(132,63,70,.4);border-radius:18px;background:#faf9f8;color:#282522;box-shadow:0 12px 40px #0005;overflow:auto;}
+.daily-move-dialog{position:fixed;inset:auto;margin:0;transform:translate(-50%,-50%);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:12px;box-sizing:border-box;border:1px solid rgba(132,63,70,.4);border-radius:18px;background:var(--ui-surface);color:var(--ui-text);box-shadow:0 12px 40px #0005;overflow:auto;}
 .daily-move-dialog:not([open]){display:none;}
 .daily-move-dialog::backdrop{background:rgba(0,0,0,.08);}
-html.dark-mode .daily-move-dialog{background:#292b30;color:#f3f4f6;border-color:#87636a;}
+html.dark-mode .daily-move-dialog{background:var(--ui-surface-alt);color:var(--ui-text);border-color:#87636a;}
 .room-games-navigation .board-daily-draw-btn.active,.daily-move-dialog .board-daily-draw-btn.active{border-color:var(--andili-rot)!important;box-shadow:inset 0 0 0 2px rgba(132,63,70,.35)!important;}
 
 /* An incoming draw offer uses the same row and retains the resign action. */

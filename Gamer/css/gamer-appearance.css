@@ -1,0 +1,105 @@
+/*
+ * Gemeinsame Farbrollen für Hell, Sanft und Dunkel.
+ * Neue UI-Elemente verwenden diese Rollen statt fester Grau-/Weißwerte.
+ * Figuren, Brettfelder und Auswertungsbalken behalten ihre eigenen Farben.
+ */
+:root {
+  --ui-page:#f6f7fb;
+  --ui-surface:#ffffff;
+  --ui-surface-alt:#f0f1f4;
+  --ui-hover:#e4e6eb;
+  --ui-text:#24262b;
+  --ui-muted:#5d626d;
+  --ui-line:#c2c6ce;
+  --ui-line-rgb:72 79 92;
+  --ui-surface-rgb:255 255 255;
+  --ui-field:#ffffff;
+  --ui-accent:#843f46;
+  --ui-on-accent:#ffffff;
+  --ui-focus:#28639d;
+  --ui-shadow:0 10px 28px rgb(25 28 34 / .13);
+  --ui-success:#276d3b;
+  --ui-warning:#805709;
+  --ui-danger:#a62f3c;
+  --ui-info:#2b6093;
+}
+html.dark-mode {
+  --ui-page:#171a1f;
+  --ui-surface:#24282f;
+  --ui-surface-alt:#2e333c;
+  --ui-hover:#3b424d;
+  --ui-text:#eef0f4;
+  --ui-muted:#bbc3cf;
+  --ui-line:#697482;
+  --ui-line-rgb:206 215 228;
+  --ui-surface-rgb:36 40 47;
+  --ui-field:#1d2128;
+  --ui-accent:#efb3bd;
+  --ui-focus:#99caff;
+  --ui-shadow:0 12px 30px rgb(0 0 0 / .27);
+  --ui-success:#a2deb4;
+  --ui-warning:#f0cf87;
+  --ui-danger:#ffb2bd;
+  --ui-info:#a8cfee;
+}
+html.soft-mode {
+  --ui-page:#d6d2ca;
+  --ui-surface:#eeeae2;
+  --ui-surface-alt:#e2ddd4;
+  --ui-hover:#d4cec3;
+  --ui-text:#302e2b;
+  --ui-muted:#59534c;
+  --ui-line:#aaa195;
+  --ui-line-rgb:86 75 62;
+  --ui-surface-rgb:238 234 226;
+  --ui-field:#f3efe8;
+  --ui-accent:#793c46;
+  --ui-focus:#285e84;
+  --ui-shadow:0 6px 18px rgb(49 40 28 / .10);
+  --ui-success:#286138;
+  --ui-warning:#775210;
+  --ui-danger:#9c3040;
+  --ui-info:#2c5b80;
+  --button-neutral-top:var(--ui-surface);
+  --button-neutral-bottom:var(--ui-surface-alt);
+  --button-neutral-text:var(--ui-text);
+  --button-neutral-border:var(--ui-line);
+  --button-selected-start:#e6d5b0;
+  --button-selected-end:#dcc79f;
+  --button-selected-text:#513b12;
+  --button-selected-border:#947238;
+  --button-selected-shadow:rgb(65 48 20 / .10);
+  --button-focus:var(--ui-focus);
+}
+html, html body { color:var(--ui-text); }
+html.hammerschach-standalone, html.hammerschach-standalone body,
+html.soft-mode, html.soft-mode body { background:var(--ui-page); }
+html.dark-mode, html.dark-mode body { background:var(--ui-page)!important; }
+/* Dialog copy and labels must not inherit the old light-only inline colors. */
+:is(.identity-modal,.info-modal,.invite-modal,.daily-games-modal,.open-offers-modal,.public-games-modal,.game-archive-modal,.admin-overview-modal,.promo-modal) {
+  color:var(--ui-text);background:var(--ui-surface);box-shadow:var(--ui-shadow);
+}
+:is(.identity-modal,.info-modal,.invite-modal,.promo-modal) :is(h2,h3,h4,label) {color:var(--ui-text);}
+:is(.identity-modal,.info-modal,.invite-modal,.promo-modal) > p,
+#authIntro {color:var(--ui-muted);}
+:is(input,select,textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="button"]):not([type="submit"]) {
+  color:var(--ui-text);background-color:var(--ui-field);border-color:var(--ui-line);
+}
+input::placeholder,textarea::placeholder {color:var(--ui-muted);opacity:1;}
+select option {color:var(--ui-text);background:var(--ui-field);}
+:is(button,a,input,select,textarea,[tabindex]):focus-visible {outline:2px solid var(--ui-focus);outline-offset:3px;}
+/* Central settings use the same palette as every other surface. */
+html #gamerSettings {
+  --settings-bg:var(--ui-surface);
+  --settings-ink:var(--ui-text);
+  --settings-line:var(--ui-line);
+  --settings-field:linear-gradient(var(--ui-surface),var(--ui-surface-alt));
+  box-shadow:var(--ui-shadow);
+}
+#gamerSettings :is(.settings-intro,.settings-note,.settings-description) {color:var(--ui-muted);opacity:1;}
+html.dark-mode #gamerSettings button[aria-pressed=true],html.dark-mode #gamerSettings #settingsDone {background:#914650;border-color:#c77c86;color:var(--ui-on-accent);}
+html.soft-mode #gamerSettings button[aria-pressed=true],html.soft-mode #gamerSettings #settingsDone {background:#793c46;border-color:#793c46;color:var(--ui-on-accent);}
+html.soft-mode :is(.header,.box,.identity-modal,.info-modal,.visitor-board-welcome) {box-shadow:var(--ui-shadow);}
+html.soft-mode .status {background:linear-gradient(135deg,var(--ui-surface),var(--ui-surface-alt));}
+html.soft-mode button {text-shadow:none;}
+html.soft-mode.hammerschach-standalone body::before,html.soft-mode.hammerschach-standalone body::after {opacity:.12;}
