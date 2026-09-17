@@ -14,12 +14,12 @@
   function post(message){if(embedded)window.parent.postMessage(message,targetOrigin);}
   function syncTheme(){
     const dark=root.classList.contains('dark-mode');
-    if(toggle){toggle.textContent=dark?'☀️':'🌙';toggle.setAttribute('aria-pressed',String(dark));toggle.setAttribute('aria-label',dark?'Helle Darstellung aktivieren':'Dunkle Darstellung aktivieren');}
+    if(toggle){toggle.textContent = {light:'◐',soft:'🌙',dark:'☀️'}[HammerschachAppearance.current()];toggle.setAttribute('aria-pressed',String(dark));toggle.setAttribute('aria-label',({light:'Sanfte',soft:'Dunkle',dark:'Helle'}[HammerschachAppearance.current()] + ' Darstellung aktivieren'));}
     document.getElementById('themeColorMeta')?.setAttribute('content',dark?'#15171a':'#843f46');
   }
   toggle?.addEventListener('click',()=>{
-    root.classList.toggle('dark-mode');
-    try{localStorage.setItem('hammerschachGamerColorScheme',root.classList.contains('dark-mode')?'dark':'light');}catch(_){}
+    window.HammerschachAppearance.cycle();
+    try{localStorage.setItem('hammerschachGamerColorScheme', window.HammerschachAppearance.current());}catch(_){}
     syncTheme();
   });
   function destroyPlayers(){
