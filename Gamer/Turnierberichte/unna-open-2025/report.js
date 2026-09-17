@@ -19,9 +19,9 @@
   function refreshThemeControls() {
     const dark = root.classList.contains('dark-mode');
     if (toggle) {
-      toggle.textContent = dark ? '☀️' : '🌙';
-      toggle.setAttribute('aria-label', dark ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren');
-      toggle.title = dark ? 'Helle Darstellung aktivieren' : 'Dunkle Darstellung aktivieren';
+      toggle.textContent = {light:'◐',soft:'🌙',dark:'☀️'}[HammerschachAppearance.current()];
+      toggle.setAttribute('aria-label', ({light:'Sanfte',soft:'Dunkle',dark:'Helle'}[HammerschachAppearance.current()] + ' Darstellung aktivieren'));
+      toggle.title = ({light:'Sanfte',soft:'Dunkle',dark:'Helle'}[HammerschachAppearance.current()] + ' Darstellung aktivieren');
     }
     if (meta) meta.setAttribute('content', dark ? '#15171a' : '#843f46');
   }
@@ -51,8 +51,8 @@
   }
 
   if (toggle) toggle.addEventListener('click', () => {
-    root.classList.toggle('dark-mode');
-    try { localStorage.setItem('hammerschachGamerColorScheme', root.classList.contains('dark-mode') ? 'dark' : 'light'); } catch (_) { }
+    window.HammerschachAppearance.cycle();
+    try { localStorage.setItem('hammerschachGamerColorScheme', window.HammerschachAppearance.current()); } catch (_) { }
     refreshThemeControls();
   });
   if (search) search.addEventListener('input', renderStandings);
