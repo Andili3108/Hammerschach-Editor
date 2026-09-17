@@ -7,14 +7,14 @@ button,a{font-family:inherit}
 .skip-link:focus{top:8px}
 a:focus-visible,button:focus-visible{outline:3px solid #3b6ea7;outline-offset:3px}
 .news-page{max-width:1100px;margin:0 auto;padding:18px 16px 0;overflow:visible}
-.news-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;align-items:center;padding:clamp(24px,4vw,46px);border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,#632d34,#843f46);color:#fff;overflow:hidden}
+.news-hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px;align-items:center;padding:clamp(24px,4vw,46px);border:1px solid var(--line);border-radius:22px;background:linear-gradient(135deg,#632d34,#843f46);color:var(--ui-on-accent);overflow:hidden}
 .news-kicker{margin:0 0 16px;color:#f0d9b5;font-size:12px;font-family:Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
 .news-hero h1{font-size:clamp(35px,4.8vw,56px);line-height:1.06;letter-spacing:-.025em;margin:0 0 20px;text-wrap:balance}
 .news-lead{font-size:19px;line-height:1.5;margin:0;max-width:39em}
-.news-meta{font-family:Arial,sans-serif;font-size:11px;color:#efdee0;line-height:1.8;margin:22px 0 0}
+.news-meta{font-family:Arial,sans-serif;font-size:11px;color:var(--ui-on-accent);line-height:1.8;margin:22px 0 0}
 .hero-art{margin:0;min-width:0}
 .hero-art img{display:block;width:100%;height:auto}
-.hero-art figcaption{font:11px/1.5 Arial,sans-serif;color:#efdee0;text-align:center}
+.hero-art figcaption{font:11px/1.5 Arial,sans-serif;color:var(--ui-on-accent);text-align:center}
 .freestyle-emblem{text-align:center;color:#f0d9b5;padding:20px}
 .freestyle-emblem>span{display:block;font-size:clamp(96px,15vw,180px);line-height:1;font-weight:bold;letter-spacing:-.08em}
 .freestyle-emblem small{display:block;margin-top:18px;font-size:23px;line-height:1.35}
@@ -36,7 +36,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #3b6ea7;outline-offset:3p
 .news-aside a:hover{color:var(--wine);text-decoration:underline}
 .public-note{font-size:14px;color:var(--muted);line-height:1.6;margin-top:22px}
 .inline-figure{margin:28px 0}
-.inline-figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:14px;background:#f7f4f0}
+.inline-figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:14px;background:var(--ui-surface-alt)}
 .inline-figure figcaption{font:12px/1.6 Arial,sans-serif;color:var(--muted);margin-top:10px}
 .news-sources{border-top:1px solid var(--line);margin-top:36px;padding-top:4px}
 .news-sources h2{font-size:23px}
@@ -54,7 +54,7 @@ html.hammerschach-embedded .news-aside{top:18px}
 html.hammerschach-embedded .news-footer{margin-bottom:10px}
 html.dark-mode .news-story h2,html.dark-mode .next-article strong{color:#efc1c7}
 html.dark-mode .citation,html.dark-mode .news-sources a,html.dark-mode .editorial-note>strong{color:#efc1c7}
-html.dark-mode .news-hero{background:linear-gradient(135deg,#301e24,#632d34)}
+html.dark-mode .news-hero{background:linear-gradient(135deg,var(--ui-surface-alt),#632d34)}
 @media(max-width:760px){
 .news-page{padding:10px 8px 0}
 .news-hero{grid-template-columns:1fr;gap:18px;padding:25px 22px}
@@ -71,15 +71,15 @@ html.dark-mode .news-hero{background:linear-gradient(135deg,#301e24,#632d34)}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 @media print{
-body{background:#fff!important;color:#000!important}
+body{background:var(--ui-surface)!important;color:var(--ui-text)!important}
 .site-header,.news-aside,.news-footer,.next-article,.skip-link{display:none!important}
 .news-page{padding:0}
-.news-hero{color:#000;background:#fff;border:0;padding:0;display:block}
-.news-kicker,.news-meta{color:#444}
+.news-hero{color:var(--ui-text);background:var(--ui-surface);border:0;padding:0;display:block}
+.news-kicker,.news-meta{color:var(--ui-text)}
 .hero-art,.freestyle-emblem{display:none}
 .news-layout{display:block;padding:15px 0}
 .news-story{font-size:12pt}
-.news-story h2{color:#000;break-after:avoid}
+.news-story h2{color:var(--ui-text);break-after:avoid}
 .news-hero h1{font-size:28pt}
 .news-lead,.news-story .opening{font-size:13pt}
 .inline-figure,.editorial-note{break-inside:avoid}
