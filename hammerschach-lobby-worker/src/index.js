@@ -2434,6 +2434,7 @@ const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 const AUTH_MAIL_RATE_WINDOW_MS = 60 * 60 * 1000;
 const AUTH_MAIL_RATE_ACCOUNT_LIMIT = 3;
 const AUTH_MAIL_RATE_IP_LIMIT = 8;
+const PASSWORD_RESET_REQUEST_MESSAGE = 'Anfrage entgegengenommen. Wenn ein bestätigter Account zu deinen Angaben gehört und der Versand möglich ist, geht der Rücksetzlink an die dort hinterlegte Mailadresse. Diese Meldung bestätigt keinen Versand. Prüfe auch den Spamordner. Falls keine Mail ankommt, warte vor einer erneuten Anfrage eine Stunde oder wende dich an den Administrator.';
 const AUTH_RATE_LOG_RETENTION_MS = 48 * 60 * 60 * 1000;
 const AUTH_SECURITY_EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const AUTH_LOGIN_MIN_RESPONSE_MS = 550;
@@ -2626,10 +2627,14 @@ async function createAccountActionToken(env, userId, purpose, email, ttlMs) {
   const now = new Date();
   const expires = new Date(now.getTime() + Math.max(5 * 60 * 1000, Number(ttlMs || 0)));
   const nowIso = now.toISOString();
-  await env.DB.prepare(
-    `UPDATE account_action_tokens SET used_at = ?
-      WHERE user_id = ? AND purpose = ? AND used_at IS NULL`
-  ).bind(nowIso, uid, action).run();
+  // Rücksetzlinks bleiben bis zum Ablauf oder einer erfolgreichen Änderung
+  // gültig. Ein erneuter Versand kann scheitern oder verspätet eintreffen.
+  if (action !== 'password_reset') {
+    await env.DB.prepare(
+      `UPDATE account_action_tokens SET used_at = ?
+        WHERE user_id = ? AND purpose = ? AND used_at IS NULL`
+    ).bind(nowIso, uid, action).run();
+  }
   await env.DB.prepare(
     `INSERT INTO account_action_tokens (id, user_id, purpose, token_hash, email, created_at, expires_at, used_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`
@@ -2695,6 +2700,7 @@ async function loadValidAccountActionToken(env, token, allowedPurposes) {
   if (!user || user.disabled === 1 || user.disabled === true || user.deleted_at) return null;
   const allowed = Array.isArray(allowedPurposes) ? allowedPurposes : [allowedPurposes];
   if (!allowed.includes(String(row.purpose || ''))) return null;
+  if (row.purpose === 'password_reset' && normalizeEmail(row.email) !== normalizeEmail(user.email)) return null;
   return {
     ...row,
     username:user.username || '',
@@ -2886,26 +2892,28 @@ async function verifyPasswordConstantTime(password, user) {
   return verifyPassword(password, candidateUser);
 }
 
-async function claimAuthMailRequest(env, request, requestType, subjectKey) {
+async function claimAuthMailRequest(env, request, requestType, subjectKey, returnClaimId = false) {
   if (!(await ensureAccountSecurityTables(env))) return false;
   const now = Date.now();
   const fromIso = new Date(now - AUTH_MAIL_RATE_WINDOW_MS).toISOString();
   const subjectHash = await sha256Hex(`subject:${requestType}:${String(subjectKey || '').toLowerCase()}`);
   const ipHash = await sha256Hex(`ip:${requestType}:${requestClientIp(request)}`);
-  const [subjectCount, ipCount] = await Promise.all([
-    env.DB.prepare(`SELECT COUNT(*) AS count FROM auth_mail_request_log WHERE subject_hash = ? AND created_at >= ?`).bind(subjectHash, fromIso).first(),
-    env.DB.prepare(`SELECT COUNT(*) AS count FROM auth_mail_request_log WHERE ip_hash = ? AND created_at >= ?`).bind(ipHash, fromIso).first()
-  ]);
-  if (Number(subjectCount && subjectCount.count || 0) >= AUTH_MAIL_RATE_ACCOUNT_LIMIT) return false;
-  if (Number(ipCount && ipCount.count || 0) >= AUTH_MAIL_RATE_IP_LIMIT) return false;
-  await env.DB.prepare(
-    `INSERT INTO auth_mail_request_log (id, request_type, subject_hash, ip_hash, created_at) VALUES (?, ?, ?, ?, ?)`
-  ).bind(crypto.randomUUID(), String(requestType || '').slice(0, 40), subjectHash, ipHash, new Date(now).toISOString()).run();
+  const claimId = crypto.randomUUID();
+  // Prüfung und Reservierung in derselben Anweisung verhindern, dass
+  // gleichzeitige Anfragen das Versandlimit überschreiten.
+  const claimed = await env.DB.prepare(
+    `INSERT INTO auth_mail_request_log (id, request_type, subject_hash, ip_hash, created_at)
+     SELECT ?, ?, ?, ?, ?
+      WHERE (SELECT COUNT(*) FROM auth_mail_request_log WHERE subject_hash = ? AND created_at >= ?) < ?
+        AND (SELECT COUNT(*) FROM auth_mail_request_log WHERE ip_hash = ? AND created_at >= ?) < ?`
+  ).bind(claimId, String(requestType || '').slice(0, 40), subjectHash, ipHash, new Date(now).toISOString(),
+    subjectHash, fromIso, AUTH_MAIL_RATE_ACCOUNT_LIMIT, ipHash, fromIso, AUTH_MAIL_RATE_IP_LIMIT).run();
+  if (Number(claimed && claimed.meta && claimed.meta.changes || 0) !== 1) return false;
   try {
     const pruneBefore = new Date(now - 48 * 60 * 60 * 1000).toISOString();
     await env.DB.prepare(`DELETE FROM auth_mail_request_log WHERE created_at < ?`).bind(pruneBefore).run();
   } catch (_) {}
-  return true;
+  return returnClaimId ? claimId : true;
 }
 
 async function findUserByIdentifier(env, identifier) {
@@ -2987,20 +2995,64 @@ async function sendPreVerificationEmailCorrectionEmail(env, user, correctedEmail
 async function sendPasswordResetEmail(env, user, request) {
   const emailState = await getUserEmailSecurityState(env, user);
   if (!emailState.emailVerified) return { ok:true, skipped:true, reason:'email_not_verified' };
-  if (!(await claimAuthMailRequest(env, request, 'password_reset', user.id))) return { ok:true, skipped:true, reason:'rate_limited' };
-  const action = await createAccountActionToken(env, user.id, 'password_reset', user.email, PASSWORD_RESET_TTL_MS);
-  const actionUrl = publicActionUrl(env, 'resetPassword', action.token);
-  const mail = prepareSecurityActionEmail({
-    recipientEmail:user.email,
-    recipientName:user.username,
-    mailType:'password_reset',
-    title:'Hammerschach-Kennwort zurücksetzen',
-    intro:'Über den folgenden Link kannst du ein neues Kennwort für deinen Hammerschach-Account festlegen.',
-    actionUrl,
-    actionLabel:'Neues Kennwort festlegen',
-    expiryText:'Der Link ist 30 Minuten gültig und kann nur einmal verwendet werden.'
-  });
-  return sendInvitationEmail(env, { preparedMail:mail, mailType:'password_reset' });
+  const claimId = await claimAuthMailRequest(env, request, 'password_reset', user.id, true);
+  if (!claimId) return { ok:true, skipped:true, reason:'rate_limited' };
+  let sent = false;
+  try {
+    const action = await createAccountActionToken(env, user.id, 'password_reset', user.email, PASSWORD_RESET_TTL_MS);
+    const actionUrl = publicActionUrl(env, 'resetPassword', action.token);
+    const mail = prepareSecurityActionEmail({
+      recipientEmail:user.email,
+      recipientName:user.username,
+      mailType:'password_reset',
+      title:'Hammerschach-Kennwort zurücksetzen',
+      intro:'Über den folgenden Link kannst du ein neues Kennwort für deinen Hammerschach-Account festlegen.',
+      actionUrl,
+      actionLabel:'Neues Kennwort festlegen',
+      expiryText:'Der Link ist 30 Minuten gültig. Eine erneute Anfrage verlängert diese Frist nicht. Sobald dein Kennwort erfolgreich zurückgesetzt wurde, sind alle bisherigen Rücksetzlinks ungültig.'
+    });
+    const result = await sendInvitationEmail(env, { preparedMail:mail, mailType:'password_reset' });
+    sent = !!(result && result.ok && !result.skipped);
+    return result;
+  } finally {
+    if (!sent) {
+      // Fehlversand belastet nicht das Account-Versandkontingent. Die
+      // IP- und Anfragegrenzen bleiben als Schutz vor Serienversuchen bestehen.
+      try {
+        await env.DB.prepare(
+          `UPDATE auth_mail_request_log SET subject_hash = ? WHERE id = ? AND request_type = 'password_reset'`
+        ).bind('failed:' + claimId, claimId).run();
+      } catch (_) {}
+    }
+  }
+}
+
+async function applyPasswordReset(env, tokenRow, passwordHash, salt) {
+  const nowIso = new Date().toISOString();
+  // D1 führt den Batch als Transaktion aus: Bei einem Fehler bleiben das
+  // bisherige Kennwort, die Sitzungen und die Rücksetzlinks erhalten.
+  // Die neue zufällige Salt/Hash-Kombination verbindet die Folgeänderungen
+  // mit genau diesem erfolgreichen Update, auch bei parallelen Rücksetzungen.
+  const results = await env.DB.batch([
+    env.DB.prepare(
+      `UPDATE users SET password_alg = ?, password_hash = ?, password_salt = ?, password_iterations = ?
+        WHERE id = ? AND LOWER(TRIM(email)) = ?
+          AND EXISTS (SELECT 1 FROM account_action_tokens
+                       WHERE id = ? AND user_id = users.id AND purpose = 'password_reset'
+                         AND token_hash = ? AND email = ? AND used_at IS NULL AND expires_at > ?)`
+    ).bind('pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, tokenRow.user_id,
+      normalizeEmail(tokenRow.email), tokenRow.id, tokenRow.token_hash, normalizeEmail(tokenRow.email), nowIso),
+    env.DB.prepare(
+      `DELETE FROM sessions WHERE user_id = ? AND EXISTS
+        (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`
+    ).bind(tokenRow.user_id, tokenRow.user_id, passwordHash, salt),
+    env.DB.prepare(
+      `UPDATE account_action_tokens SET used_at = ?
+        WHERE user_id = ? AND purpose = 'password_reset' AND used_at IS NULL AND EXISTS
+          (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`
+    ).bind(nowIso, tokenRow.user_id, tokenRow.user_id, passwordHash, salt)
+  ]);
+  return Number(results && results[0] && results[0].meta && results[0].meta.changes || 0) === 1;
 }
 
 async function waitForMinimumResponseTime(startedAt, minimumMs = 450) {
@@ -11779,7 +11831,7 @@ async function handleAuthApi(request, env, url) {
     if (!rate.allowed) {
       try { await recordAuthSecurityEvent(env, request, 'password_reset_request', 'throttled', { context:rate.context, detailCode:'RATE_LIMITED' }); } catch (_) {}
       await waitForMinimumResponseTime(startedAt);
-      return json({ ok:true, message:'Falls ein passender bestätigter Account existiert, wurde eine Mail zum Zurücksetzen des Kennworts versendet.' });
+      return json({ ok:true, message:PASSWORD_RESET_REQUEST_MESSAGE });
     }
     try { await recordAuthRateLimitEvent(env, rate.context, 'attempt'); } catch (_) {}
     try {
@@ -11797,7 +11849,7 @@ async function handleAuthApi(request, env, url) {
       console.error('Password reset request failed', error && error.message ? error.message : String(error || 'unknown'));
     }
     await waitForMinimumResponseTime(startedAt);
-    return json({ ok:true, message:'Falls ein passender bestätigter Account existiert, wurde eine Mail zum Zurücksetzen des Kennworts versendet.' });
+    return json({ ok:true, message:PASSWORD_RESET_REQUEST_MESSAGE });
   }
 
   if (url.pathname === '/api/auth/password-reset/confirm' && request.method === 'POST') {
@@ -11830,21 +11882,20 @@ async function handleAuthApi(request, env, url) {
     }
     const salt = randomBase64Url(16);
     const passwordHash = await hashPassword(newPassword, salt, PASSWORD_ITERATIONS);
-    const used = await markAccountActionTokenUsed(env, tokenRow);
+    let used;
+    try {
+      used = await applyPasswordReset(env, tokenRow, passwordHash, salt);
+    } catch (_) {
+      try { await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'error', { context:rate.context, userId:tokenRow.user_id, detailCode:'PASSWORD_RESET_SAVE_FAILED' }); } catch (_) {}
+      return json({ok:false, code:'PASSWORD_RESET_SAVE_FAILED', message:'Das neue Kennwort konnte nicht gespeichert werden. Bitte versuche es mit diesem Link erneut, solange er noch gültig ist.'}, {status:503});
+    }
     if (!used) {
       try {
         await recordAuthRateLimitEvent(env, rate.context, 'failure');
         await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'failure', { context:rate.context, userId:tokenRow.user_id, detailCode:'TOKEN_ALREADY_USED' });
       } catch (_) {}
-      return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Link wurde bereits verwendet.' }, { status:409 });
+      return json({ ok:false, code:'TOKEN_ALREADY_USED', message:'Der Link ist nicht mehr gültig oder wurde bereits verwendet. Bitte fordere bei Bedarf einen neuen Link an.' }, { status:409 });
     }
-    await env.DB.batch([
-      env.DB.prepare(
-        `UPDATE users SET password_alg = ?, password_hash = ?, password_salt = ?, password_iterations = ? WHERE id = ?`
-      ).bind('pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, tokenRow.user_id),
-      env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(tokenRow.user_id),
-      env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND purpose = 'password_reset' AND used_at IS NULL`).bind(new Date().toISOString(), tokenRow.user_id)
-    ]);
     try {
       await clearAuthSubjectFailures(env, 'password_reset_confirm', rate.context.subjectHash);
       await recordAuthSecurityEvent(env, request, 'password_reset_confirm', 'success', { context:rate.context, userId:tokenRow.user_id, detailCode:'PASSWORD_CHANGED' });
