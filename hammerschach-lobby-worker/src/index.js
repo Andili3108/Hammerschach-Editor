@@ -3060,6 +3060,221 @@ async function waitForMinimumResponseTime(startedAt, minimumMs = 450) {
   if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining));
 }
 
+let accountRecoveryTableReady = false;
+const ACCOUNT_RECOVERY_TTL_MS = 30 * 60 * 1000;
+
+async function ensureAccountRecoveryTable(env) {
+  await ensureAccountSecurityTables(env);
+  if (!accountRecoveryTableReady) {
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS admin_account_recoveries (
+      id TEXT PRIMARY KEY, user_id TEXT NOT NULL, admin_user_id TEXT NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE, new_email TEXT NOT NULL,
+      credential_fingerprint TEXT NOT NULL, identity_method TEXT NOT NULL,
+      identity_note TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL,
+      mail_status TEXT NOT NULL DEFAULT 'pending', completed_at TEXT, cancelled_at TEXT
+    )`).run();
+    await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_admin_recovery_user ON admin_account_recoveries (user_id, created_at)`).run();
+    accountRecoveryTableReady = true;
+  }
+  // Identitätsvermerk und Vorgangsdaten nur 90 Tage aufbewahren.
+  await env.DB.prepare(`DELETE FROM admin_account_recoveries WHERE created_at < ?`)
+    .bind(new Date(Date.now() - AUTH_SECURITY_EVENT_RETENTION_MS).toISOString()).run();
+}
+
+async function accountRecoveryFingerprint(user) {
+  return sha256Hex(JSON.stringify([String(user.id), normalizeEmail(user.email),
+    user.password_alg || '', user.password_hash || '', user.password_salt || '', Number(user.password_iterations || 0)]));
+}
+
+async function loadValidAccountRecovery(env, token) {
+  const raw = String(token || '').trim();
+  if (!/^[A-Za-z0-9_-]{40,100}$/.test(raw)) return null;
+  const row = await env.DB.prepare(`SELECT * FROM admin_account_recoveries
+    WHERE token_hash = ? AND mail_status = 'accepted' AND completed_at IS NULL
+      AND cancelled_at IS NULL AND expires_at > ? LIMIT 1`)
+    .bind(await sha256Hex(raw), new Date().toISOString()).first();
+  if (!row) return null;
+  const user = await loadPrivateUser(env, row.user_id);
+  if (!user || isAdminUser(user, env) || user.disabled === 1 || user.disabled === true || user.deleted_at) return null;
+  if (await accountRecoveryFingerprint(user) !== row.credential_fingerprint) return null;
+  return {row, user};
+}
+
+async function completeAccountRecovery(env, recovery, passwordHash, salt) {
+  const {row, user} = recovery;
+  const now = new Date().toISOString();
+  // Ein Batch übernimmt neue Zugangsdaten, Verifizierung, Sitzungsende und
+  // Linkentwertung vollständig oder gar nicht. Auch nach der Vorprüfung
+  // werden Ablauf, Widerruf und zwischenzeitliche Accountänderungen geprüft.
+  const results = await env.DB.batch([
+    env.DB.prepare(`UPDATE users SET email = ?, email_lc = ?, password_alg = 'pbkdf2-sha256',
+        password_hash = ?, password_salt = ?, password_iterations = ?
+      WHERE id = ? AND email = ? AND password_hash = ? AND password_salt = ?
+        AND password_alg = ? AND password_iterations = ?
+        AND NOT EXISTS (SELECT 1 FROM users other WHERE other.email_lc = ? AND other.id <> users.id)
+        AND EXISTS (SELECT 1 FROM admin_account_recoveries recovery WHERE recovery.id = ?
+          AND recovery.user_id = users.id AND recovery.token_hash = ? AND recovery.mail_status = 'accepted'
+          AND recovery.completed_at IS NULL AND recovery.cancelled_at IS NULL AND recovery.expires_at > ?)`)
+      .bind(row.new_email, row.new_email, passwordHash, salt, PASSWORD_ITERATIONS,
+        user.id, user.email, user.password_hash, user.password_salt, user.password_alg, user.password_iterations,
+        row.new_email, row.id, row.token_hash, now),
+    env.DB.prepare(`INSERT INTO user_email_status (user_id, email, verified, verified_at, updated_at)
+      SELECT id, email, 1, ?, ? FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?
+      ON CONFLICT(user_id) DO UPDATE SET email = excluded.email, verified = 1,
+        verified_at = excluded.verified_at, updated_at = excluded.updated_at`)
+      .bind(now, now, user.id, passwordHash, salt),
+    env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND EXISTS
+      (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+      .bind(user.id, user.id, passwordHash, salt),
+    env.DB.prepare(`UPDATE account_action_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL AND EXISTS
+      (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+      .bind(now, user.id, user.id, passwordHash, salt),
+    env.DB.prepare(`UPDATE admin_account_recoveries SET
+        completed_at = CASE WHEN id = ? THEN ? ELSE completed_at END,
+        cancelled_at = CASE WHEN id <> ? THEN ? ELSE cancelled_at END
+      WHERE user_id = ? AND completed_at IS NULL AND cancelled_at IS NULL AND EXISTS
+        (SELECT 1 FROM users WHERE id = ? AND password_hash = ? AND password_salt = ?)`)
+      .bind(row.id, now, row.id, now, user.id, user.id, passwordHash, salt)
+  ]);
+  return Number(results && results[0] && results[0].meta && results[0].meta.changes || 0) === 1;
+}
+
+async function handleAccountRecoveryApi(request, env, url) {
+  const adminRoute = url.pathname === '/api/admin/account-recovery';
+  const preview = url.pathname === '/api/auth/account-recovery/preview';
+  const confirm = url.pathname === '/api/auth/account-recovery/confirm';
+  if (!adminRoute && !preview && !confirm) return null;
+  const reply = (data, status = 200) => json(data, {status, headers:{'cache-control':'no-store'}});
+  const failure = (code, message, status = 400) => reply({ok:false, code, message}, status);
+  const invalidLink = () => failure('INVALID_RECOVERY_LINK', 'Dieser Wiederherstellungslink ist ungültig, abgelaufen oder wurde widerrufen. Bitte wende dich an den Administrator.');
+  const audit = async (event, outcome, userId, detailCode, context) => {
+    try { await recordAuthSecurityEvent(env, request, event, outcome, {userId, detailCode, context}); } catch (_) {}
+  };
+  try {
+    if (adminRoute) {
+      const admin = await requireAdminSession(request, env);
+      if (!admin.ok) return admin.response;
+      await ensureAccountRecoveryTable(env);
+      if (request.method === 'GET') {
+        const username = cleanUsername(url.searchParams.get('username'));
+        if (!username) return failure('USERNAME_REQUIRED', 'Bitte den genauen Benutzernamen eingeben.');
+        const user = await findUserByIdentifier(env, username);
+        if (!user) return failure('USER_NOT_FOUND', 'Dieses Mitglied wurde nicht gefunden.', 404);
+        if (isAdminUser(user, env)) return failure('ADMIN_RECOVERY_FORBIDDEN', 'Admin-Accounts können hier nicht wiederhergestellt werden.', 403);
+        const email = normalizeEmail(user.email);
+        const split = email.lastIndexOf('@');
+        const pending = await env.DB.prepare(`SELECT id, new_email, expires_at, identity_method, identity_note
+          FROM admin_account_recoveries WHERE user_id = ? AND mail_status = 'accepted'
+            AND completed_at IS NULL AND cancelled_at IS NULL AND expires_at > ? ORDER BY created_at DESC LIMIT 1`)
+          .bind(user.id, new Date().toISOString()).first();
+        return reply({ok:true, user:{id:user.id, username:user.username, createdAt:user.created_at || null,
+          maskedEmail:split > 0 ? email.slice(0, Math.min(2, split)) + '…' + email.slice(split) : '—'}, pending:pending || null});
+      }
+      if (!['POST','DELETE'].includes(request.method)) return failure('METHOD_NOT_ALLOWED', 'Diese Aktion wird nicht unterstützt.', 405);
+      const body = await readJsonBody(request);
+      if (!body) return failure('BAD_JSON', 'Die Angaben konnten nicht gelesen werden.');
+      const rate = await checkAuthRateLimit(env, request, 'admin_account_recovery', admin.session.user.id, LOGIN_RATE_POLICY);
+      if (!rate.allowed) return authRateLimitResponse('Zu viele fehlgeschlagene Kennwortprüfungen. Bitte warte kurz.', rate.retryAfterSeconds);
+      const privateAdmin = await loadPrivateUser(env, admin.session.user.id);
+      if (!privateAdmin || !isAdminUser(privateAdmin, env) ||
+          !(await verifyPassword(String(body.currentPassword || ''), privateAdmin))) {
+        await recordAuthRateLimitEvent(env, rate.context, 'failure');
+        await audit('admin_account_recovery', 'failure', admin.session.user.id, 'INVALID_PASSWORD', rate.context);
+        return failure('INVALID_PASSWORD', 'Das aktuelle Admin-Kennwort ist nicht korrekt.', 403);
+      }
+      const user = await loadPrivateUser(env, String(body.userId || ''));
+      if (!user) return failure('USER_NOT_FOUND', 'Dieses Mitglied wurde nicht gefunden.', 404);
+      if (isAdminUser(user, env)) return failure('ADMIN_RECOVERY_FORBIDDEN', 'Admin-Accounts können hier nicht wiederhergestellt werden.', 403);
+      if (request.method === 'DELETE') {
+        const result = await env.DB.prepare(`UPDATE admin_account_recoveries SET cancelled_at = ?
+          WHERE id = ? AND user_id = ? AND completed_at IS NULL AND cancelled_at IS NULL`)
+          .bind(new Date().toISOString(), String(body.requestId || ''), user.id).run();
+        if (Number(result && result.meta && result.meta.changes || 0) !== 1) return failure('RECOVERY_NOT_PENDING', 'Dieser Auftrag ist nicht mehr offen.', 409);
+        await audit('admin_account_recovery', 'success', user.id, 'RECOVERY_CANCELLED', rate.context);
+        return reply({ok:true, message:'Wiederherstellungslink widerrufen. Die Zugangsdaten bleiben unverändert.'});
+      }
+      if (user.disabled === 1 || user.disabled === true || user.deleted_at) return failure('ACCOUNT_DISABLED', 'Dieser Account ist nicht für eine Wiederherstellung freigegeben.', 409);
+      if (String(body.username || '') !== user.username) return failure('MEMBER_CHANGED', 'Bitte das Mitglied erneut suchen und prüfen.', 409);
+      const methods = ['personal', 'known_phone', 'known_contact'];
+      const identityMethod = String(body.identityMethod || '');
+      const identityNote = String(body.identityNote || '').trim();
+      if (body.identityConfirmed !== true || !methods.includes(identityMethod) || identityNote.length < 10 || identityNote.length > 400) {
+        return failure('IDENTITY_REQUIRED', 'Bitte Identität und Accountzuordnung bestätigen, die Prüfmethode wählen und einen Vermerk mit 10 bis 400 Zeichen eintragen.');
+      }
+      const newEmail = normalizeEmail(body.newEmail);
+      if (!newEmail || newEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail) || newEmail !== normalizeEmail(body.repeatEmail)) {
+        return failure('INVALID_EMAIL', 'Bitte eine gültige neue Mailadresse zweimal übereinstimmend eingeben.');
+      }
+      if (newEmail === normalizeEmail(user.email)) return failure('EMAIL_UNCHANGED', 'Bitte eine neue erreichbare Mailadresse angeben. Für die bisherige Adresse gibt es „Kennwort vergessen?“.');
+      if (await env.DB.prepare(`SELECT id FROM users WHERE email_lc = ? AND id <> ? LIMIT 1`).bind(newEmail, user.id).first()) {
+        return failure('EMAIL_NOT_AVAILABLE', 'Diese Mailadresse kann nicht verwendet werden.', 409);
+      }
+      if (!(await claimAuthMailRequest(env, request, 'admin_account_recovery', user.id))) {
+        return failure('RECOVERY_MAIL_LIMIT', 'Versandlimit erreicht. Bitte vor einer neuen Wiederherstellung eine Stunde warten.', 429);
+      }
+      const id = crypto.randomUUID();
+      const token = randomBase64Url(32);
+      const now = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + ACCOUNT_RECOVERY_TTL_MS).toISOString();
+      await env.DB.batch([
+        env.DB.prepare(`UPDATE admin_account_recoveries SET cancelled_at = ?
+          WHERE user_id = ? AND completed_at IS NULL AND cancelled_at IS NULL`).bind(now, user.id),
+        env.DB.prepare(`INSERT INTO admin_account_recoveries
+          (id, user_id, admin_user_id, token_hash, new_email, credential_fingerprint, identity_method, identity_note, created_at, expires_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(id, user.id, privateAdmin.id, await sha256Hex(token), newEmail, await accountRecoveryFingerprint(user), identityMethod, identityNote, now, expiresAt)
+      ]);
+      const mail = prepareSecurityActionEmail({recipientEmail:newEmail, recipientName:user.username,
+        mailType:'account_recovery', title:'Deinen Hammerschach-Zugang wiederherstellen',
+        intro:`Der Administrator hat nach Prüfung deiner Identität die Wiederherstellung für den Account „${user.username}“ vorbereitet. Über den Link bestätigst du dieses Postfach und legst selbst ein neues Kennwort fest. Erst beim Speichern werden die bisherigen Zugangsdaten ersetzt.`,
+        actionUrl:publicActionUrl(env, 'recoverAccount', token), actionLabel:'Zugang wiederherstellen',
+        expiryText:'Der Link gilt 30 Minuten und kann nur einmal verwendet werden. Wenn du diese Wiederherstellung nicht angefordert hast, verwende den Link nicht.'});
+      let result;
+      try { result = await sendInvitationEmail(env, {preparedMail:mail, mailType:'account_recovery'}); }
+      catch (_) { result = {ok:false, code:'RECOVERY_MAIL_FAILED'}; }
+      if (!result || !result.ok || result.skipped) {
+        await env.DB.prepare(`UPDATE admin_account_recoveries SET mail_status = 'failed', cancelled_at = ? WHERE id = ?`)
+          .bind(new Date().toISOString(), id).run();
+        await audit('admin_account_recovery', 'error', user.id, result && result.code || 'RECOVERY_MAIL_FAILED', rate.context);
+        return failure('RECOVERY_MAIL_FAILED', 'Die Mail konnte nicht zuverlässig versendet werden. Die Zugangsdaten sind unverändert. Frühere Wiederherstellungsaufträge sind widerrufen; bitte den Versand prüfen und einen neuen Auftrag anlegen.', 503);
+      }
+      await env.DB.prepare(`UPDATE admin_account_recoveries SET mail_status = 'accepted' WHERE id = ?`).bind(id).run();
+      await audit('admin_account_recovery', 'accepted', user.id, 'RECOVERY_PREPARED', rate.context);
+      return reply({ok:true, expiresAt, message:'Der Versanddienst hat die Wiederherstellungsmail angenommen. Der Link gilt 30 Minuten. Die Zugangsdaten ändern sich erst nach Bestätigung durch das Mitglied.'});
+    }
+
+    if (request.method !== 'POST') return failure('METHOD_NOT_ALLOWED', 'Diese Aktion wird nicht unterstützt.', 405);
+    const body = await readJsonBody(request);
+    const token = String(body && body.token || '').trim();
+    // Alle ungültigen Token zählen gemeinsam zur IP-Grenze; Vorschau und
+    // Bestätigung dürfen die Begrenzung nicht durch Abwechseln umgehen.
+    const rate = await checkAuthRateLimit(env, request, 'account_recovery_confirm', token, TOKEN_CONFIRM_RATE_POLICY);
+    if (!rate.allowed) return authRateLimitResponse('Zu viele ungültige Versuche. Bitte warte kurz.', rate.retryAfterSeconds);
+    await ensureAccountRecoveryTable(env);
+    const recovery = await loadValidAccountRecovery(env, token);
+    if (!recovery) {
+      await recordAuthRateLimitEvent(env, rate.context, 'failure');
+      return invalidLink();
+    }
+    if (preview) return reply({ok:true, username:recovery.user.username, newEmail:recovery.row.new_email, expiresAt:recovery.row.expires_at});
+    const newPassword = String(body.newPassword || '');
+    if (newPassword.length < 8 || newPassword.length > 128) return failure('WEAK_PASSWORD', 'Das neue Kennwort muss 8 bis 128 Zeichen haben.');
+    const salt = randomBase64Url(16);
+    const passwordHash = await hashPassword(newPassword, salt, PASSWORD_ITERATIONS);
+    let changed;
+    try { changed = await completeAccountRecovery(env, recovery, passwordHash, salt); }
+    catch (_) {
+      await audit('account_recovery_confirm', 'error', recovery.user.id, 'RECOVERY_SAVE_FAILED', rate.context);
+      return failure('RECOVERY_SAVE_FAILED', 'Der Zugang konnte nicht gespeichert werden. Bitte versuche es mit demselben Link erneut, solange er noch gültig ist.', 503);
+    }
+    if (!changed) return failure('RECOVERY_CHANGED', 'Der Auftrag ist nicht mehr gültig oder die neue Mailadresse wurde inzwischen vergeben. Bitte wende dich an den Administrator.', 409);
+    await audit('account_recovery_confirm', 'success', recovery.user.id, 'ACCOUNT_RECOVERED', rate.context);
+    return reply({ok:true, username:recovery.user.username, message:'Deine neue Mailadresse ist bestätigt und dein neues Kennwort gespeichert. Bitte melde dich neu an. Deine Partien und Turnierteilnahmen bleiben erhalten.'});
+  } catch (_) {
+    return failure('RECOVERY_UNAVAILABLE', 'Die Wiederherstellung konnte momentan nicht verarbeitet werden. Bitte versuche es später erneut.', 503);
+  }
+}
+
 
 const DEFAULT_EMAIL_NOTIFICATIONS = Object.freeze({
   dailyTurnEnabled:true,
@@ -8255,6 +8470,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM user_email_status WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM account_game_rooms WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM open_game_offers WHERE creator_user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM admin_account_recoveries WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
   return {
     ok: true,
@@ -10438,6 +10654,9 @@ async function applyModerationAction(env,adminUser,body){
 
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
+
+  const accountRecoveryResponse = await handleAccountRecoveryApi(request, env, url);
+  if (accountRecoveryResponse) return accountRecoveryResponse;
 
   const readerArchivesResponse = await handleReaderArchivesApi(request, env, url, {
     json,
@@ -19306,6 +19525,8 @@ export default {
 
   async scheduled(_event, env, ctx) {
     const maintenance = (async () => {
+      try { if (env && env.DB) await ensureAccountRecoveryTable(env); }
+      catch (_) { console.error('Scheduled account recovery cleanup failed'); }
       try { await pruneDailyGamerStats(env); }
       catch (error) { console.error('Scheduled daily stats cleanup failed'); }
       try {
