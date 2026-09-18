@@ -3,6 +3,7 @@ import {getGamerPreferences, saveGamerPreferences, validPreferencePatch} from '.
 import { connect } from 'cloudflare:sockets';
 import { handleLeagueStandingsApi } from './league-standings.js';
 import { handleReaderArchivesApi } from './reader-archives.js';
+import { checkAccountTournamentDeletion } from './account-deletion-tournaments.js';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
 const FAIRPLAY_RAW_DATA_VERSION = 1;
@@ -7820,7 +7821,8 @@ async function collectAccountRoomIds(env, userId) {
     `SELECT room_id FROM daily_games WHERE white_user_id = ? OR black_user_id = ?`,
     `SELECT room_id FROM public_games WHERE white_user_id = ? OR black_user_id = ?`,
     `SELECT room_id FROM rated_games WHERE white_user_id = ? OR black_user_id = ?`,
-    `SELECT room_id FROM chess_chronicle_games WHERE white_user_id = ? OR black_user_id = ?`
+    `SELECT room_id FROM chess_chronicle_games WHERE white_user_id = ? OR black_user_id = ?`,
+    `SELECT room_id FROM tournament_games WHERE white_user_id = ? OR black_user_id = ?`
   ]) {
     try {
       const result = await env.DB.prepare(query).bind(uid, uid).all();
@@ -8036,6 +8038,16 @@ async function deleteUserAccount(env, target, options = {}) {
   if (isAdminUser(target, env)) {
     return { ok: false, status: 400, code: 'CANNOT_DELETE_ADMIN', message: 'Der Administrator-Account kann nicht gelöscht werden.' };
   }
+
+  // Gemeinsame Sperre für Selbstlöschung und Admin-Löschung, bevor Daten
+  // zurückgezogen, anonymisiert oder gelöscht werden.
+  try {
+    if (!(await ensureTournamentTables(env))) throw new Error('Turniertabellen nicht verfügbar');
+  } catch (_) {
+    return {ok:false, status:503, code:'TOURNAMENT_CHECK_FAILED', message:'Die Turnierteilnahmen konnten nicht sicher geprüft werden. Der Account wurde nicht gelöscht. Bitte versuche es später erneut.'};
+  }
+  const tournamentCheck = await checkAccountTournamentDeletion(env, target.id);
+  if (!tournamentCheck.ok) return tournamentCheck;
 
   const daily = await pendingAndActiveDailyGamesForUser(env, target.id);
   if (daily.activeGames.length > 0) {
