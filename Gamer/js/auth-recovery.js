@@ -26,12 +26,12 @@ function openAuthRecoveryDialog(mode, token){
         : 'Kennwort zurücksetzen';
   if(authRecoveryIntro){
     authRecoveryIntro.textContent = authRecoveryMode === 'password-reset'
-      ? 'Lege ein neues Kennwort für deinen Account fest. Der Link kann nur einmal verwendet werden.'
+      ? 'Lege ein neues Kennwort für deinen Account fest. Nach erfolgreichem Speichern werden alle bisherigen Rücksetzlinks ungültig.'
       : authRecoveryMode === 'verification-request'
         ? 'Gib deinen Benutzernamen oder deine Mailadresse ein. Falls der Account noch nicht bestätigt ist, wird eine neue Bestätigungsmail versendet.'
         : emailCorrection
           ? 'Hast du dich bei der E-Mail-Adresse vertippt? Bestätige deinen noch nicht freigeschalteten Account mit Benutzername und Kennwort und gib die richtige Adresse ein.'
-          : 'Gib deinen Benutzernamen oder deine Mailadresse ein. Falls ein passender bestätigter Account existiert, erhältst du einen zeitlich begrenzten Link.';
+          : 'Dein Benutzername genügt. Der Rücksetzlink wird an die im Account hinterlegte, bestätigte Mailadresse geschickt, sofern der Versand möglich ist. Er gilt 30 Minuten. Prüfe auch den Spamordner.';
   }
   if(authRecoverySubmitBtn) authRecoverySubmitBtn.textContent = authRecoveryMode === 'password-reset'
     ? 'Kennwort speichern'

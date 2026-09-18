@@ -58,7 +58,7 @@ const ADMIN_EVENT_LABELS = {
 };
 const ADMIN_OUTCOME_LABELS = {
   success:'Erfolg', failure:'Fehlgeschlagen', rejected:'Abgelehnt', blocked:'Blockiert', throttled:'Rate-Limit',
-  error:'Fehler', skipped:'Übersprungen', not_found:'Nicht gefunden', sent:'Gesendet'
+  error:'Fehler', skipped:'Übersprungen', not_found:'Nicht gefunden', sent:'Gesendet', accepted:'Vom Versanddienst angenommen'
 };
 const ADMIN_DETAIL_LABELS = {
   RATE_LIMITED:'Zu viele Versuche', INVALID_CREDENTIALS:'Falsche Zugangsdaten', INVALID_LOGIN:'Ungültiger Login',
@@ -66,7 +66,9 @@ const ADMIN_DETAIL_LABELS = {
   SESSION_CREATED:'Sitzung erstellt', REGISTRATION_VERIFIED:'Registrierung bestätigt', EMAIL_CHANGED:'Mailadresse geändert',
   PASSWORD_CHANGED:'Kennwort geändert', INVALID_OR_EXPIRED_TOKEN:'Link ungültig oder abgelaufen', TOKEN_ALREADY_USED:'Link bereits verwendet',
   DUPLICATE_ACCOUNT_DATA:'Doppelte Accountdaten', WEAK_PASSWORD:'Kennwort zu schwach', INTERNAL_ERROR:'Interner Fehler',
-  GENERIC_RESPONSE:'Neutrale Antwort', ALREADY_VERIFIED:'Bereits bestätigt'
+  GENERIC_RESPONSE:'Neutrale Antwort', ALREADY_VERIFIED:'Bereits bestätigt',
+  rate_limited:'Versandlimit erreicht', email_not_verified:'Mail noch nicht bestätigt',
+  PASSWORD_RESET_SAVE_FAILED:'Kennwort nicht gespeichert; Link bleibt bis zum Ablauf nutzbar'
 };
 const ADMIN_MAIL_TYPE_LABELS = {
   invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset',
