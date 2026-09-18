@@ -51,7 +51,10 @@ const TOURNAMENT_REPORTS = Object.freeze({
 });
 const SCHACH_NEWS = Object.freeze({
   'schulbrett-weltspitze':{title:'Vom Schulbrett zur Weltspitze',src:'./SchachNews/schulbrett-weltspitze.html'},
-  'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html'}
+  'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html'},
+  'stroebeck-gemeinschaft':{title:'Ein Dorf lebt Schach',src:'./SchachNews/stroebeck-gemeinschaft.html'},
+  'vertrauen-online-schach':{title:'Vertrauen am virtuellen Brett',src:'./SchachNews/vertrauen-online-schach.html'},
+  'online-fide-wertung':{title:'Vom Bildschirm zum Turnierbrett',src:'./SchachNews/online-fide-wertung.html'}
 });
 const SCHACH_CURRENT_STORAGE_KEY = 'hammerschachSchachAktuellSelectionV1';
 try{
