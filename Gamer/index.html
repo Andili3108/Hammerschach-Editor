@@ -931,6 +931,7 @@
           <p>Bei einem Profilbild wird die ausgewählte Originaldatei zunächst lokal im Browser mittig zugeschnitten und auf 256 × 256 Pixel verkleinert. Nur diese verkleinerte JPG-, PNG- oder WebP-Datei wird an den Worker übertragen und in einem privaten Cloudflare-R2-Bucket gespeichert. Der Zugriff erfolgt kontrolliert über eine angemeldete Sitzung; der Bucket selbst bleibt nicht öffentlich.</p>
           <p>Ein Login-Token wird nach erfolgreicher Anmeldung im Browser gespeichert. Serverseitige Sitzungen sind regulär auf 30 Tage begrenzt. Bei einer Kennwortänderung werden andere bestehende Sitzungen beendet.</p>
           <p>Bestätigungslinks für neue Accounts und Mailadressänderungen sind 24 Stunden gültig; Links zum Zurücksetzen des Kennworts 30 Minuten. Solange ein Account noch nicht bestätigt ist, kann eine versehentlich falsch eingegebene Mailadresse nach erneuter Kennwortprüfung korrigiert werden. Dabei werden frühere Bestätigungslinks ungültig. Abgelaufene beziehungsweise verwendete Aktionstoken werden regelmäßig bereinigt.</p>
+          <p>Wenn Kennwort und Zugriff auf das bisherige Postfach fehlen, kann der Administrator nach Prüfung der Identität und Accountzuordnung eine Zugangswiederherstellung vorbereiten. Das Mitglied bestätigt das neue Postfach und setzt selbst ein neues Kennwort über einen 30 Minuten gültigen Einmallink. Erst danach werden die Zugangsdaten ersetzt und alte Sitzungen sowie Aktionslinks ungültig gemacht. Für die Nachvollziehbarkeit werden die Zuordnung zum Mitglied und Administrator, die neue Mailadresse, Prüfmethode, kurzer Prüfvermerk, Zeitpunkte und Bearbeitungsstatus gespeichert. Diese Vorgangsdaten werden nach 90 Tagen bei der automatischen Bereinigung entfernt; bei Accountlöschung werden sie ebenfalls entfernt.</p>
 
           <h4>4. Partien, Taktiktraining und Ratings</h4>
           <p>Für Online-Partien werden insbesondere Raumkennung, Spielernamen, Spielerplätze, Spielmodus, Startstellung, Bedenkzeit, Züge, Zeitstände, Ergebnis, Beendigungsgrund und Zeitpunkte verarbeitet. Bei Daily Chess werden zusätzlich Account-Zuordnungen, die jeweilige Zugfrist sowie freiwillige persönliche Einladungs- und Antworttexte gespeichert, damit die Partie über mehrere Tage und auf unterschiedlichen Geräten fortgesetzt und die Einladung nachvollziehbar beantwortet werden kann. Offene Revanche-Anfragen werden mit Ausgangsraum, beteiligten Accounts, übernommenen Partieeinstellungen, Status und Zeitpunkten gespeichert, damit sie im beendeten Spielraum, unter „Meine Partien“ und über den Mail-Link einheitlich beantwortet werden können. Für die persönliche Schachchronik werden nach Partieende zusätzlich dauerhaft kompakte Partiemetadaten gespeichert: Raumkennung, beteiligte Account-Zuordnungen und Spielernamen, Live- oder Daily-Modus, Bedenkzeit, Variante beziehungsweise Freestyle-Stellungsnummer, Start- und Endzeitpunkt, Ergebnis, Beendigungsgrund, Wertungs- und Turnierbezug sowie – soweit aus der archivierten Partie ermittelbar – Eröffnungsname und ein kurzer Partiebeginn. Das vollständige PGN wird dafür nicht ein zweites Mal in der Chronik gespeichert. Diese Metadaten ermöglichen Statistik, Gegner- und Ergebnisfilter, Monatsgliederung und persönliche Meilensteine auch dann, wenn eine ältere Partie nicht mehr im normalen Archiv liegt. Nach Partieende kann ein registriertes Mitglied eine eigene Partie als privaten Gamer-Moment markieren und eine freiwillige persönliche Erinnerung mit höchstens 240 Zeichen speichern. Dabei werden Raumkennung, Account-Zuordnung, Erinnerungstext und Zeitpunkte verarbeitet. Die Markierung schützt die Partie vor der automatischen Archivbereinigung und ist nur für den jeweiligen Account sichtbar. Registrierte Gegner können außerdem eine von drei vorgegebenen Reaktionen speichern; sichtbar ist die Reaktion nur für die beiden beteiligten Mitglieder.</p>
@@ -1287,6 +1288,7 @@
           <button id="adminMemberMessageOpenBtn" class="button-flat admin-member-message-open-btn" type="button">Mitglieder-Information verfassen</button>
           <button id="adminReaderArchivesOpenBtn" class="button-flat" type="button">Partienarchive verwalten</button>
           <button id="adminFairplayOpenBtn" class="button-flat" type="button">Fairplay-Prüfung öffnen</button>
+          <button id="adminAccountRecoveryOpenBtn" class="button-flat" type="button">Account-Zugang wiederherstellen</button>
           <button id="adminMemberDeleteOpenBtn" class="admin-member-delete-open-btn" type="button">Mitglieder löschen</button>
           <button id="adminOverviewRefreshBtn" class="button-flat" type="button">Aktualisieren</button>
           <button id="adminOverviewCloseBtn" type="button">Schließen</button>
@@ -1390,6 +1392,63 @@
         </div>
         <div id="adminTickerStatus" class="admin-ticker-status" aria-live="polite"></div>
         <div class="identity-actions"><button id="adminTickerCloseBtn" type="button">Schließen</button></div>
+      </div>
+    </div>
+
+    <div id="adminAccountRecoveryBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="adminAccountRecoveryTitle">
+        <h3 id="adminAccountRecoveryTitle">Account-Zugang wiederherstellen</h3>
+        <p>Für Mitglieder ohne Kennwort und ohne Zugriff auf ihr bisheriges Postfach. Prüfe persönlich oder über einen bereits bekannten Kontaktweg, wem der Account gehört.</p>
+        <form id="adminAccountRecoveryLookupForm">
+          <label class="identity-label" for="adminAccountRecoveryUsername">Genauer Benutzername</label>
+          <input id="adminAccountRecoveryUsername" class="identity-input" autocomplete="off" maxlength="24" required />
+          <div class="identity-actions"><button id="adminAccountRecoveryFindBtn" type="submit">Mitglied prüfen</button></div>
+        </form>
+        <div id="adminAccountRecoveryMember" class="account-edit-hint" hidden></div>
+        <form id="adminAccountRecoveryForm" hidden>
+          <label class="identity-label" for="adminAccountRecoveryEmail">Neue erreichbare Mailadresse</label>
+          <input id="adminAccountRecoveryEmail" class="identity-input" type="email" autocomplete="off" maxlength="254" required />
+          <label class="identity-label" for="adminAccountRecoveryEmailRepeat">Neue Mailadresse wiederholen</label>
+          <input id="adminAccountRecoveryEmailRepeat" class="identity-input" type="email" autocomplete="off" maxlength="254" required />
+          <label class="identity-label" for="adminAccountRecoveryMethod">Wie hast du die Identität geprüft?</label>
+          <select id="adminAccountRecoveryMethod" class="identity-input" required>
+            <option value="">Bitte auswählen</option>
+            <option value="personal">Persönlich, beispielsweise im Verein</option>
+            <option value="known_phone">Rückruf auf bereits bekannter Telefonnummer</option>
+            <option value="known_contact">Anderer bereits bekannter, verlässlicher Kontaktweg</option>
+          </select>
+          <label class="identity-label" for="adminAccountRecoveryNote">Kurzer Prüfvermerk</label>
+          <textarea id="adminAccountRecoveryNote" class="identity-input" rows="3" minlength="10" maxlength="400" placeholder="Zum Beispiel: Persönlich im Verein gesprochen; Accountzuordnung bestätigt." required></textarea>
+          <p class="account-edit-hint">Keine Ausweisdaten eintragen. Der Vermerk wird zusammen mit dem Auftrag für 90 Tage gespeichert.</p>
+          <label class="identity-label"><input id="adminAccountRecoveryVerified" type="checkbox" required /> Ich habe Identität und Zuordnung zu diesem Account geprüft.</label>
+          <p class="account-edit-hint">Das Mitglied bestätigt die neue Mailadresse über einen 30 Minuten gültigen Einmallink und setzt selbst ein Kennwort. Partien, Turniere und Ratings bleiben erhalten. Ein neuer Auftrag widerruft frühere Wiederherstellungslinks.</p>
+        </form>
+        <div id="adminAccountRecoveryPending" class="account-edit-hint" hidden></div>
+        <label class="identity-label" for="adminAccountRecoveryPassword">Dein aktuelles Admin-Kennwort – für Senden oder Widerrufen</label>
+        <input id="adminAccountRecoveryPassword" class="identity-input" type="password" autocomplete="current-password" minlength="8" maxlength="128" />
+        <div id="adminAccountRecoveryStatus" class="recovery-status" aria-live="polite"></div>
+        <div class="identity-actions">
+          <button id="adminAccountRecoverySendBtn" type="submit" form="adminAccountRecoveryForm" hidden>Wiederherstellungslink senden</button>
+          <button id="adminAccountRecoveryRevokeBtn" class="button-flat" type="button" hidden>Offenen Link widerrufen</button>
+          <button id="adminAccountRecoveryCloseBtn" class="button-flat" type="button">Zur Systemübersicht</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="accountAccessRecoveryBackdrop" class="identity-backdrop" hidden>
+      <div class="identity-modal" role="dialog" aria-modal="true" aria-labelledby="accountAccessRecoveryTitle">
+        <h3 id="accountAccessRecoveryTitle">Deinen Zugang wiederherstellen</h3>
+        <p id="accountAccessRecoveryIntro">Dein Wiederherstellungslink wird geprüft.</p>
+        <form id="accountAccessRecoveryForm" hidden>
+          <label class="identity-label" for="accountAccessRecoveryPassword">Neues Kennwort</label>
+          <input id="accountAccessRecoveryPassword" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" required />
+          <label class="identity-label" for="accountAccessRecoveryRepeat">Neues Kennwort wiederholen</label>
+          <input id="accountAccessRecoveryRepeat" class="identity-input" type="password" autocomplete="new-password" minlength="8" maxlength="128" required />
+          <p class="account-edit-hint">Mit dem Speichern bestätigst du dieses Postfach und ersetzt deine bisherigen Zugangsdaten. Deine Partien, Turnierteilnahmen und Ratings bleiben erhalten.</p>
+          <div class="identity-actions"><button id="accountAccessRecoverySaveBtn" type="submit">Mailadresse bestätigen und Kennwort speichern</button></div>
+        </form>
+        <div id="accountAccessRecoveryStatus" class="recovery-status" aria-live="polite"></div>
+        <div class="identity-actions"><button id="accountAccessRecoveryCloseBtn" class="button-flat" type="button">Zum Login</button></div>
       </div>
     </div>
 
@@ -2507,7 +2566,8 @@
 <script src="js/embedded-tools.js?v=20260917-theme-3"></script>
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
 <script src="js/global-chat-lobby.js?v=20260917-theme-3"></script>
-<script src="js/admin-overview.js?v=20260918-password-reset-1"></script>
+<script src="js/admin-overview.js?v=20260918-account-recovery-1"></script>
+<script src="js/account-access-recovery.js?v=20260918-account-recovery-1"></script>
 <script src="js/admin-reader-archives.js?v=20260917-theme-3"></script>
 <script src="js/admin-ticker.js?v=20260917-theme-3"></script>
 <script src="js/admin-member-delete.js?v=20260917-theme-3"></script>
@@ -2522,7 +2582,7 @@
 <script src="js/admin-info-center.js?v=20260917-theme-3"></script>
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
-<script src="js/auth-account.js?v=20260917-theme-3"></script>
+<script src="js/auth-account.js?v=20260918-account-recovery-1"></script>
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260917-theme-3"></script>
 <script src="js/live-tournaments.js?v=20260917-theme-3"></script>
@@ -2565,7 +2625,7 @@
 <script src="js/board-appearance.js?v=20260917-theme-3"></script>
 <script src="js/sound-system.js?v=20260917-theme-3"></script>
 <script src="js/time-controls.js?v=20260917-theme-3"></script>
-<script src="js/app-startup.js?v=20260917-theme-3"></script>
+<script src="js/app-startup.js?v=20260918-account-recovery-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
 <script src="js/mobile-navigation.js?v=20260917-theme-3"></script>
 <script src="js/room-games-layout.js?v=20260917-theme-3"></script>
