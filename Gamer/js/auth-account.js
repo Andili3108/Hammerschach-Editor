@@ -412,6 +412,7 @@ function updateAuthUi(){
     adminOverviewOpenBtn.disabled = !isAdmin;
   }
   if(!isAdmin && adminOverviewBackdrop) adminOverviewBackdrop.hidden = true;
+  if(!isAdmin && typeof window.resetAdminAccountRecovery === 'function') window.resetAdminAccountRecovery();
   if(!isAdmin && adminTickerBackdrop) adminTickerBackdrop.hidden = true;
   if(!isAdmin && adminMessageBackdrop) adminMessageBackdrop.hidden = true;
   if(!isAdmin && adminDeleteMembersBackdrop) adminDeleteMembersBackdrop.hidden = true;

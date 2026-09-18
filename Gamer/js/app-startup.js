@@ -16,6 +16,7 @@ let initialSpectatorOnly = false;
 let freshGameRequested = false;
 let initialVerifyEmailToken = '';
 let initialResetPasswordToken = '';
+let initialAccountRecoveryToken = '';
 let initialFirstStepsRequested = false;
 let initialDailyInvitationRoomId = '';
 let initialRematchOfferId = '';
@@ -23,9 +24,11 @@ try{
   const initialUrl = new URL(window.location.href);
   initialVerifyEmailToken = String(initialUrl.searchParams.get('verifyEmail') || '').trim();
   initialResetPasswordToken = String(initialUrl.searchParams.get('resetPassword') || '').trim();
-  if(initialVerifyEmailToken || initialResetPasswordToken){
+  initialAccountRecoveryToken = String(initialUrl.searchParams.get('recoverAccount') || '').trim();
+  if(initialVerifyEmailToken || initialResetPasswordToken || initialAccountRecoveryToken){
     initialUrl.searchParams.delete('verifyEmail');
     initialUrl.searchParams.delete('resetPassword');
+    initialUrl.searchParams.delete('recoverAccount');
     history.replaceState(null, '', initialUrl.toString());
   }
   initialRoomId = cleanRoomId(initialUrl.searchParams.get('room'));
@@ -54,7 +57,8 @@ if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !
   try{ sessionStorage.removeItem(ONLINE_LAST_ROOM_STORAGE_KEY); } catch(_){ }
 }
 initialAuthRefreshPromise.finally(() => {
-  if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
+  if(initialAccountRecoveryToken) window.openAccountAccessRecovery(initialAccountRecoveryToken);
+  else if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
   else if(initialResetPasswordToken) openAuthRecoveryDialog('password-reset', initialResetPasswordToken);
   if(initialRematchOfferId){
     onlineSpectatorOnly = false;
@@ -84,6 +88,6 @@ initialAuthRefreshPromise.finally(() => {
     onlineSpectatorOnly = false;
     onlinePublicWatchId = '';
     updateOnlineUi();
-    if(initialFirstStepsRequested && !initialVerifyEmailToken && !initialResetPasswordToken) openFirstStepsDialog();
+    if(initialFirstStepsRequested && !initialVerifyEmailToken && !initialResetPasswordToken && !initialAccountRecoveryToken) openFirstStepsDialog();
   }
 });

@@ -54,7 +54,8 @@ function replaceInlineStats(container, stats){
 const ADMIN_EVENT_LABELS = {
   login:'Login', register:'Registrierung', password_reset_request:'Kennwort-Reset angefordert',
   password_reset_confirm:'Kennwort-Reset bestätigt', email_verification_request:'Mailbestätigung angefordert',
-  email_verification_confirm:'Mailbestätigung bestätigt'
+  email_verification_confirm:'Mailbestätigung bestätigt', admin_account_recovery:'Zugangswiederherstellung durch Admin',
+  account_recovery_confirm:'Zugang wiederhergestellt'
 };
 const ADMIN_OUTCOME_LABELS = {
   success:'Erfolg', failure:'Fehlgeschlagen', rejected:'Abgelehnt', blocked:'Blockiert', throttled:'Rate-Limit',
@@ -68,10 +69,14 @@ const ADMIN_DETAIL_LABELS = {
   DUPLICATE_ACCOUNT_DATA:'Doppelte Accountdaten', WEAK_PASSWORD:'Kennwort zu schwach', INTERNAL_ERROR:'Interner Fehler',
   GENERIC_RESPONSE:'Neutrale Antwort', ALREADY_VERIFIED:'Bereits bestätigt',
   rate_limited:'Versandlimit erreicht', email_not_verified:'Mail noch nicht bestätigt',
-  PASSWORD_RESET_SAVE_FAILED:'Kennwort nicht gespeichert; Link bleibt bis zum Ablauf nutzbar'
+  PASSWORD_RESET_SAVE_FAILED:'Kennwort nicht gespeichert; Link bleibt bis zum Ablauf nutzbar',
+  RECOVERY_PREPARED:'Wiederherstellungslink versendet', RECOVERY_CANCELLED:'Wiederherstellungslink widerrufen',
+  ACCOUNT_RECOVERED:'Neue Mailadresse bestätigt und neues Kennwort gespeichert',
+  RECOVERY_SAVE_FAILED:'Zugang nicht gespeichert', RECOVERY_MAIL_FAILED:'Wiederherstellungsmail nicht versendet',
+  INVALID_PASSWORD:'Admin-Kennwort nicht korrekt'
 };
 const ADMIN_MAIL_TYPE_LABELS = {
-  invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset',
+  invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset', account_recovery:'Account-Zugang wiederherstellen',
   email_change_verification:'Neue Mailadresse', email_change_notice:'Hinweis zur Mailänderung',
   daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', member_news:'Mitglieder-Neuigkeiten', member_system:'Mitglieder-Systeminfo', member_personal:'Persönliche Admin-Nachricht', member_news_test:'Test: Neuigkeiten', member_system_test:'Test: Systeminfo', member_personal_test:'Test: persönliche Admin-Nachricht', transactional:'Systemmail'
 };
