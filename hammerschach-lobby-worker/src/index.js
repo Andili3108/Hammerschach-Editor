@@ -1,3 +1,4 @@
+import { handleArticleReadsApi, deleteArticleReads } from './article-reads.js';
 import {getGamerPreferences, saveGamerPreferences, validPreferencePatch} from './gamer-preferences.js';
 // BUILD: GAMER-SCHACHLABOR-20260823-4
 import { connect } from 'cloudflare:sockets';
@@ -8471,6 +8472,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM account_game_rooms WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM open_game_offers WHERE creator_user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM admin_account_recoveries WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  await deleteArticleReads(env, target.id);
   await env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(target.id).run();
   return {
     ok: true,
@@ -10654,6 +10656,10 @@ async function applyModerationAction(env,adminUser,body){
 
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
+
+  const articleReadsResponse = url.pathname === '/api/account/article-reads'
+    ? await handleArticleReadsApi(request, env, url, {json, lookupAuthSession, bearerTokenFromRequest, readJsonBody}) : null;
+  if (articleReadsResponse) return articleReadsResponse;
 
   const accountRecoveryResponse = await handleAccountRecoveryApi(request, env, url);
   if (accountRecoveryResponse) return accountRecoveryResponse;
