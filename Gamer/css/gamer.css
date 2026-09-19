@@ -2332,6 +2332,16 @@
     .match-actions{gap:5px;}
     .match-actions>button,.match-actions>.header-menu>.header-menu-button{min-height:40px;font-size:12px;padding:7px 7px;}
   }
+  /* Lobby: Logo und Navigation nach links rücken; den rechten Innenabstand
+     auch bei breiteren Systemschriften und zusätzlichen Hinweiszahlen wahren. */
+  @media (min-width:761px){
+    html.member-lobby-view .header{column-gap:12px;padding-left:10px;padding-right:16px;}
+    html.member-lobby-view .header-main{height:auto;min-height:120px;padding-top:30px;box-sizing:border-box;}
+    html.member-lobby-view .match-actions{flex-wrap:wrap;}
+  }
+  @media (min-width:981px){
+    html.member-lobby-view .header{grid-template-columns:150px minmax(0,1fr);}
+  }
   @media (max-width:760px){
     .board-player-strip .player-clock-card{grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-rows:auto auto;column-gap:7px;row-gap:2px;padding:7px 9px;border-radius:12px;}
     .board-player-strip .player-clock-head{grid-row:1;}
