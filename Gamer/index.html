@@ -47,6 +47,7 @@
 <link rel="stylesheet" href="css/gamer-settings.css?v=20260917-theme-3">
 <script src="js/gamer-preferences.js?v=20260917-theme-3"></script>
 <link rel="stylesheet" href="css/gamer-appearance.css?v=20260917-theme-3">
+<link rel="stylesheet" href="css/article-unread.css?v=20260919-unread-2">
 </head>
 <body>
 <div class="app" role="main">
@@ -926,6 +927,7 @@
           <h4>2. Nutzung ohne Account</h4>
           <p>Live-Partien können über einen Einladungslink auch als Gast gespielt werden. Dabei werden ein Gastname, eine zufällig erzeugte Spielerkennung, der belegte Spielerplatz sowie die für die Partie erforderlichen Verbindungs- und Spieldaten verarbeitet. Gäste können keine eigenen Einladungen erstellen und Daily Chess nicht als Spieler verwenden.</p>
           <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbaren Bereichs-Sitzungen. Der Grundkurs speichert die zuletzt geöffnete und die erledigten Lektionen; das Anfängertraining speichert Lernblöcke, gemeisterte Aufgaben und die persönliche Fehlerliste; die Mattbilder-Schule merkt sich das zuletzt geöffnete Kapitel und die gewählte Mattnetz-Anzeige; das Schachlabor speichert die zuletzt bearbeitete Stellung und seine lokalen Optionen; die Eröffnungsschule speichert das auf diesem Gerät markierte Repertoire und den lokalen Übungsfortschritt. Bei Nutzung der ausschließlich für den Administrator zugänglichen Fairplay-Prüfung werden bereits berechnete Stockfish-Ergebnisse lokal zwischengespeichert, damit eine Partie nicht nach jedem Neuladen erneut berechnet werden muss. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Bereichs-Sitzungen, Lern- und Eröffnungsfortschritt sowie die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
+          <p>Für Hinweise auf ungelesene Schach-News und Turnierberichte merkt sich der Gamer die Kennungen bereits geöffneter Berichte. Bei Besuchern bleibt dieser Lesestand im jeweiligen Browser. Bei angemeldeten Mitgliedern wird er zusätzlich dem Benutzerkonto zugeordnet auf dem Server gespeichert und zwischen Geräten abgeglichen; im Browser werden der zuletzt bekannte Stand und noch nicht übertragene Markierungen zwischengespeichert. Lesezeiten werden dafür nicht erfasst. Beim Löschen des Accounts wird der serverseitige Lesestand entfernt. Lokale Lesemarkierungen lassen sich über die Browserfunktionen löschen.</p>
 
           <h4>3. Registrierung, Account und Login</h4>
           <p>Bei der Registrierung werden Benutzername, Mailadresse und ein aus dem Kennwort abgeleiteter Kennwort-Hash gespeichert. Das Kennwort selbst wird nicht im Klartext gespeichert. Zusätzlich werden der Bestätigungsstatus der Mailadresse, Accountänderungen, E-Mail-Einstellungen, aktive Anmeldesitzungen und der Zeitpunkt der einmaligen Leitbild-Bestätigung verwaltet.</p>
@@ -2566,7 +2568,7 @@
 <script src="js/league-standings.js?v=20260917-theme-3"></script>
 <script src="Mediathek/catalog.js?v=20260917-theme-3"></script>
 <script src="js/mediathek.js?v=20260917-theme-3"></script>
-<script src="js/embedded-tools.js?v=20260918-news-1"></script>
+<script src="js/embedded-tools.js?v=20260918-unread-1"></script>
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
 <script src="js/global-chat-lobby.js?v=20260917-theme-3"></script>
 <script src="js/admin-overview.js?v=20260918-account-recovery-1"></script>
@@ -2585,7 +2587,7 @@
 <script src="js/admin-info-center.js?v=20260917-theme-3"></script>
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
-<script src="js/auth-account.js?v=20260918-account-recovery-1"></script>
+<script src="js/auth-account.js?v=20260918-unread-1"></script>
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260917-theme-3"></script>
 <script src="js/live-tournaments.js?v=20260917-theme-3"></script>
@@ -2628,6 +2630,8 @@
 <script src="js/board-appearance.js?v=20260917-theme-3"></script>
 <script src="js/sound-system.js?v=20260917-theme-3"></script>
 <script src="js/time-controls.js?v=20260917-theme-3"></script>
+<script src="js/article-read-state.js?v=20260918-unread-1"></script>
+<script src="js/article-read-ui.js?v=20260918-unread-1"></script>
 <script src="js/app-startup.js?v=20260918-account-recovery-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
 <script src="js/mobile-navigation.js?v=20260917-theme-3"></script>
