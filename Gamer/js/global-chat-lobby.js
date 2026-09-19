@@ -59,7 +59,7 @@ function normalizeGlobalChatMessage(value){
   const text = cleanChatText(value.text || value.message);
   const senderName = cleanDisplayName(value.senderName || value.name || 'Mitglied') || 'Mitglied';
   if(!id || !text) return null;
-  return {id,messageId:id,text,senderName,senderKey:String(value.senderKey || ''),sentAt:value.sentAt || new Date().toISOString(),mine:value.mine === true};
+  return {id,messageId:id,text,senderName,senderProfileId:String(value.senderProfileId || ''),senderKey:String(value.senderKey || ''),sentAt:value.sentAt || new Date().toISOString(),mine:value.mine === true};
 }
 function renderGlobalChatMembers(){
   if(globalChatOnlineCountEl){
@@ -81,18 +81,7 @@ function renderGlobalChatMembers(){
     const memberId=String(member.id||member.userId||'').trim();
     if(memberId){
       row.classList.add('clickable');
-      row.setAttribute('role','button');
-      row.tabIndex=0;
-      row.title='Mitgliederprofil von '+displayName+' öffnen';
-      const openProfile=()=>{
-        if(typeof openMemberProfile!=='function') return;
-        const context=onlineAuthUser&&String(onlineAuthUser.id||'')===memberId?'self':'standalone';
-        openMemberProfile({id:memberId,username:displayName,isOnline:true,activityVisible:true},context);
-      };
-      row.addEventListener('click',openProfile);
-      row.addEventListener('keydown',event=>{
-        if(event.key==='Enter'||event.key===' '){event.preventDefault();openProfile();}
-      });
+      MemberHovercard.bind(row, {id:memberId,username:displayName});
     }
     row.append(name);frag.appendChild(row);
   });
@@ -144,7 +133,8 @@ function renderGlobalChatMessages(){
     const muted=!!(!message.mine&&message.senderKey&&globalChatMutedKeys.has(message.senderKey));
     const item=document.createElement('div');item.className='global-chat-message'+(message.mine?' mine':'');
     const head=document.createElement('div');head.className='global-chat-message-head';
-    const name=document.createElement('div');name.className='global-chat-message-name';name.textContent=message.senderName+(message.mine?' (Du)':'');
+    const name=document.createElement(message.senderProfileId?'button':'div');name.className='global-chat-message-name'+(message.senderProfileId?' member-name-button':'');name.textContent=message.senderName+(message.mine?' (Du)':'');
+    if(message.senderProfileId){name.type='button';MemberHovercard.bind(name,{id:message.senderProfileId,username:message.senderName});}
     const time=document.createElement('div');time.className='global-chat-message-time';time.textContent=formatGlobalChatTime(message.sentAt);
     head.append(name,time);
     const body=document.createElement('div');body.className='global-chat-message-text';body.textContent=muted?'Nachrichten dieses Mitglieds sind auf diesem Gerät stummgeschaltet.':message.text;

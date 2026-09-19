@@ -203,6 +203,7 @@ function updateOnlineStartButton(){
   startOnlineBtn.title = canStart ? 'Live-Partie mit der gewählten Bedenkzeit starten.' : (timeMode ? 'Partiestart ist noch nicht möglich.' : 'Bitte zuerst eine Bedenkzeit auswählen.');
 }
 function updateOnlineUi(){
+  refreshBoardMemberLinks();
   updateVisitorLandingUi();
   if(!onlineRoomId){
     onlineCanSetTimeControl = false;
@@ -337,8 +338,8 @@ function updateOnlineUi(){
   const blackPlayerDisplayName = onlineSideText('b');
   whitePlayerNameEl.textContent = whitePlayerDisplayName;
   blackPlayerNameEl.textContent = blackPlayerDisplayName;
-  whitePlayerNameEl.title = whitePlayerDisplayName;
-  blackPlayerNameEl.title = blackPlayerDisplayName;
+  if(!whitePlayerNameEl.classList.contains('member-profile-link')) whitePlayerNameEl.title = whitePlayerDisplayName;
+  if(!blackPlayerNameEl.classList.contains('member-profile-link')) blackPlayerNameEl.title = blackPlayerDisplayName;
   updatePlayerPresenceBadges();
   updateRoomRatingUi();
   updateHeadToHeadUi();

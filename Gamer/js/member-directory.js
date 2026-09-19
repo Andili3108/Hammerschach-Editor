@@ -257,6 +257,7 @@ function updateMemberProfileInviteButton(){
   }
 }
 async function openMemberProfile(user, context){
+  MemberHovercard.hide();
   if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   const id = String(user && user.id || '').trim();
   if(!id) return;
@@ -376,8 +377,7 @@ function renderStandaloneMemberResults(users, options){
     profileHit.type = 'button';
     profileHit.className = 'member-profile-hit';
     profileHit.setAttribute('aria-label', 'Profil von ' + (user.username || 'Mitglied') + ' ansehen');
-    profileHit.title = 'Profil ansehen';
-    profileHit.addEventListener('click', () => openMemberProfile(user, 'standalone'));
+    MemberHovercard.bind(profileHit, user);
     main.appendChild(profileHit);
     const avatar = createMemberAvatarElement(user, 'profile-avatar-small');
     const info = document.createElement('div');

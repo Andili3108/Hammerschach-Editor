@@ -455,6 +455,7 @@ function renderMemberSearchResults(users, options){
     const nameText = document.createElement('span');
     nameText.className = 'member-result-name-text';
     nameText.textContent = user.username || 'Mitglied';
+    MemberHovercard.bind(nameText, Object.assign({}, user, {context:'invite'}));
     name.appendChild(nameText);
     name.appendChild(createMemberActivityBadge(user, options.serverNow));
     const meta = document.createElement('div');

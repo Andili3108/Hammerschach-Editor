@@ -162,6 +162,7 @@ function normalizeChatMessage(message){
     messageId: id,
     role,
     playerId,
+    senderProfileId:String(chat.senderProfileId || ''),
     senderName,
     text,
     sentAt: chat.sentAt || chat.time || new Date().toISOString(),
@@ -231,8 +232,13 @@ function renderChatMessages(){
     item.className = 'chat-message' + (chat.mine ? ' mine' : '');
     const meta = document.createElement('div');
     meta.className = 'chat-message-meta';
-    const name = document.createElement('span');
+    const name = document.createElement(chat.senderProfileId ? 'button' : 'span');
     name.textContent = chat.senderName;
+    if(chat.senderProfileId){
+      name.type = 'button';
+      name.className = 'member-name-button';
+      MemberHovercard.bind(name, () => Object.assign({id:chat.senderProfileId, username:chat.senderName}, memberCardRoomContext()));
+    }
     const time = document.createElement('span');
     time.textContent = formatChatTime(chat.sentAt);
     meta.appendChild(name);

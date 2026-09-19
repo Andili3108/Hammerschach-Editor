@@ -63,7 +63,14 @@ function createOpenOfferCard(offer){
   }
   const title = document.createElement('div');
   title.className = 'open-offer-title';
-  title.textContent = (cleanDisplayName(offer.creatorName) || 'Mitglied') + ' bietet eine Partie an';
+  const creatorName = cleanDisplayName(offer.creatorName) || 'Mitglied';
+  const name = document.createElement(offer.creatorProfileId ? 'button' : 'span');
+  name.textContent = creatorName;
+  if(offer.creatorProfileId){
+    name.type = 'button'; name.className = 'member-name-button';
+    MemberHovercard.bind(name, {id:offer.creatorProfileId, username:creatorName, ratingType:offer.ratingType, variant:offer.variant});
+  }
+  title.append(name, document.createTextNode(' bietet eine Partie an'));
   const status = document.createElement('div');
   status.className = 'open-offer-status';
   status.textContent = 'Anbieter spielt ' + openOfferRoleLabel(offer.creatorRole) + ' · frei ist ' + openOfferRoleLabel(offer.opponentRole);

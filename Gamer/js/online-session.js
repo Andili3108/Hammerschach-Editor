@@ -240,7 +240,8 @@ function normalizeOnlinePlayerSlot(slot){
     gamerOnline: !!(slot.gamerOnline ?? slot.gamer_online ?? slot.isOnline ?? slot.is_online),
     name: cleanDisplayName(slot.name || slot.displayName || slot.username || ''),
     guest: slot.guest !== false,
-    playerId: slot.playerId || slot.id || null
+    playerId: slot.playerId || slot.id || null,
+    profileId: String(slot.profileId || '')
   };
 }
 function normalizeOnlinePlayers(players){
