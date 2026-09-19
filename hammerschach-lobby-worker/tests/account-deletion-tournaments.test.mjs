@@ -1,3 +1,4 @@
+import { deleteArticleReads } from '../src/article-reads.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
@@ -185,7 +186,7 @@ const workerSource = readFileSync(new URL('../src/index.js', import.meta.url), '
   .replace(/^export class /gm, 'class ')
   .replace(/^export default /m, 'const worker = ');
 function workerContext() {
-  const context = vm.createContext({checkAccountTournamentDeletion, console, crypto:webcrypto,
+  const context = vm.createContext({checkAccountTournamentDeletion, deleteArticleReads, console, crypto:webcrypto,
     TextEncoder, TextDecoder, URL, Request, Response, Headers, setTimeout, clearTimeout});
   vm.runInContext(workerSource, context);
   // Das Fixture enthält die relevanten Turniertabellen bereits.
