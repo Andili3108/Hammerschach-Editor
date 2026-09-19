@@ -37,9 +37,16 @@
     try{
       const doc=tournamentReportToolFrame.contentDocument;
       const expected=new URL(currentSchachArticle().src,location.href);
-      // Keine Markierung für Vorladen, Fehlerseiten, alte oder abgebrochene Navigation.
-      if(!doc||doc.readyState!=='complete'||!doc.querySelector('h1')||new URL(doc.URL).pathname!==expected.pathname)return;
-      store.mark((schachCurrentCategory==='news'?'news:':'report:')+(schachCurrentCategory==='news'?schachNewsCurrentId:tournamentReportCurrentId));
+      // Cloudflare liefert .html-Dateien unter endungslosen URLs und index.html als Verzeichnis.
+      // Zusätzlich die Kennung im geladenen Dokument prüfen, damit keine Fehlerseite zählt.
+      if(!doc||doc.readyState!=='complete'||!doc.querySelector('h1'))return;
+      const actual=new URL(doc.URL);
+      const articlePath=path=>path.replace(/\/index\.html$/,'/').replace(/\.html$/,'').replace(/\/+$/,'')||'/';
+      if(actual.origin!==expected.origin||articlePath(actual.pathname)!==articlePath(expected.pathname))return;
+      const key=(schachCurrentCategory==='news'?'news:':'report:')+(schachCurrentCategory==='news'?schachNewsCurrentId:tournamentReportCurrentId);
+      const loadedKey=doc.body?.dataset.articleReadKey||(doc.body?.dataset.newsId?'news:'+doc.body.dataset.newsId:'');
+      if(loadedKey!==key)return;
+      store.mark(key);
     }catch(_){}
   }
   let authKey='';
