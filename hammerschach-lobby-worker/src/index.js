@@ -1,3 +1,4 @@
+import { ensureLobbyWelcome, newLobbyWelcomeStatement, handleLobbyWelcomeApi } from './lobby-welcome.js';
 import { handleArticleReadsApi, deleteArticleReads } from './article-reads.js';
 import {getGamerPreferences, saveGamerPreferences, validPreferencePatch} from './gamer-preferences.js';
 // BUILD: GAMER-SCHACHLABOR-20260823-4
@@ -8444,6 +8445,7 @@ async function deleteUserAccount(env, target, options = {}) {
   } catch (_) {}
   await env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(target.id).run();
   try { await env.DB.prepare(`DELETE FROM user_presence WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM lobby_welcome WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try {
     if (await ensureMemberFavoritesTable(env)) {
       await env.DB.prepare(`DELETE FROM member_favorites WHERE owner_user_id = ? OR favorite_user_id = ?`).bind(target.id, target.id).run();
@@ -10754,6 +10756,10 @@ async function handleAuthApi(request, env, url) {
     }
   }
 
+  const lobbyWelcomeResponse = url.pathname === '/api/account/lobby-welcome'
+    ? await handleLobbyWelcomeApi(request, env, url, {json, lookupAuthSession, bearerTokenFromRequest, readJsonBody}) : null;
+  if (lobbyWelcomeResponse) return lobbyWelcomeResponse;
+
   if (url.pathname === '/api/account/leitbild' && request.method === 'POST') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.' }, { status:401 });
@@ -12395,10 +12401,14 @@ async function handleAuthApi(request, env, url) {
     const passwordHash = await hashPassword(password, salt, PASSWORD_ITERATIONS);
     const nowIso = new Date().toISOString();
     try {
-      await env.DB.prepare(
-        `INSERT INTO users (id, username, username_lc, email, email_lc, password_alg, password_hash, password_salt, password_iterations, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso).run();
+      await ensureLobbyWelcome(env);
+      await env.DB.batch([
+        env.DB.prepare(
+          `INSERT INTO users (id, username, username_lc, email, email_lc, password_alg, password_hash, password_salt, password_iterations, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(id, username, usernameLc, email, email, 'pbkdf2-sha256', passwordHash, salt, PASSWORD_ITERATIONS, nowIso),
+        newLobbyWelcomeStatement(env, id)
+      ]);
     } catch (error) {
       const message = String(error && error.message || '');
       if (/unique|constraint/i.test(message)) {
