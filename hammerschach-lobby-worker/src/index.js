@@ -138,6 +138,7 @@ function safeGlobalChatMessageForClient(value, viewerUserId = '') {
     id:message.id,
     messageId:message.id,
     senderName:message.senderName,
+    senderProfileId:viewerUserId ? message.senderUserId : '',
     senderKey:message.senderKey,
     text:message.text,
     sentAt:message.sentAt,
@@ -195,6 +196,7 @@ function safeChatForClient(value, viewerInfo = {}) {
     messageId: chat.messageId,
     role: chat.role,
     senderName: chat.senderName,
+    senderProfileId: viewerInfo.userId ? chat.senderUserId : '',
     name: chat.name,
     text: chat.text,
     sentAt: chat.sentAt,
@@ -7503,6 +7505,8 @@ async function listOpenGameOffers(env, sessionUser = null) {
   return (result && result.results ? result.results : []).map(row => ({
     roomId: cleanRoomId(row.room_id),
     creatorName: cleanDisplayName(row.creator_name) || 'Mitglied',
+    creatorProfileId: currentUserId ? String(row.creator_user_id || '') : '',
+    ratingType: ratingTypeFromCompletedGameRow(row),
     creatorRole: row.creator_role === 'b' ? 'b' : 'w',
     opponentRole: row.opponent_role === 'w' ? 'w' : 'b',
     mode: row.mode === 'daily' ? 'daily' : 'live',
@@ -17088,6 +17092,7 @@ export class GameRoom {
       return {
         connected: false,
         gamerOnline: !!(userId && presence[userId]),
+        profileId: options.includeProfileIds ? String(userId || '') : '',
         name: displayName,
         displayName,
         guest: userId ? false : profile.guest !== false
@@ -17844,7 +17849,7 @@ export class GameRoom {
         white: !!players.white,
         black: !!players.black
       },
-      players: await this.getActivePlayers(players, { includePresence: !!(storedTimeControl && storedTimeControl.mode === 'daily') }),
+      players: await this.getActivePlayers(players, { includePresence: !!(storedTimeControl && storedTimeControl.mode === 'daily'), includeProfileIds: !!info.userId }),
       canSetTimeControl: !!(!game.started && !game.ended && (info.role === 'w' || (createdByRole && info.role === createdByRole))),
       createdByMe,
       publicGame,
