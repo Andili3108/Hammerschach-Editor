@@ -314,6 +314,7 @@ function hasTournamentViewerAccess(){
   return !!(onlineAuthToken && onlineAuthUser);
 }
 function updateAuthUi(){
+  window.HammerschachArticleReads?.refreshIdentity();
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);
   const canViewTournaments = loggedIn;

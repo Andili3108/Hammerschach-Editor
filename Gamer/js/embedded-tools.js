@@ -45,13 +45,14 @@ let pendingAnalyzerArchivePgn = '';
 const EMBEDDED_TOOL_OPEN_DEBOUNCE_MS = 450;
 const PENDING_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachPendingEmbeddedToolV1';
 const ACTIVE_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachActiveEmbeddedToolV1';
+// Stabile IDs behalten den Lesestand. Nur Altbestand erhält notify:false; neue Artikel zählen automatisch.
 const TOURNAMENT_REPORTS = Object.freeze({
-  'unna-open-2025':{title:'Unna Open 2025',src:'./Turnierberichte/unna-open-2025/?embedded=1'},
-  'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1'}
+  'unna-open-2025':{title:'Unna Open 2025',src:'./Turnierberichte/unna-open-2025/?embedded=1',notify:false},
+  'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1',notify:false}
 });
 const SCHACH_NEWS = Object.freeze({
-  'schulbrett-weltspitze':{title:'Vom Schulbrett zur Weltspitze',src:'./SchachNews/schulbrett-weltspitze.html'},
-  'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html'},
+  'schulbrett-weltspitze':{title:'Vom Schulbrett zur Weltspitze',src:'./SchachNews/schulbrett-weltspitze.html',notify:false},
+  'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html',notify:false},
   'stroebeck-gemeinschaft':{title:'Ein Dorf lebt Schach',src:'./SchachNews/stroebeck-gemeinschaft.html'},
   'vertrauen-online-schach':{title:'Vertrauen am virtuellen Brett',src:'./SchachNews/vertrauen-online-schach.html'},
   'online-fide-wertung':{title:'Vom Bildschirm zum Turnierbrett',src:'./SchachNews/online-fide-wertung.html'}
@@ -585,7 +586,10 @@ function setEmbeddedToolActive(toolName){
   if(openingsToolActive)postOpeningsToolContext();
   if(fairplayToolActive)postFairplayToolContext();
   if(readerToolActive)postReaderToolContext();
-  if(tournamentReportToolActive)postTournamentReportToolContext();
+  if(tournamentReportToolActive){
+    postTournamentReportToolContext();
+    requestAnimationFrame(()=>window.HammerschachArticleReads?.checkVisibleArticle());
+  }
   if(statusEl){
     const toolStatus=embeddedToolStatusText();
     if(toolStatus)statusEl.textContent=toolStatus;else refreshHeaderStatusFromState();
