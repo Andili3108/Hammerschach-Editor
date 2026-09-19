@@ -7,3 +7,7 @@ html.dark-mode .article-unread-badge{background:#e8b879;color:#2b1c19}
 .mobile-nav-accordion-toggle:has(>.article-unread-badge:not([hidden])){grid-template-columns:28px minmax(0,1fr) auto auto}
 .mobile-nav-accordion-toggle>.article-unread-badge{grid-column:3;grid-row:1}
 .mobile-nav-accordion-toggle:has(>.article-unread-badge:not([hidden]))>i{grid-column:4;grid-row:1}
+
+/* Hauptnavigation: Platz für Gamer-TV erhalten, auch mit ungelesenen Berichten. */
+#clubChessMenuBtn{padding-inline:6px;gap:3px}
+#clubChessMenuBtn>.article-unread-badge{margin-left:0;min-width:1.35em;height:1.35em;padding-inline:.25em}
