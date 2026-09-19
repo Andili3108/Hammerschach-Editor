@@ -1,0 +1,62 @@
+/* Shared palette keeps the player card readable in Hell, Sanft and Dunkel. */
+.member-hovercard {
+  position:fixed;
+  z-index:4900;
+  box-sizing:border-box;
+  width:334px;
+  max-width:calc(100vw - 24px);
+  max-height:calc(100vh - 24px);
+  overflow:auto;
+  padding:18px;
+  border:1px solid var(--ui-line);
+  border-top:3px solid var(--ui-accent);
+  border-radius:16px;
+  background:var(--ui-surface);
+  color:var(--ui-text);
+  box-shadow:var(--ui-shadow), 0 18px 48px rgb(0 0 0 / .12);
+  font:14px/1.45 Arial, sans-serif;
+  text-align:left;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  animation:member-card-enter .14s ease-out;
+}
+.member-hovercard[hidden] {display:none!important;}
+.member-hovercard-head {display:flex;gap:12px;align-items:center;}
+.member-hovercard .member-hovercard-avatar {
+  flex:0 0 48px;width:48px;height:48px;border-radius:14px;
+  background:var(--ui-surface-alt);color:var(--ui-accent);
+  border:1px solid var(--ui-line);font-size:22px;
+}
+.member-hovercard-identity {min-width:0;display:grid;gap:5px;justify-items:start;}
+.member-hovercard-name {font-size:19px;line-height:1.2;}
+.member-hovercard .presence-badge {font-size:11px;white-space:normal;}
+.member-hovercard-about {
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  margin:14px 0 0;color:var(--ui-muted);font-size:13px;line-height:1.5;
+}
+.member-hovercard-section {margin:16px 0 7px;font-size:10px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--ui-muted);}
+.member-hovercard-ratings {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+.member-hovercard-rating {display:flex;flex-direction:column;gap:2px;padding:9px 11px;border:1px solid transparent;border-radius:10px;background:var(--ui-surface-alt);}
+.member-hovercard-rating.is-current {border-color:var(--ui-accent);background:var(--ui-surface);box-shadow:inset 3px 0 var(--ui-accent);}
+.member-hovercard-rating-label {color:var(--ui-muted);font-size:11px;}
+.member-hovercard-rating-value {font-size:21px;line-height:1.2;font-variant-numeric:tabular-nums;}
+.member-hovercard-rating.is-current .member-hovercard-rating-value {color:var(--ui-accent);}
+.member-hovercard-unrated {font-size:11px;line-height:1.6;font-weight:400;color:var(--ui-muted);}
+.member-hovercard-current {color:var(--ui-accent);font-size:10px;font-weight:700;}
+.member-hovercard-note {margin-top:6px;font-size:10px;color:var(--ui-muted);}
+.member-hovercard-footer {margin-top:14px;padding-top:11px;border-top:1px solid var(--ui-line);font-size:11px;color:var(--ui-muted);}
+.member-hovercard-club {font-size:12px;font-weight:700;color:var(--ui-text);margin-bottom:3px;}
+.member-hovercard-hint {margin-top:8px;font-size:10px;}
+.member-hovercard-loading {padding:5px 0;color:var(--ui-muted);font-size:13px;}
+.member-profile-link {cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;}
+.member-profile-link:hover {text-decoration-color:currentColor;}
+.member-profile-link:focus-visible {outline:2px solid var(--ui-focus);outline-offset:3px;border-radius:3px;}
+/* Inline names remain the same size and color as their surrounding content. */
+button.member-name-button {
+  display:inline;margin:0;padding:0;border:0;border-radius:0;background:none!important;
+  box-shadow:none!important;color:inherit!important;font:inherit;line-height:inherit;
+  min-height:0;min-width:0;text-align:inherit;white-space:normal;
+}
+@keyframes member-card-enter {from {opacity:0;transform:translateY(3px);} to {opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce) {.member-hovercard {animation:none;}}
+button.global-chat-message-name.member-name-button {font-size:13px;font-weight:900;color:var(--ui-accent)!important;}
