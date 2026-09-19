@@ -1,0 +1,9 @@
+/* Eigene Hinweiszahlen für ungelesene Berichte; unabhängig von Nachrichten/Turnieren. */
+.article-unread-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.45em;height:1.45em;padding:0 .36em;margin-left:.45em;border-radius:999px;background:#843f46;color:#fffaf0;font:700 12px/1 Arial,sans-serif;white-space:nowrap;flex:0 0 auto;vertical-align:middle;box-sizing:border-box}
+.article-unread-badge[hidden]{display:none!important}
+.header-menu-item .article-unread-badge{float:right;margin-top:.15em}
+html.dark-mode .article-unread-badge{background:#e8b879;color:#2b1c19}
+.mobile-nav-test-item .article-unread-badge{width:auto;min-width:1.5em;height:1.5em;margin-left:auto;padding:0 .4em;font:700 12px/1 Arial,sans-serif}
+.mobile-nav-accordion-toggle:has(>.article-unread-badge:not([hidden])){grid-template-columns:28px minmax(0,1fr) auto auto}
+.mobile-nav-accordion-toggle>.article-unread-badge{grid-column:3;grid-row:1}
+.mobile-nav-accordion-toggle:has(>.article-unread-badge:not([hidden]))>i{grid-column:4;grid-row:1}
