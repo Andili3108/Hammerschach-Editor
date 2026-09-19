@@ -264,11 +264,11 @@ function updateStatus(g){
   }
   if(!onlineRoomId){
     if(isAnonymousVisitorStartView()){
-      statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+      statusEl.textContent = lobbyWelcomeText();
     } else if(hasOnlineTargetInAddress()){
       statusEl.textContent = 'Spielraum wird geladen…';
     } else {
-      statusEl.textContent = 'Spielmodus, Farbe und Bedenkzeit wählen – dann einladen oder anbieten.';
+      statusEl.textContent = lobbyWelcomeText();
     }
     return;
   }

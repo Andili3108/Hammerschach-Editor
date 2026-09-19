@@ -289,7 +289,7 @@ function updateMemberLobbyUi(){
   }
   updateSiteFootnotePlacement();
   if(active){
-    if(statusEl)statusEl.textContent=embeddedToolStatusText()||'Partie starten, Gegner finden oder chatten.';
+    if(statusEl)statusEl.textContent=embeddedToolStatusText()||lobbyWelcomeText();
     connectGlobalChat();
   }else{
     closeNewGameDialog({restoreFocus:false});

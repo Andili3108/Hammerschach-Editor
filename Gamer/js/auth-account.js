@@ -281,7 +281,7 @@ function updateVisitorLandingUi(){
   }
 
   if(active && statusEl){
-    statusEl.textContent = embeddedToolStatusText() || 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    statusEl.textContent = embeddedToolStatusText() || lobbyWelcomeText();
   }
   updateMemberLobbyUi();
   hammerschachScheduleHeightReport(false);

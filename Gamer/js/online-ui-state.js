@@ -16,11 +16,11 @@ function refreshHeaderStatusFromState(){
     return;
   }
   if(isAnonymousVisitorStartView()){
-    statusEl.textContent = 'Bitte melde dich an, um eine Partie anzubieten oder jemanden einzuladen.';
+    statusEl.textContent = lobbyWelcomeText();
     return;
   }
   if(isMemberLobbyView()){
-    statusEl.textContent = 'Partie starten, Gegner finden oder chatten.';
+    statusEl.textContent = lobbyWelcomeText();
     return;
   }
   try{ updateStatus(buildGameFromHistory(viewIndex)); } catch(_){}
