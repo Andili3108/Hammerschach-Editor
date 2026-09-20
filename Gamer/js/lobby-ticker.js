@@ -55,10 +55,11 @@ function lobbyTournamentMeta(tournament){
 }
 
 function renderLobbyTournamentRow(tournament){
-  const row = document.createElement('div');
+  const row = document.createElement('button');
+  row.type = 'button';
   row.className = 'lobby-tournament-row';
 
-  const main = document.createElement('div');
+  const main = document.createElement('span');
   main.className = 'lobby-tournament-main';
   const name = document.createElement('span');
   name.className = 'lobby-tournament-name';
@@ -72,13 +73,8 @@ function renderLobbyTournamentRow(tournament){
   meta.className = 'lobby-tournament-meta';
   meta.textContent = lobbyTournamentMeta(tournament);
 
-  const open = document.createElement('button');
-  open.type = 'button';
-  open.className = 'button-flat lobby-tournament-open';
-  open.textContent = 'Öffnen ›';
-  open.addEventListener('click', () => openTournamentDialog(String(tournament.id || '')));
-
-  row.append(main, meta, open);
+  row.addEventListener('click', () => openTournamentDialog(String(tournament.id || '')));
+  row.append(main, meta);
   return row;
 }
 
