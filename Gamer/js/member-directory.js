@@ -197,9 +197,7 @@ function renderMemberProfileRatings(ratings){
     const name = document.createElement('div');
     name.className = 'auth-rating-name';
     name.textContent = info.label;
-    const value = document.createElement('div');
-    value.className = 'auth-rating-value';
-    value.textContent = rating.display;
+    const value = createRatingHistoryButton(() => memberProfileTarget, info, rating);
     const meta = document.createElement('div');
     meta.className = 'auth-rating-meta';
     meta.textContent = rating.games === 0
@@ -563,3 +561,10 @@ async function inviteMemberFromStandaloneList(member, button){
   }
   openDirectInvitationSetup(member, button || null);
 }
+
+document.getElementById('memberProfileGamesBtn').addEventListener('click', () => {
+  if(memberProfileTarget) openMemberGamesDialog({...memberProfileTarget});
+});
+document.getElementById('accountRunningGamesBtn').addEventListener('click', () => {
+  if(onlineAuthUser) openMemberGamesDialog({...onlineAuthUser});
+});

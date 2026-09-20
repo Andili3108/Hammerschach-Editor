@@ -171,9 +171,7 @@ function renderAccountRatings(){
     const name = document.createElement('div');
     name.className = 'auth-rating-name';
     name.textContent = info.label;
-    const value = document.createElement('div');
-    value.className = 'auth-rating-value';
-    value.textContent = rating.display;
+    const value = createRatingHistoryButton(() => onlineAuthUser, info, rating);
     const meta = document.createElement('div');
     meta.className = 'auth-rating-meta';
     meta.textContent = rating.games === 0
@@ -363,6 +361,9 @@ function updateAuthUi(){
   if(authIntro){
     authIntro.textContent = loggedIn ? 'Hier kannst du deine Accountdaten verwalten oder dich ausloggen.' : 'Melde dich an, damit dein Accountname automatisch in Online-Partien angezeigt wird.';
   }
+  if(authBackdrop) authBackdrop.classList.toggle('account-settings-open', loggedIn);
+  const accountHeading = document.getElementById('authTitle');
+  if(accountHeading) accountHeading.textContent = loggedIn ? 'Mein Profil & Einstellungen' : 'Registrierung / Login';
   if(authLoggedOut) authLoggedOut.hidden = loggedIn;
   if(authLoggedIn) authLoggedIn.hidden = !loggedIn;
   if(authLogoutBtn) authLogoutBtn.hidden = !loggedIn;

@@ -40,12 +40,15 @@ const MemberHovercard = (() => {
     if(card) return card;
     card = node('aside', 'member-hovercard');
     card.id = 'memberHovercard';
-    card.setAttribute('role', 'tooltip');
+    card.setAttribute('role', 'dialog');
+    card.setAttribute('aria-label', 'Spielerinfo');
     card.hidden = true;
     card.addEventListener('pointerenter', event => {
       if(event.pointerType === 'mouse') clearTimeout(closeTimer);
     });
-    card.addEventListener('pointerleave', deferHide);
+    card.addEventListener('pointerleave', () => { if(!card.contains(document.activeElement)) deferHide(); });
+    card.addEventListener('focusin', () => clearTimeout(closeTimer));
+    card.addEventListener('focusout', event => { if(!card.contains(event.relatedTarget)) deferHide(); });
     document.body.appendChild(card);
     return card;
   }
@@ -101,7 +104,9 @@ const MemberHovercard = (() => {
       const relevant = key === target.ratingType;
       const item = node('div', 'member-hovercard-rating' + (relevant ? ' is-current' : ''));
       item.appendChild(node('span', 'member-hovercard-rating-label', labels[key]));
-      item.appendChild(node('strong', rating.games ? 'member-hovercard-rating-value' : 'member-hovercard-unrated', rating.games ? rating.display : 'Noch ohne Wertung'));
+      const info = RATING_TYPE_ORDER.find(item => item.key === key);
+      item.appendChild(createRatingHistoryButton(member, info, rating, 'member-hovercard-rating-value'));
+      if(!rating.games) item.appendChild(node('span', 'member-hovercard-unrated', 'Noch ohne Wertung'));
       if(relevant) item.appendChild(node('span', 'member-hovercard-current', 'Diese Partie'));
       if(rating.games && rating.provisional) provisional = true;
       ratings.appendChild(item);
@@ -113,6 +118,15 @@ const MemberHovercard = (() => {
     const since = formatMemberProfileSince(member.createdAt);
     if(since !== '—') footer.appendChild(node('div', 'member-hovercard-since', 'Mitglied seit ' + since));
     footer.appendChild(node('div', 'member-hovercard-hint', 'Klick auf den Namen öffnet das Profil'));
+    const games = node('button', 'button-flat member-hovercard-games', '♟ Laufende Partien');
+    games.type = 'button';
+    games.title = 'Laufende Partien mit Brettvorschau';
+    games.addEventListener('click', () => {
+      const source = anchor;
+      hide();
+      openMemberGamesDialog(member, source);
+    });
+    footer.appendChild(games);
     panel.appendChild(footer);
     position();
   }
@@ -172,6 +186,12 @@ const MemberHovercard = (() => {
     };
     element.addEventListener('click', open);
     element.addEventListener('keydown', event => {
+      if(event.key === 'ArrowDown' && anchor === element && card && !card.hidden){
+        event.preventDefault(); clearTimeout(closeTimer);
+        const first = card.querySelector('button');
+        if(first) first.focus();
+        return;
+      }
       if(element.tagName !== 'BUTTON' && (event.key === 'Enter' || event.key === ' ')){
         event.preventDefault(); open(event);
       }
@@ -184,7 +204,10 @@ const MemberHovercard = (() => {
     element.addEventListener('focus', () => { if(keyboardNavigation && hoverDevice.matches) schedule(element); });
     element.addEventListener('blur', () => { if(anchor === element || openTimer) deferHide(); });
   }
-  document.addEventListener('pointerdown', event => { keyboardNavigation = false; hide(); }, true);
+  document.addEventListener('pointerdown', event => {
+    keyboardNavigation = false;
+    if(!card || !card.contains(event.target)) hide();
+  }, true);
   document.addEventListener('keydown', event => {
     if(event.key === 'Tab'){ keyboardNavigation = true; }
     if(event.key === 'Escape' && anchor){ event.preventDefault(); event.stopImmediatePropagation(); hide(); }

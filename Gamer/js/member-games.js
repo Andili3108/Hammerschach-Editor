@@ -13,7 +13,7 @@
   let member = null, opener = null, timer = null, requestId = 0, controller = null;
   let observer = null, queue = [], generation = 0, active = 0;
   const previewControllers = new Set();
-  let savedScroll = 0;
+  let savedScroll = 0, returnProfile = null, returnAccount = false;
 
   function memberFromAddress(){
     const url = new URL(location.href);
@@ -44,7 +44,7 @@
     const context = memberFromAddress();
     const url = new URL(location.href);
     returnButton.hidden = !context || !(url.searchParams.has('watch') || url.searchParams.has('room'));
-    returnButton.textContent = context ? (context.id === 'all' ? '← Laufende öffentliche Partien' : '← Partien von ' + context.username) : '';
+    returnButton.textContent = context ? (context.id === 'all' ? '← Laufende Partien' : '← Partien von ' + context.username) : '';
   }
   function scrollKey(){ return 'hammerschach-member-games-scroll:' + (member ? member.id : ''); }
   function saveScroll(){
@@ -178,7 +178,7 @@
     if(!list.children.length){
       const empty = document.createElement('div');
       empty.className = 'public-games-empty';
-      empty.textContent = member.id === 'all' ? 'Derzeit läuft keine öffentlich freigegebene Partie.' : 'Für dieses Mitglied laufen derzeit keine öffentlich freigegebenen Partien.';
+      empty.textContent = member.id === 'all' ? 'Derzeit läuft keine Partie.' : 'Für dieses Mitglied laufen derzeit keine Partien.';
       list.appendChild(empty);
     }
     if(focused && focused.isConnected && list.contains(focused)) focused.focus({preventScroll:true});
@@ -203,7 +203,7 @@
       rememberAddress(true);
       const games = Array.isArray(data.games) ? data.games : [];
       renderGames(games);
-      status.textContent = games.length + (games.length === 1 ? ' öffentliche Partie' : ' öffentliche Partien') + ' · Aktualisierung alle 30 Sekunden';
+      status.textContent = games.length + (games.length === 1 ? ' laufende Partie' : ' laufende Partien') + ' · Aktualisierung alle 30 Sekunden';
     } catch(error){
       if(id !== requestId || backdrop.hidden) return;
       status.textContent = (error && error.message || 'Partien konnten nicht geladen werden.') + ' Bitte erneut aktualisieren.';
@@ -214,20 +214,26 @@
   }
   function updateHeading(){
     const all = member.id === 'all';
-    title.textContent = all ? 'Laufende öffentliche Partien' : 'Partien von ' + member.username;
+    title.textContent = all ? 'Laufende Partien' : 'Partien von ' + member.username;
     allButton.hidden = all;
     hint.textContent = all
-      ? 'Öffentlich freigegebene Partien mit aktueller Brettvorschau. Eigene Partien öffnest du mit deinem Spielerplatz.'
-      : 'Laufende öffentlich freigegebene Partien. Das ausgewählte Mitglied spielt auf den Vorschaubrettern von unten.';
+      ? 'Laufende Partien mit aktueller Brettvorschau. Eigene Partien öffnest du mit deinem Spielerplatz.'
+      : 'Laufende Partien. Das ausgewählte Mitglied spielt auf den Vorschaubrettern von unten.';
   }
-  function openDialog(user){
+  function openDialog(user, source){
     if(user && user.id !== 'all' && !/^[A-Za-z0-9_-]{8,128}$/.test(String(user.id || ''))) return;
     if(!backdrop.hidden) saveScroll();
-    else opener = document.activeElement;
+    else {
+      opener = source || document.activeElement;
+      returnProfile = memberProfileBackdrop && !memberProfileBackdrop.hidden && memberProfileTarget ? {...memberProfileTarget} : null;
+      returnAccount = !!(authBackdrop && !authBackdrop.hidden);
+    }
     resetPreviews();
     member = user ? {id:String(user.id), username:cleanDisplayName(user.username) || 'Mitglied'} : {id:'all', username:''};
     savedScroll = 0;
     try { savedScroll = Math.max(0, Number(sessionStorage.getItem(scrollKey())) || 0); } catch(_) {}
+    MemberHovercard.hide();
+    closeAuthDialog();
     closeMembersDialog();
     closeMemberProfileDialog();
     list.replaceChildren();
@@ -251,7 +257,10 @@
     if(!preserveAddress) rememberAddress(false);
     // Reopen the original members dialog without resetting its search or scroll.
     if(opener && opener.isConnected && opener.closest('#membersBackdrop')) membersBackdrop.hidden = false;
-    if(opener && opener.isConnected) opener.focus({preventScroll:true});
+    if(returnProfile) openMemberProfile(returnProfile, 'standalone');
+    else if(returnAccount) openAuthDialog('login');
+    returnProfile = null; returnAccount = false;
+    if(opener && opener.isConnected && opener.getClientRects().length) opener.focus({preventScroll:true});
   }
   function restoreFromAddress(){
     syncReturnButton();
@@ -276,7 +285,7 @@
       event.stopImmediatePropagation();
       closeDialog(false);
     } else if(event.key === 'Tab'){
-      const controls = Array.from(backdrop.querySelectorAll('button:not(:disabled), a[href]'));
+      const controls = Array.from(backdrop.querySelectorAll('button:not(:disabled), a[href]')).filter(el => el.getClientRects().length);
       const first = controls[0], last = controls[controls.length - 1];
       if(event.shiftKey && document.activeElement === first){ event.preventDefault(); last.focus(); }
       else if(!event.shiftKey && document.activeElement === last){ event.preventDefault(); first.focus(); }
