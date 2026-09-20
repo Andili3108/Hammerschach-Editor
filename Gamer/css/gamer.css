@@ -3577,7 +3577,7 @@ html.mediathek-tool-active .top-layout{display:none!important;}
 }
 
 /* Lobby: Turniere und Mitteilungen gemeinsam im Blick. */
-.lobby-overview{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:18px;align-items:stretch;}
+.lobby-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch;}
 .lobby-overview:not(:has(>section:not([hidden]))){display:none;}
 .lobby-overview>section{min-width:0;}
 .lobby-overview:has(>section[hidden])>section:not([hidden]){grid-column:1/-1;}
@@ -3637,4 +3637,17 @@ html.visitor-start-view .match-actions{justify-content:center;flex-wrap:wrap;}
 .lobby-overview .lobby-tournaments-all{min-height:40px!important;padding:6px 12px!important;font-size:14px!important;line-height:1.2;}
 @media(max-width:1000px){
   .lobby-overview .lobby-tournaments-all{min-height:44px!important;}
+}
+
+/* Alle aktiven Turniere bleiben innerhalb des kompakten Feldes erreichbar. */
+.lobby-overview .lobby-tournaments{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;box-sizing:border-box;height:300px;min-width:0;}
+.lobby-overview .lobby-tournaments-head{margin-bottom:0;}
+.lobby-overview .lobby-tournaments-list{min-height:0;overflow-y:auto;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#9a916b transparent;}
+.lobby-overview .lobby-tournament-row{flex-shrink:0;box-sizing:border-box;}
+.lobby-tournaments-list::-webkit-scrollbar{width:8px;}
+.lobby-tournaments-list::-webkit-scrollbar-thumb{background:#9a916b;border-radius:8px;}
+.lobby-tournaments-list:focus-visible{outline:2px solid var(--ui-accent);outline-offset:-2px;}
+@media(max-width:1000px){
+  .lobby-overview .lobby-tournaments{height:auto;}
+  .lobby-overview .lobby-tournaments-list{max-height:320px;}
 }
