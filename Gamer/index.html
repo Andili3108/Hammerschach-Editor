@@ -39,7 +39,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260920-tournament-type-1" />
+  <link rel="stylesheet" href="css/gamer.css?v=20260920-lobby-overview-1" />
 <link rel="stylesheet" href="css/move-notation.css?v=20260917-theme-3">
 <link rel="stylesheet" href="css/my-games-overview.css?v=20260917-theme-3">
 <link rel="stylesheet" href="css/member-games.css?v=20260917-theme-3">
@@ -521,6 +521,7 @@
     </div>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
+      <div class="lobby-overview">
       <section id="lobbyTicker" class="lobby-tournaments" hidden aria-live="polite" aria-label="Aktuelle Hammerschach-Turniere">
         <div class="lobby-tournaments-head">
           <div class="lobby-tournaments-heading"><span aria-hidden="true">🏆</span><strong>Turniere</strong></div>
@@ -529,16 +530,14 @@
         <div id="lobbyTickerList" class="lobby-tournaments-list"></div>
       </section>
       <section id="infoCenterBar" class="info-center-bar" hidden aria-label="Hammerschach Info-Center">
-        <button id="infoCenterPrevBtn" class="info-center-nav" type="button" title="Vorherige Mitteilung" aria-label="Vorherige Mitteilung">‹</button>
-        <button id="infoCenterOpenBtn" class="info-center-open" type="button" title="Info-Center öffnen">
-          <span id="infoCenterCarouselIcon" class="info-center-bar-icon" aria-hidden="true">ℹ️</span>
-          <span class="info-center-bar-copy"><span class="info-center-bar-kicker">Info-Center</span><strong id="infoCenterCarouselTitle">Mitteilungen und Neuigkeiten</strong><span id="infoCenterLatestText">Alle Informationen im Info-Center nachlesen</span></span>
-          <span class="info-center-bar-action">Öffnen ›</span>
-        </button>
-        <span id="infoCenterUnreadBadge" class="info-center-unread-badge" hidden>0 neu</span>
-        <span id="infoCenterCounter" class="info-center-counter"></span>
-        <button id="infoCenterNextBtn" class="info-center-nav" type="button" title="Nächste Mitteilung" aria-label="Nächste Mitteilung">›</button>
+        <div class="info-center-overview-head">
+          <h2>ℹ️ Info-Center</h2>
+          <span id="infoCenterUnreadBadge" class="info-center-unread-badge" hidden>0 neu</span>
+        </div>
+        <div id="infoCenterOverviewList" class="info-center-overview-list" tabindex="0" role="region" aria-label="Aktuelle Mitteilungen"></div>
+        <button id="infoCenterOpenBtn" class="button-flat info-center-all" type="button">Alle Meldungen ›</button>
       </section>
+      </div>
       <div class="box global-chat-shell" aria-label="Hammerschach Mitglieder-Chat">
         <div class="global-chat-header">
           <div>
@@ -2592,8 +2591,8 @@
 <script src="js/game-moments.js?v=20260917-theme-3"></script>
 <script src="js/chess-chronicle.js?v=20260917-theme-3"></script>
 <script src="js/lobby-ticker.js?v=20260917-theme-3"></script>
-<script src="js/info-center.js?v=20260917-theme-3"></script>
-<script src="js/admin-info-center.js?v=20260917-theme-3"></script>
+<script src="js/info-center.js?v=20260920-lobby-overview-1"></script>
+<script src="js/admin-info-center.js?v=20260920-lobby-overview-1"></script>
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
 <script src="js/rating-history.js?v=20260920-profile-1"></script>
