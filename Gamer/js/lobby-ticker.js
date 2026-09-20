@@ -59,6 +59,7 @@ function renderLobbyTournamentRow(tournament){
   row.setAttribute('role', 'button');
   row.tabIndex = 0;
   row.className = 'lobby-tournament-row';
+  row.dataset.tournamentId = String(tournament.id || '');
 
   const main = document.createElement('span');
   main.className = 'lobby-tournament-main';
@@ -91,13 +92,20 @@ function renderLobbyTournaments(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   if(!loggedIn){ clearLobbyTicker(); return; }
   const items = lobbyTournamentItems();
-  const visibleItems = items.slice(0, 4);
+  const scrollTop = lobbyTickerList.scrollTop;
+  const focusedId = lobbyTickerList.contains(document.activeElement)
+    ? document.activeElement.dataset.tournamentId : null;
   lobbyTickerList.innerHTML = '';
   lobbyTicker.hidden = items.length < 1;
   if(!items.length) return;
   const fragment = document.createDocumentFragment();
-  visibleItems.forEach(tournament => fragment.appendChild(renderLobbyTournamentRow(tournament)));
+  items.forEach(tournament => fragment.appendChild(renderLobbyTournamentRow(tournament)));
   lobbyTickerList.appendChild(fragment);
+  if(focusedId != null){
+    const focused = Array.from(lobbyTickerList.children).find(row => row.dataset.tournamentId === focusedId);
+    if(focused) focused.focus({preventScroll:true});
+  }
+  lobbyTickerList.scrollTop = scrollTop;
 }
 
 async function loadLobbyTicker(){
