@@ -21,9 +21,9 @@ function cleanText(value, maxLength = 160) {
 function decodeHtmlEntities(value) {
   const named = {
     amp:'&', apos:"'", gt:'>', lt:'<', nbsp:' ', quot:'"', minus:'−', ndash:'–', mdash:'—',
-    auml:'ä', Auml:'Ä', ouml:'ö', Ouml:'Ö', uuml:'ü', Uuml:'Ü', szlig:'ß'
+    auml:'ä', Auml:'Ä', ouml:'ö', Ouml:'Ö', uuml:'ü', Uuml:'Ü', szlig:'ß', frac12:'½'
   };
-  return String(value || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity) => {
+  return String(value || '').replace(/&(#x[0-9a-f]+|#\d+|[a-z][a-z0-9]*);/gi, (match, entity) => {
     if (entity[0] === '#') {
       const hex = entity[1] && entity[1].toLowerCase() === 'x';
       const codePoint = Number.parseInt(entity.slice(hex ? 2 : 1), hex ? 16 : 10);
