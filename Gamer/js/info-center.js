@@ -63,6 +63,7 @@ function updateInfoCenterBar(){
     button.dataset.infoCenterId = String(item.id || '');
     const title = document.createElement('strong');
     title.textContent = (item.icon || 'ℹ️') + ' ' + (item.title || 'Mitteilung');
+    button.title = item.title || 'Mitteilung';
     const meta = document.createElement('span');
     meta.className = 'info-center-overview-meta';
     meta.textContent = (item.categoryLabel || 'Mitteilung') + (item.unread ? ' · Neu' : '');
