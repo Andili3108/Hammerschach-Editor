@@ -3,7 +3,7 @@
 let infoCenterItems = [];
 let infoCenterSelectedId = '';
 let infoCenterAddressHandled = false;
-let infoCenterCarouselIndex = 0;
+const infoCenterOverviewList = document.getElementById('infoCenterOverviewList');
 const infoCenterObjectUrls = new Set();
 
 function setInfoCenterStatus(message, kind){
@@ -28,7 +28,7 @@ function clearInfoCenter(){
   infoCenterItems = [];
   infoCenterSelectedId = '';
   infoCenterAddressHandled = false;
-  infoCenterCarouselIndex = 0;
+  if(infoCenterOverviewList) infoCenterOverviewList.replaceChildren();
   releaseInfoCenterObjectUrls();
   if(infoCenterBar) infoCenterBar.hidden = true;
   if(infoCenterBackdrop) infoCenterBackdrop.hidden = true;
@@ -41,33 +41,47 @@ function infoCenterUnreadCount(){
   return infoCenterItems.filter(item => item && item.unread).length;
 }
 
-function currentInfoCenterCarouselItem(){
-  return infoCenterItems[infoCenterCarouselIndex] || null;
-}
-
-function showInfoCenterCarouselAt(index){
+function updateInfoCenterBar(){
   if(!infoCenterBar) return;
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   infoCenterBar.hidden = !loggedIn;
   if(!loggedIn) return;
-  const count = infoCenterItems.length;
-  infoCenterCarouselIndex = count ? ((Number(index || 0) % count) + count) % count : 0;
-  const item = currentInfoCenterCarouselItem();
-  if(infoCenterCarouselIcon) infoCenterCarouselIcon.textContent = item ? (item.icon || 'ℹ️') : 'ℹ️';
-  if(infoCenterCarouselTitle) infoCenterCarouselTitle.textContent = item ? (item.title || 'Mitteilung') : 'Mitteilungen und Neuigkeiten';
-  if(infoCenterLatestText) infoCenterLatestText.textContent = item ? (item.summary || item.categoryLabel || 'Mitteilung im Info-Center') : 'Noch keine Mitteilungen vorhanden';
-  if(infoCenterCounter) infoCenterCounter.textContent = count > 1 ? ((infoCenterCarouselIndex + 1) + '/' + count) : '';
-  if(infoCenterPrevBtn) infoCenterPrevBtn.hidden = count < 2;
-  if(infoCenterNextBtn) infoCenterNextBtn.hidden = count < 2;
   const unread = infoCenterUnreadCount();
   if(infoCenterUnreadBadge){
     infoCenterUnreadBadge.hidden = unread < 1;
     infoCenterUnreadBadge.textContent = unread === 1 ? '1 neu' : unread + ' neu';
   }
-}
-
-function updateInfoCenterBar(){
-  showInfoCenterCarouselAt(infoCenterCarouselIndex);
+  if(!infoCenterOverviewList) return;
+  const scrollTop = infoCenterOverviewList.scrollTop;
+  const focusedId = infoCenterOverviewList.contains(document.activeElement)
+    ? document.activeElement.dataset.infoCenterId : null;
+  const fragment = document.createDocumentFragment();
+  infoCenterItems.forEach(item => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'info-center-overview-item' + (item.unread ? ' unread' : '');
+    button.dataset.infoCenterId = String(item.id || '');
+    const title = document.createElement('strong');
+    title.textContent = (item.icon || 'ℹ️') + ' ' + (item.title || 'Mitteilung');
+    const meta = document.createElement('span');
+    meta.className = 'info-center-overview-meta';
+    meta.textContent = (item.categoryLabel || 'Mitteilung') + (item.unread ? ' · Neu' : '');
+    button.append(title, meta);
+    button.addEventListener('click', () => openInfoCenter(item.id));
+    fragment.appendChild(button);
+  });
+  if(!infoCenterItems.length){
+    const empty = document.createElement('p');
+    empty.className = 'info-center-overview-empty';
+    empty.textContent = 'Noch keine Mitteilungen vorhanden.';
+    fragment.appendChild(empty);
+  }
+  infoCenterOverviewList.replaceChildren(fragment);
+  if(focusedId != null){
+    const focused = Array.from(infoCenterOverviewList.children).find(item => item.dataset.infoCenterId === focusedId);
+    if(focused) focused.focus({preventScroll:true});
+  }
+  infoCenterOverviewList.scrollTop = scrollTop;
 }
 
 function renderInfoCenterList(){
@@ -274,7 +288,8 @@ async function loadInfoCenter(){
   if(!onlineAuthToken || !onlineAuthUser){ clearInfoCenter(); return; }
   try{
     const data = await authApi('/api/info-center');
-    infoCenterItems = Array.isArray(data.items) ? data.items : [];
+    infoCenterItems = (Array.isArray(data.items) ? data.items : []).filter(Boolean).sort((a, b) =>
+      (Date.parse(b.publishedAt || b.startsAt) || 0) - (Date.parse(a.publishedAt || a.startsAt) || 0));
     updateInfoCenterBar();
     renderInfoCenterList();
     if(!infoCenterAddressHandled){
@@ -289,9 +304,7 @@ async function loadInfoCenter(){
   }
 }
 
-if(infoCenterOpenBtn) infoCenterOpenBtn.addEventListener('click', () => { const item = currentInfoCenterCarouselItem(); openInfoCenter(item ? item.id : ''); });
-if(infoCenterPrevBtn) infoCenterPrevBtn.addEventListener('click', () => showInfoCenterCarouselAt(infoCenterCarouselIndex - 1));
-if(infoCenterNextBtn) infoCenterNextBtn.addEventListener('click', () => showInfoCenterCarouselAt(infoCenterCarouselIndex + 1));
+if(infoCenterOpenBtn) infoCenterOpenBtn.addEventListener('click', () => openInfoCenter(''));
 if(infoCenterCloseBtn) infoCenterCloseBtn.addEventListener('click', closeInfoCenter);
 if(infoCenterCloseTopBtn) infoCenterCloseTopBtn.addEventListener('click', closeInfoCenter);
 if(infoCenterBackdrop) infoCenterBackdrop.addEventListener('click', event => { if(event.target === infoCenterBackdrop) closeInfoCenter(); });
