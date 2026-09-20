@@ -49,6 +49,7 @@
 <link rel="stylesheet" href="css/gamer-appearance.css?v=20260917-theme-3">
 <link rel="stylesheet" href="css/member-hovercard.css?v=20260919-playercard-1">
 <link rel="stylesheet" href="css/article-unread.css?v=20260919-compact-3">
+<link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
 </head>
 <body>
 <div class="app" role="main">
@@ -1072,6 +1073,7 @@
         </div>
 
         <div id="authLoggedIn" class="auth-account" hidden>
+          <div class="account-settings-column">
           <div>Angemeldet als</div>
           <div id="authAccountName" class="auth-account-name">—</div>
           <div id="authAccountEmail" class="auth-account-mail">—</div>
@@ -1083,8 +1085,21 @@
           <div id="authRatings" class="auth-ratings">
             <div class="auth-ratings-title">Meine Ratings</div>
             <div id="authRatingsGrid" class="auth-ratings-grid" aria-live="polite"></div>
-            <div class="auth-ratings-note">Startwert 1500. Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating.</div>
+            <div class="auth-ratings-note">Startwert 1500. Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating. Ein Klick auf die Zahl zeigt den Verlauf.</div>
           </div>
+          <div class="auth-account-actions" aria-label="Account verwalten">
+            <button id="accountProfileOpenBtn" class="button-flat account-profile-open-btn" type="button">✏️ Mein Profil bearbeiten</button>
+            <button id="accountProfilePreviewBtn" class="button-flat account-profile-preview-btn" type="button">👁️ Mein Profil ansehen</button>
+            <button id="accountRunningGamesBtn" class="button-flat" type="button">♟ Laufende Partien</button>
+            <button id="accountUsernameOpenBtn" class="button-flat" type="button">Benutzername ändern</button>
+            <button id="accountEmailOpenBtn" class="button-flat" type="button">Mailadresse ändern</button>
+            <button id="accountPasswordOpenBtn" class="button-flat" type="button">Kennwort ändern</button>
+            <button id="accountDeleteOpenBtn" class="auth-account-delete-btn" type="button">Account löschen</button>
+            <button id="adminOverviewOpenBtn" class="button-flat admin-overview-open-btn" type="button" hidden>Admin-Systemübersicht</button>
+          </div>
+          <div id="authAccountProtectionNote" class="auth-account-protection-note" hidden></div>
+          </div>
+          <div class="account-settings-column">
           <div id="authEmailNotifications" class="auth-email-notifications">
             <div class="auth-email-notifications-title">E-Mail-Benachrichtigungen</div>
             <label class="auth-email-option" for="dailyTurnEmailCheckbox">
@@ -1109,17 +1124,8 @@
               <div id="emailNotificationsStatus" class="auth-email-notifications-status" aria-live="polite"></div>
             </div>
           </div>
-          <div class="auth-account-actions" aria-label="Account verwalten">
-            <button id="accountProfileOpenBtn" class="button-flat account-profile-open-btn" type="button">✏️ Mein Profil bearbeiten</button>
-            <button id="accountProfilePreviewBtn" class="button-flat account-profile-preview-btn" type="button">👁️ Mein Profil ansehen</button>
-            <button id="accountUsernameOpenBtn" class="button-flat" type="button">Benutzername ändern</button>
-            <button id="accountEmailOpenBtn" class="button-flat" type="button">Mailadresse ändern</button>
-            <button id="accountPasswordOpenBtn" class="button-flat" type="button">Kennwort ändern</button>
-            <button id="accountDeleteOpenBtn" class="auth-account-delete-btn" type="button">Account löschen</button>
-            <button id="adminOverviewOpenBtn" class="button-flat admin-overview-open-btn" type="button" hidden>Admin-Systemübersicht</button>
-          </div>
-          <div id="authAccountProtectionNote" class="auth-account-protection-note" hidden></div>
           <div class="account-privacy-note">Informationen zu Account, Partien, Chat und E-Mails: <button id="accountPrivacyOpenBtn" class="privacy-open-inline" type="button">Gamer-Datenschutz öffnen</button></div>
+          </div>
         </div>
 
         <div id="authError" class="identity-error" aria-live="polite"></div>
@@ -1685,7 +1691,7 @@
           <button id="memberGamesCloseIcon" class="button-flat list-dialog-close-icon" type="button" aria-label="Partienübersicht schließen">×</button>
         </div>
         <div class="member-games-filter-row"><button id="memberGamesAllBtn" class="button-flat" type="button" hidden>Alle anzeigen</button></div>
-        <p id="memberGamesHint">Laufende öffentlich freigegebene Partien. Das ausgewählte Mitglied spielt auf den Vorschaubrettern von unten.</p>
+        <p id="memberGamesHint">Laufende Partien. Das ausgewählte Mitglied spielt auf den Vorschaubrettern von unten.</p>
         <div id="publicGamesList" class="member-games-grid"></div>
         <div id="publicGamesStatus" class="public-games-status" role="status"></div>
         <div class="public-games-actions">
@@ -1847,10 +1853,11 @@
         <div class="auth-ratings">
           <div class="auth-ratings-title">Hammerschach-Ratings</div>
           <div id="memberProfileRatingsGrid" class="auth-ratings-grid" aria-live="polite"></div>
-          <div class="auth-ratings-note">Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating.</div>
+          <div class="auth-ratings-note">Ein „?“ kennzeichnet ein noch vorläufiges Glicko-2-Rating. Ein Klick auf die Zahl zeigt den Verlauf.</div>
         </div>
         <div id="memberProfileStatus" class="member-profile-status" aria-live="polite"></div>
         <div class="identity-actions">
+          <button id="memberProfileGamesBtn" class="button-flat" type="button">♟ Laufende Partien</button>
           <button id="memberProfileEditBtn" class="button-flat" type="button" hidden>✏️ Profil bearbeiten</button>
           <button id="memberProfileMessageBtn" class="button-flat" type="button" hidden>✉️ Nachricht</button>
           <button id="memberProfileInviteBtn" class="button-flat" type="button" hidden>Zur Partie einladen</button>
@@ -2589,7 +2596,8 @@
 <script src="js/admin-info-center.js?v=20260917-theme-3"></script>
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
-<script src="js/auth-account.js?v=20260919-welcome-1"></script>
+<script src="js/rating-history.js?v=20260920-profile-1"></script>
+<script src="js/auth-account.js?v=20260920-profile-1"></script>
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260917-theme-3"></script>
 <script src="js/live-tournaments.js?v=20260917-theme-3"></script>
@@ -2606,9 +2614,9 @@
 <script src="js/policy-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/online-room-utils.js?v=20260917-theme-3"></script>
 <script src="js/online-ui-state.js?v=20260919-playercard-1"></script>
-<script src="js/member-directory.js?v=20260919-playercard-1"></script>
-<script src="js/member-hovercard.js?v=20260919-playercard-1"></script>
-<script src="js/member-games.js?v=20260917-theme-3"></script>
+<script src="js/member-directory.js?v=20260920-profile-1"></script>
+<script src="js/member-hovercard.js?v=20260920-profile-1"></script>
+<script src="js/member-games.js?v=20260920-profile-1"></script>
 <script src="js/direct-messages.js?v=20260917-theme-3"></script>
 <script src="js/game-invitations.js?v=20260919-playercard-1"></script>
 <script src="js/online-sync-state.js?v=20260917-theme-3"></script>
