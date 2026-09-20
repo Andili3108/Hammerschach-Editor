@@ -3617,7 +3617,6 @@ html.dark-mode .info-center-overview-head h2,html.dark-mode .info-center-overvie
   .lobby-overview{grid-template-columns:minmax(0,1fr);gap:14px;}
   .lobby-overview .info-center-bar{min-height:0;}
   .info-center-overview-list{contain:none;height:auto;min-height:0;overflow:visible;}
-  .info-center-overview-item:nth-child(n+4){display:none!important;}
 }
 @media(max-width:420px){
   .lobby-overview .lobby-tournament-main{grid-column:1/-1;}
@@ -3650,4 +3649,19 @@ html.visitor-start-view .match-actions{justify-content:center;flex-wrap:wrap;}
 @media(max-width:1000px){
   .lobby-overview .lobby-tournaments{height:auto;}
   .lobby-overview .lobby-tournaments-list{max-height:320px;}
+}
+
+/* Drei ganze Meldungen; lange Titel werden nur in der Übersicht gekürzt. */
+.info-center-overview-list{scroll-snap-type:y mandatory;}
+.info-center-overview-list .info-center-overview-item{
+  box-sizing:border-box;height:calc(100% / 3);min-height:0!important;
+  justify-content:center;overflow:hidden;scroll-snap-align:start;
+}
+.info-center-overview-item strong{
+  display:block;flex:none;min-width:0;width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.info-center-overview-meta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+@media(max-width:1000px){
+  .info-center-overview-list{height:234px;overflow-y:auto;contain:size;}
 }
