@@ -433,6 +433,8 @@ function updateAuthUi(){
   if(authError){ authError.textContent = ''; authError.style.color = '#9A2D33'; }
   updatePublicVisibilityUi();
   updateVisitorLandingUi();
+  // Auch ein bereits geladenes Schachschul-Fenster erhält Login und Logout sofort.
+  postLearningToolContext();
 }
 function applyLoggedInUserToOnlineRoom(){
   if(!onlineAuthUser) return;

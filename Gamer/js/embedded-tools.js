@@ -122,7 +122,7 @@ function embeddedToolActive(){
 }
 function embeddedToolStatusText(){
   if(mediathekToolActive) return 'Mediathek · '+mediathekSelectionTitle();
-  if(learningToolActive) return 'Hammerschach - Schach lernen';
+  if(learningToolActive) return 'Hammerschach - Schachschule';
   if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
   if(tvToolActive) return 'Hammerschach - TV';
   if(fairplayToolActive) return 'Hammerschach - Fairplay-Prüfung';
@@ -158,7 +158,7 @@ function updateAnalyzerToolAvailability(){
   if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && learningToolActive) || (!trainerAvailable && trainerToolActive) || (!mateSchoolAvailable && mateSchoolToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive) || (!readerAvailable && readerToolActive) || (!tournamentReportAvailable && tournamentReportToolActive) || (!mediathekAvailable && mediathekToolActive)) setEmbeddedToolActive('');
   if(!fairplayAvailable && fairplayToolActive) setEmbeddedToolActive('');
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
-  if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Hammerschach-Grundkurs öffnen':'Spielraum verlassen und den Hammerschach-Grundkurs öffnen';}
+  if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Hammerschach-Schachschule öffnen':'Spielraum verlassen und die Hammerschach-Schachschule öffnen';}
   if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Hammerschach-Analyzer');}
   if(playerToolBtn){playerToolBtn.hidden=!navigable;playerToolBtn.title=titleFor('Hammerschach-Player');}
   if(trainerToolBtn){trainerToolBtn.hidden=!trainerNavigable;trainerToolBtn.title=trainerAvailable?'Hammerschach-Trainer öffnen':'Spielraum verlassen und den Hammerschach-Trainer öffnen';}
@@ -274,6 +274,7 @@ function postTournamentReportToolMessage(message){
 function postLearningToolContext(){
   postLearningToolMessage({
     type:'hammerschach-learning-context',
+    userId:onlineAuthUser ? String(onlineAuthUser.id || '') : '',
     darkMode:!!darkModeEnabled,colorScheme:HammerschachPreferences.get('scheme'),
     loggedIn:!!(onlineAuthToken && onlineAuthUser),
     username:onlineAuthUser ? cleanDisplayName(onlineAuthUser.username || '') : ''
@@ -918,7 +919,18 @@ window.addEventListener('message',async event=>{
       }
       return;
     }
+    if(message.type==='hammerschach-learning-open-auth'){
+      if(learningToolActive && !(onlineAuthToken && onlineAuthUser)){
+        openAuthDialog(message.mode==='register'?'register':'login');
+      }
+      return;
+    }
+    if(message.type==='hammerschach-learning-open-mate-school'){
+      if(learningToolActive)openMateSchoolToolDebounced();
+      return;
+    }
     if(message.type==='hammerschach-learning-open-trainer'){
+      if(!learningToolActive)return;
       pendingTrainerStartMode=message.mode==='free'?'free':'coach';
       try{sessionStorage.setItem('hammerschachTrainerRequestedMode',pendingTrainerStartMode);}catch(_){ }
       setTrainerToolActive(true);
