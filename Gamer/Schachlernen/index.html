@@ -1,96 +1,104 @@
 <!doctype html>
 <html lang="de">
 <head>
-<script src="../js/gamer-appearance.js?v=20260917-theme-3"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Schach lernen · Hammerschach</title>
-  <script>
-    try{
-      if(localStorage.getItem('hammerschachGamerColorScheme') === 'dark'){
-        document.documentElement.classList.add('dark-mode');
-      }
-    }catch(_){ }
-  </script>
-  <link rel="stylesheet" href="schachlernen.css?v=20260917-theme-3">
-<link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
+  <title>Schachschule · Hammerschach</title>
+  <script src="../js/gamer-appearance.js?v=20260917-theme-3"></script>
+  <link rel="stylesheet" href="schachlernen.css?v=20260922-schachschule-1">
+  <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
 </head>
 <body>
   <main class="learning-app">
-    <section class="learning-hero" aria-labelledby="courseTitle">
-      <div class="hero-copy">
-        <div class="eyebrow">Hammerschach-Grundkurs</div>
-        <h1 id="courseTitle">🎓 Schach lernen</h1>
-        <p>Zehn verständliche Lektionen führen dich vom leeren Brett bis zu Schach, Matt und Patt. Du bestimmst das Tempo und kannst jederzeit dort weitermachen, wo du aufgehört hast.</p>
-      </div>
-      <div class="progress-card" aria-label="Kursfortschritt">
-        <div class="progress-summary"><strong id="progressValue">0 von 10</strong><span>Lektionen abgeschlossen</span></div>
-        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Abgeschlossene Lektionen">
-          <span id="progressBar"></span>
+    <nav class="school-navigation" aria-label="Schachschule">
+      <button id="schoolOverviewBtn" class="school-home" type="button">🎓 Schachschule</button>
+      <div id="schoolCourseNavigation" class="school-course-navigation"></div>
+    </nav>
+    <section id="schoolOverview" aria-labelledby="schoolTitle">
+      <div class="learning-hero school-hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Die Hammerschach-Schachschule</div>
+          <h1 id="schoolTitle" tabindex="-1">Dein nächster Zug: dazulernen.</h1>
+          <p>Vom ersten Figurenzug bis zum durchdachten Endspiel. Wähle deinen Kurs oder entdecke ein Thema, das dich gerade interessiert.</p>
         </div>
+        <div class="progress-card">
+          <div class="progress-summary"><strong id="schoolProgressValue">0 von 96</strong><span>Lektionen als erledigt markiert</span></div>
+          <button id="continueLearningBtn" class="beginner-training-button" type="button">Weiterlernen</button>
+          <span id="continueLearningLabel" class="continue-label"></span>
+        </div>
+      </div>
+      <p id="schoolAccessNote" class="school-access-note"></p>
+      <div id="schoolCourseCards"></div>
+    </section>
+    <section id="schoolCourse" aria-labelledby="courseTitle" hidden>
+      <div class="learning-hero">
+        <div class="hero-copy">
+          <div id="courseEyebrow" class="eyebrow"></div>
+          <h1 id="courseTitle" tabindex="-1"></h1>
+          <p id="courseIntro"></p>
+        </div>
+        <div class="progress-card" aria-label="Kursfortschritt">
+          <div class="progress-summary"><strong id="progressValue"></strong><span>Lektionen als erledigt markiert</span></div>
+          <div id="progressTrack" class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Kursfortschritt"><span id="progressBar"></span></div>
+        </div>
+      </div>
+      <div class="learning-layout">
+        <aside class="course-card" aria-label="Lektionen und Lernstand">
+          <details id="lessonDirectory" open>
+            <summary>Alle Lektionen <span id="lessonDirectoryCount"></span></summary>
+            <nav id="lessonList" class="lesson-list" aria-label="Lektionen"></nav>
+          </details>
+          <p id="storageNote" class="storage-note"></p>
+          <button id="resetProgressBtn" class="quiet-button" type="button">Diesen Kurs zurücksetzen</button>
+        </aside>
+        <article class="lesson-card" aria-labelledby="lessonTitle">
+          <div class="lesson-heading">
+            <div><div id="lessonNumber" class="eyebrow"></div><h2 id="lessonTitle" tabindex="-1"></h2></div>
+            <span id="lessonState" class="lesson-state"></span>
+          </div>
+          <p id="lessonIntro" class="lesson-intro"></p>
+          <div id="lessonAccess" class="lesson-access"></div>
+          <section id="lessonGate" class="lesson-gate" aria-labelledby="lessonGateTitle" hidden>
+            <span class="gate-icon" aria-hidden="true">♜</span>
+            <h3 id="lessonGateTitle">Für Gamer-Mitglieder</h3>
+            <p>Mit deinem Gamer-Login kannst du alle Lektionen der Schachschule öffnen. Die Mitgliedschaft ist kostenlos und ermöglicht dir auch Online-Schach.</p>
+            <div class="gate-actions"><button id="lessonLoginBtn" class="beginner-training-button" type="button">Anmelden</button><button id="lessonRegisterBtn" class="quiet-button" type="button">Registrieren</button></div>
+            <a id="standaloneLoginLink" href="../" hidden>Zur Gamer-Anmeldung →</a>
+          </section>
+          <div id="videoShell" class="video-shell">
+            <div id="videoFrame" class="video-frame">
+              <div id="videoPlaceholder" class="video-placeholder">
+                <span aria-hidden="true" class="video-play-symbol">▶</span>
+                <button id="loadVideoBtn" type="button" class="beginner-training-button">Video laden</button>
+                <span>Das YouTube-Video wird erst nach deinem Klick geladen.</span>
+              </div>
+              <iframe id="lessonVideo" title="Schachlernvideo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
+            </div>
+            <div class="video-caption"><span id="videoAuthor"></span><a id="videoExternalLink" target="_blank" rel="noopener noreferrer">Auf YouTube öffnen ↗</a></div>
+          </div>
+          <p id="videoHelp" class="video-help">Falls das eingebettete Video nicht verfügbar ist, nutze „Auf YouTube öffnen“.</p>
+          <p id="lessonNote" class="lesson-note" hidden></p>
+          <section class="goals-card" aria-labelledby="goalsTitle"><h3 id="goalsTitle">Darauf kommt es an</h3><ul id="lessonGoals"></ul></section>
+          <div class="lesson-actions">
+            <button id="previousLessonBtn" class="quiet-button" type="button">← Vorherige Lektion</button>
+            <button id="completeLessonBtn" class="complete-button" type="button">✓ Als erledigt markieren</button>
+            <button id="nextLessonBtn" class="quiet-button" type="button">Nächste Lektion →</button>
+          </div>
+          <p id="lessonFeedback" class="lesson-feedback" aria-live="polite"></p>
+          <section id="courseNextStep" class="course-next-step" hidden aria-labelledby="courseNextStepTitle">
+            <div><div class="eyebrow">Der nächste Schritt</div><h3 id="courseNextStepTitle">Weiterlernen und ausprobieren</h3><p id="courseNextStepText"></p></div>
+            <button id="nextCourseBtn" class="beginner-training-button" type="button">Nächsten Kurs öffnen</button>
+          </section>
+          <div class="practice-actions"><span>Das Gelernte am Brett vertiefen:</span><button id="openBeginnerTrainingBtn" class="quiet-button" type="button">🎯 Trainer öffnen</button><button id="openMateSchoolBtn" class="quiet-button" type="button">🧩 Mattbilder-Schule</button></div>
+          <p class="course-source">Kursauswahl: <a id="courseSourceLink" target="_blank" rel="noopener noreferrer">Andili ↗</a></p>
+        </article>
       </div>
     </section>
-
-    <div class="learning-layout">
-      <aside class="course-card" aria-labelledby="courseOverviewTitle">
-        <div class="course-card-head">
-          <div>
-            <div class="eyebrow">Dein Kurs</div>
-            <h2 id="courseOverviewTitle">Alle Lektionen</h2>
-          </div>
-          <button id="resetProgressBtn" class="quiet-button" type="button" title="Gespeicherten Kursfortschritt zurücksetzen">Neu beginnen</button>
-        </div>
-        <nav id="lessonList" class="lesson-list" aria-label="Lektionen"></nav>
-        <p class="storage-note">Dein Fortschritt wird ausschließlich auf diesem Gerät gespeichert. Für diesen Grundkurs ist keine Anmeldung erforderlich.</p>
-      </aside>
-
-      <article class="lesson-card" aria-labelledby="lessonTitle">
-        <div class="lesson-heading">
-          <div>
-            <div id="lessonNumber" class="eyebrow">Lektion 1 von 10</div>
-            <h2 id="lessonTitle" tabindex="-1">Das Schachbrett und die Figuren</h2>
-          </div>
-          <span id="lessonState" class="lesson-state">Offen</span>
-        </div>
-        <p id="lessonIntro" class="lesson-intro"></p>
-
-        <div class="video-shell">
-          <div class="video-frame">
-            <iframe id="lessonVideo" title="Schachlernvideo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
-          </div>
-          <div class="video-caption">
-            <span>Videotraining mit TheBigGreek</span>
-            <a href="https://www.youtube.com/@TheBigGreek" target="thebiggreek" rel="noopener">YouTube-Kanal öffnen ↗</a>
-          </div>
-        </div>
-
-        <section class="goals-card" aria-labelledby="goalsTitle">
-          <h3 id="goalsTitle">Darauf kommt es in dieser Lektion an</h3>
-          <ul id="lessonGoals"></ul>
-        </section>
-
-        <div class="lesson-actions">
-          <button id="previousLessonBtn" class="quiet-button" type="button">← Vorherige Lektion</button>
-          <button id="completeLessonBtn" class="complete-button" type="button">✓ Als erledigt markieren</button>
-          <button id="nextLessonBtn" class="quiet-button" type="button">Nächste Lektion →</button>
-        </div>
-        <p id="lessonFeedback" class="lesson-feedback" aria-live="polite"></p>
-
-        <section id="courseNextStep" class="course-next-step" hidden aria-labelledby="courseNextStepTitle">
-          <div>
-            <div class="eyebrow">Der nächste Schritt</div>
-            <h3 id="courseNextStepTitle">Vom Regelwissen zum sicheren Schachblick</h3>
-            <p>Das Gamer-Anfängertraining führt dich jetzt durch einfache Mattbilder, erste Taktikmotive und eine abschließende Prüfung.</p>
-          </div>
-          <button id="openBeginnerTrainingBtn" class="beginner-training-button" type="button">🎯 Anfängertraining starten</button>
-        </section>
-      </article>
-    </div>
-
-    <footer class="learning-footer">
-      <p>Die Videoreihe wird mit freundlichem Hinweis auf TheBigGreek innerhalb des Hammerschach-Grundkurses gezeigt.</p>
-    </footer>
+    <footer class="learning-footer"><p>Videokurse aus der Andili-Sammlung. Die Videos werden über YouTube eingebunden; die Rechte liegen bei den jeweiligen Urhebern.</p><span id="storageStatus" role="status"></span></footer>
+    <noscript>Bitte aktiviere JavaScript, um die Kurse und deinen Lernfortschritt zu öffnen.</noscript>
   </main>
-  <script src="schachlernen.js?v=20260917-theme-3"></script>
+  <script src="catalog.js?v=20260922-schachschule-1"></script>
+  <script src="school-model.js?v=20260922-schachschule-1"></script>
+  <script src="schachlernen.js?v=20260922-schachschule-1"></script>
 </body>
 </html>

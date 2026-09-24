@@ -144,3 +144,64 @@ html.dark-mode .course-next-step{background:linear-gradient(145deg,var(--ui-surf
 html.dark-mode .course-next-step h3{color:var(--ui-text)}
 html.dark-mode .course-next-step p{color:var(--ui-muted)}
 @media(max-width:680px){.course-next-step{align-items:stretch;flex-direction:column}.beginner-training-button{width:100%}}
+
+/* Schachschule: dieselben Gamer-Farben, sechs Kurse, ein gemeinsamer Lernstand. */
+[hidden]{display:none!important}
+.school-navigation{display:flex;align-items:center;gap:22px;padding:15px 18px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.school-home{flex-shrink:0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--ui-surface-alt);color:var(--ui-text);font-size:20px;font-weight:900}
+.school-home[aria-current]{box-shadow:inset 0 -3px var(--wine)}
+.school-course-navigation{display:flex;flex-wrap:wrap;gap:8px 24px}
+.school-nav-group{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.school-nav-label{width:100%;color:var(--muted);font:800 10px Arial,sans-serif;letter-spacing:.07em;text-transform:uppercase;margin:0 0 2px 5px}
+.school-course-button{border:1px solid transparent;border-radius:8px;padding:7px 9px;background:transparent;color:var(--ui-text);font-weight:700;font-size:14px}
+.school-course-button:hover{background:var(--ui-hover)}
+.school-course-button[aria-current]{background:var(--ui-surface-alt);border-color:var(--line);box-shadow:inset 0 -2px var(--wine)}
+.school-hero{margin-bottom:12px}
+.school-hero h1{max-width:550px;line-height:1.12}
+.school-hero .beginner-training-button{width:100%;margin:14px 0 8px}
+.continue-label{display:block;color:var(--muted);font:12px/1.5 Arial,sans-serif}
+.school-access-note{margin:0 0 20px;padding:12px 16px;border-left:3px solid var(--gold);background:var(--ui-surface-alt);border-radius:0 10px 10px 0;font-size:15px;line-height:1.55;color:var(--ui-text)}
+.school-course-group{margin:0 0 20px}
+.school-course-group>h2{font-size:21px;margin:0 0 10px;color:var(--ui-text)}
+.school-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.school-card{display:flex;flex-direction:column;min-width:0;gap:10px;padding:20px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.school-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.school-card-icon{color:var(--wine);font-size:35px;line-height:1}
+.school-card-count{font:800 11px Arial,sans-serif;color:var(--muted)}
+.school-card h3{margin:0;font-size:26px;color:var(--ui-text)}
+.school-card p{margin:0 0 5px;color:var(--muted);font-size:16px;line-height:1.45;flex:1}
+.school-card-access{font:800 11px/1.4 Arial,sans-serif;color:var(--wine-dark)}
+.school-card-progress{font:12px Arial,sans-serif;color:var(--muted)}
+.school-card-open{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--ui-surface-alt);color:var(--ui-text);font-weight:900;text-align:left}
+.school-card-open:hover{background:var(--ui-hover)}
+#schoolCourse>.learning-hero{margin-bottom:14px}
+.course-card{position:static}
+#lessonDirectory summary{cursor:pointer;font-size:21px;font-weight:900;color:var(--ui-text)}
+#lessonDirectoryCount{font:800 12px Arial,sans-serif;color:var(--muted)}
+.lesson-list{display:block;max-height:600px;overflow-y:auto;scrollbar-gutter:stable;padding:0 4px 2px 0}
+.lesson-chapter{margin-bottom:18px}
+.lesson-chapter:last-child{margin-bottom:0}
+.lesson-chapter h3{margin:0 0 8px;font:800 11px/1.4 Arial,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.lesson-chapter .lesson-item{margin-bottom:6px}
+.lesson-access{margin:0 0 13px;color:var(--gold);font:800 12px/1.5 Arial,sans-serif}
+.lesson-gate{padding:30px 24px;border:1px solid var(--line);border-radius:16px;text-align:center;background:var(--ui-surface-alt)}
+.gate-icon{display:block;color:var(--wine);font-size:42px;margin-bottom:8px}
+.lesson-gate h3{margin:0 0 10px;font-size:25px;color:var(--ui-text)}
+.lesson-gate p{margin:0 auto 18px;max-width:460px;font-size:16px;line-height:1.5;color:var(--muted)}
+.gate-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
+.lesson-gate a{color:var(--ui-text)}
+.video-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:14px;color:#f0ecee;text-align:center}
+.video-play-symbol{font-size:34px;color:#dbb774}
+.video-placeholder>span:last-child{font:12px/1.45 Arial,sans-serif;max-width:300px}
+.video-help,.course-source{color:var(--muted);font:12px/1.5 Arial,sans-serif;margin:10px 0 0}
+.course-source a{color:var(--ui-text)}
+.lesson-note{padding:13px 15px;margin:16px 0 0;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;background:var(--ui-surface-alt);color:var(--ui-text);font:13px/1.6 Arial,sans-serif}
+.practice-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.practice-actions>span{flex-basis:100%;font:12px Arial,sans-serif;color:var(--muted)}
+#storageStatus{color:var(--gold)}
+html.dark-mode .school-card-icon,html.dark-mode .school-card-access,html.dark-mode .gate-icon{color:#e7a8b0}
+html.dark-mode .lesson-access,html.dark-mode #storageStatus{color:#e1b057}
+@media(max-width:1000px){.school-navigation{align-items:flex-start;flex-direction:column;gap:12px}.school-course-navigation{width:100%;justify-content:space-between}.learning-layout{grid-template-columns:270px minmax(0,1fr)}.lesson-card{padding:18px}.lesson-actions{grid-template-columns:1fr 1fr}.complete-button{grid-column:1/-1;grid-row:1;min-width:0}}
+@media(max-width:880px){.learning-layout{grid-template-columns:1fr}.lesson-list{max-height:260px}.school-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lesson-heading{flex-wrap:wrap}}
+@media(max-width:620px){.school-card-grid{grid-template-columns:1fr}.school-navigation{padding:12px}.school-course-navigation{flex-direction:column;gap:12px}.school-course-button{font-size:14px;padding:9px 7px}.school-home{font-size:19px}.school-card{padding:17px}.school-card h3{font-size:24px}.lesson-list{max-height:220px}.video-play-symbol{display:none}.video-placeholder{gap:8px}.video-placeholder .beginner-training-button{min-height:38px;padding:8px 12px}.video-placeholder>span:last-child{font-size:11px}.lesson-card h2{font-size:25px}.lesson-gate{padding:22px 15px}}
+html.dark-mode .progress-summary strong{color:#e7a8b0}
