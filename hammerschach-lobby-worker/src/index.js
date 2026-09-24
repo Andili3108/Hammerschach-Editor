@@ -1,3 +1,4 @@
+import {getProgress, saveProgress, deleteProgress} from './videocourse-progress.js';
 import { handleRatingHistoryApi } from './rating-history.js';
 import { ensureLobbyWelcome, newLobbyWelcomeStatement, handleLobbyWelcomeApi } from './lobby-welcome.js';
 import { handleArticleReadsApi, deleteArticleReads } from './article-reads.js';
@@ -8471,6 +8472,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { if (await ensureUserPublicProfilesTable(env)) await env.DB.prepare(`DELETE FROM user_public_profiles WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM gamer_preferences WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  await deleteProgress(env,target.id);
   try { await env.DB.prepare(`DELETE FROM user_onboarding WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM email_notification_log WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM invitation_email_log WHERE sender_user_id = ? OR recipient_user_id = ?`).bind(target.id, target.id).run(); } catch (_) {}
@@ -12889,6 +12891,21 @@ async function handleAuthApi(request, env, url) {
     } catch (error) {
       console.error('Lobby ticker list failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'LOBBY_TICKER_UNAVAILABLE', message:'Der Veranstaltungsticker konnte nicht geladen werden.'}, {status:500});
+    }
+  }
+
+  if (url.pathname === '/api/videocourse-progress' && ['GET','POST'].includes(request.method)) {
+    const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
+    if (!session) return json({ok:false,message:'Bitte zuerst anmelden.'},{status:401});
+    try {
+      if(request.method === 'GET') return json({ok:true,...await getProgress(env,session.user.id)},{headers:{'Cache-Control':'no-store'}});
+      const text = await request.text();
+      if(text.length > 20000) return json({ok:false,message:'Lernstand zu groß.'},{status:413});
+      const result = await saveProgress(env,session.user.id,JSON.parse(text));
+      return json({ok:true,...result},{headers:{'Cache-Control':'no-store'}});
+    } catch(error) {
+      const invalid=error instanceof SyntaxError || error.message==='INVALID_PROGRESS';
+      return json({ok:false,message:invalid?'Ungültiger Lernstand.':'Lernstand konnte nicht synchronisiert werden.'},{status:invalid?400:503});
     }
   }
 
