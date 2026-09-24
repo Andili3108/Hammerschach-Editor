@@ -3580,7 +3580,7 @@ html.mediathek-tool-active .top-layout{display:none!important;}
 .lobby-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch;}
 .lobby-overview:not(:has(>section:not([hidden]))){display:none;}
 .lobby-overview>section{min-width:0;}
-.lobby-overview:has(>section[hidden])>section:not([hidden]){grid-column:1/-1;}
+@media(min-width:1001px){.lobby-overview>#lobbyTicker{grid-column:1;grid-row:1}.lobby-overview>#infoCenterBar{grid-column:2;grid-row:1}}
 .lobby-overview .lobby-tournament-row{display:grid!important;grid-template-columns:minmax(0,1fr);gap:6px 12px;width:100%!important;min-width:0;min-height:44px!important;padding:12px 2px!important;border:0!important;border-top:1px solid rgba(118,95,32,.16)!important;border-radius:0!important;background:transparent!important;color:var(--ui-text)!important;box-shadow:none!important;text-align:left!important;white-space:normal!important;cursor:pointer;}
 .lobby-overview .lobby-tournament-row:first-child{border-top:0!important;}
 .lobby-overview .lobby-tournament-row:hover{background:rgb(var(--ui-line-rgb) / .06)!important;transform:none!important;}
@@ -3665,3 +3665,10 @@ html.visitor-start-view .match-actions{justify-content:center;flex-wrap:wrap;}
 @media(max-width:1000px){
   .info-center-overview-list{height:234px;overflow-y:auto;contain:size;}
 }
+
+/* Turnierbezug im Spielraum, oberhalb von Zugliste und Chat. */
+.room-tournament-notice{display:flex;flex-direction:column;gap:3px;padding:2px 2px 10px;min-width:0;overflow-wrap:anywhere;line-height:1.35;}
+.room-tournament-notice[hidden]{display:none!important}
+.room-tournament-notice strong{color:#87600b;font-size:15px;}
+.room-tournament-notice span{color:var(--ui-muted);font-size:13px;}
+html.dark-mode .room-tournament-notice strong{color:#ddbd73;}
