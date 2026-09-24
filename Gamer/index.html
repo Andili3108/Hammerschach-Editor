@@ -129,7 +129,7 @@
             </div>
           </div>
           <button id="authOpenBtn" class="button-flat name-action-btn" type="button">👤 Registrierung / Login</button>
-          <button id="visitorLearningOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="learningToolView" hidden>🎓 Schachschule</button>
+          <button id="visitorLearningOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-controls="learningToolView" hidden>🎓 Videokurse</button>
           <button id="visitorTrainerOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>🎯 Trainer</button>
           <button id="visitorTrainerProgressHeaderBtn" class="button-flat name-action-btn header-direct-action visitor-header-action trainer-header-action" type="button" aria-controls="trainerToolView" hidden>📊 Lernstand · 0/65</button>
           <button id="visitorPublicGamesOpenBtn" class="button-flat name-action-btn header-direct-action visitor-header-action" type="button" aria-haspopup="dialog" aria-controls="publicGamesBackdrop" hidden>👁️ Laufende Partien</button>
@@ -139,7 +139,7 @@
             </button>
             <div id="toolsMenuPopup" class="header-menu-popup areas-menu-popup" role="menu" aria-label="Werkstatt" hidden>
               <div class="header-menu-section-label">Lernen &amp; Trainieren</div>
-              <button id="learningToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="learningToolView">🎓 Schachschule</button>
+              <button id="learningToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="learningToolView">🎓 Videokurse</button>
               <button id="trainerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="trainerToolView">🎯 Trainer</button>
               <button id="mateSchoolToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="mateSchoolToolView">🧩 Mattbilder-Schule</button>
               <button id="openingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="openingsToolView">📘 Eröffnungsschule</button>
@@ -180,7 +180,7 @@
               <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavVisitorToolsPanel"><span>🔧</span><strong>Werkstatt</strong><i aria-hidden="true">▾</i></button>
               <div id="mobileNavVisitorToolsPanel" class="mobile-nav-accordion-panel" hidden>
                 <div class="mobile-nav-accordion-label">Lernen &amp; Trainieren</div>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Schachschule</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Videokurse</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="trainerToolBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Trainer</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="mateSchoolToolBtn" data-mobile-nav-visitor-only><span>🧩</span><strong>Mattbilder-Schule</strong></button>
               </div>
@@ -253,7 +253,7 @@
               <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavAreasPanel"><span>🔧</span><strong>Werkstatt</strong><i aria-hidden="true">▾</i></button>
               <div id="mobileNavAreasPanel" class="mobile-nav-accordion-panel" hidden>
                 <div class="mobile-nav-accordion-label">Lernen &amp; Trainieren</div>
-                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn"><span>🎓</span><strong>Schachschule</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn"><span>🎓</span><strong>Videokurse</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="trainerToolBtn"><span>🎯</span><strong>Trainer</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="mateSchoolToolBtn"><span>🧩</span><strong>Mattbilder-Schule</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="openingsToolBtn"><span>📘</span><strong>Eröffnungsschule</strong></button>
@@ -270,8 +270,8 @@
       </aside>
     </div>
 
-    <section id="learningToolView" class="learning-tool-view" hidden aria-label="Hammerschach Schachschule">
-      <iframe id="learningToolFrame" class="learning-tool-frame" title="Hammerschach Schachschule" data-src="./Schachlernen/?v=20260922-schachschule-1" loading="lazy"></iframe>
+    <section id="learningToolView" class="learning-tool-view" hidden aria-label="Gamer-Videokurse">
+      <iframe id="learningToolFrame" class="learning-tool-frame" title="Gamer-Videokurse" data-src="./Schachlernen/?v=20260924-videokurse-1" loading="lazy"></iframe>
     </section>
 
     <section id="analyzerToolView" class="analyzer-tool-view" hidden aria-label="Hammerschach-Analyzer">
@@ -622,7 +622,7 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Schachgeschehen“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong>, <strong>„📚 Partienarchiv“</strong> und <strong>„📰 Schach aktuell“</strong>; dort kannst du zwischen Turnierberichten und den Schach-News unterscheiden. In der <strong>„🔧 Werkstatt“</strong> findest du die Schachschule, Trainer, Mattbilder-Schule, Eröffnungsschule, den Player, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Schachgeschehen“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong>, <strong>„📚 Partienarchiv“</strong> und <strong>„📰 Schach aktuell“</strong>; dort kannst du zwischen Turnierberichten und den Schach-News unterscheiden. In der <strong>„🔧 Werkstatt“</strong> findest du die Videokurse, Trainer, Mattbilder-Schule, Eröffnungsschule, den Player, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
           <p>Die Schach-News sind für Besucher vollständig und ohne Registrierung lesbar. Im mittig angeordneten Dropdown „Schach-News“ wählst du den gewünschten Artikel aus.</p>
 
           <h4>4. Eine Partie beginnen</h4>
@@ -653,7 +653,7 @@
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
-          <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login enthält die <strong>„🔧 Werkstatt“</strong> die Bereiche <strong>„🎓 Schachschule“</strong>, <strong>„🎯 Trainer“</strong> und <strong>„🧩 Mattbilder-Schule“</strong>. Außerdem stehen laufende Partien sowie unter <strong>„♜ Schachgeschehen“</strong> der <strong>Ergebnisdienst</strong>, das <strong>Partienarchiv</strong> und <strong>„📰 Schach aktuell“</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein. Jede Partie ist öffentlich; ein gültiger Partie- oder Zuschauerlink öffnet den benötigten Spielraum auch ohne vorherigen Login direkt.</p>
+          <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login enthält die <strong>„🔧 Werkstatt“</strong> die Bereiche <strong>„🎓 Videokurse“</strong>, <strong>„🎯 Trainer“</strong> und <strong>„🧩 Mattbilder-Schule“</strong>. Außerdem stehen laufende Partien sowie unter <strong>„♜ Schachgeschehen“</strong> der <strong>Ergebnisdienst</strong>, das <strong>Partienarchiv</strong> und <strong>„📰 Schach aktuell“</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein. Jede Partie ist öffentlich; ein gültiger Partie- oder Zuschauerlink öffnet den benötigten Spielraum auch ohne vorherigen Login direkt.</p>
           <p>Im Dropdown <strong>„👥 Mitglieder“</strong> stehen unter der Überschrift <strong>„INFORMATIONEN“</strong> die Punkte <strong>„🚀 Erste Schritte“</strong>, <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Der Gamer zeigt die Empfängeradresse nach der Registrierung und nach einem wegen ausstehender Bestätigung abgewiesenen Login erneut an. Dort kann eine fehlerhafte Adresse korrigiert oder eine neue Bestätigungsmail angefordert werden.</p>
@@ -770,14 +770,14 @@
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
-          <h4>18. Schachschule</h4>
-          <p>Über <strong>„🔧 Werkstatt“ → „🎓 Schachschule“</strong> öffnest du sechs Videokurse direkt im Gamer: Unter <strong>„Nach Spielstärke“</strong> findest du den bisherigen Grundkurs <strong>„Schach lernen“</strong>, <strong>Einsteiger</strong> und <strong>Fortgeschrittene</strong>; unter <strong>„Nach Thema“</strong> stehen <strong>Eröffnungen</strong>, <strong>Mittelspiel</strong> und <strong>Endspiel</strong>. Die 96 Lektionen stammen aus der Andili-Auswahl. Videos werden erst mit „Video laden“ eingebunden und starten nicht automatisch. Jede Lektion kann als erledigt markiert werden. Fortschritt und letzte Lektion werden nur in diesem Browser gespeichert, für Besucher und Gamer-Konten getrennt. Der bisherige Grundkurs-Lernstand wird übernommen; beim ersten Öffnen mit einem Gamer-Konto wird auch der vorhandene Besucher-Lernstand übernommen. Über „Diesen Kurs zurücksetzen“ wird nur der ausgewählte Kurs zurückgesetzt.</p>
+          <h4>18. Videokurse</h4>
+          <p>Über <strong>„🔧 Werkstatt“ → „🎓 Videokurse“</strong> öffnest du sechs Videokurse direkt im Gamer: Unter <strong>„Nach Spielstärke“</strong> findest du den bisherigen Grundkurs <strong>„Schach lernen“</strong>, <strong>Einsteiger</strong> und <strong>Fortgeschrittene</strong>; unter <strong>„Nach Thema“</strong> stehen <strong>Eröffnungen</strong>, <strong>Mittelspiel</strong> und <strong>Endspiel</strong>. Die 96 Lektionen stammen aus der Andili-Auswahl. Videos werden erst mit „Video laden“ eingebunden und starten nicht automatisch. Jede Lektion kann als erledigt markiert werden. Fortschritt und letzte Lektion werden nur in diesem Browser gespeichert, für Besucher und Gamer-Konten getrennt. Der bisherige Grundkurs-Lernstand wird übernommen; beim ersten Öffnen mit einem Gamer-Konto wird auch der vorhandene Besucher-Lernstand übernommen. Über „Diesen Kurs zurücksetzen“ wird nur der ausgewählte Kurs zurückgesetzt.</p>
           <p>Nach Abschluss aller zehn Lektionen führt <strong>„🎯 Anfängertraining starten“</strong> ohne Umweg in den geführten Lernpfad. Der Trainer beginnt mit Matt in einem Zug und steigert die Anforderungen blockweise.</p>
           <p>Der Grundkurs steht auch ohne Registrierung zur Verfügung. Der Gamer-Header bleibt sichtbar. Besucher kehren mit <strong>„↩️ Zur Startseite“</strong> zurück; angemeldete Mitglieder schließen den Lernbereich mit <strong>„↩️ Zur Lobby“</strong>. Während eines geöffneten Spiel- oder Zuschauerraums wird der Lernkurs nicht parallel eingeblendet.</p>
 
           <h4>19. Der integrierte Analyzer</h4>
           <p>Über <strong>„🔧 Werkstatt“ → „🧠 Analyzer“</strong> öffnest du das Analysebrett direkt innerhalb des Hammerschach-Gamers. Es wird kein neuer Browser-Tab geladen; der Gamer-Header bleibt sichtbar und das Statusfeld zeigt <strong>„Hammerschach - Analyzer“</strong>. Gleichzeitig wird <strong>„♟️ Neue Partie“</strong> durch <strong>„↩️ Zur Lobby“</strong> ersetzt. Damit schließt du den Analyzer wieder und kehrst ohne Neuladen direkt in die Lobby beziehungsweise zur vorherigen Startansicht zurück.</p>
-          <p>Der Grundkurs „Schach lernen“ und der Trainer stehen auch Besuchern vollständig zur Verfügung. In der Schachschule sind außerdem alle sieben Einsteiger-Grundlagen und jeweils die erste Lektion von Fortgeschrittene, Eröffnungen, Mittelspiel und Endspiel frei zugänglich. Alle weiteren Lektionen bleiben als Vorschau sichtbar und öffnen bei Bedarf die bestehende Registrierung oder Anmeldung. Angemeldete Gamer-Mitglieder haben vollständigen Zugang zu allen Kursen; die Mitgliedschaft ist kostenlos. Player, Analyzer, Schachlabor und Eröffnungsschule bleiben eingeloggten Mitgliedern vorbehalten. Wird eine geschützte Werkstatt-Funktion aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch die gewählte Funktion. Die Partie bleibt serverseitig bestehen; die Funktion wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt die gerade aktive Funktion wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
+          <p>Der Grundkurs „Schach lernen“ und der Trainer stehen auch Besuchern vollständig zur Verfügung. Bei den Videokursen sind außerdem alle sieben Einsteiger-Grundlagen und jeweils die erste Lektion von Fortgeschrittene, Eröffnungen, Mittelspiel und Endspiel frei zugänglich. Alle weiteren Lektionen bleiben als Vorschau sichtbar und öffnen bei Bedarf die bestehende Registrierung oder Anmeldung. Angemeldete Gamer-Mitglieder haben vollständigen Zugang zu allen Kursen; die Mitgliedschaft ist kostenlos. Player, Analyzer, Schachlabor und Eröffnungsschule bleiben eingeloggten Mitgliedern vorbehalten. Wird eine geschützte Werkstatt-Funktion aus dem eigenen Spielraum gewählt, verlässt der Gamer den Raum über denselben sicheren Wechsel wie bei <strong>„↩️ Zur Lobby“</strong> und öffnet anschließend automatisch die gewählte Funktion. Die Partie bleibt serverseitig bestehen; die Funktion wird nicht parallel im Spielraum geöffnet. Ein Browser-Reload stellt die gerade aktive Funktion wieder her; <strong>„↩️ Zur Lobby“</strong> beendet diese Wiederherstellung bewusst. Über die Gamer-Verbindung können weiterhin ausschließlich beendete Partien direkt in den Analyzer geladen werden.</p>
           <ul>
             <li><strong>Brett und Werkzeugleiste:</strong> Das Analysebrett entspricht in Größe und Bedienung dem Gamer-Brett. Figuren werden durch Anklicken bewegt. Unter dem Brett kannst du es drehen, den letzten Zug zurücknehmen und die aktuell geöffnete Partie über <strong>„Speichern“</strong> als PGN-Datei herunterladen. Brettfarbe, Figurensatz, Größe und Farbschema stellst du über das zentrale Zahnrad des Gamers ein.</li>
             <li><strong>Rechte Spalte:</strong> Mit <strong>„Zugliste“</strong>, <strong>„Engine“</strong> und <strong>„Partie“</strong> wechselst du zwischen den drei Arbeitsbereichen. Das Brett und die aktuelle Stellung bleiben beim Umschalten unverändert.</li>
@@ -929,7 +929,7 @@
 
           <h4>2. Nutzung ohne Account</h4>
           <p>Live-Partien können über einen Einladungslink auch als Gast gespielt werden. Dabei werden ein Gastname, eine zufällig erzeugte Spielerkennung, der belegte Spielerplatz sowie die für die Partie erforderlichen Verbindungs- und Spieldaten verarbeitet. Gäste können keine eigenen Einladungen erstellen und Daily Chess nicht als Spieler verwenden.</p>
-          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbaren Bereichs-Sitzungen. Die Schachschule speichert die zuletzt geöffneten und die als erledigt markierten Lektionen lokal, getrennt nach Besucher und Gamer-Konto; das Anfängertraining speichert Lernblöcke, gemeisterte Aufgaben und die persönliche Fehlerliste; die Mattbilder-Schule merkt sich das zuletzt geöffnete Kapitel und die gewählte Mattnetz-Anzeige; das Schachlabor speichert die zuletzt bearbeitete Stellung und seine lokalen Optionen; die Eröffnungsschule speichert das auf diesem Gerät markierte Repertoire und den lokalen Übungsfortschritt. Bei Nutzung der ausschließlich für den Administrator zugänglichen Fairplay-Prüfung werden bereits berechnete Stockfish-Ergebnisse lokal zwischengespeichert, damit eine Partie nicht nach jedem Neuladen erneut berechnet werden muss. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Bereichs-Sitzungen, Lern- und Eröffnungsfortschritt sowie die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
+          <p>Im Browser werden technisch notwendige Einstellungen gespeichert, unter anderem Spielerkennung, Gastname, Brettdarstellung, Ton, bevorzugte Farbe, Spielmodus sowie die lokal wiederherstellbaren Bereichs-Sitzungen. Die Videokurse speichern die zuletzt geöffneten und die als erledigt markierten Lektionen lokal, getrennt nach Besucher und Gamer-Konto; das Anfängertraining speichert Lernblöcke, gemeisterte Aufgaben und die persönliche Fehlerliste; die Mattbilder-Schule merkt sich das zuletzt geöffnete Kapitel und die gewählte Mattnetz-Anzeige; das Schachlabor speichert die zuletzt bearbeitete Stellung und seine lokalen Optionen; die Eröffnungsschule speichert das auf diesem Gerät markierte Repertoire und den lokalen Übungsfortschritt. Bei Nutzung der ausschließlich für den Administrator zugänglichen Fairplay-Prüfung werden bereits berechnete Stockfish-Ergebnisse lokal zwischengespeichert, damit eine Partie nicht nach jedem Neuladen erneut berechnet werden muss. Dafür verwendet der Gamer <code>localStorage</code> und <code>sessionStorage</code>. Diese Einträge kannst du über die Browserfunktionen löschen; danach können lokale Einstellungen, Bereichs-Sitzungen, Lern- und Eröffnungsfortschritt sowie die Wiedererkennung eines Gast-Spielerplatzes verloren gehen.</p>
           <p>Für Hinweise auf ungelesene Schach-News und Turnierberichte merkt sich der Gamer die Kennungen bereits geöffneter Berichte. Bei Besuchern bleibt dieser Lesestand im jeweiligen Browser. Bei angemeldeten Mitgliedern wird er zusätzlich dem Benutzerkonto zugeordnet auf dem Server gespeichert und zwischen Geräten abgeglichen; im Browser werden der zuletzt bekannte Stand und noch nicht übertragene Markierungen zwischengespeichert. Lesezeiten werden dafür nicht erfasst. Beim Löschen des Accounts wird der serverseitige Lesestand entfernt. Lokale Lesemarkierungen lassen sich über die Browserfunktionen löschen.</p>
 
           <h4>3. Registrierung, Account und Login</h4>
@@ -2577,7 +2577,7 @@
 <script src="js/league-standings.js?v=20260917-theme-3"></script>
 <script src="Mediathek/catalog.js?v=20260917-theme-3"></script>
 <script src="js/mediathek.js?v=20260917-theme-3"></script>
-<script src="js/embedded-tools.js?v=20260922-schachschule-1"></script>
+<script src="js/embedded-tools.js?v=20260924-videokurse-1"></script>
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
 <script src="js/lobby-welcome.js?v=20260919-welcome-1"></script>
 <script src="js/global-chat-lobby.js?v=20260919-playercard-1"></script>
@@ -2598,7 +2598,7 @@
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
 <script src="js/rating-history.js?v=20260920-profile-1"></script>
-<script src="js/auth-account.js?v=20260922-schachschule-1"></script>
+<script src="js/auth-account.js?v=20260924-videokurse-1"></script>
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260917-theme-3"></script>
 <script src="js/live-tournaments.js?v=20260917-theme-3"></script>
@@ -2614,7 +2614,7 @@
 <script src="js/info-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/policy-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/online-room-utils.js?v=20260917-theme-3"></script>
-<script src="js/online-ui-state.js?v=20260922-schachschule-1"></script>
+<script src="js/online-ui-state.js?v=20260924-videokurse-1"></script>
 <script src="js/member-directory.js?v=20260920-profile-1"></script>
 <script src="js/member-hovercard.js?v=20260920-profile-1"></script>
 <script src="js/member-games.js?v=20260920-profile-1"></script>
@@ -2646,7 +2646,7 @@
 <script src="js/article-read-ui.js?v=20260919-cloudflare-2"></script>
 <script src="js/app-startup.js?v=20260918-account-recovery-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
-<script src="js/mobile-navigation.js?v=20260922-schachschule-1"></script>
+<script src="js/mobile-navigation.js?v=20260924-videokurse-1"></script>
 <script src="js/room-games-layout.js?v=20260917-theme-3"></script>
 <script defer src="js/gamer-settings.js?v=20260917-theme-3"></script>
 </body>
