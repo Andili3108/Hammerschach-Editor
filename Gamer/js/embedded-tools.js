@@ -906,6 +906,22 @@ window.addEventListener('message',async event=>{
     return;
   }
   if(fromLearning){
+    if(message.type==='hammerschach-learning-progress'){
+      const user='member:'+String(onlineAuthUser&&onlineAuthUser.id||'');
+      const token=onlineAuthToken;
+      if(!token||!onlineAuthUser||message.user!==user||!['GET','POST'].includes(message.method))return;
+      try{
+        const options=message.method==='POST'?{method:'POST',body:JSON.stringify(message.payload)}:undefined;
+        const data=await authApi('/api/videocourse-progress',options);
+        if(token===onlineAuthToken&&user==='member:'+String(onlineAuthUser&&onlineAuthUser.id||''))
+          postLearningToolMessage({type:'hammerschach-learning-progress-result',requestId:message.requestId,user,ok:true,data});
+      }catch(_){
+        if(token===onlineAuthToken&&user==='member:'+String(onlineAuthUser&&onlineAuthUser.id||''))
+          postLearningToolMessage({type:'hammerschach-learning-progress-result',requestId:message.requestId,user,ok:false});
+      }
+      return;
+    }
+
     if(message.type==='hammerschach-learning-ready'){
       postLearningToolContext();
       postLearningToolMessage({type:'hammerschach-learning-visibility',visible:learningToolActive});
