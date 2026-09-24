@@ -312,6 +312,7 @@ function hasTournamentViewerAccess(){
   return !!(onlineAuthToken && onlineAuthUser);
 }
 function updateAuthUi(){
+  if(typeof renderLobbyTournaments === 'function') renderLobbyTournaments();
   window.HammerschachArticleReads?.refreshIdentity();
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const isAdmin = !!(loggedIn && onlineAuthUser.isAdmin === true);

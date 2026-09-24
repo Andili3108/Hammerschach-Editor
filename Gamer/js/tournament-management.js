@@ -52,7 +52,21 @@ async function loadTournaments(options){
     if(typeof renderLobbyTournaments === 'function') renderLobbyTournaments();
     return [];
   }
-  const data = await authApi('/api/tournaments');
+  const requestToken = onlineAuthToken;
+  lobbyTournamentLoadState = 'loading';
+  renderLobbyTournaments();
+  let data;
+  try{
+    data = await authApi('/api/tournaments');
+  } catch(error){
+    if(requestToken === onlineAuthToken){
+      lobbyTournamentLoadState = 'error';
+      renderLobbyTournaments();
+    }
+    throw error;
+  }
+  if(requestToken !== onlineAuthToken) return [];
+
   if(hasTournamentAdminAccess()){
     try{
       const migrationKey = 'hammerschachTournamentServerMigrationV1';
@@ -71,6 +85,8 @@ async function loadTournaments(options){
       }
     } catch(_){ }
   }
+  if(requestToken !== onlineAuthToken) return [];
+  lobbyTournamentLoadState = 'loaded';
   tournamentItems = (Array.isArray(data.tournaments) ? data.tournaments : []).map((item,index) => normalizeLocalTournament(item,index)).filter(Boolean);
   tournamentUnreadCount = Number(data.unreadCount || 0);
   updateTournamentNotificationUi();

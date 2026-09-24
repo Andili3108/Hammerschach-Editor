@@ -1,6 +1,9 @@
 'use strict';
 
+let lobbyTournamentLoadState = 'loading';
+
 function clearLobbyTicker(){
+  lobbyTournamentLoadState = 'loading';
   if(lobbyTickerList) lobbyTickerList.innerHTML = '';
   if(lobbyTicker) lobbyTicker.hidden = true;
 }
@@ -96,8 +99,17 @@ function renderLobbyTournaments(){
   const focusedId = lobbyTickerList.contains(document.activeElement)
     ? document.activeElement.dataset.tournamentId : null;
   lobbyTickerList.innerHTML = '';
-  lobbyTicker.hidden = items.length < 1;
-  if(!items.length) return;
+  lobbyTicker.hidden = false;
+  lobbyTicker.setAttribute('aria-busy', String(lobbyTournamentLoadState === 'loading'));
+  if(!items.length){
+    const empty = document.createElement('div');
+    empty.className = 'lobby-tournaments-empty';
+    empty.textContent = lobbyTournamentLoadState === 'loading' ? 'Turniere werden geladen …'
+      : lobbyTournamentLoadState === 'error' ? 'Turniere konnten nicht geladen werden. Bitte öffne „Alle Turniere“ erneut.'
+      : 'Zurzeit sind keine offenen oder laufenden Turniere vorhanden.';
+    lobbyTickerList.appendChild(empty);
+    return;
+  }
   const fragment = document.createDocumentFragment();
   items.forEach(tournament => fragment.appendChild(renderLobbyTournamentRow(tournament)));
   lobbyTickerList.appendChild(fragment);

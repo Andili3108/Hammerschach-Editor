@@ -1,5 +1,7 @@
 'use strict';
 
+let onlineTournamentContext = null;
+
 function connectOnlineRoom(roomId, opts){
   opts = opts || {};
   if(typeof opts.spectatorOnly === 'boolean') onlineSpectatorOnly = opts.spectatorOnly;
@@ -14,6 +16,7 @@ function connectOnlineRoom(roomId, opts){
   const previousRoomId = onlineRoomId;
   const restoringInterruptedConnection = !!(opts.reconnect && previousRoomId === roomId && (onlineConnectionState === 'closed' || onlineConnectionState === 'error'));
   if(previousRoomId !== roomId) resetChatMessages();
+  onlineTournamentContext = null;
   onlineRoomId = roomId;
   updateAnalyzerToolAvailability();
   onlineRoleCode = 'local';
@@ -190,6 +193,14 @@ function connectOnlineRoom(roomId, opts){
 
     const incomingRoom = extractOnlineRoom(msg);
     if(incomingRoom){ onlineRoomId = cleanRoomId(incomingRoom) || onlineRoomId; handled = true; }
+
+    if(Object.prototype.hasOwnProperty.call(msg, 'tournament')){
+      onlineTournamentContext = msg.tournament && msg.tournament.id
+        ? {roomId:onlineRoomId, ...msg.tournament} : null;
+      handled = true;
+    } else if(['room_state','hello_state','state','sync','game_state'].includes(msg.type)){
+      onlineTournamentContext = null;
+    }
 
     const incomingRole = extractOnlineRole(msg);
     if(incomingRole){

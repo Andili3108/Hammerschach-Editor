@@ -202,7 +202,25 @@ function updateOnlineStartButton(){
   }
   startOnlineBtn.title = canStart ? 'Live-Partie mit der gewählten Bedenkzeit starten.' : (timeMode ? 'Partiestart ist noch nicht möglich.' : 'Bitte zuerst eine Bedenkzeit auswählen.');
 }
+function updateRoomTournamentNotice(){
+  const notice = document.getElementById('roomTournamentNotice');
+  if(!notice) return;
+  const context = onlineTournamentContext;
+  const visible = !!(onlineRoomId && context && context.roomId === onlineRoomId && context.id && !embeddedToolActive());
+  notice.hidden = !visible;
+  document.getElementById('roomTournamentTitle').textContent = visible ? '🏆 ' + (context.name || 'Turnier') : '';
+  const details = document.getElementById('roomTournamentDetails');
+  const parts = [];
+  if(visible){
+    if(context.roundLabel) parts.push(context.roundLabel);
+    else if(Number(context.roundNumber) > 0) parts.push('Runde ' + Number(context.roundNumber));
+    if(context.positionId !== null && context.positionId !== undefined && Number.isInteger(Number(context.positionId))) parts.push('Position ' + Number(context.positionId));
+  }
+  details.textContent = parts.join(' · ');
+  details.hidden = !parts.length;
+}
 function updateOnlineUi(){
+  updateRoomTournamentNotice();
   refreshBoardMemberLinks();
   updateVisitorLandingUi();
   if(!onlineRoomId){
