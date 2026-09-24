@@ -17869,6 +17869,13 @@ export class GameRoom {
       game,
       rating,
       headToHead,
+      tournament: tournamentMeta && tournamentMeta.tournamentId ? {
+        id:String(tournamentMeta.tournamentId).slice(0,128),
+        name:cleanTournamentName(tournamentMeta.tournamentName),
+        roundLabel:String(tournamentMeta.roundLabel || '').slice(0,80),
+        roundNumber:Number(tournamentMeta.roundNumber || 0),
+        positionId:gameSetup && gameSetup.variant === GAME_VARIANT_FREESTYLE ? gameSetup.positionId : null
+      } : null,
       rematch,
       gameReactions,
       gameMoment,
