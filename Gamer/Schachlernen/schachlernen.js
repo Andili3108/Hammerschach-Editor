@@ -140,7 +140,7 @@
   }
   function renderCourse(){
     const index=course.lessons.indexOf(lesson),done=doneCount(course),completed=state.completed.includes(lesson.id),open=allowed();
-    $('courseEyebrow').textContent=course.group+' · Hammerschach-Schachschule';
+    $('courseEyebrow').textContent=course.group+' · Gamer-Videokurse';
     $('courseTitle').textContent=course.title;$('courseIntro').textContent=course.description;
     $('progressValue').textContent=done+' von '+course.lessons.length;
     $('progressTrack').setAttribute('aria-valuemax',course.lessons.length);

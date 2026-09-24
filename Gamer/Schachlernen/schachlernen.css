@@ -145,7 +145,7 @@ html.dark-mode .course-next-step h3{color:var(--ui-text)}
 html.dark-mode .course-next-step p{color:var(--ui-muted)}
 @media(max-width:680px){.course-next-step{align-items:stretch;flex-direction:column}.beginner-training-button{width:100%}}
 
-/* Schachschule: dieselben Gamer-Farben, sechs Kurse, ein gemeinsamer Lernstand. */
+/* Videokurse: dieselben Gamer-Farben, sechs Kurse, ein gemeinsamer Lernstand. */
 [hidden]{display:none!important}
 .school-navigation{display:flex;align-items:center;gap:22px;padding:15px 18px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
 .school-home{flex-shrink:0;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--ui-surface-alt);color:var(--ui-text);font-size:20px;font-weight:900}
@@ -205,3 +205,6 @@ html.dark-mode .lesson-access,html.dark-mode #storageStatus{color:#e1b057}
 @media(max-width:880px){.learning-layout{grid-template-columns:1fr}.lesson-list{max-height:260px}.school-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.lesson-heading{flex-wrap:wrap}}
 @media(max-width:620px){.school-card-grid{grid-template-columns:1fr}.school-navigation{padding:12px}.school-course-navigation{flex-direction:column;gap:12px}.school-course-button{font-size:14px;padding:9px 7px}.school-home{font-size:19px}.school-card{padding:17px}.school-card h3{font-size:24px}.lesson-list{max-height:220px}.video-play-symbol{display:none}.video-placeholder{gap:8px}.video-placeholder .beginner-training-button{min-height:38px;padding:8px 12px}.video-placeholder>span:last-child{font-size:11px}.lesson-card h2{font-size:25px}.lesson-gate{padding:22px 15px}}
 html.dark-mode .progress-summary strong{color:#e7a8b0}
+
+/* Ohne Speicherhinweis bleibt unter den Kursen keine zusätzliche Zeile. */
+#storageStatus:empty{display:none}
