@@ -162,15 +162,15 @@
     $('lessonGoals').textContent='';
     lesson.goals.forEach(goal=>{const li=document.createElement('li');li.textContent=goal;$('lessonGoals').append(li);});
     $('completeLessonBtn').disabled=!open;
-    $('completeLessonBtn').textContent=completed?'✓ Erledigt · Rückgängig':'✓ Als erledigt markieren';
+    $('completeLessonBtn').textContent=completed?'✓ Erledigt · Rückgängig':'Als erledigt markieren';
     $('completeLessonBtn').classList.toggle('completed',completed);
+    $('completeLessonBtn').setAttribute('aria-pressed',String(completed));
     $('previousLessonBtn').disabled=index===0;$('nextLessonBtn').disabled=index===course.lessons.length-1;
     $('lessonFeedback').textContent=completed&&open?'Du hast diese Lektion als erledigt markiert.':'';
     $('courseSourceLink').href=course.source;
     $('courseNextStep').hidden=done!==course.lessons.length;
     $('courseNextStepText').textContent=course.id==='grundkurs'?'Dein Grundkurs ist abgeschlossen. Vertiefe dein Wissen im Kurs „Einsteiger“ oder übe im Trainer.':'Du hast alle Lektionen dieses Kurses markiert. Entdecke ein weiteres Thema oder vertiefe das Gelernte im Trainer.';
     $('nextCourseBtn').textContent=course.id==='grundkurs'?'Einsteiger öffnen →':'Alle Kurse entdecken →';
-    document.querySelector('.practice-actions').hidden=!embedded;
     renderLessonList();renderStorage();
   }
   function render(){
@@ -199,8 +199,6 @@
   $('lessonLoginBtn').addEventListener('click',()=>send({type:'hammerschach-learning-open-auth',mode:'login'}));
   $('lessonRegisterBtn').addEventListener('click',()=>send({type:'hammerschach-learning-open-auth',mode:'register'}));
   $('standaloneLoginLink').addEventListener('click',()=>{try{sessionStorage.setItem('hammerschachActiveEmbeddedToolV1','learning');}catch(_){}});
-  $('openBeginnerTrainingBtn').addEventListener('click',()=>send({type:'hammerschach-learning-open-trainer',mode:course.id==='grundkurs'||course.id==='einsteiger'?'coach':'free'}));
-  $('openMateSchoolBtn').addEventListener('click',()=>send({type:'hammerschach-learning-open-mate-school'}));
   $('nextCourseBtn').addEventListener('click',()=>course.id==='grundkurs'?openCourse('einsteiger'):goOverview(true));
   $('lessonDirectory').addEventListener('toggle',reportHeight);
   window.addEventListener('message',event=>{
