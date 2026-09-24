@@ -10,6 +10,19 @@
   let member=false,identity='visitor',visible=!embedded,storageAvailable=true;
   let course=null,lesson=null,lastHeight=0,heightPending=false;
   let state=loadState();
+  let savedState=model.clean(state),syncStatus='local';
+  const requests=new Map();
+  const sync=window.HammerschachProgressSync.create({
+    clean:model.clean,storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
+    request:(method,payload,user)=>new Promise((resolve,reject)=>{
+      const requestId=Date.now().toString(36)+Math.random().toString(36).slice(2);
+      const timer=setTimeout(()=>{requests.delete(requestId);reject(new Error('timeout'));},15000);
+      requests.set(requestId,{resolve,reject,timer,user});
+      send({type:'hammerschach-learning-progress',requestId,user,method,payload});
+    }),
+    onState:next=>{const changed=JSON.stringify(state)!==JSON.stringify(next);state=next;savedState=model.clean(state);saveState(false);if(changed)render();},
+    onStatus:status=>{syncStatus=status;renderStorage();}
+  });
   function read(key){try{return JSON.parse(localStorage.getItem(key)||'null');}catch(_){return null;}}
   function loadState(){
     const saved=read(STORAGE_PREFIX+identity);
@@ -18,16 +31,20 @@
     try{localStorage.setItem(STORAGE_PREFIX+identity,JSON.stringify(migrated));}catch(_){storageAvailable=false;}
     return migrated;
   }
-  function saveState(){
+  function saveState(upload=true,explicit={}){
+    if(upload&&member)sync.record(savedState,state,explicit);
+    savedState=model.clean(state);
     try{localStorage.setItem(STORAGE_PREFIX+identity,JSON.stringify(state));storageAvailable=true;}
     catch(_){storageAvailable=false;}
     renderStorage();
   }
   function renderStorage(){
-    $('storageStatus').textContent=storageAvailable?'':'Dein Browser kann den Lernstand gerade nicht dauerhaft speichern.';
-    $('storageNote').textContent=storageAvailable
-      ? (member?'Dein Lernstand wird für dein Gamer-Konto nur in diesem Browser gespeichert.':'Dein Besucher-Lernstand wird nur in diesem Browser gespeichert.')+' „Erledigt“ ist deine eigene Markierung.'
-      : 'Der Lernstand bleibt nur für diese geöffnete Seite erhalten.';
+    const waiting=member&&syncStatus!=='synced';
+    $('storageStatus').textContent=!storageAvailable?'Dein Browser kann Änderungen nicht dauerhaft zwischenspeichern.':
+      member&&syncStatus==='offline'?'Noch nicht synchronisiert. Änderungen werden bei bestehender Verbindung erneut übertragen.':'';
+    $('storageNote').textContent=member
+      ? (waiting?'Dein Lernstand wird mit deinem Gamer-Konto abgeglichen.':'Dein Lernstand ist mit deinem Gamer-Konto synchronisiert und auf anderen Geräten verfügbar.')+' „Erledigt“ ist deine eigene Markierung.'
+      : 'Dein Besucher-Lernstand wird nur in diesem Browser gespeichert. „Erledigt“ ist deine eigene Markierung.';
   }
   function send(message){
     if(embedded)window.parent.postMessage(message,location.origin==='null'?'*':location.origin);
@@ -188,11 +205,11 @@
   $('completeLessonBtn').addEventListener('click',()=>{
     if(!allowed())return;
     state=model.toggle(state,lesson.id,member);saveState();render();
-    $('lessonFeedback').textContent=state.completed.includes(lesson.id)?(storageAvailable?'Geschafft! Dein Lernstand wurde in diesem Browser gespeichert.':'Geschafft! Die Markierung gilt für diese geöffnete Seite.'):'Die Lektion ist wieder offen.';
+    $('lessonFeedback').textContent=state.completed.includes(lesson.id)?(member?'Als erledigt markiert. Der Konto-Abgleich läuft automatisch.':storageAvailable?'Geschafft! Dein Lernstand wurde in diesem Browser gespeichert.':'Geschafft! Die Markierung gilt für diese geöffnete Seite.'):'Die Lektion ist wieder offen.';
   });
   $('resetProgressBtn').addEventListener('click',()=>{
     if(!course||!window.confirm('Möchtest du nur den Lernstand im Kurs „'+course.title+'“ zurücksetzen? Die anderen Kurse bleiben erhalten.'))return;
-    state=model.reset(state,course.id);saveState();openCourse(course.id,course.lessons[0].id,false);
+    state=model.reset(state,course.id);saveState(true,Object.fromEntries(course.lessons.map(entry=>['done:'+entry.id,false])));openCourse(course.id,course.lessons[0].id,false);
     $('lessonFeedback').textContent='Der Lernstand dieses Kurses wurde zurückgesetzt.';
   });
   $('lessonLoginBtn').addEventListener('click',()=>send({type:'hammerschach-learning-open-auth',mode:'login'}));
@@ -203,22 +220,33 @@
   window.addEventListener('message',event=>{
     if(!embedded||event.source!==window.parent||event.origin!==location.origin)return;
     const message=event.data&&typeof event.data==='object'?event.data:{};
+    if(message.type==='hammerschach-learning-progress-result'){
+      const pending=requests.get(message.requestId);
+      if(pending&&pending.user===identity&&message.user===identity){
+        clearTimeout(pending.timer);requests.delete(message.requestId);
+        if(message.ok)pending.resolve(message.data);else pending.reject(new Error('sync failed'));
+      }
+      return;
+    }
     if(message.type==='hammerschach-learning-context'){
       const nextMember=message.loggedIn===true;
       const nextIdentity=nextMember?'member:'+String(message.userId||message.username||'local'):'visitor';
       if(member!==nextMember||identity!==nextIdentity){
-        member=nextMember;identity=nextIdentity;state=loadState();stopVideo();
-        if(course){state.current[course.id]=lesson.id;state.lastCourse=course.id;saveState();}
+        sync.start(null,state);
+        for(const pending of requests.values()){clearTimeout(pending.timer);pending.reject(new Error('identity changed'));}requests.clear();
+        member=nextMember;identity=nextIdentity;state=loadState();savedState=model.clean(state);stopVideo();
+        sync.start(member?identity:null,state);
         render();
       }
       reportHeight();
     }
     if(message.type==='hammerschach-learning-visibility'){
-      visible=message.visible===true;if(!visible)stopVideo();else reportHeight();
+      visible=message.visible===true;if(!visible)stopVideo();else {reportHeight();if(member)sync.flush();}
     }
   });
   window.addEventListener('storage',event=>{
-    if(event.key===STORAGE_PREFIX+identity||event.key===null){state=model.clean(read(STORAGE_PREFIX+identity));render();}
+    if(member){if(event.key===null||event.key===STORAGE_PREFIX+identity||event.key==='hammerschachSchoolPendingV1:'+identity)sync.flush();return;}
+    if(event.key===STORAGE_PREFIX+identity||event.key===null){state=model.clean(read(STORAGE_PREFIX+identity));savedState=model.clean(state);render();}
   });
   function restoreRoute(hash){
     const route=model.route(hash);
@@ -226,6 +254,9 @@
   }
   window.addEventListener('hashchange',()=>restoreRoute(location.hash));
   window.addEventListener('resize',reportHeight,{passive:true});
+  window.addEventListener('online',()=>sync.flush());
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&member)sync.flush();});
+  setInterval(()=>{if(member&&visible&&!document.hidden)sync.flush();},20000);
   if(typeof ResizeObserver==='function')new ResizeObserver(reportHeight).observe(document.querySelector('.learning-app'));
   let initialHash=location.hash;
   if(!initialHash){try{initialHash=sessionStorage.getItem(ROUTE_KEY)||'';}catch(_){}}
