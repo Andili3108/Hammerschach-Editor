@@ -155,7 +155,7 @@
     $('lessonGate').hidden=open;$('videoShell').hidden=!open;$('videoHelp').hidden=!open;
     $('lessonLoginBtn').hidden=!embedded;$('lessonRegisterBtn').hidden=!embedded;$('standaloneLoginLink').hidden=embedded;
     if(!open)stopVideo();
-    $('videoAuthor').textContent=lesson.author==='Andili-Videoauswahl'?'Videotraining · Andili-Auswahl':'Videotraining mit '+lesson.author;
+    $('videoAuthor').textContent=lesson.author?'Videotraining mit '+lesson.author:'Videotraining';
     $('lessonVideo').title=lesson.title+' – Videotraining';
     if(open)$('videoExternalLink').href='https://www.youtube.com/watch?v='+lesson.video;else $('videoExternalLink').removeAttribute('href');
     $('lessonNote').textContent=lesson.note||'';$('lessonNote').hidden=!lesson.note;
@@ -167,7 +167,6 @@
     $('completeLessonBtn').setAttribute('aria-pressed',String(completed));
     $('previousLessonBtn').disabled=index===0;$('nextLessonBtn').disabled=index===course.lessons.length-1;
     $('lessonFeedback').textContent=completed&&open?'Du hast diese Lektion als erledigt markiert.':'';
-    $('courseSourceLink').href=course.source;
     $('courseNextStep').hidden=done!==course.lessons.length;
     $('courseNextStepText').textContent=course.id==='grundkurs'?'Dein Grundkurs ist abgeschlossen. Vertiefe dein Wissen im Kurs „Einsteiger“ oder übe im Trainer.':'Du hast alle Lektionen dieses Kurses markiert. Entdecke ein weiteres Thema oder vertiefe das Gelernte im Trainer.';
     $('nextCourseBtn').textContent=course.id==='grundkurs'?'Einsteiger öffnen →':'Alle Kurse entdecken →';

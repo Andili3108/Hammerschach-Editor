@@ -1,5 +1,5 @@
 'use strict';
-// Andili-Kursauswahl, geprüft am 22.09.2026. Video-IDs sind dauerhafte Lektionskennungen.
+// Video-IDs sind dauerhafte Lektionskennungen.
 window.HammerschachSchoolCatalog = [
   {
     "id": "grundkurs",
@@ -7,7 +7,6 @@ window.HammerschachSchoolCatalog = [
     "icon": "♙",
     "group": "Nach Spielstärke",
     "description": "Der vertraute Grundkurs: vom Schachbrett bis zu Schach, Matt und Patt.",
-    "source": "https://www.andili.de/page-hammerschach-videotraining-schach_lernen.html",
     "lessons": [
       {
         "id": "wE71uYXYLvE",
@@ -157,7 +156,6 @@ window.HammerschachSchoolCatalog = [
     "icon": "♘",
     "group": "Nach Spielstärke",
     "description": "Nach den Regeln: Mattsetzen, erste Eröffnungsideen, Schach-Puzzle und taktische Motive.",
-    "source": "https://www.andili.de/page-hammerschach-videotraining-einsteiger.html",
     "lessons": [
       {
         "id": "dvO_M1PUdoM",
@@ -444,7 +442,6 @@ window.HammerschachSchoolCatalog = [
     "icon": "♗",
     "group": "Nach Spielstärke",
     "description": "Stellungen beurteilen, Pläne finden und Vorteile mit guter Schachtechnik verwerten.",
-    "source": "https://www.andili.de/page-hammerschach-videotraining-fortgeschrittene.html",
     "lessons": [
       {
         "id": "cymud_gPKIA",
@@ -688,7 +685,6 @@ window.HammerschachSchoolCatalog = [
     "icon": "♞",
     "group": "Nach Thema",
     "description": "Eröffnungen verstehen, typische Fallen erkennen und aus frühen Fehlern lernen.",
-    "source": "https://www.andili.de/page-hammerschach-videotraining-eroeffnungen.html",
     "lessons": [
       {
         "id": "4qPgG_OTSo0",
@@ -701,7 +697,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": true,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "8hzuMb5jgOQ",
@@ -714,7 +710,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "xMg3CzpbIwY",
@@ -727,7 +723,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "SI8iWxzzgRA",
@@ -740,7 +736,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "trVvvokT4hg",
@@ -753,7 +749,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "DmTa7MikV00",
@@ -766,7 +762,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "YPt8BLgKr0o",
@@ -779,7 +775,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "dEpknUxnb_8",
@@ -792,7 +788,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "G-u2h-lZ3Wk",
@@ -805,7 +801,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "wtN90Y9h8i4",
@@ -818,7 +814,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "SCwh4-sORu8",
@@ -831,7 +827,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "PMrqDK-H6G4",
@@ -844,7 +840,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "fMtlkUppwgY",
@@ -857,7 +853,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "JC9-6fQAv_0",
@@ -870,7 +866,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Schacheröffnungen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "NfeHgC5liBg",
@@ -883,7 +879,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "PyoW7Axntg4",
@@ -896,7 +892,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "ev44-_xwKtQ",
@@ -909,7 +905,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "Jh3tAQcC57E",
@@ -922,7 +918,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "mLoI6lxHwhI",
@@ -935,7 +931,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "QVX9V9GarJs",
@@ -948,7 +944,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "uXioB9_YK6w",
@@ -961,7 +957,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "csrcK8G8rFc",
@@ -974,7 +970,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "1MrPar7TmQc",
@@ -987,7 +983,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "jqbHL_Cp1RM",
@@ -1000,7 +996,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungsfallen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "WxyNRt3Is8k",
@@ -1013,7 +1009,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "MQHkSyR_5rs",
@@ -1026,7 +1022,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "qllQadkrR5Y",
@@ -1039,7 +1035,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "Iiknu8oB8hA",
@@ -1052,7 +1048,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "adP_5UGb5gQ",
@@ -1065,7 +1061,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "mqPfMrf5N9I",
@@ -1078,7 +1074,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "csnYX8CTgj4",
@@ -1091,7 +1087,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "Cp7inDMn9LU",
@@ -1104,7 +1100,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "ie9xbSbl-c8",
@@ -1117,7 +1113,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Eröffnungskatastrophen erklärt",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       }
     ]
   },
@@ -1127,7 +1123,6 @@ window.HammerschachSchoolCatalog = [
     "icon": "♕",
     "group": "Nach Thema",
     "description": "Figuren verbessern, Gefahren erkennen, Varianten berechnen und eigene Pläne entwickeln.",
-    "source": "https://www.andili.de/page-hammerschach-videotraining-mittelspiel.html",
     "lessons": [
       {
         "id": "uokObdo2x1I",
@@ -1140,7 +1135,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Mittelspiel-Training",
         "preview": true,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "zjmjH3-Mdiw",
@@ -1153,7 +1148,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Mittelspiel-Training",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "YVhr4lcJPSo",
@@ -1179,7 +1174,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Mittelspiel-Training",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "JUVUcDtOFf8",
@@ -1192,7 +1187,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Mittelspiel-Training",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "gfr6GbIeRi0",
@@ -1205,7 +1200,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Mittelspiel-Training",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       },
       {
         "id": "fjUM2grUuqU",
@@ -1218,7 +1213,7 @@ window.HammerschachSchoolCatalog = [
         ],
         "chapter": "Mittelspiel-Training",
         "preview": false,
-        "author": "Andili-Videoauswahl"
+        "author": ""
       }
     ]
   },
@@ -1228,7 +1223,6 @@ window.HammerschachSchoolCatalog = [
     "icon": "♔",
     "group": "Nach Thema",
     "description": "Mit wenigen Figuren sicher weiterspielen: Bauern-, Damen-, Leichtfiguren- und Turmendspiele.",
-    "source": "https://www.andili.de/page-hammerschach-videotraining-endspiel.html",
     "lessons": [
       {
         "id": "_85ZE9QAdf0",
@@ -1268,7 +1262,7 @@ window.HammerschachSchoolCatalog = [
         "chapter": "Dame und Leichtfiguren",
         "preview": false,
         "author": "Ledator",
-        "note": "Hinweis der Andili-Quelle zu 17:25: Weiß setzt mit De1 matt. Das im Video gezeigte De5 lässt dagegen b1D+ und damit eine Remischance zu."
+        "note": "Hinweis zu 17:25: Weiß setzt mit De1 matt. Das im Video gezeigte De5 lässt dagegen b1D+ und damit eine Remischance zu."
       },
       {
         "id": "50aAg1gynH0",
@@ -1295,7 +1289,7 @@ window.HammerschachSchoolCatalog = [
         "chapter": "Dame und Leichtfiguren",
         "preview": false,
         "author": "Ledator",
-        "note": "Hinweis der Andili-Quelle zu 5:40: Se2 ist gegenüber c4 vorzuziehen, weil der spätere Bauernzug c3 für den Durchbruch verfügbar bleiben soll."
+        "note": "Hinweis zu 5:40: Se2 ist gegenüber c4 vorzuziehen, weil der spätere Bauernzug c3 für den Durchbruch verfügbar bleiben soll."
       },
       {
         "id": "FvRDTCV9jUI",

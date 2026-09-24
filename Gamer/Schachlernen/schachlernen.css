@@ -194,8 +194,7 @@ html.dark-mode .course-next-step p{color:var(--ui-muted)}
 .video-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:14px;color:#f0ecee;text-align:center}
 .video-play-symbol{font-size:34px;color:#dbb774}
 .video-placeholder>span:last-child{font:12px/1.45 Arial,sans-serif;max-width:300px}
-.video-help,.course-source{color:var(--muted);font:12px/1.5 Arial,sans-serif;margin:10px 0 0}
-.course-source a{color:var(--ui-text)}
+.video-help{color:var(--muted);font:12px/1.5 Arial,sans-serif;margin:10px 0 0}
 .lesson-note{padding:13px 15px;margin:16px 0 0;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;background:var(--ui-surface-alt);color:var(--ui-text);font:13px/1.6 Arial,sans-serif}
 #storageStatus{color:var(--gold)}
 html.dark-mode .school-card-icon,html.dark-mode .school-card-access,html.dark-mode .gate-icon{color:#e7a8b0}
