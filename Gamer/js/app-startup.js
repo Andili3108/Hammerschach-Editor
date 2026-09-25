@@ -80,10 +80,11 @@ initialAuthRefreshPromise.finally(() => {
     onlinePublicWatchId = '';
     updateInviteUrlInAddressBar(initialRoomId);
     onlinePreferredRoleForNextConnect = '';
-    ensureDisplayNameForOnline().then(ok => {
-      if(ok) connectOnlineRoom(initialRoomId, {reconnect:true, spectatorOnly:false});
-      else updateOnlineUi();
-    });
+    // Zuerst den verlinkten Raum öffnen. Der Server erkennt, ob ein Login
+    // erforderlich ist; der bestehende Login-Ablauf übernimmt danach den
+    // eigenen Spielerplatz in diesem Raum. Ein Gastdialog darf das nicht
+    // blockieren, insbesondere bei „Du bist am Zug“-Links zu Daily-Partien.
+    connectOnlineRoom(initialRoomId, {reconnect:true, spectatorOnly:false});
   } else {
     onlineSpectatorOnly = false;
     onlinePublicWatchId = '';

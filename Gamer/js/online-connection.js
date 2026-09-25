@@ -426,9 +426,27 @@ function connectOnlineRoom(roomId, opts){
       setTimeout(refreshHeaderStatusFromState, 2500);
     }
     if(shouldAutoOpenRematch) setTimeout(openReadyRematchRoom, 180);
-    if(msg.type === 'hello' && msg.seatCode === 'DAILY_ACCOUNT_REQUIRED' && !onlineAuthUser){
-      if(statusEl) statusEl.textContent = msg.message || 'Daily Chess erfordert einen Login.';
-      setTimeout(() => openAuthDialog('login'), 120);
+    // Den optionalen Gastnamen erst abfragen, wenn tatsächlich ein
+    // Gast-Spielerplatz vergeben wurde. Daily-Spieler und Mitglieder mit
+    // reserviertem Platz gelangen stattdessen direkt zum Login darunter.
+    if(msg.type === 'hello' && !msg.seatDenied && !onlineAuthUser && !onlineSpectatorOnly
+      && (onlineRoleCode === 'w' || onlineRoleCode === 'b') && !hasConfirmedDisplayName()
+      && playerNameBackdrop && playerNameBackdrop.hidden){
+      showPlayerNameDialog();
+    }
+    // Auch eine bereits besetzte Live-Partie kann auf einem neuen Gerät
+    // zunächst nur als Zuschauer verbunden werden. Über den Spielerlink
+    // deshalb den Login anbieten; öffentliche Zuschauerlinks ausnehmen.
+    if(msg.type === 'hello' && !onlineAuthUser && !onlineSpectatorOnly
+      && (msg.seatCode === 'DAILY_ACCOUNT_REQUIRED'
+        || (!msg.seatCode && onlineRoleCode === 'spectator'))){
+      if(statusEl) statusEl.textContent = msg.message || (msg.seatCode === 'DAILY_ACCOUNT_REQUIRED'
+        ? 'Daily Chess erfordert einen Login.'
+        : 'Melde dich mit deinem Spieler-Account an, um diese Partie fortzusetzen.');
+      const loginRoomId = onlineRoomId;
+      setTimeout(() => {
+        if(!onlineAuthUser && !onlineSpectatorOnly && onlineRoomId === loginRoomId) openAuthDialog('login');
+      }, 120);
     }
     if(msg.type === 'hello' && msg.seatCode === 'ROOM_CREATOR_ACCOUNT_REQUIRED'){
       saveAuthState('', null);
