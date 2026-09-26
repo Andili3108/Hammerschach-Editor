@@ -50,6 +50,7 @@
 <link rel="stylesheet" href="css/member-hovercard.css?v=20260919-playercard-1">
 <link rel="stylesheet" href="css/article-unread.css?v=20260919-compact-3">
 <link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
+<link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
 </head>
 <body>
 <div class="app" role="main">
@@ -139,6 +140,7 @@
             </button>
             <div id="toolsMenuPopup" class="header-menu-popup areas-menu-popup" role="menu" aria-label="Werkstatt" hidden>
               <div class="header-menu-section-label">Lernen &amp; Trainieren</div>
+              <button id="impulsesToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="impulsesToolView">💡 Trainingsimpulse</button>
               <button id="learningToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="learningToolView">🎓 Videokurse</button>
               <button id="trainerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="trainerToolView">🎯 Trainer</button>
               <button id="mateSchoolToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="mateSchoolToolView">🧩 Mattbilder-Schule</button>
@@ -180,6 +182,7 @@
               <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavVisitorToolsPanel"><span>🔧</span><strong>Werkstatt</strong><i aria-hidden="true">▾</i></button>
               <div id="mobileNavVisitorToolsPanel" class="mobile-nav-accordion-panel" hidden>
                 <div class="mobile-nav-accordion-label">Lernen &amp; Trainieren</div>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="impulsesToolBtn" data-mobile-nav-visitor-only><span>💡</span><strong>Trainingsimpulse</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn" data-mobile-nav-visitor-only><span>🎓</span><strong>Videokurse</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="trainerToolBtn" data-mobile-nav-visitor-only><span>🎯</span><strong>Trainer</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="mateSchoolToolBtn" data-mobile-nav-visitor-only><span>🧩</span><strong>Mattbilder-Schule</strong></button>
@@ -253,6 +256,7 @@
               <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavAreasPanel"><span>🔧</span><strong>Werkstatt</strong><i aria-hidden="true">▾</i></button>
               <div id="mobileNavAreasPanel" class="mobile-nav-accordion-panel" hidden>
                 <div class="mobile-nav-accordion-label">Lernen &amp; Trainieren</div>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="impulsesToolBtn"><span>💡</span><strong>Trainingsimpulse</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="learningToolBtn"><span>🎓</span><strong>Videokurse</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="trainerToolBtn"><span>🎯</span><strong>Trainer</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="mateSchoolToolBtn"><span>🧩</span><strong>Mattbilder-Schule</strong></button>
@@ -270,6 +274,9 @@
       </aside>
     </div>
 
+    <section id="impulsesToolView" class="learning-tool-view" hidden aria-label="Trainingsimpulse">
+      <iframe id="impulsesToolFrame" class="learning-tool-frame" title="Trainingsimpulse" data-src="./Trainingsimpulse/?v=20260925-1" loading="lazy"></iframe>
+    </section>
     <section id="learningToolView" class="learning-tool-view" hidden aria-label="Gamer-Videokurse">
       <iframe id="learningToolFrame" class="learning-tool-frame" title="Gamer-Videokurse" data-src="./Schachlernen/?v=20260924-kontosync-1" loading="lazy"></iframe>
     </section>
@@ -622,7 +629,7 @@
 
           <h4>3. Einloggen und orientieren</h4>
           <p>Öffne erneut <strong>„👤 Registrierung / Login“</strong>. Im Reiter <strong>„Login“</strong> meldest du dich mit deinem Benutzernamen oder deiner Mailadresse und deinem Kennwort an. Beim ersten erfolgreichen Login erscheint einmalig unser Leitbild. Danach gelangst du in die Mitglieder-Lobby.</p>
-          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Schachgeschehen“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong>, <strong>„📚 Partienarchiv“</strong> und <strong>„📰 Schach aktuell“</strong>; dort kannst du zwischen Turnierberichten und den Schach-News unterscheiden. In der <strong>„🔧 Werkstatt“</strong> findest du die Videokurse, Trainer, Mattbilder-Schule, Eröffnungsschule, den Player, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
+          <p>Die wichtigsten Ziele erreichst du direkt im Header: <strong>„🔎 Angebote“</strong>, <strong>„♟️ Neue Partie“</strong> und <strong>„📋 Meine Partien“</strong>. Unter <strong>„♟️ Alle Partien“</strong> liegen <strong>„👁️ Laufende Partien“</strong> und <strong>„📖 Partiechronik“</strong>. <strong>„♜ Schachgeschehen“</strong> bündelt <strong>„📊 Ergebnisdienst“</strong>, <strong>„📚 Partienarchiv“</strong> und <strong>„📰 Schach aktuell“</strong>; dort kannst du zwischen Turnierberichten und den Schach-News unterscheiden. In der <strong>„🔧 Werkstatt“</strong> findest du die Trainingsimpulse, Videokurse, Trainer, Mattbilder-Schule, Eröffnungsschule, den Player, Analyzer und Schachlabor. <strong>„📺 Gamer-TV“</strong> steht direkt rechts neben der Werkstatt. In der Personenreihe stehen <strong>„👥 Mitglieder“</strong>, <strong>„👤 Mein Profil“</strong> und <strong>„✉️ PN“</strong> nebeneinander. Erste Schritte, Handbuch und Leitbild liegen im Mitglieder-Menü unter <strong>„INFORMATIONEN“</strong>. Der kleine Schalter ganz oben rechts wechselt zwischen heller und dunkler Darstellung. In der Desktop-Lobby führt das Turnierfeld über <strong>„Alle Turniere“</strong> zur Turnierzentrale; in anderen Ansichten bleibt <strong>„🏆 Turniere“</strong> im Header sichtbar.</p>
           <p>Die Schach-News sind für Besucher vollständig und ohne Registrierung lesbar. Im mittig angeordneten Dropdown „Schach-News“ wählst du den gewünschten Artikel aus.</p>
 
           <h4>4. Eine Partie beginnen</h4>
@@ -653,7 +660,7 @@
         <div class="info-scroll" id="infoScroll" tabindex="0">
           <h4>1. Registrierung oder Gastspiel</h4>
           <p>Live-Partien kannst du mit einem registrierten Account oder als eingeladener Gast spielen. <strong>Eine neue Partie und einen Einladungslink können nur registrierte und eingeloggte Mitglieder erstellen.</strong> Ein Mitglied darf seinen Gegner bei einer Live-Partie weiterhin per Link als Gast einladen. Über <strong>„Registrierung / Login“</strong> meldest du dich an oder erstellst einen neuen Account. Als Gast wirst du mit einem Gastnamen angezeigt.</p>
-          <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login enthält die <strong>„🔧 Werkstatt“</strong> die Bereiche <strong>„🎓 Videokurse“</strong>, <strong>„🎯 Trainer“</strong> und <strong>„🧩 Mattbilder-Schule“</strong>. Außerdem stehen laufende Partien sowie unter <strong>„♜ Schachgeschehen“</strong> der <strong>Ergebnisdienst</strong>, das <strong>Partienarchiv</strong> und <strong>„📰 Schach aktuell“</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein. Jede Partie ist öffentlich; ein gültiger Partie- oder Zuschauerlink öffnet den benötigten Spielraum auch ohne vorherigen Login direkt.</p>
+          <p>Auf der anonymen Startseite wird die Partievorbereitung ausgeblendet und das Brett als ruhige Willkommensfläche mit Gamer-Logo dargestellt. Ohne Login enthält die <strong>„🔧 Werkstatt“</strong> die Bereiche <strong>„💡 Trainingsimpulse“</strong>, <strong>„🎓 Videokurse“</strong>, <strong>„🎯 Trainer“</strong> und <strong>„🧩 Mattbilder-Schule“</strong>. Außerdem stehen laufende Partien sowie unter <strong>„♜ Schachgeschehen“</strong> der <strong>Ergebnisdienst</strong>, das <strong>Partienarchiv</strong> und <strong>„📰 Schach aktuell“</strong> bereit. Nach dem Login gelangst du in die Mitglieder-Lobby. Farbe, Spielmodus, Bedenkzeit und Wertung stellst du erst im eigenen Fenster <strong>„♟️ Neue Partie“</strong> ein. Jede Partie ist öffentlich; ein gültiger Partie- oder Zuschauerlink öffnet den benötigten Spielraum auch ohne vorherigen Login direkt.</p>
           <p>Im Dropdown <strong>„👥 Mitglieder“</strong> stehen unter der Überschrift <strong>„INFORMATIONEN“</strong> die Punkte <strong>„🚀 Erste Schritte“</strong>, <strong>„📖 Handbuch“</strong> und <strong>„🤝 Unser Leitbild“</strong>. Nach dem ersten erfolgreichen Login erscheint das Leitbild einmalig automatisch; die Bestätigung wird dem Account zugeordnet, damit der Hinweis nicht auf jedem Gerät erneut erscheint.</p>
           <p><strong>Daily Chess ist ausschließlich für registrierte und eingeloggte Mitglieder verfügbar.</strong> Beide Spieler benötigen einen Account, damit ihre Spielerplätze auch nach mehreren Tagen und auf einem anderen Gerät sicher wiedererkannt werden.</p>
           <p>Nach einer neuen Registrierung muss die Mailadresse über den zugesandten Bestätigungslink bestätigt werden. Erst danach ist der Login möglich. Der Gamer zeigt die Empfängeradresse nach der Registrierung und nach einem wegen ausstehender Bestätigung abgewiesenen Login erneut an. Dort kann eine fehlerhafte Adresse korrigiert oder eine neue Bestätigungsmail angefordert werden.</p>
@@ -770,6 +777,8 @@
           <p>Nach Partieende kann die Zugliste angesehen und über <strong>„PGN“</strong> als Datei heruntergeladen werden. Daily-Partien enthalten zusätzliche Angaben zum Daily-Modus und zur Zahl der Tage pro Zug.</p>
           <p>Bei Freestyle-Partien enthält die PGN außerdem die Startstellung als FEN sowie Angaben zur Chess960-/Freestyle-Position. Dadurch kann die Partie später korrekt importiert und nachgespielt werden.</p>
 
+          <h4>Trainingsimpulse</h4>
+          <p>Unter <strong>„🔧 Werkstatt“ → „💡 Trainingsimpulse“</strong> findest du bis zu 20 ausgewählte YouTube-Videos. Für Besucher freigegebene Videos lassen sich direkt öffnen; weitere Überschriften dienen als Vorschau. Mit einem kostenlosen Gamer-Konto stehen alle Impulse zur Verfügung. Videos werden erst nach einem Klick geladen. Als Administrator kannst du über <strong>„Konfiguration“</strong> Überschriften und YouTube-Links eintragen, austauschen oder entfernen und jeden Eintrag einzeln für Besucher freigeben. Speichern übernimmt die Auswahl zentral für alle Geräte.</p>
           <h4>18. Videokurse</h4>
           <p>Über <strong>„🔧 Werkstatt“ → „🎓 Videokurse“</strong> öffnest du sechs Videokurse direkt im Gamer: Unter <strong>„Nach Spielstärke“</strong> findest du den bisherigen Grundkurs <strong>„Schach lernen“</strong>, <strong>Einsteiger</strong> und <strong>Fortgeschrittene</strong>; unter <strong>„Nach Thema“</strong> stehen <strong>Eröffnungen</strong>, <strong>Mittelspiel</strong> und <strong>Endspiel</strong>. Die sechs Kurse umfassen insgesamt 96 Lektionen. Videos werden erst mit „Video laden“ eingebunden und starten nicht automatisch. Jede Lektion kann als erledigt markiert werden. Fortschritt und letzte Lektion werden bei Gamer-Mitgliedern im Konto gespeichert und zwischen Geräten abgeglichen. Besucher-Lernstände bleiben lokal im Browser. Bei geöffneter Kursansicht wird der Lernstand regelmäßig und beim erneuten Öffnen abgeglichen. Beim ersten Konto-Abgleich wird der lokale Lernstand übernommen, sofern noch kein Konto-Lernstand vorliegt. Ein bereits vorhandener Konto-Lernstand hat Vorrang vor alten Browserständen; neu vorgemerkte Änderungen werden abgeglichen. Über „Diesen Kurs zurücksetzen“ wird nur der ausgewählte Kurs zurückgesetzt.</p>
           <p>Nach Abschluss aller zehn Lektionen führt <strong>„🎯 Anfängertraining starten“</strong> ohne Umweg in den geführten Lernpfad. Der Trainer beginnt mit Matt in einem Zug und steigert die Anforderungen blockweise.</p>
@@ -2573,13 +2582,14 @@
 <script src="js/game-chat.js?v=20260919-playercard-1"></script>
 <script src="js/game-setup-ui.js?v=20260917-theme-3"></script>
 <script src="js/online-ui-elements.js?v=20260917-theme-3"></script>
-<script src="js/header-ui.js?v=20260917-theme-3"></script>
+<script src="js/header-ui.js?v=20260925-impulses-1"></script>
 <script src="js/dialog-ui-state.js?v=20260917-theme-3"></script>
 <script src="js/hammerschach-tv.js?v=20260917-theme-3"></script>
 <script src="js/league-standings.js?v=20260917-theme-3"></script>
 <script src="Mediathek/catalog.js?v=20260917-theme-3"></script>
 <script src="js/mediathek.js?v=20260917-theme-3"></script>
-<script src="js/embedded-tools.js?v=20260924-kontosync-1"></script>
+<script src="js/training-impulses.js?v=20260925-1"></script>
+<script src="js/embedded-tools.js?v=20260925-impulses-1"></script>
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
 <script src="js/lobby-welcome.js?v=20260919-welcome-1"></script>
 <script src="js/global-chat-lobby.js?v=20260919-playercard-1"></script>
@@ -2616,7 +2626,7 @@
 <script src="js/info-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/policy-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/online-room-utils.js?v=20260917-theme-3"></script>
-<script src="js/online-ui-state.js?v=20260924-turnieranzeige-1"></script>
+<script src="js/online-ui-state.js?v=20260925-impulses-1"></script>
 <script src="js/member-directory.js?v=20260920-profile-1"></script>
 <script src="js/member-hovercard.js?v=20260920-profile-1"></script>
 <script src="js/member-games.js?v=20260920-profile-1"></script>
@@ -2648,7 +2658,7 @@
 <script src="js/article-read-ui.js?v=20260919-cloudflare-2"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
-<script src="js/mobile-navigation.js?v=20260924-videokurse-1"></script>
+<script src="js/mobile-navigation.js?v=20260925-impulses-1"></script>
 <script src="js/room-games-layout.js?v=20260917-theme-3"></script>
 <script defer src="js/gamer-settings.js?v=20260917-theme-3"></script>
 </body>
