@@ -17,7 +17,7 @@
  function section(tab,title,description){const el=document.createElement('section');el.dataset.section=tab;el.innerHTML='<h3></h3><p class="settings-help"></p>';el.querySelector('h3').textContent=title;el.querySelector('p').textContent=description||'';content.append(el);sections[title]=el;return el;}
  function select(el,key,label,items,hint){const row=document.createElement('label');row.className='settings-row';const copy=document.createElement('span');copy.textContent=label;if(hint){const small=document.createElement('small');small.textContent=hint;copy.append(small);}const input=document.createElement('select');input.dataset.preference=key;for(const [value,text] of items)input.add(new Option(text,value));input.value=P.get(key);input.addEventListener('change',()=>P.set(key,input.value));row.append(copy,input);el.append(row);}
  function toggle(el,key,label,hint){const row=document.createElement('label');row.className='settings-row';const copy=document.createElement('span');copy.textContent=label;if(hint){const small=document.createElement('small');small.textContent=hint;copy.append(small);}const input=document.createElement('input');input.type='checkbox';input.dataset.preference=key;input.checked=P.get(key);input.addEventListener('change',()=>P.set(key,input.checked));row.append(copy,input);el.append(row);}
- const appearance=section('appearance','Oberfläche','Die Darstellung gilt auch für die eingebundenen Werkstatt-Bretter.');
+ const appearance=section('appearance','Oberfläche','Die Darstellung gilt auch für die eingebundenen Trainingsbretter.');
  select(appearance,'scheme','Farbschema',[['light','Hell'],['soft','Sanft'],['dark','Dunkel']]);
  toggle(appearance,'focus','Konzentrationsmodus','Blendet im Spielraum Chat und zusätzliche Informationsbereiche aus.');
  const board=section('appearance','Brett & Figuren');
@@ -25,7 +25,7 @@
  // Only offer sets accepted by the shared preferences, excluding retired aliases.
  select(board,'pieces','Figurensatz',pieceSetPresets.filter(p=>P.normalize({pieces:p.id}).pieces===p.id).map(p=>[p.id,p.name]));
  const preview=document.createElement('div');preview.className='settings-preview';preview.setAttribute('aria-label','Vorschau von Brett und Figuren');board.append(preview);
- const sizeRow=document.createElement('div');sizeRow.className='settings-size';sizeRow.innerHTML='<label for="settingsBoardSize">Brettgröße <output id="settingsBoardSizeValue"></output></label><div class="settings-size-buttons"><button type="button" data-size="760">Standard</button><button type="button" data-size="860">Groß</button><button type="button" data-size="1000">Sehr groß</button></div><div class="settings-range"><button type="button" data-step="-10" aria-label="Brett verkleinern">−</button><input id="settingsBoardSize" type="range" min="760" max="1000" step="10" aria-label="Brettgröße"><button type="button" data-step="10" aria-label="Brett vergrößern">+</button></div><p class="settings-help">Für dieses Gerät. Gilt auch in der Werkstatt; passt sich dem verfügbaren Platz an.</p>';
+ const sizeRow=document.createElement('div');sizeRow.className='settings-size';sizeRow.innerHTML='<label for="settingsBoardSize">Brettgröße <output id="settingsBoardSizeValue"></output></label><div class="settings-size-buttons"><button type="button" data-size="760">Standard</button><button type="button" data-size="860">Groß</button><button type="button" data-size="1000">Sehr groß</button></div><div class="settings-range"><button type="button" data-step="-10" aria-label="Brett verkleinern">−</button><input id="settingsBoardSize" type="range" min="760" max="1000" step="10" aria-label="Brettgröße"><button type="button" data-step="10" aria-label="Brett vergrößern">+</button></div><p class="settings-help">Für dieses Gerät. Gilt auch im Training; passt sich dem verfügbaren Platz an.</p>';
  board.append(sizeRow);
  const sizeHint=document.createElement('p');sizeHint.className='settings-help';sizeHint.textContent='Die Brettgröße passt sich hier automatisch an. Eine freie Größenwahl gibt es auf ausreichend großen Desktopansichten mit Mausbedienung.';board.append(sizeHint);
  const range=sizeRow.querySelector('input');
@@ -36,7 +36,7 @@
  const markings=section('appearance','Brettanzeigen');
  appearance.classList.add('settings-surface');board.classList.add('settings-board');markings.classList.add('settings-markings');
  toggle(markings,'coordinates','Koordinaten anzeigen');toggle(markings,'lastMove','Letzten Zug markieren');toggle(markings,'legalMoves','Mögliche Zielfelder anzeigen');toggle(markings,'reducedMotion','Animationen reduzieren');
- const input=section('play','Züge eingeben','Für das Hauptspielbrett. Werkstatt-Bretter behalten ihre eigene Zugeingabe.');
+ const input=section('play','Züge eingeben','Für das Hauptspielbrett. Trainingsbretter behalten ihre eigene Zugeingabe.');
  select(input,'moveMethod','Figuren bewegen',[['both','Klicken und Ziehen'],['click','Nur Klicken'],['drag','Nur Ziehen']]);
  const daily=section('play','Daily-Partien');
  toggle(daily,'confirmDaily','Zug vor dem Absenden bestätigen','Ohne Bestätigung entfällt die Zugvorschau mit der daran gebundenen Remisaktion. Eine bereits offene Vorschau bleibt bestehen.');

@@ -36,7 +36,7 @@ function resetDirectInvitationSetup(){
   directInvitationSendBusy = false;
   const modal = newGameBackdrop ? newGameBackdrop.querySelector('.new-game-modal') : null;
   if(modal) modal.classList.remove('direct-invitation-mode');
-  if(newGameDialogTitle) newGameDialogTitle.textContent = '♟️ Neue Partie';
+  if(newGameDialogTitle) newGameDialogTitle.textContent = '♟️ Spielen';
   if(newGameDialogIntro) newGameDialogIntro.textContent = 'Farbe, Spielmodus, Bedenkzeit und Wertung festlegen.';
   if(newGameCloseBtn) newGameCloseBtn.setAttribute('aria-label', 'Partievorbereitung schließen');
   if(directInvitationRecipient){ directInvitationRecipient.hidden = true; directInvitationRecipient.innerHTML = ''; }

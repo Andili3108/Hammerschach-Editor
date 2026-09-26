@@ -122,13 +122,13 @@ function registerHeaderMenu(menuEl, menuBtn, menuPopup, title){
   });
   return controller;
 }
-const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Neue-Partie-Menü');
+const newGameMenuController = registerHeaderMenu(newGameMenuEl, newGameMenuBtn, newGameMenuPopup, 'Spielen-Menü');
 const trainerBeginnerMenuController = registerHeaderMenu(trainerBeginnerMenuEl, trainerBeginnerMenuBtn, trainerBeginnerMenuPopup, 'Anfängertraining-Menü');
 const gamesMenuController = registerHeaderMenu(gamesMenuEl, gamesMenuBtn, gamesMenuPopup, 'Partien-Menü');
 const playerMenuController = registerHeaderMenu(playerMenuEl, playerMenuBtn, playerMenuPopup, 'Spieler-Menü');
-const clubChessMenuController = registerHeaderMenu(clubChessMenuEl, clubChessMenuBtn, clubChessMenuPopup, 'Schachgeschehen-Menü');
-const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Werkstatt-Menü');
-const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Info-Menü');
+const clubChessMenuController = registerHeaderMenu(clubChessMenuEl, clubChessMenuBtn, clubChessMenuPopup, 'Schachwelt-Menü');
+const toolsMenuController = registerHeaderMenu(toolsMenuEl, toolsMenuBtn, toolsMenuPopup, 'Training-Menü');
+const infoMenuController = registerHeaderMenu(infoMenuEl, infoMenuBtn, infoMenuPopup, 'Hilfe & Infos');
 const tournamentReportsMenuController = registerHeaderMenu(
   document.getElementById('tournamentReportsMenu'),
   document.getElementById('tournamentReportsCategoryBtn'),
@@ -202,3 +202,18 @@ if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => window.Hammers
 updateThemeToggleUi();
 
 function setDarkMode(enabled){ setColorScheme(enabled ? 'dark' : 'light'); }
+
+// Mirror the authoritative turn counter, including logout and zero transitions.
+(function syncPartienCounter(){
+  const source = document.getElementById('dailyGamesTurnCount');
+  const target = document.getElementById('gamesMenuTurnCount');
+  if(!source || !target) return;
+  const sync = () => {
+    target.textContent = source.textContent;
+    target.hidden = source.hidden;
+    const label = source.getAttribute('aria-label');
+    if(label) target.setAttribute('aria-label', label); else target.removeAttribute('aria-label');
+  };
+  new MutationObserver(sync).observe(source, {attributes:true, childList:true, characterData:true, subtree:true});
+  sync();
+}());

@@ -264,19 +264,6 @@ function updateVisitorLandingUi(){
   if(visitorPublicGamesOpenBtn) visitorPublicGamesOpenBtn.hidden = !visitorHeaderActive;
   updateAnalyzerToolAvailability();
 
-  /* Für anonyme Besucher bleibt dieselbe reduzierte Navigation auch in einem
-     Zuschauer-Spielraum erhalten. Nach dem Login kehrt das Info-Menü an seinen
-     normalen Platz neben dem Status zurück. */
-  if(infoMenuEl && matchActionsEl && infoMenuHome){
-    if(visitorHeaderActive){
-      const visitorInfoAnchor = toolsMenuEl && toolsMenuEl.parentNode === matchActionsEl ? toolsMenuEl : null;
-      if(infoMenuEl.parentNode !== matchActionsEl || infoMenuEl.nextSibling !== visitorInfoAnchor){
-        matchActionsEl.insertBefore(infoMenuEl, visitorInfoAnchor);
-      }
-    } else if(infoMenuEl.parentNode !== infoMenuHome.parent){
-      infoMenuHome.parent.insertBefore(infoMenuEl, infoMenuHome.nextSibling);
-    }
-  }
 
   if(active && statusEl){
     statusEl.textContent = embeddedToolStatusText() || lobbyWelcomeText();

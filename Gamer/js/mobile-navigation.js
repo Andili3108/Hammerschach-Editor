@@ -173,7 +173,7 @@
     const icon = primaryButton.querySelector('span');
     const label = primaryButton.querySelector('strong');
     if(icon) icon.textContent = backToLobby ? '↩️' : '♟️';
-    if(label) label.textContent = backToLobby ? (visitor ? 'Zur Startseite' : 'Zur Lobby') : 'Neue Partie';
+    if(label) label.textContent = backToLobby ? (visitor ? 'Zur Startseite' : 'Zur Lobby') : 'Spielen';
     primaryButton.disabled = backToLobby ? sourceDisabled(roomLobbyButton) : sourceDisabled(newGameButton);
     if(testBrand) testBrand.setAttribute('aria-label',backToLobby?(visitor?'Zur Startseite':'Zur Lobby'):'Zum Seitenanfang');
   }
@@ -210,7 +210,7 @@
       const tournamentReport = root.classList.contains('tournament-report-tool-active');
       const tv = root.classList.contains('tv-tool-active');
       const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Werkstatt' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))))));
+      testContext.textContent = root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Training' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))))));
     }
   }
 
@@ -224,10 +224,14 @@
   }
 
   function syncTurnCount(){
-    if(!turnCount || !sourceTurnCount) return;
+    if(!sourceTurnCount) return;
     const count = String(sourceTurnCount.textContent || '').trim();
-    turnCount.textContent = count || '0';
-    turnCount.hidden = sourceTurnCount.hidden || !count || count === '0';
+    [turnCount, document.getElementById('mobileNavGamesTurnCount')].filter(Boolean).forEach(badge => {
+      badge.textContent = count || '0';
+      badge.hidden = sourceTurnCount.hidden || !count || count === '0';
+      const label = sourceTurnCount.getAttribute('aria-label');
+      if(label) badge.setAttribute('aria-label', label); else badge.removeAttribute('aria-label');
+    });
   }
 
   function syncOffersCount(){
@@ -345,7 +349,7 @@
   if(root&&root.nodeType===Node.ELEMENT_NODE)rootObserver.observe(root, {attributes:true, attributeFilter:['class']});
   [sourceStatus, sourceTheme, sourceTurnCount, sourceOffersCount,sourceTournamentsNewBadge,
     document.getElementById('trainerBeginnerMenu'),document.getElementById('gamesMenu'),document.getElementById('playerMenu'),
-    document.getElementById('clubChessMenu'),document.getElementById('toolsMenu'),
+    document.getElementById('clubChessMenu'),document.getElementById('toolsMenu'),document.getElementById('infoMenu'),
     document.getElementById('trainerBeginnerHeaderBtn'),document.getElementById('trainerFreeHeaderBtn'),document.getElementById('trainerProgressHeaderBtn'),
     document.getElementById('visitorTrainerOpenBtn'),document.getElementById('visitorTrainerProgressHeaderBtn'),
     document.getElementById('trainerMattbilderHeaderBtn'),document.getElementById('mateSchoolToolBtn')]
