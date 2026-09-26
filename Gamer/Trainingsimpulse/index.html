@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Trainingsimpulse</title>
+  <script src="../js/gamer-appearance.js?v=20260917-theme-3"></script>
+  <link rel="stylesheet" href="../Schachlernen/schachlernen.css?v=20260924-kontosync-1">
+  <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
+  <link rel="stylesheet" href="impulses.css?v=20260925-1">
+</head>
+<body>
+<main class="learning-app impulses-app">
+  <nav class="impulses-nav" aria-label="Trainingsimpulse">
+    <span class="school-home">💡 Trainingsimpulse</span>
+    <button id="configure" class="quiet-button" type="button" hidden>⚙ Konfiguration</button>
+  </nav>
+  <section id="hero" class="learning-hero" aria-labelledby="title">
+    <div class="hero-copy"><div class="eyebrow">Neue Ideen für dein Schach</div><h1 id="title">Ein Impuls. Ein besserer Zug.</h1><p>Entdecke ausgewählte Videos, frische Perspektiven und praktische Tipps für dein nächstes Spiel.</p></div>
+    <div class="progress-card"><div class="progress-summary"><strong id="count">Trainingsimpulse</strong><span id="accessSummary">Deine nächste Anregung wartet.</span></div></div>
+  </section>
+  <p id="accessNote" class="school-access-note"></p>
+  <div id="status" role="status" aria-live="polite">Trainingsimpulse werden geladen …</div>
+  <button id="retry" type="button" class="quiet-button" hidden>Erneut laden</button>
+  <a id="standalone" href="../" hidden>Trainingsimpulse im Gamer öffnen →</a>
+  <section id="editor" class="lesson-card" aria-labelledby="editorTitle" hidden>
+    <h2 id="editorTitle" tabindex="-1">Trainingsimpulse konfigurieren</h2>
+    <p>Bis zu 20 Videos. Überschrift und YouTube-Link gehören zusammen. Leere Plätze werden nicht angezeigt. Zum Entfernen beide Felder leeren.</p>
+    <form id="configForm">
+      <fieldset id="configFields"><legend class="sr-only">Videoplätze</legend><div id="slots"></div></fieldset>
+      <div class="editor-actions"><button id="save" class="beginner-training-button" type="submit">Änderungen speichern</button><button id="cancel" class="quiet-button" type="button">Abbrechen</button><span id="editorStatus" role="status" aria-live="polite"></span></div>
+    </form>
+  </section>
+  <section id="grid" class="impulses-grid" aria-label="Videoauswahl"></section>
+  <section id="viewer" aria-labelledby="viewerTitle" hidden>
+    <div class="viewer-heading"><h2 id="viewerTitle" tabindex="-1"></h2><button id="closeViewer" class="quiet-button" type="button" aria-label="Video schließen">Schließen ✕</button></div>
+    <div id="viewerBody"></div>
+  </section>
+</main>
+<script src="impulses.js?v=20260925-1"></script>
+</body>
+</html>
