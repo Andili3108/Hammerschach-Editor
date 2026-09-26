@@ -4,7 +4,7 @@
   const embedded=window.parent!==window;
   const origin=location.origin==='null'?'*':location.origin;
   const pending=new Map();
-  let epoch=null,requestNumber=0,loggedIn=false,isAdmin=false,videos=[],dirty=false,editing=false;
+  let epoch=null,requestNumber=0,isAdmin=false,videos=[],dirty=false,editing=false;
   const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function post(message){if(embedded)window.parent.postMessage(message,origin);}
   function request(action,extra={}){
@@ -15,12 +15,8 @@
       post({type:'impulses-request',requestId,epoch,action,...extra});
     });
   }
-  function closeViewer(){const wasOpen=!$('viewer').hidden;$('viewer').hidden=true;$('viewerBody').replaceChildren();$('grid').hidden=false;$('hero').hidden=false;$('accessNote').hidden=false;if(wasOpen){$('grid').querySelector('button')?.focus({preventScroll:true});post({type:'impulses-scroll-top'});}}
+  function closeViewer(){const wasOpen=!$('viewer').hidden;$('viewer').hidden=true;$('viewerBody').replaceChildren();$('grid').hidden=false;$('hero').hidden=false;if(wasOpen){$('grid').querySelector('button')?.focus({preventScroll:true});post({type:'impulses-scroll-top'});}}
   function render(){
-    $('count').textContent=`${videos.length} ${videos.length===1?'Trainingsimpuls':'Trainingsimpulse'}`;
-    const free=videos.filter(video=>video.public).length;
-    $('accessSummary').textContent=loggedIn?'Alle Videos für dich verfügbar':`${free} frei zugänglich`;
-    $('accessNote').textContent=loggedIn?'Wähle einen Impuls und nimm eine neue Idee mit ans Brett.':'Die freigegebenen Videos kannst du direkt ansehen. Mit einem kostenlosen Gamer-Konto öffnest du alle Trainingsimpulse.';
     $('grid').innerHTML=videos.map((video,i)=>`<article class="impulse-card"><div class="impulse-art" aria-hidden="true"><span class="symbol">${video.locked?'♜':'▶'}</span><span class="number">${String(i+1).padStart(2,'0')}</span></div><div class="impulse-copy"><span class="badge">${video.public?'Frei zugänglich':'Für Gamer-Mitglieder'}</span><h2>${escape(video.title)}</h2><button class="${video.locked?'quiet-button':'beginner-training-button'}" type="button" data-video="${i}" aria-label="${escape(video.title)} öffnen">${video.locked?'Kostenlos freischalten':'Video öffnen →'}</button></div></article>`).join('');
     if(!videos.length)$('status').textContent='Neue Trainingsimpulse folgen bald.';
   }
@@ -54,7 +50,7 @@
         $('viewerBody').querySelector('.impulse-player').replaceChildren(frame);
       },{once:true});
     }
-    $('viewer').hidden=false;$('grid').hidden=true;$('hero').hidden=true;$('accessNote').hidden=true;
+    $('viewer').hidden=false;$('grid').hidden=true;$('hero').hidden=true;
     $('viewerTitle').focus({preventScroll:true});post({type:'impulses-scroll-top'});
   }
   function hideEditor(){editing=false;dirty=false;$('editor').hidden=true;$('configure').disabled=false;}
@@ -103,7 +99,7 @@
     if(message.type==='impulses-context'){
       HammerschachAppearance.apply(message.colorScheme);
       if(message.epoch===epoch)return;
-      epoch=message.epoch;loggedIn=message.loggedIn===true;isAdmin=message.isAdmin===true;
+      epoch=message.epoch;isAdmin=message.isAdmin===true;
       pending.forEach(item=>{clearTimeout(item.timer);item.reject(new Error('Die Anmeldung hat sich geändert.'));});pending.clear();
       closeViewer();hideEditor();videos=[];$('grid').replaceChildren();$('slots').replaceChildren();
       $('configFields').disabled=false;$('save').disabled=false;$('cancel').disabled=false;

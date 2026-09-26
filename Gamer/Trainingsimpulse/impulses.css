@@ -1,7 +1,10 @@
 .impulses-app{padding:2px 2px 16px}
 [hidden]{display:none!important}
-.impulses-nav,.editor-actions,.viewer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.impulses-nav .school-home{cursor:default}
+.editor-actions,.viewer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.impulses-app #hero{display:flex;align-items:center;gap:22px}
+#hero .hero-copy{flex:1;min-width:0}
+#configure{flex:0 0 auto}
+@media(max-width:880px){.impulses-app #hero{flex-direction:column;align-items:stretch}#configure{align-self:flex-start}}
 .impulses-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .impulse-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow)}
 .impulse-art{min-height:116px;display:flex;align-items:center;justify-content:space-between;padding:22px;background:linear-gradient(125deg,var(--ui-surface-alt),var(--ui-surface));border-bottom:1px solid var(--line);color:var(--wine)}
@@ -39,4 +42,4 @@
 button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #3876ad;outline-offset:3px}
 html.dark-mode .impulse-art,html.dark-mode .badge,html.dark-mode .slot-number,html.dark-mode .viewer-caption a{color:#e7a8af}
 @media(max-width:1000px){.impulses-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){.impulses-grid{grid-template-columns:1fr}.impulse-art{min-height:85px;padding:16px 20px}.config-slot{grid-template-columns:26px minmax(0,1fr)}.config-slot label{grid-column:2}.slot-number{grid-row:1/4}.viewer-heading{flex-direction:column}#viewer{padding:16px}.video-consent .symbol{display:none}.video-consent{padding:12px}.learning-hero{padding:20px}.impulses-nav{align-items:stretch}}
+@media(max-width:600px){.impulses-grid{grid-template-columns:1fr}.impulse-art{min-height:85px;padding:16px 20px}.config-slot{grid-template-columns:26px minmax(0,1fr)}.config-slot label{grid-column:2}.slot-number{grid-row:1/4}.viewer-heading{flex-direction:column}#viewer{padding:16px}.video-consent .symbol{display:none}.video-consent{padding:12px}.learning-hero{padding:20px}}
