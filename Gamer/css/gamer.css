@@ -3703,7 +3703,7 @@ html.visitor-start-view .header-status{grid-column:auto;}
 .header-icon-actions #infoMenu{order:0;}
 @media(min-width:1101px){
   html.member-lobby-view .header-main{align-items:center;}
-  html.member-lobby-view .header-status{min-height:42px;font-size:14px;padding:6px 8px;}
+  html.member-lobby-view .header-status{min-height:42px;font-size:16px;padding:6px 8px;}
   html.member-lobby-view #membersOpenBtn,
   html.member-lobby-view #profileOpenBtn,
   html.member-lobby-view #privateMessagesOpenBtn{height:42px;min-height:42px!important;box-sizing:border-box;}
