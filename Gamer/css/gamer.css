@@ -3673,7 +3673,7 @@ html.visitor-start-view .match-actions{justify-content:center;flex-wrap:wrap;}
 .room-tournament-notice span{color:var(--ui-muted);font-size:13px;}
 html.dark-mode .room-tournament-notice strong{color:#ddbd73;}
 
-/* Shared columns keep the two lobby rows aligned. */
+/* Shared desktop columns for the member lobby and game room. */
 .header-icon-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;}
 .header-icon-actions>.header-menu{flex:0 0 auto;width:auto;}
 .header-icon-actions .header-icon-button,
@@ -3685,29 +3685,32 @@ html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr) auto
 html.visitor-start-view .header-status{grid-column:auto;}
 #dailyGamesOpenBtn .header-menu-count{margin-left:auto;}
 @media(min-width:1101px){
-  html.member-lobby-view.central-settings .header{padding-top:12px;}
-  html.member-lobby-view .header-main{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 6px;height:auto;padding-top:0;align-content:center;}
-  html.member-lobby-view .header-top-row,
-  html.member-lobby-view .header-utility-actions,
-  html.member-lobby-view .match-actions{display:contents;}
-  html.member-lobby-view .header-status{grid-row:2;grid-column:1 / 4;box-sizing:border-box;min-width:0;font-size:16px;white-space:normal;}
-  html.member-lobby-view #playerMenu{grid-row:2;grid-column:4;}
-  html.member-lobby-view #profileOpenBtn{grid-row:2;grid-column:5;}
-  html.member-lobby-view #privateMessagesOpenBtn{grid-row:2;grid-column:6;}
-  html.member-lobby-view .header-icon-actions{grid-row:1;grid-column:6;}
-  html.member-lobby-view .match-actions>button,
-  html.member-lobby-view .match-actions>.header-menu{grid-row:3;width:100%;min-width:0;}
-  html.member-lobby-view .match-actions>.header-menu>.header-menu-button{width:100%;}
-  html.member-lobby-view .header-people-actions>button{width:100%;min-width:0;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)).central-settings .header{padding-top:12px;grid-template-columns:150px minmax(0,1fr);column-gap:12px;padding-left:10px;padding-right:16px;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-main{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 6px;height:auto;padding-top:0;align-content:center;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-top-row,
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-utility-actions,
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions{display:contents;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-status{grid-row:2;grid-column:1 / 4;box-sizing:border-box;min-width:0;font-size:16px;white-space:normal;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #playerMenu{grid-row:2;grid-column:4;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #profileOpenBtn{grid-row:2;grid-column:5;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #privateMessagesOpenBtn{grid-row:2;grid-column:6;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-icon-actions{grid-row:1;grid-column:6;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>button,
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>.header-menu{grid-row:3;width:100%;min-width:0;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>.header-menu>.header-menu-button{width:100%;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-people-actions>button{width:100%;min-width:0;}
 }
 .header-icon-actions #infoMenu{order:0;}
 @media(min-width:1101px){
-  html.member-lobby-view .header-main{align-items:center;}
-  html.member-lobby-view .header-status{min-height:42px;font-size:16px;padding:6px 8px;}
-  html.member-lobby-view #membersOpenBtn,
-  html.member-lobby-view #profileOpenBtn,
-  html.member-lobby-view #privateMessagesOpenBtn{height:42px;min-height:42px!important;box-sizing:border-box;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-main{align-items:center;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-status{min-height:42px;font-size:16px;padding:6px 8px;}
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #membersOpenBtn,
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #profileOpenBtn,
+  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #privateMessagesOpenBtn{height:42px;min-height:42px!important;box-sizing:border-box;}
 }
 html.visitor-header-view .header-icon-actions #infoMenu{order:0;}
 .mobile-nav-accordion-toggle:has(>#mobileNavGamesTurnCount:not([hidden])){grid-template-columns:28px minmax(0,1fr) auto auto;}
 .mobile-nav-accordion-toggle:has(>#mobileNavGamesTurnCount:not([hidden]))>i{grid-column:4;grid-row:1;}
+@media(min-width:1101px){
+  html.hammerschach-room-view:not(.visitor-header-view) .header-status{font-size:15px;}
+}

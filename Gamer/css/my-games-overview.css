@@ -51,7 +51,7 @@ html.dark-mode .running-game-board:not(.preview-ready){background:var(--ui-hover
 .game-preview-square .preview-file{left:auto;right:2px;}
 
 /* One stable action row: navigation before a move, confirmation after it. */
-html.room-actions-active .header #dailyGamesOpenBtn{display:none!important;}
+html.room-actions-active .header .match-actions > #dailyGamesOpenBtn{display:none!important;}
 .room-games-navigation{display:flex;flex-direction:column;justify-content:center;align-items:stretch;min-height:48px;}
 .room-default-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px;align-items:stretch;min-height:48px;}
 .room-default-actions[hidden],.room-default-actions>button[hidden]{display:none!important;}
