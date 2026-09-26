@@ -2,6 +2,10 @@
 
 function updateSiteFootnotePlacement(){
   if(!siteFootnoteEl||!siteFootnoteHome)return;
+  if(impulsesToolActive&&impulsesToolView){
+    if(siteFootnoteEl.parentNode!==impulsesToolView)impulsesToolView.appendChild(siteFootnoteEl);
+    return;
+  }
   if(learningToolActive&&learningToolView){
     if(siteFootnoteEl.parentNode!==learningToolView)learningToolView.appendChild(siteFootnoteEl);
     return;

@@ -67,7 +67,7 @@ try{
 function currentSchachArticle(){
   return schachCurrentCategory==='news' ? SCHACH_NEWS[schachNewsCurrentId] : TOURNAMENT_REPORTS[tournamentReportCurrentId];
 }
-const NAVIGABLE_EMBEDDED_TOOLS = new Set(['learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','mediathek','tv','league-standings']);
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['impulses','learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','mediathek','tv','league-standings']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -118,10 +118,11 @@ function memberEmbeddedToolActive(){
   return analyzerToolActive || playerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive;
 }
 function embeddedToolActive(){
-  return learningToolActive || mediathekToolActive || memberEmbeddedToolActive();
+  return impulsesToolActive || learningToolActive || mediathekToolActive || memberEmbeddedToolActive();
 }
 function embeddedToolStatusText(){
   if(mediathekToolActive) return 'Mediathek · '+mediathekSelectionTitle();
+  if(impulsesToolActive) return 'Trainingsimpulse';
   if(learningToolActive) return 'Gamer-Videokurse';
   if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
   if(tvToolActive) return 'Hammerschach - TV';
@@ -155,9 +156,10 @@ function updateAnalyzerToolAvailability(){
   const tournamentReportNavigable = tournamentReportToolNavigable();
   const fairplayAvailable = available && !!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   document.documentElement.classList.toggle('hammerschach-room-view', !available);
-  if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && learningToolActive) || (!trainerAvailable && trainerToolActive) || (!mateSchoolAvailable && mateSchoolToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive) || (!readerAvailable && readerToolActive) || (!tournamentReportAvailable && tournamentReportToolActive) || (!mediathekAvailable && mediathekToolActive)) setEmbeddedToolActive('');
+  if((!available && protectedEmbeddedToolActive()) || (!learningAvailable && (learningToolActive || impulsesToolActive)) || (!trainerAvailable && trainerToolActive) || (!mateSchoolAvailable && mateSchoolToolActive) || (!leagueStandingsAvailable && leagueStandingsToolActive) || (!readerAvailable && readerToolActive) || (!tournamentReportAvailable && tournamentReportToolActive) || (!mediathekAvailable && mediathekToolActive)) setEmbeddedToolActive('');
   if(!fairplayAvailable && fairplayToolActive) setEmbeddedToolActive('');
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
+  if(impulsesToolBtn){impulsesToolBtn.hidden=!learningNavigable;}
   if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Gamer-Videokurse öffnen':'Spielraum verlassen und die Gamer-Videokurse öffnen';}
   if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Hammerschach-Analyzer');}
   if(playerToolBtn){playerToolBtn.hidden=!navigable;playerToolBtn.title=titleFor('Hammerschach-Player');}
@@ -186,7 +188,7 @@ function updateAnalyzerToolAvailability(){
       remembered=String(sessionStorage.getItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY)||'');
       sessionStorage.removeItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY);
     }catch(_){}
-    const canRestore=tool=>tool==='mediathek'?mediathekAvailable:tool==='learning'?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='mate-school'?mateSchoolAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(tool==='tournament-report'?tournamentReportAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))))));
+    const canRestore=tool=>tool==='mediathek'?mediathekAvailable:(tool==='learning'||tool==='impulses')?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='mate-school'?mateSchoolAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(tool==='tournament-report'?tournamentReportAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))))));
     const restorePending=NAVIGABLE_EMBEDDED_TOOLS.has(pending)&&canRestore(pending)?pending:'';
     const restoreRemembered=!embeddedToolActive()&&RESTORABLE_EMBEDDED_TOOLS.has(remembered)&&
       canRestore(remembered)&&(remembered!=='fairplay'||fairplayAvailable)?remembered:'';
@@ -272,6 +274,7 @@ function postTournamentReportToolMessage(message){
   try{ tournamentReportToolFrame.contentWindow.postMessage(message, embeddedToolTargetOrigin()); } catch(_){ }
 }
 function postLearningToolContext(){
+  postImpulsesToolContext();
   postLearningToolMessage({
     type:'hammerschach-learning-context',
     userId:onlineAuthUser ? String(onlineAuthUser.id || '') : '',
@@ -435,6 +438,7 @@ function setEmbeddedToolActive(toolName){
   const fairplayAllowed=!!(onlineAuthUser && onlineAuthUser.isAdmin === true);
   let requested='';
   if(toolName==='mediathek'&&mediathekToolAvailable())requested='mediathek';
+  else if(toolName==='impulses'&&learningToolAvailable())requested='impulses';
   else if(toolName==='learning'&&learningToolAvailable())requested='learning';
   else if(toolName==='trainer'&&trainerToolAvailable())requested='trainer';
   else if(toolName==='mate-school'&&mateSchoolToolAvailable())requested='mate-school';
@@ -455,6 +459,7 @@ function setEmbeddedToolActive(toolName){
   }catch(_){}
   const mediathekWasActive=mediathekToolActive;
   mediathekToolActive=requested==='mediathek';
+  setImpulsesView(requested==='impulses');
   learningToolActive=requested==='learning';
   analyzerToolActive=requested==='analyzer';
   playerToolActive=requested==='player';
@@ -621,7 +626,7 @@ function setLeagueStandingsToolActive(active){setEmbeddedToolActive(active?'leag
 function closeEmbeddedTools(){setEmbeddedToolActive('');}
 function openEmbeddedToolFromCurrentContext(toolName){
   const requested=NAVIGABLE_EMBEDDED_TOOLS.has(toolName)?toolName:'';
-  const isLearning=requested==='learning';
+  const isLearning=requested==='learning'||requested==='impulses';
   const isTrainer=requested==='trainer';
   const isMateSchool=requested==='mate-school';
   const isLeagueStandings=requested==='league-standings';
