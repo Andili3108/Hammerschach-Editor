@@ -7,6 +7,7 @@ import {getGamerPreferences, saveGamerPreferences, validPreferencePatch} from '.
 import { connect } from 'cloudflare:sockets';
 import { handleLeagueStandingsApi } from './league-standings.js';
 import { handleReaderArchivesApi } from './reader-archives.js';
+import { handleTrainingImpulsesApi } from './training-impulses.js';
 import { checkAccountTournamentDeletion } from './account-deletion-tournaments.js';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
@@ -10678,6 +10679,12 @@ async function handleAuthApi(request, env, url) {
 
   const accountRecoveryResponse = await handleAccountRecoveryApi(request, env, url);
   if (accountRecoveryResponse) return accountRecoveryResponse;
+
+  const impulsesResponse = ['/api/training-impulses','/api/admin/training-impulses'].includes(url.pathname)
+    ? await handleTrainingImpulsesApi(request, env, url, {
+      json, lookupAuthSession, bearerTokenFromRequest, requireAdminSession, readJsonBody
+    }) : null;
+  if (impulsesResponse) return impulsesResponse;
 
   const readerArchivesResponse = await handleReaderArchivesApi(request, env, url, {
     json,
