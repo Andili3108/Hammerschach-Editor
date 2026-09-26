@@ -3685,20 +3685,20 @@ html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr) auto
 html.visitor-start-view .header-status{grid-column:auto;}
 #dailyGamesOpenBtn .header-menu-count{margin-left:auto;}
 @media(min-width:1101px){
-  html.member-lobby-view .header-main{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 6px;height:auto;align-content:center;}
+  html.member-lobby-view.central-settings .header{padding-top:12px;}
+  html.member-lobby-view .header-main{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 6px;height:auto;padding-top:0;align-content:center;}
   html.member-lobby-view .header-top-row,
   html.member-lobby-view .header-utility-actions,
   html.member-lobby-view .match-actions{display:contents;}
-  html.member-lobby-view .header-status{grid-row:1;grid-column:1 / 3;box-sizing:border-box;min-width:0;font-size:16px;white-space:normal;}
-  html.member-lobby-view #playerMenu{grid-row:1;grid-column:3;}
-  html.member-lobby-view #profileOpenBtn{grid-row:1;grid-column:4;}
-  html.member-lobby-view #privateMessagesOpenBtn{grid-row:1;grid-column:5;}
+  html.member-lobby-view .header-status{grid-row:2;grid-column:1 / 4;box-sizing:border-box;min-width:0;font-size:16px;white-space:normal;}
+  html.member-lobby-view #playerMenu{grid-row:2;grid-column:4;}
+  html.member-lobby-view #profileOpenBtn{grid-row:2;grid-column:5;}
+  html.member-lobby-view #privateMessagesOpenBtn{grid-row:2;grid-column:6;}
   html.member-lobby-view .header-icon-actions{grid-row:1;grid-column:6;}
   html.member-lobby-view .match-actions>button,
-  html.member-lobby-view .match-actions>.header-menu{grid-row:2;width:100%;min-width:0;}
+  html.member-lobby-view .match-actions>.header-menu{grid-row:3;width:100%;min-width:0;}
   html.member-lobby-view .match-actions>.header-menu>.header-menu-button{width:100%;}
   html.member-lobby-view .header-people-actions>button{width:100%;min-width:0;}
-  html.member-lobby-view .match-actions>#tournamentsOpenBtn:not([hidden]):not([aria-disabled="true"]){grid-row:3;}
 }
 .header-icon-actions #infoMenu{order:0;}
 @media(min-width:1101px){
