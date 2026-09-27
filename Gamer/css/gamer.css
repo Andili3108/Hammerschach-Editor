@@ -3714,3 +3714,39 @@ html.visitor-header-view .header-icon-actions #infoMenu{order:0;}
 @media(min-width:1101px){
   html.hammerschach-room-view:not(.visitor-header-view) .header-status{font-size:15px;}
 }
+
+/* Kurze Bereichstitel und ruhige Standortmarkierung in beiden Navigationen. */
+html.embedded-area-active #status,
+html.embedded-area-active #mobileNavTestStatus{
+  font-size:32px;
+  line-height:1.2;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-overflow:clip;
+}
+@media(max-width:1400px){
+  html.embedded-area-active #status,
+  html.embedded-area-active #mobileNavTestStatus{font-size:26px;}
+}
+@media(max-width:760px){
+  html.embedded-area-active #status,
+  html.embedded-area-active #mobileNavTestStatus{font-size:22px;}
+}
+@media(max-width:380px){
+  html.embedded-area-active #status,
+  html.embedded-area-active #mobileNavTestStatus{font-size:20px;}
+}
+html body button.current-area:disabled,
+html body button.current-area:disabled:hover,
+html body button.current-area:disabled:active{
+  opacity:1!important;
+  filter:none!important;
+  cursor:default!important;
+  color:var(--ui-text)!important;
+  background:var(--ui-surface-alt)!important;
+  border-color:rgb(var(--ui-line-rgb) / .28)!important;
+  box-shadow:inset 3px 0 0 var(--ui-accent)!important;
+  transform:none!important;
+  transition:none!important;
+}
