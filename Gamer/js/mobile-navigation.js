@@ -153,6 +153,7 @@
     button.hidden = !source || source.hidden || visitorBlocked;
     button.disabled = unavailable;
     if(source){
+      button.classList.toggle('current-area',source.classList.contains('current-area'));
       const current = source.getAttribute('aria-current');
       const active = source.classList.contains('active') || current === 'page' || source.getAttribute('aria-pressed') === 'true';
       button.classList.toggle('active',active);

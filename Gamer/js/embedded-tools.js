@@ -121,21 +121,42 @@ function embeddedToolActive(){
   return impulsesToolActive || learningToolActive || mediathekToolActive || memberEmbeddedToolActive();
 }
 function embeddedToolStatusText(){
-  if(mediathekToolActive) return 'Mediathek · '+mediathekSelectionTitle();
+  if(mediathekToolActive) return 'Mediathek';
   if(impulsesToolActive) return 'Trainingsimpulse';
   if(learningToolActive) return 'Gamer-Videokurse';
-  if(leagueStandingsToolActive) return 'Hammerschach - Ergebnisdienst';
-  if(tvToolActive) return 'Hammerschach - TV';
-  if(fairplayToolActive) return 'Hammerschach - Fairplay-Prüfung';
-  if(tournamentReportToolActive) return (schachCurrentCategory==='news'?'Schach-News · ':'Turnierbericht ')+currentSchachArticle().title;
-  if(readerToolActive) return 'Hammerschach - Partienarchiv';
-  if(openingsToolActive) return 'Hammerschach - Eröffnungsschule';
-  if(mateSchoolToolActive) return 'Hammerschach - Mattbilder-Schule';
-  if(schachlaborToolActive) return 'Hammerschach - Schachlabor';
-  if(trainerToolActive) return 'Hammerschach - Trainer';
-  if(analyzerToolActive) return 'Hammerschach - Analyzer';
-  if(playerToolActive) return 'Hammerschach - Player';
+  if(leagueStandingsToolActive) return 'Ergebnisdienst';
+  if(tvToolActive) return 'Gamer-TV';
+  if(fairplayToolActive) return 'Fairplay-Prüfung';
+  if(tournamentReportToolActive) return 'Schach aktuell';
+  if(readerToolActive) return 'Partienarchiv';
+  if(openingsToolActive) return 'Eröffnungsschule';
+  if(mateSchoolToolActive) return 'Mattbilder-Schule';
+  if(schachlaborToolActive) return 'Schachlabor';
+  if(trainerToolActive) return 'Trainer';
+  if(analyzerToolActive) return 'Analyzer';
+  if(playerToolActive) return 'Player';
   return '';
+}
+// Bereichsnavigation bleibt an ihrem Platz; der aktuelle Bereich ist kein Linkziel.
+function updateEmbeddedToolNavigation(){
+  document.documentElement.classList.toggle('embedded-area-active',embeddedToolActive());
+  const entries=[
+    [impulsesToolBtn,impulsesToolActive],[learningToolBtn,learningToolActive],
+    [visitorLearningOpenBtn,learningToolActive],[visitorTrainerOpenBtn,trainerToolActive],
+    [analyzerToolBtn,analyzerToolActive],[playerToolBtn,playerToolActive],
+    [trainerToolBtn,trainerToolActive],[mateSchoolToolBtn,mateSchoolToolActive],
+    [trainerMattbilderHeaderBtn,mateSchoolToolActive],
+    [schachlaborToolBtn,schachlaborToolActive],[openingsToolBtn,openingsToolActive],
+    [tvToolBtn,tvToolActive],[readerToolBtn,readerToolActive],
+    [tournamentReportToolBtn,tournamentReportToolActive],[mediathekToolBtn,mediathekToolActive],
+    [leagueStandingsToolBtn,leagueStandingsToolActive]
+  ];
+  entries.forEach(([button,current])=>{
+    if(!button)return;
+    button.disabled=current;
+    button.classList.toggle('current-area',current);
+    if(current)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+  });
 }
 function updateAnalyzerToolAvailability(){
   const available = embeddedToolsAvailable();
@@ -488,6 +509,7 @@ function setEmbeddedToolActive(toolName){
   document.documentElement.classList.toggle('tv-tool-active',tvToolActive);
   document.documentElement.classList.toggle('league-standings-tool-active',leagueStandingsToolActive);
   updateTrainerHeaderActions();
+  updateEmbeddedToolNavigation();
   if(mediathekToolView)mediathekToolView.hidden=!mediathekToolActive;
   if(learningToolView)learningToolView.hidden=!learningToolActive;
   if(analyzerToolView)analyzerToolView.hidden=!analyzerToolActive;
@@ -1087,9 +1109,7 @@ window.addEventListener('message',async event=>{
       if(visitor&&reportedMode==='free')postTrainerToolMessage({type:'hammerschach-trainer-open-mode',mode:'coach'});
       updateTrainerHeaderActions();
       if(trainerToolActive&&statusEl){
-        statusEl.textContent=trainerHeaderState.mode==='free'
-          ? 'Freies Training – Aufgaben und Schwierigkeitsgrad selbst wählen'
-          : 'Block '+trainerHeaderState.stage+'/'+trainerHeaderState.stageTotal+' · '+trainerHeaderState.stageTitle+' · '+trainerHeaderState.solved+'/'+trainerHeaderState.total+' gemeistert';
+        statusEl.textContent=embeddedToolStatusText();
       }
       return;
     }
