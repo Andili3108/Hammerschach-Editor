@@ -71,7 +71,7 @@ function renderLobbyTournamentRow(tournament){
   name.textContent = tournament.name || 'Turnier';
   const status = document.createElement('span');
   status.className = 'lobby-tournament-status ' + (tournament.status === 'running' ? 'running' : 'upcoming');
-  status.textContent = tournament.status === 'running' ? 'Läuft' : (tournament.status === 'full' ? 'Ausgebucht' : 'Anmeldung offen');
+  status.textContent = tournamentDisplayStatus(tournament);
   main.append(name, status);
 
   const meta = document.createElement('span');

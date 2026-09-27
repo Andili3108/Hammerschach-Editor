@@ -33,15 +33,15 @@ function closeTournamentDialog(){
   hammerschachScheduleHeightReport(false);
 }
 function updateTournamentNotificationUi(){
-  tournamentUnreadCount = tournamentItems.filter(item => item.unread && item.status !== 'draft').length;
+  tournamentUnreadCount = tournamentItems.filter(item => item.unread && item.status !== 'draft' && (!item.visibleAt || Date.parse(item.visibleAt)<=Date.now())).length;
   if(tournamentsNewBadge){
     tournamentsNewBadge.hidden = tournamentUnreadCount < 1;
     tournamentsNewBadge.textContent = tournamentUnreadCount > 1 ? ('NEU ' + tournamentUnreadCount) : 'NEU';
   }
-  const newest = tournamentItems.find(item => item.unread && ['open','full','running'].includes(item.status));
+  const newest = tournamentItems.find(item => item.unread && ['open','full','running'].includes(item.status) && (!item.visibleAt || Date.parse(item.visibleAt)<=Date.now()));
   const showBanner = !!(onlineAuthToken && onlineAuthUser && newest && tournamentBannerDismissedId !== newest.id);
   if(tournamentLobbyBanner) tournamentLobbyBanner.hidden = !showBanner;
-  if(tournamentLobbyBannerText && newest) tournamentLobbyBannerText.textContent = '„' + newest.name + '“ – ' + (newest.status === 'running' ? 'das Turnier läuft.' : 'die Anmeldung ist geöffnet.');
+  if(tournamentLobbyBannerText && newest) tournamentLobbyBannerText.textContent = '„' + newest.name + '“ – ' + (newest.status === 'running' ? 'das Turnier läuft.' : newest.arena ? 'die Arena ist angekündigt.' : newest.registrationOpen ? 'die Anmeldung ist geöffnet.' : 'das Turnier ist angekündigt.');
   if(tournamentLobbyViewBtn) tournamentLobbyViewBtn.dataset.tournamentId = newest ? newest.id : '';
 }
 async function loadTournaments(options){
@@ -155,11 +155,14 @@ async function openTournamentDialog(tournamentId){
   }, 0);
   hammerschachScheduleHeightReport(false);
 }
-function openTournamentCreateDialog(tournamentId){
+let tournamentEditingSeries = null;
+function openTournamentCreateDialog(tournamentId, editSeries=false){
   if(!hasTournamentAdminAccess()) return;
   const requestedId = typeof tournamentId === 'string' ? tournamentId : '';
-  const draft = requestedId ? loadLocalTournamentList().find(item => item.id === requestedId && ['draft','open','full'].includes(item.status)) : null;
+  let draft = requestedId ? loadLocalTournamentList().find(item => item.id === requestedId && (editSeries || ['draft','open','full'].includes(item.status))) : null;
   if(requestedId && !draft) return;
+  tournamentEditingSeries=editSeries && draft && draft.series ? draft.series : null;
+  if(tournamentEditingSeries)draft=tournamentFromSeries(tournamentEditingSeries);
   const published = !!(draft && draft.status !== 'draft');
   const form = document.getElementById('tournamentCreateForm');
   if(form) form.querySelectorAll('input, select, textarea, button').forEach(field => { field.disabled = false; });
@@ -170,7 +173,7 @@ function openTournamentCreateDialog(tournamentId){
     ? 'Beschreibung und Startplanung können bis zum Start geändert werden. Die Spielregeln bleiben verbindlich. Ohne Datum startet ein volles Daily-Turnier nach dem Speichern automatisch. Bei Live-Turnieren kann der Termin nur geändert werden, solange niemand eingecheckt ist.'
     : draft
     ? 'Bearbeite diesen serverseitigen Entwurf. Mitglieder werden weiterhin nicht informiert und es entstehen noch keine Partien.'
-    : 'Erstelle zunächst einen serverseitigen Entwurf. Erst die getrennte Veröffentlichung öffnet die Anmeldung und versendet die einmalige Turniermail.';
+    : 'Erstelle einen Entwurf. Nach Freigabe erscheint das Turnier zum festgelegten Zeitpunkt. Arenen brauchen keine Voranmeldung.';
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.textContent = draft ? 'Änderungen speichern' : 'Entwurf speichern';
   if(tournamentNameInput) tournamentNameInput.value = draft ? draft.name : '';
   if(tournamentModeSelect) tournamentModeSelect.value = normalizeTournamentMode(draft ? draft.mode : 'double_round_robin');
@@ -183,8 +186,10 @@ function openTournamentCreateDialog(tournamentId){
   updateTournamentThemeUi();
   if(tournamentRatingSelect) tournamentRatingSelect.value = draft && !draft.rated ? 'unrated' : 'rated';
   if(tournamentDescriptionInput) tournamentDescriptionInput.value = draft ? draft.description : '';
+  fillTournamentTimingFields(draft,published);
+  if(tournamentEditingSeries){tournamentCreateTitle.textContent='Serienvorlage bearbeiten';tournamentCreateIntro.textContent='Änderungen gelten für künftig erzeugte Termine. Bereits angelegte Termine bleiben unverändert und können einzeln bearbeitet oder abgesagt werden.';}
   if(published && form) form.querySelectorAll('input, select, textarea, button').forEach(field => {
-    field.disabled = !['tournamentDescriptionInput','tournamentScheduleInput','tournamentCreatePreviewBtn','tournamentCreateCancelBtn'].includes(field.id);
+    field.disabled = !['tournamentDescriptionInput','tournamentScheduleInput','tournamentVisibleInput','tournamentRegistrationInput','tournamentCreatePreviewBtn','tournamentCreateCancelBtn'].includes(field.id);
   });
   setTournamentCreateStatus('', '');
   if(tournamentCreateBackdrop) tournamentCreateBackdrop.hidden = false;
@@ -225,13 +230,18 @@ async function saveTournamentDraft(event){
     return;
   }
   const scheduledStartAt = unchangedSchedule ? existing.scheduledStartAt : scheduleValue ? scheduled.toISOString() : null;
+  let timing;
+  try{timing=readTournamentTimingFields(mode==='arena',scheduledStartAt);}catch(error){setTournamentCreateStatus(error.message,'error');return;}
   if(tournamentCreatePreviewBtn) tournamentCreatePreviewBtn.disabled = true;
   setTournamentCreateStatus('Turnier wird gespeichert…', '');
   try{
     const data = await authApi(published ? '/api/tournaments/' + encodeURIComponent(tournamentEditingId) + '/planning' : '/api/tournaments', {
       method:'POST',
       body:JSON.stringify({
-        id:tournamentEditingId || '',
+        id:tournamentEditingSeries?'':tournamentEditingId || '',
+        seriesId:tournamentEditingSeries?.id || '',
+        seriesUpdatedAt:tournamentEditingSeries?.updatedAt || '',
+        ...timing,
         name:name.slice(0,80),
         description:String(tournamentDescriptionInput ? tournamentDescriptionInput.value : '').trim().slice(0,1200),
         tournamentType,

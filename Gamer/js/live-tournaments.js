@@ -13,7 +13,7 @@ function formatLiveTournamentCountdown(targetValue){
 }
 function updateLiveTournamentCountdown(){
   const selected = tournamentSelectedId ? selectedTournament() : null;
-  if(selected && selected.live && ['open','full'].includes(selected.status) && selected.userState === 'confirmed' && !selected.checkedIn && !selected.canCheckIn){
+  if(selected && selected.live && !selected.arena && ['open','full'].includes(selected.status) && selected.userState === 'confirmed' && !selected.checkedIn && !selected.canCheckIn){
     const opensAt = Date.parse(selected.checkInOpensAt || '');
     if(Number.isFinite(opensAt) && Date.now() + liveTournamentClockOffsetMs >= opensAt){
       selected.canCheckIn = true;
@@ -30,8 +30,8 @@ function renderLiveTournamentWaiting(tournament){
   const liveStatus = activeLiveTournamentStatus && String(activeLiveTournamentStatus.tournamentId) === String(tournament.id)
     ? activeLiveTournamentStatus
     : null;
-  const beforeStart = !!(tournament.live && ['open','full'].includes(tournament.status) && tournament.checkedIn);
-  const running = !!(tournament.live && tournament.status === 'running' && tournament.userState === 'playing');
+  const beforeStart = !!(tournament.live && !tournament.arena && ['open','full'].includes(tournament.status) && tournament.checkedIn);
+  const running = !!(tournament.live && tournament.status === 'running' && tournament.userState === 'playing' && (!tournament.arena || Number(tournament.arenaActive || 0)>0));
   tournamentLiveWaiting.hidden = !(beforeStart || running);
   tournamentLiveWaiting.dataset.countdownTarget = '';
   if(!(beforeStart || running)) return;
@@ -49,7 +49,7 @@ function renderLiveTournamentWaiting(tournament){
         text = liveStatus.game && liveStatus.game.status === 'running' ? 'Deine laufende Partie wird noch vollständig gewertet.' : 'Es werden keine neuen Paarungen mehr erzeugt.';
       } else if(liveStatus.paused){
         title = '⏸️ Arena pausiert';
-        text = 'Du erhältst momentan keine neue Paarung. Mit „Arena fortsetzen“ steigst du wieder in die Warteschlange ein.';
+        text = 'Du erhältst momentan keine neue Paarung. Mit „Jetzt mitspielen“ steigst du wieder in die Warteschlange ein.';
       } else if(Number.isFinite(Date.parse(liveStatus.pairingNotBefore || '')) && Date.parse(liveStatus.pairingNotBefore) > Date.now() + liveTournamentClockOffsetMs){
         target = liveStatus.pairingNotBefore;
         title = '⏱️ Kurzes Pausenfenster';

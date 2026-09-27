@@ -65,13 +65,14 @@ function updateTournamentCreationFieldVisibility(){
   const arena = !!(config.live && mode === 'arena');
   if(tournamentArenaDurationField) tournamentArenaDurationField.hidden = !arena;
   if(tournamentPlayersField) tournamentPlayersField.hidden = arena;
+  updateTournamentRecurrenceUi();
   if(tournamentPlayersLabel) tournamentPlayersLabel.textContent = mode === 'swiss' ? 'Maximale Teilnehmerzahl' : 'Teilnehmerzahl';
   if(tournamentScheduleField) tournamentScheduleField.hidden = false;
   if(tournamentScheduleInput) tournamentScheduleInput.required = !!config.live;
   if(tournamentScheduleLabel) tournamentScheduleLabel.textContent = config.live ? 'Starttermin' : 'Frühester Start (optional)';
   const hint = document.getElementById('tournamentScheduleHint');
   if(hint) hint.textContent = config.live
-    ? 'Fester Termin erforderlich. Der Check-in öffnet eine Stunde vorher.'
+    ? (arena ? 'Fester Termin. Während der Laufzeit direkt mitspielen – ohne Voranmeldung und Check-in.' : 'Fester Termin erforderlich. Der Check-in öffnet eine Stunde vorher.')
     : 'Leer lassen: automatischer Start bei voller Teilnehmerzahl. Mit Datum: Start frühestens ab diesem Zeitpunkt, sobald ' + (mode === 'swiss' ? 'mindestens vier Teilnehmer angemeldet sind. Ohne Datum kann der Admin auch manuell ab vier Teilnehmern starten.' : 'alle Plätze belegt sind.');
 }
 function updateTournamentModeUi(preferredPlayers){
@@ -385,8 +386,8 @@ const TOURNAMENT_STATUS_CONFIG = Object.freeze({
   cancelled:{label:'Abgesagt',className:'status-cancelled'}
 });
 const TOURNAMENT_LIST_CONFIG = Object.freeze({
-  current:{title:'Aktuelle Turniere',note:'Turniere mit offener Anmeldung und bereits laufende Wettbewerbe.',empty:'Derzeit ist noch kein Turnier veröffentlicht oder gestartet.'},
-  mine:{title:'Meine Turniere',note:'Anmeldungen, Wartelistenplätze sowie laufende und frühere eigene Turniere.',empty:'Du bist derzeit bei keinem veröffentlichten Turnier angemeldet.'},
+  current:{title:'Aktuelle Turniere',note:'Angekündigte Turniere, offene Anmeldungen und laufende Wettbewerbe.',empty:'Derzeit ist noch kein Turnier veröffentlicht oder gestartet.'},
+  mine:{title:'Meine Turniere',note:'Vormerkungen, Anmeldungen, Wartelistenplätze sowie laufende und frühere eigene Turniere.',empty:'Du bist derzeit bei keinem veröffentlichten Turnier angemeldet.'},
   archive:{title:'Archiv',note:'Beendete und abgesagte Turniere bleiben mit ihren Ergebnissen einsehbar.',empty:'Das Turnierarchiv ist momentan noch leer.'},
   drafts:{title:'Meine Entwürfe',note:'Serverseitig gespeicherte, noch nicht veröffentlichte Turnierentwürfe.',empty:'Noch keine Turnierentwürfe vorhanden.'}
 });

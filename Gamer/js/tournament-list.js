@@ -37,6 +37,11 @@ function normalizeLocalTournament(value, index){
     timeKey:String(value.timeKey || ''),
     timeLabel:String(value.timeLabel || (live ? '' : (hours + ' Stunden pro Zug'))),
     scheduledStartAt:value.scheduledStartAt || null,
+    visibleAt:value.visibleAt || null,
+    registrationOpensAt:value.registrationOpensAt || null,
+    registrationOpen:value.registrationOpen !== false,
+    recurrence:value.recurrence || null,
+    series:value.series || null,
     startedAt:value.startedAt || null,
     arena:mode === 'arena' || value.arena === true,
     arenaDurationMinutes:[60,90,120,180,240,1440].includes(Number(value.arenaDurationMinutes)) ? Number(value.arenaDurationMinutes) : (mode === 'arena' ? 90 : null),
@@ -110,12 +115,19 @@ function formatTournamentLocalDateTime(value){
   try{ return date.toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + ' Uhr'; }
   catch(_){ return ''; }
 }
-function setTournamentStatusBadge(element, status){
+function tournamentDisplayStatus(tournament){
+  if(tournament.status==='open'){
+    if(tournament.visibleAt && Date.parse(tournament.visibleAt)>Date.now())return 'Geplant';
+    if(tournament.arena || !tournament.registrationOpen)return 'Angekündigt';
+  }
+  return tournamentStatusInfo(tournament.status).label;
+}
+function setTournamentStatusBadge(element, status, tournament){
   if(!element) return;
   const info = tournamentStatusInfo(status);
   Object.values(TOURNAMENT_STATUS_CONFIG).forEach(item => element.classList.remove(item.className));
   element.classList.add(info.className);
-  element.textContent = info.label;
+  element.textContent = tournament ? tournamentDisplayStatus(tournament) : info.label;
 }
 function appendTournamentMeta(container, text){
   const chip = document.createElement('span');
@@ -133,7 +145,7 @@ function createTournamentListCard(tournament){
   name.textContent = (tournament.unread ? '🆕 ' : '') + tournament.name;
   const badge = document.createElement('div');
   badge.className = 'tournament-status-badge';
-  setTournamentStatusBadge(badge, tournament.status);
+  setTournamentStatusBadge(badge, tournament.status, tournament);
   head.appendChild(name);
   head.appendChild(badge);
 
@@ -148,6 +160,8 @@ function createTournamentListCard(tournament){
   appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer · offen') : (tournament.status === 'draft' ? ('👥 ' + (normalizeTournamentMode(tournament.mode) === 'swiss' ? 'max. ' : '') + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players + (normalizeTournamentMode(tournament.mode) === 'swiss' ? ' max.' : ''))));
   appendTournamentMeta(meta, '⏱ ' + (tournament.timeLabel || (tournament.hours + ' Std./Zug')));
   appendTournamentMeta(meta, '📅 ' + tournamentStartPlanText(tournament));
+  if(tournament.series)appendTournamentMeta(meta,'↻ Serie'+(tournament.series.paused?' · pausiert':''));
+  if(tournament.visibleAt && Date.parse(tournament.visibleAt)>Date.now())appendTournamentMeta(meta,'Sichtbar ab '+formatTournamentLocalDateTime(tournament.visibleAt));
   if(tournament.arena) appendTournamentMeta(meta, '⌛ ' + (Number(tournament.arenaDurationMinutes) === 1440 ? '24 Stunden' : (tournament.arenaDurationMinutes + ' Minuten')));
   appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
   appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');

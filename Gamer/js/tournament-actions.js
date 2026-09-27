@@ -12,7 +12,7 @@ async function refreshSelectedTournament(message){
 async function publishSelectedTournament(){
   const tournament = selectedTournament();
   if(!tournament || tournament.status !== 'draft' || !hasTournamentAdminAccess()) return;
-  if(!window.confirm('Turnier „' + tournament.name + '“ jetzt veröffentlichen?\n\nDanach ist die Anmeldung für alle Mitglieder sichtbar und die einmalige Turniermail wird versendet. Die Turnierdaten können dann nicht mehr als Entwurf bearbeitet werden.')) return;
+  if(!window.confirm('Turnier „' + tournament.name + '“ freigeben?\n\nEs erscheint zum eingestellten Zeitpunkt; dann wird die Turniermail versendet.'+(tournament.recurrence?' Die Wiederholung wird damit aktiviert.':'')+(tournament.arena?' Eine Voranmeldung ist nicht erforderlich.':''))) return;
   if(tournamentPublishBtn) tournamentPublishBtn.disabled = true;
   try{
     const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/publish', {method:'POST',body:JSON.stringify({confirmed:true})});
@@ -25,7 +25,7 @@ async function joinSelectedTournament(){
   const tournament = selectedTournament();
   if(!tournament || !['open','full'].includes(tournament.status)) return;
   const waitlist = tournament.status === 'full';
-  const question = waitlist
+  const question = tournament.arena ? 'Arena unverbindlich vormerken? Zum Start entscheidest du selbst, ob du mitspielst.' : waitlist
     ? 'Das Teilnehmerfeld ist voll. Möchtest du dich verbindlich auf die Warteliste setzen lassen?'
     : 'Möchtest du deine Teilnahme am Turnier „' + tournament.name + '“ verbindlich bestätigen?';
   if(!window.confirm(question)) return;
@@ -38,7 +38,7 @@ async function joinSelectedTournament(){
 }
 async function checkInSelectedTournament(){
   const tournament = selectedTournament();
-  if(!tournament || !tournament.live || !['open','full'].includes(tournament.status) || tournament.userState !== 'confirmed' || tournament.checkedIn) return;
+  if(!tournament || !tournament.live || tournament.arena || !['open','full'].includes(tournament.status) || tournament.userState !== 'confirmed' || tournament.checkedIn) return;
   if(!tournament.canCheckIn){
     if(statusEl) statusEl.textContent = 'Der Check-in öffnet eine Stunde vor dem geplanten Start.';
     return;
@@ -101,7 +101,7 @@ async function toggleArenaPause(){
 async function withdrawSelectedTournament(){
   const tournament = selectedTournament();
   if(!tournament || !['open','full'].includes(tournament.status)) return;
-  if(!window.confirm('Möchtest du deine Anmeldung für „' + tournament.name + '“ wirklich zurückziehen?')) return;
+  if(!window.confirm(tournament.arena ? 'Vormerkung entfernen?' : 'Möchtest du deine Anmeldung für „' + tournament.name + '“ wirklich zurückziehen?')) return;
   if(tournamentWithdrawBtn) tournamentWithdrawBtn.disabled = true;
   try{
     const data = await authApi('/api/tournaments/' + encodeURIComponent(tournament.id) + '/join', {method:'DELETE'});
