@@ -1,3 +1,4 @@
+import { ensureSeriesSchema, tournamentTiming, tournamentVisible, tournamentRegistrationOpen, activateTournamentSeries, materializeTournamentSeries, tournamentSeriesDto, seriesConfig } from './tournament-series.js';
 import {getProgress, saveProgress, deleteProgress} from './videocourse-progress.js';
 import { handleRatingHistoryApi } from './rating-history.js';
 import { ensureLobbyWelcome, newLobbyWelcomeStatement, handleLobbyWelcomeApi } from './lobby-welcome.js';
@@ -4306,6 +4307,7 @@ async function ensureTournamentTables(env) {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_games_black ON tournament_games (black_user_id, status)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_tournament_knockout_results_round ON tournament_knockout_results (tournament_id, round_number, pairing_number)`)
   ]);
+  await ensureSeriesSchema(env);
   tournamentTablesReady = true;
   return true;
 }
@@ -4501,7 +4503,7 @@ function tournamentStandings(participants, games, byes = []) {
 function tournamentArenaStandings(participants, games) {
   const rows = new Map();
   for (const participant of participants || []) {
-    if (!participant || participant.status !== 'confirmed') continue;
+    if (!participant || participant.status !== 'confirmed' || !participant.arenaJoinedAt) continue;
     rows.set(String(participant.userId), {
       userId:String(participant.userId),
       username:cleanDisplayName(participant.username) || 'Mitglied',
@@ -4700,7 +4702,7 @@ async function tournamentDto(env, row, sessionUser) {
   const live = tournamentType !== TOURNAMENT_TYPE_DAILY;
   const scheduledStartAt = row.scheduled_start_at || null;
   const scheduledStartMs = scheduledStartAt ? Date.parse(scheduledStartAt) : NaN;
-  const checkInOpensAt = live && Number.isFinite(scheduledStartMs) ? new Date(scheduledStartMs - 60 * 60 * 1000).toISOString() : null;
+  const checkInOpensAt = live && !arena && Number.isFinite(scheduledStartMs) ? new Date(scheduledStartMs - 60 * 60 * 1000).toISOString() : null;
   const checkInOpen = !!(live && ['open', 'full'].includes(status) && checkInOpensAt && Date.now() >= Date.parse(checkInOpensAt));
   const userState = own
     ? (status === 'running' && own.status === 'confirmed' ? 'playing' : status === 'ended' && own.status === 'confirmed' ? 'finished' : own.status)
@@ -4720,6 +4722,11 @@ async function tournamentDto(env, row, sessionUser) {
     timeKey:live ? normalizeTournamentTimeKey(tournamentType, row.time_key) : '',
     timeLabel:tournamentTimeLabel(tournamentType, row.time_key, row.hours_per_move),
     scheduledStartAt,
+    visibleAt:row.visible_at || null,
+    registrationOpensAt:row.registration_opens_at || null,
+    registrationOpen:tournamentRegistrationOpen(row),
+    recurrence:row.recurrence_json ? JSON.parse(row.recurrence_json) : null,
+    series:await tournamentSeriesDto(env,row.series_id),
     arena,
     arenaDurationMinutes:arena ? normalizeTournamentArenaDuration(row.arena_duration_minutes) : null,
     arenaEndsAt:arena ? (row.arena_ends_at || null) : null,
@@ -4764,17 +4771,17 @@ async function tournamentDto(env, row, sessionUser) {
 
 async function listTournaments(env, sessionUser) {
   if (!(await ensureTournamentTables(env)) || !sessionUser) return [];
-  await autoStartDueTournaments(env);
+  await processTournamentSchedule(env);
   await repairRunningKnockoutTournaments(env);
   const admin = isAdminUser(sessionUser, env);
   const result = await env.DB.prepare(
     `SELECT tournament.*, view.viewed_at
        FROM tournaments tournament
        LEFT JOIN tournament_views view ON view.tournament_id = tournament.id AND view.user_id = ?
-      WHERE tournament.status <> 'draft' OR ? = 1
+      WHERE (tournament.status <> 'draft' AND (tournament.visible_at IS NULL OR tournament.visible_at <= ?)) OR ? = 1
       ORDER BY CASE tournament.status WHEN 'open' THEN 0 WHEN 'full' THEN 1 WHEN 'running' THEN 2 WHEN 'draft' THEN 3 ELSE 4 END,
                COALESCE(tournament.published_at, tournament.updated_at) DESC`
-  ).bind(sessionUser.id, admin ? 1 : 0).all();
+  ).bind(sessionUser.id, new Date().toISOString(), admin ? 1 : 0).all();
   const rows = result && result.results ? result.results : [];
   const tournaments = [];
   for (const row of rows) tournaments.push(await tournamentDto(env, row, sessionUser));
@@ -4798,6 +4805,7 @@ async function liveTournamentStatusForUser(env, sessionUser) {
         AND participant.status = 'confirmed'
         AND tournament.status = 'running'
         AND tournament.tournament_type IN ('rapid','blitz')
+        AND (tournament.mode <> 'arena' OR participant.arena_joined_at IS NOT NULL)
       ORDER BY tournament.started_at DESC
       LIMIT 1`
   ).bind(sessionUser.id).first();
@@ -5617,12 +5625,12 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
     ).bind(now, arenaEndsAt, now, tournament.id, tournament.scheduled_start_at || null).run();
     if (d1Changes(changed) < 1) return {started:false, reason:'start_conflict'};
     await env.DB.prepare(
-      `UPDATE tournament_participants SET arena_active = CASE WHEN checked_in_at IS NULL THEN 0 ELSE 1 END,
-              arena_joined_at = CASE WHEN checked_in_at IS NULL THEN arena_joined_at ELSE COALESCE(arena_joined_at, ?) END,
-              arena_waiting_since = CASE WHEN checked_in_at IS NULL THEN NULL ELSE ? END,
+      `UPDATE tournament_participants SET arena_active = 0,
+              arena_joined_at = NULL,
+              arena_waiting_since = NULL,
               arena_pairing_not_before = NULL, updated_at = ?
         WHERE tournament_id = ? AND status = 'confirmed'`
-    ).bind(now, now, now, tournament.id).run();
+    ).bind(now, tournament.id).run();
     return {started:true, arena:true, startingPlayers, arenaEndsAt};
   }
 
@@ -5652,6 +5660,21 @@ async function autoStartScheduledTournament(env, tournamentId, options = {}) {
   const running = await loadTournamentRow(env, tournament.id);
   await startTournamentRound(env, running, 1);
   return {started:true, arena:false, startingPlayers};
+}
+
+async function processTournamentSchedule(env) {
+  if(!(await ensureTournamentTables(env)))return;
+  await materializeTournamentSeries(env);
+  const now=new Date().toISOString();
+  const rows=(await env.DB.prepare(`SELECT * FROM tournaments WHERE status IN ('open','full','running') AND (visible_at IS NULL OR visible_at <= ?) AND publication_mail_sent_at IS NULL LIMIT 24`).bind(now).all()).results || [];
+  for(const row of rows){
+    if(row.scheduled_start_at)await scheduleTournamentAlarm(env,row,row.status==='running'&&row.arena_ends_at?row.arena_ends_at:row.scheduled_start_at,row.status==='running'?'end':'start');
+    const claimed=await env.DB.prepare("UPDATE tournaments SET publication_mail_sent_at = ? WHERE id = ? AND publication_mail_sent_at IS NULL AND status IN ('open','full','running') AND (visible_at IS NULL OR visible_at <= ?)").bind(now,row.id,now).run();
+    if(d1Changes(claimed)>0)await sendTournamentPublishedEmails(env,row);
+  }
+  await autoStartDueTournaments(env);
+  const arenas=(await env.DB.prepare("SELECT id FROM tournaments WHERE status = 'running' AND mode = 'arena' AND arena_ends_at <= ?").bind(now).all()).results || [];
+  for(const row of arenas)await closeArenaTournamentIfDue(env,row.id);
 }
 
 async function autoStartDueTournaments(env) {
@@ -5973,23 +5996,24 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
       : `${Number(tournament.max_players)} Teilnehmer`;
   const details = `${type} · ${mode} · ${participation} · ${time} · ${variant} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}${scheduled ? ` · ${tournamentIsLive(tournament) ? 'Starttermin' : 'Frühestens'}: ${scheduled}` : ' · Start bei voller Teilnehmerzahl'}`;
   const subject = `Neues Hammerschach-Turnier: ${title}`;
-  const startHint = tournamentIsLive(tournament)
+  const startHint = arena ? '\n\nKeine Voranmeldung und kein Check-in nötig. Während der Laufzeit direkt mitspielen; zwischen den Partien sind Pausen möglich.' : tournamentIsLive(tournament)
     ? '\n\nDer Check-in öffnet eine Stunde vor dem Turnierstart. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.'
     : !scheduled
       ? '\n\nDas Turnier startet automatisch, sobald alle Startplätze belegt sind.' + (swiss ? ' Der Admin kann es auch ab vier Teilnehmern manuell starten.' : '')
     : swiss
       ? '\n\nDas Turnier startet zum geplanten Termin automatisch, sobald mindestens 4 Teilnehmer bestätigt sind.'
       : '\n\nDas Turnier startet zum geplanten Termin automatisch, sobald alle Startplätze belegt sind.';
-  const textPart = `Hallo ${name},\n\nfür das Turnier „${title}“ ist die Anmeldung geöffnet.\n\n${details}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.${startHint}${arena ? '\nIn die laufende Arena kannst du auch später jederzeit einsteigen.' : ''}\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const registrationNotice=arena?'Die Arena ist angekündigt – während der Laufzeit einfach mitspielen.':tournament.registration_opens_at && Date.parse(tournament.registration_opens_at)>Date.now()?'Die Anmeldung öffnet am '+new Date(tournament.registration_opens_at).toLocaleString('de-DE',{timeZone:'Europe/Berlin'})+' Uhr.':'Die Anmeldung ist geöffnet.';
+  const textPart = `Hallo ${name},\n\nTurnier „${title}“: ${registrationNotice}\n\n${details}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}${arena?'Eine Vormerkung ist freiwillig und führt nicht zur automatischen Paarung.':'Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.'}${startHint}${arena ? '\nIn die laufende Arena kannst du auch später jederzeit einsteigen.' : ''}\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier ansehen</a></p>` : '';
-  const startHintHtml = tournamentIsLive(tournament)
+  const startHintHtml = arena ? '<p>Keine Voranmeldung und kein Check-in nötig. Während der Laufzeit direkt mitspielen; zwischen den Partien sind Pausen möglich.</p>' : tournamentIsLive(tournament)
     ? '<p>Der Check-in öffnet eine Stunde vor dem Turnierstart. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.</p>'
     : !scheduled
       ? '<p>Das Turnier startet automatisch, sobald alle Startplätze belegt sind.' + (swiss ? ' Der Admin kann es auch ab vier Teilnehmern manuell starten.' : '') + '</p>'
     : swiss
       ? '<p>Das Turnier startet zum geplanten Termin automatisch, sobald mindestens 4 Teilnehmer bestätigt sind.</p>'
       : '<p>Das Turnier startet zum geplanten Termin automatisch, sobald alle Startplätze belegt sind.</p>';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>für dieses ${escapeEmailHtml(type)}-Turnier ist die Anmeldung geöffnet.</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.</p>${startHintHtml}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>${escapeEmailHtml(registrationNotice)}</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>${arena?'Eine Vormerkung ist freiwillig und führt nicht zur automatischen Paarung.':'Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.'}</p>${startHintHtml}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_published', recipientEmail:recipient.email, recipientName:name, subject, textPart, htmlPart, attachments:[]};
 }
 
@@ -9800,7 +9824,8 @@ function tickerTournamentMessage(row) {
   const start = !scheduled ? 'Start bei voller Teilnehmerzahl'
     : Date.parse(row.scheduled_start_at) <= Date.now() ? 'Wartet auf Startvoraussetzungen'
     : `${tournamentIsLive(row) ? 'Starttermin' : 'Frühestens'} ${scheduled}`;
-  return `${type} · ${mode}${thematic} · Anmeldung geöffnet · ${start}.`;
+  const participation=normalizeTournamentMode(row.mode)===TOURNAMENT_MODE_ARENA?'Ohne Voranmeldung mitspielen':row.registration_opens_at && Date.parse(row.registration_opens_at)>Date.now()?'Anmeldung öffnet später':'Anmeldung geöffnet';
+  return `${type} · ${mode}${thematic} · ${participation} · ${start}.`;
 }
 
 async function listLobbyTickerItems(env) {
@@ -9814,10 +9839,10 @@ async function listLobbyTickerItems(env) {
         ORDER BY priority DESC, starts_at DESC LIMIT 30`
     ).bind(now, now).all(),
     env.DB.prepare(
-      `SELECT id, name, tournament_type, mode, status, scheduled_start_at, published_at, started_at, updated_at
-         FROM tournaments WHERE status IN ('open','full','running') AND published_at IS NOT NULL
+      `SELECT id, name, tournament_type, mode, status, scheduled_start_at, registration_opens_at, published_at, started_at, updated_at
+         FROM tournaments WHERE status IN ('open','full','running') AND published_at IS NOT NULL AND (visible_at IS NULL OR visible_at <= ?)
         ORDER BY CASE status WHEN 'running' THEN 0 ELSE 1 END, COALESCE(scheduled_start_at, published_at) ASC LIMIT 8`
-    ).all()
+    ).bind(now).all()
   ]);
   const stored = (storedResult && storedResult.results ? storedResult.results : []).map(row => lobbyTickerItemDto(row, false));
   const tournaments = (tournamentResult && tournamentResult.results ? tournamentResult.results : []).map(row => {
@@ -11071,6 +11096,9 @@ async function handleAuthApi(request, env, url) {
     const themeRequested = body.theme !== null && body.theme !== undefined;
     const theme = themeRequested ? cleanThemeDefinition(body.theme) : null;
     const themeJson = theme ? JSON.stringify(theme) : null;
+    let timing;
+    try { timing=tournamentTiming(body,scheduledStartAt,mode===TOURNAMENT_MODE_ARENA); }
+    catch(error) { return json({ok:false,message:error.message},{status:400}); }
     if (name.length < 3) return json({ok:false, code:'INVALID_TOURNAMENT_NAME', message:'Bitte einen Turniernamen mit mindestens drei Zeichen eingeben.'}, {status:400});
     if (themeRequested && !theme) return json({ok:false, code:'INVALID_TOURNAMENT_THEME', message:'Die gewählte Eröffnung ist ungültig oder enthält keine vollständig legale Zugfolge.'}, {status:400});
     if (theme && variant === GAME_VARIANT_FREESTYLE) return json({ok:false, code:'THEME_FREESTYLE_CONFLICT', message:'Thementurniere verwenden klassische Eröffnungen und können nicht mit Freestyle kombiniert werden.'}, {status:400});
@@ -11078,6 +11106,13 @@ async function handleAuthApi(request, env, url) {
     if (Date.parse(scheduledStartAt) <= Date.now()) return json({ok:false, code:'TOURNAMENT_START_IN_PAST', message:'Der geplante Turnierstart muss in der Zukunft liegen.'}, {status:400});
     try {
       await ensureTournamentTables(env);
+      if(body.seriesId){
+        if(!timing.recurrence)return json({ok:false,message:'Bitte eine Wiederholung für die Serie wählen.'},{status:400});
+        const template={name,description,max_players:players,hours_per_move:hours,rated:body.rated===false?0:1,variant,theme_json:themeJson,tournament_type:tournamentType,time_key:timeKey||null,time_label:timeLabel,arena_duration_minutes:arenaDuration,round_pause_seconds:60,mode,created_by_user_id:admin.session.user.id};
+        const result=await env.DB.prepare('UPDATE tournament_series SET template_json = ?, config_json = ?, next_start_at = ?, updated_at = ? WHERE id = ? AND updated_at = ?').bind(JSON.stringify(template),JSON.stringify(timing.recurrence),scheduledStartAt,new Date().toISOString(),String(body.seriesId),String(body.seriesUpdatedAt||'')).run();
+        if(d1Changes(result)<1)return json({ok:false,message:'Die Serie wurde zwischenzeitlich geändert. Bitte neu öffnen.'},{status:409});
+        return json({ok:true,message:'Serienvorlage gespeichert. Bereits angelegte Einzeltermine bleiben unverändert.'});
+      }
       const requestedId = String(body.id || '').trim();
       const existing = requestedId ? await loadTournamentRow(env, requestedId) : null;
       if (requestedId && (!existing || existing.status !== 'draft')) {
@@ -11102,12 +11137,31 @@ async function handleAuthApi(request, env, url) {
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 60, ?, 'draft', ?, 0, 0, ?, ?, NULL, NULL, NULL, NULL)`
         ).bind(id, name, description, players, hours, body.rated === false ? 0 : 1, variant, themeJson, tournamentType, timeKey || null, timeLabel, scheduledStartAt, arenaDuration, mode, admin.session.user.id, now, now).run();
       }
+      await env.DB.prepare('UPDATE tournaments SET visible_at = ?, registration_opens_at = ?, recurrence_json = ? WHERE id = ? AND status = \'draft\'').bind(timing.visibleAt,timing.registrationOpensAt,timing.recurrence?JSON.stringify(timing.recurrence):null,id).run();
       const row = await loadTournamentRow(env, id);
       return json({ok:true, tournament:await tournamentDto(env, row, admin.session.user), message:existing ? 'Turnierentwurf wurde aktualisiert.' : 'Turnierentwurf wurde gespeichert.'});
     } catch (error) {
       console.error('Tournament draft save failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'TOURNAMENT_SAVE_FAILED', message:'Der Turnierentwurf konnte nicht gespeichert werden.'}, {status:500});
     }
+  }
+
+  const seriesActionMatch=url.pathname.match(/^\/api\/tournament-series\/([^/]+)\/(pause|resume)$/);
+  if(seriesActionMatch && request.method==='POST'){
+    const admin=await requireAdminSession(request,env);if(!admin.ok)return admin.response;
+    await ensureTournamentTables(env);
+    const changed=await env.DB.prepare('UPDATE tournament_series SET paused = ?, updated_at = ? WHERE id = ?').bind(seriesActionMatch[2]==='pause'?1:0,new Date().toISOString(),decodeURIComponent(seriesActionMatch[1])).run();
+    if(!d1Changes(changed))return json({ok:false,message:'Serie nicht gefunden.'},{status:404});
+    return json({ok:true,message:seriesActionMatch[2]==='pause'?'Serie pausiert. Bereits angelegte Termine bleiben bestehen und können einzeln abgesagt werden.':'Serie fortgesetzt. Vergangene Termine werden nicht nachgeholt.'});
+  }
+  const tournamentCancelMatch=url.pathname.match(/^\/api\/tournaments\/([^/]+)\/cancel$/);
+  if(tournamentCancelMatch && request.method==='POST'){
+    const admin=await requireAdminSession(request,env);if(!admin.ok)return admin.response;
+    await ensureTournamentTables(env);
+    const now=new Date().toISOString();
+    const changed=await env.DB.prepare("UPDATE tournaments SET status = 'cancelled', ended_at = ?, updated_at = ? WHERE id = ? AND status IN ('draft','open','full')").bind(now,now,decodeURIComponent(tournamentCancelMatch[1])).run();
+    if(!d1Changes(changed))return json({ok:false,message:'Dieser Termin ist bereits gestartet oder abgesagt.'},{status:409});
+    return json({ok:true,message:'Einzeltermin abgesagt. Eine zugehörige Serie bleibt bestehen.'});
   }
 
   const tournamentPlanningMatch = url.pathname.match(/^\/api\/tournaments\/([^/]+)\/planning$/);
@@ -11125,13 +11179,18 @@ async function handleAuthApi(request, env, url) {
       if ((raw && !Number.isFinite(ms)) || (tournamentIsLive(row) && !raw)) return json({ok:false, message:'Bitte einen gültigen Starttermin wählen. Live-Turniere benötigen einen festen Termin.'}, {status:400});
       const scheduled = raw ? new Date(ms).toISOString() : null;
       const changedSchedule = scheduled !== (row.scheduled_start_at || null);
+      let timing;
+      try { timing=tournamentTiming({visibleAt:body.visibleAt===undefined?row.visible_at:body.visibleAt,registrationOpensAt:body.registrationOpensAt===undefined?row.registration_opens_at:body.registrationOpensAt},scheduled,normalizeTournamentMode(row.mode)===TOURNAMENT_MODE_ARENA); }
+      catch(error){return json({ok:false,message:error.message},{status:400});}
+      if(tournamentVisible(row) && timing.visibleAt && Date.parse(timing.visibleAt)>Date.now())return json({ok:false,message:'Ein bereits sichtbarer Termin kann nicht wieder verborgen werden.'},{status:409});
+
       if (changedSchedule && scheduled && ms <= Date.now()) return json({ok:false, message:'Ein neuer Starttermin muss in der Zukunft liegen. Bei Daily-Turnieren kannst du das Datum auch entfernen.'}, {status:400});
       const now = new Date().toISOString();
       const changed = await env.DB.prepare(
-        `UPDATE tournaments SET description = ?, scheduled_start_at = ?, updated_at = ?
+        `UPDATE tournaments SET description = ?, scheduled_start_at = ?, visible_at = ?, registration_opens_at = ?, updated_at = ?
           WHERE id = ? AND status IN ('open','full') AND updated_at = ?
           AND (? = 0 OR NOT EXISTS (SELECT 1 FROM tournament_participants WHERE tournament_id = ? AND status = 'confirmed' AND checked_in_at IS NOT NULL))`
-      ).bind(cleanTournamentDescription(body.description), scheduled, now, tournamentId, row.updated_at,
+      ).bind(cleanTournamentDescription(body.description), scheduled, timing.visibleAt, timing.registrationOpensAt, now, tournamentId, row.updated_at,
         changedSchedule && tournamentIsLive(row) ? 1 : 0, tournamentId).run();
       if (d1Changes(changed) < 1) return json({ok:false, message:'Die Planung wurde nicht gespeichert: Der Turnierstand hat sich geändert oder es sind bereits Spieler eingecheckt. Bitte das Turnier neu öffnen; nach dem Check-in bleibt der Live-Termin verbindlich.'}, {status:409});
       const updated = await loadTournamentRow(env, tournamentId);
@@ -11157,10 +11216,12 @@ async function handleAuthApi(request, env, url) {
       const tournament = await loadTournamentRow(env, tournamentId);
       if (!tournament) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
       if (tournament.status !== 'draft') return json({ok:false, code:'TOURNAMENT_ALREADY_PUBLISHED', message:'Dieses Turnier wurde bereits veröffentlicht.'}, {status:409});
+      if(tournament.scheduled_start_at && Date.parse(tournament.scheduled_start_at)<=Date.now()) return json({ok:false,message:'Bitte vor der Freigabe einen zukünftigen Starttermin wählen.'},{status:409});
+      await activateTournamentSeries(env,tournament);
       const now = new Date().toISOString();
       const changed = await env.DB.prepare(
         `UPDATE tournaments SET status = 'open', published_at = ?, updated_at = ? WHERE id = ? AND status = 'draft'`
-      ).bind(now, now, tournamentId).run();
+      ).bind(tournament.visible_at && tournament.visible_at>now?tournament.visible_at:now, now, tournamentId).run();
       if (d1Changes(changed) < 1) return json({ok:false, code:'TOURNAMENT_PUBLISH_CONFLICT', message:'Der Turnierstatus hat sich bereits geändert.'}, {status:409});
       const published = await loadTournamentRow(env, tournamentId);
       let automaticStartScheduled = false;
@@ -11168,9 +11229,9 @@ async function handleAuthApi(request, env, url) {
         try { automaticStartScheduled = await scheduleTournamentAlarm(env, published, published.scheduled_start_at, 'start'); }
         catch (error) { console.error('Tournament start scheduling failed', error && error.message ? error.message : String(error || 'unknown')); }
       }
-      const mail = await sendTournamentPublishedEmails(env, published);
-      await env.DB.prepare(`UPDATE tournaments SET publication_mail_sent_at = ? WHERE id = ?`).bind(new Date().toISOString(), tournamentId).run();
-      return json({ok:true, tournament:await tournamentDto(env, published, admin.session.user), mail, automaticStartScheduled, message:`Turnier wurde veröffentlicht. ${mail.sent} Turniermail${mail.sent === 1 ? '' : 's'} versendet${mail.failed ? `, ${mail.failed} fehlgeschlagen` : ''}.${published.scheduled_start_at ? ' Der geplante automatische Start ist eingeplant.' : ''}`});
+      await processTournamentSchedule(env);
+      const current=await loadTournamentRow(env,tournamentId);
+      return json({ok:true,tournament:await tournamentDto(env,current,admin.session.user),automaticStartScheduled,message:tournamentVisible(current)?'Turnier wurde freigegeben.':'Turnier wurde eingeplant und erscheint zum festgelegten Zeitpunkt.'});
     } catch (error) {
       console.error('Tournament publish failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'TOURNAMENT_PUBLISH_FAILED', message:'Das Turnier wurde veröffentlicht, aber die Verarbeitung konnte nicht vollständig abgeschlossen werden.'}, {status:500});
@@ -11184,7 +11245,7 @@ async function handleAuthApi(request, env, url) {
     const tournamentId = String(decodeURIComponent(tournamentViewedMatch[1]) || '').trim();
     try {
       const tournament = await loadTournamentRow(env, tournamentId);
-      if (!tournament || (tournament.status === 'draft' && !isAdminUser(session.user, env))) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
+      if (!tournament || (!tournamentVisible(tournament) && !isAdminUser(session.user, env))) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
       const viewedAt = new Date().toISOString();
       await env.DB.prepare(
         `INSERT INTO tournament_views (tournament_id, user_id, viewed_at) VALUES (?, ?, ?)
@@ -11205,7 +11266,7 @@ async function handleAuthApi(request, env, url) {
     const tournamentId = String(decodeURIComponent(tournamentCheckInMatch[1]) || '').trim();
     try {
       const tournament = await loadTournamentRow(env, tournamentId);
-      if (!tournament || !tournamentIsLive(tournament)) return json({ok:false, code:'LIVE_TOURNAMENT_NOT_FOUND', message:'Das Live-Turnier wurde nicht gefunden.'}, {status:404});
+      if (!tournament || !tournamentVisible(tournament) || !tournamentIsLive(tournament) || normalizeTournamentMode(tournament.mode)===TOURNAMENT_MODE_ARENA) return json({ok:false, code:'LIVE_TOURNAMENT_NOT_FOUND', message:'Das Live-Turnier wurde nicht gefunden.'}, {status:404});
       if (!['open', 'full'].includes(tournament.status)) return json({ok:false, code:'CHECK_IN_CLOSED', message:'Der Check-in ist nicht geöffnet.'}, {status:409});
       const scheduled = Date.parse(tournament.scheduled_start_at || '');
       const opensAt = scheduled - 60 * 60 * 1000;
@@ -11247,7 +11308,7 @@ async function handleAuthApi(request, env, url) {
     try {
       const tournament = await loadTournamentRow(env, tournamentId);
       if (!tournament) return json({ok:false, code:'TOURNAMENT_NOT_FOUND', message:'Das Turnier wurde nicht gefunden.'}, {status:404});
-      if (!['open', 'full'].includes(tournament.status)) return json({ok:false, code:'REGISTRATION_CLOSED', message:'Die Anmeldung für dieses Turnier ist geschlossen.'}, {status:409});
+      if (!tournamentRegistrationOpen(tournament)) return json({ok:false, code:'REGISTRATION_CLOSED', message:'Die Anmeldung für dieses Turnier ist geschlossen.'}, {status:409});
       const arena = tournamentIsLive(tournament) && normalizeTournamentMode(tournament.mode) === TOURNAMENT_MODE_ARENA;
       const now = new Date().toISOString();
       if (request.method === 'POST') {
@@ -11269,7 +11330,7 @@ async function handleAuthApi(request, env, url) {
           ).bind(tournamentId, session.user.id, now, now).run();
           await env.DB.prepare(`UPDATE tournaments SET status = 'open', updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(now, tournamentId).run();
           const row = await loadTournamentRow(env, tournamentId);
-          return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Deine Arena-Teilnahme wurde bestätigt. Eine Stunde vor dem Start kannst du einchecken.'});
+          return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Du hast die Arena unverbindlich vorgemerkt. Zum Start kannst du mit „Jetzt mitspielen“ einsteigen.'});
         }
         await env.DB.prepare(
           `INSERT INTO tournament_participants (tournament_id, user_id, status, checked_in_at, joined_at, updated_at)
@@ -11306,7 +11367,7 @@ async function handleAuthApi(request, env, url) {
         await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, arena_pairing_not_before = NULL WHERE tournament_id = ? AND user_id = ?`).bind(tournamentId, session.user.id).run();
         await env.DB.prepare(`UPDATE tournaments SET status = 'open', updated_at = ? WHERE id = ? AND status IN ('open','full')`).bind(now, tournamentId).run();
         const row = await loadTournamentRow(env, tournamentId);
-        return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Deine Arena-Anmeldung wurde zurückgezogen.'});
+        return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Deine Vormerkung wurde entfernt.'});
       }
       const balanced = await rebalanceTournamentParticipants(env, tournamentId, tournament.max_players);
       const nextStatus = balanced.confirmed >= Number(tournament.max_players || 0) ? 'full' : 'open';
@@ -11346,6 +11407,7 @@ async function handleAuthApi(request, env, url) {
       }
       const now = new Date().toISOString();
       await setUserPresence(env, session.user.id, true);
+      if (!tournamentVisible(tournament)) return json({ok:false,message:'Diese Arena ist noch nicht sichtbar.'},{status:404});
       if (action === 'join') {
         await env.DB.prepare(
           `INSERT INTO tournament_participants
@@ -11353,7 +11415,8 @@ async function handleAuthApi(request, env, url) {
            VALUES (?, ?, 'confirmed', ?, 1, ?, ?, NULL, ?, ?)
            ON CONFLICT(tournament_id, user_id) DO UPDATE SET status = 'confirmed', checked_in_at = COALESCE(tournament_participants.checked_in_at, excluded.checked_in_at),
              arena_active = 1, arena_joined_at = COALESCE(tournament_participants.arena_joined_at, excluded.arena_joined_at),
-             arena_waiting_since = excluded.arena_waiting_since, arena_pairing_not_before = NULL, updated_at = excluded.updated_at`
+             arena_waiting_since = excluded.arena_waiting_since, arena_pairing_not_before = NULL, updated_at = excluded.updated_at
+             WHERE tournament_participants.arena_active = 0`
         ).bind(tournamentId, session.user.id, now, now, now, now, now).run();
         await pairArenaPlayers(env, tournamentId);
         const row = await loadTournamentRow(env, tournamentId);
@@ -11365,12 +11428,12 @@ async function handleAuthApi(request, env, url) {
       if (!participant || participant.status !== 'confirmed') return json({ok:false, code:'NOT_IN_ARENA', message:'Du bist dieser Arena noch nicht beigetreten.'}, {status:409});
       if (action === 'pause') {
         if (Number(participant.arena_active || 0) === 2) return json({ok:false, code:'ARENA_GAME_RUNNING', message:'Während einer laufenden Arena-Partie kannst du nicht pausieren.'}, {status:409});
-        await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ?`)
+        await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 0, arena_waiting_since = NULL, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ? AND arena_active <> 2`)
           .bind(now, tournamentId, session.user.id).run();
         const row = await loadTournamentRow(env, tournamentId);
         return json({ok:true, tournament:await tournamentDto(env, row, session.user), message:'Arena pausiert. Du erhältst bis zum Fortsetzen keine neue Paarung.'});
       }
-      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ?`)
+      await env.DB.prepare(`UPDATE tournament_participants SET arena_active = 1, arena_waiting_since = ?, arena_pairing_not_before = NULL, updated_at = ? WHERE tournament_id = ? AND user_id = ? AND arena_active = 0`)
         .bind(now, now, tournamentId, session.user.id).run();
       await pairArenaPlayers(env, tournamentId);
       const row = await loadTournamentRow(env, tournamentId);
@@ -19584,6 +19647,9 @@ export default {
 
   async scheduled(_event, env, ctx) {
     const maintenance = (async () => {
+      try { await processTournamentSchedule(env); }
+      catch(error) { console.error('Scheduled tournaments failed',error && error.message); }
+      if(_event && _event.cron === '* * * * *') return;
       try { if (env && env.DB) await ensureAccountRecoveryTable(env); }
       catch (_) { console.error('Scheduled account recovery cleanup failed'); }
       try { await pruneDailyGamerStats(env); }
