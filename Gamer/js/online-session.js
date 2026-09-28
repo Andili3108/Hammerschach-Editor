@@ -151,6 +151,7 @@ const PRESENCE_HEARTBEAT_MS = 60000;
 const PRESENCE_MIN_SEND_INTERVAL_MS = 25000;
 let presenceHeartbeatTimer = null;
 let presenceLastSentAt = 0;
+let presenceHeartbeatBusy = false;
 
 function stopPresenceHeartbeat(){
   if(presenceHeartbeatTimer){ clearInterval(presenceHeartbeatTimer); presenceHeartbeatTimer = null; }
@@ -159,12 +160,14 @@ async function sendPresenceHeartbeat(force, online){
   const active = online !== false;
   if(!onlineAuthToken || !onlineAuthUser) return false;
   const now = Date.now();
-  if(active && !force && now - presenceLastSentAt < PRESENCE_MIN_SEND_INTERVAL_MS) return false;
+  if(active && (presenceHeartbeatBusy || (!force && now - presenceLastSentAt < PRESENCE_MIN_SEND_INTERVAL_MS))) return false;
+  if(active) presenceHeartbeatBusy = true;
   try{
     await authApi('/api/presence', {method:'POST', body:JSON.stringify({online:active})});
     if(active) presenceLastSentAt = now;
     return true;
   } catch(_){ return false; }
+  finally { if(active) presenceHeartbeatBusy = false; }
 }
 function startPresenceHeartbeat(){
   stopPresenceHeartbeat();
@@ -172,10 +175,10 @@ function startPresenceHeartbeat(){
   sendPresenceHeartbeat(true, true);
   presenceHeartbeatTimer = setInterval(() => sendPresenceHeartbeat(false, true), PRESENCE_HEARTBEAT_MS);
 }
-window.addEventListener('focus', () => sendPresenceHeartbeat(true, true));
+window.addEventListener('focus', () => { if(!document.hidden) sendPresenceHeartbeat(false, true); });
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible'){
-    sendPresenceHeartbeat(true, true);
+    sendPresenceHeartbeat(false, true);
     requestOnlineState();
   }
 });
@@ -433,7 +436,7 @@ async function refreshSiteStats(countVisit){
   }
 }
 // Auch eine über Mitternacht geöffnete Seite erhält den neuen Kalendertag.
-setInterval(() => { if(!document.hidden) refreshSiteStats(true); }, 60000);
+setInterval(() => { if(!document.hidden) refreshSiteStats(true); }, 300000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden) refreshSiteStats(true); });
 function loadAuthState(){
   try{

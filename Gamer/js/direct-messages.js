@@ -36,6 +36,8 @@ let privateMessagesActiveId = '';
 let privateMessagesPollTimer = null;
 let privateMessagesRequestId = 0;
 let privateMessagesLastUnreadCount = null;
+let privateMessagesBadgeLastAt = 0;
+let privateMessagesBadgeBusy = false;
 let privateMessagesMobileReaderActive = false;
 
 function setPrivateMessagesStatus(message, kind, compose){
@@ -81,16 +83,21 @@ function startPrivateMessagesPolling(){
   stopPrivateMessagesPolling();
   if(!privateMessagesLoggedIn()) return;
   privateMessagesPollTimer = setInterval(() => {
-    if(document.visibilityState === 'visible') refreshPrivateMessagesBadge().catch(() => {});
+    const dialogOpen = privateMessagesBackdrop && !privateMessagesBackdrop.hidden;
+    if(document.visibilityState === 'visible' && (dialogOpen || Date.now() - privateMessagesBadgeLastAt >= 30000)) refreshPrivateMessagesBadge().catch(() => {});
   }, 15000);
 }
 
 async function refreshPrivateMessagesBadge(){
   if(!privateMessagesLoggedIn()){ setPrivateMessagesBadge(0); return; }
+  if(privateMessagesBadgeBusy) return;
+  privateMessagesBadgeBusy = true;
+  privateMessagesBadgeLastAt = Date.now();
   try{
     const data = await authApi('/api/private-messages?summary=1');
     setPrivateMessagesBadge(data.unreadCount || 0);
   } catch(_){}
+  finally { privateMessagesBadgeBusy = false; }
 }
 
 function updatePrivateMessagesAuthState(){

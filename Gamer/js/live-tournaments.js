@@ -188,22 +188,30 @@ async function pollLiveTournamentStatus(){
     liveTournamentPollBusy = false;
   }
 }
+function liveTournamentNeedsFastPolling(){
+  return !!activeLiveTournamentStatus || tournamentItems.some(item => item && item.live &&
+    ['open','full','running'].includes(item.status) &&
+    (item.checkedIn || ['confirmed','playing'].includes(item.userState)));
+}
 function startLiveTournamentPolling(){
   if(liveTournamentPollTimer) clearTimeout(liveTournamentPollTimer);
   if(!onlineAuthToken || !onlineAuthUser) return;
   const generation = ++liveTournamentPollGeneration;
   const run = async () => {
     if(generation !== liveTournamentPollGeneration || !onlineAuthToken || !onlineAuthUser) return;
-    await pollLiveTournamentStatus();
+    if(!document.hidden || liveTournamentNeedsFastPolling()) await pollLiveTournamentStatus();
     if(generation !== liveTournamentPollGeneration || !onlineAuthToken || !onlineAuthUser) return;
     const active = !!activeLiveTournamentStatus;
     const delay = document.visibilityState !== 'visible'
       ? 60000
-      : (active ? 2500 : (onlineRoomId && onlineGameStarted ? 30000 : 15000));
+      : (active ? 2500 : (liveTournamentNeedsFastPolling() ? 15000 : 60000));
     liveTournamentPollTimer = setTimeout(run,delay);
   };
   run();
 }
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && onlineAuthToken && onlineAuthUser) startLiveTournamentPolling();
+});
 function stopLiveTournamentPolling(){
   liveTournamentPollGeneration++;
   if(liveTournamentPollTimer){ clearTimeout(liveTournamentPollTimer); liveTournamentPollTimer = null; }

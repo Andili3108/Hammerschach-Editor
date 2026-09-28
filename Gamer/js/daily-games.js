@@ -1113,7 +1113,7 @@ function openNextDailyGame(){
 }
 if(nextDailyGameBtn) nextDailyGameBtn.addEventListener('click', openNextDailyGame);
 window.setInterval(() => {
-  if(nextDailyGameEligible()) refreshNextDailyGameButton({force:true});
+  if(!document.hidden && nextDailyGameEligible()) refreshNextDailyGameButton({force:true});
 }, 60000);
 
 async function deleteDailyInvitation(game, button){
@@ -1151,7 +1151,7 @@ async function loadDailyGames(options){
   if(!silent && dailyGamesRefreshBtn) dailyGamesRefreshBtn.disabled = true;
   try{
     const requests = [authApi('/api/daily-games'), authApi('/api/my-live-games'), authApi('/api/game-archive?scope=mine&mode=live&page=1&limit=50'), authApi('/api/rematches')];
-    if(!dailyGamesTournamentOnly) requests.push(authApi('/api/open-offers'));
+    if(!dailyGamesTournamentOnly) requests.push(requestOpenOffers());
     const results = await Promise.allSettled(requests);
     const dailyResult = results[0];
     const liveResult = results[1];
@@ -1226,9 +1226,14 @@ async function loadDailyGames(options){
 function startDailyGamesPresenceRefresh(){
   if(dailyGamesPresenceRefreshTimer) clearInterval(dailyGamesPresenceRefreshTimer);
   dailyGamesPresenceRefreshTimer = setInterval(() => {
-    if(dailyGamesBackdrop && !dailyGamesBackdrop.hidden) loadDailyGames({silent:true});
+    if(!document.hidden && dailyGamesBackdrop && !dailyGamesBackdrop.hidden) loadDailyGames({silent:true});
   }, 60000);
 }
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) return;
+  if(dailyGamesBackdrop && !dailyGamesBackdrop.hidden) loadDailyGames({silent:true});
+  if(nextDailyGameEligible()) refreshNextDailyGameButton();
+});
 function stopDailyGamesPresenceRefresh(){
   if(dailyGamesPresenceRefreshTimer){ clearInterval(dailyGamesPresenceRefreshTimer); dailyGamesPresenceRefreshTimer = null; }
 }

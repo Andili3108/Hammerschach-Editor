@@ -59,10 +59,14 @@
   tournamentReportToolFrame?.addEventListener('load',checkVisibleArticle);
   window.addEventListener('hammerschach:auth-change',refreshIdentity);
   window.addEventListener('storage',e=>store.storageChanged(e.key));
-  const refresh=()=>{if(!document.hidden){void store.sync();checkVisibleArticle();}};
+  let lastRefreshAt=0;
+  const refresh=()=>{if(!document.hidden){
+    if(Date.now()-lastRefreshAt>=30000){lastRefreshAt=Date.now();void store.sync();}
+    checkVisibleArticle();
+  }};
   window.addEventListener('online',refresh);
   window.addEventListener('focus',refresh);
   document.addEventListener('visibilitychange',refresh);
-  setInterval(refresh,60000);
+  setInterval(refresh,300000);
   refreshIdentity();
 })();

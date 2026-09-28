@@ -40,14 +40,30 @@ if(tournamentPlayersSelect) tournamentPlayersSelect.addEventListener('change', u
 tournamentTypeButtons.forEach(button => {
   button.addEventListener('click', () => updateTournamentTypeUi(button.dataset.tournamentType));
 });
-window.setInterval(() => {
-  if(!onlineAuthToken || !onlineAuthUser) return;
-  loadTournaments({keepDetail:!!(tournamentBackdrop && !tournamentBackdrop.hidden && tournamentSelectedId)}).catch(() => {});
-  loadDailyGames({silent:true}).catch(() => {});
-  refreshOpenOffersBadge().catch(() => {});
-  loadLobbyTicker().catch(() => {});
-  loadInfoCenter().catch(() => {});
-}, 120000);
+// Badges und geschlossene Übersichten brauchen keinen Live-Takt.
+let backgroundOverviewLastAt = Date.now();
+let backgroundOverviewBusy = false;
+async function refreshBackgroundOverview(resume){
+  if(document.hidden || !onlineAuthToken || !onlineAuthUser || backgroundOverviewBusy) return;
+  const detailOpen = !!(tournamentBackdrop && !tournamentBackdrop.hidden);
+  const interval = resume ? 30000 : (detailOpen ? 120000 : 600000);
+  if(Date.now() - backgroundOverviewLastAt < interval) return;
+  backgroundOverviewLastAt = Date.now();
+  backgroundOverviewBusy = true;
+  try{
+    const requests = [
+      loadTournaments({keepDetail:!!(detailOpen && tournamentSelectedId)}),
+      refreshOpenOffersBadge(),
+      loadInfoCenter()
+    ];
+    // Der geöffnete Partien-Dialog hat bereits einen eigenen Minutentakt.
+    if(!dailyGamesBackdrop || dailyGamesBackdrop.hidden) requests.push(loadDailyGames({silent:true}));
+    await Promise.allSettled(requests);
+  } finally { backgroundOverviewBusy = false; }
+}
+window.setInterval(() => { void refreshBackgroundOverview(false); }, 60000);
+document.addEventListener('visibilitychange', () => { void refreshBackgroundOverview(true); });
+window.addEventListener('focus', () => { void refreshBackgroundOverview(true); });
 tournamentListTabButtons.forEach(button => {
   button.addEventListener('click', () => setTournamentListTab(button.dataset.tournamentListTab, false));
   button.addEventListener('keydown', event => {

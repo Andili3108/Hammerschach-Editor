@@ -168,9 +168,12 @@ async function withdrawOpenOffer(offer, button){
 function startOpenOffersRefresh(){
   if(openOffersRefreshTimer) clearInterval(openOffersRefreshTimer);
   openOffersRefreshTimer = setInterval(() => {
-    if(openOffersBackdrop && !openOffersBackdrop.hidden) loadOpenOffers({silent:true});
+    if(!document.hidden && openOffersBackdrop && !openOffersBackdrop.hidden) loadOpenOffers({silent:true});
   }, 15000);
 }
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && openOffersBackdrop && !openOffersBackdrop.hidden) loadOpenOffers({silent:true});
+});
 function stopOpenOffersRefresh(){ if(openOffersRefreshTimer){ clearInterval(openOffersRefreshTimer); openOffersRefreshTimer = null; } }
 function openOpenOffersDialog(){
   if(openOffersBackdrop) openOffersBackdrop.hidden = false;
