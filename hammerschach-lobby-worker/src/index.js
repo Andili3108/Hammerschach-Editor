@@ -10,6 +10,7 @@ import { handleLeagueStandingsApi } from './league-standings.js';
 import { handleReaderArchivesApi } from './reader-archives.js';
 import { handleTrainingImpulsesApi } from './training-impulses.js';
 import { checkAccountTournamentDeletion } from './account-deletion-tournaments.js';
+import { readLiveRoomProbeCache, maySkipLiveRoomProbe, inactiveLiveRoomRecheckAt, saveLiveRoomProbeCache } from './live-room-probe-cache.js';
 
 const DEFAULT_GAMER_PUBLIC_URL = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/';
 const FAIRPLAY_RAW_DATA_VERSION = 1;
@@ -8158,11 +8159,16 @@ async function listMyRunningLiveGames(env, sessionUser) {
       LIMIT 80`
   ).bind(userId, userId, userId).all();
   const candidates = (result && result.results ? result.results : [])
-    .map(row => cleanRoomId(row.room_id))
-    .filter(Boolean);
+    .map(row => ({room_id:cleanRoomId(row.room_id), last_seen_at:String(row.last_seen_at || '')}))
+    .filter(row => row.room_id);
   if (!candidates.length) return [];
 
-  const summaries = await Promise.all(candidates.map(async roomId => {
+  const probeCache = await readLiveRoomProbeCache(env, userId);
+  const checkedAt = Date.now();
+  const inactiveRooms = [];
+  const summaries = await Promise.all(candidates.map(async candidate => {
+    if (maySkipLiveRoomProbe(probeCache, candidate, checkedAt)) return null;
+    const roomId = candidate.room_id;
     try {
       const id = env.GAME_ROOM.idFromName(roomId);
       const stub = gameRoomStub(env, id);
@@ -8174,14 +8180,18 @@ async function listMyRunningLiveGames(env, sessionUser) {
         },
         body:JSON.stringify({userId})
       }));
-      if (!response.ok) return null;
+      if (!response.ok && response.status !== 403) return null;
       const summary = await response.json();
+      const recheckAfter = inactiveLiveRoomRecheckAt(response.status, summary, candidate.last_seen_at, checkedAt);
+      if (probeCache && recheckAfter) inactiveRooms.push({...candidate, recheck_after:recheckAfter});
+      if (!response.ok) return null;
       if (!summary || !summary.ok || summary.ended || summary.mode !== 'live' || (!summary.started && !summary.pendingInvitation)) return null;
       return summary;
     } catch (_) {
       return null;
     }
   }));
+  await saveLiveRoomProbeCache(env, userId, inactiveRooms);
   return summaries.filter(Boolean).sort((a, b) => {
     if (!!a.isMyTurn !== !!b.isMyTurn) return a.isMyTurn ? -1 : 1;
     return Date.parse(b.updatedAt || b.startedAt || 0) - Date.parse(a.updatedAt || a.startedAt || 0);
@@ -8504,6 +8514,7 @@ async function deleteUserAccount(env, target, options = {}) {
   try { await env.DB.prepare(`DELETE FROM account_action_tokens WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM user_email_status WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM account_game_rooms WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
+  try { await env.DB.prepare(`DELETE FROM live_room_probe_cache WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM open_game_offers WHERE creator_user_id = ?`).bind(target.id).run(); } catch (_) {}
   try { await env.DB.prepare(`DELETE FROM admin_account_recoveries WHERE user_id = ?`).bind(target.id).run(); } catch (_) {}
   await deleteArticleReads(env, target.id);
