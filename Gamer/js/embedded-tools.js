@@ -22,9 +22,10 @@ let openingsToolFrameStarted = false;
 let fairplayToolFrameStarted = false;
 let readerToolFrameStarted = false;
 let tournamentReportToolFrameStarted = false;
+const SCHACH_NEWS_START_ID = 'schacholympiade-2026';
 let tournamentReportCurrentId = 'quick-round-robin-2026';
-let schachCurrentCategory = 'reports';
-let schachNewsCurrentId = 'schulbrett-weltspitze';
+let schachCurrentCategory = 'news';
+let schachNewsCurrentId = SCHACH_NEWS_START_ID;
 let learningToolLastOpenAt = 0;
 let analyzerToolLastOpenAt = 0;
 let playerToolLastOpenAt = 0;
@@ -51,6 +52,7 @@ const TOURNAMENT_REPORTS = Object.freeze({
   'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1',notify:false}
 });
 const SCHACH_NEWS = Object.freeze({
+  'schacholympiade-2026':{title:'Bronze in Samarkand',src:'./SchachNews/schacholympiade-2026.html'},
   'schulbrett-weltspitze':{title:'Vom Schulbrett zur Weltspitze',src:'./SchachNews/schulbrett-weltspitze.html',notify:false},
   'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html',notify:false},
   'stroebeck-gemeinschaft':{title:'Ein Dorf lebt Schach',src:'./SchachNews/stroebeck-gemeinschaft.html'},
@@ -61,8 +63,12 @@ const SCHACH_CURRENT_STORAGE_KEY = 'hammerschachSchachAktuellSelectionV1';
 try{
   const saved=JSON.parse(localStorage.getItem(SCHACH_CURRENT_STORAGE_KEY)||'null');
   if(saved && Object.hasOwn(TOURNAMENT_REPORTS,saved.reportId)) tournamentReportCurrentId=saved.reportId;
-  if(saved && Object.hasOwn(SCHACH_NEWS,saved.newsId)) schachNewsCurrentId=saved.newsId;
-  if(saved && saved.category==='news') schachCurrentCategory='news';
+  // Alte Auswahlen dürfen die neue Startseite nicht verdrängen. Danach bleibt
+  // die bewusst gewählte Artikelseite bei einem Browser-Reload erhalten.
+  if(saved && saved.startNewsId===SCHACH_NEWS_START_ID){
+    if(Object.hasOwn(SCHACH_NEWS,saved.newsId)) schachNewsCurrentId=saved.newsId;
+    if(saved.category==='reports'||saved.category==='news') schachCurrentCategory=saved.category;
+  }
 }catch(_){}
 function currentSchachArticle(){
   return schachCurrentCategory==='news' ? SCHACH_NEWS[schachNewsCurrentId] : TOURNAMENT_REPORTS[tournamentReportCurrentId];
@@ -445,7 +451,7 @@ function selectSchachNews(newsId){
   loadCurrentSchachArticle(changed);
 }
 function loadCurrentSchachArticle(changed){
-  try{localStorage.setItem(SCHACH_CURRENT_STORAGE_KEY,JSON.stringify({category:schachCurrentCategory,reportId:tournamentReportCurrentId,newsId:schachNewsCurrentId}));}catch(_){}
+  try{localStorage.setItem(SCHACH_CURRENT_STORAGE_KEY,JSON.stringify({category:schachCurrentCategory,reportId:tournamentReportCurrentId,newsId:schachNewsCurrentId,startNewsId:SCHACH_NEWS_START_ID}));}catch(_){}
   updateTournamentReportSwitcher();
   if(changed&&!tournamentReportToolActive)tournamentReportToolFrameStarted=false;
   if(tournamentReportToolFrame&&tournamentReportToolActive&&(changed||!tournamentReportToolFrameStarted)){
@@ -581,7 +587,7 @@ function setEmbeddedToolActive(toolName){
   if(tournamentReportToolActive&&tournamentReportToolFrame&&!tournamentReportToolFrameStarted){
     tournamentReportToolFrameStarted=true;
     updateTournamentReportSwitcher();
-    tournamentReportToolFrame.src=tournamentReportToolFrame.dataset.src||TOURNAMENT_REPORTS['quick-round-robin-2026'].src;
+    tournamentReportToolFrame.src=tournamentReportToolFrame.dataset.src||SCHACH_NEWS[SCHACH_NEWS_START_ID].src;
   }
   if(tvToolActive){
     loadHammerschachTv();
@@ -737,7 +743,8 @@ function openTournamentReportToolDebounced(){
   const now=Date.now();
   if(now-tournamentReportToolLastOpenAt<EMBEDDED_TOOL_OPEN_DEBOUNCE_MS)return;
   tournamentReportToolLastOpenAt=now;
-  loadCurrentSchachArticle(false);
+  // Der Bereichseinstieg öffnet für Mitglieder und Besucher die Titelgeschichte.
+  selectSchachNews(SCHACH_NEWS_START_ID);
   openEmbeddedToolFromCurrentContext('tournament-report');
 }
 function openTvToolDebounced(){
