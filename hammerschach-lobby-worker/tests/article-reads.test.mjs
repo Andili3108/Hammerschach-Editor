@@ -83,10 +83,10 @@ test('Speicherlimit schützt den Server; vorhandene Reads bleiben abrufbar',asyn
  const x=fixture(t);await ensureArticleReads(x.env);const stmt=x.sql.prepare('INSERT INTO article_reads VALUES(?,?)');for(let i=0;i<1000;i++)stmt.run('a','news:test-'+i);
  assert.equal((await x.call('POST','a',{read:[A]})).status,409);assert.equal((await (await x.call('GET','a')).json()).read.length,1000);
 });
-test('Startbestand markiert genau die drei neuen News',()=>{
+test('News-Katalog zählt den Olympiadebericht und die drei bisherigen neuen News',()=>{
  const source=readFileSync(new URL('../../Gamer/js/embedded-tools.js',import.meta.url),'utf8');
  const registries=source.slice(source.indexOf('const TOURNAMENT_REPORTS ='),source.indexOf('const SCHACH_CURRENT_STORAGE_KEY'));
  const c=vm.createContext({});vm.runInContext(registries+';globalThis.reports=TOURNAMENT_REPORTS;globalThis.news=SCHACH_NEWS;',c);
- assert.deepEqual(Object.entries(c.news).filter(([,a])=>a.notify!==false).map(([id])=>'news:'+id),[A,B,C]);
+ assert.deepEqual(Object.entries(c.news).filter(([,a])=>a.notify!==false).map(([id])=>'news:'+id),['news:schacholympiade-2026',A,B,C]);
  assert.equal(Object.values(c.reports).filter(a=>a.notify!==false).length,0);
 });
