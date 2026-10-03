@@ -43,6 +43,7 @@ function normalizeLocalTournament(value, index){
     recurrence:value.recurrence || null,
     series:value.series || null,
     startedAt:value.startedAt || null,
+    endedAt:value.endedAt || null,
     arena:mode === 'arena' || value.arena === true,
     arenaDurationMinutes:[60,90,120,180,240,1440].includes(Number(value.arenaDurationMinutes)) ? Number(value.arenaDurationMinutes) : (mode === 'arena' ? 90 : null),
     arenaEndsAt:value.arenaEndsAt || null,
@@ -97,10 +98,30 @@ function tournamentBelongsToList(tournament, tabName){
   return false;
 }
 function tournamentsForList(tabName, tournaments){
+  const timestamp = (...values) => {
+    for(const value of values){
+      const parsed = Date.parse(value || '');
+      if(Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+  };
+  const archived = item => ['ended','cancelled'].includes(item.status);
+  const group = item => item.status === 'running' ? 0 : archived(item) ? 2 : 1;
   return tournaments.filter(tournament => tournamentBelongsToList(tournament, tabName)).sort((a,b) => {
-    const bt = Date.parse(b.updatedAt || b.createdAt || '') || 0;
-    const at = Date.parse(a.updatedAt || a.createdAt || '') || 0;
-    return bt - at || a.name.localeCompare(b.name, 'de');
+    const groupDifference = tabName === 'current' || tabName === 'mine' ? group(a) - group(b) : 0;
+    if(groupDifference) return groupDifference;
+    const descending = tabName === 'drafts' || tabName === 'archive' || (archived(a) && archived(b));
+    const date = item => tabName === 'drafts'
+      ? timestamp(item.updatedAt, item.createdAt)
+      : archived(item)
+        ? timestamp(item.endedAt, item.startedAt, item.scheduledStartAt, item.createdAt)
+        : timestamp(item.startedAt, item.scheduledStartAt);
+    const at = date(a), bt = date(b);
+    // Turniere ohne Starttermin stehen hinter den terminierten Turnieren.
+    if(at === null && bt !== null) return 1;
+    if(bt === null && at !== null) return -1;
+    return (at !== null && bt !== null ? (descending ? bt - at : at - bt) : 0)
+      || a.name.localeCompare(b.name, 'de') || a.id.localeCompare(b.id);
   });
 }
 function formatTournamentLocalDate(value){
@@ -137,65 +158,53 @@ function appendTournamentMeta(container, text){
 function createTournamentListCard(tournament){
   const card = document.createElement('article');
   card.className = 'tournament-list-card';
+  const canEdit = ['draft','open','full'].includes(tournament.status) && hasTournamentAdminAccess();
+  card.classList.toggle('tournament-list-card-editable', canEdit);
 
-  const head = document.createElement('div');
+  // Native Schaltflächen unterstützen Touch, Enter und Leertaste gleichermaßen.
+  const viewButton = document.createElement('button');
+  viewButton.type = 'button';
+  viewButton.className = 'tournament-list-open';
+  viewButton.title = 'Turnierdetails öffnen';
+  viewButton.addEventListener('click', () => openTournamentDetail(tournament.id));
+  const head = document.createElement('span');
   head.className = 'tournament-list-card-head';
-  const name = document.createElement('div');
+  const name = document.createElement('span');
   name.className = 'tournament-list-card-name';
   name.textContent = (tournament.unread ? '🆕 ' : '') + tournament.name;
-  const badge = document.createElement('div');
+  const badge = document.createElement('span');
   badge.className = 'tournament-status-badge';
   setTournamentStatusBadge(badge, tournament.status, tournament);
   head.appendChild(name);
   head.appendChild(badge);
 
-  const description = document.createElement('div');
-  description.className = 'tournament-list-card-description';
-  description.textContent = tournament.description || defaultTournamentDescription(tournament.mode, tournament.tournamentType);
-
-  const meta = document.createElement('div');
+  const meta = document.createElement('span');
   meta.className = 'tournament-list-meta';
   const participantCount = Number(tournament.confirmedCount || 0);
   appendTournamentMeta(meta, (tournament.tournamentType === 'blitz' ? '⚡ ' : tournament.tournamentType === 'rapid' ? '⏱️ ' : '⏳ ') + tournament.tournamentTypeLabel);
-  appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer · offen') : (tournament.status === 'draft' ? ('👥 ' + (normalizeTournamentMode(tournament.mode) === 'swiss' ? 'max. ' : '') + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players + (normalizeTournamentMode(tournament.mode) === 'swiss' ? ' max.' : ''))));
-  appendTournamentMeta(meta, '⏱ ' + (tournament.timeLabel || (tournament.hours + ' Std./Zug')));
-  appendTournamentMeta(meta, '📅 ' + tournamentStartPlanText(tournament));
-  if(tournament.series)appendTournamentMeta(meta,'↻ Serie'+(tournament.series.paused?' · pausiert':''));
-  if(tournament.visibleAt && Date.parse(tournament.visibleAt)>Date.now())appendTournamentMeta(meta,'Sichtbar ab '+formatTournamentLocalDateTime(tournament.visibleAt));
-  if(tournament.arena) appendTournamentMeta(meta, '⌛ ' + (Number(tournament.arenaDurationMinutes) === 1440 ? '24 Stunden' : (tournament.arenaDurationMinutes + ' Minuten')));
-  appendTournamentMeta(meta, tournament.rated ? '★ Gewertet' : '○ Ohne Rating');
-  appendTournamentMeta(meta, tournament.variant === GAME_VARIANT_FREESTYLE ? '♜ Freestyle' : '♟ Klassisch');
-  if(tournament.theme) appendTournamentMeta(meta, '🎯 Thementurnier · ' + tournament.theme.name);
-  appendTournamentMeta(meta, '🏁 ' + TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(tournament.mode)].label);
+  const start = formatTournamentLocalDateTime(tournament.startedAt) || formatTournamentLocalDateTime(tournament.scheduledStartAt);
+  appendTournamentMeta(meta, start ? ('📅 ' + (!tournament.live && !tournament.startedAt ? 'Ab ' : '') + start) : '📅 Start offen');
+  appendTournamentMeta(meta, tournament.timeLabel || (tournament.hours + ' Std./Zug'));
+  appendTournamentMeta(meta, tournament.arena ? ('👥 ' + participantCount + ' Teilnehmer') : (tournament.status === 'draft' ? ('👥 ' + tournament.players + ' Plätze') : ('👥 ' + participantCount + ' / ' + tournament.players)));
+  appendTournamentMeta(meta, TOURNAMENT_MODE_CONFIG[normalizeTournamentMode(tournament.mode)].label);
+  if(tournament.arena) appendTournamentMeta(meta, Number(tournament.arenaDurationMinutes) === 1440 ? '24 Std.' : (tournament.arenaDurationMinutes + ' Min.'));
+  viewButton.appendChild(head);
+  viewButton.appendChild(meta);
+  card.appendChild(viewButton);
 
-  const foot = document.createElement('div');
-  foot.className = 'tournament-list-card-foot';
-  const updated = document.createElement('div');
-  updated.className = 'tournament-list-updated';
-  const dateText = formatTournamentLocalDate(tournament.updatedAt);
-  updated.textContent = tournament.status === 'draft' ? ('Zuletzt bearbeitet' + (dateText ? ': ' + dateText : '')) : (dateText ? 'Stand: ' + dateText : '');
-  const actions = document.createElement('div');
-  actions.className = 'tournament-list-actions';
-  const viewButton = document.createElement('button');
-  viewButton.type = 'button';
-  viewButton.className = 'button-flat';
-  viewButton.textContent = 'Turnier ansehen';
-  viewButton.addEventListener('click', () => openTournamentDetail(tournament.id));
-  actions.appendChild(viewButton);
-  if(['draft','open','full'].includes(tournament.status) && hasTournamentAdminAccess()){
+  if(canEdit){
     const editButton = document.createElement('button');
     editButton.type = 'button';
-    editButton.textContent = '✏️ Bearbeiten';
-    editButton.addEventListener('click', () => openTournamentCreateDialog(tournament.id));
-    actions.appendChild(editButton);
+    editButton.className = 'tournament-list-edit';
+    editButton.textContent = '✏️';
+    editButton.title = 'Turnier bearbeiten';
+    editButton.setAttribute('aria-label', tournament.name + ' bearbeiten');
+    editButton.addEventListener('click', event => {
+      event.stopPropagation();
+      openTournamentCreateDialog(tournament.id);
+    });
+    card.appendChild(editButton);
   }
-  foot.appendChild(updated);
-  foot.appendChild(actions);
-
-  card.appendChild(head);
-  card.appendChild(description);
-  card.appendChild(meta);
-  card.appendChild(foot);
   return card;
 }
 function updateTournamentListCounts(tournaments){
@@ -205,6 +214,12 @@ function updateTournamentListCounts(tournaments){
   if(tournamentDraftCount) tournamentDraftCount.textContent = String(tournamentsForList('drafts', tournaments).length);
 }
 function renderTournamentList(){
+  const admin = hasTournamentAdminAccess();
+  if(tournamentDraftsTab) tournamentDraftsTab.hidden = !admin;
+  if(!admin && tournamentActiveListTab === 'drafts'){
+    setTournamentListTab('current', false);
+    return;
+  }
   const tournaments = loadLocalTournamentList();
   updateTournamentListCounts(tournaments);
   const config = TOURNAMENT_LIST_CONFIG[tournamentActiveListTab] || TOURNAMENT_LIST_CONFIG.current;
