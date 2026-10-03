@@ -39,7 +39,7 @@
   } catch(_){ }
 </script>
 <!-- Design v11: produktive Hammerschach-Turnierzentrale -->
-  <link rel="stylesheet" href="css/gamer.css?v=20260929-visitor-start-2" />
+  <link rel="stylesheet" href="css/gamer.css?v=20261003-tournament-list-1" />
 <link rel="stylesheet" href="css/move-notation.css?v=20260917-theme-3">
 <link rel="stylesheet" href="css/my-games-overview.css?v=20260926-header-5">
 <link rel="stylesheet" href="css/member-games.css?v=20260917-theme-3">
@@ -1885,9 +1885,8 @@
       <div class="identity-modal tournament-modal" role="dialog" aria-modal="true" aria-labelledby="tournamentTitle">
         <div class="tournament-modal-head">
           <div>
-            <div id="tournamentTitle" class="tournament-modal-title">Hammerschach-Turniere</div>
+            <div id="tournamentTitle" class="tournament-modal-title">Turniere</div>
           </div>
-          <div id="tournamentTestBadge" class="tournament-test-badge">🏆 Mitgliederbereich</div>
         </div>
 
         <div id="tournamentSelectionView" class="tournament-view">
@@ -1895,7 +1894,7 @@
             <button class="tournament-selection-tab active" type="button" role="tab" aria-selected="true" data-tournament-list-tab="current">Aktuelle Turniere <span id="tournamentCurrentCount" class="tournament-selection-count">0</span></button>
             <button class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="mine">Meine Turniere <span id="tournamentMineCount" class="tournament-selection-count">0</span></button>
             <button class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="archive">Archiv <span id="tournamentArchiveCount" class="tournament-selection-count">0</span></button>
-            <button id="tournamentDraftsTab" class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="drafts">Meine Entwürfe <span id="tournamentDraftCount" class="tournament-selection-count">0</span></button>
+            <button id="tournamentDraftsTab" hidden class="tournament-selection-tab" type="button" role="tab" aria-selected="false" data-tournament-list-tab="drafts">Meine Entwürfe <span id="tournamentDraftCount" class="tournament-selection-count">0</span></button>
           </div>
           <div class="tournament-selection-content">
             <div class="tournament-selection-heading">
@@ -2644,7 +2643,7 @@
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260927-series-3"></script>
 <script src="js/live-tournaments.js?v=20260928-request-audit-1"></script>
-<script src="js/tournament-list.js?v=20260927-series-3"></script>
+<script src="js/tournament-list.js?v=20261003-tournament-list-1"></script>
 <script src="js/tournament-detail.js?v=20260927-series-3"></script>
 <script src="js/tournament-management.js?v=20260927-series-3"></script>
 <script src="js/tournament-series.js?v=20260927-series-3"></script>
