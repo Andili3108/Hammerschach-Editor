@@ -161,7 +161,7 @@ function createMemberActivityBadge(user, serverNow){
   } else if(source.isOnline === true){
     badge.classList.add('online');
     label.textContent = 'Online';
-    badge.title = 'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv.';
+    badge.title = 'Innerhalb der letzten rund zweieinhalb Minuten im Gamer aktiv.';
   } else {
     const age = formatMemberActivityAge(source.lastActiveAt, serverNow);
     if(age){
@@ -169,10 +169,10 @@ function createMemberActivityBadge(user, serverNow){
       label.textContent = age;
       try{
         badge.title = 'Zuletzt aktiv: ' + new Date(source.lastActiveAt).toLocaleString('de-DE', {dateStyle:'medium', timeStyle:'short'});
-      } catch(_){ badge.title = 'Zuletzt im Hammerschach-Gamer aktiv.'; }
+      } catch(_){ badge.title = 'Zuletzt im Gamer aktiv.'; }
     } else {
       label.textContent = 'Offline';
-      badge.title = 'Derzeit keine aktuelle Aktivität im Hammerschach-Gamer erkannt.';
+      badge.title = 'Derzeit keine aktuelle Aktivität im Gamer erkannt.';
     }
   }
   badge.append(dot, label);

@@ -322,7 +322,7 @@ function buildInvitationText(member){
   details.push('Wertung: ' + (effectiveRatedPreference() ? 'Gewertet' : 'Ungewertet'));
   const detailText = details.length ? ('\n\n' + details.join('\n')) : '';
   return greeting + '\n\n' +
-    'du wurdest von ' + (senderName || 'Gast') + ' zu einer Schachpartie auf Hammerschach eingeladen.' + detailText + '\n\n' +
+    'du wurdest von ' + (senderName || 'Gast') + ' zu einer Schachpartie im Gamer eingeladen.' + detailText + '\n\n' +
     'Klicke einfach auf folgenden Link:\n\n' +
     link + '\n\n' +
     'Viele Grüße\n' +
@@ -376,7 +376,7 @@ async function sendEmailInvitationToMember(member, button, personalMessage, sour
   if(sourceButton) sourceButton.disabled = true;
   setInviteCopyStatus('Einladung an ' + recipientName + ' wird versendet…', false);
   if(invitationMessageStatus) invitationMessageStatus.textContent = 'Einladung wird sicher versendet…';
-  if(memberSearchStatus) memberSearchStatus.textContent = 'Der Hammerschach-Gamer übergibt die Einladung sicher an den Mailserver…';
+  if(memberSearchStatus) memberSearchStatus.textContent = 'Der Gamer übergibt die Einladung sicher an den Mailserver…';
 
   try{
     if(invitationMessageStatus) invitationMessageStatus.textContent = 'Bedenkzeit und Spielmodus werden vom Server bestätigt…';
@@ -416,8 +416,8 @@ function createPresenceBadge(isOnline){
   const badge = document.createElement('span');
   badge.className = 'presence-badge' + (isOnline ? ' online' : '');
   badge.title = isOnline
-    ? 'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv.'
-    : 'Derzeit keine aktuelle Aktivität im Hammerschach-Gamer erkannt.';
+    ? 'Innerhalb der letzten rund zweieinhalb Minuten im Gamer aktiv.'
+    : 'Derzeit keine aktuelle Aktivität im Gamer erkannt.';
   const dot = document.createElement('span');
   dot.className = 'presence-dot';
   dot.setAttribute('aria-hidden', 'true');

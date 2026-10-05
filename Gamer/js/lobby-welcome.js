@@ -5,7 +5,7 @@ let lobbyWelcomeState = null;
 function lobbyWelcomeText(){
   if(!onlineAuthToken || !onlineAuthUser){
     lobbyWelcomeState = null;
-    return 'Willkommen im Hammerschach-Gamer!';
+    return 'Willkommen im Gamer!';
   }
   const userId = String(onlineAuthUser.id || '');
   const token = onlineAuthToken;
@@ -36,5 +36,5 @@ function formatLobbyWelcome(firstVisit){
   const name = cleanDisplayName(onlineAuthUser && onlineAuthUser.username);
   const suffix = name ? ', ' + name + '!' : '!';
   // While offline or loading, use a neutral welcome rather than guessing "zurück".
-  return (firstVisit === false ? 'Willkommen zurück' : 'Willkommen im Hammerschach-Gamer') + suffix;
+  return (firstVisit === false ? 'Willkommen zurück' : 'Willkommen im Gamer') + suffix;
 }

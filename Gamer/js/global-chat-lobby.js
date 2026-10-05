@@ -126,7 +126,7 @@ function renderGlobalChatMessages(){
   if(!globalChatMessagesEl) return;
   globalChatMessagesEl.innerHTML='';
   if(!globalChatMessages.length){
-    const empty=document.createElement('div');empty.className='global-chat-empty';empty.textContent='Noch keine Nachrichten. Begrüße die Hammerschach-Mitglieder!';globalChatMessagesEl.appendChild(empty);return;
+    const empty=document.createElement('div');empty.className='global-chat-empty';empty.textContent='Noch keine Nachrichten. Begrüße die Mitglieder!';globalChatMessagesEl.appendChild(empty);return;
   }
   const frag=document.createDocumentFragment();
   globalChatMessages.slice().reverse().forEach(message=>{
@@ -157,7 +157,7 @@ function updateGlobalChatControls(){
   const usable=!!(isMemberLobbyView()&&globalChatConnected&&!globalChatChatBlocked);
   if(globalChatInputEl) globalChatInputEl.disabled=!usable;
   if(globalChatSendBtn) globalChatSendBtn.disabled=!usable;
-  if(globalChatInputEl) globalChatInputEl.placeholder=globalChatChatBlocked?'Deine Chatfunktion ist derzeit gesperrt.':'Nachricht an die Hammerschach-Mitglieder schreiben…';
+  if(globalChatInputEl) globalChatInputEl.placeholder=globalChatChatBlocked?'Deine Chatfunktion ist derzeit gesperrt.':'Nachricht an die Mitglieder schreiben…';
 }
 function appendGlobalChatMessage(raw){
   const message=normalizeGlobalChatMessage(raw);if(!message)return;

@@ -293,8 +293,8 @@ function setPlayerPresenceBadge(role, element){
   if(label) label.textContent = isOnline ? 'Online' : 'Offline';
   if(daily){
     element.title = isOnline
-      ? 'Innerhalb der letzten rund zweieinhalb Minuten im Hammerschach-Gamer aktiv – nicht zwingend in dieser Partie.'
-      : 'Derzeit keine aktuelle Aktivität im Hammerschach-Gamer erkannt.';
+      ? 'Innerhalb der letzten rund zweieinhalb Minuten im Gamer aktiv – nicht zwingend in dieser Partie.'
+      : 'Derzeit keine aktuelle Aktivität im Gamer erkannt.';
   } else {
     element.title = isOnline
       ? 'Gerade mit diesem Spielraum verbunden.'

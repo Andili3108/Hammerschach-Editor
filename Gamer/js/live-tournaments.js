@@ -38,7 +38,7 @@ function renderLiveTournamentWaiting(tournament){
 
   let title = beforeStart ? '✅ Eingecheckt – startbereit' : '♟️ Live-Turnier-Warteraum';
   let text = beforeStart
-    ? 'Bleib zum Turnierstart im Hammerschach-Gamer. Das Turnier startet automatisch und dein Brett mit Gegner erscheint von selbst.'
+    ? 'Bleib zum Turnierstart im Gamer. Das Turnier startet automatisch und dein Brett mit Gegner erscheint von selbst.'
     : 'Bleib hier im Gamer. Dein nächstes Brett wird automatisch geöffnet.';
   let target = beforeStart ? tournament.scheduledStartAt : (tournament.arena ? tournament.arenaEndsAt : tournament.nextRoundAt);
   if(liveStatus){

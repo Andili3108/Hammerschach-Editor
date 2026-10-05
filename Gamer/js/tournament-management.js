@@ -148,7 +148,7 @@ async function openTournamentDialog(tournamentId){
   openTournamentSelection(hasTournamentAdminAccess() && !hasCurrent && hasDrafts ? 'drafts' : 'current', false);
   const requestedId = typeof tournamentId === 'string' ? tournamentId : '';
   if(requestedId && tournaments.some(item => item.id === requestedId)) openTournamentDetail(requestedId);
-  if(statusEl) statusEl.textContent = 'Hammerschach – Turniere';
+  if(statusEl) statusEl.textContent = 'Gamer – Turniere';
   setTimeout(() => {
     const activeTab = tournamentListTabButtons.find(button => button.classList.contains('active'));
     if(activeTab) activeTab.focus();

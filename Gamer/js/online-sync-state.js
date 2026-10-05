@@ -628,7 +628,7 @@ function updateHeadToHeadUi(){
   const target = onlineRoleCode === 'w' ? blackHeadToHeadEl : whiteHeadToHeadEl;
   if(!target) return;
   target.textContent = 'Direktvergleich: S ' + state.wins + ' · R ' + state.draws + ' · N ' + state.losses;
-  target.title = 'Bisherige beendete Partien gegen diesen Gegner in derselben Hammerschach-Kategorie.';
+  target.title = 'Bisherige beendete Partien gegen diesen Gegner in derselben Wertungskategorie.';
   target.hidden = false;
 }
 function normalizeRematchState(value){

@@ -103,7 +103,7 @@ async function loadAdminTicker(){
     const settings = data.settings || {};
     if(adminTickerWelcomeEnabled) adminTickerWelcomeEnabled.checked = settings.welcomeEnabled !== false;
     if(adminTickerWelcomeDuration) adminTickerWelcomeDuration.value = String(settings.welcomeDurationHours || 72);
-    if(adminTickerWelcomeTemplate) adminTickerWelcomeTemplate.value = settings.welcomeTemplate || 'Herzlich willkommen bei Hammerschach, {username}! Schön, dass du dabei bist.';
+    if(adminTickerWelcomeTemplate) adminTickerWelcomeTemplate.value = settings.welcomeTemplate || 'Herzlich willkommen im Gamer, {username}! Schön, dass du dabei bist.';
     renderAdminTickerItems();
     setAdminTickerStatus('Ticker-Verwaltung ist aktuell.', 'success');
   } catch(err){

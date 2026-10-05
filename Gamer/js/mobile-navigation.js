@@ -201,7 +201,7 @@
   }
 
   function syncStatus(){
-    if(testStatus && sourceStatus) testStatus.textContent = sourceStatus.textContent || 'Hammerschach-Gamer';
+    if(testStatus && sourceStatus) testStatus.textContent = sourceStatus.textContent || 'Gamer';
     if(testContext){
       const learning = root.classList.contains('learning-tool-active');
       const trainer = root.classList.contains('trainer-tool-active');
@@ -211,7 +211,7 @@
       const tournamentReport = root.classList.contains('tournament-report-tool-active');
       const tv = root.classList.contains('tv-tool-active');
       const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Training' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Gamer')))))))));
+      testContext.textContent = root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Training' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Hammerschach')))))))));
     }
   }
 

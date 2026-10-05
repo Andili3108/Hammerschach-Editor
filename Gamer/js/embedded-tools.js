@@ -188,12 +188,12 @@ function updateAnalyzerToolAvailability(){
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
   if(impulsesToolBtn){impulsesToolBtn.hidden=!learningNavigable;}
   if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Gamer-Videokurse öffnen':'Spielraum verlassen und die Gamer-Videokurse öffnen';}
-  if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Hammerschach-Analyzer');}
-  if(playerToolBtn){playerToolBtn.hidden=!navigable;playerToolBtn.title=titleFor('Hammerschach-Player');}
-  if(trainerToolBtn){trainerToolBtn.hidden=!trainerNavigable;trainerToolBtn.title=trainerAvailable?'Hammerschach-Trainer öffnen':'Spielraum verlassen und den Hammerschach-Trainer öffnen';}
-  if(mateSchoolToolBtn){mateSchoolToolBtn.hidden=!mateSchoolNavigable;mateSchoolToolBtn.title=mateSchoolAvailable?'Hammerschach-Mattbilder-Schule öffnen':'Spielraum verlassen und die Mattbilder-Schule öffnen';}
-  if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Hammerschach-Schachlabor');}
-  if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Hammerschach-Eröffnungsschule');}
+  if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Analyzer');}
+  if(playerToolBtn){playerToolBtn.hidden=!navigable;playerToolBtn.title=titleFor('Player');}
+  if(trainerToolBtn){trainerToolBtn.hidden=!trainerNavigable;trainerToolBtn.title=trainerAvailable?'Trainer öffnen':'Spielraum verlassen und den Trainer öffnen';}
+  if(mateSchoolToolBtn){mateSchoolToolBtn.hidden=!mateSchoolNavigable;mateSchoolToolBtn.title=mateSchoolAvailable?'Mattbilder-Schule öffnen':'Spielraum verlassen und die Mattbilder-Schule öffnen';}
+  if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Schachlabor');}
+  if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Eröffnungsschule');}
   if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer-TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer-TV'));}
   if(readerToolBtn){readerToolBtn.hidden=!readerNavigable;readerToolBtn.title=readerAvailable?'Partienarchiv öffnen':'Spielraum verlassen und das Partienarchiv öffnen';}
   if(tournamentReportToolBtn){tournamentReportToolBtn.hidden=!tournamentReportNavigable;tournamentReportToolBtn.title=tournamentReportAvailable?'Schach aktuell öffnen':'Spielraum verlassen und Schach aktuell öffnen';}
