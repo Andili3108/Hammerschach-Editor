@@ -1679,7 +1679,7 @@ function mailBrandHeaderHtml(env) {
   const logoUrl = configuredMailLogoUrl(env);
   if (!logoUrl) return '';
   const publicUrl = configuredGamerPublicUrl(env);
-  const image = `<img src="${escapeEmailHtml(logoUrl)}" width="190" alt="Hammerschach-Gamer" style="display:block;width:190px;max-width:72%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">`;
+  const image = `<img src="${escapeEmailHtml(logoUrl)}" width="190" alt="Gamer" style="display:block;width:190px;max-width:72%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;">`;
   const linked = publicUrl
     ? `<a href="${escapeEmailHtml(publicUrl)}" style="display:inline-block;text-decoration:none;border:0;">${image}</a>`
     : image;
@@ -1971,9 +1971,9 @@ function prepareInvitationEmail(payload) {
   const detailText = detailLines.length ? `\n\n${detailLines.join('\n')}` : '';
   const personalText = personalMessage ? `\n\nPersönliche Nachricht von ${senderName}:\n${personalMessage}` : '';
   const decisionText = daily
-    ? '\n\nDie Partie wurde noch nicht gestartet. Öffne die Einladung, um sie im Hammerschach-Gamer anzunehmen oder abzulehnen. Erst nach deiner Annahme wird die Daily-Partie automatisch gestartet.'
+    ? '\n\nDie Partie wurde noch nicht gestartet. Öffne die Einladung, um sie im Gamer anzunehmen oder abzulehnen. Erst nach deiner Annahme wird die Daily-Partie automatisch gestartet.'
     : '';
-  const textPart = `Hallo ${recipientName},\n\n${senderName} lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} auf Hammerschach ein.${personalText}${detailText}${decisionText}\n\n${daily ? 'Einladung ansehen' : 'Partie öffnen'}:\n${inviteUrl}\n\nDiese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\n${senderName} lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} im Gamer ein.${personalText}${detailText}${decisionText}\n\n${daily ? 'Einladung ansehen' : 'Partie öffnen'}:\n${inviteUrl}\n\nDiese Nachricht wurde automatisch vom Gamer versendet.\n\nViele Grüße\nGamer`;
 
   const detailHtml = detailLines.length
     ? `<div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailLines.map(line => escapeEmailHtml(line)).join('<br>')}</div>`
@@ -1982,9 +1982,9 @@ function prepareInvitationEmail(payload) {
     ? `<div style="margin:18px 0;padding:14px 16px;background:#fff9e9;border:1px solid #e8cf96;border-radius:12px;line-height:1.55;"><div style="font-size:12px;font-weight:bold;color:#843f46;margin-bottom:5px;">Persönliche Nachricht von ${escapeEmailHtml(senderName)}</div><div style="white-space:pre-wrap;word-break:break-word;">${escapeEmailHtml(personalMessage)}</div></div>`
     : '';
   const decisionHtml = daily
-    ? '<p><strong>Die Partie wurde noch nicht gestartet.</strong> Öffne die Einladung, um sie im Hammerschach-Gamer anzunehmen oder abzulehnen. Erst nach deiner Annahme wird die Daily-Partie automatisch gestartet.</p>'
+    ? '<p><strong>Die Partie wurde noch nicht gestartet.</strong> Öffne die Einladung, um sie im Gamer anzunehmen oder abzulehnen. Erst nach deiner Annahme wird die Daily-Partie automatisch gestartet.</p>'
     : '';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} auf Hammerschach ein.</p>${personalHtml}${detailHtml}${decisionHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${daily ? 'Einladung ansehen' : 'Partie öffnen'}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Hammerschach-Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Einladung zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(senderName)}</strong> lädt dich zu einer ${daily ? 'Daily-Partie' : 'Schachpartie'} im Gamer ein.</p>${personalHtml}${detailHtml}${decisionHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${daily ? 'Einladung ansehen' : 'Partie öffnen'}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht wurde automatisch vom Gamer versendet.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
 
   return { ok:true, mailType:'invitation', recipientEmail, recipientName, senderName, subject, textPart, htmlPart };
 }
@@ -2011,7 +2011,7 @@ async function sendMailjetInvitation(env, payload) {
   const apiKey = String((env && env.MAILJET_API_KEY) || '').trim();
   const secretKey = String((env && env.MAILJET_SECRET_KEY) || '').trim();
   const fromEmail = normalizeEmail((env && env.MAILJET_FROM_EMAIL) || '');
-  const fromName = cleanDisplayName((env && env.MAILJET_FROM_NAME) || '') || 'Hammerschach-Gamer';
+  const fromName = cleanDisplayName((env && env.MAILJET_FROM_NAME) || '') || 'Gamer';
   if (!apiKey || !secretKey || !fromEmail) {
     return { ok:false, status:503, code:'MAIL_NOT_CONFIGURED', message:'Der automatische Mailversand ist noch nicht vollständig konfiguriert.' };
   }
@@ -2332,7 +2332,7 @@ async function sendSmtpInvitation(env, payload) {
     username:String((env && env.SMTP_USERNAME) || '').trim(),
     password:String((env && env.SMTP_PASSWORD) || ''),
     fromEmail:'',
-    fromName:cleanDisplayName((env && env.SMTP_FROM_NAME) || '') || 'Hammerschach-Gamer'
+    fromName:cleanDisplayName((env && env.SMTP_FROM_NAME) || '') || 'Gamer'
   };
   settings.fromEmail = normalizeEmail((env && env.SMTP_FROM_EMAIL) || settings.username);
   if (!settings.host || !Number.isInteger(settings.port) || !settings.username || !settings.password || !settings.fromEmail) {
@@ -2945,8 +2945,8 @@ function prepareSecurityActionEmail(payload) {
   if (!recipientEmail || !title || !intro || !actionUrl) {
     return { ok:false, status:400, code:'INVALID_SECURITY_MAIL', message:'Die Sicherheitsmail konnte nicht vorbereitet werden.' };
   }
-  const textPart = `Hallo ${recipientName},\n\n${intro}\n\n${actionLabel}:\n${actionUrl}${expiryText ? `\n\n${expiryText}` : ''}\n\nFalls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.\n\nViele Grüße\nHammerschach-Gamer`;
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p style="line-height:1.55;">${escapeEmailHtml(intro)}</p><p style="margin:22px 0;"><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${escapeEmailHtml(actionLabel)}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(actionUrl)}</p>${expiryText ? `<p style="font-size:13px;color:#666;">${escapeEmailHtml(expiryText)}</p>` : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Falls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const textPart = `Hallo ${recipientName},\n\n${intro}\n\n${actionLabel}:\n${actionUrl}${expiryText ? `\n\n${expiryText}` : ''}\n\nFalls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.\n\nViele Grüße\nGamer`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p style="line-height:1.55;">${escapeEmailHtml(intro)}</p><p style="margin:22px 0;"><a href="${escapeEmailHtml(actionUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">${escapeEmailHtml(actionLabel)}</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(actionUrl)}</p>${expiryText ? `<p style="font-size:13px;color:#666;">${escapeEmailHtml(expiryText)}</p>` : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Falls du diese Aktion nicht angefordert hast, kannst du diese Nachricht ignorieren.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:cleanMailLogType(payload && payload.mailType || 'security_action'), recipientEmail, recipientName, subject:title, textPart, htmlPart };
 }
 
@@ -2955,9 +2955,9 @@ function prepareEmailChangeNoticeEmail(payload) {
   const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
   const pendingEmail = normalizeEmail(payload && payload.pendingEmail);
   if (!recipientEmail || !pendingEmail) return { ok:false, status:400, code:'INVALID_EMAIL_CHANGE_NOTICE', message:'Die Hinweis-Mail konnte nicht vorbereitet werden.' };
-  const subject = 'Änderung deiner Hammerschach-Mailadresse angefordert';
-  const textPart = `Hallo ${recipientName},\n\nfür deinen Hammerschach-Account wurde die Änderung der Mailadresse auf ${pendingEmail} angefordert. Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.\n\nFalls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.\n\nViele Grüße\nHammerschach-Gamer`;
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Mailadressänderung angefordert</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>für deinen Hammerschach-Account wurde die Änderung der Mailadresse auf <strong>${escapeEmailHtml(pendingEmail)}</strong> angefordert.</p><p>Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.</p><p style="font-size:13px;color:#843f46;font-weight:bold;">Falls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const subject = 'Änderung deiner Gamer-Mailadresse angefordert';
+  const textPart = `Hallo ${recipientName},\n\nfür deinen Gamer-Account wurde die Änderung der Mailadresse auf ${pendingEmail} angefordert. Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.\n\nFalls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.\n\nViele Grüße\nGamer`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Mailadressänderung angefordert</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>für deinen Gamer-Account wurde die Änderung der Mailadresse auf <strong>${escapeEmailHtml(pendingEmail)}</strong> angefordert.</p><p>Die bisherige Adresse bleibt aktiv, bis die neue Adresse über den Bestätigungslink bestätigt wurde.</p><p style="font-size:13px;color:#843f46;font-weight:bold;">Falls du diese Änderung nicht veranlasst hast, ändere bitte dein Kennwort.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:'email_change_notice', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
@@ -2971,7 +2971,7 @@ async function sendRegistrationVerificationEmail(env, user, request = null) {
     recipientEmail:email,
     recipientName:user.username,
     mailType:'email_verification',
-    title:'Mailadresse für Hammerschach bestätigen',
+    title:'Mailadresse für den Gamer bestätigen',
     intro:'Bitte bestätige deine Mailadresse. Erst danach kannst du dich mit dem neu angelegten Account einloggen.',
     actionUrl,
     actionLabel:'Mailadresse bestätigen',
@@ -2992,8 +2992,8 @@ async function sendPreVerificationEmailCorrectionEmail(env, user, correctedEmail
     recipientEmail:email,
     recipientName:user.username,
     mailType:'email_correction_verification',
-    title:'Korrigierte Hammerschach-Mailadresse bestätigen',
-    intro:`Bitte bestätige, dass ${email} als Mailadresse für deinen neu angelegten Hammerschach-Account verwendet werden soll. Frühere Bestätigungslinks sind nicht mehr gültig.`,
+    title:'Korrigierte Gamer-Mailadresse bestätigen',
+    intro:`Bitte bestätige, dass ${email} als Mailadresse für deinen neu angelegten Gamer-Account verwendet werden soll. Frühere Bestätigungslinks sind nicht mehr gültig.`,
     actionUrl,
     actionLabel:'Korrigierte Mailadresse bestätigen',
     expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
@@ -3014,8 +3014,8 @@ async function sendPasswordResetEmail(env, user, request) {
       recipientEmail:user.email,
       recipientName:user.username,
       mailType:'password_reset',
-      title:'Hammerschach-Kennwort zurücksetzen',
-      intro:'Über den folgenden Link kannst du ein neues Kennwort für deinen Hammerschach-Account festlegen.',
+      title:'Gamer-Kennwort zurücksetzen',
+      intro:'Über den folgenden Link kannst du ein neues Kennwort für deinen Gamer-Account festlegen.',
       actionUrl,
       actionLabel:'Neues Kennwort festlegen',
       expiryText:'Der Link ist 30 Minuten gültig. Eine erneute Anfrage verlängert diese Frist nicht. Sobald dein Kennwort erfolgreich zurückgesetzt wurde, sind alle bisherigen Rücksetzlinks ungültig.'
@@ -3234,7 +3234,7 @@ async function handleAccountRecoveryApi(request, env, url) {
           .bind(id, user.id, privateAdmin.id, await sha256Hex(token), newEmail, await accountRecoveryFingerprint(user), identityMethod, identityNote, now, expiresAt)
       ]);
       const mail = prepareSecurityActionEmail({recipientEmail:newEmail, recipientName:user.username,
-        mailType:'account_recovery', title:'Deinen Hammerschach-Zugang wiederherstellen',
+        mailType:'account_recovery', title:'Deinen Gamer-Zugang wiederherstellen',
         intro:`Der Administrator hat nach Prüfung deiner Identität die Wiederherstellung für den Account „${user.username}“ vorbereitet. Über den Link bestätigst du dieses Postfach und legst selbst ein neues Kennwort fest. Erst beim Speichern werden die bisherigen Zugangsdaten ersetzt.`,
         actionUrl:publicActionUrl(env, 'recoverAccount', token), actionLabel:'Zugang wiederherstellen',
         expiryText:'Der Link gilt 30 Minuten und kann nur einmal verwendet werden. Wenn du diese Wiederherstellung nicht angefordert hast, verwende den Link nicht.'});
@@ -3549,9 +3549,9 @@ function prepareDailyTurnEmail(payload) {
   const moveSentence = lastMoveSan ? `${opponentName} hat ${lastMoveSan} gezogen. ` : '';
   const textDetails = [`Spielmodus: ${variantLabel}`, `Zugfrist: ${timeLabel}`];
   if (deadlineLabel) textDetails.push(`Fristende: ${deadlineLabel}`);
-  const textPart = `Hallo ${recipientName},\n\n${moveSentence}Du bist jetzt in deiner Daily-Partie gegen ${opponentName} am Zug.\n\n${textDetails.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\n${moveSentence}Du bist jetzt in deiner Daily-Partie gegen ${opponentName} am Zug.\n\n${textDetails.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nGamer`;
   const detailHtml = textDetails.map(line => escapeEmailHtml(line)).join('<br>');
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Du bist am Zug</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>${lastMoveSan ? `<strong>${escapeEmailHtml(opponentName)}</strong> hat <strong>${escapeEmailHtml(lastMoveSan)}</strong> gezogen. ` : ''}Du bist jetzt in deiner Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Du bist am Zug</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>${lastMoveSan ? `<strong>${escapeEmailHtml(opponentName)}</strong> hat <strong>${escapeEmailHtml(lastMoveSan)}</strong> gezogen. ` : ''}Du bist jetzt in deiner Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:'daily_turn', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
@@ -3583,10 +3583,10 @@ function prepareDailyOpenOfferAcceptedEmail(payload) {
   const turnText = includesTurn
     ? ` Die Partie wurde automatisch gestartet und du bist mit Weiß am Zug.`
     : ` Die Partie wurde automatisch gestartet; zunächst ist ${opponentName} mit Weiß am Zug.`;
-  const textPart = `Hallo ${recipientName},\n\n${opponentName} hat dein offenes Daily-Partieangebot angenommen.${turnText}\n\n${details.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Nachricht ist eine notwendige Information zu deinem angenommenen Partieangebot.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\n${opponentName} hat dein offenes Daily-Partieangebot angenommen.${turnText}\n\n${details.join('\n')}\n\nPartie öffnen:\n${inviteUrl}\n\nDiese Nachricht ist eine notwendige Information zu deinem angenommenen Partieangebot.\n\nViele Grüße\nGamer`;
   const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
   const heading = includesTurn ? 'Angebot angenommen – du bist am Zug' : 'Dein Partieangebot wurde angenommen';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(heading)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(opponentName)}</strong> hat dein offenes Daily-Partieangebot angenommen.${includesTurn ? ' Die Partie wurde automatisch gestartet und <strong>du bist mit Weiß am Zug</strong>.' : ` Die Partie wurde automatisch gestartet; zunächst ist <strong>${escapeEmailHtml(opponentName)} mit Weiß am Zug</strong>.`}</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht ist eine notwendige Information zu deinem angenommenen Partieangebot.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(heading)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(opponentName)}</strong> hat dein offenes Daily-Partieangebot angenommen.${includesTurn ? ' Die Partie wurde automatisch gestartet und <strong>du bist mit Weiß am Zug</strong>.' : ` Die Partie wurde automatisch gestartet; zunächst ist <strong>${escapeEmailHtml(opponentName)} mit Weiß am Zug</strong>.`}</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht ist eine notwendige Information zu deinem angenommenen Partieangebot.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:'daily_offer_accepted', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
@@ -3608,14 +3608,14 @@ function prepareDailyInvitationResponseEmail(payload) {
   const nextText = accepted
     ? '\n\nDie Partie wird vorbereitet und kann anschließend über „Meine Partien“ geöffnet werden.'
     : '\n\nDie Einladung ist damit beendet. Die persönliche Antwort bleibt für dich unter „Meine Partien“ sichtbar.';
-  const textPart = `Hallo ${recipientName},\n\n${responderName} hat deine Daily-Einladung ${actionLabel}.${responseText}${nextText}\n\nHammerschach-Gamer öffnen:\n${inviteUrl}\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\n${responderName} hat deine Daily-Einladung ${actionLabel}.${responseText}${nextText}\n\nGamer öffnen:\n${inviteUrl}\n\nViele Grüße\nGamer`;
   const responseHtml = responseMessage
     ? `<div style="margin:18px 0;padding:14px 16px;background:#fff9e9;border:1px solid #e8cf96;border-radius:12px;line-height:1.55;"><div style="font-size:12px;font-weight:bold;color:#843f46;margin-bottom:5px;">Persönliche Antwort von ${escapeEmailHtml(responderName)}</div><div style="white-space:pre-wrap;word-break:break-word;">${escapeEmailHtml(responseMessage)}</div></div>`
     : '';
   const nextHtml = accepted
     ? '<p>Die Partie wird vorbereitet und kann anschließend über <strong>„Meine Partien“</strong> geöffnet werden.</p>'
     : '<p>Die Einladung ist damit beendet. Die persönliche Antwort bleibt für dich unter <strong>„Meine Partien“</strong> sichtbar.</p>';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Einladung ${accepted ? 'angenommen' : 'abgelehnt'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(responderName)}</strong> hat deine Daily-Einladung ${actionLabel}.</p>${responseHtml}${nextHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Hammerschach-Gamer öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Einladung ${accepted ? 'angenommen' : 'abgelehnt'}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(responderName)}</strong> hat deine Daily-Einladung ${actionLabel}.</p>${responseHtml}${nextHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Gamer öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:'daily_invitation_response', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
@@ -3634,9 +3634,9 @@ function prepareDailyResultEmail(payload) {
   const subject = `Daily-Partie beendet – ${outcome} gegen ${opponentName}`;
   const details = [`Ergebnis: ${dailyNotificationResultLabel(result)}`, `Ausgang für dich: ${outcome}`, `Beendigungsgrund: ${endReason}`, `Spielmodus: ${variantLabel}`];
   if (endedAt) details.push(`Beendet: ${endedAt}`);
-  const textPart = `Hallo ${recipientName},\n\ndeine Daily-Partie gegen ${opponentName} ist beendet.\n\n${details.join('\n')}\n\nPartie ansehen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\ndeine Daily-Partie gegen ${opponentName} ist beendet.\n\n${details.join('\n')}\n\nPartie ansehen:\n${inviteUrl}\n\nDiese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.\n\nViele Grüße\nGamer`;
   const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Partie beendet</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>deine Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> ist beendet.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie ansehen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Daily-Partie beendet</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>deine Daily-Partie gegen <strong>${escapeEmailHtml(opponentName)}</strong> ist beendet.</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie ansehen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Benachrichtigung kannst du in deiner Accountverwaltung abschalten.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:'daily_result', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
@@ -3655,11 +3655,11 @@ function prepareRematchRequestEmail(payload) {
   if (timeLabel) details.push(`Bedenkzeit: ${timeLabel}`);
   const detailText = details.length ? `\n\n${details.join('\n')}` : '';
   const subject = `${opponentName} bietet dir eine Revanche an`;
-  const textPart = `Hallo ${recipientName},\n\n${opponentName} möchte nach eurer gerade beendeten Partie eine Revanche spielen.${detailText}\n\nRevanche ansehen und beantworten:\n${inviteUrl}\n\nDie neue Partie wird erst erstellt, wenn du die Revanche im Hammerschach-Gamer annimmst.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\n${opponentName} möchte nach eurer gerade beendeten Partie eine Revanche spielen.${detailText}\n\nRevanche ansehen und beantworten:\n${inviteUrl}\n\nDie neue Partie wird erst erstellt, wenn du die Revanche im Gamer annimmst.\n\nViele Grüße\nGamer`;
   const detailHtml = details.length
     ? `<div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${details.map(line => escapeEmailHtml(line)).join('<br>')}</div>`
     : '';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Revanche angeboten</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(opponentName)}</strong> möchte nach eurer gerade beendeten Partie eine Revanche spielen.</p>${detailHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Revanche beantworten</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Die neue Partie wird erst nach deiner Annahme erstellt.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><h2 style="margin:0 0 18px;color:#843f46;">Revanche angeboten</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p><strong>${escapeEmailHtml(opponentName)}</strong> möchte nach eurer gerade beendeten Partie eine Revanche spielen.</p>${detailHtml}<p style="margin:22px 0;"><a href="${escapeEmailHtml(inviteUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Revanche beantworten</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(inviteUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Die neue Partie wird erst nach deiner Annahme erstellt.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return { ok:true, mailType:'rematch_request', recipientEmail, recipientName, subject, textPart, htmlPart };
 }
 
@@ -5996,7 +5996,7 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
       ? `maximal ${Number(tournament.max_players)} Teilnehmer · Start ab 4`
       : `${Number(tournament.max_players)} Teilnehmer`;
   const details = `${type} · ${mode} · ${participation} · ${time} · ${variant} · ${Number(tournament.rated || 0) === 1 ? 'gewertet' : 'ohne Rating'}${scheduled ? ` · ${tournamentIsLive(tournament) ? 'Starttermin' : 'Frühestens'}: ${scheduled}` : ' · Start bei voller Teilnehmerzahl'}`;
-  const subject = `Neues Hammerschach-Turnier: ${title}`;
+  const subject = `Neues Gamer-Turnier: ${title}`;
   const startHint = arena ? '\n\nKeine Voranmeldung und kein Check-in nötig. Während der Laufzeit direkt mitspielen; zwischen den Partien sind Pausen möglich.' : tournamentIsLive(tournament)
     ? '\n\nDer Check-in öffnet eine Stunde vor dem Turnierstart. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.'
     : !scheduled
@@ -6005,7 +6005,7 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
       ? '\n\nDas Turnier startet zum geplanten Termin automatisch, sobald mindestens 4 Teilnehmer bestätigt sind.'
       : '\n\nDas Turnier startet zum geplanten Termin automatisch, sobald alle Startplätze belegt sind.';
   const registrationNotice=arena?'Die Arena ist angekündigt – während der Laufzeit einfach mitspielen.':tournament.registration_opens_at && Date.parse(tournament.registration_opens_at)>Date.now()?'Die Anmeldung öffnet am '+new Date(tournament.registration_opens_at).toLocaleString('de-DE',{timeZone:'Europe/Berlin'})+' Uhr.':'Die Anmeldung ist geöffnet.';
-  const textPart = `Hallo ${name},\n\nTurnier „${title}“: ${registrationNotice}\n\n${details}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}${arena?'Eine Vormerkung ist freiwillig und führt nicht zur automatischen Paarung.':'Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.'}${startHint}${arena ? '\nIn die laufende Arena kannst du auch später jederzeit einsteigen.' : ''}\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${name},\n\nTurnier „${title}“: ${registrationNotice}\n\n${details}\n\n${link ? `Turnier ansehen und Teilnahme bestätigen:\n${link}\n\n` : ''}${arena?'Eine Vormerkung ist freiwillig und führt nicht zur automatischen Paarung.':'Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.'}${startHint}${arena ? '\nIn die laufende Arena kannst du auch später jederzeit einsteigen.' : ''}\n\nDu kannst Turniermails jederzeit in deiner Accountverwaltung ausschalten.\n\nViele Grüße\nGamer`;
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier ansehen</a></p>` : '';
   const startHintHtml = arena ? '<p>Keine Voranmeldung und kein Check-in nötig. Während der Laufzeit direkt mitspielen; zwischen den Partien sind Pausen möglich.</p>' : tournamentIsLive(tournament)
     ? '<p>Der Check-in öffnet eine Stunde vor dem Turnierstart. Das Turnier startet automatisch, sobald die Startvoraussetzungen erfüllt sind.</p>'
@@ -6014,7 +6014,7 @@ function prepareTournamentPublishedEmail(env, tournament, recipient) {
     : swiss
       ? '<p>Das Turnier startet zum geplanten Termin automatisch, sobald mindestens 4 Teilnehmer bestätigt sind.</p>'
       : '<p>Das Turnier startet zum geplanten Termin automatisch, sobald alle Startplätze belegt sind.</p>';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>${escapeEmailHtml(registrationNotice)}</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>${arena?'Eine Vormerkung ist freiwillig und führt nicht zur automatischen Paarung.':'Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.'}</p>${startHintHtml}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Gamer-Turniere</div><h2 style="color:#843f46;">${escapeEmailHtml(title)}</h2><p>Hallo ${escapeEmailHtml(name)},</p><p>${escapeEmailHtml(registrationNotice)}</p><p><strong>${escapeEmailHtml(details)}</strong></p>${button}<p>${arena?'Eine Vormerkung ist freiwillig und führt nicht zur automatischen Paarung.':'Die Teilnahme wird erst nach deiner ausdrücklichen Bestätigung im Turnierbereich eingetragen.'}</p>${startHintHtml}${arena ? '<p>Ein späterer Einstieg in die laufende Arena ist jederzeit möglich.</p>' : ''}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Turniermails kannst du jederzeit in deiner Accountverwaltung ausschalten.</p><p>Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_published', recipientEmail:recipient.email, recipientName:name, subject, textPart, htmlPart, attachments:[]};
 }
 
@@ -6029,7 +6029,7 @@ function prepareTournamentGameStartedEmail(payload) {
   const recipientEmail = normalizeEmail(payload && payload.recipientEmail);
   const recipientName = cleanDisplayName(payload && payload.recipientName) || 'Schachfreund';
   const opponentName = cleanDisplayName(payload && payload.opponentName) || 'dein Gegner';
-  const tournamentName = cleanTournamentName(payload && payload.tournamentName) || 'Hammerschach-Turnier';
+  const tournamentName = cleanTournamentName(payload && payload.tournamentName) || 'Gamer-Turnier';
   const roundLabel = String(payload && payload.roundLabel || 'Turnierrunde').replace(/[\r\n<>]/g, '').trim().slice(0, 80);
   const pairingLabel = String(payload && payload.pairingLabel || '').replace(/[\r\n<>]/g, '').trim().slice(0, 80);
   const color = payload && payload.role === 'b' ? 'Schwarz' : 'Weiß';
@@ -6054,10 +6054,10 @@ function prepareTournamentGameStartedEmail(payload) {
   const turnText = isTurn
     ? ' Die Partie ist eröffnet und du bist am Zug.'
     : ` Die Partie ist eröffnet; zunächst ist ${opponentName} am Zug.`;
-  const textPart = `Hallo ${recipientName},\n\ndeine Partie im Turnier „${tournamentName}“ wurde gestartet.${turnText}\n\n${details.join('\n')}\n\nPartie öffnen:\n${gameUrl}\n\nDiese Nachricht ist eine notwendige Information zu deiner bestätigten Turnierteilnahme.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${recipientName},\n\ndeine Partie im Turnier „${tournamentName}“ wurde gestartet.${turnText}\n\n${details.join('\n')}\n\nPartie öffnen:\n${gameUrl}\n\nDiese Nachricht ist eine notwendige Information zu deiner bestätigten Turnierteilnahme.\n\nViele Grüße\nGamer`;
   const detailHtml = details.map(line => escapeEmailHtml(line)).join('<br>');
   const heading = isTurn ? 'Turnierpartie gestartet – du bist am Zug' : 'Deine Turnierpartie wurde gestartet';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere</div><h2 style="margin:8px 0 18px;color:#843f46;">${escapeEmailHtml(heading)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>Deine Partie im Turnier <strong>„${escapeEmailHtml(tournamentName)}“</strong> wurde gestartet.${isTurn ? ' <strong>Du bist am Zug.</strong>' : ` Zunächst ist <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.`}</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(gameUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(gameUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht ist eine notwendige Information zu deiner bestätigten Turnierteilnahme.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Gamer-Turniere</div><h2 style="margin:8px 0 18px;color:#843f46;">${escapeEmailHtml(heading)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p><p>Deine Partie im Turnier <strong>„${escapeEmailHtml(tournamentName)}“</strong> wurde gestartet.${isTurn ? ' <strong>Du bist am Zug.</strong>' : ` Zunächst ist <strong>${escapeEmailHtml(opponentName)}</strong> am Zug.`}</p><div style="margin:18px 0;padding:12px 14px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;line-height:1.55;">${detailHtml}</div><p style="margin:22px 0;"><a href="${escapeEmailHtml(gameUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Partie öffnen</a></p><p style="font-size:13px;color:#666;word-break:break-all;">Falls die Schaltfläche nicht funktioniert:<br>${escapeEmailHtml(gameUrl)}</p><hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;">Diese Nachricht ist eine notwendige Information zu deiner bestätigten Turnierteilnahme.</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_game_started', recipientEmail, recipientName, subject, textPart, htmlPart, attachments:[]};
 }
 
@@ -6096,9 +6096,9 @@ function prepareTournamentFullAdminEmail(env, tournament, admin) {
       ? `Das vollständig belegte Daily-Turnier startet automatisch zum geplanten Termin am ${scheduled}. Du musst es nicht manuell starten.`
       : 'Dieses Daily-Turnier startet automatisch, sobald alle Startplätze belegt sind.';
   const subject = `Turnier vollständig belegt: ${title}`;
-  const textPart = `Hallo ${adminName},\n\ndas Turnier „${title}“ ist mit ${playerCount} von ${playerCount} bestätigten Teilnehmern vollständig belegt.\n\n${nextStepText}\n\n${link ? `Turnier öffnen:\n${link}\n\n` : ''}Du musst zum Startzeitpunkt nicht online sein.\n\nViele Grüße\nHammerschach-Gamer`;
+  const textPart = `Hallo ${adminName},\n\ndas Turnier „${title}“ ist mit ${playerCount} von ${playerCount} bestätigten Teilnehmern vollständig belegt.\n\n${nextStepText}\n\n${link ? `Turnier öffnen:\n${link}\n\n` : ''}Du musst zum Startzeitpunkt nicht online sein.\n\nViele Grüße\nGamer`;
   const button = link ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(link)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Turnier öffnen</a></p>` : '';
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Hammerschach-Turniere · Admin-Hinweis</div><h2 style="color:#843f46;">${escapeEmailHtml(title)} ist vollständig belegt</h2><p>Hallo ${escapeEmailHtml(adminName)},</p><p>das Turnier ist mit <strong>${playerCount} von ${playerCount} bestätigten Teilnehmern</strong> vollständig belegt.</p><p>${escapeEmailHtml(nextStepText)}</p>${button}<p>Du musst zum Startzeitpunkt nicht online sein.</p><p>Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;text-transform:uppercase;color:#777;">Gamer-Turniere · Admin-Hinweis</div><h2 style="color:#843f46;">${escapeEmailHtml(title)} ist vollständig belegt</h2><p>Hallo ${escapeEmailHtml(adminName)},</p><p>das Turnier ist mit <strong>${playerCount} von ${playerCount} bestätigten Teilnehmern</strong> vollständig belegt.</p><p>${escapeEmailHtml(nextStepText)}</p>${button}<p>Du musst zum Startzeitpunkt nicht online sein.</p><p>Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return {ok:true, mailType:'tournament_full_admin', recipientEmail:admin.email, recipientName:adminName, subject, textPart, htmlPart, attachments:[]};
 }
 
@@ -8721,16 +8721,16 @@ function prepareAdminMemberMessageEmail(env, payload) {
   if (!recipientEmail || subject.length < 3 || messageText.length < 3) {
     return { ok:false, status:400, code:'INVALID_MEMBER_MESSAGE', message:'Betreff und Nachricht sind nicht vollständig.' };
   }
-  const typeLabel = kind === 'personal' ? 'Persönliche Admin-Nachricht' : kind === 'system' ? 'Wichtige Systeminformation' : 'Hammerschach-Neuigkeiten';
+  const typeLabel = kind === 'personal' ? 'Persönliche Admin-Nachricht' : kind === 'system' ? 'Wichtige Systeminformation' : 'Gamer-Neuigkeiten';
   const preferenceText = kind === 'personal'
-    ? 'Diese persönliche administrative Nachricht wurde ausschließlich an deinen Hammerschach-Account gesendet. Deine Einstellung für Neuigkeiten hat darauf keinen Einfluss.'
+    ? 'Diese persönliche administrative Nachricht wurde ausschließlich an deinen Gamer-Account gesendet. Deine Einstellung für Neuigkeiten hat darauf keinen Einfluss.'
     : kind === 'news'
     ? (adminCopy
       ? 'Du erhältst diese Nachricht als Administrator-Kontrollkopie des versendeten Mitgliedertextes.'
-      : 'Du erhältst diese Nachricht, weil du Hammerschach-Neuigkeiten in deiner Accountverwaltung aktiviert hast. Dort kannst du diese Einstellung jederzeit wieder abschalten.')
+      : 'Du erhältst diese Nachricht, weil du Gamer-Neuigkeiten in deiner Accountverwaltung aktiviert hast. Dort kannst du diese Einstellung jederzeit wieder abschalten.')
     : (adminCopy
       ? 'Du erhältst diese wichtige Systeminformation zugleich als Administrator-Kontrollkopie.'
-      : 'Diese wichtige Systeminformation betrifft die Nutzung deines Hammerschach-Accounts.');
+      : 'Diese wichtige Systeminformation betrifft die Nutzung deines Gamer-Accounts.');
   const attachmentText = attachment
     ? `
 
@@ -8742,20 +8742,20 @@ ${messageText}${attachmentText}
 
 ${preferenceText}${publicUrl ? `
 
-Hammerschach-Gamer öffnen:
+Gamer öffnen:
 ${publicUrl}` : ''}
 
 Viele Grüße
-Hammerschach-Gamer`;
+Gamer`;
   const buttonHtml = publicUrl
-    ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(publicUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Hammerschach-Gamer öffnen</a></p>`
+    ? `<p style="margin:22px 0;"><a href="${escapeEmailHtml(publicUrl)}" style="display:inline-block;padding:12px 18px;border-radius:999px;background:#843f46;color:#fff;text-decoration:none;font-weight:bold;">Gamer öffnen</a></p>`
     : '';
   const attachmentHtml = !attachment
     ? ''
     : attachment.inline
       ? `<div style="margin:20px 0;text-align:center;"><img src="cid:${escapeEmailHtml(attachment.contentId)}" alt="${escapeEmailHtml(attachment.name)}" style="display:block;max-width:100%;max-height:460px;width:auto;height:auto;margin:0 auto;border:0;border-radius:10px;"><div style="margin-top:7px;font-size:12px;color:#777;">${escapeEmailHtml(attachment.name)} · ${escapeEmailHtml(formatMailAttachmentSize(attachment.size))}</div></div>`
       : `<div style="margin:18px 0;padding:11px 13px;background:#f6f1f2;border:1px solid #e5d3d6;border-radius:10px;font-size:13px;line-height:1.45;"><strong>Anhang:</strong> ${escapeEmailHtml(attachment.name)} · ${escapeEmailHtml(formatMailAttachmentSize(attachment.size))}</div>`;
-  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;letter-spacing:.04em;text-transform:uppercase;color:#777;margin-bottom:7px;">${escapeEmailHtml(typeLabel)}</div><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(subject)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p>${adminMemberMessageHtmlParagraphs(messageText)}${attachmentHtml}${buttonHtml}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;line-height:1.45;">${escapeEmailHtml(preferenceText)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Hammerschach-Gamer</strong></p></div></body></html>`;
+  const htmlPart = `<!doctype html><html lang="de"><body style="margin:0;padding:24px;background:#f6f7fb;font-family:Arial,sans-serif;color:#222;"><div style="max-width:620px;margin:0 auto;background:#fff;border:1px solid #eadde0;border-radius:16px;padding:24px;box-sizing:border-box;"><div style="font-size:12px;font-weight:bold;letter-spacing:.04em;text-transform:uppercase;color:#777;margin-bottom:7px;">${escapeEmailHtml(typeLabel)}</div><h2 style="margin:0 0 18px;color:#843f46;">${escapeEmailHtml(subject)}</h2><p>Hallo ${escapeEmailHtml(recipientName)},</p>${adminMemberMessageHtmlParagraphs(messageText)}${attachmentHtml}${buttonHtml}<hr style="border:0;border-top:1px solid #eee;margin:22px 0;"><p style="font-size:12px;color:#777;line-height:1.45;">${escapeEmailHtml(preferenceText)}</p><p style="margin-bottom:0;">Viele Grüße<br><strong>Gamer</strong></p></div></body></html>`;
   return {
     ok:true,
     mailType:kind === 'personal' ? 'member_personal' : kind === 'system' ? 'member_system' : 'member_news',
@@ -9246,7 +9246,7 @@ function defaultTvConfig(slotNumber = 1) {
     mode:'channel',
     title:'Gamer-TV',
     eventName:'',
-    description:'Schach-Livestreams direkt im Hammerschach-Gamer.',
+    description:'Schach-Livestreams direkt im Gamer.',
     channelName:'',
     channelId:'',
     manualVideoId:'',
@@ -9266,7 +9266,7 @@ function normalizeTvConfig(value, slotNumber = 1) {
     mode:normalizeTvMode(source.mode),
     title:cleanedTitle === 'Hammerschach TV' || cleanedTitle === 'Gamer TV' ? 'Gamer-TV' : cleanedTitle,
     eventName:cleanTvText(source.eventName, 120),
-    description:cleanTvText(source.description || 'Schach-Livestreams direkt im Hammerschach-Gamer.', 600),
+    description:cleanTvText(source.description || 'Schach-Livestreams direkt im Gamer.', 600),
     channelName:cleanTvText(source.channelName, 90),
     /* channelId bleibt aus Kompatibilitätsgründen der Feldname, enthält aber
        wahlweise die UC-ID oder den öffentlich sichtbaren @Handle. */
@@ -9774,7 +9774,7 @@ async function lobbyWelcomeSettings(env) {
   return {
     welcomeEnabled:values.get('ticker_welcome_enabled') !== '0',
     welcomeDurationHours:[24, 48, 72, 120, 168].includes(duration) ? duration : 72,
-    welcomeTemplate:cleanLobbyTickerMessage(values.get('ticker_welcome_template') || 'Herzlich willkommen bei Hammerschach, {username}! Schön, dass du dabei bist.')
+    welcomeTemplate:cleanLobbyTickerMessage(values.get('ticker_welcome_template') || 'Herzlich willkommen im Gamer, {username}! Schön, dass du dabei bist.')
   };
 }
 
@@ -10325,7 +10325,7 @@ async function saveAdminInfoCenterItem(env, adminUser, body) {
   await syncInfoCenterTickerItem(env, row);
   let mailResult = null;
   if (body && body.sendEmail === true && row.status === 'published') {
-    const emailText = [row.summary, '', cleanInfoCenterBody(row.body), '', 'Die vollständige Mitteilung findest du im Info-Center des Hammerschach-Gamers.'].join('\n').slice(0, ADMIN_MEMBER_MESSAGE_MAX_LENGTH);
+    const emailText = [row.summary, '', cleanInfoCenterBody(row.body), '', 'Die vollständige Mitteilung findest du im Info-Center des Gamers.'].join('\n').slice(0, ADMIN_MEMBER_MESSAGE_MAX_LENGTH);
     try { mailResult = await sendAdminMemberMessage(env, adminUser, {kind:'news', subject:row.title, message:emailText, confirmed:true}); }
     catch (error) { mailResult = {ok:false, code:'INFO_EMAIL_FAILED', message:error && error.message ? error.message : 'Der optionale Mailversand ist fehlgeschlagen.'}; }
     const mailComplete = !!(mailResult && mailResult.ok && Number(mailResult.sentCount || 0) > 0 && Number(mailResult.failedCount || 0) === 0);
@@ -10947,8 +10947,8 @@ async function handleAuthApi(request, env, url) {
       recipientEmail:email,
       recipientName:user.username,
       mailType:'email_change_verification',
-      title:'Neue Hammerschach-Mailadresse bestätigen',
-      intro:`Bitte bestätige, dass ${email} künftig als Mailadresse für deinen Hammerschach-Account verwendet werden soll.`,
+      title:'Neue Gamer-Mailadresse bestätigen',
+      intro:`Bitte bestätige, dass ${email} künftig als Mailadresse für deinen Gamer-Account verwendet werden soll.`,
       actionUrl,
       actionLabel:'Neue Mailadresse bestätigen',
       expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
@@ -10985,8 +10985,8 @@ async function handleAuthApi(request, env, url) {
       recipientEmail:state.pendingEmail,
       recipientName:user.username,
       mailType:'email_change_verification',
-      title:'Neue Hammerschach-Mailadresse bestätigen',
-      intro:`Bitte bestätige, dass ${state.pendingEmail} künftig als Mailadresse für deinen Hammerschach-Account verwendet werden soll.`,
+      title:'Neue Gamer-Mailadresse bestätigen',
+      intro:`Bitte bestätige, dass ${state.pendingEmail} künftig als Mailadresse für deinen Gamer-Account verwendet werden soll.`,
       actionUrl,
       actionLabel:'Neue Mailadresse bestätigen',
       expiryText:'Der Bestätigungslink ist 24 Stunden gültig und kann nur einmal verwendet werden.'
