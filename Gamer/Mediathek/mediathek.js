@@ -123,7 +123,7 @@
       const credits=catalog.entries.filter(item=>item.image && (!category||item.category===category.id));
       content.innerHTML=`${back}<header class="media-intro"><h1>${escape(title)}</h1>${intro}</header>${(category?[category]:catalog.categories).map(categoryMarkup).join('')}<footer class="media-sources">${credits.map(item=>`<p>${escape(item.title)} – ${imageCredit(item.image)}</p>`).join('')}</footer>`;
     }
-    document.title=(entry?.title||category?.title||'Mediathek')+' · Hammerschach-Gamer';
+    document.title=(entry?.title||category?.title||'Mediathek')+' · Gamer';
     content.querySelectorAll('.media-video-start').forEach(button=>button.addEventListener('click',()=>startVideo(button)));
     content.querySelectorAll('.media-more').forEach(details=>details.addEventListener('toggle',()=>{
       if(!details.open)players.forEach(player=>{try{if(details.contains(player.getIframe()))player.pauseVideo();}catch(_){}});
