@@ -61,6 +61,9 @@ try{
     assert.equal(await page.locator('.member-lobby').isVisible(),false);
     assert.equal(await dlg.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'no horizontal overflow');
     await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-pages').getBoundingClientRect().bottom<=innerHeight+2);
+    assert.equal(await page.locator('.site-footnote').count(),1);
+    assert.equal(await dlg.locator('.site-footnote').isVisible(),true);
+    assert.equal(await dlg.locator('[data-lb="lobby"],.lb-passive,.lb-clock-note').count(),0);
     const shotDir=process.env.LIVE_BOARD_SCREENSHOTS;
     if(shotDir){await fs.mkdir(shotDir,{recursive:true});await page.screenshot({path:path.join(shotDir,name+'-overview.png')});}
     await dlg.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-pages span').textContent.startsWith('Seite 2'));
@@ -82,14 +85,14 @@ try{
     await page.waitForFunction(()=>!document.querySelector('#liveBoardView [data-lb="refresh"]').disabled);assert.equal(liveCalls,paused+1);
     unauthorized=true;await page.clock.fastForward(31000);await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-status').textContent.includes('abgelaufen'));
     assert.equal(await dlg.locator('.lb-board').count(),0,'expired session clears private data');const denied=liveCalls;await page.clock.fastForward(120000);assert.equal(liveCalls,denied);
-    await dlg.locator('[data-lb="lobby"]').click();unauthorized=false;
+    await page.locator('#roomLobbyBtn').evaluate(el=>el.click());unauthorized=false;
     await page.evaluate(()=>HammerschachLiveBoard.open('tournament'));await dlg.locator('.lb-event').waitFor().catch(async e=>{console.error(name,await dlg.innerText(),await page.evaluate(()=>({open:!document.querySelector('#liveBoardView').hidden,token:onlineAuthToken,hidden:document.hidden})));throw e;});assert.match(await dlg.locator('.lb-event').innerText(),/Gamer Open/);
     // A late response from a departed event must not replace the catalog.
     slow=true;await dlg.locator('.lb-event').click();
-    await dlg.locator('[data-lb="lobby"]').click();
+    await page.locator('#roomLobbyBtn').evaluate(el=>el.click());
     await new Promise(r=>setTimeout(r,350));
     assert.equal(await dlg.locator('.lb-board').count(),0);
-    assert.equal(await dlg.evaluate(el=>!el.hidden),false);slow=false;
+    assert.equal(await dlg.evaluate(el=>!el.hidden),false);assert.equal(await page.locator('.member-lobby .site-footnote').isVisible(),true);slow=false;
     await page.evaluate(()=>HammerschachLiveBoard.open('club'));await dlg.locator('.lb-event').waitFor();
     await page.evaluate(()=>setEmbeddedToolActive('league-standings'));
     assert.equal(await dlg.evaluate(el=>el.hidden),true);
