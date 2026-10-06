@@ -2,6 +2,25 @@
 
 Stand: 6. Oktober 2026. Dieses Änderungs-ZIP setzt auf dem zuletzt gelieferten `Hammerschach-Gamer-LIVE-BOARD-Komplettpaket-2026-10-06.zip` auf. Es enthält ausschließlich bearbeitete/neue Dateien in der bisherigen Ordnerstruktur.
 
+## Korrektur: Veranstaltungssuche in Cloudflare Workers
+
+Das vorherige Veranstaltungssuche-Testpaket verwendete beim externen Abruf `redirect: 'error'`. Node.js unterstützt diese Option, die Cloudflare-Worker-Laufzeit dagegen nicht. Deshalb scheiterte dort bereits der Start des Abrufs; der Gamer zeigte „Veranstaltungssuche derzeit nicht erreichbar“. Der Fehler wurde in der lokalen offiziellen Worker-Laufzeit `workerd` mit derselben Kompatibilitätsversion wie im Projekt reproduziert.
+
+Korrigiert auf `redirect: 'manual'` mit ausdrücklicher Ablehnung sämtlicher HTTP-3xx-Antworten. Weiterleitungen werden weiterhin nicht verfolgt und die Host-Schutzregeln bleiben bestehen. Diese gemeinsame Abruffunktion gilt für Katalog, Runden, PGN und DGT. Die Benutzeroberfläche wird durch diese Korrektur nicht verändert.
+
+**Dieses kleine Korrektur-ZIP über das zuletzt gelieferte Veranstaltungssuche-Testpaket legen und den Lobby-Worker erneut bereitstellen.** Dafür ist kein erneutes Frontend-Update erforderlich. Falls unmittelbar nach dem Update noch die alte Meldung erscheint, mindestens 60 Sekunden warten und „Aktualisieren“ drücken: Der alte Fehler kann noch für diesen Zeitraum im Quellen-Cache liegen.
+
+Prüfung: alle 19 LIVE-BOARD-Tests bestanden, zusätzlich ein neuer `workerd`-Regressionstest mit echter Fetch-/Cache-API. Dieser prüft Veranstaltungsliste, vier Bretter, geteilten PGN-Cache, Besucher-Sperre und abgelehnte Weiterleitungen ohne Abruf des Zielhosts. Außerdem wurde die echte Lichess-Übertragung in `workerd` erneut getestet: 68 Veranstaltungen gefunden und vier Bretter aus insgesamt 30 Partien von „Fagernes International Autumn 2026 | GM“ geladen. Keine produktive Bereitstellung durchgeführt; Cloudflare-Rechenzentrumsnetzwerk und echte Nutzeranmeldung bleiben vom lokalen Lauf getrennt.
+
+Der optionale Laufzeittest benötigt Miniflare als Entwicklungswerkzeug, keine neue Abhängigkeit im produktiven Worker:
+
+```sh
+node tests/live-board-worker-runtime.mjs
+LIVE_BOARD_NETWORK_TEST=1 node tests/live-board-worker-runtime.mjs
+```
+
+Standardmäßig verwendet er kontrollierte Quellenantworten ohne externen Abruf; die zweite Variante ruft ausdrücklich Lichess auf. `MINIFLARE_MODULE` kann auf die installierte Miniflare-Moduldatei zeigen. Das Testskript unterstützt die Miniflare-4-Schnittstelle und den offiziellen Kompatibilitätsadapter in Version 5.
+
 ## Einspielen
 
 1. Die enthaltenen Dateien über die gleichnamigen Dateien des letzten Komplettpakets legen; neue Dateien ergänzen. Die oberste Ebene ist einmal `Hammerschach-Gamer/`.
