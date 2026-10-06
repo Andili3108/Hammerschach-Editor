@@ -6,7 +6,7 @@ import {parseLivePgn,sourceEvents,safeSourceUrl,dgtGame,dgtPairings,demoGames} f
 import {handleLiveBoardApi,sharedLiveCache,fetchSource} from '../src/live-board.js';
 const pgn=(moves='1. e4 e5 *',extra='')=>`[Event "Test"]\n[White "A <script>"]\n[Black "B"]\n${extra}\n${moves}\n`;
 const env={LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.stringify([{id:'club',category:'club',title:'Test',source:{type:'demo'}},{id:'turnier',category:'tournament',title:'Turnier',source:{type:'demo'}}])};
-const helpers={json:(d,init)=>new Response(JSON.stringify(d),init),bearerTokenFromRequest:r=>r.headers.get('authorization'),lookupAuthSession:async(e,t)=>t==='Bearer valid'?{user:{id:'member'}}:null};
+const helpers={json:(d,init)=>new Response(JSON.stringify(d),init),bearerTokenFromRequest:r=>r.headers.get('authorization'),lookupAuthSession:async(e,t)=>t==='Bearer valid'?{user:{id:'member',username:'Andili'}}:null};
 const call=(path,token='valid',config=env,deps={})=>{const url=new URL('https://gamer.test/api/live-board/'+path);const request=new Request(url,{headers:token?{authorization:'Bearer '+token}:{}});return handleLiveBoardApi(request,config,url,helpers,deps);};
 
 test('guest/invalid/expired session blocked before catalog or external work',async()=>{
@@ -16,9 +16,9 @@ test('guest/invalid/expired session blocked before catalog or external work',asy
   }
 });
 test('catalog strips URLs and supports both categories',async()=>{const r=await call('events');const d=await r.json();assert.equal(d.events.length,2);assert.equal(d.events[0].source,undefined);assert.equal(r.headers.get('vary'),'Authorization');});
-test('8 boards, pagination, search, single board, finished polling stop',async()=>{
-  const first=await (await call('events/club/boards')).json();assert.equal(first.games.length,8);assert.equal(first.pages,2);assert.equal(first.pollAfterMs,30000);
-  const second=await (await call('events/club/boards?page=2')).json();assert.equal(second.games.length,2);assert.equal(second.pollAfterMs,0);
+test('4 boards, pagination, search, single board, finished polling stop',async()=>{
+  const first=await (await call('events/club/boards')).json();assert.equal(first.games.length,4);assert.equal(first.pages,3);assert.equal(first.pollAfterMs,30000);
+  const second=await (await call('events/club/boards?page=3')).json();assert.equal(second.games.length,2);assert.equal(second.pollAfterMs,0);
   const single=await (await call('events/club/boards?board=3')).json();assert.equal(single.games.length,1);assert.equal(single.games[0].board,3);
   const search=await (await call('events/club/boards?q=Schwarz%205')).json();assert.equal(search.games.length,1);assert.equal(search.games[0].board,5);
   const numeric=await (await call('events/club/boards?q=9')).json();assert.equal(numeric.games[0].board,9);
@@ -60,7 +60,7 @@ test('PGN fetch shared across viewers and pages; partial update retains old data
   const config={LIVE_BOARD_PGN_HOSTS:'pgn.example',LIVE_BOARD_EVENTS:JSON.stringify([{id:'pgn',title:'PGN',category:'tournament',source:{type:'pgn',url}}])};
   const deps={now:()=>time,cache:null,fetcher:async()=>{requests++;return new Response(broken?pgn('1. e4 {'):Array.from({length:10},()=>pgn()).join('\n'));}};
   await call('events/pgn/boards','valid',config,deps);await call('events/pgn/boards?page=2','valid',config,deps);assert.equal(requests,1);
-  time+=31000;broken=true;const d=await(await call('events/pgn/boards','valid',config,deps)).json();assert.equal(d.games.length,8);assert.equal(d.stale,true);assert.equal(d.pollAfterMs,60000);
+  time+=31000;broken=true;const d=await(await call('events/pgn/boards','valid',config,deps)).json();assert.equal(d.games.length,4);assert.equal(d.stale,true);assert.equal(d.pollAfterMs,60000);
 });
 
 const ctx=vm.createContext({console,localStorage:{getItem:()=>null}});
@@ -96,4 +96,13 @@ test('DGT rejects an untrusted lookup host and duplicate board IDs',async()=>{
   const config={LIVE_BOARD_EVENTS:JSON.stringify([{id:'badhost',title:'Bad',category:'club',source:{type:'dgt',tournamentId:crypto.randomUUID(),round:1}}])};
   let requests=0;const fetcher=async()=>{requests++;return new Response(JSON.stringify({host:'127.0.0.1'}));};
   assert.equal((await call('events/badhost/boards','valid',config,{fetcher,cache:null})).status,503);assert.equal(requests,1);
+});
+
+test('other authenticated members cannot read catalog or boards during Andili preview',async()=>{
+  const h={...helpers,lookupAuthSession:async()=>({user:{id:'other',username:'Other',isAdmin:true}})};
+  for(const route of ['events','events/club/boards']){
+    const u=new URL('https://test/api/live-board/'+route);
+    const response=await handleLiveBoardApi(new Request(u),{LIVE_BOARD_EVENTS:'invalid'},u,h,{fetcher:()=>assert.fail('must not fetch')});
+    assert.equal(response.status,403);assert.equal((await response.json()).code,'LIVE_BOARD_RESTRICTED');
+  }
 });

@@ -9,7 +9,7 @@ import {handleLiveBoardApi} from '../src/live-board.js';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=fileURLToPath(new URL('../../Gamer/',import.meta.url));
 const env={LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.stringify([{id:'club',title:'Vereinsabend · Testübertragung',category:'club',source:{type:'demo'}},{id:'open',title:'Gamer Open · Testrunde',category:'tournament',source:{type:'demo'}}])};
-const user={id:'test-user',username:'Testmitglied',isAdmin:false};
+const user={id:'test-user',username:'Andili',isAdmin:false};
 const helpers={json:(data,init)=>new Response(JSON.stringify(data),init),lookupAuthSession:async(e,t)=>t==='Bearer test-token'?{user}:null,bearerTokenFromRequest:r=>r.headers.get('authorization')};
 const server=http.createServer(async(req,res)=>{
   try{
@@ -44,7 +44,7 @@ try{
     await context.routeWebSocket(/.*/,socket=>socket.close());
     const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto(local);await page.waitForFunction(()=>typeof HammerschachLiveBoard!=='undefined');
-    await page.evaluate(()=>{onlineAuthToken='test-token';onlineAuthUser={id:'test-user',username:'Testmitglied'};updateAuthUi();});
+    await page.evaluate(()=>{onlineAuthToken='test-token';onlineAuthUser={id:'test-user',username:'Andili'};updateAuthUi();});
     assert.equal(liveCalls,0,'closed module must not fetch');
     if(name==='desktop'){
       await page.locator('#clubChessMenuBtn').click();await page.locator('#liveBoardClubBtn').click();
@@ -53,39 +53,53 @@ try{
       await page.locator('[aria-controls="mobileNavClubChessPanel"]').click();
       await page.locator('#mobileNavClubChessPanel [data-mobile-nav-target="liveBoardClubBtn"]').click();
     }
-    const dlg=page.locator('#liveBoardDialog');await dlg.locator('.lb-event').waitFor();
-    await dlg.locator('.lb-event').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardDialog .lb-card').length===8);
-    assert.equal(await dlg.locator('.lb-board').count(),8);
+    const dlg=page.locator('#liveBoardView');await dlg.locator('.lb-event').waitFor();
+    await dlg.locator('.lb-event').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===4);
+    assert.equal(await dlg.locator('.lb-board').count(),4);
+    assert.equal(await page.locator('dialog[open]').count(),0);
+    assert.equal(await page.locator('#roomLobbyBtn').evaluate(el=>el.hidden),false);
+    assert.equal(await page.locator('.member-lobby').isVisible(),false);
     assert.equal(await dlg.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'no horizontal overflow');
+    await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-pages').getBoundingClientRect().bottom<=innerHeight+2);
     const shotDir=process.env.LIVE_BOARD_SCREENSHOTS;
     if(shotDir){await fs.mkdir(shotDir,{recursive:true});await page.screenshot({path:path.join(shotDir,name+'-overview.png')});}
-    await dlg.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardDialog .lb-card').length===2);
+    await dlg.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-pages span').textContent.startsWith('Seite 2'));
+    await dlg.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===2);
     await page.clock.install();const stopped=liveCalls;await page.clock.fastForward(90000);assert.equal(liveCalls,stopped,'finished page must not poll');
-    await dlg.locator('#lbSearch').fill('Schwarz 5');await dlg.locator('form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardDialog .lb-card').length===1);
-    await dlg.getByRole('button',{name:'Brett öffnen'}).click();await dlg.locator('.lb-single .lb-board').waitFor();
+    if(!await dlg.locator('#lbSearch').isVisible())await dlg.locator('.lb-search-panel summary').click();
+    await dlg.locator('#lbSearch').fill('Schwarz 5');await dlg.locator('form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===1);
+    await dlg.locator('.lb-card[role="button"]').click();await dlg.locator('.lb-single .lb-board').waitFor();
     assert.equal(await dlg.locator('.lb-board').count(),1);
     if(shotDir)await page.screenshot({path:path.join(shotDir,name+'-single.png')});
     await dlg.getByRole('button',{name:'Startstellung'}).click();assert.match(await dlg.locator('.lb-replay').innerText(),/0 \/ /);
     await dlg.getByRole('button',{name:'Aktueller Stand'}).click();
     const gameBefore=await page.evaluate(()=>JSON.stringify({history:masterHistory,setup:currentGameSetup,view:viewIndex}));
     await dlg.getByRole('button',{name:'Brett drehen'}).click();assert.equal(await page.evaluate(()=>JSON.stringify({history:masterHistory,setup:currentGameSetup,view:viewIndex})),gameBefore,'passive viewer leaves own game alone');
-    const active=liveCalls;await page.clock.fastForward(31000);await page.waitForFunction(()=>!document.querySelector('#liveBoardDialog [data-lb="refresh"]').disabled);assert.equal(liveCalls,active+1,'single view has one poll');
+    const active=liveCalls;await page.clock.fastForward(31000);await page.waitForFunction(()=>!document.querySelector('#liveBoardView [data-lb="refresh"]').disabled);assert.equal(liveCalls,active+1,'single view has one poll');
     await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));});
     const paused=liveCalls;await page.clock.fastForward(120000);assert.equal(liveCalls,paused,'background pauses');
     await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'));});
-    await page.waitForFunction(()=>!document.querySelector('#liveBoardDialog [data-lb="refresh"]').disabled);assert.equal(liveCalls,paused+1);
-    unauthorized=true;await page.clock.fastForward(31000);await page.waitForFunction(()=>document.querySelector('#liveBoardDialog .lb-status').textContent.includes('abgelaufen'));
+    await page.waitForFunction(()=>!document.querySelector('#liveBoardView [data-lb="refresh"]').disabled);assert.equal(liveCalls,paused+1);
+    unauthorized=true;await page.clock.fastForward(31000);await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-status').textContent.includes('abgelaufen'));
     assert.equal(await dlg.locator('.lb-board').count(),0,'expired session clears private data');const denied=liveCalls;await page.clock.fastForward(120000);assert.equal(liveCalls,denied);
-    await dlg.locator('[data-lb="close"]').click();unauthorized=false;
-    await page.evaluate(()=>HammerschachLiveBoard.open('tournament'));await dlg.locator('.lb-event').waitFor().catch(async e=>{console.error(name,await dlg.innerText(),await page.evaluate(()=>({open:document.querySelector('#liveBoardDialog').open,token:onlineAuthToken,hidden:document.hidden})));throw e;});assert.match(await dlg.locator('.lb-event').innerText(),/Gamer Open/);
+    await dlg.locator('[data-lb="lobby"]').click();unauthorized=false;
+    await page.evaluate(()=>HammerschachLiveBoard.open('tournament'));await dlg.locator('.lb-event').waitFor().catch(async e=>{console.error(name,await dlg.innerText(),await page.evaluate(()=>({open:!document.querySelector('#liveBoardView').hidden,token:onlineAuthToken,hidden:document.hidden})));throw e;});assert.match(await dlg.locator('.lb-event').innerText(),/Gamer Open/);
     // A late response from a departed event must not replace the catalog.
     slow=true;await dlg.locator('.lb-event').click();
-    await dlg.locator('[data-lb="close"]').click();
+    await dlg.locator('[data-lb="lobby"]').click();
     await new Promise(r=>setTimeout(r,350));
     assert.equal(await dlg.locator('.lb-board').count(),0);
-    assert.equal(await dlg.evaluate(el=>el.open),false);slow=false;
+    assert.equal(await dlg.evaluate(el=>!el.hidden),false);slow=false;
     await page.evaluate(()=>HammerschachLiveBoard.open('club'));await dlg.locator('.lb-event').waitFor();
-    await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await dlg.evaluate(el=>el.open),false);assert.equal(await page.locator('#liveBoardClubBtn').evaluate(el=>el.hidden),true);
+    await page.evaluate(()=>setEmbeddedToolActive('league-standings'));
+    assert.equal(await dlg.evaluate(el=>el.hidden),true);
+    assert.equal(await page.locator('#leagueStandingsView').isVisible(),true);
+    const left=liveCalls;await page.clock.fastForward(60000);assert.equal(liveCalls,left);
+    await page.evaluate(()=>HammerschachLiveBoard.open('club'));await dlg.locator('.lb-event').waitFor();
+    await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await dlg.evaluate(el=>!el.hidden),false);assert.equal(await page.locator('#liveBoardClubBtn').evaluate(el=>el.hidden),true);
+    await page.evaluate(()=>{onlineAuthToken='test-token';onlineAuthUser={id:'other',username:'Other'};updateAuthUi();});
+    assert.equal(await page.locator('#liveBoardClubBtn').evaluate(el=>el.hidden),true);
+    assert.equal(await page.locator('#liveBoardTournamentBtn').evaluate(el=>el.hidden),true);
     const guest=liveCalls;await page.evaluate(()=>HammerschachLiveBoard.open('club'));await page.clock.fastForward(60000);assert.equal(liveCalls,guest);
     assert.deepEqual(errors,[],'no browser JavaScript errors');
     report.push({name,liveCalls,errors});await context.close();
