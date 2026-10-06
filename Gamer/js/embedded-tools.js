@@ -11,6 +11,7 @@ let fairplayToolActive = false;
 let readerToolActive = false;
 let tournamentReportToolActive = false;
 let tvToolActive = false;
+let liveBoardToolActive = '';
 let leagueStandingsToolActive = false;
 let learningToolFrameStarted = false;
 let analyzerToolFrameStarted = false;
@@ -73,7 +74,7 @@ try{
 function currentSchachArticle(){
   return schachCurrentCategory==='news' ? SCHACH_NEWS[schachNewsCurrentId] : TOURNAMENT_REPORTS[tournamentReportCurrentId];
 }
-const NAVIGABLE_EMBEDDED_TOOLS = new Set(['impulses','learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','mediathek','tv','league-standings']);
+const NAVIGABLE_EMBEDDED_TOOLS = new Set(['impulses','learning','analyzer','player','trainer','mate-school','schachlabor','openings','reader','tournament-report','mediathek','tv','league-standings','live-board-club','live-board-tournament']);
 const RESTORABLE_EMBEDDED_TOOLS = new Set([...NAVIGABLE_EMBEDDED_TOOLS,'fairplay']);
 function embeddedToolsAvailable(){
   return !!(onlineAuthToken && onlineAuthUser && !onlineRoomId && !hasOnlineTargetInAddress());
@@ -118,15 +119,16 @@ function tournamentReportToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function protectedEmbeddedToolActive(){
-  return analyzerToolActive || playerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive;
+  return analyzerToolActive || playerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive || !!liveBoardToolActive;
 }
 function memberEmbeddedToolActive(){
-  return analyzerToolActive || playerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive;
+  return analyzerToolActive || playerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive || !!liveBoardToolActive;
 }
 function embeddedToolActive(){
   return impulsesToolActive || learningToolActive || mediathekToolActive || memberEmbeddedToolActive();
 }
 function embeddedToolStatusText(){
+  if(liveBoardToolActive) return 'LIVE-BOARD · '+(liveBoardToolActive==='club'?'Vereinsschach':'Turnierschach');
   if(mediathekToolActive) return 'Mediathek';
   if(impulsesToolActive) return 'Trainingsimpulse';
   if(learningToolActive) return 'Gamer-Videokurse';
@@ -155,6 +157,8 @@ function updateEmbeddedToolNavigation(){
     [schachlaborToolBtn,schachlaborToolActive],[openingsToolBtn,openingsToolActive],
     [tvToolBtn,tvToolActive],[readerToolBtn,readerToolActive],
     [tournamentReportToolBtn,tournamentReportToolActive],[mediathekToolBtn,mediathekToolActive],
+    [document.getElementById('liveBoardClubBtn'),liveBoardToolActive==='club'],
+    [document.getElementById('liveBoardTournamentBtn'),liveBoardToolActive==='tournament'],
     [leagueStandingsToolBtn,leagueStandingsToolActive]
   ];
   entries.forEach(([button,current])=>{
@@ -473,7 +477,8 @@ function setEmbeddedToolActive(toolName){
   else if(toolName==='reader'&&readerToolAvailable())requested='reader';
   else if(toolName==='tournament-report'&&tournamentReportToolAvailable())requested='tournament-report';
   else if(embeddedToolsAvailable()){
-    if(toolName==='tv')requested='tv';
+    if((toolName==='live-board-club'||toolName==='live-board-tournament')&&String(onlineAuthUser?.username||'').trim().toLowerCase()==='andili')requested=toolName;
+    else if(toolName==='tv')requested='tv';
     else if(toolName==='fairplay'&&fairplayAllowed)requested='fairplay';
     else if(toolName==='openings')requested='openings';
     else if(toolName==='schachlabor')requested='schachlabor';
@@ -497,6 +502,9 @@ function setEmbeddedToolActive(toolName){
   fairplayToolActive=requested==='fairplay';
   readerToolActive=requested==='reader';
   tournamentReportToolActive=requested==='tournament-report';
+  liveBoardToolActive=requested==='live-board-club'?'club':requested==='live-board-tournament'?'tournament':'';
+  document.documentElement.classList.toggle('live-board-tool-active',!!liveBoardToolActive);
+  if(typeof HammerschachLiveBoard!=='undefined')HammerschachLiveBoard.setView(liveBoardToolActive);
   const tvWasActive=tvToolActive;
   tvToolActive=requested==='tv';
   const leagueStandingsWasActive=leagueStandingsToolActive;

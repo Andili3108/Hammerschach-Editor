@@ -65,7 +65,7 @@
   }
 
   function embeddedToolContext(){
-    return ['impulses-tool-active','learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tournament-report-tool-active','tv-tool-active','league-standings-tool-active']
+    return ['live-board-tool-active','impulses-tool-active','learning-tool-active','analyzer-tool-active','trainer-tool-active','mate-school-tool-active','schachlabor-tool-active','openings-tool-active','fairplay-tool-active','reader-tool-active','tournament-report-tool-active','tv-tool-active','league-standings-tool-active']
       .some(className => root.classList.contains(className));
   }
 
@@ -211,7 +211,7 @@
       const tournamentReport = root.classList.contains('tournament-report-tool-active');
       const tv = root.classList.contains('tv-tool-active');
       const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Training' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Hammerschach')))))))));
+      testContext.textContent = root.classList.contains('live-board-tool-active') ? 'Live-Board' : root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Training' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Hammerschach')))))))));
     }
   }
 
