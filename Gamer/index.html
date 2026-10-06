@@ -51,6 +51,7 @@
 <link rel="stylesheet" href="css/article-unread.css?v=20260919-compact-3">
 <link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
+<link rel="stylesheet" href="css/live-board.css?v=20261005-live-board-1">
 </head>
 <body>
 <div class="app" role="main">
@@ -123,6 +124,9 @@
               <span>♜ Schachwelt</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
             </button>
             <div id="clubChessMenuPopup" class="header-menu-popup" role="menu" aria-label="Schachwelt" hidden>
+              <div class="header-menu-section-label" data-live-board-member hidden>LIVE-BOARD</div>
+              <button id="liveBoardClubBtn" class="header-menu-item" type="button" role="menuitem" data-live-board-category="club" data-live-board-member aria-haspopup="dialog" aria-controls="liveBoardDialog" hidden>♟ Vereinsschach</button>
+              <button id="liveBoardTournamentBtn" class="header-menu-item" type="button" role="menuitem" data-live-board-category="tournament" data-live-board-member aria-haspopup="dialog" aria-controls="liveBoardDialog" hidden>🏆 Turnierschach</button>
               <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
               <button id="readerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="readerToolView" hidden>📚 Partienarchiv</button>
               <div class="header-menu-section-label">Schach aktuell</div>
@@ -249,6 +253,9 @@
             <div class="mobile-nav-accordion" data-mobile-nav-accordion-source="clubChessMenu" hidden>
               <button class="mobile-nav-test-item mobile-nav-accordion-toggle" type="button" aria-expanded="false" aria-controls="mobileNavClubChessPanel"><span>♜</span><strong>Schachwelt</strong><i aria-hidden="true">▾</i></button>
               <div id="mobileNavClubChessPanel" class="mobile-nav-accordion-panel" hidden>
+                <div class="mobile-nav-accordion-label" data-live-board-member hidden>LIVE-BOARD</div>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="liveBoardClubBtn" data-live-board-member hidden><span>♟</span><strong>Vereinsschach</strong></button>
+                <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="liveBoardTournamentBtn" data-live-board-member hidden><span>🏆</span><strong>Turnierschach</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="leagueStandingsToolBtn"><span>📊</span><strong>Ergebnisdienst</strong></button>
                 <button class="mobile-nav-test-item mobile-nav-accordion-item" type="button" data-mobile-nav-target="readerToolBtn"><span>📚</span><strong>Partienarchiv</strong></button>
                 <div class="mobile-nav-accordion-label">Schach aktuell</div>
@@ -2639,7 +2646,7 @@
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
 <script src="js/rating-history.js?v=20260920-profile-1"></script>
-<script src="js/auth-account.js?v=20260926-header-2"></script>
+<script src="js/auth-account.js?v=20261005-live-board-1"></script>
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260927-series-3"></script>
 <script src="js/live-tournaments.js?v=20261005-gamer-brand-1"></script>
@@ -2686,6 +2693,8 @@
 <script src="js/time-controls.js?v=20260917-theme-3"></script>
 <script src="js/article-read-state.js?v=20260918-unread-1"></script>
 <script src="js/article-read-ui.js?v=20260928-request-audit-1"></script>
+<script src="js/live-board-position.js?v=20261005-live-board-1"></script>
+<script src="js/live-board.js?v=20261005-live-board-1"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
 <script src="js/mobile-navigation.js?v=20261005-gamer-brand-1"></script>
