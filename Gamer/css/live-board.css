@@ -52,3 +52,15 @@ html.live-board-tool-active .member-lobby,html.live-board-tool-active .top-layou
 
 #liveBoardView .lb-status:empty{display:none}
 #liveBoardView .site-footnote-button{min-height:0}
+
+#liveBoardView select{font:inherit;font-size:16px;max-width:100%;min-height:40px;border:1px solid var(--ui-line,#cbb);border-radius:8px;padding:8px;background:var(--ui-surface-alt,#f3ece2);color:inherit}
+#liveBoardView select:focus-visible{outline:3px solid var(--andili-blau,#3b6ea7);outline-offset:2px}
+#liveBoardView .lb-round{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%}
+#liveBoardView .lb-round select{min-width:0}
+#liveBoardView .lb-catalog-pages{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+#liveBoardView .lb-add{margin:12px 0 18px}
+#liveBoardView .lb-add summary{cursor:pointer;font-weight:bold;padding:6px 0}
+#liveBoardView .lb-source-form{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:12px 0}
+#liveBoardView .lb-source-form label{display:flex;flex:1;min-width:180px;flex-direction:column;gap:6px}
+#liveBoardView .lb-event{overflow-wrap:anywhere;min-width:0}
+@media(max-width:560px){#liveBoardView .lb-round{font-size:12px}#liveBoardView .lb-round select{font-size:16px;padding:6px;min-height:36px}#liveBoardView .lb-source-form label{min-width:100%}#liveBoardView .lb-catalog-tools .lb-search>*{max-width:100%}#liveBoardView .lb-catalog-pages{font-size:12px;gap:6px}#liveBoardView .lb-event{padding:14px;min-height:90px}#liveBoardView .lb-event strong{font-size:18px}}
