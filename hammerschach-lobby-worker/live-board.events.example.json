@@ -1,0 +1,16 @@
+[
+  {
+    "id": "verein-demo",
+    "title": "Vereinsschach · Testübertragung",
+    "category": "club",
+    "round": "Testrunde",
+    "source": { "type": "demo" }
+  },
+  {
+    "id": "turnier-demo",
+    "title": "Turnierschach · Testübertragung",
+    "category": "tournament",
+    "round": "Testrunde",
+    "source": { "type": "demo" }
+  }
+]
