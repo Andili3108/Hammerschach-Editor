@@ -92,6 +92,7 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
   // Authenticate before consulting either the catalog or any source/cache.
   const session=await helpers.lookupAuthSession(env,helpers.bearerTokenFromRequest(request));
   if(!session?.user)return reply({ok:false,code:'NOT_AUTHENTICATED',message:'LIVE-BOARD ist nur für angemeldete Mitglieder verfügbar.'},401);
+  if(String(session.user.username||'').trim().toLowerCase()!=='andili')return reply({ok:false,code:'LIVE_BOARD_RESTRICTED',message:'LIVE-BOARD ist derzeit nur für Andili freigeschaltet.'},403);
   if(request.method!=='GET')return reply({ok:false,message:'Nur lesender Zugriff erlaubt.'},405);
   try{
     const events=sourceEvents(env);
@@ -103,12 +104,12 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     const board=url.searchParams.get('board');
     const page=Number(url.searchParams.get('page')||1);
     const q=(url.searchParams.get('q')||'').trim().slice(0,80).toLocaleLowerCase('de');
-    if(!Number.isInteger(page)||page<1||page>125||(board&&!/^\d{1,4}$/.test(board)))return reply({ok:false,message:'Ungültige Brettauswahl.'},400);
+    if(!Number.isInteger(page)||page<1||page>250||(board&&!/^\d{1,4}$/.test(board)))return reply({ok:false,message:'Ungültige Brettauswahl.'},400);
     const source=await eventSource(event,deps);
     const matches=source.catalog.filter(p=>!q||(/^\d+$/.test(q) ? String(p.board)===q||p.label===q : `${p.white} ${p.black}`.toLocaleLowerCase('de').includes(q)));
-    const pages=Math.max(1,Math.ceil(matches.length/8));
+    const pages=Math.max(1,Math.ceil(matches.length/4));
     const selectedPage=Math.min(page,pages);
-    const selected=board?source.catalog.filter(p=>p.id===board):matches.slice((selectedPage-1)*8,selectedPage*8);
+    const selected=board?source.catalog.filter(p=>p.id===board):matches.slice((selectedPage-1)*4,selectedPage*4);
     if(board&&!selected.length)return reply({ok:false,message:'Brett nicht gefunden.'},404);
     // Partial DGT failures do not discard seven healthy boards.
     const results=await Promise.all(selected.map(async p=>{
