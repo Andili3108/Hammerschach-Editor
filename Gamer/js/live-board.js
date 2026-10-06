@@ -1,0 +1,156 @@
+'use strict';
+const HammerschachLiveBoard = (() => {
+  const dialog=document.createElement('dialog');
+  dialog.id='liveBoardDialog';
+  dialog.setAttribute('aria-labelledby','liveBoardTitle');
+  dialog.innerHTML=`<header class="lb-header"><div><div class="lb-eyebrow">SCHACHWELT · LIVE-BOARD</div><h2 id="liveBoardTitle">Vereinsschach</h2></div><button type="button" data-lb="close" aria-label="Live-Board schließen">✕</button></header>
+    <div class="lb-toolbar"><button type="button" data-lb="back" hidden>← Veranstaltungen</button><button type="button" data-lb="refresh">Aktualisieren</button><span class="lb-passive">Nur zuschauen</span></div>
+    <form class="lb-search" hidden><label for="lbSearch">Spieler oder Brett suchen</label><input id="lbSearch" type="search" maxlength="80" placeholder="Name oder Brettnummer" autocomplete="off"><button type="submit">Suchen / Springen</button><button type="button" data-lb="clear">Alle Bretter</button></form>
+    <p class="lb-status" role="status" aria-live="polite"></p><div class="lb-content"></div>
+    <nav class="lb-pages" aria-label="Brettseiten" hidden><button type="button" data-lb="prev">← Zurück</button><span></span><button type="button" data-lb="next">Vor →</button></nav>`;
+  document.body.append(dialog);
+  const content=dialog.querySelector('.lb-content'),status=dialog.querySelector('.lb-status'),search=dialog.querySelector('form'),pages=dialog.querySelector('.lb-pages');
+  const button=name=>dialog.querySelector(`[data-lb="${name}"]`);
+  const state={category:'club',event:null,events:[],page:1,pages:1,query:'',board:'',data:null,ply:null,flipped:false,timer:null,controller:null,generation:0,lastAt:0,delay:0,failures:0,token:'',returnFocus:null};
+  const replays=new Map();
+  const member=()=>!!(onlineAuthToken&&onlineAuthUser);
+  const visible=()=>dialog.open&&!document.hidden&&navigator.onLine!==false&&member();
+  function node(tag,cls,label){const el=document.createElement(tag);if(cls)el.className=cls;if(label!==undefined)el.textContent=label;return el;}
+  function action(label,fn){const b=node('button','',label);b.type='button';b.addEventListener('click',fn);return b;}
+  function stop(){clearTimeout(state.timer);state.timer=null;state.generation++;state.controller?.abort();state.controller=null;}
+  function schedule(delay){clearTimeout(state.timer);state.delay=delay;if(delay&&visible())state.timer=setTimeout(load,delay);}
+  function clearPosition(){state.data=null;state.ply=null;replays.clear();content.replaceChildren();}
+  function updateIdentity(){
+    document.querySelectorAll('[data-live-board-member]').forEach(el=>el.hidden=!member());
+    if(dialog.open&&(!member()||state.token!==onlineAuthToken)){stop();dialog.close();clearPosition();state.events=[];}
+  }
+  function statusText(data){
+    const when=new Date(data.updatedAt).toLocaleTimeString('de-DE');
+    return (data.event.demo?'DEMO · Beispieldaten, keine echte Übertragung. ':'')+(data.stale?'Quelle verzögert – letzter verfügbarer Stand: ':data.pollAfterMs?'Aktualisierung alle 30 Sekunden · Stand: ':'Keine weiteren Live-Abfragen für diese Auswahl · Stand: ')+when+'.';
+  }
+  function catalog(){
+    search.hidden=true;pages.hidden=true;button('back').hidden=true;
+    content.className='lb-content lb-events';content.replaceChildren();
+    const events=state.events.filter(e=>e.category===state.category);
+    if(!events.length)content.append(node('p','','Derzeit sind keine Veranstaltungen eingerichtet.'));
+    for(const e of events){
+      const b=action('',()=>{state.event=e;state.page=1;state.query='';state.board='';dialog.querySelector('input').value='';clearPosition();navigate();});
+      b.className='lb-event';b.append(node('strong','',e.title),node('span','',`${e.round?'Runde '+e.round+' · ':''}${e.demo?'DEMO':e.finished?'Beendet':'Übertragung'}`));content.append(b);
+    }
+  }
+  function replay(g){
+    const key=JSON.stringify([g.id,g.fen,g.variant,g.moves,g.error]);
+    if(!replays.has(key)){const value=LiveBoardPosition.replay(g);replays.set(key,value);while(replays.size>12)replays.delete(replays.keys().next().value);}
+    return replays.get(key);
+  }
+  function boardView(position,flip){
+    const el=node('div','lb-board');el.setAttribute('role','img');el.setAttribute('aria-label','Schachstellung; '+(position.turn==='w'?'Weiß':'Schwarz')+' am Zug');
+    for(let row=0;row<8;row++)for(let col=0;col<8;col++){
+      const x=flip?7-col:col,y=flip?7-row:row;
+      const sq=node('span','lb-square '+((x+y)%2?'lb-dark':'lb-light'));
+      if(position.last?.some(([a,b])=>a===x&&b===y))sq.classList.add('lb-last');
+      const p=position.board[y][x];if(p!=='.'){const img=document.createElement('img');img.src=pieceImg[p];img.alt='';img.draggable=false;sq.append(img);}
+      if(col===0)sq.append(node('small','lb-rank',String(8-y)));
+      if(row===7)sq.append(node('small','lb-file','abcdefgh'[x]));
+      el.append(sq);
+    }
+    return el;
+  }
+  function card(g,single){
+    const el=node('article','lb-card');
+    const title=`Brett ${g.label||g.board} · ${g.result==='*'?'Läuft / wartet':g.result}`;
+    const top=single&&state.flipped?'white':'black',bottom=top==='white'?'black':'white';
+    const player=side=>{el.append(node('div','lb-player',`${side==='white'?'○':'●'} ${g[side]}`));if(g.clocks?.[side])el.append(node('div','lb-clock',g.clocks[side]));};
+    el.append(node('h3','',title));player(top);
+    try{
+      const r=replay(g),positions=r.positions;
+      const ply=single&&state.ply!==null?Math.min(state.ply,positions.length-1):positions.length-1;
+      el.append(boardView(positions[ply],single&&state.flipped));
+      if(single){
+        player(bottom);
+        const controls=node('div','lb-replay');
+        const at=p=>{state.ply=p;render(state.data);};
+        const first=action('⏮',()=>at(0));first.setAttribute('aria-label','Startstellung');first.disabled=ply===0;
+        const prev=action('◀',()=>at(ply-1));prev.setAttribute('aria-label','Voriger Zug');prev.disabled=ply===0;
+        const next=action('▶',()=>at(ply+1));next.setAttribute('aria-label','Nächster Zug');next.disabled=ply===positions.length-1;
+        controls.append(first,prev,node('span','',`${ply} / ${positions.length-1}`),next,action('Aktueller Stand',()=>at(null)),action('Brett drehen',()=>{state.flipped=!state.flipped;render(state.data);}));el.append(controls);
+        const notation=node('div','lb-notation');notation.setAttribute('aria-label','Zugfolge');
+        g.moves.forEach((san,i)=>{
+          const n=r.firstNumber+Math.floor((i+(r.firstTurn==='b'?1:0))/2);
+          const black=(i+(r.firstTurn==='b'?1:0))%2===1;
+          const b=action(`${n}${black?'…':'.'} ${san}`,()=>at(i+1));b.classList.toggle('lb-selected',i+1===ply);if(i+1===ply)b.setAttribute('aria-current','step');notation.append(b);
+        });el.append(notation);
+      }
+    }catch(error){el.append(node('p','lb-error',error.message));}
+    if(!single||!el.querySelector('.lb-board'))player(bottom);
+    if(g.clocks?.white||g.clocks?.black)el.append(node('small','lb-clock-note','Uhrenstand der Quelle; keine lokale Countdown-Uhr.'));
+    if(g.stale)el.append(node('p','lb-error','Übertragung verzögert.'));
+    if(!single){
+      const open=()=>{state.board=g.id;state.ply=null;state.flipped=false;clearPosition();navigate();};
+      el.append(action('Brett öffnen',open));
+      el.querySelector('.lb-board')?.addEventListener('click',open);
+    }
+    return el;
+  }
+  function render(data){
+    state.data=data;state.pages=data.pages;state.page=data.page;
+    dialog.querySelector('h2').textContent=data.event.title;
+    button('back').hidden=false;button('back').textContent=state.board?'← Brettübersicht':'← Veranstaltungen';
+    search.hidden=!!state.board;
+    content.className='lb-content '+(state.board?'lb-single':'lb-grid');content.replaceChildren();
+    if(!data.games.length)content.append(node('p','','Keine passenden Bretter gefunden.'));
+    data.games.forEach(g=>content.append(card(g,!!state.board)));
+    pages.hidden=!!state.board||data.pages<=1;pages.querySelector('span').textContent=`Seite ${data.page} / ${data.pages} · ${data.total} Bretter`;
+    button('prev').disabled=data.page<=1;button('next').disabled=data.page>=data.pages;
+  }
+  function contentSignature(data){return JSON.stringify([data.event,data.page,data.pages,data.total,data.games.map(({updatedAt,...g})=>g)]);}
+  async function load(){
+    if(!visible()||state.controller)return;
+    const generation=++state.generation,token=onlineAuthToken;
+    const controller=new AbortController();state.controller=controller;
+    const timeout=setTimeout(()=>controller.abort(),25000);
+    button('refresh').disabled=true;status.textContent=state.data?'Aktualisiere …':'Lade …';
+    try{
+      let path='/api/live-board/events';
+      if(state.event){const params=new URLSearchParams({page:String(state.page),q:state.query});if(state.board)params.set('board',state.board);path+=`/${state.event.id}/boards?${params}`;}
+      const data=await authApi(path,{signal:controller.signal,cache:'no-store'});
+      if(generation!==state.generation||token!==onlineAuthToken||!visible())return;
+      state.lastAt=Date.now();state.failures=0;
+      if(!state.event){state.events=data.events;catalog();status.textContent='Veranstaltung auswählen. Der Katalog wird nur bei Bedarf geladen.';schedule(0);}
+      else{if(!state.data||contentSignature(state.data)!==contentSignature(data))render(data);else state.data=data;status.textContent=statusText(data);schedule(data.pollAfterMs);}
+    }catch(error){
+      if(generation!==state.generation)return;
+      if(error.data?.code==='NOT_AUTHENTICATED'){stop();clearPosition();state.events=[];state.event=null;search.hidden=true;pages.hidden=true;button('back').hidden=true;status.textContent='Die Anmeldung ist abgelaufen. Bitte erneut anmelden.';state.delay=0;}
+      else{status.textContent=(state.data?'Der letzte angezeigte Stand bleibt erhalten. ':'')+(error.name==='AbortError'?'Die Quelle antwortet zu langsam.':error.message);schedule(Math.min(240000,60000*2**state.failures++));}
+    }finally{
+      clearTimeout(timeout);
+      if(state.controller===controller){state.controller=null;button('refresh').disabled=false;}
+    }
+  }
+  function navigate(){stop();state.delay=30000;button('refresh').disabled=false;load();}
+  function open(category){
+    if(!member())return;
+    stop();clearPosition();state.returnFocus=document.activeElement;state.token=onlineAuthToken;state.category=category;state.event=null;state.board='';state.query='';state.page=1;state.failures=0;
+    dialog.querySelector('h2').textContent=category==='club'?'Vereinsschach':'Turnierschach';
+    search.hidden=true;pages.hidden=true;button('back').hidden=true;
+    if(typeof closeClubChessMenu==='function')closeClubChessMenu();
+    if(!dialog.open)dialog.showModal();navigate();
+  }
+  button('close').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('close',()=>{if(dialog.open)return;stop();clearPosition();state.events=[];state.returnFocus?.focus();});
+  button('refresh').addEventListener('click',()=>{if(Date.now()-state.lastAt<3000)return;navigate();});
+  button('back').addEventListener('click',()=>{
+    if(state.board){state.board='';clearPosition();navigate();}
+    else{stop();state.event=null;clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';catalog();status.textContent='Veranstaltung auswählen.';state.delay=0;}
+  });
+  search.addEventListener('submit',e=>{e.preventDefault();state.query=dialog.querySelector('input').value.trim();state.page=1;clearPosition();navigate();});
+  button('clear').addEventListener('click',()=>{dialog.querySelector('input').value='';state.query='';state.page=1;clearPosition();navigate();});
+  button('prev').addEventListener('click',()=>{if(state.page>1){state.page--;clearPosition();navigate();}});
+  button('next').addEventListener('click',()=>{if(state.page<state.pages){state.page++;clearPosition();navigate();}});
+  function resume(){if(visible()&&state.delay&&!state.controller){const remaining=Math.max(0,state.lastAt+state.delay-Date.now());if(remaining)schedule(remaining);else load();}}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else resume();});
+  window.addEventListener('offline',()=>{stop();if(dialog.open)status.textContent='Offline – Live-Aktualisierung pausiert.';});
+  window.addEventListener('online',resume);window.addEventListener('focus',resume);
+  document.querySelectorAll('[data-live-board-category]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.liveBoardCategory)));
+  return {open,updateIdentity};
+})();
