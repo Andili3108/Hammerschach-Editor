@@ -49,3 +49,6 @@ html.live-board-tool-active .member-lobby,html.live-board-tool-active .top-layou
 @media(max-width:560px){#liveBoardView .lb-eyebrow{display:none}#liveBoardView .lb-header h2{font-size:18px;margin:0}#liveBoardView .lb-header button{white-space:nowrap;font-size:12px;padding:8px 10px}#liveBoardView .lb-grid .lb-player{font-size:11px}#liveBoardView .lb-grid .lb-card h3{font-size:11px;white-space:nowrap}#liveBoardView .lb-search-panel summary{font-size:13px}#liveBoardView .lb-toolbar button{font-size:12px;padding:8px 10px}#liveBoardView .lb-pages button{font-size:12px;padding:8px 10px}}
 
 @media(min-width:561px) and (max-width:1000px){#liveBoardView .lb-grid{max-width:min(100%,max(420px,calc(100dvh - 540px)));margin-inline:auto}}
+
+#liveBoardView .lb-status:empty{display:none}
+#liveBoardView .site-footnote-button{min-height:0}
