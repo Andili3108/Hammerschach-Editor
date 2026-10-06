@@ -63,10 +63,12 @@ async function readSource(url, fetcher) {
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),9000);
   try{
-    // Redirects are deliberately rejected so configured hosts cannot redirect
-    // the worker to an internal address. No incoming headers are forwarded.
-    const response=await fetcher(url,{redirect:'error',signal:controller.signal,headers:{accept:'application/x-chess-pgn, application/json, text/plain'}});
-    if(!response.ok){const error=new Error('Quelle nicht erreichbar.');error.rateLimited=response.status===429;throw error;}
+    // Workers only implement follow/manual, not redirect:error. Stop at the
+    // first response and reject all 3xx below; never follow another host.
+    // No incoming headers are forwarded.
+    const response=await fetcher(url,{redirect:'manual',signal:controller.signal,headers:{accept:'application/x-chess-pgn, application/json, text/plain'}});
+    if(response.status>=300&&response.status<400)throw new Error('Weiterleitungen der Live-Quelle sind nicht erlaubt.');
+    if(!response.ok){const error=new Error('Quelle nicht erreichbar (HTTP '+response.status+').');error.rateLimited=response.status===429;throw error;}
     if(Number(response.headers.get('content-length'))>MAX_BYTES)throw new Error('Quelle zu groß.');
     const reader=response.body.getReader();let bytes=0;const chunks=[];
     while(true){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>MAX_BYTES){await reader.cancel();throw new Error('Quelle zu groß.');}chunks.push(value);}
