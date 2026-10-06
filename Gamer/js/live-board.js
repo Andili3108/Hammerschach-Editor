@@ -2,8 +2,8 @@
 const HammerschachLiveBoard = (() => {
   const dialog=document.getElementById('liveBoardView');
   dialog.setAttribute('aria-labelledby','liveBoardTitle');
-  dialog.innerHTML=`<header class="lb-header"><div><div class="lb-eyebrow">SCHACHWELT · LIVE-BOARD</div><h2 id="liveBoardTitle">Vereinsschach</h2></div><button type="button" data-lb="lobby">↩️ Zur Lobby</button></header>
-    <div class="lb-toolbar"><button type="button" data-lb="back" hidden>← Veranstaltungen</button><button type="button" data-lb="refresh">Aktualisieren</button><span class="lb-passive">Nur zuschauen</span></div>
+  dialog.innerHTML=`<header class="lb-header"><div><h2 id="liveBoardTitle">Vereinsschach</h2></div></header>
+    <div class="lb-toolbar"><button type="button" data-lb="back" hidden>← Veranstaltungen</button><button type="button" data-lb="refresh">Aktualisieren</button></div>
     <details class="lb-search-panel" hidden open><summary>Spieler oder Brett suchen</summary><form class="lb-search"><label for="lbSearch">Spieler oder Brett suchen</label><input id="lbSearch" type="search" maxlength="80" placeholder="Name oder Brettnummer" autocomplete="off"><button type="submit">Suchen / Springen</button><button type="button" data-lb="clear">Alle Bretter</button></form></details>
     <p class="lb-status" role="status" aria-live="polite"></p><div class="lb-content"></div>
     <nav class="lb-pages" aria-label="Brettseiten" hidden><button type="button" data-lb="prev">← Zurück</button><span></span><button type="button" data-lb="next">Vor →</button></nav>`;
@@ -26,17 +26,14 @@ const HammerschachLiveBoard = (() => {
     document.querySelectorAll('[data-live-board-member]').forEach(el=>el.hidden=!member());
     if(!dialog.hidden&&(!member()||state.token!==onlineAuthToken)){closeEmbeddedTools();}
   }
-  function statusText(data){
-    const when=new Date(data.updatedAt).toLocaleTimeString('de-DE');
-    return (data.event.demo?'DEMO · Beispieldaten, keine echte Übertragung. ':'')+(data.stale?'Quelle verzögert – letzter verfügbarer Stand: ':data.pollAfterMs?'Aktualisierung alle 30 Sekunden · Stand: ':'Keine weiteren Live-Abfragen für diese Auswahl · Stand: ')+when+'.';
-  }
+  function statusText(data){return (data.event.demo?'DEMO':'')+(data.stale?(data.event.demo?' · ':'')+'Übertragung verzögert.':'');}
   function catalog(){
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;
     content.className='lb-content lb-events';content.replaceChildren();
     const events=state.events.filter(e=>e.category===state.category);
     if(!events.length){
       const empty=node('div','lb-empty');
-      empty.append(node('p','','Für diesen Bereich sind noch keine Veranstaltungen eingerichtet.'),node('p','','Zuerst muss der Administrator eine Veranstaltung mit Live-Quelle hinterlegen. „Aktualisieren“ prüft anschließend, ob eine Übertragung hinzugekommen ist.'));
+      empty.append(node('p','','Derzeit keine Veranstaltungen.'));
       content.append(empty);
     }
     for(const e of events){
@@ -89,7 +86,6 @@ const HammerschachLiveBoard = (() => {
       }
     }catch(error){el.append(node('p','lb-error',error.message));}
     if(!single||!el.querySelector('.lb-board'))player(bottom);
-    if(single&&(g.clocks?.white||g.clocks?.black))el.append(node('small','lb-clock-note','Uhrenstand der Quelle; keine lokale Countdown-Uhr.'));
     if(g.stale)el.append(node('p','lb-error','Übertragung verzögert.'));
     if(!single){
       const open=()=>{state.board=g.id;state.ply=null;state.flipped=false;clearPosition();navigate();};
@@ -125,9 +121,7 @@ const HammerschachLiveBoard = (() => {
       state.lastAt=Date.now();state.failures=0;
       if(!state.event){
         state.events=data.events;catalog();
-        const count=state.events.filter(e=>e.category===state.category).length;
-        const checked=(manual?'Erneut geprüft um ':'Geprüft um ')+new Date(state.lastAt).toLocaleTimeString('de-DE')+'. ';
-        status.textContent=checked+(count?count+' Veranstaltung'+(count===1?'':'en')+' verfügbar. Bitte auswählen.':'Keine Veranstaltungen verfügbar.');
+        status.textContent=manual?'Aktualisiert.':'';
         schedule(0);
       }
       else{if(!state.data||contentSignature(state.data)!==contentSignature(data))render(data);else state.data=data;status.textContent=statusText(data);schedule(data.pollAfterMs);}
@@ -153,11 +147,10 @@ const HammerschachLiveBoard = (() => {
     closeClubChessMenu();dialog.hidden=false;navigate();
     requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));
   }
-  button('lobby').addEventListener('click',()=>roomLobbyBtn.click());
   button('refresh').addEventListener('click',()=>{if(!state.controller)navigate(true);});
   button('back').addEventListener('click',()=>{
     if(state.board){state.board='';clearPosition();navigate();}
-    else{stop();state.event=null;clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';catalog();status.textContent='Veranstaltung auswählen.';state.delay=0;}
+    else{stop();state.event=null;clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';catalog();status.textContent='';state.delay=0;}
   });
   search.addEventListener('submit',e=>{e.preventDefault();state.query=dialog.querySelector('input').value.trim();state.page=1;clearPosition();navigate();});
   button('clear').addEventListener('click',()=>{dialog.querySelector('input').value='';state.query='';state.page=1;clearPosition();navigate();});

@@ -2,6 +2,11 @@
 
 function updateSiteFootnotePlacement(){
   if(!siteFootnoteEl||!siteFootnoteHome)return;
+  const liveBoardView=document.getElementById('liveBoardView');
+  if(typeof liveBoardToolActive!=='undefined'&&liveBoardToolActive&&liveBoardView){
+    if(siteFootnoteEl.parentNode!==liveBoardView)liveBoardView.appendChild(siteFootnoteEl);
+    return;
+  }
   if(impulsesToolActive&&impulsesToolView){
     if(siteFootnoteEl.parentNode!==impulsesToolView)impulsesToolView.appendChild(siteFootnoteEl);
     return;
