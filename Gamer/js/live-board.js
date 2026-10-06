@@ -9,6 +9,14 @@ const HammerschachLiveBoard = (() => {
     <p class="lb-status" role="status" aria-live="polite"></p><div class="lb-content"></div>
     <nav class="lb-pages" aria-label="Brettseiten" hidden><button type="button" data-lb="prev">← Zurück</button><span></span><button type="button" data-lb="next">Vor →</button></nav>`;
   document.body.append(dialog);
+  // Match the actual Gamer shell, including its user-selected board size.
+  const gamerShell=document.querySelector('.shell');
+  function syncWidth(){
+    const width=gamerShell?.getBoundingClientRect().width;
+    if(width>0)dialog.style.setProperty('--lb-gamer-width',Math.floor(width)+'px');
+  }
+  if(gamerShell&&typeof ResizeObserver!=='undefined')new ResizeObserver(syncWidth).observe(gamerShell);
+  window.addEventListener('resize',syncWidth,{passive:true});
   const content=dialog.querySelector('.lb-content'),status=dialog.querySelector('.lb-status'),search=dialog.querySelector('form'),pages=dialog.querySelector('.lb-pages');
   const button=name=>dialog.querySelector(`[data-lb="${name}"]`);
   const state={category:'club',event:null,events:[],page:1,pages:1,query:'',board:'',data:null,ply:null,flipped:false,timer:null,controller:null,generation:0,lastAt:0,delay:0,failures:0,token:'',returnFocus:null};
@@ -17,7 +25,8 @@ const HammerschachLiveBoard = (() => {
   const visible=()=>dialog.open&&!document.hidden&&navigator.onLine!==false&&member();
   function node(tag,cls,label){const el=document.createElement(tag);if(cls)el.className=cls;if(label!==undefined)el.textContent=label;return el;}
   function action(label,fn){const b=node('button','',label);b.type='button';b.addEventListener('click',fn);return b;}
-  function stop(){clearTimeout(state.timer);state.timer=null;state.generation++;state.controller?.abort();state.controller=null;}
+  function setBusy(busy){button('refresh').disabled=busy;button('refresh').textContent=busy?'Wird aktualisiert …':'Aktualisieren';dialog.setAttribute('aria-busy',String(busy));}
+  function stop(){clearTimeout(state.timer);state.timer=null;state.generation++;state.controller?.abort();state.controller=null;setBusy(false);}
   function schedule(delay){clearTimeout(state.timer);state.delay=delay;if(delay&&visible())state.timer=setTimeout(load,delay);}
   function clearPosition(){state.data=null;state.ply=null;replays.clear();content.replaceChildren();}
   function updateIdentity(){
@@ -32,7 +41,11 @@ const HammerschachLiveBoard = (() => {
     search.hidden=true;pages.hidden=true;button('back').hidden=true;
     content.className='lb-content lb-events';content.replaceChildren();
     const events=state.events.filter(e=>e.category===state.category);
-    if(!events.length)content.append(node('p','','Derzeit sind keine Veranstaltungen eingerichtet.'));
+    if(!events.length){
+      const empty=node('div','lb-empty');
+      empty.append(node('p','','Für diesen Bereich sind noch keine Veranstaltungen eingerichtet.'),node('p','','Zuerst muss der Administrator eine Veranstaltung mit Live-Quelle hinterlegen. „Aktualisieren“ prüft anschließend, ob eine Übertragung hinzugekommen ist.'));
+      content.append(empty);
+    }
     for(const e of events){
       const b=action('',()=>{state.event=e;state.page=1;state.query='';state.board='';dialog.querySelector('input').value='';clearPosition();navigate();});
       b.className='lb-event';b.append(node('strong','',e.title),node('span','',`${e.round?'Runde '+e.round+' · ':''}${e.demo?'DEMO':e.finished?'Beendet':'Übertragung'}`));content.append(b);
@@ -104,19 +117,25 @@ const HammerschachLiveBoard = (() => {
     button('prev').disabled=data.page<=1;button('next').disabled=data.page>=data.pages;
   }
   function contentSignature(data){return JSON.stringify([data.event,data.page,data.pages,data.total,data.games.map(({updatedAt,...g})=>g)]);}
-  async function load(){
-    if(!visible()||state.controller)return;
+  async function load(manual=false){
+    if(!visible()||state.controller){if(dialog.open&&navigator.onLine===false)status.textContent='Offline – Aktualisieren ist erst mit Internetverbindung möglich.';return;}
     const generation=++state.generation,token=onlineAuthToken;
     const controller=new AbortController();state.controller=controller;
     const timeout=setTimeout(()=>controller.abort(),25000);
-    button('refresh').disabled=true;status.textContent=state.data?'Aktualisiere …':'Lade …';
+    setBusy(true);status.textContent=state.event?'Brettdaten werden geladen …':'Veranstaltungen werden geprüft …';
     try{
       let path='/api/live-board/events';
       if(state.event){const params=new URLSearchParams({page:String(state.page),q:state.query});if(state.board)params.set('board',state.board);path+=`/${state.event.id}/boards?${params}`;}
       const data=await authApi(path,{signal:controller.signal,cache:'no-store'});
       if(generation!==state.generation||token!==onlineAuthToken||!visible())return;
       state.lastAt=Date.now();state.failures=0;
-      if(!state.event){state.events=data.events;catalog();status.textContent='Veranstaltung auswählen. Der Katalog wird nur bei Bedarf geladen.';schedule(0);}
+      if(!state.event){
+        state.events=data.events;catalog();
+        const count=state.events.filter(e=>e.category===state.category).length;
+        const checked=(manual?'Erneut geprüft um ':'Geprüft um ')+new Date(state.lastAt).toLocaleTimeString('de-DE')+'. ';
+        status.textContent=checked+(count?count+' Veranstaltung'+(count===1?'':'en')+' verfügbar. Bitte auswählen.':'Keine Veranstaltungen verfügbar.');
+        schedule(0);
+      }
       else{if(!state.data||contentSignature(state.data)!==contentSignature(data))render(data);else state.data=data;status.textContent=statusText(data);schedule(data.pollAfterMs);}
     }catch(error){
       if(generation!==state.generation)return;
@@ -124,21 +143,21 @@ const HammerschachLiveBoard = (() => {
       else{status.textContent=(state.data?'Der letzte angezeigte Stand bleibt erhalten. ':'')+(error.name==='AbortError'?'Die Quelle antwortet zu langsam.':error.message);schedule(Math.min(240000,60000*2**state.failures++));}
     }finally{
       clearTimeout(timeout);
-      if(state.controller===controller){state.controller=null;button('refresh').disabled=false;}
+      if(state.controller===controller){state.controller=null;setBusy(false);}
     }
   }
-  function navigate(){stop();state.delay=30000;button('refresh').disabled=false;load();}
+  function navigate(manual=false){stop();state.delay=30000;load(manual);}
   function open(category){
     if(!member())return;
     stop();clearPosition();state.returnFocus=document.activeElement;state.token=onlineAuthToken;state.category=category;state.event=null;state.board='';state.query='';state.page=1;state.failures=0;
     dialog.querySelector('h2').textContent=category==='club'?'Vereinsschach':'Turnierschach';
     search.hidden=true;pages.hidden=true;button('back').hidden=true;
     if(typeof closeClubChessMenu==='function')closeClubChessMenu();
-    if(!dialog.open)dialog.showModal();navigate();
+    syncWidth();if(!dialog.open)dialog.showModal();navigate();
   }
   button('close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{if(dialog.open)return;stop();clearPosition();state.events=[];state.returnFocus?.focus();});
-  button('refresh').addEventListener('click',()=>{if(Date.now()-state.lastAt<3000)return;navigate();});
+  button('refresh').addEventListener('click',()=>{if(!state.controller)navigate(true);});
   button('back').addEventListener('click',()=>{
     if(state.board){state.board='';clearPosition();navigate();}
     else{stop();state.event=null;clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';catalog();status.textContent='Veranstaltung auswählen.';state.delay=0;}
