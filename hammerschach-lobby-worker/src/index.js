@@ -1,3 +1,4 @@
+import { handleLiveBoardApi } from './live-board.js';
 import { ensureSeriesSchema, tournamentTiming, tournamentVisible, tournamentRegistrationOpen, activateTournamentSeries, materializeTournamentSeries, tournamentSeriesDto, seriesConfig } from './tournament-series.js';
 import {getProgress, saveProgress, deleteProgress} from './videocourse-progress.js';
 import { handleRatingHistoryApi } from './rating-history.js';
@@ -10702,6 +10703,10 @@ async function applyModerationAction(env,adminUser,body){
 
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
+
+  const liveBoardResponse = /^\/api\/live-board(?:\/|$)/.test(url.pathname)
+    ? await handleLiveBoardApi(request, env, url, {json, lookupAuthSession, bearerTokenFromRequest}) : null;
+  if (liveBoardResponse) return liveBoardResponse;
 
   const ratingHistoryResponse = /^\/api\/members\/[^/]+\/rating-history$/.test(url.pathname)
     ? await handleRatingHistoryApi(request, env, url, {
