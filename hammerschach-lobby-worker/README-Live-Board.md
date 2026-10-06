@@ -4,7 +4,7 @@ Stand: 6. Oktober 2026. Grundlage ist ausschließlich der in diesem Chat hochgel
 
 ## Aktualisierung: integrierter Bereich / Andili-Vorschau
 
-LIVE-BOARD öffnet jetzt als normaler Bereich unter dem Gamer-Header, ohne Popup oder abgedunkerten Hintergrund. Die bestehenden Navigations- und Lobby-Abläufe werden verwendet. „Zur Lobby“ ist im Header bzw. Mobilmenü und zusätzlich im Live-Board erreichbar. Beim Bereichswechsel stoppen die Abfragen. Menü und Steuerelemente verwenden die vorhandenen Gamer-Schaltflächenstile.
+LIVE-BOARD öffnet jetzt als normaler Bereich unter dem Gamer-Header, ohne Popup oder abgedunkerten Hintergrund. Die bestehenden Navigations- und Lobby-Abläufe werden verwendet. „Zur Lobby“ ist ausschließlich über den vorhandenen Header bzw. das Mobilmenü erreichbar. Die originale Gamer-Fußzeile wird wie in den anderen Bereichen mitgeführt und bei Rückkehr wieder in der Lobby angezeigt. Zusätzliche Erklärtexte wurden entfernt; kurze Leer-, Lade- und Fehlermeldungen bleiben erhalten. Beim Bereichswechsel stoppen die Abfragen. Menü und Steuerelemente verwenden die vorhandenen Gamer-Schaltflächenstile.
 
 Vorläufige Freigabe ausschließlich für den angemeldeten Benutzernamen **Andili** (Groß-/Kleinschreibung unerheblich). Andere Mitglieder sehen die beiden Schachwelt-Zugänge nicht und erhalten bei direkten API-Aufrufen HTTP 403. Besucher erhalten weiterhin HTTP 401. Die Freigabe wird über den serverseitig geprüften Sitzungsbenutzernamen kontrolliert, nicht über einen Request-Parameter. Bei einer späteren Umbenennung des Kontos muss diese vorläufige Freigaberegel angepasst werden.
 
