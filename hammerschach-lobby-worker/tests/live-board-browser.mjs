@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {handleLiveBoardApi} from '../src/live-board.js';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const root=fileURLToPath(new URL('../../Gamer/',import.meta.url));
-const env={LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.stringify([{id:'club',title:'Vereinsabend · Testübertragung',category:'club',source:{type:'demo'}},{id:'open',title:'Gamer Open · Testrunde',category:'tournament',source:{type:'demo'}}])};
+const env={LIVE_BOARD_DISCOVERY:'0',LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.stringify([{id:'club',title:'Vereinsabend · Testübertragung',category:'club',source:{type:'demo'}},{id:'open',title:'Gamer Open · Testrunde',category:'tournament',source:{type:'demo'}}])};
 const user={id:'test-user',username:'Andili',isAdmin:false};
 const helpers={json:(data,init)=>new Response(JSON.stringify(data),init),lookupAuthSession:async(e,t)=>t==='Bearer test-token'?{user}:null,bearerTokenFromRequest:r=>r.headers.get('authorization')};
 const server=http.createServer(async(req,res)=>{
@@ -20,7 +20,7 @@ const server=http.createServer(async(req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const local=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined});
 const report=[];
 try{
   for(const [name,width,height,mobile] of [['desktop',1440,1000,false],['ipad',820,1180,true],['iphone',390,844,true]]){
@@ -70,7 +70,7 @@ try{
     await dlg.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===2);
     await page.clock.install();const stopped=liveCalls;await page.clock.fastForward(90000);assert.equal(liveCalls,stopped,'finished page must not poll');
     if(!await dlg.locator('#lbSearch').isVisible())await dlg.locator('.lb-search-panel summary').click();
-    await dlg.locator('#lbSearch').fill('Schwarz 5');await dlg.locator('form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===1);
+    await dlg.locator('#lbSearch').fill('Schwarz 5');await dlg.locator('.lb-search-panel form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===1);
     await dlg.locator('.lb-card[role="button"]').click();await dlg.locator('.lb-single .lb-board').waitFor();
     assert.equal(await dlg.locator('.lb-board').count(),1);
     if(shotDir)await page.screenshot({path:path.join(shotDir,name+'-single.png')});

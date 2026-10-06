@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import {parseLivePgn,sourceEvents,safeSourceUrl,dgtGame,dgtPairings,demoGames} from '../src/live-board-sources.js';
 import {handleLiveBoardApi,sharedLiveCache,fetchSource} from '../src/live-board.js';
 const pgn=(moves='1. e4 e5 *',extra='')=>`[Event "Test"]\n[White "A <script>"]\n[Black "B"]\n${extra}\n${moves}\n`;
-const env={LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.stringify([{id:'club',category:'club',title:'Test',source:{type:'demo'}},{id:'turnier',category:'tournament',title:'Turnier',source:{type:'demo'}}])};
+const env={LIVE_BOARD_DISCOVERY:'0',LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.stringify([{id:'club',category:'club',title:'Test',source:{type:'demo'}},{id:'turnier',category:'tournament',title:'Turnier',source:{type:'demo'}}])};
 const helpers={json:(d,init)=>new Response(JSON.stringify(d),init),bearerTokenFromRequest:r=>r.headers.get('authorization'),lookupAuthSession:async(e,t)=>t==='Bearer valid'?{user:{id:'member',username:'Andili'}}:null};
 const call=(path,token='valid',config=env,deps={})=>{const url=new URL('https://gamer.test/api/live-board/'+path);const request=new Request(url,{headers:token?{authorization:'Bearer '+token}:{}});return handleLiveBoardApi(request,config,url,helpers,deps);};
 
@@ -75,7 +75,7 @@ test('isolated Gamer engine replays castling, en passant, promotion and black-to
   for(const game of demoGames())replay(game);
 });
 
-test('empty rounds retry slowly; numeric jump selects exact board; all writes rejected',async()=>{
+test('empty rounds retry slowly; numeric jump selects exact board; event reads reject writes',async()=>{
   const numeric=await(await call('events/club/boards?q=1')).json();assert.equal(numeric.games.length,1);assert.equal(numeric.games[0].board,1);
   const url=new URL('https://test/api/live-board/events');const req=new Request(url,{method:'POST',headers:{authorization:'Bearer valid'}});assert.equal((await handleLiveBoardApi(req,env,url,helpers)).status,405);
   const id=crypto.randomUUID();const config={LIVE_BOARD_EVENTS:JSON.stringify([{id:'empty',title:'Startet bald',category:'club',source:{type:'dgt',tournamentId:id,round:1}}])};
