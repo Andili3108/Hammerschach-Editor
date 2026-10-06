@@ -33,8 +33,9 @@ test('PGN mainline, variations, NAGs, comments, clocks and multiple games',()=>{
 test('source allowlist rejects local hosts, insecure URLs, credentials and redirects',async()=>{
   for(const url of ['http://example.com/a','https://127.0.0.1/a','https://user:secret@example.com/a','https://example.com:444/a','https://example.com/a#fragment'])assert.throws(()=>safeSourceUrl(url,['example.com','127.0.0.1']));
   assert.equal(safeSourceUrl('https://example.com/live.pgn',['example.com']),'https://example.com/live.pgn');
-  await fetchSource('https://example.com',async(url,init)=>{assert.equal(init.redirect,'error');assert.equal(init.headers.authorization,undefined);return new Response('ok');});
+  await fetchSource('https://example.com',async(url,init)=>{assert.equal(init.redirect,'manual');assert.equal(init.headers.authorization,undefined);return new Response('ok');});
   await assert.rejects(fetchSource('https://example.com',async()=>new Response('x',{headers:{'content-length':'9999999'}})));
+  for(const code of [301,302,303,307,308])await assert.rejects(fetchSource('https://example.com/live.pgn',async()=>new Response('',{status:code,headers:{location:'https://127.0.0.1/private'}})),/Weiterleitungen/);
   assert.throws(()=>sourceEvents({LIVE_BOARD_EVENTS:JSON.stringify([{id:'bad',title:'Bad',category:'club',source:{type:'pgn',url:'https://unknown.com/a'}}])}));
 });
 test('shared concurrent fetch, TTL, stale fallback, error backoff and finished cache',async()=>{
