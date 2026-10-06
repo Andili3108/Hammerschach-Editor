@@ -51,7 +51,7 @@
 <link rel="stylesheet" href="css/article-unread.css?v=20260919-compact-3">
 <link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
-<link rel="stylesheet" href="css/live-board.css?v=20261006-live-board-ui-2">
+<link rel="stylesheet" href="css/live-board.css?v=20261006-live-board-embedded-1">
 </head>
 <body>
 <div class="app" role="main">
@@ -127,8 +127,8 @@
               <button id="leagueStandingsToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="leagueStandingsView" hidden>📊 Ergebnisdienst</button>
               <button id="readerToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="readerToolView" hidden>📚 Partienarchiv</button>
               <div class="header-menu-section-label" data-live-board-member hidden>LIVE-BOARD</div>
-              <button id="liveBoardClubBtn" class="header-menu-item" type="button" role="menuitem" data-live-board-category="club" data-live-board-member aria-haspopup="dialog" aria-controls="liveBoardDialog" hidden>♟ Vereinsschach</button>
-              <button id="liveBoardTournamentBtn" class="header-menu-item" type="button" role="menuitem" data-live-board-category="tournament" data-live-board-member aria-haspopup="dialog" aria-controls="liveBoardDialog" hidden>🏆 Turnierschach</button>
+              <button id="liveBoardClubBtn" class="header-menu-item" type="button" role="menuitem" data-live-board-category="club" data-live-board-member aria-controls="liveBoardView" hidden>♟ Vereinsschach</button>
+              <button id="liveBoardTournamentBtn" class="header-menu-item" type="button" role="menuitem" data-live-board-category="tournament" data-live-board-member aria-controls="liveBoardView" hidden>🏆 Turnierschach</button>
               <div class="header-menu-section-label">Schach aktuell</div>
               <button id="tournamentReportToolBtn" class="header-menu-item tournament-report-link" type="button" role="menuitem" aria-controls="tournamentReportToolView" hidden>📰 Schach aktuell</button>
               <button id="mediathekToolBtn" class="header-menu-item" type="button" role="menuitem" aria-controls="mediathekToolView" hidden>🎬 Mediathek</button>
@@ -362,6 +362,8 @@
       </nav>
       <iframe id="mediathekToolFrame" class="tournament-report-tool-frame" title="Mediathek · Übersicht" data-src="./Mediathek/?v=20260917-theme-3" loading="lazy" allow="fullscreen"></iframe>
     </section>
+
+    <section id="liveBoardView" hidden aria-labelledby="liveBoardTitle"></section>
 
     <section id="tvToolView" class="tv-tool-view" hidden aria-label="Gamer-TV">
       <div class="box tv-stage">
@@ -2625,7 +2627,7 @@
 <script src="Mediathek/catalog.js?v=20260917-theme-3"></script>
 <script src="js/mediathek.js?v=20260917-theme-3"></script>
 <script src="js/training-impulses.js?v=20260925-1"></script>
-<script src="js/embedded-tools.js?v=20261005-gamer-brand-1"></script>
+<script src="js/embedded-tools.js?v=20261006-live-board-embedded-1"></script>
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
 <script src="js/lobby-welcome.js?v=20261005-gamer-brand-1"></script>
 <script src="js/global-chat-lobby.js?v=20261005-gamer-brand-1"></script>
@@ -2663,7 +2665,7 @@
 <script src="js/info-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/policy-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/online-room-utils.js?v=20260917-theme-3"></script>
-<script src="js/online-ui-state.js?v=20260925-impulses-1"></script>
+<script src="js/online-ui-state.js?v=20261006-live-board-embedded-1"></script>
 <script src="js/member-directory.js?v=20261005-gamer-brand-1"></script>
 <script src="js/member-hovercard.js?v=20260920-profile-1"></script>
 <script src="js/member-games.js?v=20260920-profile-1"></script>
@@ -2694,10 +2696,10 @@
 <script src="js/article-read-state.js?v=20260918-unread-1"></script>
 <script src="js/article-read-ui.js?v=20260928-request-audit-1"></script>
 <script src="js/live-board-position.js?v=20261005-live-board-1"></script>
-<script src="js/live-board.js?v=20261006-live-board-ui-2"></script>
+<script src="js/live-board.js?v=20261006-live-board-embedded-1"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
-<script src="js/mobile-navigation.js?v=20261005-gamer-brand-1"></script>
+<script src="js/mobile-navigation.js?v=20261006-live-board-embedded-1"></script>
 <script src="js/room-games-layout.js?v=20260917-theme-3"></script>
 <script defer src="js/gamer-settings.js?v=20260926-header-2"></script>
 </body>
