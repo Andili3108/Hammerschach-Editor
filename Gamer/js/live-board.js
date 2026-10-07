@@ -58,53 +58,81 @@ const HammerschachLiveBoard = (() => {
     if(!replays.has(key)){const value=LiveBoardPosition.replay(g);replays.set(key,value);while(replays.size>12)replays.delete(replays.keys().next().value);}
     return replays.get(key);
   }
-  function boardView(position,flip){
+  function boardView(position,flip,gamerStyle=false){
     const el=node('div','lb-board');el.setAttribute('role','img');el.setAttribute('aria-label','Schachstellung; '+(position.turn==='w'?'Weiß':'Schwarz')+' am Zug');
     for(let row=0;row<8;row++)for(let col=0;col<8;col++){
       const x=flip?7-col:col,y=flip?7-row:row;
-      const sq=node('span','lb-square '+((x+y)%2?'lb-dark':'lb-light'));
-      if(position.last?.some(([a,b])=>a===x&&b===y))sq.classList.add('lb-last');
-      const p=position.board[y][x];if(p!=='.'){const img=document.createElement('img');img.src=pieceImg[p];img.alt='';img.draggable=false;sq.append(img);}
+      const sq=node('span','lb-square '+(gamerStyle?'square '+((x+y)%2?'dark':'light'):((x+y)%2?'lb-dark':'lb-light')));
+      if(position.last?.some(([a,b])=>a===x&&b===y))sq.classList.add(gamerStyle?'last-move':'lb-last');
+      const p=position.board[y][x];if(p!=='.'){const img=document.createElement('img');img.src=pieceImg[p];img.alt='';img.draggable=false;if(gamerStyle)img.className='piece-img';sq.append(img);}
       if(col===0)sq.append(node('small','lb-rank',String(8-y)));
       if(row===7)sq.append(node('small','lb-file','abcdefgh'[x]));
       el.append(sq);
     }
     return el;
   }
-  function card(g,single){
-    const el=node('article','lb-card');
-    const title=`Brett ${g.label||g.board} · ${g.result==='*'?'Läuft / wartet':g.result}`;
-    const top=single&&state.flipped?'white':'black',bottom=top==='white'?'black':'white';
-    const player=side=>{el.append(node('div','lb-player',`${side==='white'?'○':'●'} ${g[side]}`));if(single&&g.clocks?.[side])el.append(node('div','lb-clock',g.clocks[side]));};
-    el.append(node('h3','',title));player(top);
+  function singleCard(g){
+    const el=node('article','lb-single-layout');
+    const boardColumn=node('div','lb-board-column');
+    const movesColumn=node('aside','lb-moves-column');movesColumn.setAttribute('aria-label','Zugliste');
+    const panel=node('div','side-panel box lb-moves-panel');
+    const movesPanel=node('div','side-content moves-panel');
+    const title=node('div','moves-title');
+    title.append(node('span','','Zugliste'),node('span','lb-moves-position',''));
+    const heading=node('h3','lb-game-heading',`Brett ${g.label||g.board}${g.result==='*'?'':' · '+g.result}`);
+    const top=state.flipped?'white':'black',bottom=top==='white'?'black':'white';
+    const strip=(side,turn)=>{
+      const wrapper=node('div','board-player-strip');
+      const card=node('div','player-clock-card');card.classList.toggle('active',!g.finished&&turn===(side==='white'?'w':'b'));
+      const head=node('div','player-clock-head');const dot=node('span','dot '+side);dot.setAttribute('aria-hidden','true');
+      head.append(dot,node('span','player-clock-side',side==='white'?'Weiß':'Schwarz'));
+      const names=node('div','player-clock-name-row'),name=node('div','player-clock-name',g[side]);name.title=g[side];names.append(name);
+      card.append(head,names);
+      if(g.clocks?.[side]){const clock=node('div','player-clock-time',g.clocks[side]);clock.title='Uhrenstand der Übertragung';card.append(clock);}
+      wrapper.append(card);return wrapper;
+    };
     try{
       const r=replay(g),positions=r.positions;
-      const ply=single&&state.ply!==null?Math.min(state.ply,positions.length-1):positions.length-1;
-      el.append(boardView(positions[ply],single&&state.flipped));
-      if(single){
-        player(bottom);
-        const controls=node('div','lb-replay');
-        const at=p=>{state.ply=p;render(state.data);};
-        const first=action('⏮',()=>at(0));first.setAttribute('aria-label','Startstellung');first.disabled=ply===0;
-        const prev=action('◀',()=>at(ply-1));prev.setAttribute('aria-label','Voriger Zug');prev.disabled=ply===0;
-        const next=action('▶',()=>at(ply+1));next.setAttribute('aria-label','Nächster Zug');next.disabled=ply===positions.length-1;
-        controls.append(first,prev,node('span','',`${ply} / ${positions.length-1}`),next,action('Aktueller Stand',()=>at(null)),action('Brett drehen',()=>{state.flipped=!state.flipped;render(state.data);}));el.append(controls);
-        const notation=node('div','lb-notation');notation.setAttribute('aria-label','Zugfolge');
-        g.moves.forEach((san,i)=>{
-          const n=r.firstNumber+Math.floor((i+(r.firstTurn==='b'?1:0))/2);
-          const black=(i+(r.firstTurn==='b'?1:0))%2===1;
-          const b=action(`${n}${black?'…':'.'} ${san}`,()=>at(i+1));b.classList.toggle('lb-selected',i+1===ply);if(i+1===ply)b.setAttribute('aria-current','step');notation.append(b);
-        });el.append(notation);
+      const ply=state.ply===null?positions.length-1:Math.min(state.ply,positions.length-1);
+      boardColumn.append(strip(top,positions.at(-1).turn),boardView(positions[ply],state.flipped,true),strip(bottom,positions.at(-1).turn));
+      const controls=node('div','board-tools lb-replay'),nav=node('div','gamer-board-nav');nav.setAttribute('aria-label','Zugnavigation');
+      const at=p=>{state.ply=p;render(state.data);};
+      for(const [symbol,label,target,disabled] of [['«','Startstellung',0,ply===0],['‹','Voriger Zug',ply-1,ply===0],['›','Nächster Zug',ply+1,ply===positions.length-1],['»','Aktueller Stand',null,false]]){
+        const b=action(symbol,()=>at(target));b.classList.add('gamer-board-nav-btn');b.setAttribute('aria-label',label);b.title=label;b.disabled=disabled;nav.append(b);
       }
-    }catch(error){el.append(node('p','lb-error',error.message));}
-    if(!single||!el.querySelector('.lb-board'))player(bottom);
+      const flip=action('↻',()=>{state.flipped=!state.flipped;render(state.data);});flip.classList.add('icon-btn');flip.setAttribute('aria-label','Brett drehen');flip.title='Brett drehen';controls.append(nav,flip);boardColumn.append(controls);
+      title.querySelector('.lb-moves-position').textContent=`${ply} / ${positions.length-1}`;
+      const notation=node('div','lb-notation variation-moves');notation.setAttribute('aria-label','Zugfolge');
+      g.moves.forEach((san,i)=>{
+        const n=r.firstNumber+Math.floor((i+(r.firstTurn==='b'?1:0))/2),black=(i+(r.firstTurn==='b'?1:0))%2===1;
+        if(!black||i===0){notation.append(node('span','variation-move-cell move-number',n+'.'));if(black)notation.append(node('span','variation-move-cell'));}
+        const b=action(san,()=>at(i+1));b.className='variation-move-cell move-cell move-entry';b.setAttribute('aria-label',`${n}${black?'…':'.'} ${san}`);b.dataset.lbPly=String(i+1);
+        b.classList.toggle('current',i+1===ply);if(i+1===ply)b.setAttribute('aria-current','step');notation.append(b);
+      });
+      if(g.moves.length&&(g.moves.length+(r.firstTurn==='b'?1:0))%2===1)notation.append(node('span','variation-move-cell'));
+      if(!g.moves.length)notation.append(node('p','variation-moves-empty','Noch keine Züge.'));
+      if(g.finished)notation.append(node('div','move-cell move-result',g.result));
+      movesPanel.append(title,notation);panel.append(heading,movesPanel);movesColumn.append(panel);el.append(boardColumn,movesColumn);
+      // Scroll only the notation pane; never move the whole page while polling.
+      requestAnimationFrame(()=>{if(!notation.isConnected)return;const current=notation.querySelector('[aria-current]');if(!current)return;const a=current.getBoundingClientRect(),b=notation.getBoundingClientRect();if(a.bottom>b.bottom)notation.scrollTop+=a.bottom-b.bottom;else if(a.top<b.top)notation.scrollTop+=a.top-b.top;});
+    }catch(error){boardColumn.append(strip(top,''),node('p','lb-error',error.message),strip(bottom,''));el.append(boardColumn);}
+    if(g.stale)boardColumn.append(node('p','lb-error','Übertragung verzögert.'));
+    return el;
+  }
+  function card(g,single){
+    if(single)return singleCard(g);
+    const el=node('article','lb-card');
+    const title=`Brett ${g.label||g.board} · ${g.result==='*'?'Läuft / wartet':g.result}`;
+    const player=side=>el.append(node('div','lb-player',`${side==='white'?'○':'●'} ${g[side]}`));
+    el.append(node('h3','',title));player('black');
+    try{const positions=replay(g).positions;el.append(boardView(positions.at(-1),false));}
+    catch(error){el.append(node('p','lb-error',error.message));}
+    player('white');
     if(g.stale)el.append(node('p','lb-error','Übertragung verzögert.'));
-    if(!single){
-      const open=()=>{state.board=g.id;state.ply=null;state.flipped=false;clearPosition();navigate();};
-      el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',`Brett ${g.label||g.board}: ${g.white} gegen ${g.black} öffnen`);
-      el.addEventListener('click',open);
-      el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
-    }
+    const open=()=>{state.board=g.id;state.ply=null;state.flipped=false;clearPosition();navigate();};
+    el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-label',`Brett ${g.label||g.board}: ${g.white} gegen ${g.black} öffnen`);
+    el.addEventListener('click',open);
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
     return el;
   }
   function render(data){
