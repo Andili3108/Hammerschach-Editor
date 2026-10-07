@@ -93,3 +93,13 @@ html.dark-mode #liveBoardView .lb-notation .current{background:rgba(226,151,160,
 #liveBoardView .lb-scope-heading { grid-column:1 / -1; margin:12px 0 0; }
 #liveBoardView .lb-scope-filter { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0; }
 #liveBoardView .lb-scope-filter select, #liveBoardView .lb-source-scope select { max-width:100%; min-width:0; }
+
+#liveBoardView .lb-tabs{flex-shrink:0}
+#liveBoardView .lb-tabs .side-toggle-btn{min-width:0;padding-inline:8px}
+#liveBoardView .lb-refresh-panel label{display:block;font-weight:bold;margin:12px 0}
+#liveBoardView .lb-refresh-panel select{width:100%}
+#liveBoardView .lb-player-results{display:grid;gap:16px}
+#liveBoardView .lb-player-event{min-width:0}
+#liveBoardView .lb-player-event h3{overflow-wrap:anywhere}
+#liveBoardView .lb-player-event button{display:block;width:100%;text-align:left;margin:8px 0;white-space:normal;overflow-wrap:anywhere}
+#liveBoardView [data-lb="search-more"]{margin-top:16px;max-width:100%;white-space:normal}
