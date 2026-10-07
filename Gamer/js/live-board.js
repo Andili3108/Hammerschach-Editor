@@ -5,7 +5,7 @@ const HammerschachLiveBoard = (() => {
   function storedInterval(){try{const n=Number(localStorage.getItem(intervalKey()));return [5000,10000,15000,30000].includes(n)?n:10000;}catch(_){return 10000;}}
   const dialog=document.getElementById('liveBoardView');
   dialog.setAttribute('aria-labelledby','liveBoardTitle');
-  dialog.innerHTML=`<header class="lb-header"><div><h2 id="liveBoardTitle">Vereinsschach</h2></div></header>
+  dialog.innerHTML=`<header class="lb-header" hidden><div><h2 id="liveBoardTitle">Vereinsschach</h2></div></header>
     <div class="lb-toolbar"><button type="button" data-lb="back" hidden>← Veranstaltungen</button><button type="button" data-lb="refresh">Aktualisieren</button><label class="lb-round" hidden>Runde <select aria-label="Runde wählen"></select></label><button type="button" data-lb="remove" hidden>Übertragung entfernen</button></div>
     <div class="lb-catalog-tools" hidden><form class="lb-catalog-form"><div class="lb-search"><label for="lbEventSearch">Veranstaltung suchen</label><input id="lbEventSearch" type="search" maxlength="100" placeholder="Name der Veranstaltung"><select id="lbEventState" aria-label="Veranstaltungsstatus"><option value="all">Alle Veranstaltungen</option><option value="live">Laufend</option><option value="upcoming">Geplant</option><option value="finished">Beendet</option></select></div>
     <label class="lb-scope-filter" hidden>Verbandsebene <select id="lbClubScope"><option value="">Alle Ebenen</option><option value="bundesliga">Bundesliga</option><option value="nrw">Schachbund NRW (SBNRW)</option><option value="ruhrgebiet">Schachverband Ruhrgebiet (SVRuhrgebiet)</option><option value="hamm">Schachbezirk Hamm (SBHamm)</option><option value="own">Eigene Vereinsübertragungen</option></select></label>
@@ -79,6 +79,7 @@ const HammerschachLiveBoard = (() => {
   }
   const scopeMatches=(scope,event)=>!scope||event===scope||scope==='nrw'&&['ruhrgebiet','hamm'].includes(event)||scope==='ruhrgebiet'&&event==='hamm';
   function catalog(){
+    dialog.querySelector('.lb-header').hidden=true;
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;roundControl.hidden=true;button('remove').hidden=true;catalogTools.hidden=false;
     content.className='lb-content lb-events';content.replaceChildren();
     const scope=state.filters.scope;
@@ -256,6 +257,7 @@ const HammerschachLiveBoard = (() => {
     return el;
   }
   function render(data){
+    dialog.querySelector('.lb-header').hidden=false;
     const scrollX=window.scrollX,scrollY=window.scrollY,notationScroll=content.querySelector('.lb-notation')?.scrollTop;
     const focusId=dialog.contains(document.activeElement)?document.activeElement.id:'';
     state.data=data;state.event=data.event;state.pages=data.pages;state.page=data.page;
@@ -323,6 +325,7 @@ const HammerschachLiveBoard = (() => {
     if(!category){stop();dialog.hidden=true;clearPosition();state.events=[];state.playerSearch=null;sourceForm.reset();dialog.querySelector('.lb-add').open=false;return;}
     if(!dialog.hidden&&state.category===category&&state.token===onlineAuthToken)return;
     stop();clearPosition();state.token=onlineAuthToken;state.interval=storedInterval();state.tab='moves';state.filters={q:'',scope:'',status:'all',player:''};state.playerSearch=null;dialog.querySelector('#lbPlayerSearch').value='';button('search-more').hidden=true;state.category=category;state.event=null;state.board='';state.query='';state.page=1;state.failures=0;state.catalogPage=1;state.catalogNotice='';dialog.querySelector('#lbEventSearch').value='';dialog.querySelector('#lbEventState').value='all';dialog.querySelector('#lbClubScope').value='';catalogTools.hidden=true;catalogPages.hidden=true;roundControl.hidden=true;button('remove').hidden=true;
+    dialog.querySelector('.lb-header').hidden=true;
     dialog.querySelector('h2').textContent=category==='club'?'Vereinsschach':'Turnierschach';
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;
     closeClubChessMenu();dialog.hidden=false;navigate();
