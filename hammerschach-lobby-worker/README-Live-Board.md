@@ -1,6 +1,17 @@
 # LIVE-BOARD – Mitglieder, Spielersuche und Aktualisierung
 
-Stand: 7. Oktober 2026. Dieses Änderungs-ZIP ergänzt das gesicherte **Hammerschach-Gamer-LIVE-BOARD-Lichess-DGT-Komplettpaket-2026-10-07.zip**. Enthaltene Dateien in derselben Ordnerstruktur ersetzen/ergänzen, den Worker wie gewohnt bereitstellen und den Gamer neu laden. Frontend und Worker gehören zusammen. Keine Datenbankmigration, neuen Secrets oder Änderungen an `wrangler.toml` erforderlich. Es wurde nichts produktiv bereitgestellt.
+Stand: 7. Oktober 2026, Korrektur von Uhrenanzeige, Seitenbewegung und Intervallwechsel. Dieses Korrektur-ZIP setzt auf dem zuletzt gelieferten **Hammerschach-Gamer-LIVE-BOARD-Mitglieder-Suche-Aktualisierung-Testpaket-2026-10-07.zip** auf. Die enthaltenen Gamer-Dateien in derselben Ordnerstruktur ersetzen/ergänzen und den Gamer neu laden. Die neue Datei `Gamer/js/live-board-clock.js` muss mit hochgeladen werden; `index.html` lädt sie vor dem Live-Board-Modul. Der Worker-Code bleibt unverändert und muss für diese Korrektur nicht erneut bereitgestellt werden. Keine Datenbankmigration oder neuen Secrets. Es wurde nichts produktiv bereitgestellt.
+
+## Korrektur der Einzelansicht
+
+- **Uhr:** Bisher wurden ausschließlich gelieferte Uhrenstände angezeigt. Der PGN-Adapter liest `%clk`-Kommentare nach Zügen; diese sind keine kontinuierlich laufende Uhr. Jetzt läuft die Uhr der am Zug befindlichen Seite lokal sekündlich weiter. Wiederholte identische Daten setzen sie nicht zurück. Ein neuer Zug oder korrigierter Quellenwert gleicht die Anzeige wieder ab. Neue Uhrenwerte ohne Zug werden direkt in die vorhandene Ansicht übernommen.
+- **Genauigkeit:** `≈` und ein Tooltip kennzeichnen die lokale Schätzung. Die aktuelle Quelle liefert keine durchgehend zuverlässigen Zeitstempel des Zugbeginns; deshalb beginnt die Schätzung beim empfangenen Stand. Zeit vor dem Öffnen, Quellenverzögerung und Pausen lassen sich damit nicht rekonstruieren. Die Anzeige ist nicht die verbindliche Uhr des Turniers. Aus geschätzten null Sekunden wird niemals ein Partieergebnis abgeleitet. Fehlende Uhren werden nicht erfunden. Vor dem ersten Zug und nach Partieende läuft nichts herunter. Bei Fehler, Offline-Zustand oder verborgenem Tab pausiert die Schätzung.
+- **Seitenbewegung:** Automatische Updates blenden nicht mehr wiederholt einen Ladetext ein/aus. Die Beschriftung von „Aktualisieren“ bleibt gleich breit. Bei unveränderter Stellung und reinen Uhrenänderungen bleibt das Brett im Dokument erhalten. Bei einem neuen Zug werden die neuen Elemente vor dem Austausch aufgebaut; Scrollposition und Notationsposition werden übernommen.
+- **Intervallwechsel:** Bricht keine laufende Anfrage mehr ab. Die gültige Antwort wird übernommen, danach gilt die zuletzt gewählte Pause. Es bleibt bei höchstens einer laufenden Ansichtsabfrage. Eine Auswahl von fünf Sekunden bedeutet nicht, dass eine langsamere Quelle nach fünf Sekunden abgebrochen wird.
+- **Zeitüberschreitung:** Das Zeitlimit für die gesamte Ansichtsabfrage beträgt 45 statt 25 Sekunden. Ein kalter DGT-Abruf kann mehrere nacheinander geladene Metadaten-/Partiedateien benötigen, deren bisherige Einzelgrenzen zusammen über 25 Sekunden liegen. Das Limit bleibt begrenzt. Ein echter Timeout pausiert die Schätzung, erhält die letzte Stellung und führt nach der bestehenden Fehlerpause zu einem automatischen neuen Versuch. Ein Intervallwechsel umgeht diese Pause nicht.
+
+Die zuvor gemeldete Ursache einer konkreten langsamen externen Quelle ist ohne deren Veranstaltungslink nicht abschließend belegt. Nachgewiesen und korrigiert sind die beschriebenen Abläufe im Gamer; Tests simulieren langsame Antworten und vollständige Ausfälle ausdrücklich.
+
 
 ## Bedienung und Zugriffsrechte
 
@@ -64,10 +75,11 @@ Keine neuen Cronjobs. Cache API teilt Daten innerhalb eines Cloudflare-Standorts
 
 ## Prüfung dieses Pakets
 
-- **35 gezielte Tests bestanden:** Mitglieds-/Besucherzugriff, administrative Schreibrechte, Klassifikation, alle Landesverbände, Quellenparser, D1, Suchblöcke, Namenssuche, DGT-Suche ohne Brettabrufe, Cache-Frische bei Intervallwechsel, Fehlerpausen und beendete Partien.
+- **39 gezielte Tests bestanden:** Mitglieds-/Besucherzugriff, administrative Schreibrechte, Klassifikation, alle Landesverbände, Quellenparser, D1, Suchblöcke, Namenssuche, DGT-Suche ohne Brettabrufe, Cache-Frische bei Intervallwechsel, Fehlerpausen und beendete Partien.
 - **Browser auf Desktop 1440×1000, iPad 820×1180 und iPhone 390×844:** gefilterte Suche erst bei Klick, Suchblöcke und Fortsetzung, Treffer öffnen, Reiter und alle vier Intervalle, Hintergrundpause, Lobby, Fußzeile, Zugnavigation, keine Veränderung der eigenen Partie, keine JavaScript-Fehler. Sichtprüfung der Reiterdarstellung durchgeführt.
-- **Cloudflare workerd mit kontrollierten Gegenstellen:** gewöhnliches Mitglied, Besucher-Sperre, administrative Schreibsperre, Lichess/DGT, neue Spielersuche, 5-Sekunden-Antwort, gemeinsamer Cache und Redirect-Sperre bestanden.
-- **Gesamtsuite:** 239 von 242 Tests bestanden. Drei Fehler in `account-deletion-tournaments.test.mjs` wegen `deleteProgress is not defined` treten identisch im unveränderten Ausgangspaket auf. Kontolöschung und deren Tests wurden nicht verändert. Daher keine Behauptung einer vollständig grünen Gesamtsuite.
+- **Cloudflare workerd mit kontrollierten Gegenstellen (Mitgliederpaket, Worker hier unverändert):** gewöhnliches Mitglied, Besucher-Sperre, administrative Schreibsperre, Lichess/DGT, neue Spielersuche, 5-Sekunden-Antwort, gemeinsamer Cache und Redirect-Sperre bestanden.
+- **Gesamtsuite:** 243 von 246 Tests bestanden. Drei Fehler in `account-deletion-tournaments.test.mjs` wegen `deleteProgress is not defined` treten identisch im unveränderten Ausgangspaket auf. Kontolöschung und deren Tests wurden nicht verändert. Daher keine Behauptung einer vollständig grünen Gesamtsuite.
+- **Neue Fehlerfall-Browserprüfung:** Desktop/iPad/iPhone sowie nachgebildete HTTPS-Einbettung auf Desktop/iPhone. Seitenhöhe und Scrollposition vor, während und nach verzögerten Abfragen gleich; laufende Uhren ohne Reset, Uhrenkorrektur ohne Brett-Neuaufbau, neue Züge, Intervallwechsel während einer länger als 25 Sekunden dauernden Antwort, echter 45-Sekunden-Timeout, Wiederaufnahme und Partieende geprüft. Die bestehenden Browserprüfungen für Suche, Lobby, eigene Partie und Mitgliederzugriff bestehen ebenfalls.
 - Neue Funktionen wurden mit kontrollierten Quellen geprüft. Kein neuer Live-End-to-End-Nachweis mit aktuell laufender externer Veranstaltung und echten Gamer-Zugangsdaten; keine Produktivbereitstellung. Frühere externe DGT-Tests des Ausgangspakets ersetzen diesen Nachweis nicht.
 
 Im Worker-Verzeichnis:
@@ -75,6 +87,7 @@ Im Worker-Verzeichnis:
 ```sh
 node --test tests/live-board*.test.mjs
 node tests/live-board-browser.mjs
+node tests/live-board-stability-browser.mjs
 node tests/live-board-worker-runtime.mjs
 node --test tests/*.test.mjs
 ```
