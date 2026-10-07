@@ -34,7 +34,7 @@ const worker={name:'live-board-runtime-test',compatibilityDate:'2026-06-26',bind
       return handleLiveBoardApi(request,env,new URL(request.url),{
         json:(data,init)=>Response.json(data,init),
         bearerTokenFromRequest:r=>r.headers.get('authorization'),
-        lookupAuthSession:async(e,token)=>token==='Bearer test'?{user:{username:'Andili'}}:null
+        lookupAuthSession:async(e,token)=>token==='Bearer test'?{user:{username:'Member'}}:null
       });
     }};`
 },...['live-board.js','live-board-catalog.js','live-board-sources.js','live-board-classification.js','live-board-discovery-pages.js'].map(name=>({type:'ESModule',path:root+name,contents:fs.readFileSync(root+name,'utf8')}))]};
@@ -51,7 +51,11 @@ try{
   if(!network){
     const club=await call('events?category=club');assert.equal(club.events.length,1);
     const dgt=await call('events/'+club.events[0].id+'/boards');assert.equal(dgt.games.length,4);assert.ok(dgt.games.every(g=>Array.isArray(g.moves)));
-    await call('events/'+dgt.event.id+'/boards?board=1');
+    const single=await call('events/'+dgt.event.id+'/boards?board=1&interval=5000');assert.equal(single.pollAfterMs,5000);
+    const search=await call('players?events='+dgt.event.id+','+event.id+'&q=White');
+    assert.equal(search.results.length,2);assert.equal(search.results[0].matches.length,4);assert.equal(search.results[1].matches.length,5);
+    const guestSearch=await mf.dispatchFetch('http://localhost/api/live-board/players?events='+dgt.event.id+'&q=White');assert.equal(guestSearch.status,401);
+    const write=await mf.dispatchFetch('http://localhost/api/live-board/sources',{method:'POST',headers:{authorization:'Bearer test'}});assert.equal(write.status,403);
     assert.equal(seen.filter(url=>url===publisher.url).length,1,'publisher cache reused by workerd');
     assert.equal(seen.filter(url=>url.includes('/game-')).length,4,'only visible DGT games fetched once');
     assert.equal(seen.filter(url=>url.endsWith('.pgn')).length,1,'real Cache API shares the round');

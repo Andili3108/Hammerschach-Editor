@@ -99,11 +99,15 @@ test('DGT rejects an untrusted lookup host and duplicate board IDs',async()=>{
   assert.equal((await call('events/badhost/boards','valid',config,{fetcher,cache:null})).status,503);assert.equal(requests,1);
 });
 
-test('other authenticated members cannot read catalog or boards during Andili preview',async()=>{
-  const h={...helpers,lookupAuthSession:async()=>({user:{id:'other',username:'Other',isAdmin:true}})};
-  for(const route of ['events','events/club/boards']){
+test('ordinary members can read, visitors cannot, shared source writes remain administrative',async()=>{
+  const h={...helpers,lookupAuthSession:async()=>({user:{id:'other',username:'Other'}})};
+  for(const route of ['events','events/club/boards','players?events=club&q=Weiss']){
     const u=new URL('https://test/api/live-board/'+route);
-    const response=await handleLiveBoardApi(new Request(u),{LIVE_BOARD_EVENTS:'invalid'},u,h,{fetcher:()=>assert.fail('must not fetch')});
-    assert.equal(response.status,403);assert.equal((await response.json()).code,'LIVE_BOARD_RESTRICTED');
+    const response=await handleLiveBoardApi(new Request(u),env,u,h,{fetcher:()=>assert.fail('must not fetch')});
+    assert.equal(response.status,200);
+  }
+  for(const method of ['POST','DELETE']){
+    const u=new URL('https://test/api/live-board/sources'+(method==='DELETE'?'/saved-'+ 'a'.repeat(32):''));
+    assert.equal((await handleLiveBoardApi(new Request(u,{method}),{DB:{prepare(){assert.fail('DB');}}},u,h)).status,403);
   }
 });

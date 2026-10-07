@@ -51,9 +51,9 @@ test('combined API: direct DGT discovery, latest populated round, four visible g
     throw Error('Unexpected '+address);
   }};
   async function call(path,token='Andili'){const u=new URL('https://local/api/live-board/'+path);return handleLiveBoardApi(new Request(u,{headers:{authorization:token}}),env,u,helpers,deps);}
-  for(const [token,status] of [['',401],['other',403]])assert.equal((await call('events',token)).status,status);
+  for(const [token,status] of [['',401]])assert.equal((await call('events',token)).status,status);
   assert.equal(calls.length,0);
-  const catalog=await(await call('events')).json();assert.equal(catalog.events.length,2);assert.equal(catalog.publisherUnavailable,false);
+  const catalog=await(await call('events','other')).json();assert.equal(catalog.events.length,2);assert.equal(catalog.publisherUnavailable,false);
   await call('events?category=club');assert.equal(calls.filter(u=>u===seed.url).length,1);
   const e=catalog.events.find(e=>e.sourceType==='dgt');assert.equal(e.source,undefined);
   const boards=await(await call('events/'+e.id+'/boards')).json();

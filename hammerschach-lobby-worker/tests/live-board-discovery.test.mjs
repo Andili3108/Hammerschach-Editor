@@ -64,8 +64,9 @@ test('source management validates HTTPS links, round ids, PGN allowlist and body
   for(const url of ['https://localhost/a','https://127.0.0.1/a','https://lichess.org/broadcast/tour/abcdefgh','http://view.livechesscloud.com/#12345678-1234-1234-1234-123456789abc','https://user:pass@lichess.org/api/broadcast/round/Abcd1234.pgn'])assert.throws(()=>sourceFromLink({...valid,url},{}));
   assert.equal((await call('sources',{},deps,'POST',{...valid,title:'x'.repeat(5000)})).status,400);
 });
-test('all discovery, saved sources and writes deny guests and other members before work',async()=>{
+test('guests cannot access discovery; ordinary members cannot mutate shared sources',async()=>{
   for(const token of ['','other'])for(const [route,method] of [['events','GET'],['events/lc-tournament-Test2026-Round002/boards','GET'],['sources','POST'],['sources/saved-'+'a'.repeat(32),'DELETE']]){
+    if(token==='other'&&method==='GET')continue;
     const response=await call(route,{DB:{prepare(){assert.fail('must not access DB');}}},{fetcher(){assert.fail('must not fetch');}},method,method==='POST'?{}:undefined,token);
     assert.equal(response.status,token?403:401);
   }
@@ -95,7 +96,7 @@ test('manual DGT link validates and saves before an event id exists',async()=>{
     assert.fail('unexpected '+url);
   }};
   const response=await call('sources',env,deps,'POST',{category:'club',clubScope:'own',title:'Berliner Landesliga – Test',url:'https://view.livechesscloud.com/#87654321-4321-4321-4321-abcdefabcdef'});
-  assert.equal(response.status,201);const {event}=await response.json();assert.equal(event.clubScope,'own');
+  assert.equal(response.status,201);const {event}=await response.json();assert.equal(event.clubScope,'berlin');
   const boards=await(await call('events/'+event.id+'/boards',env,deps)).json();assert.equal(boards.games.length,1);assert.deepEqual(boards.games[0].moves,['e4','e5']);
   assert.equal(requests.filter(u=>u.endsWith('index.json')).length,1);
 });
