@@ -12,7 +12,7 @@ const deps={cache:null,fetcher:async(url,options)=>{
   return new Response(body,{status:response.status,headers:response.headers});
 }};
 const helpers={json:(data,init)=>new Response(JSON.stringify(data),init),lookupAuthSession:async()=>({user:{username:'Andili'}}),bearerTokenFromRequest:()=>null};
-async function call(path){const url=new URL('https://local.test/api/live-board/'+path);const response=await handleLiveBoardApi(new Request(url),{},url,helpers,deps);assert.equal(response.status,200);return response.json();}
+async function call(path){const url=new URL('https://local.test/api/live-board/'+path);const response=await handleLiveBoardApi(new Request(url),{LIVE_BOARD_PAGE_DISCOVERY:'0'},url,helpers,deps);assert.equal(response.status,200);return response.json();}
 const catalog=await call('events?category=tournament');assert.equal(catalog.discoveryUnavailable,false);assert.ok(catalog.events.length);
 const requestedTour=process.env.LIVE_BOARD_TOUR;
 const selected=(requestedTour?catalog.events.find(e=>e.id.includes('-'+requestedTour+'-')):catalog.events.find(e=>e.ongoing))||catalog.events.find(e=>e.finished)||catalog.events[0];assert.ok(selected);

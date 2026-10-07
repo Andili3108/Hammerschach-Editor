@@ -9,6 +9,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {handleLiveBoardApi} from '../src/live-board.js';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const record=JSON.parse(await fs.readFile(process.env.LIVE_BOARD_RECORD,'utf8'));
+const dgtRecord=!!record.report.publisher;
 const root=fileURLToPath(new URL('../../Gamer/',import.meta.url));
 const server=http.createServer(async(req,res)=>{
   try{
@@ -28,7 +29,7 @@ const report=[];
 try{
   for(const [name,width,height] of [['desktop',1440,1000],['ipad',820,1180],['iphone',390,844]]){
     const sql=new DatabaseSync(':memory:');
-    const env={DB:{prepare(text){let args=[];return {bind(...a){args=a;return this;},async run(){return {meta:{changes:sql.prepare(text).run(...args).changes}};},async all(){return {results:sql.prepare(text).all(...args)};},async first(){return sql.prepare(text).get(...args)||null;}};}}};
+    const env={LIVE_BOARD_PAGE_DISCOVERY:dgtRecord?'1':'0',LIVE_BOARD_DISCOVERY_PAGES:dgtRecord?JSON.stringify([{id:'realtest',name:'Chess Castle',url:record.report.publisher,category:'tournament'}]):undefined,DB:{prepare(text){let args=[];return {bind(...a){args=a;return this;},async run(){return {meta:{changes:sql.prepare(text).run(...args).changes}};},async all(){return {results:sql.prepare(text).all(...args)};},async first(){return sql.prepare(text).get(...args)||null;}};}}};
     const context=await browser.newContext({viewport:{width,height},isMobile:name!=='desktop',hasTouch:name!=='desktop'});
     await context.addInitScript(user=>{localStorage.setItem('hammerschachGamerAuthToken','test-token');localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));},user);
     let calls=0;
@@ -53,10 +54,10 @@ try{
     assert.equal(await view.locator('.lb-error').count(),0);
     assert.equal(await view.evaluate(el=>el.scrollWidth<=el.clientWidth),true);
     assert.equal(await view.locator('.site-footnote').isVisible(),true);
-    const bounds=await view.locator('.lb-pages').boundingBox();assert.ok(bounds.y+bounds.height<=height+2,`four boards and controls must fit: ${name} ${bounds.y+bounds.height}`);
+    const bounds=await view.locator('.lb-pages').boundingBox();if(bounds)assert.ok(bounds.y+bounds.height<=height+2,`four boards and controls must fit: ${name} ${bounds.y+bounds.height}`);
     const shots=process.env.LIVE_BOARD_SCREENSHOTS;
     if(shots){await fs.mkdir(shots,{recursive:true});await page.screenshot({path:path.join(shots,name+'-real-overview.png')});}
-    await view.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelector('.lb-pages span').textContent.startsWith('Seite 2'));
+    if(!dgtRecord&&record.report.total>4){await view.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelector('.lb-pages span').textContent.startsWith('Seite 2'));}
     await view.locator('.lb-card').first().click();await view.locator('.lb-single .lb-board').waitFor();
     assert.equal(await view.locator('.lb-board').count(),1);assert.equal(await view.locator('.lb-error').count(),0);
     const boardBox=await view.locator('.lb-board').boundingBox(),notationBox=await view.locator('.lb-moves-panel').boundingBox();
@@ -69,13 +70,14 @@ try{
       await view.locator('.lb-round select').selectOption(record.report.previousRound.id);await view.locator('.lb-grid .lb-board').first().waitFor();
       await page.clock.install();const stopped=calls;await page.clock.fastForward(90000);assert.equal(calls,stopped,'completed round does not poll');
     }
+    if(await view.locator('.lb-single').isVisible()){await view.locator('[data-lb="back"]').click();await view.locator('.lb-grid').waitFor();}
     await view.locator('[data-lb="back"]').click();await view.locator('#lbEventSearch').fill('');
     await view.locator('.lb-add summary').click();
     await view.locator('[name="title"]').fill('Eigene Testübertragung');
     await view.locator('[name="url"]').fill('https://not-allowed.example/live.pgn');await view.locator('.lb-source-form button').click();
     await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-status').textContent.includes('LIVE_BOARD_PGN_HOSTS'));
-    await view.locator('[name="url"]').fill(record.report.requests.find(u=>u.endsWith('.pgn')));
-    await view.locator('.lb-source-form button').click();await view.locator('.lb-grid .lb-board').first().waitFor();
+    await view.locator('[name="url"]').fill(dgtRecord?'https://view.livechesscloud.com/#'+record.report.event.id.match(/dg-realtest-(.+)-\d+$/)[1]+'/1':record.report.requests.find(u=>u.endsWith('.pgn')));
+    await view.locator('.lb-source-form button').click();await view.locator('.lb-grid .lb-board').first().waitFor({timeout:10000});
     assert.equal(await view.locator('h2').textContent(),'Eigene Testübertragung');
     await view.locator('[data-lb="back"]').click();await view.locator('#lbEventSearch').fill('Eigene Testübertragung');await view.locator('.lb-event').click();await view.locator('[data-lb="remove"]').waitFor();
     await view.locator('[data-lb="remove"]').click();await view.getByRole('button',{name:'Wirklich entfernen?'}).click();

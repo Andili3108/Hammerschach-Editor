@@ -4,7 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {handleLiveBoardApi,fetchSource} from '../src/live-board.js';
 import {sourceFromLink,savedEvents,saveEvent} from '../src/live-board-catalog.js';
 
-const tour={id:'Test2026',name:'Mannschaftsmeisterschaft',teamTable:true};
+const tour={id:'Test2026',name:'German Bundesliga 2026/27 (Schachbundesliga)',teamTable:true};
 const rounds=[{id:'Round001',name:'Runde 1',finished:true},{id:'Round002',name:'Runde 2',ongoing:true},{id:'Round003',name:'Runde 3'}];
 const pgn='[White "Anna"]\n[Black "Berta"]\n1. e4 e5 *\n';
 const helpers={json:(d,o)=>new Response(JSON.stringify(d),o),bearerTokenFromRequest:r=>r.headers.get('authorization'),lookupAuthSession:async(e,t)=>t==='Bearer test'?{user:{username:'Andili'}}:t==='Bearer other'?{user:{username:'Other'}}:null};
@@ -27,9 +27,11 @@ const deps={cache:null,fetcher:async url=>{
 }};
 
 test('automatic catalog, explicit team category, round selection and cache reuse',async()=>{
-  const env={};const catalog=await(await call('events?category=tournament',env,deps)).json();
+  const env={LIVE_BOARD_PAGE_DISCOVERY:'0'};const catalog=await(await call('events?category=club',env,deps)).json();
   assert.equal(catalog.events.length,1);assert.equal(catalog.events[0].title,tour.name);assert.equal(catalog.events[0].source,undefined);
-  const club=await(await call('events?category=club',env,deps)).json();assert.equal(club.events.length,1);
+  const tournaments=await(await call('events?category=tournament',env,deps)).json();assert.equal(tournaments.events.length,0);
+  assert.equal(catalog.events[0].clubScope,'bundesliga');
+  assert.equal((await call('events/lc-tournament-Test2026-Round002/boards',env,deps)).status,404);
   const event=catalog.events[0];const board=await(await call('events/'+event.id+'/boards',env,deps)).json();
   assert.equal(board.games[0].white,'Anna');assert.equal(board.event.rounds.length,3);
   assert.equal(board.pollAfterMs,30000);
@@ -45,6 +47,9 @@ test('saved source persists in D1, duplicate deduplication and removal',async()=
   const response=await call('sources',env,deps,'POST',body);assert.equal(response.status,201);
   const {event}=await response.json();assert.equal(event.saved,true);assert.equal(event.source,undefined);
   assert.equal((await(await call('sources',env,deps,'POST',body)).json()).event.id,event.id);
+  assert.equal((await savedEvents(env)).length,1);
+  const changed=await(await call('sources',env,deps,'POST',{...body,category:'tournament',title:'Unna Open'})).json();
+  assert.equal(changed.event.id,event.id);assert.equal(changed.event.category,'tournament');
   assert.equal((await savedEvents(env)).length,1);
   assert.equal((await(await call('events/'+event.id+'/boards',env,deps)).json()).games.length,1);
   assert.equal((await call('sources/'+event.id,env,deps,'DELETE')).status,200);
@@ -77,4 +82,20 @@ test('Lichess requests serialize and HTTP 429 pauses every endpoint for a minute
   await Promise.all([fetchSource('https://lichess.org/a',fetcher),fetchSource('https://lichess.org/b',fetcher)]);assert.equal(max,1);
   let n=0;const limited=async()=>{n++;return new Response('',{status:429});};
   await assert.rejects(fetchSource('https://lichess.org/a',limited));await assert.rejects(fetchSource('https://lichess.org/b',limited));assert.equal(n,1);
+});
+
+test('manual DGT link validates and saves before an event id exists',async()=>{
+  const env={DB:database(),LIVE_BOARD_DISCOVERY:'0'};
+  const requests=[];
+  const deps={cache:null,fetcher:async url=>{
+    requests.push(url);
+    if(url.includes('/meta/'))return Response.json({host:'1.pool.livechesscloud.com'});
+    if(url.endsWith('index.json'))return Response.json({pairings:[{white:'Anna',black:'Berta'}]});
+    if(url.includes('game-1.json'))return Response.json({moves:['e4 60','e5 60']});
+    assert.fail('unexpected '+url);
+  }};
+  const response=await call('sources',env,deps,'POST',{category:'club',clubScope:'own',title:'Berliner Landesliga – Test',url:'https://view.livechesscloud.com/#87654321-4321-4321-4321-abcdefabcdef'});
+  assert.equal(response.status,201);const {event}=await response.json();assert.equal(event.clubScope,'own');
+  const boards=await(await call('events/'+event.id+'/boards',env,deps)).json();assert.equal(boards.games.length,1);assert.deepEqual(boards.games[0].moves,['e4','e5']);
+  assert.equal(requests.filter(u=>u.endsWith('index.json')).length,1);
 });

@@ -54,6 +54,34 @@ try{
       await page.locator('#mobileNavClubChessPanel [data-mobile-nav-target="liveBoardClubBtn"]').click();
     }
     const dlg=page.locator('#liveBoardView');await dlg.locator('.lb-event').waitFor();
+    const originalCatalog=env.LIVE_BOARD_EVENTS;
+    env.LIVE_BOARD_EVENTS=JSON.stringify([
+      {id:'hamm',title:'Hamm Vereinsabend',category:'club',clubScope:'hamm',source:{type:'demo'}},
+      {id:'ruhr',title:'SVRuhrgebiet Verbandsliga',category:'club',clubScope:'ruhrgebiet',source:{type:'demo'}},
+      {id:'nrw',title:'NRW-Liga',category:'club',source:{type:'demo'}},
+      {id:'bund',title:'German Bundesliga',category:'tournament',source:{type:'demo'}},
+      {id:'unna',title:'Unna Open',category:'tournament',source:{type:'demo'}}]);
+    await dlg.locator('[data-lb="refresh"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.lb-scope-heading').length===4);
+    assert.deepEqual(await dlg.locator('.lb-scope-heading').allTextContents(),['Bundesliga','Schachbund NRW (SBNRW)','Schachverband Ruhrgebiet (SVRuhrgebiet)','Schachbezirk Hamm (SBHamm)']);
+    assert.equal(await dlg.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'regional catalog fits viewport');
+    await dlg.locator('#lbClubScope').selectOption('hamm');
+    assert.equal(await dlg.locator('.lb-event').count(),1);
+    assert.match(await dlg.locator('.lb-event').innerText(),/Hamm Vereinsabend/);
+    await dlg.locator('.lb-add summary').click();
+    assert.equal(await dlg.locator('[name="clubScope"]').isVisible(),true);
+    await dlg.locator('[name="clubScope"]').selectOption('hamm');
+    assert.equal(await dlg.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'source form fits viewport');
+    await dlg.locator('.lb-add summary').click();
+    await page.evaluate(()=>HammerschachLiveBoard.open('tournament'));
+    await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-event strong')?.textContent==='Unna Open');
+    assert.equal(await dlg.locator('.lb-event').count(),1,'Bundesliga is absent from tournaments');
+    assert.equal(await dlg.locator('.lb-scope-filter').isVisible(),false);
+    assert.equal(await dlg.locator('[name="clubScope"]').isDisabled(),true);
+    env.LIVE_BOARD_EVENTS=originalCatalog;
+    await page.evaluate(()=>HammerschachLiveBoard.open('club'));
+    await page.waitForFunction(()=>document.querySelector('#liveBoardView .lb-event strong')?.textContent==='Vereinsabend · Testübertragung');
+
     await dlg.locator('.lb-event').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===4);
     assert.equal(await dlg.locator('.lb-board').count(),4);
     assert.equal(await page.locator('dialog[open]').count(),0);
