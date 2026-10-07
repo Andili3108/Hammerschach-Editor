@@ -1,122 +1,79 @@
-# LIVE-BOARD – Veranstaltungssuche und echter Quellentest
+# LIVE-BOARD: Lichess, DGT und regionale Auswahl
 
-Stand: 6. Oktober 2026. Dieses Änderungs-ZIP setzt auf dem zuletzt gelieferten `Hammerschach-Gamer-LIVE-BOARD-Komplettpaket-2026-10-06.zip` auf. Es enthält ausschließlich bearbeitete/neue Dateien in der bisherigen Ordnerstruktur.
+Stand: 7. Oktober 2026. Dieses Änderungs-Paket setzt direkt auf dem zuletzt beim Nutzer funktionierenden Stand mit Veranstaltungssuche, Cloudflare-Korrektur und Gamer-Einzelansicht auf. Das verworfene Paket „Vereine-Turniere-Testpaket“ muss NICHT vorher installiert werden. Nur Dateien aus diesem ZIP in gleicher Ordnerstruktur ersetzen/ergänzen; anschließend den Worker wie gewohnt bereitstellen und den Gamer neu laden. Es wurde nichts produktiv bereitgestellt.
 
-## Korrektur: Veranstaltungssuche in Cloudflare Workers
+## Quellen und automatische Suche
 
-Das vorherige Veranstaltungssuche-Testpaket verwendete beim externen Abruf `redirect: 'error'`. Node.js unterstützt diese Option, die Cloudflare-Worker-Laufzeit dagegen nicht. Deshalb scheiterte dort bereits der Start des Abrufs; der Gamer zeigte „Veranstaltungssuche derzeit nicht erreichbar“. Der Fehler wurde in der lokalen offiziellen Worker-Laufzeit `workerd` mit derselben Kompatibilitätsversion wie im Projekt reproduziert.
+- **Lichess:** offizieller öffentlicher Katalog `/api/broadcast/top`, danach Rundenliste und PGN der gewählten Runde. Keine vollständige Suche durch sämtliche historischen Lichess-Übertragungen.
+- **DGT LiveChess Cloud:** neue Suche nach veröffentlichten DGT-Links auf festgelegten Vereins-/Verbandsseiten. Erkannte Veranstaltungen erscheinen im Katalog; beim Öffnen lädt der Worker die Runden und Bretter direkt aus der DGT-Cloud. Lichess ist dafür nicht erforderlich.
+- **Öffentliche Live-PGN:** weiterhin über manuell oder in der Worker-Konfiguration hinterlegte Links. Der Anbieter muss in `LIVE_BOARD_PGN_HOSTS` freigegeben sein.
 
-Korrigiert auf `redirect: 'manual'` mit ausdrücklicher Ablehnung sämtlicher HTTP-3xx-Antworten. Weiterleitungen werden weiterhin nicht verfolgt und die Host-Schutzregeln bleiben bestehen. Diese gemeinsame Abruffunktion gilt für Katalog, Runden, PGN und DGT. Die Benutzeroberfläche wird durch diese Korrektur nicht verändert.
+Ein öffentlich dokumentiertes Gesamtverzeichnis sämtlicher DGT-Veranstaltungen liegt nicht vor. Deshalb durchsucht der Gamer Veröffentlichungsseiten, nicht alle möglichen Cloud-IDs. Der Parser erkennt direkte HTML-Links und eingebettete/lazy geladene iframes. Er führt keine fremden Skripte aus, verfolgt keine Weiterleitungen und durchsucht keine PDFs, sozialen Netzwerke oder geschützten Bereiche. Ein Link mit passendem Veranstaltungsnamen bzw. eindeutiger Zuordnung ist nötig. Unklare Einträge auf gemischten Verbandsseiten werden ausgelassen; die manuelle Eingabe bleibt dafür verfügbar.
 
-**Dieses kleine Korrektur-ZIP über das zuletzt gelieferte Veranstaltungssuche-Testpaket legen und den Lobby-Worker erneut bereitstellen.** Dafür ist kein erneutes Frontend-Update erforderlich. Falls unmittelbar nach dem Update noch die alte Meldung erscheint, mindestens 60 Sekunden warten und „Aktualisieren“ drücken: Der alte Fehler kann noch für diesen Zeitraum im Quellen-Cache liegen.
+Die voreingestellten Veröffentlichungsseiten stehen in `src/live-board-discovery-pages.js`:
 
-Prüfung: alle 19 LIVE-BOARD-Tests bestanden, zusätzlich ein neuer `workerd`-Regressionstest mit echter Fetch-/Cache-API. Dieser prüft Veranstaltungsliste, vier Bretter, geteilten PGN-Cache, Besucher-Sperre und abgelehnte Weiterleitungen ohne Abruf des Zielhosts. Außerdem wurde die echte Lichess-Übertragung in `workerd` erneut getestet: 68 Veranstaltungen gefunden und vier Bretter aus insgesamt 30 Partien von „Fagernes International Autumn 2026 | GM“ geladen. Keine produktive Bereitstellung durchgeführt; Cloudflare-Rechenzentrumsnetzwerk und echte Nutzeranmeldung bleiben vom lokalen Lauf getrennt.
+| Seite | Bereich |
+| --- | --- |
+| https://www.schachbundesliga.de/ | Bundesliga |
+| https://schach-nrw.de/ | SBNRW |
+| https://svr-schach.de/ | SVRuhrgebiet |
+| https://bezirk.sbhamm.de/ | SBHamm |
+| https://svunna.de/ | SV Unna |
+| https://www.caissahamm.de/ | Caissa Hamm |
+| https://www.sv49.de/ | SV Bönen |
+| https://www.skwerne.de/ | SK Werne |
 
-Der optionale Laufzeittest benötigt Miniflare als Entwicklungswerkzeug, keine neue Abhängigkeit im produktiven Worker:
+Eine gelistete Website bedeutet nicht, dass der Verein DGT-Bretter besitzt oder gerade überträgt. Im realen Prüflauf waren alle acht Hauptseiten erreichbar, aber kein passend zuordenbarer DGT-Link wurde gefunden. Das ist kein Nachweis, dass es auf anderen Unterseiten oder an anderen Spieltagen keine Übertragungen gibt.
 
-```sh
-node tests/live-board-worker-runtime.mjs
-LIVE_BOARD_NETWORK_TEST=1 node tests/live-board-worker-runtime.mjs
-```
+## Vereins- und Turnierschach
 
-Standardmäßig verwendet er kontrollierte Quellenantworten ohne externen Abruf; die zweite Variante ruft ausdrücklich Lichess auf. `MINIFLARE_MODULE` kann auf die installierte Miniflare-Moduldatei zeigen. Das Testskript unterstützt die Miniflare-4-Schnittstelle und den offiziellen Kompatibilitätsadapter in Version 5.
+Vereinsschach wird in dieser Reihenfolge gruppiert und ist nach Ebene filterbar: **Bundesliga → SBNRW → SVRuhrgebiet → SBHamm**. Deutsche Bundesliga-Übertragungen erscheinen ausschließlich im Vereinsschach. Ausländische Ligen und unklare Mannschaftsveranstaltungen werden nicht aus dem Lichess-Katalog übernommen. Namensregeln stehen zentral in `src/live-board-classification.js`; ein Mannschaftsmerkmal allein genügt nicht mehr.
 
-## Einspielen
+Turnierschach umfasst eigenständige Turniere jeder Größe: Weltklasse, Opens, Einzelmeisterschaften und lokale Veranstaltungen wie Unna Open oder Quick-Round-Robin. Der Standort NRW/Hamm allein macht ein Einzelturnier nicht zu Vereinsschach. Bereits gespeicherte eigene Vereinseinträge ohne erkennbare Ebene bleiben unter „Eigene Vereinsübertragungen“ erhalten. Dort können auch manuelle Mannschaftskämpfe außerhalb der zunächst vorgesehenen Hierarchie eingeordnet werden.
 
-1. Die enthaltenen Dateien über die gleichnamigen Dateien des letzten Komplettpakets legen; neue Dateien ergänzen. Die oberste Ebene ist einmal `Hammerschach-Gamer/`.
-2. **Lobby-Worker und Gamer-Frontend beide neu bereitstellen.** Das neue Worker-Modul `src/live-board-catalog.js` muss dabei mitkommen. Ein Austausch nur der HTML-Datei genügt nicht.
-3. Als **Andili** unter **Schachwelt → LIVE-BOARD → Turnierschach** öffnen. Die öffentliche Veranstaltungsliste wird automatisch geladen. Dafür sind kein Lichess-Konto, Token und keine manuell hinterlegte Veranstaltung nötig.
-4. Veranstaltung auswählen, Runde wählen, vier Bretter ansehen; mit Vor/Zurück blättern oder einen Spieler/eine Brettnummer suchen. Ein Brett öffnet die große passive Einzelansicht.
-5. Zur Lobby führt weiterhin ausschließlich die vorhandene Schaltfläche im Header bzw. Mobilmenü. Die originale Fußzeile bleibt Bestandteil des Gamers.
+DGT-Veröffentlichungslinks haben im Katalog zunächst den neutralen Status „Übertragung“. Ohne Prüfung der Partien werden sie nicht als „Laufend“ oder „Geplant“ ausgegeben. Deshalb erscheinen solche Einträge zunächst unter „Alle Veranstaltungen“. Bei der Auswahl wird die im Link angegebene Runde verwendet; ohne Rundennummer die erste als live gemeldete, sonst die letzte Runde mit Brettern. Eine angebotene spätere Runde kann noch leer sein. Die Runde bleibt beim weiteren Zuschauen fest und ist über die Rundenauswahl wechselbar.
 
-Es wurde nichts produktiv ausgerollt und keine Cloudflare-Einstellung verändert. Vorhandene Bindings, Secrets, Cronjobs und `wrangler.toml` bleiben bestehen. Falls ausdrücklich `LIVE_BOARD_DISCOVERY=0` gesetzt wurde, diese Abschaltung für die automatische Suche entfernen. Bestehende korrekt konfigurierte Demo-/Quelleneinträge bleiben zusätzlich verfügbar; Demos sind weiter als DEMO markiert.
+## Manuelle Links
 
-## Was der Gamer selbst findet
+Unter **Eigene Übertragung hinzufügen** Name und direkten Link eingeben. Im Vereinsschach zusätzlich Ebene oder „Eigene Vereinsübertragungen“ wählen.
 
-- Der Worker verwendet den offiziellen öffentlichen Lichess-Katalog `/api/broadcast/top`: aktive, angekündigte und die erste Seite zuletzt beendeter Übertragungen. Kein Scraping und keine Vollsuche durch das gesamte Internet.
-- **Turnierschach:** öffentliche Veranstaltungen aus diesem Katalog.
-- **Vereinsschach:** zusätzlich die von Lichess ausdrücklich als Mannschaftsveranstaltungen markierten Einträge (`teamTable`), ergänzt um eigene Vereinsübertragungen. Das umfasst auch Mannschaftsturniere und ist kein vollständiges Verzeichnis deutscher Vereinsligen.
-- Suche nach Veranstaltungsnamen und Filter für laufend/geplant/beendet arbeiten lokal in der bereits geladenen Liste. Acht Veranstaltungen pro Katalogseite; vier Bretter pro Brettseite.
-- Beim Öffnen wird die offizielle Rundenliste geladen. Die ausgewählte Runde bleibt fest, bis eine andere gewählt wird. Ein Rundenwechsel setzt Brettsuche und Einzelansicht zurück. Noch nicht veröffentlichte Bretter angekündigter Runden erscheinen als leerer Wartestand.
-- Der Katalog deckt nur bei Lichess gelistete Übertragungen ab. Nicht gelistete Vereinsveranstaltungen werden nicht erfunden. Für diese gibt es die Link-Eingabe.
-- „Aktualisieren“ fragt den Gamer-Worker erneut ab; der gemeinsame Quellen-Cache wird dabei bewusst nicht umgangen. Bei einem Katalogausfall bleiben eigene Quellen nutzbar und eine kurze Fehlermeldung erscheint. Ein vorhandener älterer Katalog wird als verzögert gekennzeichnet.
+- DGT: `https://view.livechesscloud.com/#UUID`, optional `/RUNDENNUMMER`; die Runde ist auch als Zahl einstellbar.
+- Lichess: Link einer konkreten Runde `https://lichess.org/broadcast/TURNIER/RUNDE/ACHTSTELLIGE-ID` oder deren offizieller PGN-Export. Eine Turnierübersichtsseite ohne Runde reicht hier nicht aus.
+- Live-PGN: direkte HTTPS-Datei; der Host muss vorab in `LIVE_BOARD_PGN_HOSTS` eingetragen werden.
 
-## Eigene Übertragungen direkt im Gamer
+Eine normale Vereins-/Turnierhomepage oder eine Ergebnistabelle ist kein direkt eintragbarer Partielink. Ganze Websites für die automatische Suche werden ausschließlich in der Worker-Konfiguration hinterlegt.
 
-In der Veranstaltungsübersicht **Eigene Übertragung hinzufügen** öffnen, Name und öffentlichen Link eingeben und **Hinzufügen** drücken. Der aktuell geöffnete Bereich bestimmt Vereinsschach/Turnierschach.
+Speicherung erfolgt weiterhin in der vorhandenen D1-Tabelle `live_board_sources`, maximal 40 eigene Einträge. Erneutes Hinzufügen derselben Quelle aktualisiert Name/Zuordnung und behält die gespeicherte ID. Keine Tabellenmigration nötig. Identische Quellenadressen werden im Katalog zusammengeführt; unterschiedliche Anbieter/Runden können eigenständige Einträge bleiben. Entfernen ist wie bisher mit zweitem Klick bestätigt. Die serverseitige Freigabe bleibt ausschließlich für das angemeldete Konto **Andili** bestehen, auch für Schreibzugriffe.
 
-Unterstützte Links:
+## Umfang, Cache und Erweiterung
 
-- **Lichess:** Link einer konkreten Broadcast-Runde, beispielsweise `https://lichess.org/broadcast/TURNIER/RUNDE/ACHTSTELLIGE-ID`, oder deren offizieller PGN-Export. Ein Turnierübersichtslink ohne konkrete Runde reicht in diesem Eingabefeld nicht.
-- **DGT LiveChessCloud:** offizieller Viewer-Link `https://view.livechesscloud.com/#UUID`, optional mit `/RUNDENNUMMER`. Das Feld **DGT-Runde** erscheint bei einem DGT-Link; eine enthaltene Rundennummer wird übernommen und kann angepasst werden.
-- **Öffentliche PGN:** vollständige direkte HTTPS-Adresse. Aus Sicherheitsgründen muss deren Host weiterhin einmal in der vorhandenen Worker-Variable `LIVE_BOARD_PGN_HOSTS` freigegeben werden, etwa `live.verein.de,live.turnier.de`. Der Gamer nennt einen noch nicht freigegebenen Host als Fehlermeldung. Lichess und DGT benötigen diese zusätzliche Freigabe nicht. Weiterleitungen, URL-Zugangsdaten, interne/IP-Hosts und abweichende Ports werden abgelehnt.
+- Maximal acht Veröffentlichungsseiten, je Hauptseite und höchstens eine direkt verlinkte weitere Seite derselben HTTPS-Adresse mit Live-/Übertragungshinweis. Maximal zwölf DGT-Veranstaltungen pro Suchseite.
+- Gemeinsamer Cache pro Suchseite: 30 Minuten, Lichess-Katalog: fünf Minuten. „Aktualisieren“ umgeht diese Limits nicht. Simultane Anfragen werden innerhalb einer Worker-Instanz zusammengeführt; Cloudflare Cache API teilt Daten innerhalb des Standorts, nicht garantiert weltweit.
+- Keine neue Dauerabfrage und kein Cronjob. Im Hintergrund pausiert die Brettabfrage. Nur vier sichtbare Bretter bzw. ein Einzelbrett werden geladen. Erfolgreich geladene beendete Partien stoppen die laufende Abfrage; vorübergehend fehlende Daten werden langsamer erneut versucht.
+- Fehler einer Suchseite blockieren keine anderen Anbieter. Alte Cache-Ergebnisse können bis zu 24 Stunden als verzögert erhalten bleiben. Ein kurzzeitiger Ausfall und ein Katalog ohne Treffer werden unterschieden.
+- HTML-Abrufe: höchstens vier Sekunden je Seite, maximal 2 MiB wie die vorhandenen Quellenabrufe. Keine Anmeldedaten gehen an externe Anbieter. Private API-Antworten bleiben ungecacht.
 
-Die Quelle wird vor dem Speichern tatsächlich abgerufen und ihr Datenformat geprüft. Eigene Einträge werden dauerhaft in der vorhandenen D1-Datenbank gespeichert. Das Modul legt bei Bedarf ausschließlich die Tabelle `live_board_sources` an (`id`, `event_json`, `created_at`); keine bestehenden Tabellen werden geändert. Maximal 40 eigene Quellen. Derselbe Link im selben Bereich wird nicht doppelt angelegt. Einträge aus dieser Eingabe können in ihrer Brettansicht über **Übertragung entfernen** und den zweiten Klick **Wirklich entfernen?** gelöscht werden. Eine entfernte Quelle kann erneut hinzugefügt werden.
+Optional ersetzt `LIVE_BOARD_DISCOVERY_PAGES` die acht Vorgaben vollständig durch ein JSON-Array (maximal acht Objekte). Felder: `id` (1–16 Kleinbuchstaben/Ziffern, eindeutig), `name`, `url` (öffentliche HTTPS-Seite), `category` (`club`, `tournament` oder `mixed`), für Vereins-/gemischte Seiten `clubScope` (`bundesliga`, `nrw`, `ruhrgebiet`, `hamm` oder `own`). `mixed` benötigt eine erkennbare Team-/Einzelturnierbezeichnung im Linkumfeld. Für eine reine Übertragungsseite eines Mannschaftswettbewerbs ist `club` passend. Immer die endgültige URL ohne Weiterleitung verwenden.
 
-Die vorhandene optionale Variable `LIVE_BOARD_EVENTS` funktioniert weiter (maximal 40 konfigurierte Einträge). Diese Einträge können nicht über die neue Oberfläche gelöscht werden. Das Format dokumentiert `live-board.events.example.json`. Demo-Einträge benötigen weiterhin `LIVE_BOARD_DEMO=1`; bei Abschalten des Demomodus auch die Demo-Einträge entfernen. Eigene gespeicherte Quellen sind feste Runden, während automatisch gefundene Veranstaltungen eine Rundenauswahl haben.
+`LIVE_BOARD_PAGE_DISCOVERY=0` schaltet nur die neue Seitensuche ab. `LIVE_BOARD_DISCOVERY=0` schaltet beide automatischen Suchen ab. Bestehende eigene/configurierte Quellen bleiben nutzbar. `LIVE_BOARD_EVENTS`, D1-Bindings, Secrets und `wrangler.toml` bleiben bestehen. Die neuen Ebenen lassen sich später gezielt ergänzen; weitere Webseiten erfordern keine Änderungen am Brettmodul.
 
-## Design, Zugriff und Architektur
+## Prüfung
 
-- Eingebauter Bereich unter dem vorhandenen Header, kein Popup. Originale Gamer-Schaltflächen, Figuren und Brettfarben. Keine zusätzlichen Hauptmenüpunkte, doppelten Lobby-Schaltflächen oder Hinweise wie „Nur zuschauen“.
-- Vorläufig ausschließlich für **Andili**: Menüfreigabe und API prüfen diesen Benutzernamen ohne Beachtung der Groß-/Kleinschreibung. Die API verwendet dafür die vorhandene serverseitige Sitzungsprüfung. Andere Mitglieder erhalten 403, Besucher/ungültige Sitzungen 401 – auch für Katalog, Runden, direkte Brettadressen, Hinzufügen und Entfernen.
-- Die Andili-Prüfung erfolgt vor Datenbank-, Quellen- oder Cachezugriff. Quellen erhalten keine Gamer-Tokens, Cookies oder Benutzernamen. API-Antworten sind `private, no-store` und nach Authorization getrennt.
-- Vorhandener Worker-Router, Login und Navigation bleiben bestehen. Keine zusätzliche Laufzeitbibliothek, Hardware-/Bluetooth-/USB-Logik oder Cron-Abfrage.
-- Passive Bretter verwenden eigene Instanzen des vorhandenen Gamer-Regelkerns. Eigene Partie, Zugliste, Spielräume und Uhren werden nicht verändert. Standard-Schach, Standard-FEN, Rochade, en passant und Verwandlung werden unterstützt; andere Varianten wie Chess960 werden mit einem Fehlerhinweis statt einer falschen Stellung dargestellt.
-- Desktop vier Bretter nebeneinander, iPad/iPhone 2×2; Suchbereich dort zunächst eingeklappt. Bei 1440×1000, 820×1180 und 390×844 passen vier echte Bretter einschließlich Seitensteuerung ins Fenster. Die normale Fußzeile folgt darunter. Kleinere Fenster, Zoom und besonders lange Titel können Scrollen erfordern.
+- 30 gezielte automatisierte LIVE-BOARD-Tests: Klassifikation, Reihenfolge, Bundesliga-Trennung, Parser, Abrufgrenzen, Quelle/Host-Prüfung, unbekannte IDs, Zugriffsschutz, manuelle DGT-Speicherung, D1-Umordnung, Cache, Spieler-/Brettsuche und Polling.
+- Browser: Desktop (1440 px), iPad (820 px), iPhone (390 px). Hierarchie, Suchfilter, vier Bretter, Einzelansicht mit Gamer-Zugliste, manuelle DGT-Linkeingabe und Löschen, Rückkehr zur Lobby, Fußzeile, abgelaufene Anmeldung, Hintergrundpause und unveränderte eigene Partie geprüft. Echte aufgezeichnete DGT-Daten werden dabei ohne wiederholte externe Abfragen abgespielt.
+- Cloudflare `workerd`: Lichess und DGT einschließlich Suchseite, vier Bretter, geteilter Cache, Besucher-Sperre und abgelehnte Weiterleitungen mit kontrollierten Gegenstellen geprüft.
+- Öffentlicher DGT-End-to-End-Test: automatische Linkerkennung auf der Veröffentlichungsseite von Chess Castle, neun verfügbare Bretter, vier geladen und vollständig mit dem Gamer nachgespielt; Einzelbrett ohne erneuten Quellenabruf. Diese US-Testseite wird nicht zu den regionalen Vorgaben hinzugefügt.
+- Zusätzlicher realer deutscher Ligatest: [SV Mattnetz Berlin, Landesliga-Spieltag 5](https://www.sv-mattnetz-berlin.de/landesliga-5-spieltag/), veröffentlichter [DGT-Link](https://view.livechesscloud.com/#2be70a50-3bae-4f0e-a13a-add636d9cda0). Acht Bretter vorhanden, vier geladen und vollständig nachgespielt; beendete Runde ohne weiteres Polling. Diese ältere Übertragung dient nur zum Test, Berlin ist nicht Teil der automatischen regionalen Vorgaben.
+- Die regionalen Ebenen NRW/Ruhrgebiet/Hamm wurden mangels echter gefundener Übertragung mit kontrollierten Daten geprüft. Es wird keine vollständige Erfassung aller Vereinsseiten behauptet. Keine Produktivbereitstellung und kein Test mit echten Gamer-Zugangsdaten.
 
-## Abfragen und Grenzen
-
-- Geschlossen, ausgeloggt, im Hintergrund oder offline: keine laufenden Browser-Live-Abfragen. Sichtbare Auswahl: eine Anfrage etwa alle 30 Sekunden, keine vier separaten Browserabrufe. Seitenwechsel/Logout brechen alte Abrufe ab; verspätete Antworten überschreiben keine andere Ansicht.
-- Beendete sichtbare Auswahl bzw. beendete Runde: kein automatisches Polling. Leere angekündigte Runde: langsamer Wiederholabstand von 60 Sekunden. Erfolgloses Brett-Suchergebnis pollt nicht weiter.
-- Katalog und Rundenlisten: fünf Minuten gemeinsamer Cache. PGN und DGT-Brettdaten: 30 Sekunden. DGT-Paarungen: 60 Sekunden; DGT-Hostauflösung: fünf Minuten. Vollständig abgeschlossene Daten: bis zu 24 Stunden. Ergebnisberichtigungen können deshalb verzögert eintreffen.
-- Gleichzeitige identische Abrufe werden innerhalb einer Worker-Instanz zusammengeführt. Lichess-Anfragen verschiedener Endpunkte werden innerhalb dieser Instanz nacheinander ausgeführt; nach HTTP 429 gilt dort mindestens eine Minute Pause.
-- Cloudflare Cache API ist pro Rechenzentrum geteilt, **kein weltweit zentraler Einmal-Abruf**. Andere Instanzen/Standorte können parallel auf Quellen zugreifen. Die Abrufpause ist ebenfalls kein globaler Koordinator. Realen Verbrauch und Cache-Hitrate nach Testdeployment kontrollieren.
-- Bei einer Sammel-PGN muss der Worker die ganze Runde abrufen; der Browser erhält nur seine vier bzw. eine Partie. DGT erlaubt selektive Brettdateien. Fertige Bretter in einer weiterhin laufenden Sammel-PGN bleiben Teil des Gesamtquellenabrufs.
-- Maximal 2 MiB je Quelldatei, 1.000 Partien, 1.600 Halbzüge pro Partie. PGN-Reihenfolge innerhalb einer Runde muss stabil bleiben. Ungültige/unvollständige Aktualisierungen ersetzen keinen guten Cache-Stand; eine leere PGN wird nur bei angekündigten automatischen Runden als Wartestand akzeptiert. Bei Quellenfehlern mindestens 60 Sekunden Abstand, Browserfehler bis zu vier Minuten.
-- Die bereits vorhandenen sonstigen Gamer-Pollingmechanismen wurden nicht umgestellt.
-
-## Nachweis der Tests
-
-**Echte externe Quelle, 6. Oktober 2026 um 10:28 Uhr MESZ:** [Romanian Team Chess Championships 2026 | Division A, Round 2](https://lichess.org/broadcast/romanian-team-chess-championships-2026-division-a/round-2/9NxAdvEC).
-
-- Öffentlicher Katalog → Veranstaltungsmetadaten/Runden → PGN → neues Worker-Modul → vorhandene Gamer-Brettlogik erfolgreich getestet. Alle **48 Partien** vollständig nachgespielt.
-- Zwischen zwei echten Abrufen wuchs Brett 1 von 34 auf 37 Halbzüge; es wurden reale neue Züge empfangen. Das war kein künstlicher Demo-Zugwechsel.
-- Vierer-Seite, zweite Seite, Einzelbrett und Namenssuche teilten einen PGN-Ursprungsabruf. Abgeschlossene Runde 1 zusätzlich abgerufen und Polling-Stopp geprüft.
-- Browserprüfung mit den aufgezeichneten echten Anbieterantworten und dem tatsächlichen Worker-Handler auf Desktop-, iPad- und iPhone-Größe: Anzeige, Suche, Rundenwechsel, Seitenwechsel, Nachspielen, eigene Quelle hinzufügen/speichern/entfernen, normale Fußzeile und Lobby-Rückkehr bestanden; keine JavaScript-Seitenfehler und kein horizontaler Überlauf. Die drei Browserläufe wiederholen die Anbieterantworten lokal und erzeugen keine zusätzlichen externen Lasttests.
-- Bestehender separater Browserlauf mit Demo-Testdaten weiterhin bestanden: Hintergrundpause/Wiederaufnahme, beendete Bretter, Sitzungsablauf, Logout, fremde Mitglieder, verspätete Antworten und unveränderte eigene Partie.
-- **19 LIVE-BOARD-Tests bestanden.** Einschließlich SQL-Speicherung/Löschung/Duplikaten/40er-Grenze, Schreibschutz für Fremde, URL-Grenzen, Katalog/Runden, Cache, Lichess-Serialisierung und 429-Pause. SQL-Tests verwenden echtes lokales SQLite mit einer kleinen D1-Schnittstellenanpassung.
-- Gesamte vorhandene Node-Testreihe: **223 von 226 bestanden**. Die drei Fehler sind die bereits vorhandenen `deleteProgress is not defined`-Fehler in `account-deletion-tournaments.test.mjs`. Vor diesem Update: 217 von 220 bestanden; keine zusätzlichen Fehlschläge.
-
-**Nicht bestätigt:** produktives Cloudflare-Deployment mit echter D1-Sitzung/verteilter Cache API, DGT-Ende-zu-Ende mit einer realen Veranstaltung und physische Apple-Geräte/Safari. DGT bleibt durch Format-/Abrufsimulation getestet. Die Bildschirmgrößen wurden mit Chromium emuliert. PGN-Fremdhosts wurden mit kontrollierten Testdaten geprüft; der echte Quellentest nutzte Lichess.
-
-## Tests wiederholen
-
-Im Worker-Ordner, Node 22.13 oder neuer (SQLite erforderlich):
+Testbefehle im Worker-Verzeichnis:
 
 ```sh
 node --test tests/live-board*.test.mjs
-node --test tests/*.test.mjs
-```
-
-Mit installiertem Playwright/Chromium:
-
-```sh
 node tests/live-board-browser.mjs
+node tests/live-board-worker-runtime.mjs
+LIVE_BOARD_DGT_RECORD=/tmp/live-board-dgt.json node tests/live-board-dgt-external.mjs
+LIVE_BOARD_RECORD=/tmp/live-board-dgt.json node tests/live-board-discovery-browser.mjs
 ```
 
-Optionaler echter externer Test (greift ausdrücklich auf öffentliche Lichess-Daten zu):
-
-```sh
-LIVE_BOARD_RECORD=/tmp/live-board-record.json node tests/live-board-external.mjs
-LIVE_BOARD_RECORD=/tmp/live-board-record.json node tests/live-board-discovery-browser.mjs
-```
-
-`LIVE_BOARD_TOUR` kann eine konkrete achtstellige Turnier-ID auswählen, solange sie noch im öffentlichen Katalog steht. Ohne Vorgabe wird eine laufende bzw. verfügbare Übertragung gewählt. Der reale Browserlauf setzt eine Veranstaltung mit mindestens vier Brettern voraus. `PLAYWRIGHT_MODULE` kann auf die installierte `index.mjs` zeigen, `CHROMIUM_EXECUTABLE` auf eine vorhandene Chromium-Datei und `LIVE_BOARD_SCREENSHOTS` auf einen Screenshot-Ausgabeordner. Alle Tests verwenden lokale Testidentitäten; keine produktiven Gamer-Zugangsdaten.
-
-## Quellen
-
-- [Offizielle Lichess-API](https://lichess.org/api), insbesondere `broadcast/top`, `/api/broadcast/{id}` und PGN-Rundenexport.
-- [Offizielle Broadcast-Hilfe](https://lichess.org/broadcast/help): gelistete gegenüber nicht gelisteten Übertragungen, Turniere und Runden.
-- [Lichess API-Tipps](https://lichess.org/page/api-tips): serielle Aufrufe und Pause nach 429.
-- [DGT LiveChessCloud-Viewer](https://view.livechesscloud.com/) und vorhandener Quellenadapter.
-- [Cloudflare Cache API](https://developers.cloudflare.com/workers/runtime-apis/cache/): Standortbindung des Caches.
+Browserläufe benötigen Playwright/Chromium, der Worker-Lauf Miniflare; diese optionalen Testwerkzeuge werden nicht mitgeliefert. Bestehende Umgebungsvariablen `PLAYWRIGHT_MODULE`, `CHROMIUM_EXECUTABLE`, `MINIFLARE_MODULE` können deren Pfade setzen. Die externen Tests rufen öffentliche Dienste tatsächlich auf, die übrigen Tests verwenden lokale Testdaten.
