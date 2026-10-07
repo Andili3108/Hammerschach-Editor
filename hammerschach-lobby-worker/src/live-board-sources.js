@@ -1,3 +1,4 @@
+import {normalizeEvent,CLUB_SCOPES} from './live-board-classification.js';
 // Source adapters return the same passive spectator format. No member data goes upstream.
 const MAX_GAMES = 1000;
 const MAX_PLIES = 1600;
@@ -28,7 +29,8 @@ export function sourceEvents(env) {
     else if (s.type === 'dgt' && /^[a-f0-9-]{32,36}$/i.test(s.tournamentId) && Number.isInteger(s.round) && s.round > 0 && s.round <= 100) source = {type:s.type,tournamentId:s.tournamentId.toLowerCase(),round:s.round};
     else if (s.type === 'demo' && env.LIVE_BOARD_DEMO === '1') source = {type:'demo'};
     else throw new Error('Unbekannte oder unvollständige Live-Quelle.');
-    return {id:e.id,title:text(e.title),category:e.category,round:text(e.round || s.round || ''),finished:e.finished === true,source};
+    if(e.clubScope!==undefined&&!CLUB_SCOPES.includes(e.clubScope)&&e.clubScope!=='own')throw new Error('Ungültige Verbandsebene.');
+    return normalizeEvent({id:e.id,clubScope:e.clubScope,title:text(e.title),category:e.category,round:text(e.round || s.round || ''),finished:e.finished === true,source});
   });
 }
 

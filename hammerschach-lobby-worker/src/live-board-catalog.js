@@ -1,28 +1,31 @@
+import {classifyBroadcast,normalizeEvent,sourceIdentity,CLUB_SCOPES} from './live-board-classification.js';
 import {safeSourceUrl} from './live-board-sources.js';
 
 const validId = value => typeof value === 'string' && /^[A-Za-z0-9]{8}$/.test(value);
 const clean = value => String(value || '').slice(0,160);
 const schemas = new WeakMap();
 
-export function broadcastEvent(tour, round, category='tournament') {
+export function broadcastEvent(tour, round) {
+  const classification=classifyBroadcast(tour);
+  if(!classification)return null;
+  const {category}=classification;
   if (!validId(tour?.id) || !validId(round?.id)) throw Error('Ungültige Übertragung.');
-  return {id:`lc-${category}-${tour.id}-${round.id}`,title:clean(tour.name),category,
+  return {id:`lc-${category}-${tour.id}-${round.id}`,title:clean(tour.name),...classification,
     round:clean(round.name),finished:round.finished===true,ongoing:round.ongoing===true,
     startsAt:Number(round.startsAt)||null,automatic:true,
     source:{type:'lichess',url:`https://lichess.org/api/broadcast/round/${round.id}.pgn`}};
 }
 
 export async function discoverBroadcasts(cached, read) {
-  return cached('lichess-discovery-v1',300000,async()=>{
+  return cached('lichess-discovery-regional-v2',300000,async()=>{
     const data=JSON.parse(await read('https://lichess.org/api/broadcast/top'));
-    if(!Array.isArray(data.active)||!Array.isArray(data.upcoming)||!Array.isArray(data.past?.currentPageResults))throw Error('Veranstaltungsliste nicht verfügbar.');
+    if(!Array.isArray(data.active)||(data.upcoming!==undefined&&!Array.isArray(data.upcoming))||!Array.isArray(data.past?.currentPageResults))throw Error('Veranstaltungsliste nicht verfügbar.');
     const events=[],seen=new Set();
-    for(const item of [...data.active,...data.upcoming,...data.past.currentPageResults].slice(0,120)){
+    for(const item of [...data.active,...(data.upcoming||[]),...data.past.currentPageResults].slice(0,120)){
       if(!validId(item.tour?.id)||!validId(item.round?.id)||seen.has(item.tour.id))continue;
       seen.add(item.tour.id);
-      events.push(broadcastEvent(item.tour,item.round));
-      // Only the provider's explicit team flag classifies an event as team chess.
-      if(item.tour.teamTable===true)events.push(broadcastEvent(item.tour,item.round,'club'));
+      const event=broadcastEvent(item.tour,item.round);
+      if(event)events.push(event);
     }
     return {events};
   });
@@ -38,7 +41,8 @@ export async function resolveBroadcast(id,cached,read){
   });
   const round=result.value.rounds.find(r=>r.id===m[3]);
   if(!round)return null;
-  const event=broadcastEvent(result.value.tour,round,m[1]);
+  const event=broadcastEvent(result.value.tour,round);
+  if(!event||event.category!==m[1])return null;
   event.rounds=result.value.rounds.filter(r=>validId(r.id)).map(r=>({id:`lc-${m[1]}-${m[2]}-${r.id}`,name:clean(r.name),finished:r.finished===true}));
   event.catalogStale=result.stale;
   return event;
@@ -55,7 +59,7 @@ export async function savedEvents(env){
   if(!env.DB)return [];
   await ensureTable(env.DB);
   const {results}=await env.DB.prepare('SELECT event_json FROM live_board_sources ORDER BY created_at DESC LIMIT 40').all();
-  return results.map(row=>({...JSON.parse(row.event_json),saved:true}));
+  return results.map(row=>normalizeEvent({...JSON.parse(row.event_json),saved:true}));
 }
 
 // Source management is guarded by the existing authenticated Andili check.
@@ -85,12 +89,22 @@ export function sourceFromLink(body,env){
   }
   const title=String(body.title||'').trim();
   if(!title||title.length>160)throw Error('Bitte einen Veranstaltungsnamen eingeben (maximal 160 Zeichen).');
-  return {title,category:body.category,round,finished:false,source};
+  if(body.clubScope!==undefined&&!CLUB_SCOPES.includes(body.clubScope)&&body.clubScope!=='own')throw Error('Bitte eine gültige Verbandsebene auswählen.');
+  return normalizeEvent({title,category:body.category,clubScope:body.clubScope,round,finished:false,source});
 }
 export async function saveEvent(env,event){
   if(!env.DB)throw Error('Veranstaltungsspeicher nicht verfügbar.');
   await ensureTable(env.DB);
-  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([event.category,event.source])));
+  event=normalizeEvent(event);
+  // Reusing a round cannot create a second entry in another category. Existing
+  // records keep their ids, so old links and deletion continue to work.
+  const prior=(await savedEvents(env)).find(e=>sourceIdentity(e)===sourceIdentity(event));
+  if(prior){
+    const value={...event,id:prior.id};
+    await env.DB.prepare('UPDATE live_board_sources SET event_json = ? WHERE id = ?').bind(JSON.stringify(value),prior.id).run();
+    return {...value,saved:true};
+  }
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(sourceIdentity(event))));
   const id='saved-'+Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('').slice(0,32);
   const existing=await env.DB.prepare('SELECT event_json FROM live_board_sources WHERE id = ?').bind(id).first();
   if(existing)return {...JSON.parse(existing.event_json),saved:true};

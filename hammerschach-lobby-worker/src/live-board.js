@@ -1,3 +1,5 @@
+import {discoverPageEvents,resolvePageEvent} from './live-board-discovery-pages.js';
+import {orderedEvents} from './live-board-classification.js';
 import {discoverBroadcasts,resolveBroadcast,savedEvents,sourceFromLink,saveEvent,removeEvent} from './live-board-catalog.js';
 import { sourceEvents, safeSourceUrl, parseLivePgn, demoGames, dgtPairings, dgtGame } from './live-board-sources.js';
 
@@ -48,25 +50,25 @@ export async function sharedLiveCache(key, ttl, load, options={}) {
 }
 
 const upstreamQueues=new WeakMap();
-export async function fetchSource(url,fetcher=fetch){
-  if(new URL(url).hostname!=='lichess.org')return readSource(url,fetcher);
+export async function fetchSource(url,fetcher=fetch,options={}){
+  if(new URL(url).hostname!=='lichess.org')return readSource(url,fetcher,options);
   let queue=upstreamQueues.get(fetcher);
   if(!queue){queue={tail:Promise.resolve(),blockedUntil:0};upstreamQueues.set(fetcher,queue);}
   const task=queue.tail.then(async()=>{
     if(Date.now()<queue.blockedUntil)throw Error('Lichess-Pause nach Abruflimit.');
-    try{return await readSource(url,fetcher);}catch(error){if(error.rateLimited)queue.blockedUntil=Date.now()+60000;throw error;}
+    try{return await readSource(url,fetcher,options);}catch(error){if(error.rateLimited)queue.blockedUntil=Date.now()+60000;throw error;}
   });
   queue.tail=task.catch(()=>{});
   return task;
 }
-async function readSource(url, fetcher) {
+async function readSource(url, fetcher, options={}) {
   const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),9000);
+  const timer=setTimeout(()=>controller.abort(),options.timeoutMs||9000);
   try{
     // Workers only implement follow/manual, not redirect:error. Stop at the
     // first response and reject all 3xx below; never follow another host.
     // No incoming headers are forwarded.
-    const response=await fetcher(url,{redirect:'manual',signal:controller.signal,headers:{accept:'application/x-chess-pgn, application/json, text/plain'}});
+    const response=await fetcher(url,{redirect:'manual',signal:controller.signal,headers:{accept:options.accept||'application/x-chess-pgn, application/json, text/plain'}});
     if(response.status>=300&&response.status<400)throw new Error('Weiterleitungen der Live-Quelle sind nicht erlaubt.');
     if(!response.ok){const error=new Error('Quelle nicht erreichbar (HTTP '+response.status+').');error.rateLimited=response.status===429;throw error;}
     if(Number(response.headers.get('content-length'))>MAX_BYTES)throw new Error('Quelle zu groß.');
@@ -97,8 +99,23 @@ async function eventSource(event, deps) {
     if(typeof info.host!=='string'||!/^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.livechesscloud\.com$/i.test(info.host))throw new Error('Unbekannter DGT-Datenhost.');
     return {base:safeSourceUrl(`https://${info.host}/get/${id}/`,[info.host.toLowerCase()])};
   });
+  if(event.id?.startsWith('dg-')){
+    const details=await cached('dgt-tournament:'+id,60000,async()=>{
+      const data=JSON.parse(await read(meta.value.base+'tournament.json'));
+      if(!Array.isArray(data.rounds)||!data.rounds.length||data.rounds.length>100)throw Error('Ungültige DGT-Rundenliste.');
+      return {rounds:data.rounds.map(r=>({count:Number(r.count)||0,live:Number(r.live)||0}))};
+    });
+    let n=source.round;
+    if(!n){const live=details.value.rounds.findIndex(r=>r.live>0);n=live>=0?live+1:Math.max(1,details.value.rounds.findLastIndex(r=>r.count>0)+1);}
+    if(n>details.value.rounds.length)throw Error('DGT-Runde nicht gefunden.');
+    const prefix=event.id.replace(/-\d+$/,'-');
+    event.id=prefix+n;event.round=String(n);source.round=n;
+    event.rounds=details.value.rounds.map((r,i)=>({id:prefix+(i+1),name:'Runde '+(i+1)}));
+    event.catalogStale ||= details.stale;
+  }
   const base=meta.value.base+`round-${source.round}/`;
   const index=await cached('dgt-index:'+base,60000,async()=>({games:dgtPairings(JSON.parse(await read(base+'index.json'))),finished:false}));
+  if(event.id?.startsWith('dg-')){event.finished=!index.stale&&index.value.games.length>0&&index.value.games.every(g=>g.finished);event.status=event.finished?'finished':'unknown';}
   return {catalog:index.value.games,updatedAt:index.updatedAt,stale:meta.stale||index.stale,board:p=>cached('dgt-game:'+base+p.id,POLL_MS,async()=>dgtGame(JSON.parse(await read(base+`game-${p.id}.json`)),p))};
 }
 const publicEvent=({source,...e})=>({...e,sourceType:source.type,demo:source.type==='demo'});
@@ -115,6 +132,7 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
   try{
     const cached=(key,ttl,load)=>sharedLiveCache(key,ttl,load,deps);
     const read=address=>fetchSource(address,deps.fetcher);
+    const readPage=address=>fetchSource(address,deps.fetcher,{timeoutMs:4000,accept:'text/html, application/xhtml+xml'});
     if(url.pathname==='/api/live-board/sources'&&method==='POST'){
       let event;
       try{
@@ -135,16 +153,23 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     if(url.pathname==='/api/live-board/events'){
       events.push(...await savedEvents(env));
       let discoveryUnavailable=false,stale=false;
-      if(env.LIVE_BOARD_DISCOVERY!=='0'){
-        try{const result=await discoverBroadcasts(cached,read);events.push(...result.value.events);stale=result.stale;}
-        catch(_){discoveryUnavailable=true;}
-      }
+      // Providers fail independently. One catalog refresh shares all page work
+      // across viewers; board polling never refreshes the other publishers.
+      const [lichess,publishers]=await Promise.allSettled([
+        env.LIVE_BOARD_DISCOVERY==='0'?Promise.resolve(null):discoverBroadcasts(cached,read),
+        discoverPageEvents(env,cached,readPage)
+      ]);
+      if(lichess.status==='fulfilled'&&lichess.value){events.push(...lichess.value.value.events);stale ||= lichess.value.stale;}
+      else if(lichess.status==='rejected')discoveryUnavailable=true;
+      let publisherUnavailable=false;
+      if(publishers.status==='fulfilled'){events.push(...publishers.value.events);stale ||= publishers.value.stale;publisherUnavailable=publishers.value.unavailable>0;}
+      else publisherUnavailable=true;
       const category=url.searchParams.get('category');
-      return reply({ok:true,events:events.filter(e=>!category||e.category===category).map(publicEvent),stale,discoveryUnavailable});
+      return reply({ok:true,events:orderedEvents(events).filter(e=>!category||e.category===category).map(publicEvent),stale,discoveryUnavailable,publisherUnavailable});
     }
     const match=url.pathname.match(/^\/api\/live-board\/events\/([A-Za-z0-9_-]+)\/boards$/);
     if(!match)return reply({ok:false,message:'Endpunkt nicht gefunden.'},404);
-    const event=events.find(e=>e.id===match[1])||(match[1].startsWith('saved-')?(await savedEvents(env)).find(e=>e.id===match[1]):null)||(env.LIVE_BOARD_DISCOVERY!=='0'?await resolveBroadcast(match[1],cached,read):null);
+    const event=events.find(e=>e.id===match[1])||(match[1].startsWith('saved-')?(await savedEvents(env)).find(e=>e.id===match[1]):null)||(match[1].startsWith('dg-')?await resolvePageEvent(match[1],env,cached,readPage):null)||(env.LIVE_BOARD_DISCOVERY!=='0'?await resolveBroadcast(match[1],cached,read):null);
     if(!event)return reply({ok:false,message:'Veranstaltung nicht gefunden.'},404);
     const board=url.searchParams.get('board');
     const page=Number(url.searchParams.get('page')||1);
@@ -162,7 +187,7 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     }));
     const stale=!!event.catalogStale||source.stale||results.some(r=>r.stale);
     const games=results.map(r=>({...r.value,updatedAt:r.updatedAt,stale:r.stale}));
-    const finished=event.finished||(!stale&&games.length>0&&games.every(g=>g.finished));
+    const finished=!stale&&(event.finished||(games.length>0&&games.every(g=>g.finished)));
     return reply({ok:true,event:publicEvent(event),games,page:selectedPage,pages,total:matches.length,updatedAt:Math.min(source.updatedAt,...results.map(r=>r.updatedAt||source.updatedAt)),stale,pollAfterMs:finished||(!stale&&!selected.length&&q)?0:stale||!selected.length?60000:POLL_MS});
   }catch(error){return error.status===409?reply({ok:false,message:error.message},409):reply({ok:false,code:'LIVE_SOURCE_UNAVAILABLE',message:'Übertragung derzeit nicht erreichbar. Bitte später erneut versuchen.'},503);}
 }
