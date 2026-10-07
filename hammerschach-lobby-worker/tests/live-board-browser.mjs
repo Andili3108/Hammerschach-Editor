@@ -73,8 +73,12 @@ try{
     await dlg.locator('#lbSearch').fill('Schwarz 5');await dlg.locator('.lb-search-panel form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===1);
     await dlg.locator('.lb-card[role="button"]').click();await dlg.locator('.lb-single .lb-board').waitFor();
     assert.equal(await dlg.locator('.lb-board').count(),1);
+    const boardBox=await dlg.locator('.lb-board').boundingBox(),notationBox=await dlg.locator('.lb-moves-panel').boundingBox();
+    assert.ok(width>760?notationBox.x>=boardBox.x+boardBox.width:notationBox.y>=boardBox.y+boardBox.height,'notation follows Gamer responsive layout');
+    assert.equal(await dlg.locator('.board-player-strip').count(),2);
+    assert.equal(await dlg.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'single view has no horizontal overflow');
     if(shotDir)await page.screenshot({path:path.join(shotDir,name+'-single.png')});
-    await dlg.getByRole('button',{name:'Startstellung'}).click();assert.match(await dlg.locator('.lb-replay').innerText(),/0 \/ /);
+    await dlg.getByRole('button',{name:'Startstellung'}).click();assert.match(await dlg.locator('.lb-moves-position').innerText(),/0 \/ /);
     await dlg.getByRole('button',{name:'Aktueller Stand'}).click();
     const gameBefore=await page.evaluate(()=>JSON.stringify({history:masterHistory,setup:currentGameSetup,view:viewIndex}));
     await dlg.getByRole('button',{name:'Brett drehen'}).click();assert.equal(await page.evaluate(()=>JSON.stringify({history:masterHistory,setup:currentGameSetup,view:viewIndex})),gameBefore,'passive viewer leaves own game alone');

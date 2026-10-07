@@ -59,6 +59,11 @@ try{
     await view.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelector('.lb-pages span').textContent.startsWith('Seite 2'));
     await view.locator('.lb-card').first().click();await view.locator('.lb-single .lb-board').waitFor();
     assert.equal(await view.locator('.lb-board').count(),1);assert.equal(await view.locator('.lb-error').count(),0);
+    const boardBox=await view.locator('.lb-board').boundingBox(),notationBox=await view.locator('.lb-moves-panel').boundingBox();
+    assert.ok(width>760?notationBox.x>=boardBox.x+boardBox.width:notationBox.y>=boardBox.y+boardBox.height);
+    assert.equal(await view.evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+    assert.equal(await view.locator('.lb-single .square').count(),64);
+    if(shots)await page.screenshot({path:path.join(shots,name+'-real-single.png'),fullPage:true});
     await view.getByRole('button',{name:'Startstellung'}).click();await view.getByRole('button',{name:'Aktueller Stand'}).click();
     if(record.report.previousRound){
       await view.locator('.lb-round select').selectOption(record.report.previousRound.id);await view.locator('.lb-grid .lb-board').first().waitFor();
