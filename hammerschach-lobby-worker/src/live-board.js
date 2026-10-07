@@ -6,6 +6,12 @@ import { sourceEvents, safeSourceUrl, parseLivePgn, demoGames, dgtPairings, dgtG
 const pending = new Map();
 const memory = new Map();
 const POLL_MS = 30000;
+const SINGLE_INTERVALS = [5000,10000,15000,30000];
+export function matchesPlayer(game,query){
+  const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/ß/g,'ss').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+  const words=normalize(query).split(/\s+/).filter(Boolean);
+  return words.length>0&&[game.white,game.black].some(name=>words.every(word=>normalize(name).includes(word)));
+}
 const MAX_BYTES = 2 * 1024 * 1024;
 const RETAIN_MS = 86400000;
 
@@ -28,7 +34,7 @@ export async function sharedLiveCache(key, ttl, load, options={}) {
     const req=await cacheKey(namespaced);
     let old=memory.get(namespaced);
     if(!old&&edge){try{const hit=await edge.match(req);if(hit)old=await hit.json();}catch(_){}}
-    if(old&&old.retryAt>now()){
+    if(old&&old.retryAt>now()&&(old.failed||old.value?.finished===true||now()-old.updatedAt<ttl)){
       if(old.value==null)throw new Error('Quelle vorübergehend nicht erreichbar.');
       return {value:old.value,updatedAt:old.updatedAt,stale:!!old.failed};
     }
@@ -79,13 +85,13 @@ async function readSource(url, fetcher, options={}) {
   }finally{clearTimeout(timer);}
 }
 
-async function eventSource(event, deps) {
+async function eventSource(event, deps, interval=POLL_MS) {
   const source=event.source;
   const cached=(key,ttl,load)=>sharedLiveCache(key,ttl,load,deps);
   const read=url=>fetchSource(url,deps.fetcher);
   if(source.type==='demo')return {catalog:demoGames(),updatedAt:Date.now(),stale:false,board:async p=>({value:p,updatedAt:Date.now(),stale:false})};
   if(source.type==='pgn'||source.type==='lichess'){
-    const round=await cached('pgn:'+source.url,POLL_MS,async()=>{
+    const round=await cached('pgn:'+source.url,interval,async()=>{
       const raw=await read(source.url);
       if(!raw.trim()&&(!event.automatic||event.ongoing||event.finished))throw Error('Unvollständige PGN-Quelle.');
       const games=raw.trim()?parseLivePgn(raw):[];
@@ -116,7 +122,7 @@ async function eventSource(event, deps) {
   const base=meta.value.base+`round-${source.round}/`;
   const index=await cached('dgt-index:'+base,60000,async()=>({games:dgtPairings(JSON.parse(await read(base+'index.json'))),finished:false}));
   if(event.id?.startsWith('dg-')){event.finished=!index.stale&&index.value.games.length>0&&index.value.games.every(g=>g.finished);event.status=event.finished?'finished':'unknown';}
-  return {catalog:index.value.games,updatedAt:index.updatedAt,stale:meta.stale||index.stale,board:p=>cached('dgt-game:'+base+p.id,POLL_MS,async()=>dgtGame(JSON.parse(await read(base+`game-${p.id}.json`)),p))};
+  return {catalog:index.value.games,updatedAt:index.updatedAt,stale:meta.stale||index.stale,board:p=>cached('dgt-game:'+base+p.id,interval,async()=>dgtGame(JSON.parse(await read(base+`game-${p.id}.json`)),p))};
 }
 const publicEvent=({source,...e})=>({...e,sourceType:source.type,demo:source.type==='demo'});
 
@@ -126,9 +132,10 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
   // Authenticate before consulting either the catalog or any source/cache.
   const session=await helpers.lookupAuthSession(env,helpers.bearerTokenFromRequest(request));
   if(!session?.user)return reply({ok:false,code:'NOT_AUTHENTICATED',message:'LIVE-BOARD ist nur für angemeldete Mitglieder verfügbar.'},401);
-  if(String(session.user.username||'').trim().toLowerCase()!=='andili')return reply({ok:false,code:'LIVE_BOARD_RESTRICTED',message:'LIVE-BOARD ist derzeit nur für Andili freigeschaltet.'},403);
+  const canManage=String(session.user.username||'').trim().toLowerCase()==='andili';
   const method=request.method;
   if(!['GET','POST','DELETE'].includes(method))return reply({ok:false,message:'Methode nicht erlaubt.'},405);
+  if(method!=='GET'&&url.pathname.startsWith('/api/live-board/sources')&&!canManage)return reply({ok:false,code:'LIVE_SOURCE_ADMIN_ONLY',message:'Nur der Administrator kann gemeinsame Übertragungen verwalten.'},403);
   try{
     const cached=(key,ttl,load)=>sharedLiveCache(key,ttl,load,deps);
     const read=address=>fetchSource(address,deps.fetcher);
@@ -150,6 +157,29 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     if(removal&&method==='DELETE'){await removeEvent(env,removal[1]);return reply({ok:true});}
     if(method!=='GET')return reply({ok:false,message:'Methode nicht erlaubt.'},405);
     const events=sourceEvents(env);
+    const resolveEvent=async id=>events.find(e=>e.id===id)||(id.startsWith('saved-')?(await savedEvents(env)).find(e=>e.id===id):null)||(id.startsWith('dg-')?await resolvePageEvent(id,env,cached,readPage):null)||(env.LIVE_BOARD_DISCOVERY!=='0'?await resolveBroadcast(id,cached,read):null);
+    if(url.pathname==='/api/live-board/players'){
+      const ids=(url.searchParams.get('events')||'').split(',');
+      const q=(url.searchParams.get('q')||'').trim();
+      if(q.length<2||q.length>80||ids.length>3||!ids.length||ids.some(id=>!/^[-A-Za-z0-9_]{1,100}$/.test(id))||new Set(ids).size!==ids.length)return reply({ok:false,message:'Spielername (2–80 Zeichen) und höchstens drei Veranstaltungen erforderlich.'},400);
+      const results=[];
+      // Bounded sequential batches; pairing cache is shared across all names
+      // and members. DGT search reads the index only, never individual games.
+      for(const id of ids){
+        try{
+          const event=await resolveEvent(id);
+          if(!event){results.push({id,unavailable:true});continue;}
+          const pairings=await cached('player-pairings:'+id,60000,async()=>{
+            const source=await eventSource(event,deps,60000);
+            if(source.stale||event.catalogStale)throw Error('Veraltete Paarungen.');
+            return {event:publicEvent(event),games:source.catalog.map(({id,board,label,white,black,result})=>({id,board,label,white,black,result}))};
+          });
+          const matches=pairings.value.games.filter(g=>matchesPlayer(g,q));
+          results.push({id,event:pairings.value.event,matches:matches.slice(0,100),truncated:matches.length>100,stale:pairings.stale,updatedAt:pairings.updatedAt});
+        }catch(_){results.push({id,unavailable:true});}
+      }
+      return reply({ok:true,results});
+    }
     if(url.pathname==='/api/live-board/events'){
       events.push(...await savedEvents(env));
       let discoveryUnavailable=false,stale=false;
@@ -169,14 +199,15 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     }
     const match=url.pathname.match(/^\/api\/live-board\/events\/([A-Za-z0-9_-]+)\/boards$/);
     if(!match)return reply({ok:false,message:'Endpunkt nicht gefunden.'},404);
-    const event=events.find(e=>e.id===match[1])||(match[1].startsWith('saved-')?(await savedEvents(env)).find(e=>e.id===match[1]):null)||(match[1].startsWith('dg-')?await resolvePageEvent(match[1],env,cached,readPage):null)||(env.LIVE_BOARD_DISCOVERY!=='0'?await resolveBroadcast(match[1],cached,read):null);
+    const event=await resolveEvent(match[1]);
     if(!event)return reply({ok:false,message:'Veranstaltung nicht gefunden.'},404);
     const board=url.searchParams.get('board');
     const page=Number(url.searchParams.get('page')||1);
     const q=(url.searchParams.get('q')||'').trim().slice(0,80).toLocaleLowerCase('de');
     if(!Number.isInteger(page)||page<1||page>250||(board&&!/^\d{1,4}$/.test(board)))return reply({ok:false,message:'Ungültige Brettauswahl.'},400);
-    const source=await eventSource(event,deps);
-    const matches=source.catalog.filter(p=>!q||(/^\d+$/.test(q) ? String(p.board)===q||p.label===q : `${p.white} ${p.black}`.toLocaleLowerCase('de').includes(q)));
+    const interval=board?(SINGLE_INTERVALS.includes(Number(url.searchParams.get('interval')))?Number(url.searchParams.get('interval')):10000):POLL_MS;
+    const source=await eventSource(event,deps,interval);
+    const matches=source.catalog.filter(p=>!q||(/^\d+$/.test(q) ? String(p.board)===q||p.label===q : matchesPlayer(p,q)));
     const pages=Math.max(1,Math.ceil(matches.length/4));
     const selectedPage=Math.min(page,pages);
     const selected=board?source.catalog.filter(p=>p.id===board):matches.slice((selectedPage-1)*4,selectedPage*4);
@@ -188,6 +219,6 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     const stale=!!event.catalogStale||source.stale||results.some(r=>r.stale);
     const games=results.map(r=>({...r.value,updatedAt:r.updatedAt,stale:r.stale}));
     const finished=!stale&&(event.finished||(games.length>0&&games.every(g=>g.finished)));
-    return reply({ok:true,event:publicEvent(event),games,page:selectedPage,pages,total:matches.length,updatedAt:Math.min(source.updatedAt,...results.map(r=>r.updatedAt||source.updatedAt)),stale,pollAfterMs:finished||(!stale&&!selected.length&&q)?0:stale||!selected.length?60000:POLL_MS});
+    return reply({ok:true,event:publicEvent(event),games,page:selectedPage,pages,total:matches.length,updatedAt:Math.min(source.updatedAt,...results.map(r=>r.updatedAt||source.updatedAt)),stale,pollAfterMs:finished||(!stale&&!selected.length&&q)?0:stale||!selected.length?60000:interval});
   }catch(error){return error.status===409?reply({ok:false,message:error.message},409):reply({ok:false,code:'LIVE_SOURCE_UNAVAILABLE',message:'Übertragung derzeit nicht erreichbar. Bitte später erneut versuchen.'},503);}
 }

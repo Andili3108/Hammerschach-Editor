@@ -17,7 +17,7 @@ export function broadcastEvent(tour, round) {
 }
 
 export async function discoverBroadcasts(cached, read) {
-  return cached('lichess-discovery-regional-v2',300000,async()=>{
+  return cached('lichess-discovery-regional-v3',300000,async()=>{
     const data=JSON.parse(await read('https://lichess.org/api/broadcast/top'));
     if(!Array.isArray(data.active)||(data.upcoming!==undefined&&!Array.isArray(data.upcoming))||!Array.isArray(data.past?.currentPageResults))throw Error('Veranstaltungsliste nicht verfügbar.');
     const events=[],seen=new Set();
