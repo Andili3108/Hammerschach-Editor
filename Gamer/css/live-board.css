@@ -89,3 +89,7 @@ html.dark-mode #liveBoardView .lb-notation .current{background:rgba(226,151,160,
 #liveBoardView .lb-single .square{cursor:default}
 #liveBoardView .lb-single .square.dark small{color:var(--board-coord-light,#fff4e1)}
 #liveBoardView .lb-single .piece-img{width:82%;height:82%}
+
+#liveBoardView .lb-scope-heading { grid-column:1 / -1; margin:12px 0 0; }
+#liveBoardView .lb-scope-filter { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0; }
+#liveBoardView .lb-scope-filter select, #liveBoardView .lb-source-scope select { max-width:100%; min-width:0; }
