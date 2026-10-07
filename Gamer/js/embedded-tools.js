@@ -477,7 +477,7 @@ function setEmbeddedToolActive(toolName){
   else if(toolName==='reader'&&readerToolAvailable())requested='reader';
   else if(toolName==='tournament-report'&&tournamentReportToolAvailable())requested='tournament-report';
   else if(embeddedToolsAvailable()){
-    if((toolName==='live-board-club'||toolName==='live-board-tournament')&&String(onlineAuthUser?.username||'').trim().toLowerCase()==='andili')requested=toolName;
+    if((toolName==='live-board-club'||toolName==='live-board-tournament')&&onlineAuthToken&&onlineAuthUser)requested=toolName;
     else if(toolName==='tv')requested='tv';
     else if(toolName==='fairplay'&&fairplayAllowed)requested='fairplay';
     else if(toolName==='openings')requested='openings';
