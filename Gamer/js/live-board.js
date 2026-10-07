@@ -5,7 +5,8 @@ const HammerschachLiveBoard = (() => {
   dialog.innerHTML=`<header class="lb-header"><div><h2 id="liveBoardTitle">Vereinsschach</h2></div></header>
     <div class="lb-toolbar"><button type="button" data-lb="back" hidden>← Veranstaltungen</button><button type="button" data-lb="refresh">Aktualisieren</button><label class="lb-round" hidden>Runde <select aria-label="Runde wählen"></select></label><button type="button" data-lb="remove" hidden>Übertragung entfernen</button></div>
     <div class="lb-catalog-tools" hidden><div class="lb-search"><label for="lbEventSearch">Veranstaltung suchen</label><input id="lbEventSearch" type="search" maxlength="100" placeholder="Name der Veranstaltung"><select id="lbEventState" aria-label="Veranstaltungsstatus"><option value="all">Alle Veranstaltungen</option><option value="live">Laufend</option><option value="upcoming">Geplant</option><option value="finished">Beendet</option></select></div>
-    <details class="lb-add"><summary>Eigene Übertragung hinzufügen</summary><form class="lb-source-form"><label>Name<input name="title" required maxlength="160" autocomplete="off"></label><label>Übertragungslink<input name="url" type="url" required maxlength="2048" placeholder="DGT-, Lichess-Runden- oder PGN-Link" autocomplete="off"></label><label class="lb-dgt-round" hidden>DGT-Runde<input name="round" type="number" min="1" max="100" value="1"></label><button type="submit">Hinzufügen</button></form></details></div>
+    <label class="lb-scope-filter" hidden>Verbandsebene <select id="lbClubScope"><option value="">Alle Ebenen</option><option value="bundesliga">Bundesliga</option><option value="nrw">Schachbund NRW (SBNRW)</option><option value="ruhrgebiet">Schachverband Ruhrgebiet (SVRuhrgebiet)</option><option value="hamm">Schachbezirk Hamm (SBHamm)</option><option value="own">Eigene Vereinsübertragungen</option></select></label>
+    <details class="lb-add"><summary>Eigene Übertragung hinzufügen</summary><form class="lb-source-form"><label class="lb-source-scope" hidden>Verbandsebene<select name="clubScope" required><option value="">Bitte auswählen</option><option value="bundesliga">Bundesliga</option><option value="nrw">Schachbund NRW (SBNRW)</option><option value="ruhrgebiet">Schachverband Ruhrgebiet (SVRuhrgebiet)</option><option value="hamm">Schachbezirk Hamm (SBHamm)</option><option value="own">Eigene Vereinsübertragungen</option></select></label><label>Name<input name="title" required maxlength="160" autocomplete="off"></label><label>Übertragungslink<input name="url" type="url" required maxlength="2048" placeholder="DGT-, Lichess-Runden- oder PGN-Link" autocomplete="off"></label><label class="lb-dgt-round" hidden>DGT-Runde<input name="round" type="number" min="1" max="100" value="1"></label><button type="submit">Hinzufügen</button></form></details></div>
     <details class="lb-search-panel" hidden open><summary>Spieler oder Brett suchen</summary><form class="lb-search"><label for="lbSearch">Spieler oder Brett suchen</label><input id="lbSearch" type="search" maxlength="80" placeholder="Name oder Brettnummer" autocomplete="off"><button type="submit">Suchen / Springen</button><button type="button" data-lb="clear">Alle Bretter</button></form></details>
     <p class="lb-status" role="status" aria-live="polite"></p><div class="lb-content"></div>
     <nav class="lb-catalog-pages" aria-label="Veranstaltungsseiten" hidden><button type="button" data-lb="event-prev">← Zurück</button><span></span><button type="button" data-lb="event-next">Vor →</button></nav>
@@ -40,16 +41,23 @@ const HammerschachLiveBoard = (() => {
   function catalog(){
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;roundControl.hidden=true;button('remove').hidden=true;catalogTools.hidden=false;
     content.className='lb-content lb-events';content.replaceChildren();
+    const scope=dialog.querySelector('#lbClubScope').value;
+    dialog.querySelector('.lb-scope-filter').hidden=state.category!=='club';dialog.querySelector('.lb-source-scope').hidden=state.category!=='club';sourceForm.elements.clubScope.disabled=state.category!=='club';
     const q=dialog.querySelector('#lbEventSearch').value.trim().toLocaleLowerCase('de'),filter=dialog.querySelector('#lbEventState').value;
-    const events=state.events.filter(e=>e.category===state.category&&(!q||e.title.toLocaleLowerCase('de').includes(q))&&(filter==='all'||(filter==='live'?e.ongoing:filter==='finished'?e.finished:!e.finished&&!e.ongoing)));
+    const events=state.events.filter(e=>e.category===state.category&&(state.category!=='club'||!scope||(e.clubScope||'own')===scope)&&(!q||e.title.toLocaleLowerCase('de').includes(q))&&(filter==='all'||(filter==='live'?e.ongoing:filter==='finished'?e.finished:e.status!=='unknown'&&!e.finished&&!e.ongoing)));
+    const scopes=['bundesliga','nrw','ruhrgebiet','hamm','own'];
+    if(state.category==='club')events.sort((a,b)=>scopes.indexOf(a.clubScope||'own')-scopes.indexOf(b.clubScope||'own'));
     state.catalogPages=Math.max(1,Math.ceil(events.length/8));state.catalogPage=Math.min(state.catalogPage,state.catalogPages);
     catalogPages.hidden=state.catalogPages<=1;catalogPages.querySelector('span').textContent=`Seite ${state.catalogPage} / ${state.catalogPages} · ${events.length} Veranstaltungen`;
     button('event-prev').disabled=state.catalogPage<=1;button('event-next').disabled=state.catalogPage>=state.catalogPages;
-    if(!events.length)content.append(node('p','lb-empty',q||filter!=='all'?'Keine passenden Veranstaltungen.':'Derzeit keine Veranstaltungen.'));
+    if(!events.length)content.append(node('p','lb-empty',q||scope||filter!=='all'?'Keine passenden Veranstaltungen.':'Derzeit keine Veranstaltungen.'));
+    let lastScope=null;
+    const scopeLabels={bundesliga:'Bundesliga',nrw:'Schachbund NRW (SBNRW)',ruhrgebiet:'Schachverband Ruhrgebiet (SVRuhrgebiet)',hamm:'Schachbezirk Hamm (SBHamm)',own:'Eigene Vereinsübertragungen'};
     for(const e of events.slice((state.catalogPage-1)*8,state.catalogPage*8)){
+      if(state.category==='club'&&lastScope!==(e.clubScope||'own')){lastScope=e.clubScope||'own';content.append(node('h3','lb-scope-heading',scopeLabels[lastScope]||scopeLabels.own));}
       const b=action('',()=>chooseEvent(e));b.className='button-flat lb-event';
       const round=/^\d+$/.test(e.round)?'Runde '+e.round:e.round;
-      const label=e.demo?'DEMO':e.finished?'Beendet':e.ongoing?'Laufend':e.automatic?'Geplant':'Übertragung';
+      const label=e.demo?'DEMO':e.finished?'Beendet':e.ongoing?'Laufend':e.status==='unknown'?'Übertragung':e.automatic?'Geplant':'Übertragung';
       b.append(node('strong','',e.title),node('span','',[round,label].filter(Boolean).join(' · ')));content.append(b);
     }
   }
@@ -166,7 +174,7 @@ const HammerschachLiveBoard = (() => {
       state.lastAt=Date.now();state.failures=0;
       if(!state.event){
         state.events=data.events;catalog();
-        state.catalogNotice=data.discoveryUnavailable?'Veranstaltungssuche derzeit nicht erreichbar.':data.stale?'Veranstaltungsliste verzögert.':'';
+        state.catalogNotice=data.discoveryUnavailable&&data.publisherUnavailable?'Veranstaltungssuche derzeit nicht erreichbar.':data.discoveryUnavailable?'Lichess-Suche derzeit nicht erreichbar.':data.publisherUnavailable?'Einige Vereins- oder Verbandsseiten sind derzeit nicht erreichbar.':data.stale?'Veranstaltungsliste verzögert.':'';
         status.textContent=state.catalogNotice||(manual?'Aktualisiert.':'');
         schedule(0);
       }
@@ -187,7 +195,7 @@ const HammerschachLiveBoard = (() => {
   function setView(category){
     if(!category){stop();dialog.hidden=true;clearPosition();state.events=[];sourceForm.reset();dialog.querySelector('.lb-add').open=false;return;}
     if(!dialog.hidden&&state.category===category&&state.token===onlineAuthToken)return;
-    stop();clearPosition();state.token=onlineAuthToken;state.category=category;state.event=null;state.board='';state.query='';state.page=1;state.failures=0;state.catalogPage=1;state.catalogNotice='';dialog.querySelector('#lbEventSearch').value='';dialog.querySelector('#lbEventState').value='all';catalogTools.hidden=true;catalogPages.hidden=true;roundControl.hidden=true;button('remove').hidden=true;
+    stop();clearPosition();state.token=onlineAuthToken;state.category=category;state.event=null;state.board='';state.query='';state.page=1;state.failures=0;state.catalogPage=1;state.catalogNotice='';dialog.querySelector('#lbEventSearch').value='';dialog.querySelector('#lbEventState').value='all';dialog.querySelector('#lbClubScope').value='';catalogTools.hidden=true;catalogPages.hidden=true;roundControl.hidden=true;button('remove').hidden=true;
     dialog.querySelector('h2').textContent=category==='club'?'Vereinsschach':'Turnierschach';
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;
     closeClubChessMenu();dialog.hidden=false;navigate();
@@ -203,7 +211,7 @@ const HammerschachLiveBoard = (() => {
   button('prev').addEventListener('click',()=>{if(state.page>1){state.page--;clearPosition();navigate();}});
   button('next').addEventListener('click',()=>{if(state.page<state.pages){state.page++;clearPosition();navigate();}});
   roundSelect.addEventListener('change',()=>chooseEvent({...state.event,id:roundSelect.value}));
-  for(const id of ['lbEventSearch','lbEventState'])dialog.querySelector('#'+id).addEventListener(id==='lbEventSearch'?'input':'change',()=>{state.catalogPage=1;catalog();});
+  for(const id of ['lbEventSearch','lbEventState','lbClubScope'])dialog.querySelector('#'+id).addEventListener(id==='lbEventSearch'?'input':'change',()=>{state.catalogPage=1;catalog();});
   button('event-prev').addEventListener('click',()=>{if(state.catalogPage>1){state.catalogPage--;catalog();}});
   button('event-next').addEventListener('click',()=>{if(state.catalogPage<state.catalogPages){state.catalogPage++;catalog();}});
   sourceForm.elements.url.addEventListener('input',()=>{const value=sourceForm.elements.url.value;dialog.querySelector('.lb-dgt-round').hidden=!/livechesscloud\.com/i.test(value);const match=value.match(/\/(\d{1,3})\/?$/);if(match&&!dialog.querySelector('.lb-dgt-round').hidden)sourceForm.elements.round.value=match[1];});
@@ -216,12 +224,15 @@ const HammerschachLiveBoard = (() => {
       if(generation!==state.generation||token!==onlineAuthToken||!visible())return;
       sourceForm.reset();dialog.querySelector('.lb-add').open=false;dialog.querySelector('.lb-dgt-round').hidden=true;
       state.controller=null;
-      if(data.event){state.events.unshift(data.event);chooseEvent(data.event);}
+      if(data.event){
+        if(data.event.category!==state.category){open(data.event.category);return;}
+        state.events=state.events.filter(e=>e.id!==data.event.id);state.events.unshift(data.event);chooseEvent(data.event);
+      }
       else{state.event=null;state.board='';clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';navigate(true);}
     }catch(error){if(generation===state.generation){status.textContent=error.name==='AbortError'?'Die Quelle antwortet zu langsam.':error.message;if(['NOT_AUTHENTICATED','LIVE_BOARD_RESTRICTED'].includes(error.data?.code)){stop();clearPosition();state.events=[];state.event=null;state.delay=0;catalogTools.hidden=true;catalogPages.hidden=true;pages.hidden=true;searchPanel.hidden=true;roundControl.hidden=true;button('back').hidden=true;button('remove').hidden=true;}}}
     finally{clearTimeout(timeout);if(state.controller===controller){state.controller=null;setBusy(false);}}
   }
-  sourceForm.addEventListener('submit',e=>{e.preventDefault();changeSource('/api/live-board/sources',{method:'POST',body:JSON.stringify({category:state.category,title:sourceForm.elements.title.value,url:sourceForm.elements.url.value,round:dialog.querySelector('.lb-dgt-round').hidden?undefined:Number(sourceForm.elements.round.value)})});});
+  sourceForm.addEventListener('submit',e=>{e.preventDefault();changeSource('/api/live-board/sources',{method:'POST',body:JSON.stringify({category:state.category,clubScope:state.category==='club'?sourceForm.elements.clubScope.value:undefined,title:sourceForm.elements.title.value,url:sourceForm.elements.url.value,round:dialog.querySelector('.lb-dgt-round').hidden?undefined:Number(sourceForm.elements.round.value)})});});
   button('remove').addEventListener('click',()=>{
     if(!state.event?.saved)return;
     if(button('remove').textContent!=='Wirklich entfernen?'){button('remove').textContent='Wirklich entfernen?';return;}
