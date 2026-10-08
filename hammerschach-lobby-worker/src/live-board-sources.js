@@ -47,7 +47,7 @@ export function parseLivePgn(input) {
     if (!tags.White || !tags.Black || !parsed.termination) throw new Error('Unvollständige PGN-Partie.');
     const result = gameResult(parsed.termination);
     if (tags.Result && tags.Result !== parsed.termination) throw new Error('Widersprüchliches PGN-Ergebnis.');
-    games.push({id:String(games.length+1),board:games.length+1,label:text(tags.Board || games.length+1,20),white:text(tags.White),black:text(tags.Black),round:text(tags.Round,40),result,finished:result!=='*',fen:text(tags.FEN,120),variant:text(tags.Variant || 'Standard',40),moves:parsed.moves,clocks:parsed.clocks});
+    games.push({id:String(games.length+1),board:games.length+1,label:text(tags.Board || games.length+1,20),white:text(tags.White),black:text(tags.Black),round:text(tags.Round,40),result,finished:result!=='*',fen:text(tags.FEN,120),headers:Object.fromEntries(['Event','Site','Date','Round','WhiteElo','BlackElo','WhiteTitle','BlackTitle','WhiteTeam','BlackTeam','ECO','Opening','TimeControl'].filter(k=>tags[k]).map(k=>[k,text(tags[k])])),variant:text(tags.Variant || 'Standard',40),moves:parsed.moves,clocks:parsed.clocks});
     if(games.length>MAX_GAMES) throw new Error('Zu viele Partien.');
     tags={};body='';inMoves=false;
   };

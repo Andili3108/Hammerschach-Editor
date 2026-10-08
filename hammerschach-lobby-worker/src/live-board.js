@@ -91,7 +91,7 @@ async function eventSource(event, deps, interval=POLL_MS) {
   const read=url=>fetchSource(url,deps.fetcher);
   if(source.type==='demo')return {catalog:demoGames(),updatedAt:Date.now(),stale:false,board:async p=>({value:p,updatedAt:Date.now(),stale:false})};
   if(source.type==='pgn'||source.type==='lichess'){
-    const round=await cached('pgn:'+source.url,interval,async()=>{
+    const round=await cached('pgn-headers-v2:'+source.url,interval,async()=>{
       const raw=await read(source.url);
       if(!raw.trim()&&(!event.automatic||event.ongoing||event.finished))throw Error('Unvollständige PGN-Quelle.');
       const games=raw.trim()?parseLivePgn(raw):[];
