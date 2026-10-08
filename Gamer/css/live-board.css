@@ -110,3 +110,12 @@ html.live-board-tool-active #mobileNavTestStatus{font-size:24px}
 @media(max-width:1400px){html.live-board-tool-active #status,html.live-board-tool-active #mobileNavTestStatus{font-size:22px}}
 @media(max-width:760px){html.live-board-tool-active #status,html.live-board-tool-active #mobileNavTestStatus{font-size:18px}}
 @media(max-width:380px){html.live-board-tool-active #status,html.live-board-tool-active #mobileNavTestStatus{font-size:16px}}
+
+/* Share grid rows so the side panel stops at the board, above the lower
+   player strip and replay controls. The stacked phone layout is unchanged. */
+@media(min-width:761px){
+  #liveBoardView .lb-single-layout:has(.lb-board){row-gap:10px}
+  #liveBoardView .lb-single-layout:has(.lb-board) .lb-board-column{display:contents}
+  #liveBoardView .lb-single-layout:has(.lb-board) .lb-board-column > *{grid-column:1;min-width:0}
+  #liveBoardView .lb-single-layout:has(.lb-board) .lb-moves-column{grid-column:2;grid-row:1 / 3}
+}
