@@ -44,7 +44,7 @@
     .status.success{color:var(--success);border-color:rgba(39,112,68,.22);background:linear-gradient(var(--ui-surface),rgba(39,112,68,.10))}
     .status.error{color:var(--danger);border-color:rgba(162,41,54,.22);background:linear-gradient(var(--ui-surface),rgba(162,41,54,.10))}
     .board-wrap{position:relative;width:100%;border:4px solid var(--board-dark);border-radius:10px;overflow:hidden;background:var(--board-dark);box-shadow:0 14px 36px rgba(0,0,0,.22)}
-    #board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;touch-action:none;user-select:none}
+    #board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;aspect-ratio:1;touch-action:pinch-zoom;user-select:none}
     .square{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1}
     .square.light{background:var(--board-light)}
     .square.dark{background:var(--board-dark)}
@@ -377,6 +377,7 @@
 <link rel="stylesheet" href="../css/gamer-settings.css?v=20260917-theme-3">
 <script src="../js/gamer-preferences.js?v=20260917-theme-3"></script>
 <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
+<script src="../js/board-pinch-zoom.js?v=20261008-pinch-1"></script>
 </head>
 <body>
   <main class="openings-app">
@@ -823,7 +824,19 @@
     }
     function openInAnalyzer(){if(!current)return;parentMessage({type:'hammerschach-openings-open-analyzer',pgn:buildAnalyzerPgn(),openingId:current.id,openingName:current.name});setStatus('Die aktuelle Stellung wird an den Analyzer übergeben …')}
 
+    function cancelBoardDrag(){
+      const state=activeDrag;
+      if(!state)return;
+      activeDrag=null;
+      if(state.ghost)state.ghost.remove();
+      state.img.classList.remove('piece-drag-source');
+      try{if(boardEl.hasPointerCapture(state.pointerId))boardEl.releasePointerCapture(state.pointerId)}catch(_){}
+      suppressClickUntil=Date.now()+500;
+    }
+    const boardPinchZoom=installBoardPinchZoom([boardEl],cancelBoardDrag);
+
     function beginDrag(event){
+      if(boardPinchZoom.isActive())return;
       if(activeDrag||event.isPrimary===false||(event.pointerType==='mouse'&&event.button!==0)||!practiceActive)return;const square=event.target.closest&&event.target.closest('.square');if(!square||!boardEl.contains(square))return;
       const x=Number(square.dataset.x),y=Number(square.dataset.y),game=currentGame(practicePly),piece=game.at(x,y),img=square.querySelector('.piece-img');if(!img||piece==='.'||pieceColor(piece)!==game.turn||!userControls(game.turn))return;
       activeDrag={pointerId:event.pointerId,pointerType:event.pointerType||'mouse',startX:event.clientX,startY:event.clientY,from:[x,y],img,ghost:null,dragging:false};
