@@ -139,7 +139,7 @@ try{
     await dlg.locator('[data-lb="next"]').click();await page.waitForFunction(()=>document.querySelectorAll('#liveBoardView .lb-card').length===2);
     await page.clock.install();const stopped=liveCalls;await page.clock.fastForward(90000);assert.equal(liveCalls,stopped,'finished page must not poll');
     await dlg.locator('.lb-card').first().click();await dlg.locator('.lb-single .lb-board').waitFor();
-    await dlg.getByRole('tab',{name:'Aktualisierung',exact:true}).click();await dlg.locator('#lbInterval').selectOption('5000');
+    await dlg.getByRole('tab',{name:'Engine',exact:true}).click();await dlg.locator('#lbInterval').selectOption('5000');
     const finishedSingle=liveCalls;await page.clock.fastForward(60000);assert.equal(liveCalls,finishedSingle,'finished single never restarts polling when interval changes');
     await dlg.locator('#lbInterval').selectOption('10000');
     await dlg.locator('[data-lb="back"]').click();await dlg.locator('.lb-grid').waitFor();
@@ -159,7 +159,7 @@ try{
     await dlg.getByRole('button',{name:'Brett drehen'}).click();assert.equal(await page.evaluate(()=>JSON.stringify({history:masterHistory,setup:currentGameSetup,view:viewIndex})),gameBefore,'passive viewer leaves own game alone');
     // The Gamer-style tabs do not fetch or alter the position.
     const beforeTabs=liveCalls;
-    await dlg.getByRole('tab',{name:'Aktualisierung',exact:true}).click();
+    await dlg.getByRole('tab',{name:'Engine',exact:true}).click();
     assert.equal(await dlg.locator('#lbInterval').inputValue(),'10000');
     assert.equal(await dlg.locator('#lbMovesPanel').isVisible(),false);
     assert.equal(await dlg.locator('.lb-board').isVisible(),true);
@@ -170,7 +170,7 @@ try{
       await page.clock.fastForward(interval-1);assert.equal(liveCalls,before,'no poll before selected interval');
       await page.clock.fastForward(1);await page.waitForFunction(()=>!document.querySelector('#liveBoardView [data-lb="refresh"]').disabled);
       assert.equal(liveCalls,before+1,'one poll at selected interval');
-      assert.equal(await dlg.getByRole('tab',{name:'Aktualisierung',exact:true}).getAttribute('aria-selected'),'true');
+      assert.equal(await dlg.getByRole('tab',{name:'Engine',exact:true}).getAttribute('aria-selected'),'true');
     }
     assert.equal(await page.evaluate(()=>localStorage.getItem('hammerschachLiveInterval:test-user')),'10000');
     if(shotDir)await page.screenshot({path:path.join(shotDir,name+'-refresh-tab.png')});
