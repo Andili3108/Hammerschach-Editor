@@ -106,6 +106,7 @@ function pieceDragSquareAtPoint(container,clientX,clientY){
 }
 
 function beginPiecePointer(event,container,mode){
+  if(boardPinchZoom.isActive()) return;
   if(mode !== 'variation' && HammerschachPreferences.get('moveMethod') === 'click') return;
   if(!container || activePieceDrag || event.isPrimary === false) return;
   if(event.pointerType === 'mouse' && event.button !== 0) return;

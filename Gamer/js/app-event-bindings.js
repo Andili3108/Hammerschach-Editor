@@ -208,6 +208,7 @@ function installPieceDragInput(container,mode){
   container.addEventListener('dragstart',event => event.preventDefault());
 }
 
+const boardPinchZoom = installBoardPinchZoom([boardEl,variationBoardEl],() => cancelActivePieceDrag());
 installPieceDragInput(boardEl,'main');
 installPieceDragInput(variationBoardEl,'variation');
 document.addEventListener('pointermove',movePiecePointer,{passive:false});
