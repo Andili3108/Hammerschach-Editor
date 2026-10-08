@@ -94,7 +94,7 @@ html.dark-mode #liveBoardView .lb-notation .current{background:rgba(226,151,160,
 #liveBoardView .lb-scope-filter { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0; }
 #liveBoardView .lb-scope-filter select, #liveBoardView .lb-source-scope select { max-width:100%; min-width:0; }
 
-#liveBoardView .lb-tabs{flex-shrink:0}
+#liveBoardView .lb-tabs{flex-shrink:0;grid-template-columns:repeat(3,minmax(0,1fr))}
 #liveBoardView .lb-tabs .side-toggle-btn{min-width:0;padding-inline:8px}
 #liveBoardView .lb-refresh-panel label{display:block;font-weight:bold;margin:12px 0}
 #liveBoardView .lb-refresh-panel select{width:100%}
@@ -118,4 +118,26 @@ html.live-board-tool-active #mobileNavTestStatus{font-size:24px}
   #liveBoardView .lb-single-layout:has(.lb-board) .lb-board-column{display:contents}
   #liveBoardView .lb-single-layout:has(.lb-board) .lb-board-column > *{grid-column:1;min-width:0}
   #liveBoardView .lb-single-layout:has(.lb-board) .lb-moves-column{grid-column:2;grid-row:1 / 3}
+}
+
+/* Reader-style analysis and game details stay inside the existing side column. */
+#liveBoardView .lb-refresh-panel,#liveBoardView .lb-game-panel{min-height:0;overflow:auto}
+#liveBoardView .lb-tabs .side-toggle-btn{flex:1}
+#liveBoardView .lb-engine h4{margin:16px 0 8px}
+#liveBoardView .lb-engine-status{font-size:13px;overflow-wrap:anywhere}
+#liveBoardView .lb-engine-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#liveBoardView .lb-engine-actions label{display:flex;align-items:center;margin:4px 0;gap:5px;width:100%}
+#liveBoardView .lb-engine input[type=checkbox]{min-width:20px;min-height:20px;width:20px;height:20px;flex:none}
+#liveBoardView .lb-engine-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#liveBoardView .lb-engine-grid label{min-width:0;font-size:13px}
+#liveBoardView .lb-engine-grid input,#liveBoardView .lb-engine-grid select{min-width:0;width:100%;margin-top:5px}
+#liveBoardView .lb-engine-results{font-size:14px;line-height:1.5;margin-top:16px;overflow-wrap:anywhere}
+#liveBoardView .lb-engine-pv{padding-top:8px;border-top:1px solid var(--ui-line,#ddd)}
+#liveBoardView .lb-game-details{margin:8px 0;font-size:14px}
+#liveBoardView .lb-game-details dt{font-weight:bold;color:var(--ui-muted);margin-top:12px}
+#liveBoardView .lb-game-details dd{margin:4px 0 0;overflow-wrap:anywhere}
+#liveBoardView .lb-single .lb-pgn{margin-left:auto;order:3}
+@media(max-width:760px){
+  #liveBoardView .lb-moves-panel:has(#lbEngineTab[aria-selected="true"]),
+  #liveBoardView .lb-moves-panel:has(#lbGameTab[aria-selected="true"]){height:clamp(420px,70dvh,640px)}
 }
