@@ -1019,7 +1019,7 @@ html.dark-mode #board{
 <link rel="stylesheet" href="../css/gamer-settings.css?v=20260917-theme-3">
 <script src="../js/gamer-preferences.js?v=20260917-theme-3"></script>
 <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
-<script src="../js/board-pinch-zoom.js?v=20261008-pinch-1"></script>
+<script src="../js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
 
@@ -2684,7 +2684,8 @@ document.getElementById('btnFlip').addEventListener('click',()=>{
 });
 
 /* Klick-Logik inkl. Erfolgs-Registrierung */
-function onSquareClick(x,y){
+function onSquareClick(x,y,fromDrag=false){
+  if(!boardPinchZoom.canClick(fromDrag)) return;
   if(!currentPuzzle||isAnimatingOpponent)return;
   const p=game.at(x,y);
   if(!selected){
@@ -2861,7 +2862,7 @@ function pieceDragSquareAtPoint(container,clientX,clientY){
 }
 
 function beginPiecePointer(event){
-  if(boardPinchZoom.isActive()) return;
+  if(!boardPinchZoom.canDrag()) return;
   if(activePieceDrag||event.isPrimary===false)return;
   if(event.pointerType==='mouse'&&event.button!==0)return;
   const target=event.target instanceof Element?event.target:null;
@@ -2914,7 +2915,7 @@ function endPiecePointer(event,shouldDrop){
   event.preventDefault();
   if(!target)return;
   selected=state.from.slice();
-  onSquareClick(target[0],target[1]);
+  onSquareClick(target[0],target[1],true);
 }
 
 function suppressClickAfterPieceDrag(event){
