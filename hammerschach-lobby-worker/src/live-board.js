@@ -14,6 +14,15 @@ export function matchesPlayer(game,query){
 }
 const MAX_BYTES = 2 * 1024 * 1024;
 const RETAIN_MS = 86400000;
+// Bound the promise itself: abort alone does not settle a stalled cache/body read.
+function deadline(promise,ms,onTimeout){
+  let timer;
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{
+    reject(new Error('Zeitlimit der Live-Quelle überschritten.'));
+    try{onTimeout?.();}catch(_){}
+  },ms);});
+  return Promise.race([promise,timeout]).finally(()=>clearTimeout(timer));
+}
 
 async function cacheKey(key) {
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key));
@@ -33,21 +42,21 @@ export async function sharedLiveCache(key, ttl, load, options={}) {
   const task=(async()=>{
     const req=await cacheKey(namespaced);
     let old=memory.get(namespaced);
-    if(!old&&edge){try{const hit=await edge.match(req);if(hit)old=await hit.json();}catch(_){}}
+    if(!old&&edge){try{old=await deadline((async()=>{const hit=await edge.match(req);return hit?await hit.json():null;})(),options.cacheTimeoutMs||1500);}catch(_){}}
     if(old&&old.retryAt>now()&&(old.failed||old.value?.finished===true||now()-old.updatedAt<ttl)){
       if(old.value==null)throw new Error('Quelle vorübergehend nicht erreichbar.');
       return {value:old.value,updatedAt:old.updatedAt,stale:!!old.failed};
     }
     let entry;
     try{
-      const value=await load();
+      const value=await deadline(Promise.resolve().then(load),options.loadTimeoutMs||12000);
       const lifetime=(value.finished===true)?RETAIN_MS:ttl;
       entry={value,updatedAt:now(),retryAt:now()+lifetime,failed:false};
     }catch(error){
       entry={value:old&&now()-old.updatedAt<RETAIN_MS?old.value:null,updatedAt:old?.updatedAt||0,retryAt:now()+60000,failed:true};
     }
     remember(namespaced,entry);
-    if(edge){try{await edge.put(req,new Response(JSON.stringify(entry),{headers:{'content-type':'application/json','cache-control':'public, max-age=86400'}}));}catch(_){}}
+    if(edge){try{await deadline(edge.put(req,new Response(JSON.stringify(entry),{headers:{'content-type':'application/json','cache-control':'public, max-age=86400'}})),options.cacheTimeoutMs||1500);}catch(_){}}
     if(entry.value==null)throw new Error('Quelle vorübergehend nicht erreichbar oder unvollständig.');
     return {value:entry.value,updatedAt:entry.updatedAt,stale:entry.failed};
   })();
@@ -60,7 +69,7 @@ export async function fetchSource(url,fetcher=fetch,options={}){
   if(new URL(url).hostname!=='lichess.org')return readSource(url,fetcher,options);
   let queue=upstreamQueues.get(fetcher);
   if(!queue){queue={tail:Promise.resolve(),blockedUntil:0};upstreamQueues.set(fetcher,queue);}
-  const task=queue.tail.then(async()=>{
+  const task=deadline(queue.tail,options.queueTimeoutMs||9000).then(async()=>{
     if(Date.now()<queue.blockedUntil)throw Error('Lichess-Pause nach Abruflimit.');
     try{return await readSource(url,fetcher,options);}catch(error){if(error.rateLimited)queue.blockedUntil=Date.now()+60000;throw error;}
   });
@@ -68,21 +77,22 @@ export async function fetchSource(url,fetcher=fetch,options={}){
   return task;
 }
 async function readSource(url, fetcher, options={}) {
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),options.timeoutMs||9000);
-  try{
-    // Workers only implement follow/manual, not redirect:error. Stop at the
-    // first response and reject all 3xx below; never follow another host.
-    // No incoming headers are forwarded.
-    const response=await fetcher(url,{redirect:'manual',signal:controller.signal,headers:{accept:options.accept||'application/x-chess-pgn, application/json, text/plain'}});
-    if(response.status>=300&&response.status<400)throw new Error('Weiterleitungen der Live-Quelle sind nicht erlaubt.');
-    if(!response.ok){const error=new Error('Quelle nicht erreichbar (HTTP '+response.status+').');error.rateLimited=response.status===429;throw error;}
-    if(Number(response.headers.get('content-length'))>MAX_BYTES)throw new Error('Quelle zu groß.');
-    const reader=response.body.getReader();let bytes=0;const chunks=[];
-    while(true){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>MAX_BYTES){await reader.cancel();throw new Error('Quelle zu groß.');}chunks.push(value);}
-    const merged=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){merged.set(chunk,offset);offset+=chunk.length;}
-    return new TextDecoder().decode(merged);
-  }finally{clearTimeout(timer);}
+  const controller=new AbortController();let reader=null,response=null;
+  const cancel=()=>{controller.abort();try{const cancelled=reader?reader.cancel():response?.body?.cancel();cancelled?.catch(()=>{});}catch(_){}};
+  return deadline((async()=>{
+    try{
+      // No incoming credentials and no cross-host redirect following.
+      response=await fetcher(url,{redirect:'manual',signal:controller.signal,headers:{accept:options.accept||'application/x-chess-pgn, application/json, text/plain'}});
+      if(controller.signal.aborted){cancel();throw Error('Abruf abgebrochen.');}
+      if(response.status>=300&&response.status<400)throw new Error('Weiterleitungen der Live-Quelle sind nicht erlaubt.');
+      if(!response.ok){const error=new Error('Quelle nicht erreichbar (HTTP '+response.status+').');error.rateLimited=response.status===429;throw error;}
+      if(Number(response.headers.get('content-length'))>MAX_BYTES)throw new Error('Quelle zu groß.');
+      reader=response.body.getReader();let bytes=0;const chunks=[];
+      while(true){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>MAX_BYTES)throw new Error('Quelle zu groß.');chunks.push(value);}
+      const merged=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){merged.set(chunk,offset);offset+=chunk.length;}
+      return new TextDecoder().decode(merged);
+    }finally{cancel();}
+  })(),options.timeoutMs||9000,cancel);
 }
 
 async function eventSource(event, deps, interval=POLL_MS) {
@@ -130,7 +140,9 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
   if(!/^\/api\/live-board(?:\/|$)/.test(url.pathname))return null;
   const reply=(data,status=200)=>helpers.json(data,{status,headers:{'cache-control':'private, no-store, max-age=0','vary':'Authorization','x-content-type-options':'nosniff'}});
   // Authenticate before consulting either the catalog or any source/cache.
-  const session=await helpers.lookupAuthSession(env,helpers.bearerTokenFromRequest(request));
+  let session;
+  try{session=await deadline(helpers.lookupAuthSession(env,helpers.bearerTokenFromRequest(request)),deps.authTimeoutMs||8000);}
+  catch(_){return reply({ok:false,code:'LIVE_AUTH_UNAVAILABLE',message:'Anmeldung derzeit nicht prüfbar. Bitte erneut aktualisieren.'},503);} 
   if(!session?.user)return reply({ok:false,code:'NOT_AUTHENTICATED',message:'LIVE-BOARD ist nur für angemeldete Mitglieder verfügbar.'},401);
   const canManage=String(session.user.username||'').trim().toLowerCase()==='andili';
   const method=request.method;
@@ -181,21 +193,24 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
       return reply({ok:true,results});
     }
     if(url.pathname==='/api/live-board/events'){
-      events.push(...await savedEvents(env));
       let discoveryUnavailable=false,stale=false;
-      // Providers fail independently. One catalog refresh shares all page work
-      // across viewers; board polling never refreshes the other publishers.
-      const [lichess,publishers]=await Promise.allSettled([
-        env.LIVE_BOARD_DISCOVERY==='0'?Promise.resolve(null):discoverBroadcasts(cached,read),
-        discoverPageEvents(env,cached,readPage)
+      // All three sources settle independently; a stalled provider must not
+      // hide successful Lichess, publisher or saved-event results.
+      const budget=deps.discoveryTimeoutMs||12000;
+      const [saved,lichess,publishers]=await Promise.allSettled([
+        deadline(savedEvents(env),deps.savedTimeoutMs||4000),
+        deadline(env.LIVE_BOARD_DISCOVERY==='0'?Promise.resolve(null):discoverBroadcasts(cached,read),budget),
+        deadline(discoverPageEvents(env,cached,readPage),budget)
       ]);
+      const savedUnavailable=saved.status==='rejected';
+      if(!savedUnavailable)events.push(...saved.value);
       if(lichess.status==='fulfilled'&&lichess.value){events.push(...lichess.value.value.events);stale ||= lichess.value.stale;}
       else if(lichess.status==='rejected')discoveryUnavailable=true;
       let publisherUnavailable=false;
       if(publishers.status==='fulfilled'){events.push(...publishers.value.events);stale ||= publishers.value.stale;publisherUnavailable=publishers.value.unavailable>0;}
       else publisherUnavailable=true;
       const category=url.searchParams.get('category');
-      return reply({ok:true,events:orderedEvents(events).filter(e=>!category||e.category===category).map(publicEvent),stale,discoveryUnavailable,publisherUnavailable});
+      return reply({ok:true,events:orderedEvents(events).filter(e=>!category||e.category===category).map(publicEvent),stale,discoveryUnavailable,publisherUnavailable,savedUnavailable});
     }
     const match=url.pathname.match(/^\/api\/live-board\/events\/([A-Za-z0-9_-]+)\/boards$/);
     if(!match)return reply({ok:false,message:'Endpunkt nicht gefunden.'},404);
