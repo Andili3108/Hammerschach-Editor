@@ -37,7 +37,7 @@ const HammerschachLiveBoard = (() => {
   function setBusy(busy){sourceForm.querySelector('button').disabled=busy;button('remove').disabled=busy;button('refresh').disabled=busy;button('refresh').textContent='Aktualisieren';dialog.setAttribute('aria-busy',String(busy));}
   function stop(){pauseClock();clearTimeout(state.timer);state.timer=null;state.generation++;if(state.playerSearch?.running){state.playerSearch.running=false;state.playerSearch.interrupted=true;}state.controller?.abort();state.controller=null;setBusy(false);}
   function schedule(delay){clearTimeout(state.timer);state.delay=delay;if(delay&&visible())state.timer=setTimeout(load,delay);}
-  function clearPosition(){pauseClock();liveClock.reset();state.data=null;state.ply=null;replays.clear();content.replaceChildren();}
+  function clearPosition(){LiveBoardEngine.reset();pauseClock();liveClock.reset();state.data=null;state.ply=null;replays.clear();content.replaceChildren();}
   function pauseClock(){clearTimeout(clockTimer);clockTimer=null;liveClock.pause(Date.now());}
   function paintClock(){
     const values=liveClock.read(Date.now());
@@ -183,7 +183,7 @@ const HammerschachLiveBoard = (() => {
   function singleCard(g){
     const el=node('article','lb-single-layout');
     const boardColumn=node('div','lb-board-column');
-    const movesColumn=node('aside','lb-moves-column');movesColumn.setAttribute('aria-label','Zugliste');
+    const movesColumn=node('aside','lb-moves-column');movesColumn.setAttribute('aria-label','Brettinformationen');
     const panel=node('div','side-panel box lb-moves-panel');
     const movesPanel=node('div','side-content moves-panel');
     const title=node('div','moves-title');
@@ -209,7 +209,9 @@ const HammerschachLiveBoard = (() => {
       for(const [symbol,label,target,disabled] of [['«','Startstellung',0,ply===0],['‹','Voriger Zug',ply-1,ply===0],['›','Nächster Zug',ply+1,ply===positions.length-1],['»','Aktueller Stand',null,false]]){
         const b=action(symbol,()=>at(target));b.classList.add('gamer-board-nav-btn');b.setAttribute('aria-label',label);b.title=label;b.disabled=disabled;nav.append(b);
       }
-      const flip=action('↻',()=>{state.flipped=!state.flipped;render(state.data);});flip.classList.add('icon-btn');flip.setAttribute('aria-label','Brett drehen');flip.title='Brett drehen';controls.append(nav,flip);boardColumn.append(controls);
+      const flip=action('↻',()=>{state.flipped=!state.flipped;render(state.data);});flip.classList.add('icon-btn');flip.setAttribute('aria-label','Brett drehen');flip.title='Brett drehen';controls.append(nav,flip);
+      if(LiveBoardPgn.finished(g)){const pgn=action('PGN',()=>LiveBoardPgn.download(g,state.event));pgn.classList.add('lb-pgn');pgn.title='Vollständige beendete Partie herunterladen';controls.append(pgn);}
+      boardColumn.append(controls);
       title.querySelector('.lb-moves-position').textContent=`${ply} / ${positions.length-1}`;
       const notation=node('div','lb-notation variation-moves');notation.setAttribute('aria-label','Zugfolge');
       g.moves.forEach((san,i)=>{
@@ -222,21 +224,30 @@ const HammerschachLiveBoard = (() => {
       if(!g.moves.length)notation.append(node('p','variation-moves-empty','Noch keine Züge.'));
       if(g.finished)notation.append(node('div','move-cell move-result',g.result));
       movesPanel.append(title,notation);const tabs=node('div','side-toggle-row lb-tabs');tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Brettinformationen');
-      const settings=node('div','side-content lb-refresh-panel');settings.id='lbRefreshPanel';settings.setAttribute('role','tabpanel');settings.setAttribute('aria-labelledby','lbRefreshTab');
+      const settings=node('div','side-content lb-refresh-panel');settings.id='lbEnginePanel';settings.setAttribute('role','tabpanel');settings.setAttribute('aria-labelledby','lbEngineTab');
       movesPanel.id='lbMovesPanel';movesPanel.setAttribute('role','tabpanel');movesPanel.setAttribute('aria-labelledby','lbMovesTab');
       const label=node('label','','Aktualisierung');label.htmlFor='lbInterval';const select=node('select','');select.id='lbInterval';
       for(const n of [5000,10000,15000,30000]){const option=node('option','',`${n/1000} Sekunden`);option.value=String(n);select.append(option);}select.value=String(state.interval);
       select.addEventListener('change',()=>changeInterval(select.value));
       settings.append(label,select);
-      const updateTabs=()=>{movesPanel.hidden=state.tab!=='moves';settings.hidden=state.tab!=='refresh';for(const b of tabs.children){const selected=b.dataset.tab===state.tab;b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;}};
-      for(const [key,text,id,target] of [['moves','Zugliste','lbMovesTab','lbMovesPanel'],['refresh','Aktualisierung','lbRefreshTab','lbRefreshPanel']]){
+      const engine=node('div','lb-engine');settings.append(engine);LiveBoardEngine.mount(engine);
+      LiveBoardEngine.setPosition(state.event.id+':'+g.id,positions[ply].fen);
+      const gamePanel=node('div','side-content lb-game-panel');gamePanel.id='lbGamePanel';gamePanel.setAttribute('role','tabpanel');gamePanel.setAttribute('aria-labelledby','lbGameTab');
+      const tags=LiveBoardPgn.headers(g,state.event),details=node('dl','lb-game-details');
+      for(const [key,label] of [['Event','Veranstaltung'],['Site','Ort'],['Date','Datum'],['Round','Runde'],['Board','Brett'],['White','Weiß'],['Black','Schwarz'],['Result','Ergebnis'],['WhiteElo','Elo Weiß'],['BlackElo','Elo Schwarz'],['WhiteTitle','Titel Weiß'],['BlackTitle','Titel Schwarz'],['WhiteTeam','Team Weiß'],['BlackTeam','Team Schwarz'],['ECO','ECO'],['Opening','Eröffnung'],['TimeControl','Bedenkzeit']]){
+        const value=tags[key];if(!value&&['WhiteTitle','BlackTitle','WhiteTeam','BlackTeam','Opening','TimeControl'].includes(key))continue;
+        details.append(node('dt','',label),node('dd','',key==='Result'&&value==='*'?'Laufend / offen':!value||/^[?.]+$/.test(value)?'Nicht übermittelt':value));
+      }gamePanel.append(details);
+      const tabKeys=['moves','engine','game'];
+      const updateTabs=()=>{movesPanel.hidden=state.tab!=='moves';settings.hidden=state.tab!=='engine';gamePanel.hidden=state.tab!=='game';for(const b of tabs.children){const selected=b.dataset.tab===state.tab;b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;}};
+      for(const [key,text,id,target] of [['moves','Zugliste','lbMovesTab','lbMovesPanel'],['engine','Engine','lbEngineTab','lbEnginePanel'],['game','Partie','lbGameTab','lbGamePanel']]){
         const b=action(text,()=>{state.tab=key;updateTabs();});b.className='side-toggle-btn';b.id=id;b.dataset.tab=key;b.setAttribute('role','tab');b.setAttribute('aria-controls',target);tabs.append(b);
-        b.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();state.tab=event.key==='Home'?'moves':event.key==='End'?'refresh':state.tab==='moves'?'refresh':'moves';updateTabs();tabs.querySelector('[aria-selected="true"]').focus();}});
+        b.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();state.tab=event.key==='Home'?'moves':event.key==='End'?'game':tabKeys[(tabKeys.indexOf(state.tab)+(event.key==='ArrowLeft'?2:1))%3];updateTabs();tabs.querySelector('[aria-selected="true"]').focus();}});
       }
-      updateTabs();panel.append(heading,tabs,movesPanel,settings);movesColumn.append(panel);el.append(boardColumn,movesColumn);
+      updateTabs();panel.append(heading,tabs,movesPanel,settings,gamePanel);movesColumn.append(panel);el.append(boardColumn,movesColumn);
       // Scroll only the notation pane; never move the whole page while polling.
       requestAnimationFrame(()=>{if(!notation.isConnected)return;const current=notation.querySelector('[aria-current]');if(!current)return;const a=current.getBoundingClientRect(),b=notation.getBoundingClientRect();if(a.bottom>b.bottom)notation.scrollTop+=a.bottom-b.bottom;else if(a.top<b.top)notation.scrollTop+=a.top-b.top;});
-    }catch(error){boardColumn.append(strip(top,''),node('p','lb-error',error.message),strip(bottom,''));el.append(boardColumn);}
+    }catch(error){LiveBoardEngine.reset();boardColumn.append(strip(top,''),node('p','lb-error',error.message),strip(bottom,''));el.append(boardColumn);}
     if(g.stale)boardColumn.append(node('p','lb-error','Übertragung verzögert.'));
     return el;
   }
@@ -275,7 +286,7 @@ const HammerschachLiveBoard = (() => {
     content.replaceChildren(...children);
     if(notationScroll!==undefined&&content.querySelector('.lb-notation'))content.querySelector('.lb-notation').scrollTop=notationScroll;
     paintClock();
-    if(['lbInterval','lbMovesTab','lbRefreshTab'].includes(focusId))document.getElementById(focusId)?.focus({preventScroll:true});
+    if(focusId==='lbInterval'||focusId.startsWith('lbEngine')||['lbMovesTab','lbGameTab'].includes(focusId))document.getElementById(focusId)?.focus({preventScroll:true});
     pages.hidden=!!state.board||data.pages<=1;pages.querySelector('span').textContent=`Seite ${data.page} / ${data.pages} · ${data.total} Bretter`;
     button('prev').disabled=data.page<=1;button('next').disabled=data.page>=data.pages;
     if(window.scrollX!==scrollX||window.scrollY!==scrollY)window.scrollTo({left:scrollX,top:scrollY,behavior:'instant'});
@@ -328,7 +339,7 @@ const HammerschachLiveBoard = (() => {
     dialog.querySelector('.lb-header').hidden=true;
     dialog.querySelector('h2').textContent=category==='club'?'Vereinsschach':'Turnierschach';
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;
-    closeClubChessMenu();dialog.hidden=false;navigate();
+    closeClubChessMenu();dialog.hidden=false;LiveBoardEngine.resume();navigate();
     requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));
   }
   button('refresh').addEventListener('click',()=>{if(!state.controller)navigate(true);});
@@ -370,8 +381,13 @@ const HammerschachLiveBoard = (() => {
     if(button('remove').textContent!=='Wirklich entfernen?'){button('remove').textContent='Wirklich entfernen?';return;}
     changeSource('/api/live-board/sources/'+state.event.id,{method:'DELETE'});
   });
-  function resume(){if(visible()&&!state.event&&state.playerSearch&&!state.playerSearch.running)renderPlayerResults();if(visible()&&state.delay&&!state.controller){const remaining=Math.max(0,state.lastAt+state.delay-Date.now());if(remaining)schedule(remaining);else load();}}
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else resume();});
+  function resume(){if(visible())LiveBoardEngine.resume();if(visible()&&!state.event&&state.playerSearch&&!state.playerSearch.running)renderPlayerResults();if(visible()&&state.delay&&!state.controller){const remaining=Math.max(0,state.lastAt+state.delay-Date.now());if(remaining)schedule(remaining);else load();}}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();LiveBoardEngine.suspend();}else resume();});
+  dialog.addEventListener('keydown',event=>{
+    if(!state.board||!state.data?.games[0]||event.target.closest('input,select,textarea,[role="tab"]')||event.altKey||event.ctrlKey||event.metaKey)return;
+    const labels={ArrowLeft:'Voriger Zug',ArrowRight:'Nächster Zug',Home:'Startstellung',End:'Aktueller Stand'};
+    if(labels[event.key]){event.preventDefault();dialog.querySelector(`.lb-replay button[aria-label="${labels[event.key]}"]`)?.click();}
+  });
   window.addEventListener('offline',()=>{stop();if(!dialog.hidden)status.textContent='Offline – Live-Aktualisierung pausiert.';});
   window.addEventListener('online',resume);window.addEventListener('focus',resume);
   document.querySelectorAll('[data-live-board-category]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.liveBoardCategory)));

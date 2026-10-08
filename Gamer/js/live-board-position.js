@@ -1,6 +1,6 @@
 'use strict';
 // Reuse Gamer's rule engine with a separate instance. Never touch game/history,
-// online rooms, input handlers, clocks, move submission or analysis engines.
+// online rooms, input handlers, clocks or move submission.
 const LiveBoardPosition = (() => {
   function start(fen, variant){
     if(!['','standard','chess','normal'].includes(String(variant||'').toLowerCase()))throw new Error('Diese Schachvariante wird in Phase 1 noch nicht dargestellt.');
@@ -35,18 +35,38 @@ const LiveBoardPosition = (() => {
     if(promotion!==!!m[6])return null;
     if(m[6])move.promotion=m[6];return move;
   }
+  function fen(game){
+    const board=game.board.map(row=>{let out='',empty=0;for(const p of row){if(p==='.')empty++;else{if(empty)out+=empty;empty=0;out+=p;}}return out+(empty||'');}).join('/');
+    const rights=['K','Q','k','q'].filter(k=>game.castling[k]).join('')||'-';
+    return `${board} ${game.turn} ${rights} ${game.ep?coordToAlg(...game.ep):'-'} ${game.halfmove} ${game.fullmove}`;
+  }
+  function snapshot(game,last=null){return {board:clone(game.board),turn:game.turn,last,fen:fen(game)};}
+  function variation(fenValue,moves){
+    const game=start(fenValue,'Standard'),out=[];
+    for(const token of moves.slice(0,16)){
+      if(!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(token))break;
+      const from=[token.charCodeAt(0)-97,8-Number(token[1])],to=[token.charCodeAt(2)-97,8-Number(token[3])];
+      const move=game.legalMoves().find(m=>m.from[0]===from[0]&&m.from[1]===from[1]&&m.to[0]===to[0]&&m.to[1]===to[1]);
+      if(!move)break;
+      const chosen={...move,promotion:token[4]?.toUpperCase()||null},before=game.clone();
+      const number=game.fullmove,turn=game.turn;const applied=game.makeMove(chosen,true);chosen.taken=applied.taken;
+      const san=moveToSan(before,chosen,game);
+      out.push((turn==='w'?number+'. ':out.length===0?number+'... ':'')+san);
+    }
+    return out.join(' ');
+  }
   function replay(data){
     if(data.error||!Array.isArray(data.moves))throw new Error(data.error||'Brettdaten fehlen.');
     const game=start(data.fen,data.variant);
-    const positions=[{board:clone(game.board),turn:game.turn,last:null}];
+    const positions=[snapshot(game)];
     const firstNumber=game.fullmove,firstTurn=game.turn;
     for(const san of data.moves){
       const move=sanMove(game,san);
       if(!move)throw new Error('Unvollständige oder ungültige Zugfolge. Die nächste Aktualisierung wird abgewartet.');
       game.makeMove(move,true);
-      positions.push({board:clone(game.board),turn:game.turn,last:[move.from,move.to]});
+      positions.push(snapshot(game,[move.from,move.to]));
     }
     return {positions,firstNumber,firstTurn};
   }
-  return {replay};
+  return {replay,variation};
 })();
