@@ -835,7 +835,8 @@ if(tournamentReportToolFrame)tournamentReportToolFrame.addEventListener('load',(
   postTournamentReportToolContext();
   postTournamentReportToolMessage({type:'hammerschach-tournament-report-visibility',visible:tournamentReportToolActive});
 });
-[newGameBtn,createOnlineBtn,newGameMenuBtn,gamesMenuBtn,membersOpenBtn,profileOpenBtn,privateMessagesOpenBtn,dailyGamesOpenBtn,openOffersOpenBtn,tournamentsOpenBtn,publicGamesOpenBtn,gameArchiveOpenBtn,authOpenBtn,firstStepsOpenBtn,infoGuideOpenBtn,leitbildOpenBtn].forEach(button=>{
+// Opening the Partien menu or Meine Partien dialog preserves the current tool.
+[newGameBtn,createOnlineBtn,newGameMenuBtn,membersOpenBtn,profileOpenBtn,privateMessagesOpenBtn,openOffersOpenBtn,tournamentsOpenBtn,publicGamesOpenBtn,gameArchiveOpenBtn,authOpenBtn,firstStepsOpenBtn,infoGuideOpenBtn,leitbildOpenBtn].forEach(button=>{
   if(button)button.addEventListener('click',closeEmbeddedTools,{capture:true});
 });
 window.addEventListener('message',async event=>{
