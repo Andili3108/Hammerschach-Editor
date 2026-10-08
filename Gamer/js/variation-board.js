@@ -291,7 +291,8 @@ function commitVariationMove(found, promotion){
   renderVariationBoard();
   if(variationPurpose === 'conditional' && typeof updateConditionalMoveEditorUi === 'function') updateConditionalMoveEditorUi();
 }
-function onVariationSquareClick(x,y){
+function onVariationSquareClick(x,y,fromDrag=false){
+  if(!boardPinchZoom.canClick(fromDrag)) return;
   if(!variationGame || variationGame.gameOver()) return;
   if(variationPurpose === 'conditional' && variationHistory.length >= CONDITIONAL_MOVE_MAX_PLIES) return;
   const piece = variationGame.at(x,y);

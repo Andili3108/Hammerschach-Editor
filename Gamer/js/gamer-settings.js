@@ -36,8 +36,8 @@
  const markings=section('appearance','Brettanzeigen');
  appearance.classList.add('settings-surface');board.classList.add('settings-board');markings.classList.add('settings-markings');
  toggle(markings,'coordinates','Koordinaten anzeigen');toggle(markings,'lastMove','Letzten Zug markieren');toggle(markings,'legalMoves','Mögliche Zielfelder anzeigen');toggle(markings,'reducedMotion','Animationen reduzieren');
- const input=section('play','Züge eingeben','Für das Hauptspielbrett. Trainingsbretter behalten ihre eigene Zugeingabe.');
- select(input,'moveMethod','Figuren bewegen',[['both','Klicken und Ziehen'],['click','Nur Klicken'],['drag','Nur Ziehen']]);
+ const input=section('play','Züge eingeben','Gilt für Haupt- und Variantenbrett, Analyzer, Trainer und Eröffnungsschule.');
+ select(input,'moveMethod','Figuren bewegen',[['click','Antippen · Scrollen auf dem Brett'],['drag','Direktes Ziehen'],['both','Antippen und Ziehen']], 'Antippen: Start- und Zielfeld antippen; Wischen auf dem Brett scrollt. Bei beiden Optionen mit Ziehen scrollst du außerhalb des Bretts. Zwei-Finger-Zoom bleibt immer möglich. Reader und Player bleiben scrollbar.');
  const daily=section('play','Daily-Partien');
  toggle(daily,'confirmDaily','Zug vor dem Absenden bestätigen','Ohne Bestätigung entfällt die Zugvorschau mit der daran gebundenen Remisaktion. Eine bereits offene Vorschau bleibt bestehen.');
  select(daily,'dailyNext','Nach einem bestätigten Zug',[['manual','Bei dieser Partie bleiben'],['auto','Zur nächsten fälligen Partie']],'Wechselt nach erfolgreichem Senden. Ohne fällige Partie bleibst du hier.');

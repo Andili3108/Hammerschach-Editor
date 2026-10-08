@@ -4,6 +4,20 @@ window.installBoardPinchZoom = function(containers,cancelDrag){
   const boards = containers.filter(Boolean);
   let pinching = false;
   let suppressClickUntil = 0;
+  let moveMethod;
+  function applyMoveMethod(){
+    const next = window.HammerschachPreferences.get('moveMethod');
+    if(next === moveMethod) return;
+    if(moveMethod !== undefined){
+      cancelDrag();
+      suppressClickUntil = Date.now() + 500;
+    }
+    moveMethod = next;
+    // Decide before the gesture starts: tap mode scrolls, drag mode moves pieces.
+    boards.forEach(board => { board.style.touchAction = next === 'click' ? 'manipulation' : 'pinch-zoom'; });
+  }
+  window.addEventListener('hammerschach:preferences',applyMoveMethod);
+  applyMoveMethod();
 
   function observeTouches(event){
     if(event.touches.length > 1){
@@ -31,5 +45,9 @@ window.installBoardPinchZoom = function(containers,cancelDrag){
     pinching = false;
     cancelDrag();
   });
-  return {isActive:() => pinching};
+  return {
+    isActive:() => pinching,
+    canDrag:() => !pinching && moveMethod !== 'click',
+    canClick:(fromDrag=false) => !pinching && (fromDrag || moveMethod !== 'drag')
+  };
 };
