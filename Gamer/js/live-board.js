@@ -296,7 +296,7 @@ const HammerschachLiveBoard = (() => {
     if(!visible()||state.controller){if(!dialog.hidden&&navigator.onLine===false)status.textContent='Offline – Aktualisieren ist erst mit Internetverbindung möglich.';return;}
     const generation=++state.generation,token=onlineAuthToken;
     const controller=new AbortController();state.controller=controller;
-    let timedOut=false;const timeout=setTimeout(()=>{timedOut=true;controller.abort();},45000);let startPlayerSearch=false;
+    let timedOut=false;const timeout=setTimeout(()=>{timedOut=true;controller.abort();},state.event?45000:25000);let startPlayerSearch=false;
     setBusy(true);
     if(!state.data)status.textContent=state.event?'Brettdaten werden geladen …':'Veranstaltungen werden geprüft …';
     try{
@@ -308,7 +308,7 @@ const HammerschachLiveBoard = (() => {
       state.lastAt=Date.now();state.failures=0;
       if(!state.event){
         state.events=data.events;state.playerSearch=null;catalog();
-        state.catalogNotice=data.discoveryUnavailable&&data.publisherUnavailable?'Veranstaltungssuche derzeit nicht erreichbar.':data.discoveryUnavailable?'Lichess-Suche derzeit nicht erreichbar.':data.publisherUnavailable?'Einige Vereins- oder Verbandsseiten sind derzeit nicht erreichbar.':data.stale?'Veranstaltungsliste verzögert.':'';
+        state.catalogNotice=[data.discoveryUnavailable?'Lichess-Suche derzeit nicht erreichbar.':'',data.publisherUnavailable?'Einige Vereins- oder Verbandsseiten sind derzeit nicht erreichbar.':'',data.savedUnavailable?'Gespeicherte Übertragungen derzeit nicht erreichbar.':'',data.stale?'Veranstaltungsliste verzögert.':''].filter(Boolean).join(' ');
         status.textContent=state.catalogNotice||(manual?'Aktualisiert.':'');
         schedule(0);
         if(state.filters.player){startPlayerSearch=true;state.playerSearch={query:state.filters.player,events:filteredEvents(),results:[],offset:0,running:false};catalog();}
@@ -322,6 +322,13 @@ const HammerschachLiveBoard = (() => {
     }catch(error){
       if(generation!==state.generation)return;
       if(['NOT_AUTHENTICATED','LIVE_BOARD_RESTRICTED'].includes(error.data?.code)){stop();clearPosition();state.events=[];state.event=null;searchPanel.hidden=true;pages.hidden=true;catalogTools.hidden=true;catalogPages.hidden=true;roundControl.hidden=true;button('remove').hidden=true;button('back').hidden=true;status.textContent=error.data?.code==='LIVE_BOARD_RESTRICTED'?'LIVE-BOARD ist für diese Anmeldung nicht verfügbar.':'Die Anmeldung ist abgelaufen. Bitte erneut anmelden.';state.delay=0;}
+      else if(!state.event){
+        // Catalog requests are user-driven. Keep filters/results usable and do
+        // not restart a failed search from timers, focus or visibility events.
+        schedule(0);state.playerSearch=null;catalog();
+        state.catalogNotice=(timedOut?'Die Veranstaltungssuche hat zu lange gedauert.':error.message)+' Bitte mit „Aktualisieren“ erneut versuchen.';
+        status.textContent=state.catalogNotice;
+      }
       else{pauseClock();paintClock();status.textContent=(state.data?'Der letzte angezeigte Stand bleibt erhalten. ':'')+(timedOut?'Die Aktualisierung hat zu lange gedauert. Ein neuer Versuch folgt automatisch.':error.message);schedule(Math.min(240000,60000*2**state.failures++));}
     }finally{
       clearTimeout(timeout);
