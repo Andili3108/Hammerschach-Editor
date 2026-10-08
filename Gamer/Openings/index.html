@@ -377,7 +377,7 @@
 <link rel="stylesheet" href="../css/gamer-settings.css?v=20260917-theme-3">
 <script src="../js/gamer-preferences.js?v=20260917-theme-3"></script>
 <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
-<script src="../js/board-pinch-zoom.js?v=20261008-pinch-1"></script>
+<script src="../js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
   <main class="openings-app">
@@ -737,8 +737,9 @@
       selected=[x,y];hintMove=null;renderBoard();const refreshed=currentGame(practicePly);refreshed.legalMoves().filter(move=>move.from[0]===x&&move.from[1]===y).forEach(move=>{const target=boardEl.querySelector('.square[data-x="'+move.to[0]+'"][data-y="'+move.to[1]+'"]');if(target)target.classList.add('legal-target')});
     }
     function sameMove(a,b){return!!a&&!!b&&a.from[0]===b.from[0]&&a.from[1]===b.from[1]&&a.to[0]===b.to[0]&&a.to[1]===b.to[1]&&String(a.promotion||'Q')===String(b.promotion||'Q')}
-    function onSquareClick(x,y){
-      if(Date.now()<suppressClickUntil||!practiceActive||!current)return;const game=currentGame(practicePly),piece=game.at(x,y);
+    function onSquareClick(x,y,fromDrag=false){
+      if(!boardPinchZoom.canClick(fromDrag)) return;
+      if((!fromDrag&&Date.now()<suppressClickUntil)||!practiceActive||!current)return;const game=currentGame(practicePly),piece=game.at(x,y);
       if(!selected){selectSquare(x,y);return}
       if(selected[0]===x&&selected[1]===y){selected=null;renderBoard();return}
       const chosen=game.legalMoves().find(move=>move.from[0]===selected[0]&&move.from[1]===selected[1]&&move.to[0]===x&&move.to[1]===y);
@@ -836,7 +837,7 @@
     const boardPinchZoom=installBoardPinchZoom([boardEl],cancelBoardDrag);
 
     function beginDrag(event){
-      if(boardPinchZoom.isActive())return;
+      if(!boardPinchZoom.canDrag())return;
       if(activeDrag||event.isPrimary===false||(event.pointerType==='mouse'&&event.button!==0)||!practiceActive)return;const square=event.target.closest&&event.target.closest('.square');if(!square||!boardEl.contains(square))return;
       const x=Number(square.dataset.x),y=Number(square.dataset.y),game=currentGame(practicePly),piece=game.at(x,y),img=square.querySelector('.piece-img');if(!img||piece==='.'||pieceColor(piece)!==game.turn||!userControls(game.turn))return;
       activeDrag={pointerId:event.pointerId,pointerType:event.pointerType||'mouse',startX:event.clientX,startY:event.clientY,from:[x,y],img,ghost:null,dragging:false};
@@ -849,7 +850,7 @@
     }
     function endDrag(event,drop){
       const state=activeDrag;if(!state||state.pointerId!==event.pointerId)return;let target=null;if(state.dragging&&drop){for(const square of boardEl.querySelectorAll('.square')){const rect=square.getBoundingClientRect();if(event.clientX>=rect.left&&event.clientX<rect.right&&event.clientY>=rect.top&&event.clientY<rect.bottom){target=[Number(square.dataset.x),Number(square.dataset.y)];break}}}
-      if(state.ghost)state.ghost.remove();state.img.classList.remove('piece-drag-source');activeDrag=null;if(!state.dragging)return;suppressClickUntil=Date.now()+500;event.preventDefault();if(target){selected=state.from.slice();onSquareClick(target[0],target[1])}
+      if(state.ghost)state.ghost.remove();state.img.classList.remove('piece-drag-source');activeDrag=null;if(!state.dragging)return;suppressClickUntil=Date.now()+500;event.preventDefault();if(target){selected=state.from.slice();onSquareClick(target[0],target[1],true)}
     }
 
     document.querySelectorAll('.mode-btn').forEach(button=>button.addEventListener('click',()=>setMode(button.dataset.mode)));
