@@ -14,7 +14,8 @@
   if(!owned){owned=true;document.documentElement.classList.add('central-settings');
    for(const id of ['boardThemeBtn','pieceSetBtn']){const b=document.getElementById(id);if(b)b.closest('.appearance-control,.appearance-menu,.board-color-wrap')?.classList.add('settings-migrated-control');}
   }
-  P.replace(e.data.preferences,false);
+  // The verified parent is on this device; include its local input choice.
+  P.replace(e.data.preferences,false,true);
  });
  window.addEventListener('hammerschach:preferences',apply);
  if(window.parent!==window)window.parent.postMessage({type:'hammerschach-preferences-ready'},location.origin==='null'?'*':location.origin);

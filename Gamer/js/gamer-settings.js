@@ -37,7 +37,7 @@
  appearance.classList.add('settings-surface');board.classList.add('settings-board');markings.classList.add('settings-markings');
  toggle(markings,'coordinates','Koordinaten anzeigen');toggle(markings,'lastMove','Letzten Zug markieren');toggle(markings,'legalMoves','Mögliche Zielfelder anzeigen');toggle(markings,'reducedMotion','Animationen reduzieren');
  const input=section('play','Züge eingeben','Gilt für Haupt- und Variantenbrett, Analyzer, Trainer und Eröffnungsschule.');
- select(input,'moveMethod','Figuren bewegen',[['click','Antippen · Scrollen auf dem Brett'],['drag','Direktes Ziehen'],['both','Antippen und Ziehen']], 'Antippen: Start- und Zielfeld antippen; Wischen auf dem Brett scrollt. Bei beiden Optionen mit Ziehen scrollst du außerhalb des Bretts. Zwei-Finger-Zoom bleibt immer möglich. Reader und Player bleiben scrollbar.');
+ select(input,'moveMethod','Figuren bewegen · dieses Gerät',[['click','Antippen · Scrollen auf dem Brett'],['drag','Direktes Ziehen'],['both','Antippen und Ziehen']], 'Nur in diesem Browser bzw. dieser App gespeichert, auch bei Anmeldung. Antippen: Start- und Zielfeld antippen; Wischen auf dem Brett scrollt. Bei beiden Optionen mit Ziehen scrollst du außerhalb des Bretts. Zwei-Finger-Zoom bleibt immer möglich. Reader und Player bleiben scrollbar.');
  const daily=section('play','Daily-Partien');
  toggle(daily,'confirmDaily','Zug vor dem Absenden bestätigen','Ohne Bestätigung entfällt die Zugvorschau mit der daran gebundenen Remisaktion. Eine bereits offene Vorschau bleibt bestehen.');
  select(daily,'dailyNext','Nach einem bestätigten Zug',[['manual','Bei dieser Partie bleiben'],['auto','Zur nächsten fälligen Partie']],'Wechselt nach erfolgreichem Senden. Ohne fällige Partie bleibst du hier.');
@@ -70,25 +70,27 @@
  window.addEventListener('storage',e=>{const map={hammerschachGamerSoundEnabled:'sound',hammerschachBoardColor:'board',hammerschachPieceSet:'pieces'};const name=map[e.key];if(!name||!e.newValue)return;const value=name==='sound'?e.newValue!=='off':e.newValue;if(P.get(name)!==value)P.set(name,value);});
  window.addEventListener('message',e=>{if(e.origin!==location.origin||!Array.from(document.querySelectorAll('iframe')).some(f=>f.contentWindow===e.source))return;if(e.data?.type==='hammerschach-preferences-ready')broadcast();if(e.data?.type==='hammerschach-open-settings')window.HammerschachSettings.open();});
  document.querySelectorAll('iframe').forEach(f=>f.addEventListener('load',broadcast));
+ // Keep device-only input preferences out of account caches and uploads.
+ function accountPreferences(value){const result={...value};delete result.moveMethod;return result;}
  // Per-account cache and serialized PATCH writes prevent cross-account leakage and lost field edits.
  let account='',generation=0,loading=false,saving=false,dirty={},inFlight={},timer;
- let initialDevicePreferences=P.snapshot();
+ let initialDevicePreferences=accountPreferences(P.snapshot());
  try{const owner=localStorage.getItem('hammerschach.preferences.owner');if(owner&&owner!==String(onlineAuthUser?.id||''))initialDevicePreferences={...P.defaults};}catch(_){}
  let firstAccount=true;
  const cacheKey=id=>'hammerschach.preferences.account.'+id;
- function cache(){try{localStorage.setItem(cacheKey(account),JSON.stringify({preferences:P.snapshot(),pending:{...inFlight,...dirty}}));}catch(_){}}
+ function cache(){try{localStorage.setItem(cacheKey(account),JSON.stringify({preferences:accountPreferences(P.snapshot()),pending:accountPreferences({...inFlight,...dirty})}));}catch(_){}}
  function say(text,error=false){status.textContent=text;retry.hidden=!error;}
  async function syncAccount(force=false){const next=String(onlineAuthUser?.id||'');if(next===account&&!force)return;account=next;try{localStorage.setItem('hammerschach.preferences.owner',account);}catch(_){}const ticket=++generation;dirty={};inFlight={};loading=false;saving=false;clearTimeout(timer);if(!account){P.replace(P.defaults);say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}
  loading=true;
  let migration=firstAccount?initialDevicePreferences:P.defaults;firstAccount=false;
- try{const raw=JSON.parse(localStorage.getItem(cacheKey(account))||'null');migration=raw?.preferences||migration;P.replace(migration);dirty=raw?.pending||{};}catch(_){P.replace(P.defaults);}
+ try{const raw=JSON.parse(localStorage.getItem(cacheKey(account))||'null');migration=raw?.preferences||migration;P.replace(migration);dirty=accountPreferences(raw?.pending||{});}catch(_){P.replace(P.defaults);}
  say('Kontoeinstellungen werden geladen …');
- try{const data=await authApi('/api/account/preferences');if(ticket!==generation)return;if(!Object.keys(data.preferences||{}).length)dirty={...migration,...dirty};P.replace({...P.defaults,...data.preferences,...dirty});cache();say('Mit deinem Mitgliedskonto synchronisiert.');}
+ try{const data=await authApi('/api/account/preferences');if(ticket!==generation)return;if(!Object.keys(data.preferences||{}).length)dirty=accountPreferences({...migration,...dirty});P.replace({...P.defaults,...data.preferences,...dirty});cache();say('Mit deinem Mitgliedskonto synchronisiert.');}
  catch(_){if(ticket!==generation)return;say('Lokal verfügbar. Kontosynchronisierung derzeit nicht erreichbar.',true);}
  finally{if(ticket===generation){loading=false;if(Object.keys(dirty).length)save();}}
  }
- async function save(){if(!account||loading||saving||!Object.keys(dirty).length)return;const ticket=generation;const batch={...dirty};dirty={};inFlight=batch;saving=true;cache();say('Wird im Mitgliedskonto gespeichert …');try{await authApi('/api/account/preferences',{method:'POST',body:JSON.stringify({preferences:batch})});if(ticket!==generation)return;inFlight={};cache();say('Im Mitgliedskonto gespeichert.');}catch(_){if(ticket!==generation)return;dirty={...batch,...dirty};inFlight={};cache();say('Auf diesem Gerät gespeichert. Kontospeicherung fehlgeschlagen; bitte erneut versuchen.',true);return;}finally{if(ticket===generation){saving=false;inFlight={};}}if(Object.keys(dirty).length)save();}
- window.addEventListener('hammerschach:preferences-edit',e=>{if(!account){say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}dirty[e.detail.name]=e.detail.value;cache();clearTimeout(timer);timer=setTimeout(save,350);});
+ async function save(){dirty=accountPreferences(dirty);if(!account||loading||saving||!Object.keys(dirty).length)return;const ticket=generation;const batch={...dirty};dirty={};inFlight=batch;saving=true;cache();say('Wird im Mitgliedskonto gespeichert …');try{await authApi('/api/account/preferences',{method:'POST',body:JSON.stringify({preferences:batch})});if(ticket!==generation)return;inFlight={};cache();say('Im Mitgliedskonto gespeichert.');}catch(_){if(ticket!==generation)return;dirty={...batch,...dirty};inFlight={};cache();say('Auf diesem Gerät gespeichert. Kontospeicherung fehlgeschlagen; bitte erneut versuchen.',true);return;}finally{if(ticket===generation){saving=false;inFlight={};}}if(Object.keys(dirty).length)save();}
+ window.addEventListener('hammerschach:preferences-edit',e=>{if(e.detail.name==='moveMethod'){say('Zugmethode auf diesem Gerät gespeichert.');return;}if(!account){say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}dirty[e.detail.name]=e.detail.value;cache();clearTimeout(timer);timer=setTimeout(save,350);});
  window.addEventListener('hammerschach:auth-change',()=>queueMicrotask(()=>syncAccount()));
  retry.addEventListener('click',()=>Object.keys(dirty).length?save():syncAccount(true));
  window.addEventListener('online',()=>Object.keys(dirty).length?save():syncAccount(true));
