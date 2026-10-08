@@ -307,7 +307,7 @@ html.trainer-embedded body{
     position:relative;
     overflow:hidden;
     background:transparent;
-    touch-action:none;
+    touch-action:pinch-zoom;
   }
   .square{
     display:flex;
@@ -1019,6 +1019,7 @@ html.dark-mode #board{
 <link rel="stylesheet" href="../css/gamer-settings.css?v=20260917-theme-3">
 <script src="../js/gamer-preferences.js?v=20260917-theme-3"></script>
 <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
+<script src="../js/board-pinch-zoom.js?v=20261008-pinch-1"></script>
 </head>
 <body>
 
@@ -2860,6 +2861,7 @@ function pieceDragSquareAtPoint(container,clientX,clientY){
 }
 
 function beginPiecePointer(event){
+  if(boardPinchZoom.isActive()) return;
   if(activePieceDrag||event.isPrimary===false)return;
   if(event.pointerType==='mouse'&&event.button!==0)return;
   const target=event.target instanceof Element?event.target:null;
@@ -2921,6 +2923,7 @@ function suppressClickAfterPieceDrag(event){
   event.stopImmediatePropagation();
 }
 
+const boardPinchZoom = installBoardPinchZoom([boardEl],() => cancelActivePieceDrag());
 if(window.PointerEvent){
   boardEl.addEventListener('pointerdown',beginPiecePointer);
   boardEl.addEventListener('click',suppressClickAfterPieceDrag,true);
