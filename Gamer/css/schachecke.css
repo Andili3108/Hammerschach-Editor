@@ -1,5 +1,9 @@
 /* Scoped lobby extension; existing board squares inherit global materials. */
-.corner-tabs.side-toggle-row{margin:0;min-width:240px;max-width:340px;flex:1;}
+.lobby-chat-toggle-wrap{display:flex;align-items:center;}
+#lobbyChatTab{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:100px;width:auto;}
+.lobby-chat-unread{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;box-sizing:border-box;border-radius:10px;background:#843f46;color:#fff;font:700 11px Arial,sans-serif;}
+.lobby-chat-unread[hidden]{display:none!important;}
+html.dark-mode .lobby-chat-unread{background:#efb5bc;color:#2b1b1e;}
 #lobbyChatPanel[hidden],#lobbyCornerPanel[hidden]{display:none!important;}
 .corner-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px;align-items:stretch;}
 .corner-card{min-width:0;border:1px solid rgb(var(--ui-line-rgb) / .18);border-radius:14px;padding:14px;box-sizing:border-box;}
@@ -32,6 +36,6 @@ html.dark-mode .weekly-status[data-kind="success"]{color:#a5dcb4;}
  .corner-layout{grid-template-columns:minmax(0,1fr);padding:10px;gap:10px;}
  .corner-card{padding:12px;}
  .global-chat-shell .global-chat-header{flex-wrap:wrap;gap:9px;padding:10px;}
- .corner-tabs.side-toggle-row{min-width:220px;max-width:none;}
+
  .global-chat-shell .global-chat-presence{font-size:11px;padding:5px 8px;}
 }
