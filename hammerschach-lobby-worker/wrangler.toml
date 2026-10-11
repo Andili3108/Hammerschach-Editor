@@ -6,8 +6,8 @@ keep_vars = true
 # YOUTUBE_API_KEY (nicht in diese Datei eintragen)
 
 [vars]
-# Nach Andilis Test auf "1" setzen, um die Schachecke für Mitglieder freizugeben.
-SCHACHECKE_MEMBERS_ENABLED = "0"
+# Aufgaben und Gamer-Ticker für alle angemeldeten Mitglieder freigegeben.
+SCHACHECKE_MEMBERS_ENABLED = "1"
 GAMER_PUBLIC_URL = "https://hammerschach-gamer.webmaster-5bb.workers.dev/"
 MAIL_LOGO_URL = "https://raw.githubusercontent.com/Andili3108/Hammerschach-Editor/main/Gamer/Gamer-Logo.png"
 
