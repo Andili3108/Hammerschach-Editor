@@ -25,7 +25,7 @@ try{
   let chatSocket,chatHistory=[];await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();chatSocket=socket;socket.onMessage(message=>{if(JSON.parse(message).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:chatHistory,isAdmin:true}));});});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
   await page.waitForFunction(()=>document.querySelectorAll('#weeklyBoard .square').length===64);
-  await page.waitForFunction(()=>document.querySelectorAll('#gamerTickerList li').length===10);
+  await page.waitForFunction(()=>document.querySelectorAll('#gamerTickerList li').length===9);
   assert.equal(await page.locator('#lobbyChatPanel').isVisible(),false);
   await page.waitForFunction(()=>globalChatConnected);chatSocket.send(JSON.stringify({type:'global_chat_message',message:{id:'hidden-test',senderName:'Testmitglied',text:'Nachricht bei geöffneter Schachecke',sentAt:Date.now()}}));await page.waitForFunction(()=>document.querySelector('#globalChatMessages').textContent.includes('Nachricht bei geöffneter Schachecke'));
   assert.equal(await page.locator('#lobbyCornerTab').count(),0);
@@ -39,13 +39,19 @@ try{
   await page.evaluate(()=>appendGlobalChatMessage({id:'second-test',text:'new',sentAt:Date.now()}));assert.equal(await page.locator('#lobbyChatUnread').textContent(),'1');
   const rects=await page.locator('.corner-card').evaluateAll(els=>els.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width};}));
   assert.equal(rects[0].y===rects[1].y,!mobile||width>650);assert.ok(await page.locator('#lobbyCornerPanel').evaluate(e=>e.scrollWidth<=e.clientWidth));
+  assert.equal(await page.locator('#weeklyDate').count(),0);
+  assert.equal(await page.locator('.corner-source').count(),0);
+  assert.equal(await page.locator('#gamerTickerStatus').isVisible(),false);
+  assert.equal(await page.locator('.weekly-levels [aria-pressed="true"]').count(),1);
+  assert.equal(await page.locator('#gamerTickerList').evaluate(el=>el.scrollHeight<=el.clientHeight),true);
+  if(name==='desktop')assert.equal(Math.round((await page.locator('#weeklyBoard').boundingBox()).width),400);
   // Determine the expected task independently from the loaded database.
   const task=await page.evaluate(async()=>{const all=await(await fetch('Trainer/puzzles.json')).json();return HammerschachWeeklyPuzzles.select(all,HammerschachWeeklyPuzzles.week())[0];});
   const square=alg=>page.locator(`#weeklyBoard [data-x="${alg.charCodeAt(0)-97}"][data-y="${8-Number(alg[1])}"]`);
   const initial=await page.locator('#weeklyBoard').innerHTML();
   const wrong=await page.evaluate(task=>{const g=HammerschachWeeklyPuzzles.prepare(task).game;const m=g.legalMoves().find(m=>coordToAlg(...m.from)+coordToAlg(...m.to)!==task.moves[1]);return coordToAlg(...m.from)+coordToAlg(...m.to);},task);
-  await square(wrong.slice(0,2)).click();await square(wrong.slice(2,4)).click();assert.match(await page.locator('#weeklyStatus').textContent(),/noch nicht/);assert.equal(await page.locator('#weeklyBoard').innerHTML(),initial);
-  await page.locator('#weeklyDay').selectOption('5');await page.locator('#weeklyLevel').selectOption('3');assert.equal(await page.locator('#weeklyBoard .square').count(),64);await page.locator('#weeklyDay').selectOption('0');await page.locator('#weeklyLevel').selectOption('0');
+  await square(wrong.slice(0,2)).click();await square(wrong.slice(2,4)).click();assert.match(await page.locator('#weeklyStatus').textContent(),/noch nicht/);assert.equal(await page.locator('#weeklyBoard').innerHTML(),initial);assert.equal(await page.locator('#weeklyLine').isVisible(),false);
+  await page.locator('#weeklyDay').selectOption('5');await page.locator('[data-weekly-level="3"]').click();assert.equal(await page.locator('#weeklyBoard .square').count(),64);await page.locator('#weeklyDay').selectOption('0');await page.locator('[data-weekly-level="0"]').click();
 
   await page.locator('#weeklyHint').click();assert.match(await page.locator('#weeklyStatus').textContent(),/Tipp:/);
   await page.locator('#weeklyRepeat').click();
@@ -54,9 +60,10 @@ try{
     await page.waitForFunction(()=>!document.querySelector('#weeklyStatus').textContent.includes('Gegenzug'));
   }
   assert.match(await page.locator('#weeklyStatus').textContent(),/Richtig/);
+  assert.equal(await page.locator('#weeklyLine').textContent(),await page.evaluate(task=>LiveBoardPosition.variation(LiveBoardPosition.fen(HammerschachWeeklyPuzzles.prepare(task).game),task.moves.slice(1)),task));
   await page.locator('#weeklyRepeat').click();assert.equal(await page.locator('#weeklyBoard').innerHTML(),initial);
-  await page.locator('#weeklySolution').click();await page.waitForFunction(()=>document.querySelector('#weeklyStatus').textContent.includes('Lösung gezeigt'));
-  await page.locator('#weeklyRepeat').click();
+  await page.locator('#weeklySolution').click();assert.equal(await page.locator('#weeklyLine').isVisible(),false);await page.waitForFunction(()=>document.querySelector('#weeklyStatus').textContent.includes('Lösung gezeigt'));
+  await page.locator('#weeklyRepeat').click();assert.equal(await page.locator('#weeklyLine').isVisible(),false);
   await page.evaluate(()=>HammerschachPreferences.set('moveMethod','drag'));
   await page.waitForTimeout(550);
   await page.locator('#weeklyBoard').evaluate(el=>el.scrollIntoView({block:'center'}));
