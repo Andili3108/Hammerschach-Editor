@@ -10,6 +10,12 @@ window.HammerschachCorner = (() => {
   function newsStatus(text=''){const el=$('gamerTickerStatus');el.textContent=text;el.hidden=!text;}
   function stop(){run++;clearTimeout(timer);timer=null;busy=false;cancelActivePieceDrag(board);}
   function visible(){return active&&!document.hidden&&!$('memberLobby').hidden;}
+  function selectToday(){
+    const weekday=new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Berlin',weekday:'short'}).format(new Date());
+    // The weekly series has six days; Sunday keeps Saturday's tasks available.
+    const day=String(Math.min(['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(weekday),5));
+    if($('weeklyDay').value!==day){stop();$('weeklyDay').value=day;game=null;}
+  }
   function choose(view){
     const next=view==='corner'&&allowed;
     if(!next){stop();if(revealed&&step<puzzle?.moves.length){revealed=false;restart();}else if(game&&step<puzzle?.moves.length&&game.turn!==player){advance();status(step>=puzzle.moves.length?'Richtig gelöst!':(player==='w'?'Weiß':'Schwarz')+' am Zug.');}}
@@ -162,13 +168,14 @@ window.HammerschachCorner = (() => {
   let lobbyWasHidden=$('memberLobby').hidden;
   new MutationObserver(()=>{
     const hidden=$('memberLobby').hidden;
-    if(lobbyWasHidden&&!hidden)choose(accessPending?'pending':allowed?'corner':'chat');
+    if(lobbyWasHidden&&!hidden){selectToday();choose(accessPending?'pending':allowed?'corner':'chat');}
     lobbyWasHidden=hidden;
     window.HammerschachLobbyUnread?.markIfVisible();
     refresh();
   }).observe($('memberLobby'),{attributes:true,attributeFilter:['hidden']});
   setInterval(refresh,60000);
   // Authentication may already have completed while the later scripts loaded.
+  selectToday();
   queueMicrotask(updateIdentity);
   return {updateIdentity,canDrag,selectDrag,drop:(from,to)=>{selected=from.slice();click(...to,true);}};
 })();
