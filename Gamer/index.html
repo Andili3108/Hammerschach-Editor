@@ -52,7 +52,7 @@
 <link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
 <link rel="stylesheet" href="css/live-board.css?v=20261008-live-engine-1">
-<link rel="stylesheet" href="css/schachecke.css?v=20261011-2">
+<link rel="stylesheet" href="css/schachecke.css?v=20261011-3">
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
@@ -589,21 +589,24 @@
         </div>
         <div id="lobbyCornerPanel" class="corner-layout" role="region" aria-label="Aufgaben der Woche und Gamer-Ticker" hidden>
           <section class="corner-card corner-puzzles" aria-labelledby="weeklyHeading">
-            <h2 id="weeklyHeading">Aufgaben der Woche</h2>
-            <div id="weeklyDate" class="corner-meta"></div>
-            <div class="weekly-choices">
-              <label>Tag<select id="weeklyDay"><option value="0">Montag</option><option value="1">Dienstag</option><option value="2">Mittwoch</option><option value="3">Donnerstag</option><option value="4">Freitag</option><option value="5">Samstag</option></select></label>
-              <label>Schwierigkeit<select id="weeklyLevel"><option value="0">Leicht</option><option value="1">Mittel</option><option value="2">Schwer</option><option value="3">Experte</option></select></label>
+            <div class="weekly-header">
+              <h2 id="weeklyHeading">Aufgaben der Woche</h2>
+              <select id="weeklyDay" aria-label="Aufgabentag"><option value="0">Montag</option><option value="1">Dienstag</option><option value="2">Mittwoch</option><option value="3">Donnerstag</option><option value="4">Freitag</option><option value="5">Samstag</option></select>
+              <div class="weekly-levels" role="group" aria-label="Schwierigkeit">
+                <button class="side-toggle-btn active" type="button" data-weekly-level="0" aria-pressed="true">Leicht</button>
+                <button class="side-toggle-btn" type="button" data-weekly-level="1" aria-pressed="false">Mittel</button>
+                <button class="side-toggle-btn" type="button" data-weekly-level="2" aria-pressed="false">Schwer</button>
+                <button class="side-toggle-btn" type="button" data-weekly-level="3" aria-pressed="false">Experte</button>
+              </div>
             </div>
             <div id="weeklyBoard" class="weekly-board" role="group" aria-label="Schachaufgabe"></div>
             <div id="weeklyStatus" class="weekly-status" role="status">Aufgaben werden beim Öffnen geladen.</div>
             <div class="weekly-actions"><button id="weeklyHint" class="button-flat" type="button">Tipp</button><button id="weeklySolution" class="button-flat" type="button">Lösung</button><button id="weeklyRepeat" class="button-flat" type="button">Wiederholen</button></div>
-            <div id="weeklyLine" class="weekly-line" hidden></div>
-            <a class="corner-source" href="https://database.lichess.org/#puzzles" target="_blank" rel="noopener noreferrer">Aufgaben: Lichess · CC0 ↗</a>
+            <div id="weeklyLine" class="weekly-line" aria-label="Gespielte Züge" aria-live="polite" hidden></div>
           </section>
           <section class="corner-card corner-news" aria-labelledby="gamerTickerHeading">
             <h2 id="gamerTickerHeading">Gamer-Ticker</h2>
-            <div id="gamerTickerStatus" class="corner-meta" role="status">Nachrichten werden beim Öffnen geladen.</div>
+            <div id="gamerTickerStatus" class="corner-meta" role="status" hidden></div>
             <ol id="gamerTickerList" class="gamer-ticker-list" aria-label="Neueste Schachnachrichten"></ol>
           </section>
         </div>
@@ -2720,7 +2723,7 @@
 <script src="js/article-read-ui.js?v=20260928-request-audit-1"></script>
 <script src="js/live-board-position.js?v=20261011-corner-1"></script>
 <script src="js/weekly-puzzles.js?v=20261011-1"></script>
-<script src="js/schachecke.js?v=20261011-2"></script>
+<script src="js/schachecke.js?v=20261011-3"></script>
 <script src="js/live-board-clock.js?v=20261007-live-board-stability-1"></script>
 <script src="js/live-board-pgn.js?v=20261008-live-engine-1"></script>
 <script src="js/live-board-engine.js?v=20261008-live-engine-1"></script>
