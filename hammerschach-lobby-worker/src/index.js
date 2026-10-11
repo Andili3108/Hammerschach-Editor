@@ -1,3 +1,4 @@
+import { handleSchacheckeApi, refreshGamerNews, CORNER_CRON } from './schachecke.js';
 import { handleLiveBoardApi } from './live-board.js';
 import { ensureSeriesSchema, tournamentTiming, tournamentVisible, tournamentRegistrationOpen, activateTournamentSeries, materializeTournamentSeries, tournamentSeriesDto, seriesConfig } from './tournament-series.js';
 import {getProgress, saveProgress, deleteProgress} from './videocourse-progress.js';
@@ -10704,6 +10705,9 @@ async function applyModerationAction(env,adminUser,body){
 async function handleAuthApi(request, env, url) {
   if (!env || !env.DB) return dbMissingResponse();
 
+  const cornerResponse = await handleSchacheckeApi(request, env, url, {json, lookupAuthSession, bearerTokenFromRequest, isAdminUser});
+  if (cornerResponse) return cornerResponse;
+
   const liveBoardResponse = /^\/api\/live-board(?:\/|$)/.test(url.pathname)
     ? await handleLiveBoardApi(request, env, url, {json, lookupAuthSession, bearerTokenFromRequest}) : null;
   if (liveBoardResponse) return liveBoardResponse;
@@ -19664,6 +19668,12 @@ export default {
   },
 
   async scheduled(_event, env, ctx) {
+    if (_event && _event.cron === CORNER_CRON) {
+      const news = refreshGamerNews(env).catch(error => console.error('Gamer ticker refresh failed', error.message));
+      if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(news);
+      else await news;
+      return;
+    }
     const maintenance = (async () => {
       try { await processTournamentSchedule(env); }
       catch(error) { console.error('Scheduled tournaments failed',error && error.message); }
