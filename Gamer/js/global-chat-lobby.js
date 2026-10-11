@@ -123,6 +123,7 @@ function deleteGlobalChatMessage(message){
   globalChatSocket.send(JSON.stringify({type:'delete_message',messageId:message.id}));
 }
 function renderGlobalChatMessages(){
+  window.HammerschachLobbyUnread?.sync(globalChatMessages,globalChatMutedKeys);
   if(!globalChatMessagesEl) return;
   globalChatMessagesEl.innerHTML='';
   if(!globalChatMessages.length){

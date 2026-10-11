@@ -7,21 +7,20 @@ window.HammerschachCorner = (() => {
   let player='w',busy=false,revealed=false,timer=null,run=0,news=null,newsPending=false,newsRetryAt=0;
   function status(text,kind=''){ $('weeklyStatus').textContent=text;$('weeklyStatus').dataset.kind=kind; }
   function stop(){run++;clearTimeout(timer);timer=null;busy=false;cancelActivePieceDrag(board);}
-  function key(){return 'hammerschach.corner.view.'+String(onlineAuthUser?.id||'');}
   function visible(){return active&&!document.hidden&&!$('memberLobby').hidden;}
-  function choose(view,persist=true){
+  function choose(view){
     const next=view==='corner'&&allowed;
-    if(!next){stop();if(revealed&&step<puzzle?.moves.length){revealed=false;restart();}else if(game&&step<puzzle?.moves.length&&game.turn!==player){advance();}}
-    active=next;panel.hidden=!next;$('lobbyChatPanel').hidden=next;
-    for(const [id,on] of [['lobbyChatTab',!next],['lobbyCornerTab',next]]){const tab=$(id);tab.classList.toggle('active',on);tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;}
-    if(persist&&identity)try{localStorage.setItem(key(),next?'corner':'chat');}catch(_){}
-    if(next){loadPuzzles();loadNews();}
+    if(!next){stop();if(revealed&&step<puzzle?.moves.length){revealed=false;restart();}else if(game&&step<puzzle?.moves.length&&game.turn!==player){advance();status(step>=puzzle.moves.length?'Richtig gelöst!':(player==='w'?'Weiß':'Schwarz')+' am Zug.');}}
+    active=next;panel.hidden=!next;$('lobbyChatPanel').hidden=next||view==='pending';
+    const button=$('lobbyChatTab');button.classList.toggle('active',!$('lobbyChatPanel').hidden);button.setAttribute('aria-pressed',String(!$('lobbyChatPanel').hidden));
+    window.HammerschachLobbyUnread?.markIfVisible();
+    if(next){if(game)render();loadPuzzles();loadNews();}
     if(typeof hammerschachScheduleHeightReport==='function')hammerschachScheduleHeightReport(true);
   }
   async function updateIdentity(){
     const next=onlineAuthToken&&onlineAuthUser?String(onlineAuthUser.id)+'|'+onlineAuthToken:'';
     if(next===identity)return accessPending;
-    identity=next;const version=++identityVersion;allowed=false;choose('chat',false);news=null;newsRetryAt=0;
+    identity=next;const version=++identityVersion;allowed=false;choose('pending');news=null;newsRetryAt=0;
     $('gamerTickerList').replaceChildren();$('gamerTickerStatus').textContent='Nachrichten werden beim Öffnen geladen.';
     if(!identity)return;
     accessPending=(async()=>{
@@ -29,16 +28,15 @@ window.HammerschachCorner = (() => {
         const result=await authApi('/api/schachecke/access');
         if(version!==identityVersion)return;
         allowed=result.allowed===true;
-        let saved='chat';try{saved=localStorage.getItem(key())||'chat';}catch(_){}
-        if(allowed&&saved==='corner')choose('corner',false);
-      }catch(_){/* An unavailable or older worker leaves the chat usable. */}
+        choose(allowed?'corner':'chat');
+      }catch(_){if(version===identityVersion)choose('chat');}
       finally{if(version===identityVersion)accessPending=null;}
     })();return accessPending;
   }
-  async function open(){
+  async function toggleChat(){
+    if(active){choose('chat');return;}
     if(accessPending)await accessPending;
     if(!allowed){
-      // Retry only on an explicit click; no polling of the access endpoint.
       const version=identityVersion;
       try{const data=await authApi('/api/schachecke/access');if(version===identityVersion)allowed=data.allowed===true;}catch(_){}
     }
@@ -140,15 +138,21 @@ window.HammerschachCorner = (() => {
     catch(error){if(version!==identityVersion)return;newsRetryAt=Date.now()+60000;if(news){news.stale=true;newsRender();}else $('gamerTickerStatus').textContent=error.message;}
     finally{newsPending=false;}
   }
-  $('lobbyChatTab').addEventListener('click',()=>choose('chat'));$('lobbyCornerTab').addEventListener('click',open);
-  document.querySelector('.corner-tabs').addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();(event.key==='Home'||event.key==='ArrowLeft'?$('lobbyChatTab'):$('lobbyCornerTab')).focus();}});
+  $('lobbyChatTab').addEventListener('click',toggleChat);
   $('weeklyDay').addEventListener('change',restart);$('weeklyLevel').addEventListener('change',restart);
   $('weeklyHint').addEventListener('click',hint);$('weeklySolution').addEventListener('click',solution);$('weeklyRepeat').addEventListener('click',restart);
   new MutationObserver(()=>{if(active&&game)render();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-piece-set']});
   window.addEventListener('hammerschach:preferences',()=>{if(active&&game)render();});
   const refresh=()=>{if(visible()){loadPuzzles();loadNews();}};
   document.addEventListener('visibilitychange',refresh);
-  new MutationObserver(refresh).observe($('memberLobby'),{attributes:true,attributeFilter:['hidden']});
+  let lobbyWasHidden=$('memberLobby').hidden;
+  new MutationObserver(()=>{
+    const hidden=$('memberLobby').hidden;
+    if(lobbyWasHidden&&!hidden)choose(accessPending?'pending':allowed?'corner':'chat');
+    lobbyWasHidden=hidden;
+    window.HammerschachLobbyUnread?.markIfVisible();
+    refresh();
+  }).observe($('memberLobby'),{attributes:true,attributeFilter:['hidden']});
   setInterval(refresh,60000);
   // Authentication may already have completed while the later scripts loaded.
   queueMicrotask(updateIdentity);
