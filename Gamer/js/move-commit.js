@@ -67,8 +67,8 @@ function commitHumanMove(found, promotion, options){
   syncMoveToOnline(mv, before.turn, options);
   scheduleBoardRender();
 }
-function showPromotionOverlay(color){
-  if(HammerschachPreferences.get('autoQueen') && !isDailyTimeControl() && onlineGameStarted && !variationModeActive) return Promise.resolve('Q');
+function showPromotionOverlay(color, options = {}){
+  if(!options.forceChoice && HammerschachPreferences.get('autoQueen') && !isDailyTimeControl() && onlineGameStarted && !variationModeActive) return Promise.resolve('Q');
   return new Promise(resolve => {
     const old = document.getElementById('promotionBackdrop');
     if(old) old.remove();

@@ -68,5 +68,5 @@ const LiveBoardPosition = (() => {
     }
     return {positions,firstNumber,firstTurn};
   }
-  return {replay,variation};
+  return {replay,variation,start,fen};
 })();

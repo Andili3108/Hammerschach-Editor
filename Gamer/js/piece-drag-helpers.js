@@ -1,6 +1,7 @@
 'use strict';
 
 function pieceDragCanStart(mode,x,y){
+  if(mode === 'weekly') return !!window.HammerschachCorner?.canDrag(x,y);
   if(mode === 'variation'){
     if(!variationGame || variationGame.gameOver()) return false;
     if(variationPurpose === 'conditional' && variationHistory.length >= CONDITIONAL_MOVE_MAX_PLIES) return false;
@@ -60,7 +61,9 @@ function activatePieceDrag(state,event){
   positionPieceDragGhost(state,event.clientX,event.clientY);
   try{ state.container.setPointerCapture(state.pointerId); } catch(_){ }
 
-  if(state.mode === 'variation'){
+  if(state.mode === 'weekly'){
+    window.HammerschachCorner?.selectDrag(state.from);
+  } else if(state.mode === 'variation'){
     variationSelected = state.from.slice();
     playUiSound('pickup');
     highlightVariationDragSelection(state.from[0],state.from[1]);
@@ -162,7 +165,9 @@ function endPiecePointer(event,shouldDrop){
   event.preventDefault();
   if(!target) return;
 
-  if(state.mode === 'variation'){
+  if(state.mode === 'weekly'){
+    window.HammerschachCorner?.drop(state.from,target);
+  } else if(state.mode === 'variation'){
     variationSelected = state.from.slice();
     onVariationSquareClick(target[0],target[1],true);
   } else {

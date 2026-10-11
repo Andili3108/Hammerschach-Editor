@@ -299,6 +299,7 @@ function hasTournamentViewerAccess(){
   return !!(onlineAuthToken && onlineAuthUser);
 }
 function updateAuthUi(){
+  window.HammerschachCorner?.updateIdentity();
   if(typeof HammerschachLiveBoard !== 'undefined') HammerschachLiveBoard.updateIdentity();
   if(typeof renderLobbyTournaments === 'function') renderLobbyTournaments();
   window.HammerschachArticleReads?.refreshIdentity();

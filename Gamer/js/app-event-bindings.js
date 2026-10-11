@@ -208,9 +208,10 @@ function installPieceDragInput(container,mode){
   container.addEventListener('dragstart',event => event.preventDefault());
 }
 
-const boardPinchZoom = installBoardPinchZoom([boardEl,variationBoardEl],() => cancelActivePieceDrag());
+const boardPinchZoom = installBoardPinchZoom([boardEl,variationBoardEl,document.getElementById('weeklyBoard')],() => cancelActivePieceDrag());
 installPieceDragInput(boardEl,'main');
 installPieceDragInput(variationBoardEl,'variation');
+installPieceDragInput(document.getElementById('weeklyBoard'),'weekly');
 document.addEventListener('pointermove',movePiecePointer,{passive:false});
 document.addEventListener('pointerup',event => endPiecePointer(event,true),{passive:false});
 document.addEventListener('pointercancel',event => endPiecePointer(event,false),{passive:false});
