@@ -52,6 +52,7 @@
 <link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
 <link rel="stylesheet" href="css/live-board.css?v=20261008-live-engine-1">
+<link rel="stylesheet" href="css/schachecke.css?v=20261011-1">
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
@@ -562,14 +563,15 @@
         <div id="infoCenterOverviewList" class="info-center-overview-list" tabindex="0" role="region" aria-label="Aktuelle Mitteilungen"></div>
       </section>
       </div>
-      <div class="box global-chat-shell" aria-label="Mitglieder-Chat">
+      <div class="box global-chat-shell" aria-label="Chat und Schachecke">
         <div class="global-chat-header">
-          <div>
-            <div class="global-chat-title">💬 Chat</div>
+          <div class="side-toggle-row corner-tabs" role="tablist" aria-label="Lobbyansicht">
+            <button id="lobbyChatTab" class="side-toggle-btn active" type="button" role="tab" aria-selected="true" aria-controls="lobbyChatPanel">Chat</button>
+            <button id="lobbyCornerTab" class="side-toggle-btn" type="button" role="tab" aria-selected="false" aria-controls="lobbyCornerPanel" tabindex="-1">Schachecke</button>
           </div>
           <div class="global-chat-presence" aria-live="polite"><span class="global-chat-presence-dot" aria-hidden="true"></span><span id="globalChatOnlineCount">0 Mitglieder online</span></div>
         </div>
-        <div class="global-chat-layout">
+        <div id="lobbyChatPanel" class="global-chat-layout" role="tabpanel" aria-labelledby="lobbyChatTab">
           <div class="global-chat-main">
             <div id="globalChatMessages" class="global-chat-messages" aria-live="polite" aria-label="Nachrichten im Mitglieder-Chat">
               <div class="global-chat-empty">Der Mitglieder-Chat wird verbunden…</div>
@@ -585,6 +587,26 @@
             <div class="global-chat-members-title">Gerade online</div>
             <div id="globalChatMembersList" class="global-chat-members-list"><div class="global-chat-member"><span class="presence-dot"></span><span class="global-chat-member-name">Noch niemand verbunden</span></div></div>
           </aside>
+        </div>
+        <div id="lobbyCornerPanel" class="corner-layout" role="tabpanel" aria-labelledby="lobbyCornerTab" hidden>
+          <section class="corner-card corner-puzzles" aria-labelledby="weeklyHeading">
+            <h2 id="weeklyHeading">Aufgaben der Woche</h2>
+            <div id="weeklyDate" class="corner-meta"></div>
+            <div class="weekly-choices">
+              <label>Tag<select id="weeklyDay"><option value="0">Montag</option><option value="1">Dienstag</option><option value="2">Mittwoch</option><option value="3">Donnerstag</option><option value="4">Freitag</option><option value="5">Samstag</option></select></label>
+              <label>Schwierigkeit<select id="weeklyLevel"><option value="0">Leicht</option><option value="1">Mittel</option><option value="2">Schwer</option><option value="3">Experte</option></select></label>
+            </div>
+            <div id="weeklyBoard" class="weekly-board" role="group" aria-label="Schachaufgabe"></div>
+            <div id="weeklyStatus" class="weekly-status" role="status">Aufgaben werden beim Öffnen geladen.</div>
+            <div class="weekly-actions"><button id="weeklyHint" class="button-flat" type="button">Tipp</button><button id="weeklySolution" class="button-flat" type="button">Lösung</button><button id="weeklyRepeat" class="button-flat" type="button">Wiederholen</button></div>
+            <div id="weeklyLine" class="weekly-line" hidden></div>
+            <a class="corner-source" href="https://database.lichess.org/#puzzles" target="_blank" rel="noopener noreferrer">Aufgaben: Lichess · CC0 ↗</a>
+          </section>
+          <section class="corner-card corner-news" aria-labelledby="gamerTickerHeading">
+            <h2 id="gamerTickerHeading">Gamer-Ticker</h2>
+            <div id="gamerTickerStatus" class="corner-meta" role="status">Nachrichten werden beim Öffnen geladen.</div>
+            <ol id="gamerTickerList" class="gamer-ticker-list" aria-label="Neueste Schachnachrichten"></ol>
+          </section>
         </div>
       </div>
     </section>
@@ -2649,7 +2671,7 @@
 <script src="js/account-profile.js?v=20260917-theme-3"></script>
 <script src="js/auth-recovery.js?v=20260918-password-reset-1"></script>
 <script src="js/rating-history.js?v=20260920-profile-1"></script>
-<script src="js/auth-account.js?v=20261005-live-board-1"></script>
+<script src="js/auth-account.js?v=20261011-corner-1"></script>
 <script src="js/tournament-themes.js?v=20260917-theme-3"></script>
 <script src="js/tournament-setup.js?v=20260927-series-3"></script>
 <script src="js/live-tournaments.js?v=20261005-gamer-brand-1"></script>
@@ -2685,9 +2707,9 @@
 <script src="js/variation-board.js?v=20261008-scroll-1"></script>
 <script src="js/conditional-moves.js?v=20260917-theme-3"></script>
 <script src="js/board-input.js?v=20260917-theme-3"></script>
-<script src="js/piece-drag-helpers.js?v=20261008-scroll-1"></script>
-<script src="js/move-commit.js?v=20260917-theme-3"></script>
-<script src="js/app-event-bindings.js?v=20261008-pinch-1"></script>
+<script src="js/piece-drag-helpers.js?v=20261011-corner-1"></script>
+<script src="js/move-commit.js?v=20261011-corner-1"></script>
+<script src="js/app-event-bindings.js?v=20261011-corner-1"></script>
 <script src="js/move-history-navigation.js?v=20260917-theme-3"></script>
 <script src="js/pgn-export.js?v=20260917-theme-3"></script>
 <script src="js/new-game-board-ui.js?v=20260917-theme-3"></script>
@@ -2696,7 +2718,9 @@
 <script src="js/time-controls.js?v=20260917-theme-3"></script>
 <script src="js/article-read-state.js?v=20260918-unread-1"></script>
 <script src="js/article-read-ui.js?v=20260928-request-audit-1"></script>
-<script src="js/live-board-position.js?v=20261008-live-engine-1"></script>
+<script src="js/live-board-position.js?v=20261011-corner-1"></script>
+<script src="js/weekly-puzzles.js?v=20261011-1"></script>
+<script src="js/schachecke.js?v=20261011-1"></script>
 <script src="js/live-board-clock.js?v=20261007-live-board-stability-1"></script>
 <script src="js/live-board-pgn.js?v=20261008-live-engine-1"></script>
 <script src="js/live-board-engine.js?v=20261008-live-engine-1"></script>
