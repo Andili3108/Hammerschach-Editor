@@ -18,16 +18,25 @@ try{
   await context.addInitScript(({user})=>{localStorage.setItem('hammerschachGamerAuthToken','test-token');localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));},{user});
   await context.route('**/*',async route=>{const req=route.request(),url=new URL(req.url());if(url.origin===local)return route.continue();if(url.pathname.startsWith('/api/')){
     requests.push(url.pathname);let data={ok:true,user,stats:{},tournaments:[],games:[],members:[],offers:[],messages:[],items:[],entries:[],series:[],unread:0,unreadCount:0};
-    if(url.pathname==='/api/schachecke/access')data.allowed=user.username==='Andili';
+    if(url.pathname==='/api/schachecke/access')data.allowed=!!user.id;
     if(url.pathname==='/api/schachecke/ticker')Object.assign(data,{updatedAt:new Date().toISOString(),nextCheckAt:Date.now()+21600000,items:Array.from({length:10},(_,i)=>({title:'Testmeldung '+(i+1)+' – Schachnachrichten zum Prüfen der Darstellung',source:'Testquelle',url:'https://example.org/'+i,publishedAt:new Date(Date.now()-i*3600000).toISOString()}))});
     return route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
   }return route.abort();});
-  let chatSocket;await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();chatSocket=socket;socket.onMessage(message=>{if(JSON.parse(message).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[],isAdmin:true}));});});
+  let chatSocket,chatHistory=[];await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();chatSocket=socket;socket.onMessage(message=>{if(JSON.parse(message).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:chatHistory,isAdmin:true}));});});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
-  await page.locator('#lobbyCornerTab').click();await page.waitForFunction(()=>document.querySelectorAll('#weeklyBoard .square').length===64);
+  await page.waitForFunction(()=>document.querySelectorAll('#weeklyBoard .square').length===64);
   await page.waitForFunction(()=>document.querySelectorAll('#gamerTickerList li').length===10);
   assert.equal(await page.locator('#lobbyChatPanel').isVisible(),false);
   await page.waitForFunction(()=>globalChatConnected);chatSocket.send(JSON.stringify({type:'global_chat_message',message:{id:'hidden-test',senderName:'Testmitglied',text:'Nachricht bei geöffneter Schachecke',sentAt:Date.now()}}));await page.waitForFunction(()=>document.querySelector('#globalChatMessages').textContent.includes('Nachricht bei geöffneter Schachecke'));
+  assert.equal(await page.locator('#lobbyCornerTab').count(),0);
+  await page.waitForFunction(()=>document.querySelector('#lobbyChatUnread').textContent==='1');
+  await page.evaluate(()=>{appendGlobalChatMessage({id:'hidden-test',text:'duplicate',sentAt:Date.now()});appendGlobalChatMessage({id:'own-test',text:'own',mine:true,sentAt:Date.now()});});
+  assert.equal(await page.locator('#lobbyChatUnread').textContent(),'1');
+  chatHistory=await page.evaluate(()=>globalChatMessages);await page.reload();await page.waitForFunction(()=>!document.querySelector('#lobbyCornerPanel').hidden);await page.waitForFunction(()=>document.querySelector('#lobbyChatUnread').textContent==='1');
+  await page.locator('#lobbyChatTab').click();assert.equal(await page.locator('#lobbyChatTab').getAttribute('aria-pressed'),'true');assert.equal(await page.locator('#lobbyChatUnread').isVisible(),false);
+  await page.evaluate(()=>appendGlobalChatMessage({id:'read-test',text:'visible',sentAt:Date.now()}));assert.equal(await page.locator('#lobbyChatUnread').isVisible(),false);
+  await page.locator('#lobbyChatTab').click();assert.equal(await page.locator('#lobbyChatTab').getAttribute('aria-pressed'),'false');
+  await page.evaluate(()=>appendGlobalChatMessage({id:'second-test',text:'new',sentAt:Date.now()}));assert.equal(await page.locator('#lobbyChatUnread').textContent(),'1');
   const rects=await page.locator('.corner-card').evaluateAll(els=>els.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width};}));
   assert.equal(rects[0].y===rects[1].y,!mobile||width>650);assert.ok(await page.locator('#lobbyCornerPanel').evaluate(e=>e.scrollWidth<=e.clientWidth));
   // Determine the expected task independently from the loaded database.
@@ -50,6 +59,7 @@ try{
   await page.locator('#weeklyRepeat').click();
   await page.evaluate(()=>HammerschachPreferences.set('moveMethod','drag'));
   await page.waitForTimeout(550);
+  await page.locator('#weeklyBoard').evaluate(el=>el.scrollIntoView({block:'center'}));
   const uci=task.moves[1],a=await square(uci.slice(0,2)).boundingBox(),b=await square(uci.slice(2,4)).boundingBox();
   if(mobile){const cdp=await context.newCDPSession(page);const point=(r)=>({x:r.x+r.width/2,y:r.y+r.height/2});await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point(a)]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point(b)]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
   else{await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down();await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8});await page.mouse.up();}
@@ -62,10 +72,10 @@ try{
   await page.evaluate(()=>HammerschachPreferences.set('scheme','light'));if(process.env.CORNER_SCREENSHOTS)await page.locator('.global-chat-shell').screenshot({path:path.join(process.env.CORNER_SCREENSHOTS,name+'-light.png')});
   await page.evaluate(()=>{HammerschachPreferences.set('autoQueen',true);onlineGameStarted=true;window.qaPromotion=showPromotionOverlay('w',{forceChoice:true});});await page.locator('#promotionBackdrop [data-piece="N"]').click();assert.equal(await page.evaluate(()=>qaPromotion),'N');await page.evaluate(()=>{onlineGameStarted=false;HammerschachPreferences.set('autoQueen',false);});
   const tickerCalls=requests.filter(x=>x==='/api/schachecke/ticker').length;
-  await page.locator('#lobbyChatTab').click();assert.equal(await page.locator('#lobbyChatPanel').isVisible(),true);await page.locator('#lobbyCornerTab').click();assert.equal(requests.filter(x=>x==='/api/schachecke/ticker').length,tickerCalls);
-  await page.reload();await page.waitForFunction(()=>!document.querySelector('#lobbyCornerPanel').hidden);
-  user={id:'normal-user',username:'Mitglied',isAdmin:false};await page.evaluate(user=>{onlineAuthUser=user;updateAuthUi();},user);await page.locator('#lobbyCornerTab').click();assert.equal(await page.locator('#lobbyCornerPanel').isVisible(),false);
-  assert.deepEqual(errors,[]);report.push({name,layout:'ok',solve:'ok',drag:mobile?'touch':'mouse',accountGate:'ok',errors});await context.close();
+  await page.locator('#lobbyChatTab').click();assert.equal(await page.locator('#lobbyChatPanel').isVisible(),true);await page.locator('#lobbyChatTab').click();assert.equal(requests.filter(x=>x==='/api/schachecke/ticker').length,tickerCalls);
+  await page.locator('#lobbyChatTab').click();await page.reload();await page.waitForFunction(()=>!document.querySelector('#lobbyCornerPanel').hidden);
+  user={id:'normal-user',username:'Mitglied',isAdmin:false};await page.evaluate(user=>{onlineAuthUser=user;updateAuthUi();},user);await page.waitForFunction(()=>!document.querySelector('#lobbyCornerPanel').hidden);assert.equal(await page.locator('#lobbyChatUnread').isVisible(),false);await page.locator('#lobbyChatTab').click();assert.equal(await page.locator('#lobbyChatPanel').isVisible(),true);
+  assert.deepEqual(errors,[]);report.push({name,layout:'ok',solve:'ok',drag:mobile?'touch':'mouse',accountGate:'ok',toggleAndUnread:'ok',errors});await context.close();
  }
  console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();await new Promise(r=>server.close(r));}

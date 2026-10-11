@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import fs from 'node:fs';
+test('Unread counter: history, duplicate, own/muted messages, visibility, deletion, reload and account isolation',()=>{
+ const storage=new Map(),elements={memberLobby:{hidden:false},lobbyChatPanel:{hidden:true},lobbyChatUnread:{hidden:true,textContent:'',setAttribute(){}}};
+ const context=vm.createContext({window:{addEventListener(){}},document:{hidden:false,getElementById:id=>elements[id],addEventListener(){}},onlineAuthUser:{id:'andi'},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)}});
+ const source=fs.readFileSync(new URL('../../Gamer/js/lobby-chat-unread.js',import.meta.url),'utf8');
+ vm.runInContext(source,context);let api=context.window.HammerschachLobbyUnread;
+ const m=(id,time,extra={})=>({id,sentAt:new Date(time).toISOString(),senderProfileId:'other',senderKey:'other',...extra});
+ const messages=[m('old',1000)];api.sync(messages);assert.equal(elements.lobbyChatUnread.hidden,true);
+ messages.push(m('new',2000));api.sync(messages);api.sync(messages);assert.equal(elements.lobbyChatUnread.textContent,'1');
+ messages.push(m('own',3000,{senderProfileId:'andi'}),m('muted',4000,{senderKey:'mute'}));api.sync(messages,new Set(['mute']));assert.equal(elements.lobbyChatUnread.textContent,'1');
+ vm.runInContext(source,context);api=context.window.HammerschachLobbyUnread;api.sync(messages,new Set(['mute']));assert.equal(elements.lobbyChatUnread.textContent,'1');
+ api.sync(messages.filter(m=>m.id!=='new'),new Set(['mute']));assert.equal(elements.lobbyChatUnread.hidden,true);
+ messages.push(m('next',5000));api.sync(messages,new Set(['mute']));assert.equal(elements.lobbyChatUnread.textContent,'1');
+ context.document.hidden=true;elements.lobbyChatPanel.hidden=false;api.markIfVisible();assert.equal(elements.lobbyChatUnread.textContent,'1');
+ context.document.hidden=false;api.markIfVisible();assert.equal(elements.lobbyChatUnread.hidden,true);
+ elements.lobbyChatPanel.hidden=true;messages.push(m('later',6000));api.sync(messages,new Set(['mute']));assert.equal(elements.lobbyChatUnread.textContent,'1');
+ context.onlineAuthUser={id:'normal'};api.markIfVisible();assert.equal(elements.lobbyChatUnread.hidden,true);api.sync(messages);assert.equal(elements.lobbyChatUnread.hidden,true);
+ context.onlineAuthUser={id:'andi'};api.markIfVisible();assert.equal(elements.lobbyChatUnread.textContent,'1');
+});
