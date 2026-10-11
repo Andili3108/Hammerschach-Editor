@@ -1,0 +1,37 @@
+/* Scoped lobby extension; existing board squares inherit global materials. */
+.corner-tabs.side-toggle-row{margin:0;min-width:240px;max-width:340px;flex:1;}
+#lobbyChatPanel[hidden],#lobbyCornerPanel[hidden]{display:none!important;}
+.corner-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px;align-items:stretch;}
+.corner-card{min-width:0;border:1px solid rgb(var(--ui-line-rgb) / .18);border-radius:14px;padding:14px;box-sizing:border-box;}
+.corner-puzzles{background:linear-gradient(135deg,rgba(184,132,47,.10),rgba(184,132,47,.035)),var(--ui-surface);}
+.corner-news{background:linear-gradient(135deg,rgba(66,122,163,.11),rgba(66,122,163,.035)),var(--ui-surface);}
+.corner-card h2{font-size:14px;font-weight:800;line-height:1.3;margin:0 0 7px;color:var(--ui-text);}
+.corner-meta{font-size:11px;line-height:1.45;color:var(--ui-muted);min-height:16px;}
+.weekly-choices{display:flex;gap:10px;margin:10px 0 12px;}
+.weekly-choices label{flex:1;min-width:0;font-size:11px;color:var(--ui-muted);font-weight:700;}
+.weekly-choices select{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:7px;min-height:36px;border:1px solid rgb(var(--ui-line-rgb) / .22);border-radius:9px;background:var(--ui-surface);color:var(--ui-text);font:inherit;font-size:13px;}
+.weekly-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:min(100%,320px);aspect-ratio:1;margin:0 auto;border:4px solid var(--board-frame-mid,var(--dark-square));border-radius:9px;box-sizing:border-box;overflow:hidden;position:relative;user-select:none;-webkit-user-select:none;touch-action:pinch-zoom;box-shadow:0 5px 14px rgba(0,0,0,.16);}
+.weekly-board .square{min-width:0;min-height:0;border:0;border-radius:0;padding:0;box-shadow:none;}
+.weekly-board .square:focus-visible{outline:3px solid #d49c31;outline-offset:-3px;z-index:3;}
+.weekly-board .coord-file,.weekly-board .coord-rank{font-size:9px;}
+.weekly-status{font-size:13px;font-weight:700;color:var(--ui-text);line-height:1.45;min-height:38px;margin:12px 0 6px;text-align:center;}
+.weekly-status[data-kind="error"]{color:#9a2d33;}
+.weekly-status[data-kind="success"]{color:#226b36;}
+html.dark-mode .weekly-status[data-kind="error"]{color:#ffafb4;}
+html.dark-mode .weekly-status[data-kind="success"]{color:#a5dcb4;}
+.weekly-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.weekly-actions button{width:auto!important;min-height:36px;padding:7px 10px;font-size:12px;}
+.weekly-line{margin-top:10px;font-size:13px;line-height:1.6;overflow-wrap:anywhere;color:var(--ui-text);}
+.corner-source{display:block;text-align:center;font-size:10px;margin-top:12px;color:var(--ui-muted);}
+.gamer-ticker-list{list-style:none;padding:0 4px 0 0;margin:10px 0 0;max-height:490px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;}
+.gamer-ticker-list li{padding:10px 0;border-top:1px solid rgb(var(--ui-line-rgb) / .14);}
+.gamer-ticker-list a{font-size:13px;line-height:1.45;font-weight:700;text-decoration:none;color:var(--ui-text);display:block;overflow-wrap:anywhere;}
+.gamer-ticker-list a:hover{text-decoration:underline;color:var(--ui-accent);}
+.gamer-ticker-list .corner-meta{font-size:10px;margin-bottom:3px;}
+@media(max-width:650px){
+ .corner-layout{grid-template-columns:minmax(0,1fr);padding:10px;gap:10px;}
+ .corner-card{padding:12px;}
+ .global-chat-shell .global-chat-header{flex-wrap:wrap;gap:9px;padding:10px;}
+ .corner-tabs.side-toggle-row{min-width:220px;max-width:none;}
+ .global-chat-shell .global-chat-presence{font-size:11px;padding:5px 8px;}
+}
