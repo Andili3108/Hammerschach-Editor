@@ -4,8 +4,10 @@ window.HammerschachCorner = (() => {
   const weekly=window.HammerschachWeeklyPuzzles;
   let identity='',identityVersion=0,allowed=false,active=false,accessPending=null;
   let database=null,loading=null,series=[],weekKey='',puzzle=null,game=null,selected=null,last=null,step=1;
+  let level=0,played=[];
   let player='w',busy=false,revealed=false,timer=null,run=0,news=null,newsPending=false,newsRetryAt=0;
   function status(text,kind=''){ $('weeklyStatus').textContent=text;$('weeklyStatus').dataset.kind=kind; }
+  function newsStatus(text=''){const el=$('gamerTickerStatus');el.textContent=text;el.hidden=!text;}
   function stop(){run++;clearTimeout(timer);timer=null;busy=false;cancelActivePieceDrag(board);}
   function visible(){return active&&!document.hidden&&!$('memberLobby').hidden;}
   function choose(view){
@@ -21,7 +23,7 @@ window.HammerschachCorner = (() => {
     const next=onlineAuthToken&&onlineAuthUser?String(onlineAuthUser.id)+'|'+onlineAuthToken:'';
     if(next===identity)return accessPending;
     identity=next;const version=++identityVersion;allowed=false;choose('pending');news=null;newsRetryAt=0;
-    $('gamerTickerList').replaceChildren();$('gamerTickerStatus').textContent='Nachrichten werden beim Öffnen geladen.';
+    $('gamerTickerList').replaceChildren();newsStatus();
     if(!identity)return;
     accessPending=(async()=>{
       try{
@@ -52,13 +54,13 @@ window.HammerschachCorner = (() => {
       }
       if(version!==identityVersion||!allowed||!active)return;
       const current=weekly.week();
-      if(weekKey!==current){series=weekly.select(database,current);weekKey=current;const date=new Date(current+'T12:00:00Z');$('weeklyDate').textContent='Woche ab '+date.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Europe/Berlin'});restart();}
+      if(weekKey!==current){series=weekly.select(database,current);weekKey=current;restart();}
       else if(!game)restart();
     }catch(error){status(error.message+' Mit „Wiederholen“ erneut versuchen.','error');}
   }
   function restart(){
-    stop();selected=null;revealed=false;step=1;$('weeklyLine').hidden=true;$('weeklyLine').textContent='';
-    puzzle=series[Number($('weeklyDay').value)*4+Number($('weeklyLevel').value)];
+    stop();selected=null;revealed=false;step=1;played=[];$('weeklyLine').hidden=true;$('weeklyLine').textContent='';
+    puzzle=series[Number($('weeklyDay').value)*4+level];
     if(!puzzle){loadPuzzles();return;}
     try{const prepared=weekly.prepare(puzzle);game=prepared.game;last=prepared.last;player=game.turn;status((player==='w'?'Weiß':'Schwarz')+' am Zug.');render();}
     catch(error){game=null;board.replaceChildren();status(error.message,'error');}
@@ -107,23 +109,30 @@ window.HammerschachCorner = (() => {
     status('Richtig. Der Gegenzug folgt…','success');busy=true;
     timer=setTimeout(()=>{if(version!==run)return;advance();busy=false;render();status(step>=puzzle.moves.length?'Richtig gelöst!':(player==='w'?'Weiß':'Schwarz')+' am Zug.',step>=puzzle.moves.length?'success':'');},450);
   }
-  function apply(move){const applied=game.makeMove(move,true);last=move;selected=null;playMoveSound({capture:applied.taken!=='.',promotion:!!move.promotion,castle:!!move.meta?.castle,check:game.inCheck(game.turn)});}
+  function apply(move){
+    const before=game.clone(),number=game.fullmove,turn=game.turn;
+    const applied=game.makeMove(move,true);
+    const san=moveToSan(before,{...move,taken:applied.taken},game);
+    played.push((turn==='w'?number+'. ':played.length===0?number+'... ':'')+san);
+    $('weeklyLine').textContent=played.join(' ');$('weeklyLine').hidden=false;
+    last=move;selected=null;
+    playMoveSound({capture:applied.taken!=='.',promotion:!!move.promotion,castle:!!move.meta?.castle,check:game.inCheck(game.turn)});
+  }
   function advance(){if(game&&step<puzzle.moves.length){apply(weekly.uciMove(game,puzzle.moves[step]));step++;}}
   function hint(){if(!game||busy||revealed||step>=puzzle.moves.length)return;const uci=puzzle.moves[step];selected=[uci.charCodeAt(0)-97,8-Number(uci[1])];highlight();status('Tipp: Ziehe die Figur auf '+uci.slice(0,2)+'.');}
   function solution(){
     if(!game||busy)return;
-    restart();if(!game)return;revealed=true;busy=true;const version=run;
-    $('weeklyLine').textContent=LiveBoardPosition.variation(LiveBoardPosition.fen(game),puzzle.moves.slice(1));
-    $('weeklyLine').hidden=false;status('Lösung wird vorgespielt…');
+    if(step>=puzzle.moves.length){restart();if(!game)return;}
+    revealed=true;busy=true;const version=run;status('Lösung wird vorgespielt…');
     const next=()=>{if(version!==run||!active)return;advance();render();if(step<puzzle.moves.length)timer=setTimeout(next,700);else{busy=false;status('Lösung gezeigt. Mit „Wiederholen“ selbst probieren.');}};
     timer=setTimeout(next,500);
   }
   function newsRender(){
     const list=$('gamerTickerList');list.replaceChildren();
-    if(!news?.items?.length){$('gamerTickerStatus').textContent='Zurzeit sind keine Nachrichten abrufbar.';return;}
+    if(!news?.items?.length){newsStatus('Zurzeit sind keine Nachrichten abrufbar.');return;}
     const format=value=>new Date(value).toLocaleString('de-DE',{timeZone:'Europe/Berlin',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    $('gamerTickerStatus').textContent=(news.stale?'Letzter verfügbarer Stand: ':'Aktualisiert: ')+format(news.updatedAt)+' · alle 6 Stunden';
-    for(const item of news.items.slice(0,10)){
+    newsStatus(news.stale?'Einzelne Quellen sind vorübergehend nicht erreichbar. Letzter verfügbarer Stand.':'');
+    for(const item of news.items.slice(0,9)){
       let url;try{url=new URL(item.url);if(!['https:','http:'].includes(url.protocol))continue;}catch(_){continue;}
       const li=document.createElement('li'),meta=document.createElement('div'),a=document.createElement('a');meta.className='corner-meta';
       meta.textContent=item.source+' · '+(item.dateOnly?new Date(item.publishedAt).toLocaleDateString('de-DE',{timeZone:'Europe/Berlin'}):format(item.publishedAt));
@@ -135,11 +144,16 @@ window.HammerschachCorner = (() => {
     if(news&&Date.now()<Number(news.nextCheckAt)){newsRender();return;}
     newsPending=true;const version=identityVersion;
     try{const data=await authApi('/api/schachecke/ticker');if(version!==identityVersion||!allowed)return;news=data;newsRetryAt=Date.now()+60000;newsRender();}
-    catch(error){if(version!==identityVersion)return;newsRetryAt=Date.now()+60000;if(news){news.stale=true;newsRender();}else $('gamerTickerStatus').textContent=error.message;}
+    catch(error){if(version!==identityVersion)return;newsRetryAt=Date.now()+60000;if(news){news.stale=true;newsRender();}else newsStatus(error.message);}
     finally{newsPending=false;}
   }
   $('lobbyChatTab').addEventListener('click',toggleChat);
-  $('weeklyDay').addEventListener('change',restart);$('weeklyLevel').addEventListener('change',restart);
+  $('weeklyDay').addEventListener('change',restart);
+  document.querySelectorAll('[data-weekly-level]').forEach(button=>button.addEventListener('click',()=>{
+    const next=Number(button.dataset.weeklyLevel);if(next===level)return;level=next;
+    document.querySelectorAll('[data-weekly-level]').forEach(item=>{const on=Number(item.dataset.weeklyLevel)===level;item.classList.toggle('active',on);item.setAttribute('aria-pressed',String(on));});
+    restart();
+  }));
   $('weeklyHint').addEventListener('click',hint);$('weeklySolution').addEventListener('click',solution);$('weeklyRepeat').addEventListener('click',restart);
   new MutationObserver(()=>{if(active&&game)render();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-piece-set']});
   window.addEventListener('hammerschach:preferences',()=>{if(active&&game)render();});
