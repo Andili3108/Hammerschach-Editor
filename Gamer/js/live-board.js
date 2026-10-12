@@ -7,7 +7,7 @@ const HammerschachLiveBoard = (() => {
   dialog.setAttribute('aria-labelledby','liveBoardTitle');
   dialog.innerHTML=`<header class="lb-header" hidden><div><h2 id="liveBoardTitle">Vereinsschach</h2></div></header>
     <div class="lb-toolbar"><button type="button" data-lb="back" hidden>← Veranstaltungen</button><button type="button" data-lb="refresh">Aktualisieren</button><label class="lb-round" hidden>Runde <select aria-label="Runde wählen"></select></label><button type="button" data-lb="remove" hidden>Übertragung entfernen</button></div>
-    <div class="lb-catalog-tools" hidden><form class="lb-catalog-form"><div class="lb-search"><label for="lbEventSearch">Veranstaltung suchen</label><input id="lbEventSearch" type="search" maxlength="100" placeholder="Name der Veranstaltung"><select id="lbEventState" aria-label="Veranstaltungsstatus"><option value="all">Alle Veranstaltungen</option><option value="live">Laufend</option><option value="upcoming">Geplant</option><option value="finished">Beendet</option></select></div>
+    <div class="lb-catalog-tools" hidden><form class="lb-catalog-form"><div class="lb-search"><label for="lbEventSearch">Veranstaltung suchen</label><input id="lbEventSearch" type="search" maxlength="100" placeholder="Name, Ort oder Land – filtert sofort"><select id="lbEventState" aria-label="Veranstaltungsstatus"><option value="all">Alle Veranstaltungen</option><option value="live">Laufend</option><option value="upcoming">Geplant</option><option value="finished">Beendet</option></select></div>
     <label class="lb-scope-filter" hidden>Verbandsebene <select id="lbClubScope"><option value="">Alle Ebenen</option><option value="bundesliga">Bundesliga</option><option value="nrw">Schachbund NRW (SBNRW)</option><option value="ruhrgebiet">Schachverband Ruhrgebiet (SVRuhrgebiet)</option><option value="hamm">Schachbezirk Hamm (SBHamm)</option><option value="own">Eigene Vereinsübertragungen</option></select></label>
     <div class="lb-search"><label for="lbPlayerSearch">Spieler suchen</label><input id="lbPlayerSearch" type="search" minlength="2" maxlength="80" placeholder="Spielername" autocomplete="off"><button type="submit">Suchen</button><button type="button" data-lb="reset-filters">Zurücksetzen</button></div></form>
     <details class="lb-add"><summary>Eigene Übertragung hinzufügen</summary><form class="lb-source-form"><label class="lb-source-scope" hidden>Verbandsebene<select name="clubScope" required><option value="">Bitte auswählen</option><option value="bundesliga">Bundesliga</option><option value="nrw">Schachbund NRW (SBNRW)</option><option value="ruhrgebiet">Schachverband Ruhrgebiet (SVRuhrgebiet)</option><option value="hamm">Schachbezirk Hamm (SBHamm)</option><option value="own">Eigene Vereinsübertragungen</option></select></label><label>Name<input name="title" required maxlength="160" autocomplete="off"></label><label>Übertragungslink<input name="url" type="url" required maxlength="2048" placeholder="DGT-, Lichess-Runden- oder PGN-Link" autocomplete="off"></label><label class="lb-dgt-round" hidden>DGT-Runde<input name="round" type="number" min="1" max="100" value="1"></label><button type="submit">Hinzufügen</button></form></details></div>
@@ -88,7 +88,7 @@ const HammerschachLiveBoard = (() => {
     dialog.querySelector('.lb-add').hidden=!manager();
     if(state.playerSearch){renderPlayerResults();return;}
     button('search-more').hidden=true;
-    const events=state.events.filter(e=>e.category===state.category&&(state.category!=='club'||scopeMatches(scope,e.clubScope||'own'))&&(!q||e.title.toLocaleLowerCase('de').includes(q))&&(filter==='all'||(filter==='live'?e.ongoing:filter==='finished'?e.finished:e.status!=='unknown'&&!e.finished&&!e.ongoing)));
+    const events=filteredEvents();
     const scopes=Object.keys(scopeLabels);
     if(state.category==='club')events.sort((a,b)=>scopes.indexOf(a.clubScope||'own')-scopes.indexOf(b.clubScope||'own'));
     state.catalogPages=Math.max(1,Math.ceil(events.length/8));state.catalogPage=Math.min(state.catalogPage,state.catalogPages);
@@ -104,9 +104,50 @@ const HammerschachLiveBoard = (() => {
       b.append(node('strong','',e.title),node('span','',[round,label].filter(Boolean).join(' · ')));content.append(b);
     }
   }
+  // Local AND search: each word may match another event field. Country
+  // abbreviations match whole words, never e.g. "US" inside "Lausanne".
+  function searchText(value){
+    return String(value||'').toLowerCase().replace(/\bu\.\s*s\.(?:\s*a\.)?/g,'usa')
+      .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+  }
+  const countryAliases=[
+    ['usa','us','united states','united states of america','vereinigte staaten'],
+    ['de','deu','ger','germany','deutschland','german'],
+    ['at','aut','austria','oesterreich','osterreich','austrian'],
+    ['ch','che','sui','switzerland','schweiz','swiss'],
+    ['gb','gbr','uk','united kingdom','grossbritannien'],
+    ['fr','fra','france','frankreich','french'],
+    ['es','esp','spain','spanien','spanish'],
+    ['it','ita','italy','italien','italian'],
+    ['nl','nld','ned','netherlands','niederlande','dutch'],
+    ['pl','pol','poland','polen','polish'],
+    ['in','ind','india','indien','indian'],
+    ['no','nor','norway','norwegen','norwegian']
+  ];
+  function eventMatches(event,query){
+    let q=searchText(query);if(!q)return true;
+    const fields=[event.title,event.round,event.location,event.country,scopeLabels[event.clubScope]]
+      .filter(value=>typeof value==='string').map(searchText);
+    const countries=new Set();
+    countryAliases.forEach((aliases,index)=>{
+      // Ambiguous two-letter codes count only in a dedicated country field;
+      // US/UK also occur conventionally in tournament titles.
+      if(aliases.some(alias=>fields.some(field=>
+        (alias.length>2||alias==='us'||alias==='uk'||field===searchText(event.country))&&
+        (' '+field+' ').includes(' '+alias+' '))))countries.add(index);
+      for(const alias of [...aliases].sort((a,b)=>b.length-a.length)){
+        q=(' '+q+' ').replace(new RegExp(' '+alias+'(?= )','g'),' country'+index+' ').trim();
+      }
+    });
+    return q.split(/\s+/).every(word=>{
+      const country=word.match(/^country(\d+)$/);
+      return country?countries.has(Number(country[1])):fields.some(field=>field.includes(word));
+    });
+  }
   function filteredEvents(){
     const f=state.filters;
-    return state.events.filter(e=>e.category===state.category&&(!f.q||e.title.toLocaleLowerCase('de').includes(f.q))&&(state.category!=='club'||scopeMatches(f.scope,e.clubScope||'own'))&&(f.status==='all'||(f.status==='live'?e.ongoing:f.status==='finished'?e.finished:e.status!=='unknown'&&!e.finished&&!e.ongoing)));
+    return state.events.filter(e=>e.category===state.category&&eventMatches(e,f.q)&&(state.category!=='club'||scopeMatches(f.scope,e.clubScope||'own'))&&(f.status==='all'||(f.status==='live'?e.ongoing:f.status==='finished'?e.finished:e.status!=='unknown'&&!e.finished&&!e.ongoing)));
   }
   function renderPlayerResults(){
     const job=state.playerSearch;if(!job)return;
@@ -154,9 +195,11 @@ const HammerschachLiveBoard = (() => {
       if(state.controller===controller){state.controller=null;job.running=false;setBusy(false);if(!state.event){renderPlayerResults();if(job.error){status.textContent+=' '+job.error;job.error='';}}}
     }
   }
-  function applyFilters(){
-    stop();state.delay=0;
-    const player=dialog.querySelector('#lbPlayerSearch').value.trim();
+  function applyFilters(searchPlayer=true){
+    // Keep a catalog refresh alive while typing; cancel only obsolete player work.
+    if(searchPlayer||state.playerSearch)stop();
+    state.delay=0;
+    const player=searchPlayer?dialog.querySelector('#lbPlayerSearch').value.trim():'';
     state.filters={q:dialog.querySelector('#lbEventSearch').value.trim().toLocaleLowerCase('de'),scope:dialog.querySelector('#lbClubScope').value,status:dialog.querySelector('#lbEventState').value,player};state.catalogPage=1;state.playerSearch=null;
     if(player&&player.length<2){state.filters.player='';catalog();status.textContent='Bitte mindestens zwei Zeichen für den Spielernamen eingeben.';return;}
     if(player){state.playerSearch={query:player,events:filteredEvents(),results:[],offset:0,running:false};catalog();searchPlayers();}
@@ -360,6 +403,8 @@ const HammerschachLiveBoard = (() => {
   button('next').addEventListener('click',()=>{if(state.page<state.pages){state.page++;clearPosition();navigate();}});
   roundSelect.addEventListener('change',()=>chooseEvent({...state.event,id:roundSelect.value}));
   dialog.querySelector('.lb-catalog-form').addEventListener('submit',e=>{e.preventDefault();applyFilters();});
+  dialog.querySelector('#lbEventSearch').addEventListener('input',()=>applyFilters(false));
+  for(const id of ['#lbEventState','#lbClubScope'])dialog.querySelector(id).addEventListener('change',()=>applyFilters(false));
   button('search-more').addEventListener('click',searchPlayers);
   button('reset-filters').addEventListener('click',()=>{dialog.querySelector('#lbEventSearch').value='';dialog.querySelector('#lbPlayerSearch').value='';dialog.querySelector('#lbEventState').value='all';dialog.querySelector('#lbClubScope').value='';applyFilters();});
   button('event-prev').addEventListener('click',()=>{if(state.catalogPage>1){state.catalogPage--;catalog();}});
