@@ -48,11 +48,23 @@ export function normalizeEvent(event) {
 }
 export function sourceIdentity(event) {
   const s=event.source;
-  return s.type==='demo'?'demo:'+event.id:s.url||JSON.stringify([s.type,s.tournamentId,s.round]);
+  return s.type==='demo'?'demo:'+event.id:s.type==='chessbase'?'chessbase:'+s.slug+':'+(s.round||'latest'):s.url||JSON.stringify([s.type,s.tournamentId,s.round]);
 }
 export function orderedEvents(events) {
-  const seen=new Set();
-  return events.map(normalizeEvent).filter(e=>{const key=sourceIdentity(e);if(seen.has(key))return false;seen.add(key);return true;})
+  const seen=new Set(),named=new Map();
+  return events.map(normalizeEvent).filter(e=>{
+    const key=sourceIdentity(e);if(seen.has(key))return false;seen.add(key);
+    // Only consolidate cross-provider events with the same full title and
+    // independently supplied tournament start day. Never use a round date,
+    // fuzzy title, or an administrator's saved entry as evidence of identity.
+    const date=Number.isFinite(e.eventStartsAt)&&e.eventStartsAt>0?new Date(e.eventStartsAt).toISOString().slice(0,10):/^\d{4}-\d{2}-\d{2}$/.test(e.eventDate||'')?e.eventDate:null;
+    if(!e.automatic||e.saved||!date)return true;
+    const title=String(e.title||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    const identity=JSON.stringify([e.category,e.clubScope||'',title,date]);
+    const prior=named.get(identity);
+    if(prior&&prior.source.type!==e.source.type)return false;
+    named.set(identity,e);return true;
+  })
     .sort((a,b)=>{
       const rank=e=>e.category==='club'?(CLUB_SCOPES.indexOf(e.clubScope)+1||CLUB_SCOPES.length+1):CLUB_SCOPES.length+2;
       return rank(a)-rank(b);

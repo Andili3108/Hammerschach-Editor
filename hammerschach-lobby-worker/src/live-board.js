@@ -1,3 +1,4 @@
+import {chessbaseEnabled,discoverChessbase,resolveChessbase,chessbaseFeed} from './live-board-chessbase.js';
 import {discoverPageEvents,resolvePageEvent} from './live-board-discovery-pages.js';
 import {orderedEvents} from './live-board-classification.js';
 import {discoverBroadcasts,resolveBroadcast,savedEvents,sourceFromLink,saveEvent,removeEvent} from './live-board-catalog.js';
@@ -100,6 +101,25 @@ async function eventSource(event, deps, interval=POLL_MS) {
   const cached=(key,ttl,load)=>sharedLiveCache(key,ttl,load,deps);
   const read=url=>fetchSource(url,deps.fetcher);
   if(source.type==='demo')return {catalog:demoGames(),updatedAt:Date.now(),stale:false,board:async p=>({value:p,updatedAt:Date.now(),stale:false})};
+  if(source.type==='chessbase'){
+    const feed=await chessbaseFeed(source,cached,address=>fetchSource(address,deps.fetcher,{accept:'text/html'}));
+    const round=await cached('chessbase-pgn-v1:'+feed.value.url,interval,async()=>{
+      const games=parseLivePgn(await read(feed.value.url));
+      // A round may finish while the tournament continues. Do not freeze its cache.
+      return {games};
+    });
+    const games=round.value.games;
+    event.id='cb-'+source.slug+'_r'+feed.value.round;
+    event.round=String(feed.value.round);
+    event.rounds=feed.value.rounds.map(n=>({id:'cb-'+source.slug+'_r'+n,name:'Runde '+n}));
+    event.finished=games.length>0&&games.every(g=>g.finished);event.ongoing=games.some(g=>!g.finished);
+    event.status=event.finished?'finished':event.ongoing?'live':'unknown';
+    event.eventDate=games.find(g=>g.headers?.EventDate)?.headers.EventDate||null;
+    event.location=games.find(g=>g.headers?.Site)?.headers.Site||'';
+    event.country=games.find(g=>g.headers?.EventCountry)?.headers.EventCountry||'';
+    event.catalogStale ||= feed.stale;
+    return {catalog:games,updatedAt:round.updatedAt,stale:feed.stale||round.stale,board:async p=>({value:p,updatedAt:round.updatedAt,stale:round.stale})};
+  }
   if(source.type==='pgn'||source.type==='lichess'){
     const round=await cached('pgn-headers-v2:'+source.url,interval,async()=>{
       const raw=await read(source.url);
@@ -169,7 +189,7 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     if(removal&&method==='DELETE'){await removeEvent(env,removal[1]);return reply({ok:true});}
     if(method!=='GET')return reply({ok:false,message:'Methode nicht erlaubt.'},405);
     const events=sourceEvents(env);
-    const resolveEvent=async id=>events.find(e=>e.id===id)||(id.startsWith('saved-')?(await savedEvents(env)).find(e=>e.id===id):null)||(id.startsWith('dg-')?await resolvePageEvent(id,env,cached,readPage):null)||(env.LIVE_BOARD_DISCOVERY!=='0'?await resolveBroadcast(id,cached,read):null);
+    const resolveEvent=async id=>events.find(e=>e.id===id)||(id.startsWith('saved-')?(await savedEvents(env)).find(e=>e.id===id):null)||(id.startsWith('dg-')?await resolvePageEvent(id,env,cached,readPage):null)||(id.startsWith('cb-')?await resolveChessbase(id,env,cached,readPage):null)||(env.LIVE_BOARD_DISCOVERY!=='0'?await resolveBroadcast(id,cached,read):null);
     if(url.pathname==='/api/live-board/players'){
       const ids=(url.searchParams.get('events')||'').split(',');
       const q=(url.searchParams.get('q')||'').trim();
@@ -194,23 +214,26 @@ export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
     }
     if(url.pathname==='/api/live-board/events'){
       let discoveryUnavailable=false,stale=false;
-      // All three sources settle independently; a stalled provider must not
+      // Catalog sources settle independently; a stalled provider must not
       // hide successful Lichess, publisher or saved-event results.
       const budget=deps.discoveryTimeoutMs||12000;
-      const [saved,lichess,publishers]=await Promise.allSettled([
+      const [saved,lichess,publishers,chessbase]=await Promise.allSettled([
         deadline(savedEvents(env),deps.savedTimeoutMs||4000),
         deadline(env.LIVE_BOARD_DISCOVERY==='0'?Promise.resolve(null):discoverBroadcasts(cached,read),budget),
-        deadline(discoverPageEvents(env,cached,readPage),budget)
+        deadline(discoverPageEvents(env,cached,readPage),budget),
+        deadline(chessbaseEnabled(env)?discoverChessbase(cached,readPage):Promise.resolve(null),budget)
       ]);
       const savedUnavailable=saved.status==='rejected';
       if(!savedUnavailable)events.push(...saved.value);
       if(lichess.status==='fulfilled'&&lichess.value){events.push(...lichess.value.value.events);stale ||= lichess.value.stale;}
       else if(lichess.status==='rejected')discoveryUnavailable=true;
+      const chessbaseUnavailable=chessbase.status==='rejected';
+      if(chessbase.status==='fulfilled'&&chessbase.value){events.push(...chessbase.value.value.events);stale ||= chessbase.value.stale;}
       let publisherUnavailable=false;
       if(publishers.status==='fulfilled'){events.push(...publishers.value.events);stale ||= publishers.value.stale;publisherUnavailable=publishers.value.unavailable>0;}
       else publisherUnavailable=true;
       const category=url.searchParams.get('category');
-      return reply({ok:true,events:orderedEvents(events).filter(e=>!category||e.category===category).map(publicEvent),stale,discoveryUnavailable,publisherUnavailable,savedUnavailable});
+      return reply({ok:true,events:orderedEvents(events).filter(e=>!category||e.category===category).map(publicEvent),stale,discoveryUnavailable,publisherUnavailable,savedUnavailable,chessbaseUnavailable});
     }
     const match=url.pathname.match(/^\/api\/live-board\/events\/([A-Za-z0-9_-]+)\/boards$/);
     if(!match)return reply({ok:false,message:'Endpunkt nicht gefunden.'},404);
