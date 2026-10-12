@@ -13,7 +13,7 @@ const HammerschachLiveBoard = (() => {
     <details class="lb-add"><summary>Eigene Übertragung hinzufügen</summary><form class="lb-source-form"><label class="lb-source-scope" hidden>Verbandsebene<select name="clubScope" required><option value="">Bitte auswählen</option><option value="bundesliga">Bundesliga</option><option value="nrw">Schachbund NRW (SBNRW)</option><option value="ruhrgebiet">Schachverband Ruhrgebiet (SVRuhrgebiet)</option><option value="hamm">Schachbezirk Hamm (SBHamm)</option><option value="own">Eigene Vereinsübertragungen</option></select></label><label>Name<input name="title" required maxlength="160" autocomplete="off"></label><label>Übertragungslink<input name="url" type="url" required maxlength="2048" placeholder="DGT-, Lichess-Runden- oder PGN-Link" autocomplete="off"></label><label class="lb-dgt-round" hidden>DGT-Runde<input name="round" type="number" min="1" max="100" value="1"></label><button type="submit">Hinzufügen</button></form></details></div>
     <details class="lb-search-panel" hidden open><summary>Spieler oder Brett suchen</summary><form class="lb-search"><label for="lbSearch">Spieler oder Brett suchen</label><input id="lbSearch" type="search" maxlength="80" placeholder="Name oder Brettnummer" autocomplete="off"><button type="submit">Suchen / Springen</button><button type="button" data-lb="clear">Alle Bretter</button></form></details>
     <p class="lb-status" role="status" aria-live="polite"></p><div class="lb-content"></div>
-    <button type="button" data-lb="search-more" hidden>Weitere Veranstaltungen durchsuchen</button><nav class="lb-catalog-pages" aria-label="Veranstaltungsseiten" hidden><button type="button" data-lb="event-prev">← Zurück</button><span></span><button type="button" data-lb="event-next">Vor →</button></nav>
+    <button type="button" data-lb="search-more" hidden>Suche fortsetzen</button><nav class="lb-catalog-pages" aria-label="Veranstaltungsseiten" hidden><button type="button" data-lb="event-prev">← Zurück</button><span></span><button type="button" data-lb="event-next">Vor →</button></nav>
     <nav class="lb-pages" aria-label="Brettseiten" hidden><button type="button" data-lb="prev">← Zurück</button><span></span><button type="button" data-lb="next">Vor →</button></nav>`;
   const content=dialog.querySelector('.lb-content'),status=dialog.querySelector('.lb-status'),search=dialog.querySelector('.lb-search-panel form'),pages=dialog.querySelector('.lb-pages');
   const searchPanel=dialog.querySelector('.lb-search-panel');
@@ -182,19 +182,22 @@ const HammerschachLiveBoard = (() => {
     }
     const unavailable=job.results.filter(r=>r.unavailable).length;
     const stale=job.results.filter(r=>r.stale).length;
-    status.textContent=`${job.offset} / ${job.events.length} Veranstaltungen geprüft.`+(job.running?' Suche läuft …':job.interrupted?' Suche pausiert.':job.offset<job.events.length?' Weitere Veranstaltungen können durchsucht werden.':'')+(unavailable?` ${unavailable} nicht erreichbar.`:'')+(stale?` ${stale} mit älteren Paarungen.`:'');
+    status.textContent=`${job.offset} / ${job.events.length} Veranstaltungen geprüft.`+(job.running?' Suche läuft …':job.interrupted?' Suche pausiert.':job.offset<job.events.length?' Suche kann fortgesetzt werden.':' Suche abgeschlossen.')+(unavailable?` ${unavailable} nicht erreichbar.`:'')+(stale?` ${stale} mit älteren Paarungen.`:'');
     if(!job.results.some(r=>r.matches?.length))content.append(node('p','lb-empty',job.running?'Spieler wird gesucht …':'Bisher keine passenden Spieler in den geprüften Veranstaltungen gefunden.'));
     button('search-more').hidden=job.offset>=job.events.length;
-    button('search-more').disabled=job.running;
+    button('search-more').disabled=false;
+    button('search-more').textContent=job.running?'Suche stoppen':'Suche fortsetzen';
   }
   async function searchPlayers(){
     const job=state.playerSearch;
     if(!job||job.running||!visible())return;
     stop();state.delay=0;job.running=true;job.interrupted=false;
     const generation=state.generation,token=onlineAuthToken,controller=new AbortController();state.controller=controller;setBusy(true);renderPlayerResults();
-    const end=Math.min(job.events.length,job.offset+12);
+    // One request at a time, at most three events per request; continue to the end.
+    const end=job.events.length;
     try{
       while(job.offset<end){
+        if(generation!==state.generation||state.playerSearch!==job||!visible())return;
         const batch=job.events.slice(job.offset,Math.min(job.offset+3,end));
         const params=new URLSearchParams({q:job.query,events:batch.map(e=>e.id).join(',')});
         const timeout=setTimeout(()=>controller.abort(),35000);
@@ -429,7 +432,11 @@ const HammerschachLiveBoard = (() => {
   dialog.querySelector('.lb-catalog-form').addEventListener('submit',e=>{e.preventDefault();applyFilters();});
   dialog.querySelector('#lbEventSearch').addEventListener('input',()=>applyFilters(false));
   for(const id of ['#lbEventState','#lbClubScope'])dialog.querySelector(id).addEventListener('change',()=>applyFilters(false));
-  button('search-more').addEventListener('click',searchPlayers);
+  function togglePlayerSearch(){
+    if(state.playerSearch?.running){stop();state.delay=0;renderPlayerResults();}
+    else searchPlayers();
+  }
+  button('search-more').addEventListener('click',togglePlayerSearch);
   button('reset-filters').addEventListener('click',()=>{dialog.querySelector('#lbEventSearch').value='';dialog.querySelector('#lbPlayerSearch').value='';dialog.querySelector('#lbEventState').value='all';dialog.querySelector('#lbClubScope').value='';applyFilters();});
   button('event-prev').addEventListener('click',()=>{if(state.catalogPage>1){state.catalogPage--;catalog();}});
   button('event-next').addEventListener('click',()=>{if(state.catalogPage<state.catalogPages){state.catalogPage++;catalog();}});
