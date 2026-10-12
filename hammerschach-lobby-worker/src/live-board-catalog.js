@@ -11,13 +11,14 @@ export function broadcastEvent(tour, round) {
   const {category}=classification;
   if (!validId(tour?.id) || !validId(round?.id)) throw Error('Ungültige Übertragung.');
   return {id:`lc-${category}-${tour.id}-${round.id}`,title:clean(tour.name),...classification,
+    location:typeof tour.info?.location==='string'?clean(tour.info.location):'',
     round:clean(round.name),finished:round.finished===true,ongoing:round.ongoing===true,
     startsAt:Number(round.startsAt)||null,automatic:true,
     source:{type:'lichess',url:`https://lichess.org/api/broadcast/round/${round.id}.pgn`}};
 }
 
 export async function discoverBroadcasts(cached, read) {
-  return cached('lichess-discovery-regional-v3',300000,async()=>{
+  return cached('lichess-discovery-regional-v4',300000,async()=>{
     const data=JSON.parse(await read('https://lichess.org/api/broadcast/top'));
     if(!Array.isArray(data.active)||(data.upcoming!==undefined&&!Array.isArray(data.upcoming))||!Array.isArray(data.past?.currentPageResults))throw Error('Veranstaltungsliste nicht verfügbar.');
     const events=[],seen=new Set();
