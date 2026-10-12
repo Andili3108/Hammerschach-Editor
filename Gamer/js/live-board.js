@@ -89,19 +89,16 @@ const HammerschachLiveBoard = (() => {
     if(state.playerSearch){renderPlayerResults();return;}
     button('search-more').hidden=true;
     const events=filteredEvents();
-    const scopes=Object.keys(scopeLabels);
-    if(state.category==='club')events.sort((a,b)=>scopes.indexOf(a.clubScope||'own')-scopes.indexOf(b.clubScope||'own'));
+
     state.catalogPages=Math.max(1,Math.ceil(events.length/8));state.catalogPage=Math.min(state.catalogPage,state.catalogPages);
     catalogPages.hidden=state.catalogPages<=1;catalogPages.querySelector('span').textContent=`Seite ${state.catalogPage} / ${state.catalogPages} · ${events.length} Veranstaltungen`;
     button('event-prev').disabled=state.catalogPage<=1;button('event-next').disabled=state.catalogPage>=state.catalogPages;
     if(!events.length)content.append(node('p','lb-empty',q||scope||filter!=='all'?'Keine passenden Veranstaltungen.':'Derzeit keine Veranstaltungen.'));
-    let lastScope=null;
     for(const e of events.slice((state.catalogPage-1)*8,state.catalogPage*8)){
-      if(state.category==='club'&&lastScope!==(e.clubScope||'own')){lastScope=e.clubScope||'own';content.append(node('h3','lb-scope-heading',scopeLabels[lastScope]||scopeLabels.own));}
       const b=action('',()=>chooseEvent(e));b.className='button-flat lb-event';
       const round=/^\d+$/.test(e.round)?'Runde '+e.round:e.round;
       const label=e.demo?'DEMO':e.finished?'Beendet':e.ongoing?'Laufend':e.status==='unknown'?'Übertragung':e.automatic?'Geplant':'Übertragung';
-      b.append(node('strong','',e.title),node('span','',[round,label].filter(Boolean).join(' · ')));content.append(b);
+      b.append(node('strong','',e.title),node('span','',[eventDateLabel(e),round,label,state.category==='club'?scopeLabels[e.clubScope||'own']:'',e.publisher].filter(Boolean).join(' · ')));content.append(b);
     }
   }
   // Local AND search: each word may match another event field. Country
@@ -127,7 +124,7 @@ const HammerschachLiveBoard = (() => {
   ];
   function eventMatches(event,query){
     let q=searchText(query);if(!q)return true;
-    const fields=[event.title,event.round,event.location,event.country,scopeLabels[event.clubScope]]
+    const fields=[event.title,event.searchTitle,event.round,event.location,event.country,scopeLabels[event.clubScope]]
       .filter(value=>typeof value==='string').map(searchText);
     const countries=new Set();
     countryAliases.forEach((aliases,index)=>{
@@ -145,9 +142,28 @@ const HammerschachLiveBoard = (() => {
       return country?countries.has(Number(country[1])):fields.some(field=>field.includes(word));
     });
   }
+  function eventTime(event){
+    // Prefer the tournament's actual start, never its import/publication time.
+    if(Number.isFinite(event.eventStartsAt)&&event.eventStartsAt>0)return event.eventStartsAt;
+    const date=String(event.eventDate||'').match(/^(\d{4})[.-](\d{2})[.-](\d{2})$/);
+    if(date){const time=Date.UTC(+date[1],+date[2]-1,+date[3]),d=new Date(time);if(d.getUTCFullYear()===+date[1]&&d.getUTCMonth()===+date[2]-1&&d.getUTCDate()===+date[3])return time;}
+    return Number.isFinite(event.startsAt)&&event.startsAt>0?event.startsAt:null;
+  }
+  function eventDateLabel(event){
+    const time=eventTime(event);if(!time)return 'Datum unbekannt';
+    const onlyRound=!event.eventStartsAt&&!event.eventDate;
+    return (onlyRound?'Runde: ':'Beginn: ')+new Date(time).toLocaleDateString('de-DE',{timeZone:onlyRound?'Europe/Berlin':'UTC'});
+  }
+  function chronologicalEvents(events,upcoming=false){
+    return events.sort((a,b)=>{
+      const x=eventTime(a),y=eventTime(b);
+      if(x===null||y===null)return x===y?0:x===null?1:-1;
+      return upcoming?x-y:y-x;
+    });
+  }
   function filteredEvents(){
     const f=state.filters;
-    return state.events.filter(e=>e.category===state.category&&eventMatches(e,f.q)&&(state.category!=='club'||scopeMatches(f.scope,e.clubScope||'own'))&&(f.status==='all'||(f.status==='live'?e.ongoing:f.status==='finished'?e.finished:e.status!=='unknown'&&!e.finished&&!e.ongoing)));
+    return chronologicalEvents(state.events.filter(e=>e.category===state.category&&eventMatches(e,f.q)&&(state.category!=='club'||scopeMatches(f.scope,e.clubScope||'own'))&&(f.status==='all'||(f.status==='live'?e.ongoing:f.status==='finished'?e.finished:e.status!=='unknown'&&!e.finished&&!e.ongoing))),f.status==='upcoming');
   }
   function renderPlayerResults(){
     const job=state.playerSearch;if(!job)return;
@@ -350,13 +366,21 @@ const HammerschachLiveBoard = (() => {
       if(generation!==state.generation||token!==onlineAuthToken||!visible())return;
       state.lastAt=Date.now();state.failures=0;
       if(!state.event){
-        state.events=data.events;state.playerSearch=null;catalog();
-        state.catalogNotice=[data.discoveryUnavailable?'Lichess-Suche derzeit nicht erreichbar.':'',data.publisherUnavailable?'Einige Vereins- oder Verbandsseiten sind derzeit nicht erreichbar.':'',data.savedUnavailable?'Gespeicherte Übertragungen derzeit nicht erreichbar.':'',data.stale?'Veranstaltungsliste verzögert.':''].filter(Boolean).join(' ');
+        const previousEvents=new Map(state.events.map(e=>[e.id,e]));
+        state.events=data.events.map(e=>{
+          const previous=previousEvents.get(e.id);
+          if(e.sourceType==='chessbase'&&previous){for(const key of ['eventDate','location','country'])if(!e[key]&&previous[key])e[key]=previous[key];}
+          return e;
+        });state.playerSearch=null;catalog();
+        state.catalogNotice=[data.discoveryUnavailable?'Lichess-Suche derzeit nicht erreichbar.':'',data.publisherUnavailable?'Einige Vereins- oder Verbandsseiten sind derzeit nicht erreichbar.':'',data.savedUnavailable?'Gespeicherte Übertragungen derzeit nicht erreichbar.':'',data.chessbaseUnavailable?'ChessBase derzeit nicht erreichbar.':'',data.stale?'Veranstaltungsliste verzögert.':''].filter(Boolean).join(' ');
         status.textContent=state.catalogNotice||(manual?'Aktualisiert.':'');
         schedule(0);
         if(state.filters.player){startPlayerSearch=true;state.playerSearch={query:state.filters.player,events:filteredEvents(),results:[],offset:0,running:false};catalog();}
       }
       else{
+        const catalogId=data.event.id.replace(/_r\d+$/,'');
+        const entry=state.events.find(e=>e.id===catalogId);
+        if(entry&&data.event.sourceType==='chessbase'){for(const key of ['eventDate','location','country'])if(data.event[key])entry[key]=data.event[key];}
         syncClock(data);
         if(!state.data||contentSignature(state.data)!==contentSignature(data))render(data);else state.data=data;
         startClock();status.textContent=statusText(data);
