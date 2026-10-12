@@ -48,3 +48,13 @@ test('broadcast location is retained when available and safe when absent',()=>{
  assert.equal(broadcastEvent({...tour,info:undefined},round).location,'');
  assert.equal(broadcastEvent({...tour,info:{location:{bad:true}}},round).location,'');
 });
+test('chronology is global before paging, unknown dates last; upcoming soonest first',()=>{
+ const events=Array.from({length:10},(_,i)=>({id:i,eventStartsAt:Date.UTC(2026,9,i+1),category:'club',clubScope:i%2?'hamm':'nrw'}));
+ events.splice(2,0,{id:'unknown'});
+ assert.deepEqual(Array.from(context.chronologicalEvents([...events]),e=>e.id),[9,8,7,6,5,4,3,2,1,0,'unknown']);
+ assert.deepEqual(Array.from(context.chronologicalEvents([...events],true),e=>e.id),[0,1,2,3,4,5,6,7,8,9,'unknown']);
+ assert.equal(context.eventTime({eventDate:'2026.02.30'}),null);
+ assert.equal(context.eventTime({eventDate:'2026.10.09',startsAt:Date.UTC(2026,9,12)}),Date.UTC(2026,9,9));
+ assert.match(context.eventDateLabel({startsAt:Date.UTC(2026,9,12)}),/^Runde:/);
+ assert.equal(context.eventDateLabel({}), 'Datum unbekannt');
+});
