@@ -413,7 +413,8 @@ async function refreshSiteStats(countVisit){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) throw new Error('Ungültiger Zählertag');
     const identity = day + ':' + (authToken ? 'member:' + String(onlineAuthUser && onlineAuthUser.id || authToken) : 'visitor');
     if(countVisit && identity !== siteStatsCountedIdentity){
-      const visitorToken = authToken ? '' : await dailyVisitorToken(day);
+      // Auch beim Login mitsenden: Der Server ordnet den bisherigen Besuch um.
+      const visitorToken = await dailyVisitorToken(day);
       if(requestId !== siteStatsRequestId) return;
       if(authToken || visitorToken){
         const headers = {'content-type':'application/json'};
