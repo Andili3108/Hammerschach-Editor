@@ -9257,6 +9257,15 @@ function defaultTvConfig(slotNumber = 1) {
   };
 }
 
+function normalizeTvLiveBoardEvents(value) {
+  const seen = new Set();
+  return (Array.isArray(value) ? value : []).slice(0,12).flatMap(event => {
+    if (!event || typeof event.id !== 'string' || !/^[a-zA-Z0-9_-]{1,200}$/.test(event.id) || seen.has(event.id)) return [];
+    seen.add(event.id);
+    return [{id:event.id, title:cleanTvText(event.title,160) || 'Liveboard-Turnier', category:event.category === 'club' ? 'club' : 'tournament'}];
+  });
+}
+
 function normalizeTvConfig(value, slotNumber = 1) {
   const source = value && typeof value === 'object' ? value : {};
   const number = tvSlotNumber(source.slotId, slotNumber);
@@ -9265,6 +9274,9 @@ function normalizeTvConfig(value, slotNumber = 1) {
     slotId:tvSlotId(number),
     slotNumber:number,
     enabled:source.enabled == null ? number === 1 : source.enabled === true,
+    liveBoardsEnabled:source.liveBoardsEnabled === true,
+    liveBoardEvents:normalizeTvLiveBoardEvents(source.liveBoardEvents),
+    liveBoardStart:source.liveBoardStart === 'first' ? 'first' : 'selection',
     mode:normalizeTvMode(source.mode),
     title:cleanedTitle === 'Hammerschach TV' || cleanedTitle === 'Gamer TV' ? 'Gamer-TV' : cleanedTitle,
     eventName:cleanTvText(source.eventName, 120),
@@ -9622,6 +9634,9 @@ function tvDto(config, resolved) {
     slotId:config.slotId,
     slotNumber:config.slotNumber,
     enabled:config.enabled === true,
+    liveBoardsEnabled:config.liveBoardsEnabled === true,
+    liveBoardEvents:normalizeTvLiveBoardEvents(config.liveBoardEvents),
+    liveBoardStart:config.liveBoardStart === 'first' ? 'first' : 'selection',
     mode:normalizeTvMode(config.mode),
     title:config.title,
     eventName:config.eventName,
