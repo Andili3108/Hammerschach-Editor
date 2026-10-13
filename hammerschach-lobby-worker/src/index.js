@@ -10472,6 +10472,11 @@ async function ensureDailyStatsTables(env) {
       kind TEXT NOT NULL CHECK (kind IN ('member', 'visitor')),
       identity_hash TEXT NOT NULL,
       PRIMARY KEY (day, kind, identity_hash)
+    )`),
+    // Tagesbezogene Browser-Markierung ohne Verknüpfung zur Mitglieds-ID.
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS gamer_daily_stats_member_browsers (
+      day TEXT NOT NULL, identity_hash TEXT NOT NULL,
+      PRIMARY KEY (day, identity_hash)
     )`)
   ]);
 }
@@ -10480,7 +10485,8 @@ async function pruneDailyGamerStats(env, days = gamerStatsDays()) {
   await ensureDailyStatsTables(env);
   await env.DB.batch([
     env.DB.prepare(`DELETE FROM gamer_daily_stats_visitors WHERE day < ?`).bind(days.yesterday),
-    env.DB.prepare(`DELETE FROM gamer_daily_stats_days WHERE day < ?`).bind(days.yesterday)
+    env.DB.prepare(`DELETE FROM gamer_daily_stats_days WHERE day < ?`).bind(days.yesterday),
+    env.DB.prepare(`DELETE FROM gamer_daily_stats_member_browsers WHERE day < ?`).bind(days.yesterday)
   ]);
 }
 
@@ -10502,7 +10508,7 @@ async function readDailyGamerStats(env, days = gamerStatsDays()) {
   return stats;
 }
 
-async function recordDailyGamerVisit(env, days, kind, identity) {
+async function recordDailyGamerVisit(env, days, kind, identity, visitorToken = '') {
   await ensureDailyStatsTables(env);
   // INSERT OR IGNORE und der zusammengesetzte Primärschlüssel verhindern
   // Doppelzählungen auch bei gleichzeitigen Tabs, Geräten und Wiederholungen.
@@ -10510,8 +10516,28 @@ async function recordDailyGamerVisit(env, days, kind, identity) {
     .bind(days.today, randomBase64Url(32)).run();
   const daily = await env.DB.prepare(`SELECT salt FROM gamer_daily_stats_days WHERE day = ?`).bind(days.today).first();
   const identityHash = await sha256Hex(daily.salt + ':' + days.today + ':' + kind + ':' + identity);
-  await env.DB.prepare(`INSERT OR IGNORE INTO gamer_daily_stats_visitors (day, kind, identity_hash) VALUES (?, ?, ?)`)
-    .bind(days.today, kind, identityHash).run();
+  if (kind === 'visitor') {
+    // Auch verspätete Gastanfragen nach einem Login dürfen nicht erneut zählen.
+    await env.DB.prepare(`INSERT OR IGNORE INTO gamer_daily_stats_visitors (day, kind, identity_hash)
+      SELECT ?, 'visitor', ? WHERE NOT EXISTS (
+        SELECT 1 FROM gamer_daily_stats_member_browsers WHERE day = ? AND identity_hash = ?
+      )`).bind(days.today, identityHash, days.today, identityHash).run();
+    return;
+  }
+  const statements = [];
+  if (/^[a-f0-9]{32}$/.test(visitorToken)) {
+    const visitorHash = await sha256Hex(daily.salt + ':' + days.today + ':visitor:' + visitorToken);
+    statements.push(
+      env.DB.prepare(`INSERT OR IGNORE INTO gamer_daily_stats_member_browsers (day, identity_hash) VALUES (?, ?)`)
+        .bind(days.today, visitorHash),
+      env.DB.prepare(`DELETE FROM gamer_daily_stats_visitors WHERE day = ? AND kind = 'visitor' AND identity_hash = ?`)
+        .bind(days.today, visitorHash)
+    );
+  }
+  statements.push(env.DB.prepare(`INSERT OR IGNORE INTO gamer_daily_stats_visitors (day, kind, identity_hash) VALUES (?, 'member', ?)`)
+    .bind(days.today, identityHash));
+  // D1 batch ist atomar: Markierung, Umbuchung und Mitgliedszählung gehören zusammen.
+  await env.DB.batch(statements);
 }
 
 async function handleDailyGamerStats(request, env) {
@@ -10528,7 +10554,7 @@ async function handleDailyGamerStats(request, env) {
   if (!session && !/^[a-f0-9]{32}$/.test(visitorToken)) {
     return json({ok:false, code:'INVALID_VISITOR_TOKEN'}, {status:400, headers});
   }
-  await recordDailyGamerVisit(env, days, session ? 'member' : 'visitor', session ? String(session.user.id) : visitorToken);
+  await recordDailyGamerVisit(env, days, session ? 'member' : 'visitor', session ? String(session.user.id) : visitorToken, visitorToken);
   return json({ok:true, stats:await readDailyGamerStats(env)}, {headers});
 }
 
