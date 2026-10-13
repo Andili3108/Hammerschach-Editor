@@ -409,7 +409,8 @@ const HammerschachLiveBoard = (() => {
   function open(category){
     if(member())openEmbeddedToolFromCurrentContext(category==='tournament'?'live-board-tournament':'live-board-club');
   }
-  function setView(category){
+  function setView(category, options={}){
+    if(!options.floating && typeof TvLiveBoards !== 'undefined') TvLiveBoards.close(false);
     if(!category){stop();dialog.hidden=true;clearPosition();state.events=[];state.playerSearch=null;sourceForm.reset();dialog.querySelector('.lb-add').open=false;return;}
     if(!dialog.hidden&&state.category===category&&state.token===onlineAuthToken)return;
     stop();clearPosition();state.token=onlineAuthToken;state.interval=storedInterval();state.tab='moves';state.filters={q:'',scope:'',status:'all',player:''};state.playerSearch=null;dialog.querySelector('#lbPlayerSearch').value='';button('search-more').hidden=true;state.category=category;state.event=null;state.board='';state.query='';state.page=1;state.failures=0;state.catalogPage=1;state.catalogNotice='';dialog.querySelector('#lbEventSearch').value='';dialog.querySelector('#lbEventState').value='all';dialog.querySelector('#lbClubScope').value='';catalogTools.hidden=true;catalogPages.hidden=true;roundControl.hidden=true;button('remove').hidden=true;
@@ -417,12 +418,12 @@ const HammerschachLiveBoard = (() => {
     dialog.querySelector('h2').textContent=category==='club'?'Vereinsschach':'Turnierschach';
     searchPanel.hidden=true;pages.hidden=true;button('back').hidden=true;
     closeClubChessMenu();dialog.hidden=false;LiveBoardEngine.resume();navigate();
-    requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));
+    if(!options.floating)requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));
   }
   button('refresh').addEventListener('click',()=>{if(!state.controller)navigate(true);});
   button('back').addEventListener('click',()=>{
     if(state.board){state.board='';clearPosition();navigate();}
-    else{stop();state.event=null;clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';catalog();if(!state.playerSearch)status.textContent=state.catalogNotice;state.delay=0;}
+    else{stop();state.event=null;clearPosition();dialog.querySelector('h2').textContent=state.category==='club'?'Vereinsschach':'Turnierschach';if(!state.events.length){navigate();return;}catalog();if(!state.playerSearch)status.textContent=state.catalogNotice;state.delay=0;}
   });
   search.addEventListener('submit',e=>{e.preventDefault();state.query=dialog.querySelector('#lbSearch').value.trim();state.page=1;clearPosition();navigate();});
   button('clear').addEventListener('click',()=>{dialog.querySelector('#lbSearch').value='';state.query='';state.page=1;clearPosition();navigate();});
@@ -474,5 +475,13 @@ const HammerschachLiveBoard = (() => {
   window.addEventListener('offline',()=>{stop();if(!dialog.hidden)status.textContent='Offline – Live-Aktualisierung pausiert.';});
   window.addEventListener('online',resume);window.addEventListener('focus',resume);
   document.querySelectorAll('[data-live-board-category]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.liveBoardCategory)));
-  return {open,setView,updateIdentity};
+  function openTvEvent(event){
+    if(!member()||!event)return;
+    stop();state.category=event.category==='club'?'club':'tournament';state.events=[];
+    state.playerSearch=null;state.filters={q:'',scope:'',status:'all',player:''};
+    chooseEvent(event);
+  }
+  function pauseTv(){stop();LiveBoardEngine.suspend();dialog.hidden=true;}
+  function resumeTv(){if(!member())return;dialog.hidden=false;resume();if(state.data)startClock();}
+  return {open,setView,updateIdentity,openTvEvent,pauseTv,resumeTv};
 })();

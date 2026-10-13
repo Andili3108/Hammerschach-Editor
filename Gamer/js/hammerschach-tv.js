@@ -135,6 +135,8 @@ function captureTvAdminForm(){
   const base = tvAdminDraft(slotId);
   hammerschachTvAdminDrafts[slotId] = {
     ...base,
+    liveBoardsEnabled:document.getElementById('tvLiveBoardsEnabled').checked,
+    liveBoardStart:document.getElementById('tvLiveBoardsStart').value,
     slotId,
     slotNumber:tvSlotNumber(slotId),
     enabled:!!(tvEnabledInput && tvEnabledInput.checked),
@@ -161,6 +163,7 @@ function populateTvAdminForm(tv){
   if(tvVideoInput) tvVideoInput.value = slot.manualVideoId || '';
   if(tvPlaylistInput) tvPlaylistInput.value = slot.playlistId || '';
   if(tvDescriptionInput) tvDescriptionInput.value = slot.description || '';
+  if(typeof TvLiveBoards !== 'undefined') TvLiveBoards.populate(slot);
   tvModeFields();
 }
 
@@ -575,6 +578,7 @@ function tvPlayerSource(stream){
 
 function renderSelectedTvSlot(){
   const data = tvSlotById(hammerschachTvSelectedSlotId) || tvSlotById('tv1') || {};
+  if(typeof TvLiveBoards !== 'undefined') TvLiveBoards.sync(data);
   const stream = data.enabled === true ? data.stream : null;
   const selectedPlaylistItem = tvPlaylistSelectionForStream(data.slotId,stream);
   const playerSource = tvPlayerSource(stream);
@@ -745,6 +749,9 @@ function tvAdminPayloadSlot(slotId){
   return {
     slotId,
     enabled:draft.enabled === true,
+    liveBoardsEnabled:draft.liveBoardsEnabled === true,
+    liveBoardEvents:draft.liveBoardEvents || [],
+    liveBoardStart:draft.liveBoardStart || 'selection',
     mode:draft.mode || 'channel',
     title:gamerTvVisibleTitle(draft.title),
     eventName:draft.eventName || '',
