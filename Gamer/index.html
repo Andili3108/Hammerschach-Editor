@@ -51,7 +51,7 @@
 <link rel="stylesheet" href="css/article-unread.css?v=20260919-compact-3">
 <link rel="stylesheet" href="css/profile-extras.css?v=20260920-profile-1">
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
-<link rel="stylesheet" href="css/live-board.css?v=20261008-live-engine-1">
+<link rel="stylesheet" href="css/live-board.css?v=20261012-tv-boards-1">
 <link rel="stylesheet" href="css/schachecke.css?v=20261011-3">
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
@@ -388,6 +388,7 @@
                 <span class="tv-channel-badge" hidden>LIVE</span>
               </button>
             </div>
+            <div><button id="tvLiveBoardsOpen" class="button-flat" type="button" aria-haspopup="dialog" aria-controls="tvLiveBoardWindow" hidden>♟ Liveboards öffnen</button></div>
             <div id="tvPlaylistToolbar" class="tv-playlist-toolbar" hidden>
               <button id="tvPlaylistOpenBtn" class="tv-playlist-open-btn" type="button" aria-haspopup="dialog" aria-controls="tvPlaylistBackdrop">
                 <span aria-hidden="true">📋</span>
@@ -430,6 +431,22 @@
                 <div class="tv-mode-help">Für mehrtägige Turniere ist die automatische Kanalsuche vorgesehen.</div>
               </div>
               <label class="tv-enabled-label"><input id="tvEnabledInput" type="checkbox" checked> Diesen Senderplatz für Mitglieder einschalten</label>
+              <fieldset class="tv-field tv-field-wide tv-liveboards-admin">
+                <legend>Liveboards für diesen Sender</legend>
+                <label><input id="tvLiveBoardsEnabled" type="checkbox"> „Liveboards öffnen“ anzeigen</label>
+                <p class="tv-mode-help">Ohne Zuordnung öffnet sich die Turnierauswahl. Zuordnungen bleiben beim Ausschalten gespeichert.</p>
+                <details id="tvLiveBoardsPicker">
+                  <summary>Bevorzugte Turniere auswählen (optional)</summary>
+                  <label for="tvLiveBoardsSearch">Turniere suchen</label>
+                  <input id="tvLiveBoardsSearch" class="tv-input" type="search" placeholder="Name des Turniers">
+                  <button id="tvLiveBoardsReload" class="button-flat" type="button">Angebot laden / aktualisieren</button>
+                  <p id="tvLiveBoardsStatus" role="status"></p>
+                  <div id="tvLiveBoardsChoices"></div>
+                </details>
+                <div id="tvLiveBoardsSelected"></div>
+                <label for="tvLiveBoardsStart">Beim Öffnen anzeigen</label>
+                <select id="tvLiveBoardsStart" class="tv-select"><option value="selection">Turnierauswahl</option><option value="first">Erstes bevorzugtes Turnier direkt öffnen</option></select>
+              </fieldset>
               <div class="tv-field">
                 <label for="tvTitleInput">Seitentitel</label>
                 <input id="tvTitleInput" class="tv-input" type="text" maxlength="90" value="Gamer-TV">
@@ -2647,7 +2664,7 @@
 <script src="js/online-ui-elements.js?v=20260917-theme-3"></script>
 <script src="js/header-ui.js?v=20261006-live-board-discovery-1"></script>
 <script src="js/dialog-ui-state.js?v=20260917-theme-3"></script>
-<script src="js/hammerschach-tv.js?v=20260917-theme-3"></script>
+<script src="js/hammerschach-tv.js?v=20261012-tv-boards-1"></script>
 <script src="js/league-standings.js?v=20260917-theme-3"></script>
 <script src="Mediathek/catalog.js?v=20260917-theme-3"></script>
 <script src="js/mediathek.js?v=20260917-theme-3"></script>
@@ -2727,7 +2744,8 @@
 <script src="js/live-board-clock.js?v=20261007-live-board-stability-1"></script>
 <script src="js/live-board-pgn.js?v=20261008-live-engine-1"></script>
 <script src="js/live-board-engine.js?v=20261008-live-engine-1"></script>
-<script src="js/live-board.js?v=20261012-player-auto-1"></script>
+<script src="js/live-board.js?v=20261012-tv-boards-1"></script>
+<script src="js/tv-liveboards.js?v=20261012-tv-boards-1"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
 <script src="js/mobile-navigation.js?v=20261006-live-board-embedded-1"></script>
