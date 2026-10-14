@@ -23,7 +23,7 @@ let openingsToolFrameStarted = false;
 let fairplayToolFrameStarted = false;
 let readerToolFrameStarted = false;
 let tournamentReportToolFrameStarted = false;
-const SCHACH_NEWS_START_ID = 'schacholympiade-2026';
+const SCHACH_NEWS_START_ID = 'blitz-finals-2027';
 let tournamentReportCurrentId = 'quick-round-robin-2026';
 let schachCurrentCategory = 'news';
 let schachNewsCurrentId = SCHACH_NEWS_START_ID;
@@ -53,6 +53,7 @@ const TOURNAMENT_REPORTS = Object.freeze({
   'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1',notify:false}
 });
 const SCHACH_NEWS = Object.freeze({
+  'blitz-finals-2027':{title:'Blitzschach bei den Finals 2027',src:'./SchachNews/blitz-finals-2027.html'},
   'schacholympiade-2026':{title:'Bronze in Samarkand',src:'./SchachNews/schacholympiade-2026.html'},
   'schulbrett-weltspitze':{title:'Vom Schulbrett zur Weltspitze',src:'./SchachNews/schulbrett-weltspitze.html',notify:false},
   'freestyle-neu-denken':{title:'Freestyle: Schach neu denken',src:'./SchachNews/freestyle-neu-denken.html',notify:false},
