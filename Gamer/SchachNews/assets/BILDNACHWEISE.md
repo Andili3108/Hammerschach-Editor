@@ -27,3 +27,15 @@ Eigene, für diese Hammerschach-Berichte neu erstellte Vektorgrafiken. Keine fre
 - Übernommen wurde die unveränderte 960 × 640 Pixel große Wikimedia-Vorschau; kein eigener Beschnitt und keine Farbänderungen.
 - Namensnennung, Quellen- und Lizenzlink stehen direkt am Foto und im Quellenbereich. Bei Weiterverwendung erhalten.
 - Rechteangaben am 29. September 2026 geprüft: vom Urheber als eigenes Werk unter CC BY 4.0 veröffentlicht.
+
+
+## Blitzschach bei den Finals 2027
+
+- `blitz-2026-josefine-safarli.jpg`: Josefine Safarli, Original `DSC03526.JPG`.
+- `blitz-2026-rasmus-svane.jpg`: Rasmus Svane, Original `DSC03559.JPG`.
+- Beide: © Finn Engesser; Schachgipfel, Dresden, 26.07.2026.
+- Galerie mit einzelbildbezogener Fotografennennung: https://www.schachgipfel.de/gipfel2026-fotos/gipfel-dresden-2026-0726.html?page=2
+- Originaldateien: https://www.schachgipfel.de/files/dsb/galerien/2026/gipfel/0726/DSC03526.JPG und https://www.schachgipfel.de/files/dsb/galerien/2026/gipfel/0726/DSC03559.JPG
+- Originale (6000 × 4000 Pixel) für die Webdarstellung auf 1600 × 1066 Pixel verkleinert und als JPEG komprimiert; ohne Beschnitt oder inhaltliche Veränderung.
+- Nutzungsgrundlage: vom Nutzer bestätigte persönliche ausdrückliche Freigabe durch Jonas Jansen, DSB-Presse-/Öffentlichkeitsarbeit, für die Plattform unter Fotografennennung. Keine Creative-Commons-Lizenz und keine allgemeine Weiterverwendungsfreigabe.
+- Zuordnung und Quellen geprüft am 14.10.2026. Die Bilder zeigen 2026, nicht das zukünftige Ereignis 2027.
