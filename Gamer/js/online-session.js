@@ -286,13 +286,18 @@ function setPlayerPresenceBadge(role, element){
   const connectedToRoom = !!slot.connected;
   const activeInGamer = !!slot.gamerOnline || connectedToRoom || (role === onlineRoleCode && onlineConnected);
   const isOnline = daily ? activeInGamer : connectedToRoom;
+  const atBoard = daily && onlineConnected && connectedToRoom;
+  const statusText = atBoard ? 'am Brett' : (isOnline ? 'Online' : 'Offline');
   const label = element.querySelector('.player-presence-label');
 
   element.hidden = false;
   element.classList.toggle('online', isOnline);
-  if(label) label.textContent = isOnline ? 'Online' : 'Offline';
+  element.classList.toggle('daily-presence', daily);
+  if(label) label.textContent = statusText;
   if(daily){
-    element.title = isOnline
+    element.title = atBoard
+      ? 'Gerade mit diesem Spielraum verbunden.'
+      : isOnline
       ? 'Innerhalb der letzten rund zweieinhalb Minuten im Gamer aktiv – nicht zwingend in dieser Partie.'
       : 'Derzeit keine aktuelle Aktivität im Gamer erkannt.';
   } else {
@@ -300,7 +305,7 @@ function setPlayerPresenceBadge(role, element){
       ? 'Gerade mit diesem Spielraum verbunden.'
       : 'Derzeit nicht mit diesem Spielraum verbunden.';
   }
-  element.setAttribute('aria-label', (role === 'w' ? 'Weiß' : 'Schwarz') + ': ' + (isOnline ? 'online' : 'offline'));
+  element.setAttribute('aria-label', (role === 'w' ? 'Weiß' : 'Schwarz') + ': ' + statusText);
 }
 function updatePlayerPresenceBadges(){
   setPlayerPresenceBadge('w', whitePlayerPresenceEl);
