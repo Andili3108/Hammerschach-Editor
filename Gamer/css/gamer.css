@@ -358,6 +358,7 @@
   .player-clock-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;}
   .player-clock-name{min-width:0;font-size:17px;font-weight:900;color:var(--ui-text);line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .player-presence-badge{white-space:nowrap;}
+  .player-presence-badge.daily-presence .player-presence-label{min-width:7.5ch;text-align:center;}
   .player-presence-badge[hidden]{display:none!important;}
   .player-rating-line{display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:10px;background:rgba(132,63,70,.06);border:1px solid rgba(132,63,70,.12);padding:6px 8px;font-size:13px;font-weight:900;color:var(--ui-muted);line-height:1.2;}
   .player-rating-line[hidden]{display:none!important;}
