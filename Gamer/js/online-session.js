@@ -275,7 +275,7 @@ function setPlayerPresenceBadge(role, element){
   if(!element) return;
   const gameIsRunning = !!(onlineRoomId && onlineGameStarted && !onlineGameEnded && !gameEnded && !timeLost);
   const assigned = role === 'w' ? onlineAssignedSeats.white : onlineAssignedSeats.black;
-  if(!gameIsRunning || !assigned){
+  if(!gameIsRunning || !assigned || role === onlineRoleCode){
     element.hidden = true;
     return;
   }
