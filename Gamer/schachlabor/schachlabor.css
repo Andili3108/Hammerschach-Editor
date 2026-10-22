@@ -1279,6 +1279,11 @@ html.dark-mode .login-state { color:var(--ui-text); background:var(--ui-hover); 
 html.dark-mode .login-state.ready { color:#a9e1b8; background:var(--ui-surface-alt); }
 html.dark-mode .engine-state.ready { color:#a9e1b8; background:var(--ui-surface-alt); }
 html.dark-mode .engine-state.busy { color:#f1d39a; background:#453821; }
+html.dark-mode .engine-card .evaluation-grid strong,
+html.dark-mode .engine-card .training-result.warn,
+html.dark-mode .engine-card .fairplay-notice,
+html.dark-mode .engine-card .pv-index,
+html.dark-mode .engine-card .pv-score { color:var(--ui-text); }
 html.dark-mode .login-state.error,
 html.dark-mode .engine-state.error { color:#ffc8cb; background:var(--ui-hover); }
 html.dark-mode .appearance-popup {
