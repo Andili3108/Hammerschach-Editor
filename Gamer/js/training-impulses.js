@@ -11,7 +11,7 @@ function postImpulses(message){
 function postImpulsesToolContext(){
   const key = String(onlineAuthToken || '')+'|'+String(onlineAuthUser?.id || '')+'|'+String(onlineAuthUser?.isAdmin === true);
   if(key !== impulsesContextKey){impulsesContextKey=key;impulsesEpoch++;}
-  postImpulses({type:'impulses-context',epoch:impulsesEpoch,loggedIn:!!(onlineAuthToken && onlineAuthUser),isAdmin:!!(onlineAuthToken && onlineAuthUser?.isAdmin === true),colorScheme:HammerschachPreferences.get('scheme')});
+  postImpulses({type:'impulses-context',epoch:impulsesEpoch,loggedIn:!!(onlineAuthToken && onlineAuthUser),isAdmin:!!(onlineAuthToken && onlineAuthUser?.isAdmin === true),colorScheme:HammerschachAppearance.current()});
 }
 function setImpulsesView(active){
   const wasActive=impulsesToolActive;

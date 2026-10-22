@@ -186,9 +186,12 @@ function updateThemeToggleUi(){
 }
 function setColorScheme(scheme){
   scheme = window.HammerschachAppearance.normalize(scheme);
-  darkModeEnabled = scheme === 'dark';
   window.HammerschachAppearance.apply(scheme);
   try{ localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, scheme); } catch(_){ }
+  refreshColorSchemeContext();
+}
+function refreshColorSchemeContext(){
+  darkModeEnabled = window.HammerschachAppearance.current() === 'dark';
   updateThemeToggleUi();
   postLearningToolContext();
   postAnalyzerToolContext();
@@ -201,8 +204,10 @@ function setColorScheme(scheme){
   postTournamentReportToolContext();
   postMediathekToolContext();
   postFairplayToolContext();
+  postImpulsesToolContext();
   hammerschachScheduleHeightReport(true);
 }
+window.addEventListener('hammerschach:appearance',refreshColorSchemeContext);
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => window.HammerschachSettings?.open());
 updateThemeToggleUi();
 
