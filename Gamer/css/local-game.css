@@ -119,3 +119,8 @@ html.local-game-open #mobileNavTestDrawer #mobileNavMainSection{order:0}
 html.local-game-open #mobileNavTestDrawer #mobileNavLocalSection{order:1}
 html.local-game-open.mobile-nav-test-active #mobileNavTestHeader{padding-right:max(8px,env(safe-area-inset-right));box-sizing:border-box}
 html.local-game-open #mobileNavTestOpen{background:var(--ui-surface);color:var(--ui-muted);border:1px solid rgb(var(--ui-line-rgb) / .22);box-shadow:none}
+
+/* Gleiche Zeitauswahl wie online; eigener Zustand für die lokale Partie. */
+#localTimeSelectors{grid-template-columns:1fr;gap:8px}
+#localNoClock{margin-top:12px;min-height:44px;width:100%}
+#localTimeStatus{margin-top:12px}
