@@ -95,10 +95,6 @@ html.hammerschach-embedded .local-game-table{--local-board-size:min(760px,calc(1
 /* Lokale Partien bleiben im vertrauten Gamer-Rahmen. */
 #localHeaderActions[hidden],#localHeaderActions button[hidden],#mobileNavLocalSection[hidden]{display:none!important}
 html.local-game-open .shell > :not(.header):not(#mobileNavTestHeader):not(#mobileNavTestBackdrop):not(#localGameRoom):not(.identity-backdrop):not(.info-backdrop){display:none!important}
-html.local-game-open .header-main{display:flex!important;flex-direction:column;gap:12px;min-width:0}
-html.local-game-open .header-top-row{display:flex!important;align-items:center;justify-content:space-between;gap:12px}
-html.local-game-open .header-utility-actions{display:flex!important}
-html.local-game-open .header-icon-actions{display:flex!important}
 html.local-game-open :is(#playerMenu,#profileOpenBtn,#privateMessagesOpenBtn){display:none!important}
 html.local-game-open .match-actions{display:flex!important;flex-wrap:wrap;gap:8px}
 html.local-game-open .match-actions > :not(#roomLobbyBtn):not(#localHeaderActions){display:none!important}
@@ -124,3 +120,10 @@ html.local-game-open #mobileNavTestOpen{background:var(--ui-surface);color:var(-
 #localTimeSelectors{grid-template-columns:1fr;gap:8px}
 #localNoClock{margin-top:12px;min-height:44px;width:100%}
 #localTimeStatus{margin-top:12px}
+
+/* Status und Hilfesymbole behalten die Standardpositionen des Gamer-Headers. */
+@media(min-width:1101px){
+  html.local-game-open .match-actions{display:contents!important}
+  html.local-game-open .match-actions > #roomLobbyBtn,html.local-game-open #localHeaderActions button{grid-row:3;width:100%!important;min-width:0}
+  html.local-game-open #localHeaderActions #localAction-rematch{grid-row:4}
+}
