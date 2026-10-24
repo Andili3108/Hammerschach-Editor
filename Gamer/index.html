@@ -53,7 +53,7 @@
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
 <link rel="stylesheet" href="css/live-board.css?v=20261012-tv-boards-1">
 <link rel="stylesheet" href="css/schachecke.css?v=20261011-3">
-<link rel="stylesheet" href="css/local-game.css?v=20261024-3">
+<link rel="stylesheet" href="css/local-game.css?v=20261024-4">
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
@@ -103,9 +103,6 @@
           <div id="localHeaderActions" hidden>
             <button id="localAction-undo" class="button-flat name-action-btn header-direct-action" type="button" data-action="undo" hidden>↶ <span>Zug zurück</span></button>
             <button id="localAction-pause" class="button-flat name-action-btn header-direct-action" type="button" data-action="pause" hidden>Ⅱ <span>Pause</span></button>
-            <button id="localAction-flip" class="button-flat name-action-btn header-direct-action" type="button" data-action="flip" hidden>↻ <span>Brett drehen</span></button>
-            <button id="localAction-auto" class="button-flat name-action-btn header-direct-action" type="button" data-action="auto" hidden>⇄ <span>Automatisch drehen</span></button>
-            <button id="localAction-seating" class="button-flat name-action-btn header-direct-action" type="button" data-action="seating" hidden>♟ <span>Gegenüber sitzen</span></button>
             <button id="localAction-draw" class="button-flat name-action-btn header-direct-action" type="button" data-action="draw" hidden>½ <span>Remis</span></button>
             <button id="localAction-resign" class="button-flat name-action-btn header-direct-action" type="button" data-action="resign" hidden>⚑ <span>Aufgeben</span></button>
             <button id="localAction-new" class="button-flat name-action-btn header-direct-action" type="button" data-action="new" hidden>＋ <span>Neue Partie</span></button>
@@ -244,9 +241,6 @@
             <h2>Zusammen spielen</h2>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-undo" hidden><span>↶</span><strong>Zug zurück</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-pause" hidden><span>Ⅱ</span><strong>Pause</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-flip" hidden><span>↻</span><strong>Brett drehen</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-auto" hidden><span>⇄</span><strong>Automatisch drehen</strong></button>
-            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-seating" hidden><span>♟</span><strong>Gegenüber sitzen</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-draw" hidden><span>½</span><strong>Remis</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-resign" hidden><span>⚑</span><strong>Aufgeben</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-new" hidden><span>＋</span><strong>Neue Partie</strong></button>
@@ -695,12 +689,10 @@
           </div>
           <div id="localPlayPanel" role="tabpanel" aria-labelledby="localPlayTab" hidden>
             <div class="local-setup-group">
-              <h4>Brett</h4>
-              <label id="localAutoFlipLabel" class="local-check"><input id="localAutoFlip" type="checkbox" checked> Brett nach jedem Zug drehen</label>
-            </div>
-            <div class="local-setup-group">
-              <h4><label for="localTimeSelect">Bedenkzeit</label></h4>
-              <select id="localTimeSelect" class="local-time-select"><option value="0+0">Ohne Uhr</option></select>
+              <h4>Bedenkzeit</h4>
+              <div id="localTimeSelectors" class="time-selectors" aria-label="Bedenkzeit wählen"></div>
+              <button id="localNoClock" class="time-kind-option active" type="button" aria-pressed="true">Ohne Uhr</button>
+              <div id="localTimeStatus" class="time-status" role="status">Gewählt: Ohne Uhr</div>
               <div id="localManualClockBox" hidden>
                 <label class="local-check"><input id="localManualClock" type="checkbox"> Uhr selbst drücken</label>
                 <p class="local-setup-note">Nach dem Zug die eigene Uhr antippen. Bis dahin läuft die eigene Zeit weiter.</p>
@@ -2792,7 +2784,7 @@
 <script src="js/live-board.js?v=20261012-tv-boards-1"></script>
 <script src="js/tv-liveboards.js?v=20261012-tv-boards-1"></script>
 <script src="js/local-game-state.js?v=20261024-1"></script>
-<script src="js/local-game.js?v=20261024-3"></script>
+<script src="js/local-game.js?v=20261024-4"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
 <script src="js/mobile-navigation.js?v=20261024-3"></script>
