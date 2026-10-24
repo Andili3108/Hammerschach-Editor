@@ -40,6 +40,10 @@ function hammerschachParentOrigins(){
   return Array.from(origins);
 }
 function hammerschachMeasureContentHeight(){
+  const localRoom = document.getElementById('localGameRoom');
+  if(document.documentElement.classList.contains('local-game-open') && localRoom && !localRoom.hidden){
+    return Math.max(1, Math.ceil(Math.max(localRoom.scrollHeight, localRoom.getBoundingClientRect().height) + 2));
+  }
   const app = document.querySelector('.app');
   const shell = document.querySelector('.shell');
   const appHeight = app ? Math.max(app.scrollHeight, Math.ceil(app.getBoundingClientRect().height)) : 0;

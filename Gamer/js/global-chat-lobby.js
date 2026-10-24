@@ -224,6 +224,7 @@ function openNewGameDialog(options){
   closeGamesMenu();closePlayerMenu();closeToolsMenu();closeInfoMenu();
   setNewGameDialogStatus('');
   newGameDialogReturnFocus=options.returnFocus||document.activeElement;
+  if(window.HammerschachLocalPlay)window.HammerschachLocalPlay.prepareDialog(options);
   newGameBackdrop.hidden=false;
   document.documentElement.classList.add('new-game-dialog-open');
   setTimeout(()=>{try{if(newGameCloseBtn)newGameCloseBtn.focus();}catch(_){}},0);
