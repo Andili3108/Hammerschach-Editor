@@ -7,7 +7,7 @@
   const setup = $('localPlayPanel');
   if (!setup) return;
   const modal = newGameBackdrop.querySelector('.new-game-modal');
-  const timeSelect = $('localTimeSelect');
+  let selectedTime = '0+0';
   const tabs = [$('onlinePlayTab'), $('localPlayTab')];
   let layout = 'desktop';
   let session = null;
@@ -26,18 +26,33 @@
   function detectedLayout() { return matchMedia('(pointer: coarse)').matches ? 'tablet' : 'desktop'; }
   let returnFocus = null;
 
-  // Dieselbe Quelle wie die Online-Auswahl, ohne zusätzliche globale Zeit-Selektoren.
-  document.querySelectorAll('#liveTimeSelectors select').forEach(select => {
-    const group = document.createElement('optgroup');
-    group.label = select.options[0].textContent.trim();
-    Array.from(select.options).filter(option => option.value).forEach(option => {
-      const copy = document.createElement('option');
-      copy.value = option.value;
-      copy.textContent = option.dataset.timeLabel || option.textContent;
-      group.appendChild(copy);
-    });
-    timeSelect.appendChild(group);
+  // Darstellung und Optionen aus der Online-Auswahl, mit eigenem lokalen Zustand.
+  const localTimeSelects = Array.from(document.querySelectorAll('#liveTimeSelectors select')).map(source => {
+    const select = source.cloneNode(true);
+    select.id = 'local-' + source.id;
+    select.value = '';
+    select.disabled = false;
+    select.classList.remove('active');
+    select.addEventListener('change', () => chooseTime(select.value, select.selectedOptions[0].dataset.timeLabel));
+    $('localTimeSelectors').appendChild(select);
+    return select;
   });
+  function chooseTime(value, label = 'Ohne Uhr') {
+    selectedTime = value;
+    localTimeSelects.forEach(select => {
+      const active = Array.from(select.options).some(option => option.value === value);
+      select.value = active ? value : '';
+      select.classList.toggle('active', active);
+    });
+    const noClock = value === '0+0';
+    $('localNoClock').classList.toggle('active', noClock);
+    $('localNoClock').setAttribute('aria-pressed', String(noClock));
+    $('localManualClockBox').hidden = noClock;
+    const [base, increment] = value.split('+').map(Number);
+    $('localTimeStatus').textContent = noClock ? 'Gewählt: Ohne Uhr'
+      : 'Gewählt: ' + label + ' · Start: ' + formatTime(base * 1000) + ' · ' + (increment ? increment + ' Sek/Zug' : 'ohne Inkrement');
+  }
+  $('localNoClock').addEventListener('click', () => chooseTime('0+0'));
 
   function selectTab(local) {
     if (directInvitationSetupMember) local = false;
@@ -61,9 +76,6 @@
       selectTab(next === 1);
       tabs[next].focus();
     });
-  });
-  timeSelect.addEventListener('change', () => {
-    $('localManualClockBox').hidden = timeSelect.value === '0+0';
   });
 
   function createRoom() {
@@ -133,8 +145,8 @@
   function start() {
     if (!onlineAuthToken || !onlineAuthUser || !isMemberLobbyView() || onlineRoomId) return;
     layout = detectedLayout();
-    const [base, increment] = timeSelect.value.split('+').map(Number);
-    roomOptions = {layout, autoFlip: $('localAutoFlip').checked, baseMs: base * 1000,
+    const [base, increment] = selectedTime.split('+').map(Number);
+    roomOptions = {layout, baseMs: base * 1000,
       incrementMs: increment * 1000, manualClock: base > 0 && $('localManualClock').checked};
     if (!room) createRoom();
     returnFocus = newGameOpenBtn;
@@ -212,7 +224,7 @@
   }
   function render() {
     if (!session) return;
-    orientation = roomOptions.layout === 'desktop' && roomOptions.autoFlip
+    orientation = roomOptions.layout === 'desktop'
       ? (session.pendingClock || session.game.turn) : fixedBottom;
     const board = $('localBoard');
     board.dataset.orientation = orientation;
@@ -253,9 +265,6 @@
     });
     headerActions.querySelectorAll('[data-action="draw"], [data-action="resign"]').forEach(button => { button.disabled = !!session.result; });
     headerActions.querySelector('[data-action="rematch"]').hidden = !session.result;
-    $('localAction-auto').hidden = roomOptions.layout === 'tablet';
-    $('localAction-auto').setAttribute('aria-pressed', String(roomOptions.autoFlip));
-    $('localAction-seating').setAttribute('aria-pressed', String(roomOptions.layout === 'tablet'));
     document.dispatchEvent(new Event('hammerschach:local-controls'));
     board.classList.toggle('local-board-paused', session.paused);
     renderClocks();
@@ -373,15 +382,6 @@
     if (action === 'cancel-prompt') closePrompt();
     if (action === 'cancel-promotion') cancelPromotion();
     if (action === 'confirm-prompt') { const next = promptAction; closePrompt(false); if (next) next(); }
-    if (action === 'flip') {
-      fixedBottom = opposite(orientation); roomOptions.autoFlip = false;
-      render(); focusBoard();
-    }
-    if (action === 'auto') { roomOptions.autoFlip = !roomOptions.autoFlip; render(); }
-    if (action === 'seating') {
-      roomOptions.layout = roomOptions.layout === 'tablet' ? 'desktop' : 'tablet';
-      fixedBottom = 'w'; room.classList.toggle('local-tablet', roomOptions.layout === 'tablet'); render();
-    }
     if (action === 'draw') ask('Remis vereinbaren?', 'Sind beide mit dem Remis einverstanden?', () => { session.agreeDraw(); render(); focusBoard(); });
     if (action === 'resign') {
       const side = session.pendingClock || session.game.turn;
@@ -452,7 +452,6 @@
     requestExit,
     prepareDialog(options = {}) {
       layout = detectedLayout();
-      $('localAutoFlipLabel').closest('.local-setup-group').hidden = layout === 'tablet';
       $('playModeTabs').hidden = !!options.directInvitation;
       selectTab(false);
     }
