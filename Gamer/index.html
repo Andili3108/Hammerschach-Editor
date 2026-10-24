@@ -53,6 +53,7 @@
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
 <link rel="stylesheet" href="css/live-board.css?v=20261012-tv-boards-1">
 <link rel="stylesheet" href="css/schachecke.css?v=20261011-3">
+<link rel="stylesheet" href="css/local-game.css?v=20261024-1">
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
@@ -654,7 +655,12 @@
           </div>
           <button id="newGameCloseBtn" class="button-flat new-game-modal-close" type="button" aria-label="Partievorbereitung schließen">✕</button>
         </div>
+        <div id="playModeTabs" class="play-mode-tabs" role="tablist" aria-label="Spielart">
+          <button id="onlinePlayTab" type="button" role="tab" aria-selected="true" aria-controls="onlinePlayPanel">Online-Spiel</button>
+          <button id="localPlayTab" type="button" role="tab" aria-selected="false" aria-controls="localPlayPanel" tabindex="-1">Zusammen spielen</button>
+        </div>
         <div class="new-game-modal-body">
+          <div id="onlinePlayPanel" role="tabpanel" aria-labelledby="onlinePlayTab">
           <div id="directInvitationRecipient" class="direct-invitation-recipient" hidden></div>
           <div id="memberLobbySetupMount" class="member-lobby-settings-mount"></div>
           <section id="directInvitationMessageBox" class="direct-invitation-message-box" aria-labelledby="directInvitationMessageLabel" hidden>
@@ -663,12 +669,32 @@
             <div class="invitation-message-meta"><span>Die Nachricht erscheint in der Mail und bei Daily Chess unter „Meine Partien“.</span><span id="directInvitationMessageCount">0/300</span></div>
             <div class="direct-invitation-room-note">Der Spielraum wird erst beim endgültigen Versand erstellt.</div>
           </section>
+          </div>
+          <div id="localPlayPanel" role="tabpanel" aria-labelledby="localPlayTab" hidden>
+            <div class="local-setup-group">
+              <h4>Wie sitzt ihr am Gerät?</h4>
+              <div class="local-layout-options" aria-label="Sitzposition">
+                <button type="button" data-local-layout="desktop" aria-pressed="true"><strong>PC/Mac</strong><span>Nebeneinander</span></button>
+                <button type="button" data-local-layout="tablet" aria-pressed="false"><strong>Tablet</strong><span>Gegenüber</span></button>
+              </div>
+              <label id="localAutoFlipLabel" class="local-check"><input id="localAutoFlip" type="checkbox" checked> Brett nach jedem Zug drehen</label>
+            </div>
+            <div class="local-setup-group">
+              <h4><label for="localTimeSelect">Bedenkzeit</label></h4>
+              <select id="localTimeSelect" class="local-time-select"><option value="0+0">Ohne Uhr</option></select>
+              <div id="localManualClockBox" hidden>
+                <label class="local-check"><input id="localManualClock" type="checkbox"> Uhr selbst drücken</label>
+                <p class="local-setup-note">Nach dem Zug die eigene Uhr antippen. Bis dahin läuft die eigene Zeit weiter.</p>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="newGameDialogStatus" class="new-game-dialog-status" aria-live="polite"></div>
         <div class="member-lobby-setup-actions new-game-modal-actions" aria-label="Vorbereitete Partie verwenden">
           <button id="newGameCancelBtn" class="button-flat member-lobby-setup-action new-game-cancel-action" type="button">Abbrechen</button>
           <button id="newGameBtn" class="member-lobby-setup-action member-lobby-offer-action" type="button">♟️ Partie anbieten</button>
           <button id="createOnlineBtn" class="member-lobby-setup-action member-lobby-invite-action" type="button">✉️ Mitglied einladen</button>
+          <button id="localGameStartBtn" class="member-lobby-setup-action local-primary" type="button" hidden>Partie starten</button>
           <button id="directInvitationSendBtn" class="member-lobby-setup-action member-lobby-invite-action direct-invitation-send-action" type="button" hidden>✉️ Einladung senden</button>
         </div>
       </div>
@@ -2650,7 +2676,7 @@
 </div>
 
 <script src="js/chess-utils.js?v=20260917-theme-3"></script>
-<script src="js/embed-layout.js?v=20260917-theme-3"></script>
+<script src="js/embed-layout.js?v=20261024-1"></script>
 <script src="js/piece-assets.js?v=20260917-theme-3"></script>
 <script src="js/chess960-core.js?v=20260917-theme-3"></script>
 <script src="js/board-setup-utils.js?v=20260917-theme-3"></script>
@@ -2673,7 +2699,7 @@
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
 <script src="js/lobby-welcome.js?v=20261005-gamer-brand-1"></script>
 <script src="js/lobby-chat-unread.js?v=20261011-2"></script>
-<script src="js/global-chat-lobby.js?v=20261011-chat-2"></script>
+<script src="js/global-chat-lobby.js?v=20261024-1"></script>
 <script src="js/admin-overview.js?v=20260918-account-recovery-1"></script>
 <script src="js/account-access-recovery.js?v=20260918-account-recovery-1"></script>
 <script src="js/admin-reader-archives.js?v=20260917-theme-3"></script>
@@ -2746,6 +2772,8 @@
 <script src="js/live-board-engine.js?v=20261008-live-engine-1"></script>
 <script src="js/live-board.js?v=20261012-tv-boards-1"></script>
 <script src="js/tv-liveboards.js?v=20261012-tv-boards-1"></script>
+<script src="js/local-game-state.js?v=20261024-1"></script>
+<script src="js/local-game.js?v=20261024-1"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
 <script src="js/mobile-navigation.js?v=20261006-live-board-embedded-1"></script>
