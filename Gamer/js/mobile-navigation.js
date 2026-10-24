@@ -74,6 +74,7 @@
   }
 
   function compactNavigationWanted(){
+    if(root.classList.contains('local-game-open')) return phoneViewport() || window.matchMedia('(pointer: coarse)').matches;
     if(phoneViewport()) return true;
     if(tabletViewport() && roomContext()) return true;
     return window.matchMedia('(min-width: 761px) and (max-width: 1100px)').matches;
@@ -159,6 +160,7 @@
       button.classList.toggle('active',active);
       if(current) button.setAttribute('aria-current',current); else button.removeAttribute('aria-current');
       const label = button.querySelector('strong');
+      if(label && targetId.startsWith('localAction-')) label.textContent = source.querySelector('span').textContent;
       if(label && (targetId === 'trainerProgressHeaderBtn' || targetId === 'visitorTrainerProgressHeaderBtn')){
         const progress = String(source.textContent || '').match(/(\d+)\s*\/\s*(\d+)/);
         label.textContent = progress ? ('Lernstand · ' + progress[1] + '/' + progress[2]) : 'Lernstand';
@@ -345,6 +347,7 @@
   window.addEventListener('resize', refresh, {passive:true});
   window.addEventListener('orientationchange', refresh, {passive:true});
   window.addEventListener('popstate', refresh);
+  document.addEventListener('hammerschach:local-controls', refresh);
 
   const rootObserver = new MutationObserver(refresh);
   if(root&&root.nodeType===Node.ELEMENT_NODE)rootObserver.observe(root, {attributes:true, attributeFilter:['class']});

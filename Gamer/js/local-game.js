@@ -21,7 +21,9 @@
   let roomOptions = null;
   let promptAction = null;
   let promotionMove = null;
-  let previousInert = [];
+  const headerActions = $('localHeaderActions');
+  let dialogInert = [];
+  function detectedLayout() { return matchMedia('(pointer: coarse)').matches ? 'tablet' : 'desktop'; }
   let returnFocus = null;
 
   // Dieselbe Quelle wie die Online-Auswahl, ohne zusätzliche globale Zeit-Selektoren.
@@ -60,11 +62,6 @@
       tabs[next].focus();
     });
   });
-  setup.querySelectorAll('[data-local-layout]').forEach(button => button.addEventListener('click', () => {
-    layout = button.dataset.localLayout;
-    setup.querySelectorAll('[data-local-layout]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
-    $('localAutoFlipLabel').hidden = layout === 'tablet';
-  }));
   timeSelect.addEventListener('change', () => {
     $('localManualClockBox').hidden = timeSelect.value === '0+0';
   });
@@ -74,34 +71,18 @@
     room.id = 'localGameRoom';
     room.className = 'local-game-room';
     room.hidden = true;
-    room.setAttribute('role', 'dialog');
-    room.setAttribute('aria-modal', 'true');
+    room.setAttribute('role', 'region');
     room.setAttribute('aria-label', 'Zusammen spielen');
     const sideBar = position => `<div class="local-player-bar local-player-${position}" data-position="${position}">
       <button class="local-clock" type="button" data-clock="${position}"><span class="local-clock-time"></span><span class="local-clock-hint" aria-hidden="true"></span></button>
-      <div class="local-actions">
-        <button type="button" data-action="undo" aria-label="Letzten Zug zurücknehmen" title="Letzten Zug zurücknehmen">↶ <span>Zug zurück</span></button>
-        <button type="button" data-action="pause">Ⅱ <span>Pause</span></button>
-        <button type="button" data-action="menu" aria-label="Weitere Partieaktionen" aria-expanded="false" aria-controls="localGameMenu">⋯ <span>Mehr</span></button>
-      </div>
     </div>`;
     room.innerHTML = `<div class="local-game-table">
       ${sideBar('top')}
       <div class="local-board-frame"><div id="localBoard" class="local-board" role="group" aria-label="Schachbrett"></div></div>
       ${sideBar('bottom')}
       <div class="local-game-footer"><div id="localGameStatus" role="status" aria-live="polite"></div>
-        <button type="button" data-action="rematch" class="local-primary" hidden>Revanche</button>
       </div>
     </div>
-    <div id="localGameMenu" class="local-dialog-shade" hidden><div class="local-dialog-card" role="dialog" aria-modal="true" aria-label="Partieaktionen">
-      <button type="button" data-action="flip">Brett drehen</button>
-      <label id="localRoomAutoFlipLabel" class="local-check"><input id="localRoomAutoFlip" type="checkbox"> Brett automatisch drehen</label>
-      <button type="button" data-action="draw">Remis vereinbaren</button>
-      <button type="button" data-action="resign">Aufgeben</button>
-      <button type="button" data-action="new">Neue Partie</button>
-      <button type="button" data-action="leave">Zur Lobby</button>
-      <button type="button" data-action="close-menu">Zurück zum Brett</button>
-    </div></div>
     <div id="localGamePrompt" class="local-dialog-shade" hidden><div class="local-dialog-card" role="alertdialog" aria-modal="true" aria-labelledby="localPromptTitle">
       <h3 id="localPromptTitle"></h3><p id="localPromptText"></p><div class="local-prompt-buttons">
       <button type="button" data-action="cancel-prompt">Abbrechen</button><button type="button" data-action="confirm-prompt" class="local-primary">Bestätigen</button></div>
@@ -110,7 +91,11 @@
       <h3 id="localPromotionTitle">Bauernumwandlung</h3><div class="local-promotion-pieces"></div>
       <button type="button" data-action="cancel-promotion">Abbrechen</button>
     </div></div>`;
-    document.body.appendChild(room);
+    document.querySelector('.shell').appendChild(room);
+    headerActions.addEventListener('click', onRoomClick);
+    new ResizeObserver(updateRoomLayout).observe(document.querySelector('.header'));
+    new ResizeObserver(updateRoomLayout).observe($('mobileNavTestHeader'));
+    window.addEventListener('resize', updateRoomLayout, {passive:true});
     const board = $('localBoard');
     for (let i = 0; i < 64; i++) {
       const square = document.createElement('button');
@@ -126,10 +111,6 @@
     board.addEventListener('pointercancel', clearDrag);
     board.addEventListener('lostpointercapture', clearDrag);
     board.addEventListener('dragstart', event => event.preventDefault());
-    $('localRoomAutoFlip').addEventListener('change', event => {
-      roomOptions.autoFlip = event.target.checked;
-      render();
-    });
     room.addEventListener('keydown', event => {
       // Keine globalen Online-Tastaturaktionen aus dem lokalen Spiel heraus.
       event.stopPropagation();
@@ -137,8 +118,7 @@
         event.preventDefault();
         if (!$('localPromotion').hidden) cancelPromotion();
         else if (!$('localGamePrompt').hidden) closePrompt();
-        else if (!$('localGameMenu').hidden) closeMenu();
-        else openMenu('bottom');
+        else if ($('mobileNavTestOpen').offsetParent !== null) $('mobileNavTestOpen').click();
       }
       if (event.key === 'Tab') trapFocus(event);
       if (event.target.closest('.local-square') && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
@@ -152,19 +132,20 @@
 
   function start() {
     if (!onlineAuthToken || !onlineAuthUser || !isMemberLobbyView() || onlineRoomId) return;
+    layout = detectedLayout();
     const [base, increment] = timeSelect.value.split('+').map(Number);
     roomOptions = {layout, autoFlip: $('localAutoFlip').checked, baseMs: base * 1000,
       incrementMs: increment * 1000, manualClock: base > 0 && $('localManualClock').checked};
     if (!room) createRoom();
     returnFocus = newGameOpenBtn;
     closeNewGameDialog({restoreFocus: false});
-    previousInert = Array.from(document.body.children).filter(element => element !== room && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName))
-      .map(element => ({element, inert: element.inert}));
-    previousInert.forEach(({element}) => { element.inert = true; });
     room.hidden = false;
     document.documentElement.classList.add('local-game-open');
     fixedBottom = 'w';
     resetSession();
+    updateOnlineActionButtons();
+    refreshHeaderStatusFromState();
+    requestAnimationFrame(updateRoomLayout);
     hammerschachScheduleHeightReport(true);
     timer = setInterval(tick, 100);
     $('localBoard').querySelector('[data-square="e2"]').focus({preventScroll: true});
@@ -175,11 +156,11 @@
     selection = null;
     promotionMove = null;
     promptAction = null;
-    ['localGameMenu', 'localGamePrompt', 'localPromotion'].forEach(id => { $(id).hidden = true; });
+    ['localGamePrompt', 'localPromotion'].forEach(id => { $(id).hidden = true; });
     room.classList.toggle('local-tablet', roomOptions.layout === 'tablet');
     room.classList.toggle('local-no-clock', !roomOptions.baseMs);
-    $('localRoomAutoFlipLabel').hidden = roomOptions.layout === 'tablet';
-    $('localRoomAutoFlip').checked = roomOptions.autoFlip;
+    headerActions.hidden = false;
+    headerActions.querySelectorAll('button').forEach(button => {button.hidden = false;});
     render();
   }
   function exit(toSetup = false) {
@@ -191,8 +172,11 @@
     promptAction = null;
     room.hidden = true;
     document.documentElement.classList.remove('local-game-open');
-    previousInert.forEach(({element, inert}) => { element.inert = inert; });
-    previousInert = [];
+    restoreDialogBackground();
+    headerActions.hidden = true;
+    headerActions.querySelectorAll('button').forEach(button => {button.hidden = true;});
+    updateOnlineActionButtons();
+    refreshHeaderStatusFromState();
     hammerschachScheduleHeightReport(true);
     if (toSetup) { openNewGameDialog(); selectTab(true); }
     else {
@@ -210,7 +194,6 @@
       promotionMove = null;
       $('localPromotion').hidden = true;
       closePrompt(false);
-      closeMenu(false);
       render();
     } else renderClocks();
   }
@@ -260,16 +243,20 @@
     });
     const status = session.result ? resultText(session.result) : session.paused ? 'Pause' : king ? 'Schach' : '';
     $('localGameStatus').textContent = status;
-    room.querySelectorAll('[data-action="undo"]').forEach(button => { button.disabled = !session.history.length; });
-    room.querySelectorAll('[data-action="pause"]').forEach(button => {
+    headerActions.querySelectorAll('[data-action="undo"]').forEach(button => { button.disabled = !session.history.length; });
+    headerActions.querySelectorAll('[data-action="pause"]').forEach(button => {
       button.hidden = !roomOptions.baseMs;
       button.disabled = !session.started || !!session.result;
       button.innerHTML = session.paused ? '▶ <span>Weiter</span>' : 'Ⅱ <span>Pause</span>';
       button.setAttribute('aria-pressed', String(session.paused));
       button.setAttribute('aria-label', session.paused ? 'Partie fortsetzen' : 'Partie pausieren');
     });
-    room.querySelectorAll('[data-action="draw"], [data-action="resign"]').forEach(button => { button.disabled = !!session.result; });
-    room.querySelector('[data-action="rematch"]').hidden = !session.result;
+    headerActions.querySelectorAll('[data-action="draw"], [data-action="resign"]').forEach(button => { button.disabled = !!session.result; });
+    headerActions.querySelector('[data-action="rematch"]').hidden = !session.result;
+    $('localAction-auto').hidden = roomOptions.layout === 'tablet';
+    $('localAction-auto').setAttribute('aria-pressed', String(roomOptions.autoFlip));
+    $('localAction-seating').setAttribute('aria-pressed', String(roomOptions.layout === 'tablet'));
+    document.dispatchEvent(new Event('hammerschach:local-controls'));
     board.classList.toggle('local-board-paused', session.paused);
     renderClocks();
     hammerschachScheduleHeightReport(false);
@@ -291,7 +278,7 @@
   function boardReady() {
     if (!session) return false;
     tick();
-    return session.canMove() && !promotionMove && $('localGamePrompt').hidden && $('localGameMenu').hidden;
+    return session.canMove() && !promotionMove && $('localGamePrompt').hidden;
   }
   function chooseSquare(x, y) {
     if (!boardReady()) return;
@@ -328,36 +315,44 @@
     showLayer('localPromotion', roomOptions.layout === 'tablet' && session.game.turn !== orientation);
   }
   function cancelPromotion() {
-    promotionMove = null; selection = null; $('localPromotion').hidden = true; render(); focusBoard();
+    promotionMove = null; selection = null; $('localPromotion').hidden = true; restoreDialogBackground(); render(); focusBoard();
   }
   function focusBoard() { $('localBoard').querySelector('[tabindex="0"]').focus({preventScroll: true}); }
   function showLayer(id, rotated) {
     const layer = $(id);
     layer.classList.toggle('local-layer-rotated', !!rotated);
     layer.hidden = false;
+    restoreDialogBackground();
+    // Nur echte Dialoge sperren den Hintergrund; der Gamer-Header bleibt sonst bedienbar.
+    const siblings = [...document.querySelector('.shell').children, ...room.children];
+    dialogInert = siblings.filter(el => el !== room && el !== layer).map(el => ({el, inert:el.inert}));
+    dialogInert.forEach(({el}) => {el.inert = true;});
     layer.querySelector('button:not([disabled])').focus({preventScroll: true});
   }
-  function openMenu(position) {
-    $('localGameMenu').dataset.side = sideAt(position);
-    const rotated = roomOptions.layout === 'tablet' && position === 'top';
-    showLayer('localGameMenu', rotated);
-    room.querySelectorAll('[data-action="menu"]').forEach(button => button.setAttribute('aria-expanded', 'true'));
+  function restoreDialogBackground() {
+    dialogInert.forEach(({el, inert}) => {el.inert = inert;});
+    dialogInert = [];
   }
-  function closeMenu(focus = true) {
-    $('localGameMenu').hidden = true;
-    room.querySelectorAll('[data-action="menu"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
-    if (focus && session) focusBoard();
+  function updateRoomLayout() {
+    if (!session) return;
+    const header = [$('mobileNavTestHeader'), document.querySelector('.header')].find(el => el.offsetParent !== null);
+    room.style.setProperty('--local-header-height', Math.ceil(header?.getBoundingClientRect().height || 0) + 'px');
+    hammerschachScheduleHeightReport(false);
+  }
+  function requestExit(toSetup = false) {
+    if (!session) return;
+    if (session.started && !session.result) ask(toSetup ? 'Neue Partie?' : 'Zur Lobby?', 'Die laufende Partie wird beendet.', () => exit(toSetup));
+    else exit(toSetup);
   }
   function ask(title, text, action) {
-    const rotated = !$('localGameMenu').hidden && $('localGameMenu').classList.contains('local-layer-rotated');
-    closeMenu(false);
+    const rotated = piecesFaceTop();
     promptAction = action;
     $('localPromptTitle').textContent = title;
     $('localPromptText').textContent = text;
     showLayer('localGamePrompt', rotated);
   }
   function closePrompt(focus = true) {
-    promptAction = null; $('localGamePrompt').hidden = true;
+    promptAction = null; $('localGamePrompt').hidden = true; restoreDialogBackground();
     if (focus && session) focusBoard();
   }
   function onRoomClick(event) {
@@ -368,32 +363,31 @@
       return;
     }
     if (button.dataset.promotion && promotionMove) {
-      const move = promotionMove; promotionMove = null; $('localPromotion').hidden = true;
+      const move = promotionMove; promotionMove = null; $('localPromotion').hidden = true; restoreDialogBackground();
       attemptMove(move.from, move.to, button.dataset.promotion); focusBoard(); return;
     }
     if (button.dataset.clock) { session.pressClock(sideAt(button.dataset.clock)); render(); return; }
     const action = button.dataset.action;
     if (action === 'undo') { clearDrag(); selection = null; session.undo(); render(); }
     if (action === 'pause') { clearDrag(); selection = null; session.togglePause(); render(); }
-    if (action === 'menu') openMenu(button.closest('[data-position]').dataset.position);
-    if (action === 'close-menu') closeMenu();
     if (action === 'cancel-prompt') closePrompt();
     if (action === 'cancel-promotion') cancelPromotion();
     if (action === 'confirm-prompt') { const next = promptAction; closePrompt(false); if (next) next(); }
     if (action === 'flip') {
-      fixedBottom = opposite(orientation); roomOptions.autoFlip = false; $('localRoomAutoFlip').checked = false;
-      closeMenu(false); render(); focusBoard();
+      fixedBottom = opposite(orientation); roomOptions.autoFlip = false;
+      render(); focusBoard();
+    }
+    if (action === 'auto') { roomOptions.autoFlip = !roomOptions.autoFlip; render(); }
+    if (action === 'seating') {
+      roomOptions.layout = roomOptions.layout === 'tablet' ? 'desktop' : 'tablet';
+      fixedBottom = 'w'; room.classList.toggle('local-tablet', roomOptions.layout === 'tablet'); render();
     }
     if (action === 'draw') ask('Remis vereinbaren?', 'Sind beide mit dem Remis einverstanden?', () => { session.agreeDraw(); render(); focusBoard(); });
     if (action === 'resign') {
-      const side = roomOptions.layout === 'tablet' ? $('localGameMenu').dataset.side : (session.pendingClock || session.game.turn);
+      const side = session.pendingClock || session.game.turn;
       ask('Partie aufgeben?', (side === 'w' ? 'Weiß' : 'Schwarz') + ' gibt diese Partie auf.', () => { session.resign(side); render(); focusBoard(); });
     }
-    if (action === 'leave' || action === 'new') {
-      const leave = () => exit(action === 'new');
-      if (session.started && !session.result) ask(action === 'new' ? 'Neue Partie?' : 'Zur Lobby?', 'Die laufende Partie wird beendet.', leave);
-      else leave();
-    }
+    if (action === 'new') requestExit(true);
     if (action === 'rematch') {
       fixedBottom = opposite(fixedBottom); resetSession(); focusBoard();
     }
@@ -439,7 +433,8 @@
     if (board && board.hasPointerCapture(previous.pointer)) board.releasePointerCapture(previous.pointer);
   }
   function trapFocus(event) {
-    const layer = ['localPromotion', 'localGamePrompt', 'localGameMenu'].map($).find(element => !element.hidden) || room;
+    const layer = ['localPromotion', 'localGamePrompt'].map($).find(element => !element.hidden);
+    if (!layer) return;
     const focusable = Array.from(layer.querySelectorAll('button:not([disabled]), input:not([disabled]), [tabindex="0"]'))
       .filter(element => !element.hidden && element.offsetParent !== null && element.tabIndex >= 0);
     const first = focusable[0], last = focusable[focusable.length - 1];
@@ -453,7 +448,11 @@
   document.addEventListener('visibilitychange', () => { if (session) { clearDrag(); tick(); } });
   $('localGameStartBtn').addEventListener('click', start);
   window.HammerschachLocalPlay = {
+    isActive: () => !!session,
+    requestExit,
     prepareDialog(options = {}) {
+      layout = detectedLayout();
+      $('localAutoFlipLabel').closest('.local-setup-group').hidden = layout === 'tablet';
       $('playModeTabs').hidden = !!options.directInvitation;
       selectTab(false);
     }

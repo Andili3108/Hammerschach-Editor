@@ -41,6 +41,9 @@ if(newGameBtn) newGameBtn.addEventListener('click', event => {
   else offerPreparedGame(event);
 });
 if(roomLobbyBtn) roomLobbyBtn.addEventListener('click', event => {
+  if(window.HammerschachLocalPlay?.isActive()){
+    event.preventDefault(); window.HammerschachLocalPlay.requestExit(); return;
+  }
   if(embeddedToolActive()){
     event.preventDefault();
     closeEmbeddedTools();

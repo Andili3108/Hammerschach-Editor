@@ -7,6 +7,7 @@ function setOnlineValueClass(el, state){
 }
 function refreshHeaderStatusFromState(){
   if(!statusEl || !boardEl) return;
+  if(document.documentElement.classList.contains('local-game-open')){ statusEl.textContent = 'Zusammen spielen'; return; }
   if(variationModeActive){
     statusEl.textContent = variationPurpose === 'conditional' ? 'Bedingte Züge' : 'Variantenbrett';
     return;
@@ -31,7 +32,7 @@ function updateOnlineActionButtons(){
   const offerOpen = !!(onlineRoomId && onlineOpenOffer && onlineOpenOfferStatus === 'open');
   const inRoom = !!onlineRoomId;
   const directInvitationMode = !!directInvitationSetupMember;
-  const showLobbyButton = inRoom || embeddedToolActive();
+  const showLobbyButton = inRoom || embeddedToolActive() || document.documentElement.classList.contains('local-game-open');
   if(openOffersOpenBtn){
     openOffersOpenBtn.hidden = showLobbyButton;
     openOffersOpenBtn.title = 'Offene Partieangebote anzeigen.';
