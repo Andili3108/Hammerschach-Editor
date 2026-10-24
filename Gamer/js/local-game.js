@@ -16,6 +16,7 @@
   let selection = null;
   let drag = null;
   let suppressClick = false;
+  let boardGestures = null;
   let orientation = 'w';
   let fixedBottom = 'w';
   let roomOptions = null;
@@ -120,9 +121,16 @@
     board.addEventListener('pointerdown', onPointerDown);
     board.addEventListener('pointermove', onPointerMove);
     board.addEventListener('pointerup', onPointerUp);
-    board.addEventListener('pointercancel', clearDrag);
-    board.addEventListener('lostpointercapture', clearDrag);
+    board.addEventListener('pointercancel', () => { suppressClick = true; clearDrag(); });
+    board.addEventListener('lostpointercapture', event => {
+      // Touch beginnt mit impliziter Bindung am Feld; deren Übergabe ans Brett ist kein Abbruch.
+      if (event.target === board) clearDrag();
+    });
     board.addEventListener('dragstart', event => event.preventDefault());
+    boardGestures = installBoardPinchZoom([board], () => {
+      clearDrag(); selection = null;
+      if (session) render();
+    });
     room.addEventListener('keydown', event => {
       // Keine globalen Online-Tastaturaktionen aus dem lokalen Spiel heraus.
       event.stopPropagation();
@@ -368,7 +376,7 @@
     const button = event.target.closest('button');
     if (!button || button.disabled || !session) return;
     if (button.classList.contains('local-square')) {
-      if (!suppressClick) chooseSquare(Number(button.dataset.x), Number(button.dataset.y));
+      if ((event.detail === 0 || !suppressClick) && boardGestures.canClick()) chooseSquare(Number(button.dataset.x), Number(button.dataset.y));
       return;
     }
     if (button.dataset.promotion && promotionMove) {
@@ -393,18 +401,21 @@
     }
   }
   function onPointerDown(event) {
-    if (event.button !== 0 || !event.isPrimary || !boardReady()) return;
+    if (event.button !== 0 || !event.isPrimary) return;
+    suppressClick = false;
+    if (!boardGestures.canDrag() || !boardReady()) return;
     const square = event.target.closest('.local-square');
     if (!square) return;
     const from = [Number(square.dataset.x), Number(square.dataset.y)];
     if (pieceColor(session.game.at(...from)) !== session.game.turn) return;
     drag = {pointer: event.pointerId, from, x: event.clientX, y: event.clientY, moved: false, ghost: null};
-    $('localBoard').setPointerCapture(event.pointerId);
   }
   function onPointerMove(event) {
     if (!drag || drag.pointer !== event.pointerId) return;
     if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) > 7) {
-      drag.moved = true; selection = drag.from.slice(); render();
+      drag.moved = true; selection = drag.from.slice();
+      $('localBoard').setPointerCapture(event.pointerId);
+      render();
       drag.ghost = document.createElement('img'); drag.ghost.className = 'local-drag-ghost';
       drag.ghost.src = pieceImg[session.game.at(...drag.from)]; drag.ghost.alt = '';
       drag.ghost.style.transform = 'translate(-50%, -50%)' + (piecesFaceTop() ? ' rotate(180deg)' : '');
@@ -418,12 +429,13 @@
     const move = drag;
     const square = document.elementFromPoint(event.clientX, event.clientY)?.closest('#localBoard .local-square');
     clearDrag();
-    suppressClick = true;
-    setTimeout(() => { suppressClick = false; }, 0);
     if (move.moved) {
+      // Der nachfolgende Browser-Klick darf den gezogenen Zug nicht erneut auswerten.
+      suppressClick = true;
       if (square && boardReady()) attemptMove(move.from, [Number(square.dataset.x), Number(square.dataset.y)]);
       else { selection = null; render(); }
-    } else if (square) chooseSquare(Number(square.dataset.x), Number(square.dataset.y));
+    }
+    // Ein Antippen wird ausschließlich durch das native Klick-Ereignis verarbeitet.
   }
   function clearDrag() {
     if (!drag) return;
