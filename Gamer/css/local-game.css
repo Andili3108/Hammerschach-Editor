@@ -17,10 +17,9 @@
 .local-primary{background:var(--andili-rot)!important;color:#fff!important;border-color:var(--andili-rot)!important;font-weight:800}
 .local-setup-active .new-game-modal-actions{display:flex;justify-content:space-between;gap:12px}
 .local-setup-active .new-game-modal-actions button{min-height:46px}
-html.local-game-open,html.local-game-open body{overflow:hidden}
-.local-game-room{position:fixed;inset:0;z-index:12000;background:var(--ui-page,#f3eee8);color:var(--ui-text);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:grid;place-items:center}
-.local-game-table{--local-board-size:min(760px,calc(100vw - 32px),calc(100vh - 210px));--local-board-size:min(760px,calc(100vw - 32px),calc(100dvh - 210px));width:var(--local-board-size);min-width:190px;display:flex;flex-direction:column;gap:8px;margin:auto}
-.local-no-clock .local-game-table{--local-board-size:min(800px,calc(100vw - 32px),calc(100vh - 150px));--local-board-size:min(800px,calc(100vw - 32px),calc(100dvh - 150px))}
+.local-game-room{position:relative;color:var(--ui-text);box-sizing:border-box;width:100%;padding:8px 0 12px}
+.local-game-table{--local-board-size:min(760px,calc(100vw - 32px),max(220px,calc(100dvh - var(--local-header-height,180px) - 210px)));width:var(--local-board-size);max-width:100%;min-width:0;display:flex;flex-direction:column;gap:8px;margin:auto}
+.local-no-clock .local-game-table{--local-board-size:min(760px,calc(100vw - 32px),max(220px,calc(100dvh - var(--local-header-height,180px) - 70px)))}
 .local-board-frame{width:100%;aspect-ratio:1;border:5px solid var(--board-frame-mid);outline:1px solid var(--board-frame-dark);border-radius:9px;box-sizing:border-box;overflow:hidden;box-shadow:0 12px 35px #0003;flex-shrink:0}
 .local-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));height:100%;width:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .local-game-room .local-square{position:relative;display:block;min-width:0;min-height:0;aspect-ratio:1;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:var(--light-square);color:var(--board-coord-dark);cursor:pointer;line-height:1;touch-action:none;overflow:hidden}
@@ -48,9 +47,9 @@ html.local-game-open,html.local-game-open body{overflow:hidden}
 .local-tablet .local-player-top{transform:rotate(180deg)}
 .local-tablet .local-player-top .local-actions{visibility:visible}
 .local-no-clock .local-clock{display:none!important}
-.local-no-clock .local-player-bar{min-height:44px}.local-no-clock:not(.local-tablet) .local-player-top{display:none}
+.local-no-clock .local-player-bar{display:none}
 .local-game-footer{min-height:32px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;font-weight:800;font-size:17px}
-.local-dialog-shade{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;background:#0007;box-sizing:border-box}
+.local-dialog-shade{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:16px;background:#0007;box-sizing:border-box}
 .local-dialog-card{display:flex;flex-direction:column;gap:10px;width:min(380px,100%);padding:22px;background:var(--ui-surface);color:var(--ui-text);border-radius:18px;box-sizing:border-box;box-shadow:0 18px 50px #0006;max-height:calc(100dvh - 32px);overflow-y:auto}
 .local-layer-rotated .local-dialog-card{transform:rotate(180deg)}
 .local-dialog-card h3{margin:0;font-size:23px}.local-dialog-card p{margin:0 0 6px;line-height:1.5}
@@ -90,6 +89,33 @@ html.local-game-open,html.local-game-open body{overflow:hidden}
 }
 .local-setup-active .new-game-modal-actions{box-sizing:border-box}
 /* Im Andili-iFrame wird die Höhe wie bei den übrigen Gamer-Bereichen gemeldet. */
-html.hammerschach-embedded.local-game-open .app{display:none!important}
 html.hammerschach-embedded .local-game-room{position:relative;inset:auto;width:100%;overflow:visible}
 html.hammerschach-embedded .local-game-table{--local-board-size:min(760px,calc(100vw - 32px));min-width:0}
+
+/* Lokale Partien bleiben im vertrauten Gamer-Rahmen. */
+#localHeaderActions[hidden],#localHeaderActions button[hidden],#mobileNavLocalSection[hidden]{display:none!important}
+html.local-game-open .shell > :not(.header):not(#mobileNavTestHeader):not(#mobileNavTestBackdrop):not(#localGameRoom):not(.identity-backdrop):not(.info-backdrop){display:none!important}
+html.local-game-open .header-main{display:flex!important;flex-direction:column;gap:12px;min-width:0}
+html.local-game-open .header-top-row{display:flex!important;align-items:center;justify-content:space-between;gap:12px}
+html.local-game-open .header-utility-actions{display:flex!important}
+html.local-game-open .header-icon-actions{display:flex!important}
+html.local-game-open :is(#playerMenu,#profileOpenBtn,#privateMessagesOpenBtn){display:none!important}
+html.local-game-open .match-actions{display:flex!important;flex-wrap:wrap;gap:8px}
+html.local-game-open .match-actions > :not(#roomLobbyBtn):not(#localHeaderActions){display:none!important}
+html.local-game-open #localHeaderActions{display:contents}
+html.local-game-open .match-actions > #roomLobbyBtn,html.local-game-open #localHeaderActions button{width:auto!important;flex:0 1 auto;min-height:44px;margin:0}
+#localHeaderActions button[aria-pressed="true"]{box-shadow:inset 0 -3px var(--andili-rot)}
+html.local-game-open.mobile-nav-test-active #mobileNavTestHeader{position:relative;top:auto;display:flex;justify-content:flex-end;min-height:44px;padding:0;border:0;box-shadow:none;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+html.local-game-open #mobileNavTestHeader > :not(#mobileNavTestOpen){display:none!important}
+html.local-game-open #mobileNavTestOpen{width:44px;height:44px;min-height:44px;opacity:.8}
+html.local-game-open #mobileNavTestDrawer #mobileNavMainSection > :not(#mobileNavTestPrimary){display:none!important}
+html.local-game-open #mobileNavTestDrawer #mobileNavPeopleSection{display:none!important}
+html.local-game-open .local-game-footer:has(#localGameStatus:empty){display:none}
+html.local-game-open .local-player-bar{justify-content:center}
+
+html.local-game-open #mobileNavTestDrawer .mobile-nav-test-list{display:flex;flex-direction:column}
+html.local-game-open #mobileNavTestDrawer .mobile-nav-test-list > section{flex-shrink:0;order:2}
+html.local-game-open #mobileNavTestDrawer #mobileNavMainSection{order:0}
+html.local-game-open #mobileNavTestDrawer #mobileNavLocalSection{order:1}
+html.local-game-open.mobile-nav-test-active #mobileNavTestHeader{padding-right:max(8px,env(safe-area-inset-right));box-sizing:border-box}
+html.local-game-open #mobileNavTestOpen{background:var(--ui-surface);color:var(--ui-muted);border:1px solid rgb(var(--ui-line-rgb) / .22);box-shadow:none}
