@@ -1,0 +1,95 @@
+/* Gemeinsamer Einstieg, getrennte Einstellungen für Online- und lokale Partien. */
+.play-mode-tabs{display:flex;gap:6px;padding:12px 18px 0;background:var(--ui-surface-alt);border-bottom:1px solid rgb(var(--ui-line-rgb) / .18)}
+.play-mode-tabs button{flex:1;min-height:46px;border:1px solid transparent;border-radius:12px 12px 0 0;padding:10px 14px;background:transparent;color:var(--ui-muted);font-size:17px;font-weight:800;cursor:pointer;box-shadow:none}
+.play-mode-tabs button[aria-selected="true"]{background:var(--ui-surface);color:var(--ui-text);border-color:rgb(var(--ui-line-rgb) / .18);border-bottom-color:var(--ui-surface);box-shadow:inset 0 3px var(--andili-rot)}
+.play-mode-tabs[hidden],#onlinePlayPanel[hidden],#localPlayPanel[hidden],#localGameStartBtn[hidden],.local-game-room [hidden],.local-game-room[hidden]{display:none!important}
+.local-setup-active :is(#newGameBtn,#createOnlineBtn,#directInvitationSendBtn){display:none!important}
+.local-setup-group{padding:18px;background:var(--ui-surface-alt);border:1px solid rgb(var(--ui-line-rgb) / .18);border-radius:14px;margin-bottom:14px}
+.local-setup-group h4{margin:0 0 12px;font-size:18px;color:var(--ui-text)}
+.local-layout-options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.local-layout-options button{display:flex;flex-direction:column;align-items:center;gap:5px;min-height:86px;padding:14px;border-radius:12px;border:2px solid rgb(var(--ui-line-rgb) / .18);background:var(--ui-surface);color:var(--ui-text);cursor:pointer}
+.local-layout-options strong{font-size:20px}.local-layout-options span{font-size:15px}
+.local-layout-options button[aria-pressed="true"]{border-color:var(--andili-rot);box-shadow:inset 0 0 0 1px var(--andili-rot)}
+.local-check{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:12px;font-size:16px;font-weight:700;color:var(--ui-text);cursor:pointer}
+.local-check[hidden]{display:none}.local-check input{width:20px;height:20px;flex:0 0 20px;accent-color:var(--andili-rot)}
+.local-time-select{width:100%;min-height:48px;padding:10px 12px;font-size:16px;border:1px solid rgb(var(--ui-line-rgb) / .3);border-radius:10px;background:var(--ui-surface);color:var(--ui-text)}
+.local-setup-note{margin:4px 0 0 30px;color:var(--ui-muted);font-size:14px;line-height:1.45}
+.local-primary{background:var(--andili-rot)!important;color:#fff!important;border-color:var(--andili-rot)!important;font-weight:800}
+.local-setup-active .new-game-modal-actions{display:flex;justify-content:space-between;gap:12px}
+.local-setup-active .new-game-modal-actions button{min-height:46px}
+html.local-game-open,html.local-game-open body{overflow:hidden}
+.local-game-room{position:fixed;inset:0;z-index:12000;background:var(--ui-page,#f3eee8);color:var(--ui-text);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:grid;place-items:center}
+.local-game-table{--local-board-size:min(760px,calc(100vw - 32px),calc(100vh - 210px));--local-board-size:min(760px,calc(100vw - 32px),calc(100dvh - 210px));width:var(--local-board-size);min-width:190px;display:flex;flex-direction:column;gap:8px;margin:auto}
+.local-no-clock .local-game-table{--local-board-size:min(800px,calc(100vw - 32px),calc(100vh - 150px));--local-board-size:min(800px,calc(100vw - 32px),calc(100dvh - 150px))}
+.local-board-frame{width:100%;aspect-ratio:1;border:5px solid var(--board-frame-mid);outline:1px solid var(--board-frame-dark);border-radius:9px;box-sizing:border-box;overflow:hidden;box-shadow:0 12px 35px #0003;flex-shrink:0}
+.local-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));height:100%;width:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.local-game-room .local-square{position:relative;display:block;min-width:0;min-height:0;aspect-ratio:1;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:var(--light-square);color:var(--board-coord-dark);cursor:pointer;line-height:1;touch-action:none;overflow:hidden}
+.local-game-room .local-square.local-dark{background:var(--dark-square);color:var(--board-coord-light)}
+.local-square img{position:absolute;inset:7%;width:86%;height:86%;object-fit:contain;pointer-events:none;z-index:2}
+.local-square img.local-opponent-piece{transform:rotate(180deg)}
+.local-coord-file,.local-coord-rank{position:absolute;z-index:3;font-family:Arial,sans-serif;font-weight:700;font-size:clamp(9px,1.4vw,13px);pointer-events:none}
+.local-coord-file{right:3px;bottom:2px}.local-coord-rank{left:3px;top:3px}
+.local-square.local-last::after{content:"";position:absolute;inset:0;background:#f7d53f4d;pointer-events:none;z-index:1}
+.local-square.local-selected{box-shadow:inset 0 0 0 4px #eeb63c}
+.local-square.local-legal::before{content:"";position:absolute;width:23%;height:23%;border-radius:50%;left:38.5%;top:38.5%;background:#1116;z-index:4;pointer-events:none}
+.local-square.local-check-square{box-shadow:inset 0 0 20px 8px #ee2424}
+.local-board-paused{opacity:.55}
+.local-player-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:62px}
+.local-game-room .local-clock{position:relative;min-width:120px;min-height:62px;flex:0 1 210px;display:flex;justify-content:center;align-items:center;gap:10px;border:3px solid transparent;border-radius:12px;box-shadow:0 2px 8px #0002;padding:8px 12px;font-family:Arial,sans-serif;opacity:1;cursor:default;white-space:nowrap}
+.local-clock-white{background:#fff9ee!important;color:#211c18!important}.local-clock-black{background:#272422!important;color:#fff9ee!important}
+.local-clock-time{font-size:clamp(24px,3.8vw,36px);font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.local-clock-hint{font-size:12px;font-weight:700}
+.local-game-room .local-clock-active{border-color:#c18c25;box-shadow:0 0 0 2px #c18c2540}
+.local-game-room .local-clock-pending{cursor:pointer;border-color:#d39b2f}
+.local-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex:1}
+.local-game-room .local-actions button,.local-dialog-card button,.local-game-footer button{min-height:44px;padding:9px 12px;background:var(--ui-surface);color:var(--ui-text);border:1px solid rgb(var(--ui-line-rgb) / .25);border-radius:10px;cursor:pointer;font-size:15px;font-weight:700;line-height:1.2}
+.local-game-room button:disabled:not(.local-clock){opacity:.45;cursor:default}
+.local-player-top .local-actions{visibility:hidden}
+.local-tablet .local-player-top{transform:rotate(180deg)}
+.local-tablet .local-player-top .local-actions{visibility:visible}
+.local-no-clock .local-clock{display:none!important}
+.local-no-clock .local-player-bar{min-height:44px}.local-no-clock:not(.local-tablet) .local-player-top{display:none}
+.local-game-footer{min-height:32px;display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;font-weight:800;font-size:17px}
+.local-dialog-shade{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:16px;background:#0007;box-sizing:border-box}
+.local-dialog-card{display:flex;flex-direction:column;gap:10px;width:min(380px,100%);padding:22px;background:var(--ui-surface);color:var(--ui-text);border-radius:18px;box-sizing:border-box;box-shadow:0 18px 50px #0006;max-height:calc(100dvh - 32px);overflow-y:auto}
+.local-layer-rotated .local-dialog-card{transform:rotate(180deg)}
+.local-dialog-card h3{margin:0;font-size:23px}.local-dialog-card p{margin:0 0 6px;line-height:1.5}
+.local-dialog-card .local-check{margin:0;font-size:15px}
+.local-prompt-buttons{display:flex;gap:8px}.local-prompt-buttons button{flex:1}
+.local-promotion-pieces{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.local-promotion-pieces button{padding:3px;aspect-ratio:1}.local-promotion-pieces img{width:100%;height:100%;object-fit:contain}
+.local-drag-ghost{position:fixed;z-index:15;pointer-events:none;transform:translate(-50%,-50%);filter:drop-shadow(2px 5px 5px #0005)}
+.local-game-room button:focus-visible,.play-mode-tabs button:focus-visible,.local-layout-options button:focus-visible{outline:3px solid #3685c7;outline-offset:-3px;z-index:5}
+@media(max-width:600px){
+  .play-mode-tabs{padding:8px 12px 0}.play-mode-tabs button{font-size:16px;padding:10px 6px}
+  .local-setup-group{padding:14px}.local-layout-options{gap:8px}
+  .local-player-bar{gap:6px}.local-actions{gap:4px}.local-actions button span{display:none}
+  .local-game-room .local-actions button{min-width:44px;font-size:22px;padding:6px}
+  .local-game-room .local-clock{min-width:108px;min-height:58px;padding:8px;gap:5px}
+  .local-clock-hint{position:absolute;bottom:2px;font-size:10px}.local-clock-time{font-size:26px}
+  .local-game-table{gap:6px}.local-board-frame{border-width:3px}.local-game-footer{font-size:15px}
+}
+@media(max-height:500px) and (min-width:600px){
+  .local-game-table{--local-board-size:min(760px,calc(100vw - 32px),calc(100dvh - 150px))}
+  .local-player-bar{min-height:44px}.local-game-room .local-clock{min-height:44px;padding:4px 8px}.local-clock-time{font-size:25px}
+}
+/* Brettfelder und Uhren sind keine normalen Lobby-Schaltflächen. */
+#localGameRoom .local-clock:disabled{opacity:1;filter:none;cursor:default;box-shadow:0 2px 8px #0002!important}
+#localGameRoom .local-clock-active:disabled{box-shadow:0 0 0 2px #c18c2540!important}
+#localGameRoom .local-square:hover,#localGameRoom .local-square:active{transform:none!important;filter:none!important;box-shadow:none}
+#localGameRoom .local-square.local-selected{box-shadow:inset 0 0 0 4px #eeb63c}
+#localGameRoom .local-square.local-check-square{box-shadow:inset 0 0 20px 8px #ee2424}
+#playModeTabs button{transform:none!important;transition:none;box-shadow:none}
+#playModeTabs button[aria-selected="true"]{box-shadow:inset 0 3px var(--andili-rot)}
+.local-game-room{-webkit-tap-highlight-color:transparent}
+.local-layout-options button{transition:none}
+@media(max-width:760px){
+  .local-setup-active .new-game-modal-body{flex:1}
+  .local-setup-active .new-game-modal-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .local-setup-active .new-game-modal-actions :is(#newGameCancelBtn,#localGameStartBtn){width:100%;min-width:0;grid-column:auto;order:0;margin:0;box-sizing:border-box}
+}
+.local-setup-active .new-game-modal-actions{box-sizing:border-box}
+/* Im Andili-iFrame wird die Höhe wie bei den übrigen Gamer-Bereichen gemeldet. */
+html.hammerschach-embedded.local-game-open .app{display:none!important}
+html.hammerschach-embedded .local-game-room{position:relative;inset:auto;width:100%;overflow:visible}
+html.hammerschach-embedded .local-game-table{--local-board-size:min(760px,calc(100vw - 32px));min-width:0}
