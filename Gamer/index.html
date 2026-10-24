@@ -53,7 +53,7 @@
 <link rel="stylesheet" href="css/training-impulses.css?v=20260925-1">
 <link rel="stylesheet" href="css/live-board.css?v=20261012-tv-boards-1">
 <link rel="stylesheet" href="css/schachecke.css?v=20261011-3">
-<link rel="stylesheet" href="css/local-game.css?v=20261024-1">
+<link rel="stylesheet" href="css/local-game.css?v=20261024-3">
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
 </head>
 <body>
@@ -100,6 +100,17 @@
           <button id="openOffersOpenBtn" class="button-flat name-action-btn header-direct-action" type="button" aria-haspopup="dialog" aria-controls="openOffersBackdrop">🔎 Angebote <span id="openOffersCount" class="header-menu-count open-offers-count" hidden>0</span></button>
           <button id="newGameOpenBtn" class="name-action-btn new-game-open-btn" type="button" aria-haspopup="dialog" aria-controls="newGameBackdrop" hidden>♟️ Spielen</button>
           <button id="roomLobbyBtn" class="button-flat name-action-btn header-direct-action" type="button" hidden>↩️ Zur Lobby</button>
+          <div id="localHeaderActions" hidden>
+            <button id="localAction-undo" class="button-flat name-action-btn header-direct-action" type="button" data-action="undo" hidden>↶ <span>Zug zurück</span></button>
+            <button id="localAction-pause" class="button-flat name-action-btn header-direct-action" type="button" data-action="pause" hidden>Ⅱ <span>Pause</span></button>
+            <button id="localAction-flip" class="button-flat name-action-btn header-direct-action" type="button" data-action="flip" hidden>↻ <span>Brett drehen</span></button>
+            <button id="localAction-auto" class="button-flat name-action-btn header-direct-action" type="button" data-action="auto" hidden>⇄ <span>Automatisch drehen</span></button>
+            <button id="localAction-seating" class="button-flat name-action-btn header-direct-action" type="button" data-action="seating" hidden>♟ <span>Gegenüber sitzen</span></button>
+            <button id="localAction-draw" class="button-flat name-action-btn header-direct-action" type="button" data-action="draw" hidden>½ <span>Remis</span></button>
+            <button id="localAction-resign" class="button-flat name-action-btn header-direct-action" type="button" data-action="resign" hidden>⚑ <span>Aufgeben</span></button>
+            <button id="localAction-new" class="button-flat name-action-btn header-direct-action" type="button" data-action="new" hidden>＋ <span>Neue Partie</span></button>
+            <button id="localAction-rematch" class="button-flat name-action-btn header-direct-action" type="button" data-action="rematch" hidden>↻ <span>Revanche</span></button>
+          </div>
           <div id="trainerBeginnerMenu" class="header-menu trainer-beginner-menu" hidden>
             <button id="trainerBeginnerMenuBtn" class="button-flat name-action-btn header-menu-button trainer-header-action active" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="trainerBeginnerMenuPopup">
               <span>🎯 Anfängertraining</span><span class="header-menu-chevron" aria-hidden="true">▾</span>
@@ -228,6 +239,18 @@
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="membersOpenBtn"><span>👥</span><strong>Mitglieder</strong></button>
             <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="profileOpenBtn"><span>👤</span><strong>Mein Profil</strong></button>
             <button id="mobileNavMessagesItem" class="mobile-nav-test-item" type="button" data-mobile-nav-target="privateMessagesOpenBtn" hidden><span>✉️</span><strong>Nachrichten</strong><b id="mobileNavMessagesCount" hidden>0</b></button>
+          </section>
+          <section id="mobileNavLocalSection" hidden>
+            <h2>Zusammen spielen</h2>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-undo" hidden><span>↶</span><strong>Zug zurück</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-pause" hidden><span>Ⅱ</span><strong>Pause</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-flip" hidden><span>↻</span><strong>Brett drehen</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-auto" hidden><span>⇄</span><strong>Automatisch drehen</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-seating" hidden><span>♟</span><strong>Gegenüber sitzen</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-draw" hidden><span>½</span><strong>Remis</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-resign" hidden><span>⚑</span><strong>Aufgeben</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-new" hidden><span>＋</span><strong>Neue Partie</strong></button>
+            <button class="mobile-nav-test-item" type="button" data-mobile-nav-target="localAction-rematch" hidden><span>↻</span><strong>Revanche</strong></button>
           </section>
           <section id="mobileNavMainSection">
             <h2>Hauptnavigation</h2>
@@ -672,11 +695,7 @@
           </div>
           <div id="localPlayPanel" role="tabpanel" aria-labelledby="localPlayTab" hidden>
             <div class="local-setup-group">
-              <h4>Wie sitzt ihr am Gerät?</h4>
-              <div class="local-layout-options" aria-label="Sitzposition">
-                <button type="button" data-local-layout="desktop" aria-pressed="true"><strong>PC/Mac</strong><span>Nebeneinander</span></button>
-                <button type="button" data-local-layout="tablet" aria-pressed="false"><strong>Tablet</strong><span>Gegenüber</span></button>
-              </div>
+              <h4>Brett</h4>
               <label id="localAutoFlipLabel" class="local-check"><input id="localAutoFlip" type="checkbox" checked> Brett nach jedem Zug drehen</label>
             </div>
             <div class="local-setup-group">
@@ -2676,7 +2695,7 @@
 </div>
 
 <script src="js/chess-utils.js?v=20260917-theme-3"></script>
-<script src="js/embed-layout.js?v=20261024-1"></script>
+<script src="js/embed-layout.js?v=20261024-3"></script>
 <script src="js/piece-assets.js?v=20260917-theme-3"></script>
 <script src="js/chess960-core.js?v=20260917-theme-3"></script>
 <script src="js/board-setup-utils.js?v=20260917-theme-3"></script>
@@ -2734,7 +2753,7 @@
 <script src="js/info-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/policy-dialogs.js?v=20260917-theme-3"></script>
 <script src="js/online-room-utils.js?v=20260917-theme-3"></script>
-<script src="js/online-ui-state.js?v=20261006-live-board-embedded-1"></script>
+<script src="js/online-ui-state.js?v=20261024-3"></script>
 <script src="js/member-directory.js?v=20261005-gamer-brand-1"></script>
 <script src="js/member-hovercard.js?v=20260920-profile-1"></script>
 <script src="js/member-games.js?v=20260920-profile-1"></script>
@@ -2758,7 +2777,7 @@
 <script src="js/app-event-bindings.js?v=20261011-corner-1"></script>
 <script src="js/move-history-navigation.js?v=20260917-theme-3"></script>
 <script src="js/pgn-export.js?v=20260917-theme-3"></script>
-<script src="js/new-game-board-ui.js?v=20260917-theme-3"></script>
+<script src="js/new-game-board-ui.js?v=20261024-3"></script>
 <script src="js/board-appearance.js?v=20260917-theme-3"></script>
 <script src="js/sound-system.js?v=20260917-theme-3"></script>
 <script src="js/time-controls.js?v=20260917-theme-3"></script>
@@ -2773,10 +2792,10 @@
 <script src="js/live-board.js?v=20261012-tv-boards-1"></script>
 <script src="js/tv-liveboards.js?v=20261012-tv-boards-1"></script>
 <script src="js/local-game-state.js?v=20261024-1"></script>
-<script src="js/local-game.js?v=20261024-2"></script>
+<script src="js/local-game.js?v=20261024-3"></script>
 <script src="js/app-startup.js?v=20260925-partielink-login-1"></script>
 <script src="js/board-size-control.js?v=20260917-theme-3"></script>
-<script src="js/mobile-navigation.js?v=20261006-live-board-embedded-1"></script>
+<script src="js/mobile-navigation.js?v=20261024-3"></script>
 <script src="js/room-games-layout.js?v=20260917-theme-3"></script>
 <script defer src="js/gamer-settings.js?v=20261021-auto-night-1"></script>
 </body>
