@@ -223,6 +223,10 @@
       timeout_draw: 'Zeit abgelaufen · kein Mattmaterial', resignation: 'Aufgegeben', agreement: 'Remis vereinbart'};
     return (result.winner ? (result.winner === 'w' ? '1–0' : '0–1') : '½–½') + ' · ' + (reasons[result.type] || 'Partie beendet');
   }
+  function piecesFaceTop() {
+    // Beide Farben zeigen zur aktiven Sitzseite; das Tablet-Brett bleibt fest.
+    return roomOptions.layout === 'tablet' && (session.pendingClock || session.game.turn) !== orientation;
+  }
   function render() {
     if (!session) return;
     orientation = roomOptions.layout === 'desktop' && roomOptions.autoFlip
@@ -248,7 +252,7 @@
       const img = square.querySelector('img');
       img.hidden = piece === '.';
       if (piece !== '.') img.src = pieceImg[piece];
-      img.classList.toggle('local-opponent-piece', roomOptions.layout === 'tablet' && color === opposite(orientation));
+      img.classList.toggle('local-opponent-piece', piecesFaceTop());
       square.querySelector('.local-coord-file').textContent = row === 7 ? files[x] : '';
       square.querySelector('.local-coord-rank').textContent = col === 0 ? String(8 - y) : '';
       square.setAttribute('aria-label', coordToAlg(x, y) + (piece !== '.' ? ' · ' + (color === 'w' ? 'weißer ' : 'schwarzer ') + names[piece.toLowerCase()] : ' · leer'));
@@ -409,6 +413,7 @@
       drag.moved = true; selection = drag.from.slice(); render();
       drag.ghost = document.createElement('img'); drag.ghost.className = 'local-drag-ghost';
       drag.ghost.src = pieceImg[session.game.at(...drag.from)]; drag.ghost.alt = '';
+      drag.ghost.style.transform = 'translate(-50%, -50%)' + (piecesFaceTop() ? ' rotate(180deg)' : '');
       drag.ghost.style.width = ($('localBoard').getBoundingClientRect().width / 8) + 'px';
       room.appendChild(drag.ghost);
     }
