@@ -21,8 +21,8 @@
 .local-game-table{--local-board-size:min(760px,calc(100vw - 32px),max(220px,calc(100dvh - var(--local-header-height,180px) - 210px)));width:var(--local-board-size);max-width:100%;min-width:0;display:flex;flex-direction:column;gap:8px;margin:auto}
 .local-no-clock .local-game-table{--local-board-size:min(760px,calc(100vw - 32px),max(220px,calc(100dvh - var(--local-header-height,180px) - 70px)))}
 .local-board-frame{width:100%;aspect-ratio:1;border:5px solid var(--board-frame-mid);outline:1px solid var(--board-frame-dark);border-radius:9px;box-sizing:border-box;overflow:hidden;box-shadow:0 12px 35px #0003;flex-shrink:0}
-.local-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));height:100%;width:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.local-game-room .local-square{position:relative;display:block;min-width:0;min-height:0;aspect-ratio:1;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:var(--light-square);color:var(--board-coord-dark);cursor:pointer;line-height:1;touch-action:none;overflow:hidden}
+.local-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));height:100%;width:100%;touch-action:pinch-zoom;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.local-game-room .local-square{position:relative;display:block;min-width:0;min-height:0;aspect-ratio:1;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;background:var(--light-square);color:var(--board-coord-dark);cursor:pointer;line-height:1;touch-action:auto;overflow:hidden}
 .local-game-room .local-square.local-dark{background:var(--dark-square);color:var(--board-coord-light)}
 .local-square img{position:absolute;inset:7%;width:86%;height:86%;object-fit:contain;pointer-events:none;z-index:2}
 .local-square img.local-opponent-piece{transform:rotate(180deg)}
