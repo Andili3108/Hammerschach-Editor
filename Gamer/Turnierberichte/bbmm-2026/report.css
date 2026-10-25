@@ -1,0 +1,27 @@
+/* Ergänzungen zum gemeinsamen Turnierbericht-Design. */
+.bbmm-hero { display:block; min-height:0; padding-bottom:62px; }
+.bbmm-hero .hero-content { width:100%; padding:clamp(28px, 6vw, 70px); padding-bottom:28px; }
+.bbmm-hero h1 { max-width:940px; }
+.bbmm-hero .hero-podium { position:relative; inset:auto; margin:0 clamp(28px, 6vw, 70px); }
+.bbmm-toolbar[hidden] { display:none; }
+.bbmm-table { min-width:520px; }
+.bbmm-table tbody th { background:var(--surface); color:var(--ink); text-align:left; font-size:13px; font-weight:850; text-transform:none; letter-spacing:normal; }
+.bbmm-table tbody tr:nth-child(even) th { background:var(--surface-soft); }
+.bbmm-table .podium-row th { background:rgba(211,162,76,.12); }
+.bbmm-table .podium-row.rank-1 th { background:rgba(211,162,76,.22); }
+.bbmm-table tbody tr:hover th { background:var(--wine-soft); }
+.bbmm-table abbr { text-decoration:none; }
+.story-source { color:var(--wine-deep); font-size:.8em; font-weight:800; white-space:nowrap; }
+.bbmm-sources { margin:44px 0 64px; padding:24px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); }
+.bbmm-sources h2 { margin-top:0; }
+.bbmm-sources li + li { margin-top:12px; }
+.bbmm-sources p { margin-bottom:0; color:var(--muted); font-size:13px; }
+.bbmm-sources a { overflow-wrap:anywhere; }
+.bbmm-toolbar input:focus-visible { outline:2px solid var(--wine); outline-offset:4px; }
+@media (max-width:600px) {
+  .bbmm-hero .hero-content { padding:27px 22px 24px; }
+  .bbmm-hero .hero-podium { margin:0 22px; }
+  .bbmm-hero .eyebrow { font-size:10px; letter-spacing:.05em; }
+  .bbmm-sources { padding:20px 16px; }
+  .bbmm-sources ol { padding-left:22px; }
+}
