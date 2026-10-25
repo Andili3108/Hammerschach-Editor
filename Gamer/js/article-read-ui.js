@@ -24,7 +24,7 @@
     // Mobile Navigation verwendet eigene Knöpfe für Mitglieder und Besucher.
     document.querySelectorAll('[data-mobile-nav-target="tournamentReportToolBtn"], [data-mobile-nav-accordion-source="clubChessMenu"] > .mobile-nav-accordion-toggle').forEach(el=>badge(el,unread.length));
     document.querySelectorAll('[data-schach-news-id]').forEach(el=>badge(el,unread.some(a=>a.key==='news:'+el.dataset.schachNewsId)?1:0,true));
-    [['tournamentReportUnnaBtn','unna-open-2025'],['tournamentReportQuickBtn','quick-round-robin-2026']].forEach(([id,key])=>badge(document.getElementById(id),unread.some(a=>a.key==='report:'+key)?1:0,true));
+    [['tournamentReportUnnaBtn','unna-open-2025'],['tournamentReportQuickBtn','quick-round-robin-2026'],['tournamentReportBbmmBtn','bbmm-2026']].forEach(([id,key])=>badge(document.getElementById(id),unread.some(a=>a.key==='report:'+key)?1:0,true));
   }
   store=HammerschachArticleReadStore.create({
     storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},

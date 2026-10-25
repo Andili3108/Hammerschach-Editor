@@ -209,6 +209,7 @@ const tournamentReportToolFrame = document.getElementById('tournamentReportToolF
 const tournamentReportSwitcher = document.getElementById('tournamentReportSwitcher');
 const tournamentReportUnnaBtn = document.getElementById('tournamentReportUnnaBtn');
 const tournamentReportQuickBtn = document.getElementById('tournamentReportQuickBtn');
+const tournamentReportBbmmBtn = document.getElementById('tournamentReportBbmmBtn');
 const tvToolBtn = document.getElementById('tvToolBtn');
 const tvToolView = document.getElementById('tvToolView');
 let tvPlayerFrame = document.getElementById('tvPlayerFrame');

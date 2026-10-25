@@ -50,7 +50,8 @@ const ACTIVE_EMBEDDED_TOOL_STORAGE_KEY = 'hammerschachActiveEmbeddedToolV1';
 // Stabile IDs behalten den Lesestand. Nur Altbestand erhält notify:false; neue Artikel zählen automatisch.
 const TOURNAMENT_REPORTS = Object.freeze({
   'unna-open-2025':{title:'Unna Open 2025',src:'./Turnierberichte/unna-open-2025/?embedded=1',notify:false},
-  'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1',notify:false}
+  'quick-round-robin-2026':{title:'Quick-Round-Robin 2026',src:'./Turnierberichte/quick-round-robin-2026/?embedded=1',notify:false},
+  'bbmm-2026':{title:'BBMM 2026',src:'./Turnierberichte/bbmm-2026/?embedded=1'}
 });
 const SCHACH_NEWS = Object.freeze({
   'blitz-finals-2027':{title:'Blitzschach bei den Finals 2027',src:'./SchachNews/blitz-finals-2027.html'},
@@ -425,7 +426,7 @@ function postTournamentReportToolContext(){
 }
 function updateTournamentReportSwitcher(){
   const current=currentSchachArticle();
-  [[tournamentReportUnnaBtn,'unna-open-2025'],[tournamentReportQuickBtn,'quick-round-robin-2026']].forEach(([button,id])=>{
+  [[tournamentReportUnnaBtn,'unna-open-2025'],[tournamentReportQuickBtn,'quick-round-robin-2026'],[tournamentReportBbmmBtn,'bbmm-2026']].forEach(([button,id])=>{
     if(!button)return;
     const active=schachCurrentCategory==='reports' && id===tournamentReportCurrentId;
     button.classList.toggle('active',active);
@@ -789,6 +790,7 @@ if(readerToolBtn)readerToolBtn.addEventListener('click',openReaderToolDebounced)
 if(tournamentReportToolBtn)tournamentReportToolBtn.addEventListener('click',openTournamentReportToolDebounced);
 if(tournamentReportUnnaBtn)tournamentReportUnnaBtn.addEventListener('click',()=>selectTournamentReport('unna-open-2025'));
 if(tournamentReportQuickBtn)tournamentReportQuickBtn.addEventListener('click',()=>selectTournamentReport('quick-round-robin-2026'));
+if(tournamentReportBbmmBtn)tournamentReportBbmmBtn.addEventListener('click',()=>selectTournamentReport('bbmm-2026'));
 document.querySelectorAll('[data-schach-news-id]').forEach(button=>button.addEventListener('click',()=>selectSchachNews(button.dataset.schachNewsId)));
 if(tvToolBtn)tvToolBtn.addEventListener('click',openTvToolDebounced);
 if(leagueStandingsToolBtn)leagueStandingsToolBtn.addEventListener('click',openLeagueStandingsToolDebounced);
