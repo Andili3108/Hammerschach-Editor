@@ -1115,6 +1115,9 @@ html,body{margin:0;min-height:100%;background:transparent;color:var(--ui-text);f
 #gameListBackdrop h3{color:var(--ui-text);font-size:18px!important;font-weight:900}
 #gameListClose{min-height:36px;padding:7px 13px!important;border-radius:12px!important;background:linear-gradient(180deg,var(--ui-surface) 0%,var(--ui-surface-alt) 100%)!important;color:var(--ui-text)!important;border:1px solid rgb(var(--ui-line-rgb) / 0.18)!important;box-shadow:0 5px 12px rgba(0,0,0,.09)!important;font-weight:900}
 #gameSearch{min-height:42px;padding:9px 36px 9px 11px!important;border:1px solid rgba(132,63,70,.20)!important;border-radius:11px!important;background:var(--ui-surface);font-family:"Times New Roman",Times,serif;font-size:14px!important;font-weight:700}
+.game-list-order{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;color:var(--ui-text)}
+.game-list-order select{min-height:38px;max-width:100%;padding:6px 10px;border:1px solid rgb(var(--ui-line-rgb) / 0.25);border-radius:8px;background:var(--ui-surface);color:var(--ui-text);font:inherit}
+.game-list-order small{flex-basis:100%;font-size:12px}
 #gameListBody button{min-height:38px;margin:4px 0!important;padding:8px 10px!important;border-radius:10px!important;background:var(--ui-surface)!important;color:var(--ui-text)!important;border:1px solid rgb(var(--ui-line-rgb) / 0.18)!important;box-shadow:none!important;font-family:"Times New Roman",Times,serif!important;font-weight:700!important}
 #gameListBody button:hover{background:rgba(132,63,70,.055)!important;border-color:rgba(132,63,70,.18)!important}
 
@@ -1691,6 +1694,7 @@ let selected = null;
 /* === PGN-Verwaltung === */
 let importedGames = [];   // aus PGN.txt geladene Partien
 let currentGameIndex = -1;
+let gameListOrder = 'file'; // Auswahl bleibt während der Reader-Sitzung erhalten
 
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
@@ -2401,6 +2405,25 @@ function loadGameByIndex(index){
   renderBoardFromView();
 }
 
+// Unbekannte Datumsanteile bleiben innerhalb des bekannten Jahres/Monats.
+function archiveDateKey(headers){
+  const parts = String((headers || {}).Date || '').trim().match(/^(\d{4})\.(\d{2}|\?{2})\.(\d{2}|\?{2})$/);
+  if(!parts || Number(parts[1]) === 0) return null;
+  const month = parts[2] === '??' ? 0 : Number(parts[2]);
+  const day = parts[3] === '??' ? 0 : Number(parts[3]);
+  if(month > 12 || day > 31) return null;
+  return Number(parts[1]) * 10000 + month * 100 + day;
+}
+
+function compareArchiveGames(a, b, order){
+  if(order === 'file') return a.idx - b.idx;
+  if(a.dateKey === null && b.dateKey === null) return a.idx - b.idx;
+  if(a.dateKey === null) return 1;
+  if(b.dateKey === null) return -1;
+  const difference = a.dateKey - b.dateKey;
+  return (order === 'newest' ? -difference : difference) || a.idx - b.idx;
+}
+
 function openGameListModal(){
   if(!importedGames || importedGames.length === 0){
     alert('Bitte zuerst ein Partienarchiv laden.');
@@ -2441,6 +2464,15 @@ function openGameListModal(){
               style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
                      cursor:pointer;font-size:18px;color:#888;display:none;">❌</span>
       </div>
+      <div class="game-list-order">
+        <label for="gameListOrder">Reihenfolge:</label>
+        <select id="gameListOrder" aria-describedby="gameListOrderHint">
+          <option value="file">Dateireihenfolge</option>
+          <option value="newest">Neueste zuerst</option>
+          <option value="oldest">Älteste zuerst</option>
+        </select>
+        <small id="gameListOrderHint">Nach PGN-Datum; ohne bekanntes Jahr am Ende. Partienummern bleiben erhalten.</small>
+      </div>
       <div id="gameListBody"></div>
     </div>
   `;
@@ -2451,13 +2483,23 @@ function openGameListModal(){
   const body = modal.querySelector('#gameListBody');
   const searchInput = modal.querySelector('#gameSearch');
   const clearBtn = modal.querySelector('#gameSearchClear');
+  const orderSelect = modal.querySelector('#gameListOrder');
+  orderSelect.value = gameListOrder;
+  const orderedGames = importedGames.map((g, idx) => ({g, idx, dateKey: archiveDateKey(g.headers)}));
+  orderedGames.sort((a, b) => compareArchiveGames(a, b, gameListOrder));
   let listLimit=300;
+  orderSelect.addEventListener('change', () => {
+    gameListOrder = orderSelect.value;
+    orderedGames.sort((a, b) => compareArchiveGames(a, b, gameListOrder));
+    listLimit = 300;
+    renderGameList(searchInput.value);
+  });
 
   function renderGameList(filterText){
     const q = (filterText || '').toLowerCase();
     body.innerHTML = '';
     const matches=[];
-    importedGames.forEach((g,idx)=>{
+    orderedGames.forEach(({g,idx})=>{
       const headerText=Object.values(g.headers||{}).join(' ');
       if(!q||(String(idx+1)+' '+headerText).toLowerCase().includes(q))matches.push({g,idx});
     });
