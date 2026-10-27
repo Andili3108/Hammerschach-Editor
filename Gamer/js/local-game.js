@@ -236,6 +236,8 @@
       ? (session.pendingClock || session.game.turn) : fixedBottom;
     const board = $('localBoard');
     board.dataset.orientation = orientation;
+    const facingTop = piecesFaceTop();
+    board.classList.toggle('local-facing-top', facingTop);
     board.setAttribute('aria-label', 'Schachbrett' + (session.result ? ', Partie beendet' : session.paused ? ', Pause' : session.pendingClock ? ', Uhr drücken' : ', ' + (session.game.turn === 'w' ? 'Weiß' : 'Schwarz') + ' am Zug'));
     const legal = selection && session.canMove() ? session.game.legalMoves().filter(move => move.from[0] === selection[0] && move.from[1] === selection[1]) : [];
     const last = session.history.length ? session.history[session.history.length - 1].move : null;
@@ -255,9 +257,9 @@
       const img = square.querySelector('img');
       img.hidden = piece === '.';
       if (piece !== '.') img.src = pieceImg[piece];
-      img.classList.toggle('local-opponent-piece', piecesFaceTop());
-      square.querySelector('.local-coord-file').textContent = row === 7 ? files[x] : '';
-      square.querySelector('.local-coord-rank').textContent = col === 0 ? String(8 - y) : '';
+      img.classList.toggle('local-opponent-piece', facingTop);
+      square.querySelector('.local-coord-file').textContent = row === (facingTop ? 0 : 7) ? files[x] : '';
+      square.querySelector('.local-coord-rank').textContent = col === (facingTop ? 7 : 0) ? String(8 - y) : '';
       square.setAttribute('aria-label', coordToAlg(x, y) + (piece !== '.' ? ' · ' + (color === 'w' ? 'weißer ' : 'schwarzer ') + names[piece.toLowerCase()] : ' · leer'));
       square.tabIndex = selection && selection[0] === x && selection[1] === y || !selection && index === 56 ? 0 : -1;
     });
