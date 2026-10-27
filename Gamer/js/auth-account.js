@@ -193,6 +193,7 @@ function normalizeClientEmailNotifications(value){
     return !(raw === false || raw === 0 || raw === '0' || String(raw).toLowerCase() === 'false');
   };
   return {
+    dailyLowTimeEnabled:enabled('dailyLowTimeEnabled', 'daily_low_time_enabled', true),
     dailyTurnEnabled:enabled('dailyTurnEnabled', 'daily_turn_enabled', true),
     dailyResultEnabled:enabled('dailyResultEnabled', 'daily_result_enabled', true),
     memberNewsEnabled:enabled('memberNewsEnabled', 'member_news_enabled', false),
@@ -209,6 +210,7 @@ function renderEmailNotificationSettings(){
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
   const preferences = normalizeClientEmailNotifications(onlineAuthUser && onlineAuthUser.emailNotifications);
   if(authEmailNotifications) authEmailNotifications.hidden = !loggedIn;
+  if(dailyLowTimeEmailCheckbox){ dailyLowTimeEmailCheckbox.checked = preferences.dailyLowTimeEnabled; dailyLowTimeEmailCheckbox.disabled = !loggedIn; }
   if(dailyTurnEmailCheckbox){ dailyTurnEmailCheckbox.checked = preferences.dailyTurnEnabled; dailyTurnEmailCheckbox.disabled = !loggedIn; }
   if(dailyResultEmailCheckbox){ dailyResultEmailCheckbox.checked = preferences.dailyResultEnabled; dailyResultEmailCheckbox.disabled = !loggedIn; }
   if(memberNewsEmailCheckbox){ memberNewsEmailCheckbox.checked = preferences.memberNewsEnabled; memberNewsEmailCheckbox.disabled = !loggedIn; }
@@ -225,6 +227,7 @@ async function saveEmailNotificationSettings(){
     const data = await authApi('/api/account/notifications', {
       method:'POST',
       body:JSON.stringify({
+        dailyLowTimeEnabled:!!(dailyLowTimeEmailCheckbox && dailyLowTimeEmailCheckbox.checked),
         dailyTurnEnabled:!!(dailyTurnEmailCheckbox && dailyTurnEmailCheckbox.checked),
         dailyResultEnabled:!!(dailyResultEmailCheckbox && dailyResultEmailCheckbox.checked),
         memberNewsEnabled:!!(memberNewsEmailCheckbox && memberNewsEmailCheckbox.checked),

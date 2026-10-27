@@ -78,7 +78,7 @@ const ADMIN_DETAIL_LABELS = {
 const ADMIN_MAIL_TYPE_LABELS = {
   invitation:'Partieeinladung', email_verification:'Mailbestätigung', password_reset:'Kennwort-Reset', account_recovery:'Account-Zugang wiederherstellen',
   email_change_verification:'Neue Mailadresse', email_change_notice:'Hinweis zur Mailänderung',
-  daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', member_news:'Mitglieder-Neuigkeiten', member_system:'Mitglieder-Systeminfo', member_personal:'Persönliche Admin-Nachricht', member_news_test:'Test: Neuigkeiten', member_system_test:'Test: Systeminfo', member_personal_test:'Test: persönliche Admin-Nachricht', transactional:'Systemmail'
+  daily_low_time:'Daily: 8-Stunden-Erinnerung', daily_turn:'Daily: am Zug', daily_result:'Daily: Ergebnis', member_news:'Mitglieder-Neuigkeiten', member_system:'Mitglieder-Systeminfo', member_personal:'Persönliche Admin-Nachricht', member_news_test:'Test: Neuigkeiten', member_system_test:'Test: Systeminfo', member_personal_test:'Test: persönliche Admin-Nachricht', transactional:'Systemmail'
 };
 const ADMIN_TABLE_LABELS = {
   users:'Accounts', sessions:'Sitzungen', daily_games:'Daily-Partien', public_games:'Öffentliche Partien',

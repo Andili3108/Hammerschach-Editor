@@ -62,6 +62,7 @@ const authRecoveryCloseBtn = document.getElementById('authRecoveryCloseBtn');
 const authRecoverySubmitBtn = document.getElementById('authRecoverySubmitBtn');
 const authRatingsGrid = document.getElementById('authRatingsGrid');
 const authEmailNotifications = document.getElementById('authEmailNotifications');
+const dailyLowTimeEmailCheckbox = document.getElementById('dailyLowTimeEmailCheckbox');
 const dailyTurnEmailCheckbox = document.getElementById('dailyTurnEmailCheckbox');
 const dailyResultEmailCheckbox = document.getElementById('dailyResultEmailCheckbox');
 const memberNewsEmailCheckbox = document.getElementById('memberNewsEmailCheckbox');

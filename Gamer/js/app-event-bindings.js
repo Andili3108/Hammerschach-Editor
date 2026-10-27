@@ -121,7 +121,7 @@ if(emailNotificationsSaveBtn) emailNotificationsSaveBtn.addEventListener('click'
 if(accountProfileAvatarInput) accountProfileAvatarInput.addEventListener('change', updateAccountProfileAvatarSelection);
 if(accountProfileAvatarRemoveBtn) accountProfileAvatarRemoveBtn.addEventListener('click', removeAccountProfileAvatar);
 if(accountProfileAboutInput) accountProfileAboutInput.addEventListener('input', updateAccountProfileAboutCount);
-[dailyTurnEmailCheckbox, dailyResultEmailCheckbox, memberNewsEmailCheckbox, tournamentEmailCheckbox].forEach(input => {
+[dailyLowTimeEmailCheckbox, dailyTurnEmailCheckbox, dailyResultEmailCheckbox, memberNewsEmailCheckbox, tournamentEmailCheckbox].forEach(input => {
   if(input) input.addEventListener('change', () => setEmailNotificationsStatus('Änderung noch nicht gespeichert.', ''));
 });
 if(accountEditCancelBtn) accountEditCancelBtn.addEventListener('click', () => closeAccountEditDialog(true));
