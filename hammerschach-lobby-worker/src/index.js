@@ -1,3 +1,4 @@
+import { processDailyLowTimeReminders, sendDailyLowTimeReminder, dailyLowTimeSnapshot } from './daily-low-time.js';
 import { handleSchacheckeApi, refreshGamerNews, CORNER_CRON } from './schachecke.js';
 import { handleLiveBoardApi } from './live-board.js';
 import { ensureSeriesSchema, tournamentTiming, tournamentVisible, tournamentRegistrationOpen, activateTournamentSeries, materializeTournamentSeries, tournamentSeriesDto, seriesConfig } from './tournament-series.js';
@@ -3289,6 +3290,7 @@ async function handleAccountRecoveryApi(request, env, url) {
 
 const DEFAULT_EMAIL_NOTIFICATIONS = Object.freeze({
   dailyTurnEnabled:true,
+  dailyLowTimeEnabled:true,
   dailyResultEnabled:true,
   memberNewsEnabled:false,
   tournamentEnabled:true
@@ -3304,6 +3306,7 @@ async function ensureUserEmailPreferencesTable(env) {
     `CREATE TABLE IF NOT EXISTS user_email_preferences (
        user_id TEXT PRIMARY KEY,
        daily_turn_enabled INTEGER NOT NULL DEFAULT 1,
+       daily_low_time_enabled INTEGER NOT NULL DEFAULT 1,
        daily_result_enabled INTEGER NOT NULL DEFAULT 1,
        member_news_enabled INTEGER NOT NULL DEFAULT 0,
        tournament_enabled INTEGER NOT NULL DEFAULT 1,
@@ -3320,6 +3323,17 @@ async function ensureUserEmailPreferencesTable(env) {
   } catch (_) {
     /* Spalte existiert bereits. */
   }
+  // DEFAULT 1 aktiviert die neue Option auch für bereits gespeicherte Accounts.
+  // Spätere Abwahlen bleiben bei allen weiteren Starts erhalten.
+  const columns = await env.DB.prepare('PRAGMA table_info(user_email_preferences)').all();
+  if (!(columns.results || []).some(column => column.name === 'daily_low_time_enabled')) {
+    try {
+      await env.DB.prepare('ALTER TABLE user_email_preferences ADD COLUMN daily_low_time_enabled INTEGER NOT NULL DEFAULT 1').run();
+    } catch (error) {
+      const current = await env.DB.prepare('PRAGMA table_info(user_email_preferences)').all();
+      if (!(current.results || []).some(column => column.name === 'daily_low_time_enabled')) throw error;
+    }
+  }
   userEmailPreferencesTableReady = true;
   return true;
 }
@@ -3332,6 +3346,7 @@ function normalizeEmailNotificationPreferences(value) {
     return !(raw === false || raw === 0 || raw === '0' || String(raw).toLowerCase() === 'false');
   };
   return {
+    dailyLowTimeEnabled:boolValue('dailyLowTimeEnabled', 'daily_low_time_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyLowTimeEnabled),
     dailyTurnEnabled:boolValue('dailyTurnEnabled', 'daily_turn_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyTurnEnabled),
     dailyResultEnabled:boolValue('dailyResultEnabled', 'daily_result_enabled', DEFAULT_EMAIL_NOTIFICATIONS.dailyResultEnabled),
     memberNewsEnabled:boolValue('memberNewsEnabled', 'member_news_enabled', DEFAULT_EMAIL_NOTIFICATIONS.memberNewsEnabled),
@@ -3343,7 +3358,7 @@ async function getUserEmailPreferences(env, userId) {
   const id = String(userId || '').trim();
   if (!id || !(await ensureUserEmailPreferencesTable(env))) return { ...DEFAULT_EMAIL_NOTIFICATIONS };
   const row = await env.DB.prepare(
-    `SELECT daily_turn_enabled, daily_result_enabled, member_news_enabled, tournament_enabled
+    `SELECT daily_low_time_enabled, daily_turn_enabled, daily_result_enabled, member_news_enabled, tournament_enabled
        FROM user_email_preferences
       WHERE user_id = ?
       LIMIT 1`
@@ -3354,13 +3369,14 @@ async function getUserEmailPreferences(env, userId) {
 async function setUserEmailPreferences(env, userId, preferences) {
   const id = String(userId || '').trim();
   if (!id || !(await ensureUserEmailPreferencesTable(env))) throw new Error('E-Mail-Einstellungen sind momentan nicht verfügbar.');
-  const normalized = normalizeEmailNotificationPreferences(preferences);
+  const normalized = normalizeEmailNotificationPreferences({ ...await getUserEmailPreferences(env, id), ...Object.fromEntries(Object.entries(preferences || {}).filter(([, value]) => value !== undefined)) });
   const updatedAt = new Date().toISOString();
   await env.DB.prepare(
-    `INSERT INTO user_email_preferences (user_id, daily_turn_enabled, daily_result_enabled, member_news_enabled, tournament_enabled, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO user_email_preferences (user_id, daily_turn_enabled, daily_low_time_enabled, daily_result_enabled, member_news_enabled, tournament_enabled, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        daily_turn_enabled = excluded.daily_turn_enabled,
+       daily_low_time_enabled = excluded.daily_low_time_enabled,
        daily_result_enabled = excluded.daily_result_enabled,
        member_news_enabled = excluded.member_news_enabled,
        tournament_enabled = excluded.tournament_enabled,
@@ -3368,6 +3384,7 @@ async function setUserEmailPreferences(env, userId, preferences) {
   ).bind(
     id,
     normalized.dailyTurnEnabled ? 1 : 0,
+    normalized.dailyLowTimeEnabled ? 1 : 0,
     normalized.dailyResultEnabled ? 1 : 0,
     normalized.memberNewsEnabled ? 1 : 0,
     normalized.tournamentEnabled ? 1 : 0,
@@ -3920,6 +3937,7 @@ async function ensureDailyGamesTable(env) {
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_claim_threefold INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN draw_claim_fifty_move INTEGER NOT NULL DEFAULT 0`).run(); } catch (_) {}
   try { await env.DB.prepare(`ALTER TABLE daily_games ADD COLUMN rated INTEGER NOT NULL DEFAULT 1`).run(); } catch (_) {}
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_deadline ON daily_games (ended, started, deadline_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_white ON daily_games (white_user_id, ended, updated_at)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_daily_games_black ON daily_games (black_user_id, ended, updated_at)`).run();
   await env.DB.prepare(
@@ -11054,6 +11072,7 @@ async function handleAuthApi(request, env, url) {
     try {
       const preferences = await setUserEmailPreferences(env, session.user.id, {
         dailyTurnEnabled:body.dailyTurnEnabled,
+        dailyLowTimeEnabled:body.dailyLowTimeEnabled,
         dailyResultEnabled:body.dailyResultEnabled,
         memberNewsEnabled:body.memberNewsEnabled,
         tournamentEnabled:body.tournamentEnabled
@@ -15429,6 +15448,40 @@ export class GameRoom {
     return { roomId, timeControl, game, setup, players, whiteUserId, blackUserId, whiteName, blackName };
   }
 
+  async dailyLowTimeState() {
+    const stored = await this.state.storage.get(['game', 'clock', 'moves', 'timeControl', 'cancelled']);
+    return dailyLowTimeSnapshot(stored, Date.now());
+  }
+
+  async sendDailyLowTimeNotification() {
+    const initial = await this.dailyLowTimeState();
+    if (!initial) {
+      await this.syncDailyGameIndex();
+      return {ok:true, skipped:true, reason:'not_due'};
+    }
+    const context = await this.dailyEmailRoomContext();
+    if (!context) return {ok:true, skipped:true, reason:'not_daily'};
+    const recipientUserId = initial.turn === 'w' ? context.whiteUserId : context.blackUserId;
+    const inviteUrl = gamerInvitationUrl(this.env, context.roomId);
+    if (!recipientUserId || !inviteUrl) return {ok:true, skipped:true, reason:'recipient_or_url_missing'};
+    return sendDailyLowTimeReminder(this.env, {
+      ...initial, roomId:context.roomId, recipientUserId, inviteUrl,
+      opponentName:initial.turn === 'w' ? context.blackName : context.whiteName
+    }, {
+      loadRecipient:loadEmailNotificationRecipient,
+      ensureLog:ensureEmailNotificationLogTable,
+      complete:completeEmailNotification,
+      send:sendPreparedTransactionalEmail,
+      escape:escapeEmailHtml,
+      formatDate:formatNotificationDateTime,
+      // Nach Datenbankzugriffen nochmals prüfen: inzwischen kann ein Zug erfolgt sein.
+      isCurrent:async () => {
+        const current = await this.dailyLowTimeState();
+        return !!current && current.ply === initial.ply && current.turn === initial.turn && current.deadlineAt === initial.deadlineAt;
+      }
+    });
+  }
+
   async sendDailyTurnNotification(role, move = null, clock = null) {
     const context = await this.dailyEmailRoomContext();
     if (!context || !context.game.started || context.game.ended || (role !== 'w' && role !== 'b')) return { ok:true, skipped:true, reason:'not_applicable' };
@@ -16260,6 +16313,11 @@ export class GameRoom {
 
     const room = cleanRoomId(url.searchParams.get('room'));
     if (!room) return new Response('Missing or invalid room', { status: 400 });
+
+    if (request.method === 'POST' && url.pathname === '/daily-low-time-reminder') {
+      const result = await this.sendDailyLowTimeNotification();
+      return json(result, {status:result.ok ? 200 : 503});
+    }
 
     if (request.method === 'POST' && url.pathname === '/public-game-preview') {
       const result = await this.publicGamePreview(request.headers.get('x-hammerschach-watch-id') || '');
@@ -19718,6 +19776,15 @@ export default {
     const maintenance = (async () => {
       try { await processTournamentSchedule(env); }
       catch(error) { console.error('Scheduled tournaments failed',error && error.message); }
+      try {
+        if (env && env.DB && env.GAME_ROOM) {
+          await ensureDailyGamesTable(env);
+          await ensureUserEmailPreferencesTable(env);
+          await ensureAccountSecurityTables(env);
+          await ensureEmailNotificationLogTable(env);
+          await processDailyLowTimeReminders(env, roomId => gameRoomStub(env, env.GAME_ROOM.idFromName(roomId)));
+        }
+      } catch (error) { console.error('Daily-Zeitwarnungen fehlgeschlagen', error && error.message); }
       if(_event && _event.cron === '* * * * *') return;
       try { if (env && env.DB) await ensureAccountRecoveryTable(env); }
       catch (_) { console.error('Scheduled account recovery cleanup failed'); }
