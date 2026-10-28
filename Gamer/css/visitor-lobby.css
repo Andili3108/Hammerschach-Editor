@@ -1,0 +1,31 @@
+/* The visitor lobby reuses the member layout and its responsive content cards. */
+html.visitor-start-view .top-layout{display:none!important}
+html.visitor-header-view :is(#playerMenu,#profileOpenBtn,#privateMessagesOpenBtn,#visitorLearningOpenBtn,#visitorTrainerOpenBtn,#visitorPublicGamesOpenBtn){display:none!important}
+html.visitor-start-view :is(#lobbyTicker,.global-chat-header,#lobbyChatPanel){display:none!important}
+html.visitor-header-view #authOpenBtn{display:none!important}
+.visitor-welcome{box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0;padding:22px 24px;border:1px solid rgb(var(--ui-line-rgb) / .2);border-radius:16px;background:var(--ui-surface);box-shadow:var(--ui-shadow)}
+.visitor-welcome[hidden]{display:none!important}
+.visitor-welcome h2{font-size:25px;line-height:1.2;color:var(--ui-accent);margin:0 0 2px}
+.visitor-welcome p{font-size:16px;line-height:1.45;margin:0}
+.visitor-welcome .visitor-welcome-slogan{font-weight:800;color:var(--aktion-gold-dunkel)}
+.visitor-welcome .visitor-board-login-btn{align-self:flex-start;padding:12px 22px;min-height:46px}
+html.dark-mode .visitor-welcome-slogan{color:#e2b55d}
+html.visitor-header-view :is(#openingsToolBtn,#playerToolBtn,#analyzerToolBtn,#schachlaborToolBtn,#dailyGamesOpenBtn,#gameArchiveOpenBtn,#onlinePlayTab){opacity:.68}
+html.visitor-header-view :is(#openingsToolBtn,#playerToolBtn,#analyzerToolBtn,#schachlaborToolBtn,#dailyGamesOpenBtn,#gameArchiveOpenBtn,#onlinePlayTab)::after{content:'🔒';font-size:12px;margin-left:auto;padding-left:8px}
+.members-only-dialog{width:min(440px,calc(100% - 36px));box-sizing:border-box;border:1px solid rgb(var(--ui-line-rgb) / .25);border-radius:20px;padding:24px;background:var(--ui-surface);color:var(--ui-text);box-shadow:0 20px 60px #0005}
+.members-only-dialog::backdrop{background:#0007}
+.members-only-dialog h2{margin:0 0 12px;font-size:23px}
+.members-only-dialog p{font-size:17px;line-height:1.5}
+.members-only-actions{display:flex;flex-wrap:wrap;gap:12px}
+.members-only-actions button{min-height:44px;padding:10px 16px}
+@media(min-width:1101px){
+ html.visitor-header-view .header-status{grid-column:1 / -1!important;justify-self:stretch;width:100%}
+ html.visitor-header-view .header-utility-actions{display:contents!important}
+ html.visitor-header-view .header-icon-actions{grid-column:6;grid-row:1}
+ html.visitor-start-view #tournamentsOpenBtn{display:none!important}
+}
+@media(max-width:650px){
+ .visitor-welcome{padding:20px;gap:14px}
+ .visitor-welcome h2{font-size:23px}
+ .visitor-welcome .visitor-board-login-btn{width:100%;align-self:stretch}
+}

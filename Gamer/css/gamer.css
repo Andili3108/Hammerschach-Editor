@@ -161,26 +161,7 @@
     .visitor-board-slogan{font-size:clamp(10px,3.2vw,13px);white-space:normal;}
     .visitor-board-login-btn{width:min(210px,100%);min-width:0;min-height:42px;padding:8px 12px;font-size:14px;}
   }
-  html.visitor-start-view .moves-right{display:none!important;}
   /* Besucher verwenden in allen Bereichen denselben Logo-Header wie Mitglieder. */
-  html.visitor-start-view .top-layout{justify-content:center;}
-  html.visitor-start-view #board{opacity:.34;filter:saturate(.62) contrast(.92);pointer-events:none;}
-  html.visitor-start-view .board-column .board-tools{display:none!important;}
-  html.visitor-start-view #newGameMenu,html.visitor-start-view #newGameOpenBtn,html.visitor-start-view #dailyGamesOpenBtn,html.visitor-start-view #playerMenu,html.visitor-start-view #authOpenBtn{display:none!important;}
-  html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);width:min(748px,calc(100% - 48px));margin-inline:auto;}
-  html.visitor-start-view .header-status{grid-column:1 / -1;}
-  html.visitor-header-view .header-people-actions{display:none!important;}
-  html.visitor-header-view .match-actions{display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:12px;}
-  html.visitor-header-view .match-actions>:not(#roomLobbyBtn):not(#toolsMenu):not(#visitorPublicGamesOpenBtn):not(#clubChessMenu):not(#infoMenu){display:none!important;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#toolsMenu,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#clubChessMenu,html.visitor-header-view .match-actions>#infoMenu{width:178px!important;min-width:0!important;max-width:178px!important;flex:0 1 178px;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn{width:auto!important;min-width:0!important;max-width:none!important;flex:0 0 auto;}
-  html.visitor-header-view .match-actions>#roomLobbyBtn,html.visitor-header-view .match-actions>#visitorPublicGamesOpenBtn,html.visitor-header-view .match-actions>#toolsMenu>.header-menu-button,html.visitor-header-view .match-actions>#clubChessMenu>.header-menu-button,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{white-space:nowrap;}
-  html.visitor-header-view .match-actions>#toolsMenu>.header-menu-button,html.visitor-header-view .match-actions>#clubChessMenu>.header-menu-button,html.visitor-header-view .match-actions>#infoMenu>.header-menu-button{width:100%;}
-  html.visitor-header-view #roomLobbyBtn{order:0;}
-  html.visitor-header-view #toolsMenu{order:1;}
-  html.visitor-header-view #visitorPublicGamesOpenBtn{order:2;}
-  html.visitor-header-view #clubChessMenu{order:3;}
-  html.visitor-header-view #infoMenu{order:4;}
   .square{display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
   .light{background:var(--light-square);}
   .dark{background:var(--dark-square);}
@@ -2313,9 +2294,6 @@
     #authOpenBtn{grid-column:1 / -1;}
     #gamesMenu .header-menu-popup,#playerMenu .header-menu-popup{left:0;right:auto;transform:none;width:calc(200% + 8px);}
     #playerMenu .header-menu-popup{left:auto;right:0;}
-    html.visitor-start-view #gamesMenu{grid-column:1;}
-    html.visitor-start-view #tournamentsOpenBtn{grid-column:2;}
-    html.visitor-start-view #gamesMenu .header-menu-popup{left:0;right:auto;}
     .global-chat-messages{height:min(330px,45dvh);}
   }
   @media (max-width:980px){
@@ -3625,13 +3603,7 @@ html.dark-mode .info-center-overview-head h2,html.dark-mode .info-center-overvie
 }
 
 /* Besucher-Startseite: Das große Brettlogo übernimmt die Markenpräsenz. */
-html.visitor-start-view .header{grid-template-columns:minmax(0,1fr);}
-html.visitor-start-view .header-brand{display:none;}
-html.visitor-start-view .header-main{width:100%;height:auto;min-height:106px;justify-content:center;padding:0;box-sizing:border-box;}
-html.visitor-start-view .header-top-row{width:min(748px,100%);margin-inline:auto;}
-html.visitor-start-view .match-actions{justify-content:center;flex-wrap:wrap;}
 @media(max-width:760px){
-  html.visitor-start-view .header-main{min-height:0;padding-top:0;}
 }
 
 /* Einheitliche Übersichtsschalter im Gamer-Stil. */
@@ -3682,41 +3654,33 @@ html.dark-mode .room-tournament-notice strong{color:#ddbd73;}
 .central-settings .header-icon-actions #themeToggleBtn{position:static;display:inline-grid!important;place-items:center;width:40px!important;min-width:40px!important;height:40px!important;min-height:40px!important;padding:0!important;border-radius:50%!important;font-size:20px!important;opacity:1;}
 .header-icon-actions #infoMenuPopup{left:auto;right:0;transform:none;min-width:230px;}
 .header-member-direct>button{width:100%;min-height:40px;padding:7px 11px;font-size:13px;white-space:nowrap;}
-html.visitor-header-view .header-people-actions{display:flex!important;}
 /* Eigene obere Zeile für Hilfe/Einstellungen; Status unabhängig davon mittig. */
-html.visitor-start-view .header-top-row{grid-template-columns:minmax(0,1fr);width:100%;}
-html.visitor-start-view .header-people-actions{grid-column:1;grid-row:1;justify-self:center;justify-content:center;}
-html.visitor-start-view .header-status{grid-column:1;grid-row:2;justify-self:center;width:min(748px,100%);box-sizing:border-box;}
 /* In der kompakten Navigation bleibt das vorhandene Menü erhalten. */
-html.visitor-start-view .mobile-nav-test-brand{grid-column:1;grid-row:1;}
-html.visitor-start-view .mobile-nav-test-open{grid-column:-2 / -1;grid-row:1;}
-html.visitor-start-view .mobile-nav-test-status{grid-column:1 / -1;grid-row:2;white-space:normal;overflow-wrap:anywhere;}
 #dailyGamesOpenBtn .header-menu-count{margin-left:auto;}
 @media(min-width:1101px){
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)).central-settings .header{padding-top:12px;grid-template-columns:150px minmax(0,1fr);column-gap:12px;padding-left:10px;padding-right:16px;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-main{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 6px;height:auto;padding-top:0;align-content:center;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-top-row,
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-utility-actions,
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions{display:contents;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-status{grid-row:2;grid-column:1 / 4;box-sizing:border-box;min-width:0;font-size:16px;white-space:normal;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #playerMenu{grid-row:2;grid-column:4;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #profileOpenBtn{grid-row:2;grid-column:5;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #privateMessagesOpenBtn{grid-row:2;grid-column:6;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-icon-actions{grid-row:1;grid-column:6;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>button,
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>.header-menu{grid-row:3;width:100%;min-width:0;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>.header-menu>.header-menu-button{width:100%;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-people-actions>button{width:100%;min-width:0;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)).central-settings .header{padding-top:12px;grid-template-columns:150px minmax(0,1fr);column-gap:12px;padding-left:10px;padding-right:16px;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-main{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 6px;height:auto;padding-top:0;align-content:center;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-top-row,
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-utility-actions,
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions{display:contents;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-status{grid-row:2;grid-column:1 / 4;box-sizing:border-box;min-width:0;font-size:16px;white-space:normal;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) #playerMenu{grid-row:2;grid-column:4;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) #profileOpenBtn{grid-row:2;grid-column:5;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) #privateMessagesOpenBtn{grid-row:2;grid-column:6;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-icon-actions{grid-row:1;grid-column:6;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>button,
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>.header-menu{grid-row:3;width:100%;min-width:0;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .match-actions>.header-menu>.header-menu-button{width:100%;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-people-actions>button{width:100%;min-width:0;}
 }
 .header-icon-actions #infoMenu{order:0;}
 @media(min-width:1101px){
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-main{align-items:center;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) .header-status{min-height:42px;font-size:16px;padding:6px 8px;}
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #membersOpenBtn,
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #profileOpenBtn,
-  html:is(.member-lobby-view, .hammerschach-room-view:not(.visitor-header-view)) #privateMessagesOpenBtn{height:42px;min-height:42px!important;box-sizing:border-box;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-main{align-items:center;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) .header-status{min-height:42px;font-size:16px;padding:6px 8px;}
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) #membersOpenBtn,
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) #profileOpenBtn,
+  html:is(.member-lobby-view, .visitor-header-view, .hammerschach-room-view:not(.visitor-header-view)) #privateMessagesOpenBtn{height:42px;min-height:42px!important;box-sizing:border-box;}
 }
-html.visitor-header-view .header-icon-actions #infoMenu{order:0;}
 .mobile-nav-accordion-toggle:has(>#mobileNavGamesTurnCount:not([hidden])){grid-template-columns:28px minmax(0,1fr) auto auto;}
 .mobile-nav-accordion-toggle:has(>#mobileNavGamesTurnCount:not([hidden]))>i{grid-column:4;grid-row:1;}
 @media(min-width:1101px){
