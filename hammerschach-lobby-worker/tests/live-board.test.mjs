@@ -9,10 +9,15 @@ const env={LIVE_BOARD_DISCOVERY:'0',LIVE_BOARD_DEMO:'1',LIVE_BOARD_EVENTS:JSON.s
 const helpers={json:(d,init)=>new Response(JSON.stringify(d),init),bearerTokenFromRequest:r=>r.headers.get('authorization'),lookupAuthSession:async(e,t)=>t==='Bearer valid'?{user:{id:'member',username:'Andili'}}:null};
 const call=(path,token='valid',config=env,deps={})=>{const url=new URL('https://gamer.test/api/live-board/'+path);const request=new Request(url,{headers:token?{authorization:'Bearer '+token}:{}});return handleLiveBoardApi(request,config,url,helpers,deps);};
 
-test('guest/invalid/expired session blocked before catalog or external work',async()=>{
+test('visitors can read catalog and boards but cannot manage sources',async()=>{
   for(const token of ['', 'invalid','expired']){
-    const r=await call('events',token,{LIVE_BOARD_EVENTS:'broken'});assert.equal(r.status,401);assert.match(r.headers.get('cache-control'),/no-store/);
-    const boards=await call('events/club/boards',token,env,{fetcher:()=>assert.fail('must not fetch')});assert.equal(boards.status,401);
+    assert.equal((await call('events',token)).status,200);
+    assert.equal((await call('events/club/boards',token)).status,200);
+    for(const method of ['POST','DELETE']){
+      const url=new URL('https://gamer.test/api/live-board/sources');
+      const response=await handleLiveBoardApi(new Request(url,{method}),env,url,helpers);
+      assert.equal(response.status,401);
+    }
   }
 });
 test('catalog strips URLs and supports both categories',async()=>{const r=await call('events');const d=await r.json();assert.equal(d.events.length,2);assert.equal(d.events[0].source,undefined);assert.equal(r.headers.get('vary'),'Authorization');});
@@ -99,7 +104,7 @@ test('DGT rejects an untrusted lookup host and duplicate board IDs',async()=>{
   assert.equal((await call('events/badhost/boards','valid',config,{fetcher,cache:null})).status,503);assert.equal(requests,1);
 });
 
-test('ordinary members can read, visitors cannot, shared source writes remain administrative',async()=>{
+test('ordinary members can read; shared source writes remain administrative',async()=>{
   const h={...helpers,lookupAuthSession:async()=>({user:{id:'other',username:'Other'}})};
   for(const route of ['events','events/club/boards','players?events=club&q=Weiss']){
     const u=new URL('https://test/api/live-board/'+route);

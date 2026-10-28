@@ -64,7 +64,7 @@ test('central D1 lease prevents parallel and repeated upstream refreshes; outage
 test('server gate: unauthenticated, normal member, Andili and explicit release',async()=>{
  const deps={json:(x,init)=>new Response(JSON.stringify(x),init),bearerTokenFromRequest:()=>'',lookupAuthSession:async()=>null,isAdminUser:u=>u.isAdmin===true};
  const url=new URL('https://test/api/schachecke/access'),request=new Request(url);
- assert.equal((await handleSchacheckeApi(request,{},url,deps)).status,401);
+ assert.equal((await (await handleSchacheckeApi(request,{},url,deps)).json()).allowed,true);
  deps.lookupAuthSession=async()=>({user:{username:'Mitglied'}});
  assert.equal((await (await handleSchacheckeApi(request,{},url,deps)).json()).allowed,false);
  const ticker=new URL('https://test/api/schachecke/ticker');assert.equal((await handleSchacheckeApi(new Request(ticker),{},ticker,deps)).status,403);

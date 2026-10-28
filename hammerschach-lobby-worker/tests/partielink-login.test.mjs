@@ -32,6 +32,7 @@ function fixture({query='?room=Partie123', loggedIn=false, confirmed=false, defe
   const c = vm.createContext({
     URL, Promise, window:{location:{href:'https://example.invalid/' + query}},
     document:{querySelectorAll:()=>[]}, history:{replaceState(){}}, sessionStorage:{removeItem(){}},
+    loadInfoCenter:async()=>{},
     initialAuthRefreshPromise: deferredAuth ? new Promise(resolve => {finishAuth=resolve;}) : Promise.resolve(),
     onlineAuthUser:loggedIn ? {id:'member1', username:'Karl-Heinz'} : null,
     onlineAuthToken:loggedIn ? 'valid-session' : '', onlineRoomId:null, onlineRoleCode:'local',

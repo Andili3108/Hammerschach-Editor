@@ -54,7 +54,7 @@ function client(){
 }
 const flush=()=>new Promise(r=>setImmediate(r));
 test('Besucher und Erstbesucher erhalten die vereinbarten Texte; Aktualisieren bleibt stabil',async()=>{
-  const f=client();assert.equal(f.show(),'Willkommen im Gamer!');assert.equal(f.requests.length,0);
+  const f=client();assert.equal(f.show(),'Willkommen im Hammerschach-Gamer!');assert.equal(f.requests.length,0);
   f.login();assert.equal(f.show(),'Willkommen im Gamer, Andili!');f.show();assert.equal(f.requests.length,1);
   f.requests[0].resolve({firstVisit:true});await flush();assert.equal(f.show(),'Willkommen im Gamer, Andili!');assert.equal(f.requests.length,1);
 });
@@ -77,7 +77,7 @@ test('Fehler lassen eine neutrale Begrüßung stehen; Retry nutzt dieselbe Besuc
   vm.runInContext('lobbyWelcomeState.retryAt=0',f.c);f.show();assert.equal(f.requests[0].body.visitId,f.requests[1].body.visitId);
 });
 test('Logout zeigt Besuchertext und verwirft verspätete Antworten',async()=>{
-  const f=client();f.login();f.show();f.c.onlineAuthToken='';f.c.onlineAuthUser=null;f.show();f.requests[0].resolve({firstVisit:false});await flush();assert.equal(f.c.statusEl.textContent,'Willkommen im Gamer!');
+  const f=client();f.login();f.show();f.c.onlineAuthToken='';f.c.onlineAuthUser=null;f.show();f.requests[0].resolve({firstVisit:false});await flush();assert.equal(f.c.statusEl.textContent,'Willkommen im Hammerschach-Gamer!');
 });
 
 test('Registrierung legt Konto und Erstbegrüßung gemeinsam an; Fehler rollt beides zurück',async t=>{

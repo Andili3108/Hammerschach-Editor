@@ -59,7 +59,7 @@ test('cross-event search reads DGT pairings only, shares cache across names and 
  const count=requests.length;d=await(await call(path+'Magnus%20Carlsen',env,deps)).json();assert.equal(d.results[1].matches.length,1);assert.equal(requests.length,count,'different query reuses shared pairings');
  assert.equal((await call(path+'a',env,deps)).status,400);
  assert.equal((await call('players?events=a,b,c,d&q=Test',env,deps)).status,400);
- assert.equal((await call('players?events='+id+'&q=Test',env,deps,'guest')).status,401);
+ assert.equal((await call('players?events='+id+'&q=Test',env,deps,'guest')).status,200);
  assert.equal(requests.length,count);
  time+=61000;await call(path+'Andreas',env,deps);assert.ok(requests.length>count,'pairings refresh on next explicit search');
 });

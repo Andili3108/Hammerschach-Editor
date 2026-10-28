@@ -39,7 +39,7 @@ test('ChessBase API catalog, four boards, pagination, single board and players u
  }};
  const env={LIVE_BOARD_PAGE_DISCOVERY:'0'};
  const call=async(path,token='member')=>{const u=new URL('https://test/api/live-board/'+path);return handleLiveBoardApi(new Request(u,{headers:{authorization:token}}),env,u,helpers,deps);};
- assert.equal((await call('events','')).status,401);assert.equal(calls.length,0);
+ assert.equal((await call('events','')).status,200);
  const catalog=await(await call('events')).json();assert.equal(catalog.events.length,1);assert.equal(catalog.chessbaseUnavailable,false);
  const id=catalog.events[0].id;
  const boards=await(await call('events/'+id+'/boards')).json();assert.equal(boards.games.length,4);assert.equal(boards.total,6);assert.equal(boards.event.source,undefined);assert.equal(boards.event.sourceType,'chessbase');assert.equal(boards.event.id,'cb-'+slug+'_r2');assert.ok(boards.event.rounds.some(r=>r.id===boards.event.id));assert.equal(boards.event.eventDate,'2026.10.09');assert.equal(boards.event.country,'USA');assert.equal(boards.pollAfterMs,30000);

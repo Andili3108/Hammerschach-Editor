@@ -64,9 +64,9 @@ test('source management validates HTTPS links, round ids, PGN allowlist and body
   for(const url of ['https://localhost/a','https://127.0.0.1/a','https://lichess.org/broadcast/tour/abcdefgh','http://view.livechesscloud.com/#12345678-1234-1234-1234-123456789abc','https://user:pass@lichess.org/api/broadcast/round/Abcd1234.pgn'])assert.throws(()=>sourceFromLink({...valid,url},{}));
   assert.equal((await call('sources',{},deps,'POST',{...valid,title:'x'.repeat(5000)})).status,400);
 });
-test('guests cannot access discovery; ordinary members cannot mutate shared sources',async()=>{
+test('visitors and ordinary members cannot mutate shared sources',async()=>{
   for(const token of ['','other'])for(const [route,method] of [['events','GET'],['events/lc-tournament-Test2026-Round002/boards','GET'],['sources','POST'],['sources/saved-'+'a'.repeat(32),'DELETE']]){
-    if(token==='other'&&method==='GET')continue;
+    if(method==='GET')continue;
     const response=await call(route,{DB:{prepare(){assert.fail('must not access DB');}}},{fetcher(){assert.fail('must not fetch');}},method,method==='POST'?{}:undefined,token);
     assert.equal(response.status,token?403:401);
   }
