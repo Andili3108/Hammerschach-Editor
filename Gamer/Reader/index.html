@@ -3675,7 +3675,21 @@ renderBoardFromView();
     if(typeof window.hammerschachReaderApplyBoardColor==='function')window.hammerschachReaderApplyBoardColor(String(currentContext.boardColor||'basis'),false);
     if(typeof window.hammerschachReaderApplyPieceSet==='function')window.hammerschachReaderApplyPieceSet(String(currentContext.pieceSet||'cburnett'),false);
   }
-  function reportHeight(){post({type:'hammerschach-reader-height',height:Math.max(document.documentElement.scrollHeight,document.body.scrollHeight)});}
+  // Measure the content, never the iframe viewport: document.scrollHeight is
+  // at least the current frame height and would feed the parent's padding back.
+  const heightContent=document.querySelector('.reader-shell');
+  let heightPending=false,lastHeight=0;
+  function reportHeight(){
+    if(window.parent===window||heightPending||!heightContent)return;
+    heightPending=true;
+    requestAnimationFrame(()=>{
+      heightPending=false;
+      const rect=heightContent.getBoundingClientRect();
+      if(!heightContent.getClientRects().length||rect.height<=0)return;
+      const height=Math.ceil(rect.bottom+window.scrollY);
+      if(height!==lastHeight){lastHeight=height;post({type:'hammerschach-reader-height',height});}
+    });
+  }
 
   if(archiveSelect)archiveSelect.addEventListener('change',loadSelectedArchive);
   if(archiveReloadBtn)archiveReloadBtn.addEventListener('click',loadSelectedArchive);
@@ -3689,10 +3703,11 @@ renderBoardFromView();
     if(message.type==='hammerschach-reader-visibility'){
       if(!message.visible&&typeof stopEngineAnalysis==='function')stopEngineAnalysis(true);
       else if(message.visible&&typeof requestEngineAnalysis==='function')requestEngineAnalysis(false);
+      if(message.visible)reportHeight();
     }
   });
   window.addEventListener('resize',reportHeight);
-  if(typeof ResizeObserver==='function'&&document.body){try{new ResizeObserver(reportHeight).observe(document.body);}catch(_){}}
+  if(typeof ResizeObserver==='function'&&heightContent){try{new ResizeObserver(reportHeight).observe(heightContent);}catch(_){}}
   post({type:'hammerschach-reader-ready'});reportHeight();
 })();
 </script>
