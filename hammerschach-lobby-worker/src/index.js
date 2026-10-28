@@ -10134,6 +10134,7 @@ async function listInfoCenterItems(env, userId) {
       LIMIT ?`
   ).bind(String(userId || ''), now, now, INFO_CENTER_MAX_ITEMS).all();
   const items = (result && Array.isArray(result.results) ? result.results : []).map(row => infoCenterItemDto(row));
+  if(!userId)items.forEach(item=>item.unread=false);
   return {items, unreadCount:items.filter(item => item.unread).length};
 }
 
@@ -10154,7 +10155,7 @@ async function loadInfoCenterItem(env, user, itemId, options = {}) {
   if (!row) return null;
   const visible = row.status === 'published' && String(row.starts_at || '') <= now && (!row.ends_at || String(row.ends_at) > now);
   if (!admin && !visible) return null;
-  if (options.markRead !== false) {
+  if (user?.id && options.markRead !== false) {
     await env.DB.prepare(
       `INSERT INTO info_center_reads (item_id, user_id, read_at) VALUES (?, ?, ?)
        ON CONFLICT(item_id, user_id) DO UPDATE SET read_at = excluded.read_at`
@@ -10831,7 +10832,6 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/tv' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Gamer-TV ist nur für eingeloggte Mitglieder verfügbar.'}, {status:401});
     try {
       const config = await loadTvConfig(env);
       const resolved = await resolveTvConfigSet(env, config);
@@ -13061,9 +13061,8 @@ async function handleAuthApi(request, env, url) {
 
   if (url.pathname === '/api/info-center' && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Das Info-Center ist nur für Mitglieder sichtbar.'}, {status:401});
     try {
-      return json({ok:true, ...(await listInfoCenterItems(env, session.user.id)), serverNow:Date.now()});
+      return json({ok:true, ...(await listInfoCenterItems(env, session?.user?.id)), serverNow:Date.now()});
     } catch (error) {
       console.error('Info center list failed', error && error.message ? error.message : String(error || 'unknown'));
       return json({ok:false, code:'INFO_CENTER_UNAVAILABLE', message:'Das Info-Center konnte nicht geladen werden.'}, {status:500});
@@ -13073,16 +13072,14 @@ async function handleAuthApi(request, env, url) {
   const infoCenterAttachmentMatch = url.pathname.match(/^\/api\/info-center\/attachments\/([^/]+)$/);
   if (infoCenterAttachmentMatch && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Dateien aus dem Info-Center sind nur nach Login verfügbar.'}, {status:401});
-    return await infoCenterAttachmentResponse(request, env, session.user, decodeURIComponent(infoCenterAttachmentMatch[1]));
+    return await infoCenterAttachmentResponse(request, env, session?.user, decodeURIComponent(infoCenterAttachmentMatch[1]));
   }
 
   const infoCenterItemMatch = url.pathname.match(/^\/api\/info-center\/([^/]+)$/);
   if (infoCenterItemMatch && request.method === 'GET') {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
-    if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Das Info-Center ist nur für Mitglieder sichtbar.'}, {status:401});
     try {
-      const item = await loadInfoCenterItem(env, session.user, decodeURIComponent(infoCenterItemMatch[1]), {markRead:true});
+      const item = await loadInfoCenterItem(env, session?.user, decodeURIComponent(infoCenterItemMatch[1]), {markRead:!!session});
       if (!item) return json({ok:false, code:'INFO_ITEM_NOT_FOUND', message:'Die Mitteilung wurde nicht gefunden.'}, {status:404});
       return json({ok:true, item});
     } catch (error) {

@@ -159,12 +159,12 @@ const publicEvent=({source,...e})=>({...e,sourceType:source.type,demo:source.typ
 export async function handleLiveBoardApi(request,env,url,helpers,deps={}) {
   if(!/^\/api\/live-board(?:\/|$)/.test(url.pathname))return null;
   const reply=(data,status=200)=>helpers.json(data,{status,headers:{'cache-control':'private, no-store, max-age=0','vary':'Authorization','x-content-type-options':'nosniff'}});
-  // Authenticate before consulting either the catalog or any source/cache.
+  // Public read access; source management still requires the administrator.
   let session;
   try{session=await deadline(helpers.lookupAuthSession(env,helpers.bearerTokenFromRequest(request)),deps.authTimeoutMs||8000);}
   catch(_){return reply({ok:false,code:'LIVE_AUTH_UNAVAILABLE',message:'Anmeldung derzeit nicht prüfbar. Bitte erneut aktualisieren.'},503);} 
-  if(!session?.user)return reply({ok:false,code:'NOT_AUTHENTICATED',message:'LIVE-BOARD ist nur für angemeldete Mitglieder verfügbar.'},401);
-  const canManage=String(session.user.username||'').trim().toLowerCase()==='andili';
+  if(!session?.user&&request.method!=='GET')return reply({ok:false,code:'NOT_AUTHENTICATED',message:'Bitte zuerst anmelden.'},401);
+  const canManage=String(session?.user?.username||'').trim().toLowerCase()==='andili';
   const method=request.method;
   if(!['GET','POST','DELETE'].includes(method))return reply({ok:false,message:'Methode nicht erlaubt.'},405);
   if(method!=='GET'&&url.pathname.startsWith('/api/live-board/sources')&&!canManage)return reply({ok:false,code:'LIVE_SOURCE_ADMIN_ONLY',message:'Nur der Administrator kann gemeinsame Übertragungen verwalten.'},403);
