@@ -67,7 +67,7 @@ const HammerschachLiveBoard = (() => {
     state.lastAt=Date.now();schedule(next);
   }
   function updateIdentity(){
-    document.querySelectorAll('[data-live-board-member]').forEach(el=>el.hidden=false);
+    // Public navigation is visible in the markup, independent of auth initialization.
     if(!dialog.hidden&&(state.token!==onlineAuthToken)){closeEmbeddedTools();}
   }
   function statusText(data){return (data.event.demo?'DEMO':'')+(data.stale?(data.event.demo?' · ':'')+'Übertragung verzögert.':'');}
