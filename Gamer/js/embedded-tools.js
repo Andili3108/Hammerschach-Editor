@@ -910,8 +910,11 @@ window.addEventListener('message',async event=>{
     if(message.type==='hammerschach-reader-height'){
       const requested=Math.ceil(Number(message.height||0));
       if(Number.isFinite(requested)&&requested>0){
-        readerToolFrame.style.height=Math.max(720,Math.min(5200,requested+4))+'px';
-        hammerschachScheduleHeightReport(true);
+        const height=Math.max(720,Math.min(5200,requested+4))+'px';
+        if(readerToolFrame.style.height!==height){
+          readerToolFrame.style.height=height;
+          hammerschachScheduleHeightReport(true);
+        }
       }
       return;
     }
