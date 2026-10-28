@@ -19,18 +19,18 @@ window.HammerschachCorner = (() => {
   function choose(view){
     const next=view==='corner'&&allowed;
     if(!next){stop();if(revealed&&step<puzzle?.moves.length){revealed=false;restart();}else if(game&&step<puzzle?.moves.length&&game.turn!==player){advance();status(step>=puzzle.moves.length?'Richtig gelöst!':(player==='w'?'Weiß':'Schwarz')+' am Zug.');}}
-    active=next;panel.hidden=!next;$('lobbyChatPanel').hidden=next||view==='pending';
+    active=next;panel.hidden=!next;$('lobbyChatPanel').hidden=next||view==='pending'||identity==='visitor';
     const button=$('lobbyChatTab');button.classList.toggle('active',!$('lobbyChatPanel').hidden);button.setAttribute('aria-pressed',String(!$('lobbyChatPanel').hidden));
     window.HammerschachLobbyUnread?.markIfVisible();
     if(next){if(game)render();loadPuzzles();loadNews();}
     if(typeof hammerschachScheduleHeightReport==='function')hammerschachScheduleHeightReport(true);
   }
   async function updateIdentity(){
-    const next=onlineAuthToken&&onlineAuthUser?String(onlineAuthUser.id)+'|'+onlineAuthToken:'';
+    const next=onlineAuthToken&&onlineAuthUser?String(onlineAuthUser.id)+'|'+onlineAuthToken:'visitor';
     if(next===identity)return accessPending;
     identity=next;const version=++identityVersion;allowed=false;choose('pending');news=null;newsRetryAt=0;
     $('gamerTickerList').replaceChildren();newsStatus();
-    if(!identity)return;
+    if(identity==='visitor'){allowed=true;choose('corner');return;}
     accessPending=(async()=>{
       try{
         const result=await authApi('/api/schachecke/access');
@@ -42,6 +42,7 @@ window.HammerschachCorner = (() => {
     })();return accessPending;
   }
   async function toggleChat(){
+    if(identity==='visitor')return;
     if(active){choose('chat');return;}
     if(accessPending)await accessPending;
     if(!allowed){

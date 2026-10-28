@@ -5,7 +5,7 @@ let lobbyWelcomeState = null;
 function lobbyWelcomeText(){
   if(!onlineAuthToken || !onlineAuthUser){
     lobbyWelcomeState = null;
-    return 'Willkommen im Gamer!';
+    return 'Willkommen im Hammerschach-Gamer!';
   }
   const userId = String(onlineAuthUser.id || '');
   const token = onlineAuthToken;

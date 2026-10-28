@@ -59,7 +59,7 @@ function updateSiteFootnotePlacement(){
     if(siteFootnoteEl.parentNode!==leagueStandingsView)leagueStandingsView.appendChild(siteFootnoteEl);
     return;
   }
-  if(isMemberLobbyView()&&memberLobbyEl){
+  if((isMemberLobbyView()||isAnonymousVisitorStartView())&&memberLobbyEl){
     if(siteFootnoteEl.parentNode!==memberLobbyEl)memberLobbyEl.appendChild(siteFootnoteEl);
     return;
   }

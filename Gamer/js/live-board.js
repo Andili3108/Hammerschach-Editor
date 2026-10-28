@@ -31,7 +31,7 @@ const HammerschachLiveBoard = (() => {
   const liveClock=LiveBoardClock.create();let clockTimer=null;
   const member=()=>!!(onlineAuthToken&&onlineAuthUser);
   const manager=()=>member()&&String(onlineAuthUser.username||'').trim().toLowerCase()==='andili';
-  const visible=()=>!dialog.hidden&&!document.hidden&&navigator.onLine!==false&&member();
+  const visible=()=>!dialog.hidden&&!document.hidden&&navigator.onLine!==false;
   function node(tag,cls,label){const el=document.createElement(tag);if(cls)el.className=cls;if(label!==undefined)el.textContent=label;return el;}
   function action(label,fn){const b=node('button','button-flat',label);b.type='button';b.addEventListener('click',fn);return b;}
   function setBusy(busy){sourceForm.querySelector('button').disabled=busy;button('remove').disabled=busy;button('refresh').disabled=busy;button('refresh').textContent='Aktualisieren';dialog.setAttribute('aria-busy',String(busy));}
@@ -67,8 +67,8 @@ const HammerschachLiveBoard = (() => {
     state.lastAt=Date.now();schedule(next);
   }
   function updateIdentity(){
-    document.querySelectorAll('[data-live-board-member]').forEach(el=>el.hidden=!member());
-    if(!dialog.hidden&&(!member()||state.token!==onlineAuthToken)){closeEmbeddedTools();}
+    document.querySelectorAll('[data-live-board-member]').forEach(el=>el.hidden=false);
+    if(!dialog.hidden&&(state.token!==onlineAuthToken)){closeEmbeddedTools();}
   }
   function statusText(data){return (data.event.demo?'DEMO':'')+(data.stale?(data.event.demo?' · ':'')+'Übertragung verzögert.':'');}
   function chooseEvent(event,board='',query=''){
@@ -407,7 +407,7 @@ const HammerschachLiveBoard = (() => {
   }
   function navigate(manual=false){stop();state.delay=30000;load(manual);}
   function open(category){
-    if(member())openEmbeddedToolFromCurrentContext(category==='tournament'?'live-board-tournament':'live-board-club');
+    openEmbeddedToolFromCurrentContext(category==='tournament'?'live-board-tournament':'live-board-club');
   }
   function setView(category, options={}){
     if(!options.floating && typeof TvLiveBoards !== 'undefined') TvLiveBoards.close(false);
@@ -476,12 +476,12 @@ const HammerschachLiveBoard = (() => {
   window.addEventListener('online',resume);window.addEventListener('focus',resume);
   document.querySelectorAll('[data-live-board-category]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.liveBoardCategory)));
   function openTvEvent(event){
-    if(!member()||!event)return;
+    if(!event)return;
     stop();state.category=event.category==='club'?'club':'tournament';state.events=[];
     state.playerSearch=null;state.filters={q:'',scope:'',status:'all',player:''};
     chooseEvent(event);
   }
   function pauseTv(){stop();LiveBoardEngine.suspend();dialog.hidden=true;}
-  function resumeTv(){if(!member())return;dialog.hidden=false;resume();if(state.data)startClock();}
+  function resumeTv(){dialog.hidden=false;resume();if(state.data)startClock();}
   return {open,setView,updateIdentity,openTvEvent,pauseTv,resumeTv};
 })();

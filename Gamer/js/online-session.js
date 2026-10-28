@@ -514,6 +514,7 @@ function saveAuthState(token, user){
     updateTournamentNotificationUi();
     clearLobbyTicker();
     clearInfoCenter();
+    loadInfoCenter().catch(() => {});
   }
   if(onlineAuthToken && onlineAuthUser){
     startPresenceHeartbeat();

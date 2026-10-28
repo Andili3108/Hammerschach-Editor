@@ -38,11 +38,11 @@ function updateOnlineActionButtons(){
     openOffersOpenBtn.title = 'Offene Partieangebote anzeigen.';
   }
   if(newGameOpenBtn){
-    newGameOpenBtn.hidden = !loggedIn || showLobbyButton;
-    newGameOpenBtn.disabled = !loggedIn || showLobbyButton;
-    newGameOpenBtn.title = loggedIn ? 'Farbe, Spielmodus, Bedenkzeit und Wertung einstellen.' : 'Zum Erstellen einer Partie bitte einloggen.';
+    newGameOpenBtn.hidden = showLobbyButton;
+    newGameOpenBtn.disabled = showLobbyButton;
+    newGameOpenBtn.title = loggedIn ? 'Farbe, Spielmodus, Bedenkzeit und Wertung einstellen.' : 'Zusammen an einem Gerät spielen.';
   }
-  if((!loggedIn || showLobbyButton) && !directInvitationMode && newGameBackdrop && !newGameBackdrop.hidden) closeNewGameDialog({restoreFocus:false});
+  if(showLobbyButton && !directInvitationMode && newGameBackdrop && !newGameBackdrop.hidden) closeNewGameDialog({restoreFocus:false});
   if(newGameMenuEl){
     newGameMenuEl.hidden = showLobbyButton;
     if(showLobbyButton) closeNewGameMenu();

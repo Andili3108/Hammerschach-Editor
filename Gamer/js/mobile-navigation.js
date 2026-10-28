@@ -149,7 +149,7 @@
     const source = document.getElementById(targetId);
     const visitor = root.classList.contains('visitor-header-view');
     const visitorOnly = button.hasAttribute('data-mobile-nav-visitor-only');
-    const visitorBlocked = visitor ? (!visitorOnly && !visitorInfoTargets.has(targetId)) : visitorOnly;
+    const visitorBlocked = visitorOnly;
     const unavailable = !source || source.hidden || sourceDisabled(source) || visitorBlocked;
     button.hidden = !source || source.hidden || visitorBlocked;
     button.disabled = unavailable;
@@ -172,7 +172,7 @@
     if(!primaryButton) return;
     const backToLobby = !!(roomLobbyButton && !roomLobbyButton.hidden);
     const visitor = root.classList.contains('visitor-header-view');
-    primaryButton.hidden = visitor || (!backToLobby && (!newGameButton || newGameButton.hidden));
+    primaryButton.hidden = (!backToLobby && (!newGameButton || newGameButton.hidden));
     const icon = primaryButton.querySelector('span');
     const label = primaryButton.querySelector('strong');
     if(icon) icon.textContent = backToLobby ? '↩️' : '♟️';

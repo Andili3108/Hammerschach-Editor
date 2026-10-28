@@ -121,7 +121,7 @@ function tournamentReportToolNavigable(){
   return !onlineSpectatorOnly || !(onlineAuthToken && onlineAuthUser);
 }
 function protectedEmbeddedToolActive(){
-  return analyzerToolActive || playerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || tvToolActive || !!liveBoardToolActive;
+  return analyzerToolActive || playerToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive;
 }
 function memberEmbeddedToolActive(){
   return analyzerToolActive || playerToolActive || trainerToolActive || mateSchoolToolActive || schachlaborToolActive || openingsToolActive || fairplayToolActive || readerToolActive || tournamentReportToolActive || tvToolActive || leagueStandingsToolActive || !!liveBoardToolActive;
@@ -194,13 +194,13 @@ function updateAnalyzerToolAvailability(){
   const titleFor = name => available ? `${name} öffnen` : `Spielraum verlassen und ${name} öffnen`;
   if(impulsesToolBtn){impulsesToolBtn.hidden=!learningNavigable;}
   if(learningToolBtn){learningToolBtn.hidden=!learningNavigable;learningToolBtn.title=learningAvailable?'Gamer-Videokurse öffnen':'Spielraum verlassen und die Gamer-Videokurse öffnen';}
-  if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable;analyzerToolBtn.title=titleFor('Analyzer');}
-  if(playerToolBtn){playerToolBtn.hidden=!navigable;playerToolBtn.title=titleFor('Player');}
+  if(analyzerToolBtn){analyzerToolBtn.hidden=!navigable&&!!(onlineAuthToken&&onlineAuthUser);analyzerToolBtn.title=onlineAuthToken&&onlineAuthUser?titleFor('Analyzer'):'Nur für Mitglieder';}
+  if(playerToolBtn){playerToolBtn.hidden=!navigable&&!!(onlineAuthToken&&onlineAuthUser);playerToolBtn.title=onlineAuthToken&&onlineAuthUser?titleFor('Player'):'Nur für Mitglieder';}
   if(trainerToolBtn){trainerToolBtn.hidden=!trainerNavigable;trainerToolBtn.title=trainerAvailable?'Trainer öffnen':'Spielraum verlassen und den Trainer öffnen';}
   if(mateSchoolToolBtn){mateSchoolToolBtn.hidden=!mateSchoolNavigable;mateSchoolToolBtn.title=mateSchoolAvailable?'Mattbilder-Schule öffnen':'Spielraum verlassen und die Mattbilder-Schule öffnen';}
-  if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable;schachlaborToolBtn.title=titleFor('Schachlabor');}
-  if(openingsToolBtn){openingsToolBtn.hidden=!navigable;openingsToolBtn.title=titleFor('Eröffnungsschule');}
-  if(tvToolBtn){tvToolBtn.hidden=!navigable;tvToolBtn.title=titleFor('Gamer-TV');tvToolBtn.setAttribute('aria-label',titleFor('Gamer-TV'));}
+  if(schachlaborToolBtn){schachlaborToolBtn.hidden=!navigable&&!!(onlineAuthToken&&onlineAuthUser);schachlaborToolBtn.title=onlineAuthToken&&onlineAuthUser?titleFor('Schachlabor'):'Nur für Mitglieder';}
+  if(openingsToolBtn){openingsToolBtn.hidden=!navigable&&!!(onlineAuthToken&&onlineAuthUser);openingsToolBtn.title=onlineAuthToken&&onlineAuthUser?titleFor('Eröffnungsschule'):'Nur für Mitglieder';}
+  if(tvToolBtn){tvToolBtn.hidden=!learningNavigable;tvToolBtn.title=learningAvailable?'Gamer-TV öffnen':'Spielraum verlassen und Gamer-TV öffnen';tvToolBtn.setAttribute('aria-label',tvToolBtn.title);}
   if(readerToolBtn){readerToolBtn.hidden=!readerNavigable;readerToolBtn.title=readerAvailable?'Partienarchiv öffnen':'Spielraum verlassen und das Partienarchiv öffnen';}
   if(tournamentReportToolBtn){tournamentReportToolBtn.hidden=!tournamentReportNavigable;tournamentReportToolBtn.title=tournamentReportAvailable?'Schach aktuell öffnen':'Spielraum verlassen und Schach aktuell öffnen';}
   if(mediathekToolBtn){mediathekToolBtn.hidden=!mediathekNavigable;mediathekToolBtn.title=mediathekAvailable?'Mediathek öffnen':'Spielraum verlassen und die Mediathek öffnen';}
@@ -221,7 +221,7 @@ function updateAnalyzerToolAvailability(){
       remembered=String(sessionStorage.getItem(ACTIVE_EMBEDDED_TOOL_STORAGE_KEY)||'');
       sessionStorage.removeItem(PENDING_EMBEDDED_TOOL_STORAGE_KEY);
     }catch(_){}
-    const canRestore=tool=>tool==='mediathek'?mediathekAvailable:(tool==='learning'||tool==='impulses')?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='mate-school'?mateSchoolAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(tool==='tournament-report'?tournamentReportAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))))));
+    const canRestore=tool=>tool==='mediathek'?mediathekAvailable:(['learning','impulses','tv','live-board-club','live-board-tournament'].includes(tool))?learningAvailable:(tool==='trainer'?trainerAvailable:(tool==='mate-school'?mateSchoolAvailable:(tool==='league-standings'?leagueStandingsAvailable:(tool==='reader'?readerAvailable:(tool==='tournament-report'?tournamentReportAvailable:(available&&RESTORABLE_EMBEDDED_TOOLS.has(tool)))))));
     const restorePending=NAVIGABLE_EMBEDDED_TOOLS.has(pending)&&canRestore(pending)?pending:'';
     const restoreRemembered=!embeddedToolActive()&&RESTORABLE_EMBEDDED_TOOLS.has(remembered)&&
       canRestore(remembered)&&(remembered!=='fairplay'||fairplayAvailable)?remembered:'';
@@ -478,6 +478,7 @@ function setEmbeddedToolActive(toolName){
   else if(toolName==='league-standings'&&leagueStandingsToolAvailable())requested='league-standings';
   else if(toolName==='reader'&&readerToolAvailable())requested='reader';
   else if(toolName==='tournament-report'&&tournamentReportToolAvailable())requested='tournament-report';
+  else if(['tv','live-board-club','live-board-tournament'].includes(toolName)&&learningToolAvailable())requested=toolName;
   else if(embeddedToolsAvailable()){
     if((toolName==='live-board-club'||toolName==='live-board-tournament')&&onlineAuthToken&&onlineAuthUser)requested=toolName;
     else if(toolName==='tv')requested='tv';
@@ -664,7 +665,7 @@ function setLeagueStandingsToolActive(active){setEmbeddedToolActive(active?'leag
 function closeEmbeddedTools(){setEmbeddedToolActive('');}
 function openEmbeddedToolFromCurrentContext(toolName){
   const requested=NAVIGABLE_EMBEDDED_TOOLS.has(toolName)?toolName:'';
-  const isLearning=requested==='learning'||requested==='impulses';
+  const isLearning=['learning','impulses','tv','live-board-club','live-board-tournament'].includes(requested);
   const isTrainer=requested==='trainer';
   const isMateSchool=requested==='mate-school';
   const isLeagueStandings=requested==='league-standings';

@@ -219,7 +219,7 @@ function setNewGameDialogStatus(message){
 }
 function openNewGameDialog(options){
   options=options&&options.directInvitation===true?options:{};
-  if(!newGameBackdrop||!isMemberLobbyView())return;
+  if(!newGameBackdrop||!(isMemberLobbyView()||isAnonymousVisitorStartView()))return;
   if(!options.directInvitation&&typeof resetDirectInvitationSetup==='function')resetDirectInvitationSetup();
   closeGamesMenu();closePlayerMenu();closeToolsMenu();closeInfoMenu();
   setNewGameDialogStatus('');
@@ -271,11 +271,15 @@ document.addEventListener('keydown',event=>{
 });
 function updateMemberLobbyUi(){
   const active=isMemberLobbyView();
+  const visitor=isAnonymousVisitorStartView();
+  const home=active||visitor;
+  const welcome=document.getElementById('visitorWelcome');
+  if(welcome)welcome.hidden=!visitor;
   document.documentElement.classList.toggle('member-lobby-view',active);
-  if(memberLobbyEl)memberLobbyEl.hidden=!active;
+  if(memberLobbyEl){memberLobbyEl.hidden=!home;memberLobbyEl.setAttribute('aria-label',visitor?'Willkommen im Hammerschach-Gamer':'Mitglieder-Lobby');}
   if(preRoomSetupPanelEl&&preRoomSetupPanelHome){
-    if(active&&memberLobbySetupMountEl&&preRoomSetupPanelEl.parentNode!==memberLobbySetupMountEl)memberLobbySetupMountEl.appendChild(preRoomSetupPanelEl);
-    else if(!active&&preRoomSetupPanelEl.parentNode!==preRoomSetupPanelHome.parent){
+    if(home&&memberLobbySetupMountEl&&preRoomSetupPanelEl.parentNode!==memberLobbySetupMountEl)memberLobbySetupMountEl.appendChild(preRoomSetupPanelEl);
+    else if(!home&&preRoomSetupPanelEl.parentNode!==preRoomSetupPanelHome.parent){
       if(preRoomSetupPanelHome.nextSibling&&preRoomSetupPanelHome.nextSibling.parentNode===preRoomSetupPanelHome.parent)preRoomSetupPanelHome.parent.insertBefore(preRoomSetupPanelEl,preRoomSetupPanelHome.nextSibling);else preRoomSetupPanelHome.parent.appendChild(preRoomSetupPanelEl);
     }
   }
@@ -284,7 +288,7 @@ function updateMemberLobbyUi(){
     if(statusEl)statusEl.textContent=embeddedToolStatusText()||lobbyWelcomeText();
     connectGlobalChat();
   }else{
-    closeNewGameDialog({restoreFocus:false});
+    if(!visitor)closeNewGameDialog({restoreFocus:false});
     closeGlobalChat(true);
   }
   hammerschachScheduleHeightReport(false);

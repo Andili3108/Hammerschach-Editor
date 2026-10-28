@@ -57,6 +57,7 @@ if(!initialRoomId && !initialPublicWatchId && !initialDailyInvitationRoomId && !
   try{ sessionStorage.removeItem(ONLINE_LAST_ROOM_STORAGE_KEY); } catch(_){ }
 }
 initialAuthRefreshPromise.finally(() => {
+  if(!onlineAuthToken || !onlineAuthUser) loadInfoCenter().catch(() => {});
   if(initialAccountRecoveryToken) window.openAccountAccessRecovery(initialAccountRecoveryToken);
   else if(initialVerifyEmailToken) confirmInitialEmailToken(initialVerifyEmailToken);
   else if(initialResetPasswordToken) openAuthRecoveryDialog('password-reset', initialResetPasswordToken);

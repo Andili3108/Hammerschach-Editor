@@ -697,7 +697,7 @@ function renderHammerschachTv(tv, options){
 }
 
 async function loadHammerschachTv(options){
-  if(hammerschachTvLoading || !onlineAuthToken || !onlineAuthUser) return;
+  if(hammerschachTvLoading) return;
   hammerschachTvLoading = true;
   try{
     const data = await authApi('/api/tv');

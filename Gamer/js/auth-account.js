@@ -260,7 +260,7 @@ function updateVisitorLandingUi(){
   const visitorHeaderActive = !(onlineAuthToken && onlineAuthUser);
   document.documentElement.classList.toggle('visitor-start-view', active);
   document.documentElement.classList.toggle('visitor-header-view', visitorHeaderActive);
-  if(visitorBoardOverlay) visitorBoardOverlay.hidden = !active;
+  if(visitorBoardOverlay) visitorBoardOverlay.hidden = true;
   if(visitorLearningOpenBtn) visitorLearningOpenBtn.hidden = !visitorHeaderActive;
   if(visitorTrainerOpenBtn) visitorTrainerOpenBtn.hidden = !visitorHeaderActive;
   if(visitorTrainerProgressHeaderBtn) visitorTrainerProgressHeaderBtn.hidden = !visitorHeaderActive || !trainerToolActive;
@@ -325,9 +325,9 @@ function updateAuthUi(){
     profileOpenBtn.title = loggedIn ? 'Angemeldet als ' + accountName + ' — Accountverwaltung und Logout öffnen.' : '';
   }
   if(tournamentsOpenBtn){
-    tournamentsOpenBtn.setAttribute('aria-disabled', canViewTournaments ? 'false' : 'true');
-    tournamentsOpenBtn.tabIndex = canViewTournaments ? 0 : -1;
-    tournamentsOpenBtn.title = canViewTournaments ? 'Turnierbereich öffnen.' : '';
+    tournamentsOpenBtn.setAttribute('aria-disabled', 'false');
+    tournamentsOpenBtn.tabIndex = 0;
+    tournamentsOpenBtn.title = canViewTournaments ? 'Turnierbereich öffnen.' : 'Nur für Mitglieder';
   }
   if(tournamentDraftsTab) tournamentDraftsTab.hidden = !isAdmin;
   if(tournamentCreateOpenBtn) tournamentCreateOpenBtn.hidden = !isAdmin;

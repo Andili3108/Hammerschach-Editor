@@ -55,7 +55,7 @@ const TvLiveBoards = (() => {
     finally{clearTimeout(timeout);loading=false;request=null;byId('tvLiveBoardsReload').disabled=false;}
   }
   function sync(slot){
-    const available=slot.enabled===true&&slot.liveBoardsEnabled===true&&!!onlineAuthUser;
+    const available=slot.enabled===true&&slot.liveBoardsEnabled===true;
     opener.hidden=!available;
     if(!shell.hidden&&(!available||windowSlot!==slot.slotId))close(false);
     if(requestToken&&requestToken!==onlineAuthToken){request?.abort();catalog=[];catalogLoaded=false;requestToken='';}
@@ -85,7 +85,7 @@ const TvLiveBoards = (() => {
   }
   function open(){
     const slot=tvSlotById(hammerschachTvSelectedSlotId);
-    if(!tvToolActive||!onlineAuthToken||!slot?.enabled||!slot.liveBoardsEnabled)return;
+    if(!tvToolActive||!slot?.enabled||!slot.liveBoardsEnabled)return;
     if(!shell.hidden){minimized(false);control('minimize').focus();return;}
     // Match the full-page Liveboard width, including its notation column.
     const width=home.parentElement.getBoundingClientRect().width;

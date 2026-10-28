@@ -131,7 +131,7 @@ async function acceptOpenOffer(offer, button){
   if(!onlineAuthToken || !onlineAuthUser){
     closeOpenOffersDialog();
     openAuthDialog('login');
-    if(authError) authError.textContent = 'Bitte einloggen, um eine offene Partie anzunehmen.';
+    if(authError) authError.textContent = 'Um mitzuspielen, melde dich bitte an oder registriere dich kostenlos.';
     return;
   }
   if(!offer || !offer.roomId) return;

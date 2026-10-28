@@ -1,6 +1,6 @@
 'use strict';
 
-/* Oberfläche für „Zusammen spielen“. Nur der Start benötigt den Mitgliederzugang.
+/* Oberfläche für „Zusammen spielen“. Auch Besucher können an einem Gerät spielen.
    Züge, Uhren und Ergebnisse dieser Partie werden nicht an den Server gesendet. */
 (() => {
   const $ = id => document.getElementById(id);
@@ -56,6 +56,7 @@
   $('localNoClock').addEventListener('click', () => chooseTime('0+0'));
 
   function selectTab(local) {
+    if (!local && !(onlineAuthToken && onlineAuthUser)) { showMembersOnlyNotice(); return; }
     if (directInvitationSetupMember) local = false;
     modal.classList.toggle('local-setup-active', local);
     $('onlinePlayPanel').hidden = local;
@@ -151,7 +152,7 @@
   }
 
   function start() {
-    if (!onlineAuthToken || !onlineAuthUser || !isMemberLobbyView() || onlineRoomId) return;
+    if (!(isMemberLobbyView() || isAnonymousVisitorStartView()) || onlineRoomId) return;
     layout = detectedLayout();
     const [base, increment] = selectedTime.split('+').map(Number);
     roomOptions = {layout, baseMs: base * 1000,
@@ -360,7 +361,7 @@
   }
   function requestExit(toSetup = false) {
     if (!session) return;
-    if (session.started && !session.result) ask(toSetup ? 'Neue Partie?' : 'Zur Lobby?', 'Die laufende Partie wird beendet.', () => exit(toSetup));
+    if (session.started && !session.result) ask(toSetup ? 'Neue Partie?' : (onlineAuthToken && onlineAuthUser ? 'Zur Lobby?' : 'Zur Startseite?'), 'Die laufende Partie wird beendet.', () => exit(toSetup));
     else exit(toSetup);
   }
   function ask(title, text, action) {
@@ -467,7 +468,7 @@
     prepareDialog(options = {}) {
       layout = detectedLayout();
       $('playModeTabs').hidden = !!options.directInvitation;
-      selectTab(false);
+      selectTab(!(onlineAuthToken && onlineAuthUser));
     }
   };
 })();

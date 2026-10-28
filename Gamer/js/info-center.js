@@ -44,11 +44,10 @@ function infoCenterUnreadCount(){
 function updateInfoCenterBar(){
   if(!infoCenterBar) return;
   const loggedIn = !!(onlineAuthToken && onlineAuthUser);
-  infoCenterBar.hidden = !loggedIn;
-  if(!loggedIn) return;
+  infoCenterBar.hidden = false;
   const unread = infoCenterUnreadCount();
   if(infoCenterUnreadBadge){
-    infoCenterUnreadBadge.hidden = unread < 1;
+    infoCenterUnreadBadge.hidden = !loggedIn || unread < 1;
     infoCenterUnreadBadge.textContent = unread === 1 ? '1 neu' : unread + ' neu';
   }
   if(!infoCenterOverviewList) return;
@@ -249,11 +248,13 @@ function renderInfoCenterDetail(item){
 async function openInfoCenterItem(itemId){
   const id = String(itemId || '');
   if(!id) return;
+  const token=onlineAuthToken;
   infoCenterSelectedId = id;
   renderInfoCenterList();
   if(infoCenterDetail) infoCenterDetail.innerHTML = '<div class="info-center-detail-empty">Mitteilung wird geladen…</div>';
   try{
     const data = await authApi('/api/info-center/' + encodeURIComponent(id));
+    if(token!==onlineAuthToken||infoCenterSelectedId!==id||infoCenterBackdrop.hidden)return;
     const item = data.item || null;
     const listItem = infoCenterItems.find(entry => String(entry.id) === id);
     if(listItem) listItem.unread = false;
@@ -268,7 +269,6 @@ async function openInfoCenterItem(itemId){
 }
 
 function openInfoCenter(itemId){
-  if(!onlineAuthToken || !onlineAuthUser){ openAuthDialog('login'); return; }
   if(infoCenterBackdrop){ infoCenterBackdrop.hidden = false; delete infoCenterBackdrop.dataset.adminPreview; }
   renderInfoCenterList();
   const requested = String(itemId || '');
@@ -286,9 +286,10 @@ function closeInfoCenter(){
 }
 
 async function loadInfoCenter(){
-  if(!onlineAuthToken || !onlineAuthUser){ clearInfoCenter(); return; }
+  const token=onlineAuthToken;
   try{
     const data = await authApi('/api/info-center');
+    if(token!==onlineAuthToken)return;
     infoCenterItems = (Array.isArray(data.items) ? data.items : []).filter(Boolean).sort((a, b) =>
       (Date.parse(b.publishedAt || b.startsAt) || 0) - (Date.parse(a.publishedAt || a.startsAt) || 0));
     updateInfoCenterBar();
