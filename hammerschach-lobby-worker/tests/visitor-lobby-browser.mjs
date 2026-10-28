@@ -50,6 +50,17 @@ try{
     if(touch){await page.locator('#mobileNavTestOpen').click();if(group)await page.locator(`[data-mobile-nav-accordion-source="${group}"] > button`).click();await page.locator(`[data-mobile-nav-target="${id}"]`).click();}
     else{if(group)await page.locator('#'+group+'Btn').click();await page.locator('#'+id).click();}
   }
+  // Check the first page load before opening any dialog can refresh account UI.
+  async function checkLiveboardMenu(){
+    if(touch){await page.locator('#mobileNavTestOpen').click();await page.locator('[data-mobile-nav-accordion-source="clubChessMenu"] > button').click();}
+    else await page.locator('#clubChessMenuBtn').click();
+    for(const id of ['liveBoardClubBtn','liveBoardTournamentBtn']){
+      const selector=touch?`[data-mobile-nav-target="${id}"]`:'#'+id;
+      assert.equal(await page.locator(selector).isVisible(),true,name+': '+id+' visible on first load');
+    }
+    if(touch)await page.locator('#mobileNavTestClose').click();else await page.locator('#clubChessMenuBtn').click();
+  }
+  await checkLiveboardMenu();
   await page.locator('#visitorBoardLoginBtn').click();await page.locator('#authBackdrop').waitFor({state:'visible'});await page.evaluate(()=>closeAuthDialog());
   await page.locator('#infoCenterOverviewList button').first().click();await page.waitForFunction(()=>document.querySelector('#infoCenterDetail').textContent.includes('Spielt zu zweit'));await page.locator('#infoCenterCloseTopBtn').click();
   await page.locator('#weeklyHint').click();assert.match(await page.locator('#weeklyStatus').textContent(),/Tipp:/);await page.locator('#weeklyRepeat').click();
@@ -76,6 +87,7 @@ try{
   member=true;await page.evaluate(user=>saveAuthState('test-token',user),user);await page.waitForFunction(()=>document.documentElement.classList.contains('member-lobby-view'));
   assert.equal(await page.locator('#visitorWelcome').isVisible(),false);assert.equal(await page.locator('.global-chat-header').isVisible(),true);
   if(!touch){assert.equal(await page.locator('#profileOpenBtn').isVisible(),true);await page.locator('#toolsMenuBtn').click();await page.locator('#analyzerToolBtn').click();assert.equal(await page.locator('#analyzerToolView').isVisible(),true);await page.evaluate(()=>closeEmbeddedTools());}
+  await page.reload();await page.waitForFunction(()=>document.documentElement.classList.contains('member-lobby-view'));await checkLiveboardMenu();
   member=false;await page.evaluate(()=>saveAuthState('',null));await page.waitForFunction(()=>document.querySelectorAll('#infoCenterOverviewList button').length===4&&!document.querySelector('#visitorWelcome').hidden);
   assert.equal(await page.locator('.global-chat-header').isVisible(),false);assert.deepEqual(errors,[],name+' browser errors');
   console.log(name+': passed');await context.close();
