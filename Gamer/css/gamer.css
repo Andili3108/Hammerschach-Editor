@@ -3687,7 +3687,7 @@ html.dark-mode .room-tournament-notice strong{color:#ddbd73;}
   html.hammerschach-room-view:not(.visitor-header-view) .header-status{font-size:15px;}
 }
 
-/* Gleiche Statusschrift für Startseiten und Unterseiten, auch mobil. */
+/* Große Bereichstitel und Besucherbegrüßung, auch mobil. */
 html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #status,
 html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #mobileNavTestStatus{
   font-size:32px;
@@ -3708,6 +3708,16 @@ html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-
 @media(max-width:380px){
   html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #status,
   html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #mobileNavTestStatus{font-size:20px;}
+}
+/* Persönliche Begrüßungen brauchen auch mit langen Namen ausreichend Platz. */
+html.member-lobby-view:not(.embedded-area-active):not(.local-game-open) :is(#status, #mobileNavTestStatus){
+  font-size:20px;
+  line-height:1.25;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+  html.member-lobby-view:not(.embedded-area-active):not(.local-game-open) :is(#status, #mobileNavTestStatus){font-size:18px;}
 }
 html body button.current-area:disabled,
 html body button.current-area:disabled:hover,
