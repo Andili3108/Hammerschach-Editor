@@ -3687,9 +3687,9 @@ html.dark-mode .room-tournament-notice strong{color:#ddbd73;}
   html.hammerschach-room-view:not(.visitor-header-view) .header-status{font-size:15px;}
 }
 
-/* Kurze Bereichstitel und ruhige Standortmarkierung in beiden Navigationen. */
-html.embedded-area-active #status,
-html.embedded-area-active #mobileNavTestStatus{
+/* Gleiche Statusschrift für Startseiten und Unterseiten, auch mobil. */
+html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #status,
+html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #mobileNavTestStatus{
   font-size:32px;
   line-height:1.2;
   min-width:0;
@@ -3698,16 +3698,16 @@ html.embedded-area-active #mobileNavTestStatus{
   text-overflow:clip;
 }
 @media(max-width:1400px){
-  html.embedded-area-active #status,
-  html.embedded-area-active #mobileNavTestStatus{font-size:26px;}
+  html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #status,
+  html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #mobileNavTestStatus{font-size:26px;}
 }
 @media(max-width:760px){
-  html.embedded-area-active #status,
-  html.embedded-area-active #mobileNavTestStatus{font-size:22px;}
+  html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #status,
+  html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #mobileNavTestStatus{font-size:22px;}
 }
 @media(max-width:380px){
-  html.embedded-area-active #status,
-  html.embedded-area-active #mobileNavTestStatus{font-size:20px;}
+  html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #status,
+  html:is(.embedded-area-active,.visitor-start-view:not(.local-game-open),.member-lobby-view:not(.local-game-open)) #mobileNavTestStatus{font-size:20px;}
 }
 html body button.current-area:disabled,
 html body button.current-area:disabled:hover,
