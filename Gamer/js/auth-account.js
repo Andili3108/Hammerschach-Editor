@@ -302,6 +302,7 @@ function hasTournamentViewerAccess(){
   return !!(onlineAuthToken && onlineAuthUser);
 }
 function updateAuthUi(){
+  window.HammerschachHsc08?.updateIdentity();
   window.HammerschachCorner?.updateIdentity();
   if(typeof HammerschachLiveBoard !== 'undefined') HammerschachLiveBoard.updateIdentity();
   if(typeof renderLobbyTournaments === 'function') renderLobbyTournaments();
