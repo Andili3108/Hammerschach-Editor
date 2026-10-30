@@ -1,3 +1,4 @@
+import { handleHsc08 } from './hsc08.js';
 import { processDailyLowTimeReminders, sendDailyLowTimeReminder, dailyLowTimeSnapshot } from './daily-low-time.js';
 import { handleSchacheckeApi, refreshGamerNews, CORNER_CRON } from './schachecke.js';
 import { handleLiveBoardApi } from './live-board.js';
@@ -19646,6 +19647,29 @@ export class GameRoom {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/hsc08/')) {
+      try {
+        return await handleHsc08(request, env, {
+          json,
+          session: req => lookupAuthSession(env, bearerTokenFromRequest(req)),
+          isAdmin: user => isAdminUser(user, env),
+          reauthenticate: async (req, user, password) => {
+            const rate = await checkAuthRateLimit(env, req, 'hsc08_delete', user.id, LOGIN_RATE_POLICY);
+            if (!rate.allowed) return {ok:false, status:429, message:'Zu viele Kennwortversuche. Bitte später erneut versuchen.'};
+            const privateUser = await loadPrivateUser(env, user.id);
+            const valid = privateUser && isAdminUser(privateUser, env) &&
+              String(privateUser.username || '').toLowerCase() === 'andili' &&
+              !(privateUser.disabled || privateUser.deleted_at) && typeof password === 'string' && password.length <= 1024 &&
+              await verifyPassword(password, privateUser);
+            await recordAuthRateLimitEvent(env, rate.context, valid ? 'success' : 'failure');
+            return valid ? {ok:true} : {ok:false, status:403, message:'Das aktuelle Kennwort ist nicht korrekt.'};
+          }
+        });
+      } catch (_) {
+        return json({ok:false, message:'Der Vereinsbereich ist derzeit nicht verfügbar.'}, {status:503, headers:{'cache-control':'no-store'}});
+      }
+    }
 
     if (url.pathname === '/internal/backup/global-chat' || url.pathname === '/internal/backup/game-room' || url.pathname === '/internal/backup/game-room-name-map') {
       if (request.method !== 'POST' || !backupRequestIsAuthorized(request, env)) return privateBackupNotFound();
