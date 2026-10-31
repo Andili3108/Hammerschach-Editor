@@ -27,6 +27,11 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
 `;
 
   document.head.append(style);
+  function syncAppearance(){
+    const root=frame?.contentDocument?.documentElement;if(!root)return;
+    for(const name of ['dark-mode','soft-mode'])root.classList.toggle(name,document.documentElement.classList.contains(name));
+    root.style.colorScheme=document.documentElement.classList.contains('dark-mode')?'dark':'light';
+  }
   async function api(path,method='GET',body) {
     const token=auth();
     if(!eligible())throw new Error('Bitte als Andili anmelden.');
@@ -93,7 +98,7 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
     statusText='Vereinsmeisterschaft';setTitle(statusText);
     for(const child of shell.children){if(child.tagName==='HEADER'||child.tagName==='SCRIPT'||child.tagName==='STYLE'||child.tagName==='DIALOG'||/backdrop|popup/i.test(child.id+' '+child.className))continue;child.classList.add('hsc08-covered');}
     const view=document.createElement('section');view.id='hsc08View';view.setAttribute('aria-label','HSC08 Vereinsmeisterschaft');
-    frame=document.createElement('iframe');frame.title='HSC08 – Vereinsmeisterschaft und Konfiguration';frame.setAttribute('scrolling','no');frame.srcdoc=page.html;frame.onload=()=>{const doc=frame?.contentDocument;if(!doc)return;doc.documentElement.classList.toggle('dark-mode',document.documentElement.classList.contains('dark-mode'));const main=doc.querySelector('main');if(main){const measure=()=>window.HammerschachHsc08.resize(main.getBoundingClientRect().height+24);sizeObserver?.disconnect();sizeObserver=new ResizeObserver(measure);sizeObserver.observe(main);measure();}};view.append(frame);shell.append(view);if(footer)shell.append(footer);active=true;
+    frame=document.createElement('iframe');frame.title='HSC08 – Vereinsmeisterschaft und Konfiguration';frame.setAttribute('scrolling','no');frame.srcdoc=page.html;frame.onload=()=>{const doc=frame?.contentDocument;if(!doc)return;syncAppearance();const main=doc.querySelector('main');if(main){const measure=()=>window.HammerschachHsc08.resize(main.getBoundingClientRect().height+24);sizeObserver?.disconnect();sizeObserver=new ResizeObserver(measure);sizeObserver.observe(main);measure();}};view.append(frame);shell.append(view);if(footer)shell.append(footer);active=true;
     for(const host of [document.querySelector('.header .header-main'),document.querySelector('#mobileNavTestHeader')]){if(host){const nav=toolbar();host.append(nav);toolbars.push(nav);}}
     const drawerList=document.querySelector('#mobileNavTestDrawer .mobile-nav-test-list');if(drawerList){const nav=toolbar(true);drawerList.prepend(nav);toolbars.push(nav);}
     document.querySelectorAll('.header-menu-popup').forEach(el=>el.hidden=true);
@@ -117,7 +122,7 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
   window.addEventListener('storage',updateIdentity);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateIdentity();if(active)api('/access').catch(close);}});
   window.addEventListener('pageshow',()=>{if(active)api('/access').catch(close);});
-  new MutationObserver(()=>frame?.contentDocument?.documentElement?.classList.toggle('dark-mode',document.documentElement.classList.contains('dark-mode'))).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
+  new MutationObserver(syncAppearance).observe(document.documentElement,{attributes:true,attributeFilter:['class']});
   document.addEventListener('click',e=>{
     if(!e.target.closest('.hsc08-toolbar'))toolbars.forEach(nav=>{nav.querySelectorAll('[role=menu]').forEach(el=>el.hidden=true);nav.querySelectorAll('[aria-expanded]').forEach(el=>el.setAttribute('aria-expanded','false'));});
     if(!active || e.target.closest('.hsc08-toolbar'))return;
