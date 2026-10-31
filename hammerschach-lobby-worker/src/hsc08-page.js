@@ -15,6 +15,10 @@ html.dark-mode #participantsSection{background:linear-gradient(rgba(62,154,88,.1
 html.dark-mode #descriptionSection{background:linear-gradient(rgba(159,77,86,.18),rgba(159,77,86,.18)),var(--ui-surface);border-color:rgba(226,151,160,.24)}
 .config-grid{margin-top:14px;align-items:start}.config-grid label{font-size:14px;font-weight:bold;margin:0 0 6px}
 @media(max-width:480px){#view>section{padding:12px}}
+/* Separate the three configuration areas without changing their field layout. */
+#config .participant-fields{margin-top:48px}
+#config label[for="descriptionInput"]{margin-top:48px}
+@media(max-width:560px){#config .participant-fields{margin-top:32px}#config label[for="descriptionInput"]{margin-top:32px}}
 </style><body><main>
 <template id="hsc08Brand"><img src="${hsc08Logo}" alt="HSC08 – Schachabteilung"></template>
 <div id="message" role="status" aria-live="polite"></div>
