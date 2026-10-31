@@ -112,11 +112,23 @@ try {
   assert.equal(await frame.locator('[data-rating="dwz"]').nth(0).inputValue(),'1789');
   await frame.locator('#mode').selectOption('round-robin');await frame.locator('#cycles').selectOption('2');
   assert.ok(await frame.locator('#roundsField').isHidden());
+  await frame.locator('#descriptionInput').evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);range.collapse(false);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);});
+  await frame.locator('#tablePreset').selectOption('schedule');
+  assert.equal(await frame.locator('#descriptionInput table').count(),1);
+  await frame.locator('#descriptionInput td').first().fill('1');
+  for(const [type,value] of [['text/plain','| Runde | Datum |\n| --- | --- |\n| 2 | 12.03.2027 |'],['text/html','<table><tr><th>Runde</th><th>Datum</th></tr><tr><td>3</td><td><img src=x onerror="alert(1)">09.04.2027</td></tr></table>']]){
+    await frame.locator('#descriptionInput').evaluate((el,{type,value})=>{el.focus();const range=document.createRange();range.selectNodeContents(el);range.collapse(false);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);}, {type,value});
+    await page.waitForTimeout(30);
+    await frame.locator('#descriptionInput').evaluate((el,{type,value})=>{const clipboardData=new DataTransfer();clipboardData.setData(type,value);el.dispatchEvent(new ClipboardEvent('paste',{clipboardData,bubbles:true,cancelable:true}));},{type,value});
+  }
+  assert.equal(await frame.locator('#descriptionInput table').count(),3);assert.equal(await frame.locator('#descriptionInput img').count(),0);
+
   await frame.locator('#names input[data-participant-id]').nth(0).fill('Anna Korrigiert');
   await frame.getByRole('button',{name:'Teilnehmer 3 entfernen',exact:true}).click();
   await frame.locator('#addNames').click();
   await frame.locator('#names input[data-participant-id]').nth(11).fill('Neuer Teilnehmer');
   await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
+  assert.equal(await frame.locator('#description table').count(),3);assert.equal(await frame.locator('#description td').first().textContent(),'1');
   const after=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).participants;
   assert.equal(after.length,12,'blank fields are omitted');assert.equal(after[0].name,'Anna Korrigiert');assert.equal(after[0].id,before[0].id,'rename preserves identity');
   assert.equal(after[1].id,before[1].id);assert.equal(after[1].name,'Anna Beispiel');assert.ok(!after.some(p=>p.id===before[2].id));assert.equal(after.at(-1).name,'Neuer Teilnehmer');

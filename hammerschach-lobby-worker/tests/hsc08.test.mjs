@@ -62,3 +62,9 @@ test('rich description is canonical safe data, survives storage and rejects malf
  for(const rich of [null,[{...runs[0],size:900}],[{...runs[0],bold:'true'}],[{...runs[0],text:'a'.repeat(20001)}]])assert.throws(()=>validateHsc08Draft({...draft,descriptionRich:rich}));
  const safe=validateHsc08Draft({...draft,descriptionRich:[{...runs[0],html:'<script>alert(1)</script>',onclick:'alert(1)'}]});assert.deepEqual(safe.descriptionRich,[runs[0]]);
 });
+
+test('tables survive storage as text cells and invalid shapes are rejected',async t=>{
+ const f=fixture(t);const rich=[{table:[['Runde','Termin'],['1','<script>alert(1)</script>']]}];
+ const r=await f.request('POST',{revision:0,tournament:{...draft,descriptionRich:rich}});assert.equal(r.status,200);assert.deepEqual((await f.request()).body.tournament.descriptionRich,rich);
+ for(const table of [[['a'],['b','c']],[],[Array(13).fill('a')],[[42]]])assert.throws(()=>validateHsc08Draft({...draft,descriptionRich:[{table}]}));
+});
