@@ -64,6 +64,17 @@ try {
   assert.equal(await frame.locator('#names').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
   const names=['Anna Beispiel','Anna Beispiel','Bert Muster','Carla Beispiel','Dirk Beispiel','Eva Beispiel','Felix Beispiel','Greta Beispiel','Hans Beispiel','Ida Beispiel','Jan Beispiel','<script>alert(1)</script>'];
   for(let i=0;i<names.length;i++)await frame.locator('#names input').nth(i).fill(names[i]);
+  const fieldStyle=el=>{const c=getComputedStyle(el);return {radius:c.borderTopLeftRadius,background:c.backgroundColor,color:c.color,border:c.borderTopColor,weight:c.fontWeight,family:c.fontFamily};};
+  const originalMode=await page.evaluate(()=>document.documentElement.classList.contains('dark-mode')?'dark':document.documentElement.classList.contains('soft-mode')?'soft':'light');
+  const setMode=async mode=>{await page.evaluate(mode=>{document.documentElement.classList.toggle('dark-mode',mode==='dark');document.documentElement.classList.toggle('soft-mode',mode==='soft');},mode);await page.waitForTimeout(80);};
+  for(const mode of ['light','soft','dark']){
+    await setMode(mode);
+    const reference=await page.locator('#tournamentNameInput').evaluate(fieldStyle);
+    assert.equal(reference.radius,'12px');
+    assert.deepEqual(await frame.locator('#names input').first().evaluate(fieldStyle),reference,label+' input design '+mode);
+    if(process.env.HSC_SCREENSHOT_DIR && mode==='dark')await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-inputs-dark.png',fullPage:true});
+  }
+  await setMode(originalMode);
   await page.evaluate(()=>scrollTo(0,0));
   if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-inputs.png',fullPage:true});
   await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
@@ -82,6 +93,12 @@ try {
   assert.equal(after.length,12,'blank fields are omitted');assert.equal(after[0].name,'Anna Korrigiert');assert.equal(after[0].id,before[0].id,'rename preserves identity');
   assert.equal(after[1].id,before[1].id);assert.equal(after[1].name,'Anna Beispiel');assert.ok(!after.some(p=>p.id===before[2].id));assert.equal(after.at(-1).name,'Neuer Teilnehmer');
   assert.equal(await frame.locator('#participants li').count(),12);
+  assert.equal(await frame.locator('#participants input').count(),0,'output fields are not editable');
+  for(const mode of ['light','soft','dark']){
+    await setMode(mode);
+    assert.deepEqual(await frame.locator('.participant-output').first().evaluate(fieldStyle),await page.locator('#tournamentNameInput').evaluate(fieldStyle),label+' output design '+mode);
+  }
+  await setMode(originalMode);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'outer overflow '+label);
   assert.ok(await frame.locator('body').evaluate(el=>el.ownerDocument.documentElement.scrollWidth<=el.ownerDocument.defaultView.innerWidth+1),'inner overflow '+label);
   await page.waitForTimeout(150);
