@@ -93,6 +93,9 @@ try {
   await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
   assert.equal(await frame.locator('#participants li').count(),12);
   assert.equal(await frame.locator('#participants').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
+  assert.equal(await frame.locator('#tournamentFacts').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
+  assert.deepEqual(await frame.locator('#view > section > h2').allTextContents(),['Turnierinformationen','Runden und Paarungen','Teilnehmer','Ausschreibung']);
+  assert.ok(await frame.locator('#tournamentFacts .tournament-input').first().evaluate(el=>el.getBoundingClientRect().height<40),'compact informational fields');
   const rich=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).descriptionRich;
   assert.equal(rich.map(r=>r.text).join(''),'Formatierter Titel');assert.ok(rich.every(r=>r.bold && r.italic && r.size===30));
   assert.deepEqual(await frame.locator('#description span').first().evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.fontWeight,s.fontStyle];}),['30px','700','italic']);
