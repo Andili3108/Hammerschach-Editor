@@ -61,6 +61,7 @@ try {
   await frame.locator('#title').fill('Vereinsmeisterschaft 2026');await frame.locator('#mode').selectOption('swiss');await frame.locator('#descriptionInput').fill('Ausschreibung\nMit Vereinsfreunden');
   await frame.locator('#scoring').selectOption('three-point');await frame.locator('#rounds').fill('7');
   await frame.locator('#startsOn').fill('2026-11-05');await frame.locator('#endsOn').fill('2027-06-30');await frame.locator('#timeControl').fill('90 Minuten + 30 Sekunden pro Zug');
+  assert.deepEqual(await frame.locator('.config-grid > div:not([hidden]) > label').allTextContents(),['Modus','Punktewertung','Anzahl der Runden','Turnierbeginn','Spätester Spieltermin','Bedenkzeit']);
   assert.ok(await frame.locator('#roundsField').isVisible());assert.ok(await frame.locator('#cyclesField').isHidden());
   await frame.locator('#descriptionInput').fill('Formatierter Titel');
   await frame.locator('#descriptionInput').evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);});
@@ -112,6 +113,8 @@ try {
   assert.equal(await frame.locator('[data-rating="dwz"]').nth(0).inputValue(),'1789');
   await frame.locator('#mode').selectOption('round-robin');await frame.locator('#cycles').selectOption('2');
   assert.ok(await frame.locator('#roundsField').isHidden());
+  assert.deepEqual(await frame.locator('.config-grid > div:not([hidden]) > label').allTextContents(),['Modus','Punktewertung','Durchgänge','Turnierbeginn','Spätester Spieltermin','Bedenkzeit']);
+
   await frame.locator('#descriptionInput').evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);range.collapse(false);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);});
   await frame.locator('#tablePreset').selectOption('schedule');
   assert.equal(await frame.locator('#descriptionInput table').count(),1);
@@ -136,6 +139,9 @@ try {
   assert.equal(await frame.locator('#participants input').count(),0,'output fields are not editable');
   for(const mode of ['light','soft','dark']){
     await setMode(mode);
+    const viewColors=await frame.locator('#view > section').evaluateAll(elements=>elements.map(el=>getComputedStyle(el).backgroundImage));
+    assert.equal(new Set(viewColors).size,4,'distinct section colors '+mode);
+    assert.equal(await frame.locator('#config > section').evaluate(el=>getComputedStyle(el).backgroundImage),'none','configuration stays neutral');
     assert.deepEqual(await frame.locator('.participant-output').first().evaluate(fieldStyle),await page.locator('#tournamentNameInput').evaluate(fieldStyle),label+' output design '+mode);
   }
   await setMode(originalMode);
