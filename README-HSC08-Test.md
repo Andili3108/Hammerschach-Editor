@@ -38,3 +38,18 @@ Noch nicht produktiv bereitgestellt. Keine echten Konten oder Turniere wurden ve
 - Bestehende Tests `password-reset.test.mjs` und `tournament-series.test.mjs` scheitern teilweise an der fehlenden Test-Hilfsfunktion `handleSchacheckeApi`. Derselbe Fehler wurde in einer separaten unveränderten Kopie aus der Basis-ZIP reproduziert. Diese Testprobleme wurden nicht durch Änderungen an fremden Modulen verdeckt.
 
 Ergebnis der lokalen Prüfung: 5 neue Servertests bestanden; Desktop (1440 × 1000), iPad-Größe (820 × 1180) und iPhone-Größe (390 × 844) in Chromium geprüft. Speichern, falsches/richtiges Löschpasswort, Rückkehr, Abmelden und fehlender horizontaler Überlauf bestanden; Besucher und normales Mitglied sehen keinen Einstieg. Das sind simulierte Bildschirmgrößen, keine Prüfung auf physischen iOS-Geräten oder in Safari. Der vollständige Worker ließ sich erfolgreich bündeln.
+
+
+## Layoutkorrektur vom 31.10.2026
+
+Dieser Nachtrag setzt den ersten HSC08-Teststand voraus. Das neue Änderungs-ZIP enthält nur die seitdem angepassten Dateien.
+
+- Der HSC08-Header ersetzt die normale Lobby-Navigation durch eine Rückkehr-Schaltfläche, das Gamer-Menü „Vereinsturniere“, Konfiguration und Löschung. Keine zusätzliche Desktop-Navigationszeile. Hilfe und Einstellungen bleiben vorhanden.
+- Aktuell nur „Zur Lobby“ für Andili. Die alternative Beschriftung „Zur Startseite“ ist für eine spätere Besucherfreigabe vorbereitet; Besucher erhalten weiterhin keinen Zugriff.
+- Das geschützte HSC-Logo ersetzt das Gamer-Logo im Header. Beim Schließen werden Logo und Status wiederhergestellt.
+- Der Status zeigt „HSC08 · Vereinsmeisterschaft“ beziehungsweise den gespeicherten Turniertitel; beim Konfigurieren „HSC08 · Turnier konfigurieren“. Keine wiederholte Seitenüberschrift und kein zweites sichtbares Logo im Inhalt.
+- Seitenhöhe wird aus dem tatsächlichen Inhalt ermittelt; kein inneres Scrollfenster. Die originalen Fußnoten einschließlich ihrer bestehenden Funktionen und Statistikzeile werden unter den Inhalt verschoben und beim Schließen an ihren ursprünglichen Platz zurückgesetzt.
+- Zum Einspielen: `Gamer/index.html`, `Gamer/js/hsc08.js`, `Gamer/js/mobile-navigation.js` und Worker-Modul `src/hsc08-page.js` aktualisieren; den Worker danach neu bereitstellen. Alle übrigen Dateien aus dem ersten HSC08-Teststand bleiben erforderlich.
+- Erneut geprüft: Desktop, iPad- und iPhone-Größen in Chromium; Menüeinträge, Logo, Statuswechsel, Fußnotenposition, fehlender innerer Scrollbereich und Rückkehr. Keine Prüfung auf echten iOS-Geräten.
+
+Auch das aufgeklappte mobile Menü enthält ausschließlich HSC08-Navigation sowie die vorhandenen Hilfe-/Einstellungseinträge. Titel und Logo wechseln mit; beim Schließen werden die normale Navigation und die Scrollfreigabe wiederhergestellt. Die Browserprüfung deckt das Öffnen des Untermenüs, deaktivierten Pokal/Blitz, Auswahl der Vereinsmeisterschaft und das Schließen des Menüs ab.
