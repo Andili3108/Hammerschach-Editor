@@ -7,7 +7,19 @@ export function isHsc08Admin(user, isAdmin) {
 export function validateHsc08Draft(input) {
   if (!input || typeof input !== 'object') throw new Error('Konfiguration fehlt.');
   const title = String(input.title || '').trim();
-  const description = String(input.description || '').trim();
+  let description = String(input.description || '').trim();
+  let descriptionRich;
+  if (input.descriptionRich !== undefined) {
+    if (!Array.isArray(input.descriptionRich) || input.descriptionRich.length > 4000) throw new Error('Die Ausschreibung enthält zu viele Formatierungen.');
+    let length = 0;
+    descriptionRich = input.descriptionRich.map(run => {
+      if (!run || typeof run.text !== 'string' || ![14,18,24,30].includes(run.size) || typeof run.bold !== 'boolean' || typeof run.italic !== 'boolean') throw new Error('Ungültige Textformatierung.');
+      length += run.text.length;
+      if (length > 20000) throw new Error('Die Ausschreibung ist zu lang (maximal 20.000 Zeichen).');
+      return {text:run.text, size:run.size, bold:run.bold, italic:run.italic};
+    });
+    description = descriptionRich.map(run=>run.text).join('');
+  }
   if (title.length > 160) throw new Error('Bitte einen Titel mit höchstens 160 Zeichen eingeben.');
   if (description.length > 20000) throw new Error('Die Ausschreibung ist zu lang (maximal 20.000 Zeichen).');
   if (input.mode && !['round-robin', 'swiss'].includes(input.mode)) throw new Error('Bitte einen Turniermodus wählen.');
@@ -46,7 +58,7 @@ export function validateHsc08Draft(input) {
   if (timeControl.length > 300) throw new Error('Die Bedenkzeit darf höchstens 300 Zeichen enthalten.');
   // Incomplete preparation can be saved; starting/releasing requires separate validation.
   // Lifecycle and game data are never accepted through this configuration endpoint.
-  return {title, description, mode:input.mode || '', participants, scoring, cycles, rounds,
+  return {title, description, ...(descriptionRich !== undefined ? {descriptionRich} : {}), mode:input.mode || '', participants, scoring, cycles, rounds,
     startsOn, endsOn, timeControl, phase:'draft', rulesStatus:'pending'};
 }
 export async function handleHsc08(request, env, deps) {
