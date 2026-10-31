@@ -28,18 +28,46 @@ try {
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
   if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('HSC08'));
+  const originalLogo=await page.locator('.header-brand img').getAttribute('src');
   if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'HSC08',exact:true}).click();}
   else {await page.locator('#clubChessMenuBtn').click();await page.locator('#clubChessMenuPopup').getByRole('button',{name:'HSC08',exact:true}).click();}
   const frame=page.frameLocator('#hsc08View iframe');await frame.getByText('Diese Turnierseite ist noch leer.').waitFor();
+  if(width<1000){
+    await page.locator('#mobileNavTestOpen').click();
+    assert.equal(await page.locator('#mobileNavTestContext').textContent(),'Vereinsturniere');
+    assert.equal(await page.locator('#mobileNavMainSection').isVisible(),false);
+    assert.ok(await page.locator('#mobileNavHelpSection').isVisible());
+    assert.ok(await page.locator('#mobileNavTestTheme').isVisible());
+    const drawer=page.locator('.hsc08-drawer-nav');
+    await drawer.getByRole('button',{name:'Vereinsturniere',exact:false}).click();
+    assert.ok(await drawer.getByRole('menuitem',{name:'Blitzrunden'}).isDisabled());
+    if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-menu.png',fullPage:true});
+    await drawer.getByRole('menuitem',{name:'Vereinsmeisterschaft',exact:true}).click();
+    await page.waitForFunction(()=>document.getElementById('mobileNavTestBackdrop').hidden);
+    assert.equal(await page.locator('html.mobile-nav-test-drawer-open').count(),0);
+  }
+  assert.equal(await page.getByRole('button',{name:'Zur Startseite',exact:true}).filter({visible:true}).count(),0);
+  assert.equal(await frame.locator('h1,.intro').count(),0);
+  assert.ok((await page.locator('.header-brand img').getAttribute('src')).startsWith('data:image/jpeg'));
+  assert.ok(await page.locator('.site-footnote').isVisible());
+  assert.equal(await page.locator('.header .match-actions').isVisible(),false);
+  await page.getByRole('button',{name:'Vereinsturniere',exact:false}).filter({visible:true}).click();
+  assert.ok(await page.getByRole('menuitem',{name:'Vereinspokal',exact:true}).filter({visible:true}).isDisabled());
+  await page.getByRole('menuitem',{name:'Vereinsmeisterschaft',exact:true}).filter({visible:true}).click();
   await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
+  assert.equal(await page.locator('#status').textContent(),'HSC08 · Turnier konfigurieren');
   await frame.locator('#title').fill('Vereinsmeisterschaft 2026');await frame.locator('#mode').selectOption('swiss');await frame.locator('#descriptionInput').fill('Ausschreibung\nMit Vereinsfreunden');await frame.locator('#names').fill('Anna Beispiel\nBert Muster\n<script>alert(1)</script>');await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.getByText('Entwurf gespeichert.',{exact:false}).waitFor();assert.equal(await frame.locator('#participants li').count(),3);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'outer overflow '+label);
   assert.ok(await frame.locator('body').evaluate(el=>el.ownerDocument.documentElement.scrollWidth<=el.ownerDocument.defaultView.innerWidth+1),'inner overflow '+label);
+  await page.waitForTimeout(150);
+  assert.equal(await page.locator('#status').textContent(),'HSC08 · Vereinsmeisterschaft 2026');
+  assert.ok(await frame.locator('html').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'no inner vertical scroll '+label);
+  assert.ok(await page.evaluate(()=>document.querySelector('.site-footnote').getBoundingClientRect().top>=document.querySelector('#hsc08View').getBoundingClientRect().bottom-1),'footer below whole page');
   await page.evaluate(()=>scrollTo(0,0));
   if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'.png',fullPage:true});
   await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.locator('#password').fill('wrong');await frame.locator('#confirmation').fill('TURNIER LÖSCHEN');await frame.getByRole('button',{name:'Endgültig löschen'}).click();await frame.locator('#deleteError').getByText('Kennwort falsch').waitFor();assert.equal(await frame.locator('#participants li').count(),3);
   await frame.locator('#password').fill('correct');await frame.getByRole('button',{name:'Endgültig löschen'}).click();await frame.getByText('Turnier gelöscht.',{exact:false}).waitFor();assert.equal(await frame.locator('#participants li').count(),0);
-  await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);
+  await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);assert.equal(await page.locator('.header-brand img').getAttribute('src'),originalLogo);assert.equal(await page.locator('.site-footnote').count(),1);
   await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);
   assert.deepEqual(errors,[],label+' JS errors');console.log(label+': save, delete, overflow, navigation, logout passed');await context.close();db.close();
  }

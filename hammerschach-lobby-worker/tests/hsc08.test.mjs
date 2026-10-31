@@ -15,7 +15,7 @@ test('all page/data routes reject visitors, ordinary members and other admins',a
  const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/access','/page','/championship']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
  assert.equal(f.db.prepare("SELECT count(*) n FROM sqlite_master WHERE name='hsc08_championship'").get().n,0);
 });
-test('authorized page contains logo but no tournament user input',async t=>{const f=fixture(t);const r=await f.request('GET',null,'/page');assert.equal(r.status,200);assert.match(r.body.html,/data:image\/jpeg;base64/);assert.match(r.body.html,/Turnier konfigurieren/);});
+test('authorized page contains logo but no tournament user input',async t=>{const f=fixture(t);const r=await f.request('GET',null,'/page');assert.equal(r.status,200);assert.match(r.body.html,/data:image\/jpeg;base64/);assert.ok(r.body.html.includes('<form id="config" hidden>'));assert.ok(!r.body.html.includes('<h1'));});
 test('draft roundtrip, concurrent update conflict and online isolation',async t=>{
  const f=fixture(t);assert.equal((await f.request()).body.tournament,null);
  let r=await f.request('POST',{revision:0,tournament:draft});assert.equal(r.status,200);assert.equal(r.body.revision,1);assert.deepEqual(r.body.tournament.participants,draft.participants);
