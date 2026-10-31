@@ -53,3 +53,12 @@ test('incomplete drafts are saved, invalid dates, ratings and enums are rejected
  }
  assert.equal((await f.request()).body.revision,1,'rejected inputs leave saved state unchanged');
 });
+
+test('rich description is canonical safe data, survives storage and rejects malformed input',async t=>{
+ const f=fixture(t);const runs=[{text:'Titel\n',size:30,bold:true,italic:false},{text:'<img src=x onerror=alert(1)>',size:18,bold:false,italic:true}];
+ const r=await f.request('POST',{revision:0,tournament:{...draft,description:'conflicting',descriptionRich:runs}});
+ assert.equal(r.status,200);assert.deepEqual(r.body.tournament.descriptionRich,runs);assert.equal(r.body.tournament.description,runs.map(r=>r.text).join(''));
+ assert.deepEqual((await f.request()).body.tournament.descriptionRich,runs);
+ for(const rich of [null,[{...runs[0],size:900}],[{...runs[0],bold:'true'}],[{...runs[0],text:'a'.repeat(20001)}]])assert.throws(()=>validateHsc08Draft({...draft,descriptionRich:rich}));
+ const safe=validateHsc08Draft({...draft,descriptionRich:[{...runs[0],html:'<script>alert(1)</script>',onclick:'alert(1)'}]});assert.deepEqual(safe.descriptionRich,[runs[0]]);
+});

@@ -62,6 +62,11 @@ try {
   await frame.locator('#scoring').selectOption('three-point');await frame.locator('#rounds').fill('7');
   await frame.locator('#startsOn').fill('2026-11-05');await frame.locator('#endsOn').fill('2027-06-30');await frame.locator('#timeControl').fill('90 Minuten + 30 Sekunden pro Zug');
   assert.ok(await frame.locator('#roundsField').isVisible());assert.ok(await frame.locator('#cyclesField').isHidden());
+  await frame.locator('#descriptionInput').fill('Formatierter Titel');
+  await frame.locator('#descriptionInput').evaluate(el=>{el.focus();const range=document.createRange();range.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);});
+  await frame.getByRole('button',{name:'Fett',exact:true}).click();
+  await frame.getByRole('button',{name:'Kursiv',exact:true}).click();
+  await frame.locator('#textSize').selectOption('6');
   for(let i=0;i<3;i++)await frame.locator('#addNames').click();
   assert.equal(await frame.locator('#names input[data-participant-id]').count(),12);
   assert.equal(await frame.locator('#names').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
@@ -88,6 +93,9 @@ try {
   await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
   assert.equal(await frame.locator('#participants li').count(),12);
   assert.equal(await frame.locator('#participants').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
+  const rich=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).descriptionRich;
+  assert.equal(rich.map(r=>r.text).join(''),'Formatierter Titel');assert.ok(rich.every(r=>r.bold && r.italic && r.size===30));
+  assert.deepEqual(await frame.locator('#description span').first().evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.fontWeight,s.fontStyle];}),['30px','700','italic']);
   const before=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).participants;
   assert.equal(before[0].dwz,1789);assert.equal(before[1].estimatedRating,1500);
   assert.ok(await frame.getByText('DWZ 1789',{exact:true}).isVisible());assert.ok(await frame.getByText('Geschätzte Spielstärke 1500',{exact:true}).isVisible());
@@ -95,6 +103,8 @@ try {
   assert.notEqual(before[0].id,before[1].id,'same names remain separate participants');
   await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
   assert.deepEqual(await frame.locator('#names input[data-participant-id]').evaluateAll(inputs=>inputs.map(i=>i.value)),names);
+  assert.equal(await frame.locator('#descriptionInput').innerText(),'Formatierter Titel');
+  assert.deepEqual(await frame.locator('#descriptionInput span').first().evaluate(el=>{const s=getComputedStyle(el);return [s.fontSize,s.fontWeight,s.fontStyle];}),['30px','700','italic']);
   assert.equal(await frame.locator('#rounds').inputValue(),'7');assert.equal(await frame.locator('#scoring').inputValue(),'three-point');
   assert.equal(await frame.locator('[data-rating="dwz"]').nth(0).inputValue(),'1789');
   await frame.locator('#mode').selectOption('round-robin');await frame.locator('#cycles').selectOption('2');
