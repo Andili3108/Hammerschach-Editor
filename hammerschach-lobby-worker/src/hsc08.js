@@ -8,9 +8,9 @@ export function validateHsc08Draft(input) {
   if (!input || typeof input !== 'object') throw new Error('Konfiguration fehlt.');
   const title = String(input.title || '').trim();
   const description = String(input.description || '').trim();
-  if (!title || title.length > 160) throw new Error('Bitte einen Titel mit höchstens 160 Zeichen eingeben.');
+  if (title.length > 160) throw new Error('Bitte einen Titel mit höchstens 160 Zeichen eingeben.');
   if (description.length > 20000) throw new Error('Die Ausschreibung ist zu lang (maximal 20.000 Zeichen).');
-  if (!['round-robin', 'swiss'].includes(input.mode)) throw new Error('Bitte einen Turniermodus wählen.');
+  if (input.mode && !['round-robin', 'swiss'].includes(input.mode)) throw new Error('Bitte einen Turniermodus wählen.');
   if (!Array.isArray(input.participants) || input.participants.length > 200) throw new Error('Maximal 200 Teilnehmer sind möglich.');
   const ids = new Set();
   const participants = input.participants.map(p => {
@@ -19,10 +19,35 @@ export function validateHsc08Draft(input) {
     if (!/^[a-zA-Z0-9-]{8,64}$/.test(id) || ids.has(id)) throw new Error('Ungültige Teilnehmerkennung.');
     if (!name || name.length > 100 || /[\u0000-\u001f]/.test(name)) throw new Error('Teilnehmernamen müssen 1–100 Zeichen lang sein.');
     ids.add(id);
-    return {id, name};
+    const participant = {id, name};
+    for (const key of ['dwz', 'estimatedRating']) {
+      const value = p[key];
+      if (value !== undefined && value !== null && value !== '') {
+        if (!Number.isSafeInteger(value) || value < 1 || value > 9999) throw new Error('Spielstärke muss eine ganze Zahl zwischen 1 und 9999 sein.');
+        participant[key] = value;
+      }
+    }
+    return participant;
   });
-  // Deliberately no inferred pairing, scoring, bye or release rules.
-  return {title, description, mode:input.mode, participants, phase:'draft', rulesStatus:'pending'};
+  const scoring = input.scoring ?? 'classic';
+  if (!['classic', 'three-point'].includes(scoring)) throw new Error('Ungültige Punktewertung.');
+  const cycles = input.cycles ?? 1;
+  if (![1, 2].includes(cycles)) throw new Error('Bitte Einfach- oder Doppelrunde wählen.');
+  const rounds = input.rounds === '' || input.rounds == null ? null : input.rounds;
+  if (rounds !== null && (!Number.isSafeInteger(rounds) || rounds < 1 || rounds > 199)) throw new Error('Die Rundenzahl muss zwischen 1 und 199 liegen.');
+  function date(key) {
+    const value = input[key] ?? '';
+    if (typeof value !== 'string' || (value && (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0,10) !== value))) throw new Error('Bitte ein gültiges Datum eingeben.');
+    return value;
+  }
+  const startsOn = date('startsOn'), endsOn = date('endsOn');
+  if (startsOn && endsOn && startsOn > endsOn) throw new Error('Der letzte Spieltermin darf nicht vor dem Beginn liegen.');
+  const timeControl = String(input.timeControl ?? '').trim();
+  if (timeControl.length > 300) throw new Error('Die Bedenkzeit darf höchstens 300 Zeichen enthalten.');
+  // Incomplete preparation can be saved; starting/releasing requires separate validation.
+  // Lifecycle and game data are never accepted through this configuration endpoint.
+  return {title, description, mode:input.mode || '', participants, scoring, cycles, rounds,
+    startsOn, endsOn, timeControl, phase:'draft', rulesStatus:'pending'};
 }
 export async function handleHsc08(request, env, deps) {
   const path = new URL(request.url).pathname;
