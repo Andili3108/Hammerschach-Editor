@@ -14,7 +14,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try {
  for(const [label,width,height,role] of [['desktop',1440,1000,'admin'],['ipad',820,1180,'admin'],['iphone',390,844,'admin'],['visitor',390,844,'visitor'],['member',1440,1000,'member']]){
   const db=new DatabaseSync(':memory:');const env={DB:{prepare(sql){let a=[];return {bind(...v){a=v;return this;},async first(){return db.prepare(sql).get(...a);},async run(){return {meta:{changes:db.prepare(sql).run(...a).changes}};}};}}};
-  const context=await browser.newContext({viewport:{width,height},isMobile:width<1000,hasTouch:width<1000});
+  const context=await browser.newContext({viewport:{width,height},locale:'de-DE',isMobile:width<1000,hasTouch:width<1000});
   const user=role==='visitor'?null:{id:role,username:role==='admin'?'Andili':'Mitglied',isAdmin:role==='admin'};
   if(user)await context.addInitScript(user=>{localStorage.setItem('hammerschachGamerAuthToken','test-token');localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));},user);
   await context.route('**/*',async route=>{
@@ -59,11 +59,17 @@ try {
   assert.equal(await page.locator('#status').textContent(),'HSC08 · Turnier konfigurieren');
   const expectedColumns=width>1000?3:width>560?2:1;
   await frame.locator('#title').fill('Vereinsmeisterschaft 2026');await frame.locator('#mode').selectOption('swiss');await frame.locator('#descriptionInput').fill('Ausschreibung\nMit Vereinsfreunden');
+  await frame.locator('#scoring').selectOption('three-point');await frame.locator('#rounds').fill('7');
+  await frame.locator('#startsOn').fill('2026-11-05');await frame.locator('#endsOn').fill('2027-06-30');await frame.locator('#timeControl').fill('90 Minuten + 30 Sekunden pro Zug');
+  assert.ok(await frame.locator('#roundsField').isVisible());assert.ok(await frame.locator('#cyclesField').isHidden());
   for(let i=0;i<3;i++)await frame.locator('#addNames').click();
-  assert.equal(await frame.locator('#names input').count(),12);
+  assert.equal(await frame.locator('#names input[data-participant-id]').count(),12);
   assert.equal(await frame.locator('#names').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
   const names=['Anna Beispiel','Anna Beispiel','Bert Muster','Carla Beispiel','Dirk Beispiel','Eva Beispiel','Felix Beispiel','Greta Beispiel','Hans Beispiel','Ida Beispiel','Jan Beispiel','<script>alert(1)</script>'];
-  for(let i=0;i<names.length;i++)await frame.locator('#names input').nth(i).fill(names[i]);
+  for(let i=0;i<names.length;i++)await frame.locator('#names input[data-participant-id]').nth(i).fill(names[i]);
+  await frame.locator('[data-rating="dwz"]').nth(0).fill('1789');
+  assert.ok(await frame.locator('[data-rating="estimatedRating"]').nth(0).isDisabled());
+  await frame.locator('[data-rating="estimatedRating"]').nth(1).fill('1500');
   const fieldStyle=el=>{const c=getComputedStyle(el);return {radius:c.borderTopLeftRadius,background:c.backgroundColor,color:c.color,border:c.borderTopColor,weight:c.fontWeight,family:c.fontFamily};};
   const originalMode=await page.evaluate(()=>document.documentElement.classList.contains('dark-mode')?'dark':document.documentElement.classList.contains('soft-mode')?'soft':'light');
   const setMode=async mode=>{await page.evaluate(mode=>{document.documentElement.classList.toggle('dark-mode',mode==='dark');document.documentElement.classList.toggle('soft-mode',mode==='soft');},mode);await page.waitForTimeout(80);};
@@ -71,7 +77,9 @@ try {
     await setMode(mode);
     const reference=await page.locator('#tournamentNameInput').evaluate(fieldStyle);
     assert.equal(reference.radius,'12px');
-    assert.deepEqual(await frame.locator('#names input').first().evaluate(fieldStyle),reference,label+' input design '+mode);
+    assert.deepEqual(await frame.locator('[data-rating="dwz"]').first().evaluate(fieldStyle),reference,label+' DWZ design '+mode);
+    assert.deepEqual(await frame.locator('#timeControl').evaluate(fieldStyle),reference,label+' time control design '+mode);
+    assert.deepEqual(await frame.locator('#names input[data-participant-id]').first().evaluate(fieldStyle),reference,label+' input design '+mode);
     if(process.env.HSC_SCREENSHOT_DIR && mode==='dark')await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-inputs-dark.png',fullPage:true});
   }
   await setMode(originalMode);
@@ -81,13 +89,20 @@ try {
   assert.equal(await frame.locator('#participants li').count(),12);
   assert.equal(await frame.locator('#participants').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
   const before=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).participants;
+  assert.equal(before[0].dwz,1789);assert.equal(before[1].estimatedRating,1500);
+  assert.ok(await frame.getByText('DWZ 1789',{exact:true}).isVisible());assert.ok(await frame.getByText('Geschätzte Spielstärke 1500',{exact:true}).isVisible());
+  assert.ok(await frame.getByText('90 Minuten + 30 Sekunden pro Zug',{exact:true}).isVisible());
   assert.notEqual(before[0].id,before[1].id,'same names remain separate participants');
   await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
-  assert.deepEqual(await frame.locator('#names input').evaluateAll(inputs=>inputs.map(i=>i.value)),names);
-  await frame.locator('#names input').nth(0).fill('Anna Korrigiert');
+  assert.deepEqual(await frame.locator('#names input[data-participant-id]').evaluateAll(inputs=>inputs.map(i=>i.value)),names);
+  assert.equal(await frame.locator('#rounds').inputValue(),'7');assert.equal(await frame.locator('#scoring').inputValue(),'three-point');
+  assert.equal(await frame.locator('[data-rating="dwz"]').nth(0).inputValue(),'1789');
+  await frame.locator('#mode').selectOption('round-robin');await frame.locator('#cycles').selectOption('2');
+  assert.ok(await frame.locator('#roundsField').isHidden());
+  await frame.locator('#names input[data-participant-id]').nth(0).fill('Anna Korrigiert');
   await frame.getByRole('button',{name:'Teilnehmer 3 entfernen',exact:true}).click();
   await frame.locator('#addNames').click();
-  await frame.locator('#names input').nth(11).fill('Neuer Teilnehmer');
+  await frame.locator('#names input[data-participant-id]').nth(11).fill('Neuer Teilnehmer');
   await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
   const after=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).participants;
   assert.equal(after.length,12,'blank fields are omitted');assert.equal(after[0].name,'Anna Korrigiert');assert.equal(after[0].id,before[0].id,'rename preserves identity');
@@ -109,6 +124,10 @@ try {
   if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'.png',fullPage:true});
   await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.locator('#password').fill('wrong');await frame.locator('#confirmation').fill('TURNIER LÖSCHEN');await frame.getByRole('button',{name:'Endgültig löschen'}).click();await frame.locator('#deleteError').getByText('Kennwort falsch').waitFor();assert.equal(await frame.locator('#participants li').count(),12);
   await frame.locator('#password').fill('correct');await frame.getByRole('button',{name:'Endgültig löschen'}).click();await frame.getByText('Turnier gelöscht.',{exact:false}).waitFor();assert.equal(await frame.locator('#participants li').count(),0);
+  await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
+  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
+  const incomplete=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document);
+  assert.equal(incomplete.title,'');assert.equal(incomplete.mode,'');assert.equal(incomplete.participants.length,0);
   await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);assert.equal(await page.locator('.header-brand img').getAttribute('src'),originalLogo);assert.equal(await page.locator('.site-footnote').count(),1);
   await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);
   assert.deepEqual(errors,[],label+' JS errors');console.log(label+': save, delete, overflow, navigation, logout passed');await context.close();db.close();

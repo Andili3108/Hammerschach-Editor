@@ -34,5 +34,22 @@ test('delete requires password and confirmation, clears only HSC08 and prevents 
 });
 test('validation does not enable unapproved rules or store injected results',()=>{
  const r=validateHsc08Draft({...draft,phase:'running',results:[1],rulesStatus:'approved'});assert.equal(r.phase,'draft');assert.equal(r.rulesStatus,'pending');assert.ok(!('results' in r));
- for(const bad of [{...draft,mode:'knockout'},{...draft,title:''},{...draft,participants:[draft.participants[0],draft.participants[0]]}])assert.throws(()=>validateHsc08Draft(bad));
+ for(const bad of [{...draft,mode:'knockout'},{...draft,title:'x'.repeat(161)},{...draft,participants:[draft.participants[0],draft.participants[0]]}])assert.throws(()=>validateHsc08Draft(bad));
+});
+
+test('configuration roundtrip retains ratings and all approved preparation settings',async t=>{
+ const f=fixture(t);
+ const input={...draft,scoring:'three-point',cycles:2,rounds:7,startsOn:'2026-11-05',endsOn:'2027-06-30',timeControl:'90 Minuten + 30 Sekunden pro Zug',participants:[{id:'player-0001',name:'Anna',dwz:1789},{id:'player-0002',name:'Bert',estimatedRating:1500}]};
+ const saved=await f.request('POST',{revision:0,tournament:input});assert.equal(saved.status,200);
+ const loaded=(await f.request()).body.tournament;
+ for(const key of Object.keys(input))assert.deepEqual(loaded[key],input[key]);
+});
+test('incomplete drafts are saved, invalid dates, ratings and enums are rejected',async t=>{
+ const f=fixture(t);
+ const r=await f.request('POST',{revision:0,tournament:{title:'',mode:'',participants:[]}});
+ assert.equal(r.status,200);assert.equal(r.body.tournament.scoring,'classic');assert.equal(r.body.tournament.cycles,1);assert.equal(r.body.tournament.rounds,null);
+ for(const patch of [{scoring:'invalid'},{cycles:3},{rounds:1.5},{rounds:0},{rounds:200},{startsOn:'2026-02-30'},{startsOn:'2026-12-01',endsOn:'2026-11-01'},{timeControl:'x'.repeat(301)},{participants:[{...draft.participants[0],dwz:-1}]},{participants:[{...draft.participants[0],estimatedRating:1500.5}]}]){
+  assert.equal((await f.request('POST',{revision:1,tournament:{...draft,...patch}})).status,400);
+ }
+ assert.equal((await f.request()).body.revision,1,'rejected inputs leave saved state unchanged');
 });
