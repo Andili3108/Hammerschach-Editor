@@ -8,9 +8,10 @@ html,body{margin:0;padding:0;display:block;min-height:0;background:transparent;c
 <div id="view"><section><h2>Ausschreibung</h2><div id="description" class="description"></div></section><section><h2>Runden und Paarungen</h2><p>Noch keine Runden. Die Turnierregeln sind noch nicht beschlossen.</p></section><section><h2>Teilnehmer</h2><ol id="participants"></ol><p id="emptyParticipants">Noch keine Teilnehmer.</p></section></div>
 <form id="config" hidden><section><label for="title">Titel</label><input id="title" maxlength="160" required><label for="mode">Modus</label><select id="mode" required><option value="">Bitte wählen</option><option value="round-robin">Rundenturnier</option><option value="swiss">Schweizer System</option></select><label for="descriptionInput">Ausschreibung / Beschreibung</label><textarea id="descriptionInput" maxlength="20000"></textarea><label for="names">Teilnehmer · ein Name pro Zeile, ohne Gamer-Konto</label><textarea id="names" placeholder="Vorname Nachname"></textarea><p class="notice">Entscheidungen offen: Paarungssystem, Feinwertungen, Freilose, kampflose Ergebnisse, Rückzüge und Rundenfreigabe. Auslosung und Ergebniseingabe sind bis zur Abstimmung gesperrt. Es wird keine vermeintliche Rangliste angezeigt.</p><div class="actions"><button type="submit">Entwurf speichern</button><button id="cancel" type="button">Zur Turnierseite</button></div></section></form>
 <dialog id="deleteDialog"><form id="deleteForm"><h2>Turnier vollständig löschen</h2><p>Die gespeicherte Konfiguration, Ausschreibung und Teilnehmer werden unwiderruflich gelöscht. Die feste HSC08-Seite und ihre Navigation bleiben erhalten.</p><label for="password">Aktuelles Gamer-Passwort von Andili</label><input id="password" type="password" autocomplete="current-password" required maxlength="1024"><label for="confirmation">Zur Bestätigung TURNIER LÖSCHEN eingeben</label><input id="confirmation" required autocomplete="off"><p id="deleteError" role="alert"></p><button type="submit">Endgültig löschen</button><button id="deleteCancel" type="button">Abbrechen</button></form></dialog>
-</main><script>(${client.toString()})();</script></body></html>`;
+</main><script>(${HSC08_CLIENT})();</script></body></html>`;
 }
-function client() {
+// Keep browser code literal: Worker bundlers may inject helpers into real functions.
+const HSC08_CLIENT = String.raw`function client() {
   const $ = id => document.getElementById(id);
   let state = {revision:0,tournament:null}, busy = false;
   const api = (method, body) => parent.HammerschachHsc08.api('/championship', method, body);
@@ -56,4 +57,4 @@ function client() {
   };
   api('GET').then(data=>{state=data;render();}).catch(e=>message(e.message));
   new ResizeObserver(()=>parent.HammerschachHsc08.resize(document.querySelector('main').getBoundingClientRect().height + 24)).observe(document.querySelector('main'));
-}
+}`;
