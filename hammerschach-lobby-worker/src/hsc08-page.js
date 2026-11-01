@@ -19,17 +19,18 @@ html.dark-mode #descriptionSection{background:linear-gradient(rgba(159,77,86,.18
 #config .participant-fields{margin-top:48px}
 #config label[for="descriptionInput"]{margin-top:48px}
 @media(max-width:560px){#config .participant-fields{margin-top:32px}#config label[for="descriptionInput"]{margin-top:32px}}
+.rr-game{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(130px,.7fr);gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ui-line)}.rr-game span{overflow-wrap:anywhere}.rr-game select{min-width:0}.rr-round{margin-top:24px}.ranking-wrap{overflow-x:auto}.rr-ranking{width:100%;border-collapse:collapse}.rr-ranking th,.rr-ranking td{padding:8px;text-align:left;border-bottom:1px solid var(--ui-line)}@media(max-width:560px){.rr-game{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rr-game select{grid-column:1 / -1}}
 </style><body><main>
 <template id="hsc08Brand"><img src="${hsc08Logo}" alt="HSC08 – Schachabteilung"></template>
 <div id="message" role="status" aria-live="polite"></div>
-<div id="view"><section id="factsSection" class="lobby-tournaments" hidden><h2>Turnierinformationen</h2><div id="tournamentFacts"></div></section><section id="roundsSection"><h2>Runden und Paarungen</h2><p>Noch keine Runden freigegeben.</p></section><section id="participantsSection"><h2>Teilnehmer</h2><ol id="participants" role="list"></ol><p id="emptyParticipants">Noch keine Teilnehmer.</p></section><section id="descriptionSection"><h2>Ausschreibung</h2><div id="description" class="description"></div></section></div>
+<div id="draftNotice" class="notice" hidden><p>Ein gespeicherter Entwurf wurde noch nicht in die Turnieransicht übernommen.</p><button type="button" id="applyDraft">In Turnieransicht übernehmen</button></div><div id="view"><section id="factsSection" class="lobby-tournaments" hidden><h2>Turnierinformationen</h2><div id="tournamentFacts"></div></section><section id="rankingSection" class="lobby-tournaments" hidden><h2>Rangliste</h2><div id="ranking"></div></section><section id="roundsSection"><h2>Runden und Paarungen</h2><div id="roundActions" class="actions"></div><div id="roundContent"></div></section><section id="participantsSection"><h2>Teilnehmer</h2><ol id="participants" role="list"></ol><p id="emptyParticipants">Noch keine Teilnehmer.</p></section><section id="descriptionSection"><h2>Ausschreibung</h2><div id="description" class="description"></div></section></div>
 <form id="config" hidden><section><label for="title">Titel</label><input class="tournament-input" id="title" maxlength="160"><div class="config-grid"><div><label for="mode">Modus</label><select class="tournament-select" id="mode"><option value="">Bitte wählen</option><option value="round-robin">Rundenturnier</option><option value="swiss">Schweizer System</option></select></div>
 <div><label for="scoring">Punktewertung</label><select id="scoring" class="tournament-select"><option value="classic">Klassisch · 1 / ½ / 0</option><option value="three-point">Dreipunktewertung · 3 / 1 / 0</option></select></div>
 <div id="cyclesField"><label for="cycles">Durchgänge</label><select id="cycles" class="tournament-select"><option value="1">Einfachrunde · jeder gegen jeden</option><option value="2">Doppelrunde · Hin- und Rückspiel</option></select></div>
 <div id="roundsField" hidden><label for="rounds">Anzahl der Runden</label><input id="rounds" class="tournament-input" type="number" min="1" max="199" step="1"></div>
 <div><label for="startsOn">Turnierbeginn</label><input id="startsOn" class="tournament-input" type="date"></div>
 <div><label for="endsOn">Spätester Spieltermin</label><input id="endsOn" class="tournament-input" type="date"></div>
-<div><label for="timeControl">Bedenkzeit</label><input id="timeControl" class="tournament-input" maxlength="300" placeholder="Bedenkzeit eurer Vereinsmeisterschaft"></div></div><p id="roundsHint" class="participant-hint" hidden>Die Rundenzahl vor Turnierbeginn festlegen. Sie darf im Entwurf noch offen bleiben.</p><fieldset class="participant-fields"><legend>Teilnehmer · ohne Gamer-Konto</legend><p id="namesHint" class="participant-hint">Ein Name pro Feld. Leere Felder werden nicht gespeichert. Bis zu 200 Teilnehmer.</p><div id="names" class="participant-grid"></div><button id="addNames" class="button-flat" type="button">＋ 3 weitere Namensfelder</button></fieldset><label for="descriptionInput">Ausschreibung / Beschreibung</label><div class="editor-toolbar" role="group" aria-label="Textformatierung"><button class="button-flat" type="button" id="textBold" aria-label="Fett" title="Fett (Strg/Befehl+B)"><b>F</b></button><button class="button-flat" type="button" id="textItalic" aria-label="Kursiv" title="Kursiv (Strg/Befehl+I)"><i>K</i></button><label for="textSize">Schriftgröße</label><select id="textSize" class="tournament-select"><option value="2">Klein · 14</option><option value="4" selected>Normal · 18</option><option value="5">Groß · 24</option><option value="6">Überschrift · 30</option></select><label for="tablePreset">Tabelle</label><select id="tablePreset" class="tournament-select"><option value="">Vorlage wählen</option><option value="2">2 Spalten</option><option value="3">3 Spalten</option><option value="4">4 Spalten</option><option value="schedule">Rundentermine</option></select><button class="button-flat" type="button" id="tableRow">Zeile hinzufügen</button><button class="button-flat" type="button" id="tableDelete">Tabelle entfernen</button><button class="button-flat" type="button" id="textClear">Formatierung entfernen</button></div><div class="tournament-textarea" id="descriptionInput" contenteditable="true" role="textbox" aria-label="Ausschreibung / Beschreibung" aria-multiline="true" aria-describedby="editorHint"></div><small id="editorHint">Text markieren und formatieren. Eingefügte Texte übernehmen die Gamer-Schrift; maximal 20.000 Zeichen.</small><p class="notice">Privater Entwurf: Du kannst auch unvollständige Angaben zwischenspeichern. Dieses Turnier ist noch nicht veröffentlicht.</p><div class="actions"><button type="submit">Entwurf speichern</button><button id="cancel" type="button">Zur Turnierseite</button></div></section></form>
+<div><label for="timeControl">Bedenkzeit</label><input id="timeControl" class="tournament-input" maxlength="300" placeholder="Bedenkzeit eurer Vereinsmeisterschaft"></div></div><p id="roundsHint" class="participant-hint" hidden>Die Rundenzahl vor Turnierbeginn festlegen. Sie darf im Entwurf noch offen bleiben.</p><fieldset class="participant-fields"><legend>Teilnehmer · ohne Gamer-Konto</legend><p id="namesHint" class="participant-hint">Ein Name pro Feld. Leere Felder werden nicht gespeichert. Bis zu 200 Teilnehmer.</p><div id="names" class="participant-grid"></div><button id="addNames" class="button-flat" type="button">＋ 3 weitere Namensfelder</button></fieldset><label for="descriptionInput">Ausschreibung / Beschreibung</label><div class="editor-toolbar" role="group" aria-label="Textformatierung"><button class="button-flat" type="button" id="textBold" aria-label="Fett" title="Fett (Strg/Befehl+B)"><b>F</b></button><button class="button-flat" type="button" id="textItalic" aria-label="Kursiv" title="Kursiv (Strg/Befehl+I)"><i>K</i></button><label for="textSize">Schriftgröße</label><select id="textSize" class="tournament-select"><option value="2">Klein · 14</option><option value="4" selected>Normal · 18</option><option value="5">Groß · 24</option><option value="6">Überschrift · 30</option></select><label for="tablePreset">Tabelle</label><select id="tablePreset" class="tournament-select"><option value="">Vorlage wählen</option><option value="2">2 Spalten</option><option value="3">3 Spalten</option><option value="4">4 Spalten</option><option value="schedule">Rundentermine</option></select><button class="button-flat" type="button" id="tableRow">Zeile hinzufügen</button><button class="button-flat" type="button" id="tableDelete">Tabelle entfernen</button><button class="button-flat" type="button" id="textClear">Formatierung entfernen</button></div><div class="tournament-textarea" id="descriptionInput" contenteditable="true" role="textbox" aria-label="Ausschreibung / Beschreibung" aria-multiline="true" aria-describedby="editorHint"></div><small id="editorHint">Text markieren und formatieren. Eingefügte Texte übernehmen die Gamer-Schrift; maximal 20.000 Zeichen.</small><p class="notice">Entwurf speichern sichert deine Bearbeitung. Die Turnieransicht ändert sich erst mit „In Turnieransicht übernehmen“. Der Bereich bleibt privat.</p><div class="actions"><button type="submit">Entwurf speichern</button><button id="cancel" type="button">Zur Turnierseite</button></div></section></form>
 <dialog id="deleteDialog"><form id="deleteForm"><h2>Turnier vollständig löschen</h2><p>Die gespeicherte Konfiguration, Ausschreibung und Teilnehmer werden unwiderruflich gelöscht. Die feste HSC08-Seite und ihre Navigation bleiben erhalten.</p><label for="password">Aktuelles Gamer-Passwort von Andili</label><input class="tournament-input" id="password" type="password" autocomplete="current-password" required maxlength="1024"><label for="confirmation">Zur Bestätigung TURNIER LÖSCHEN eingeben</label><input class="tournament-input" id="confirmation" required autocomplete="off"><p id="deleteError" role="alert"></p><button type="submit">Endgültig löschen</button><button id="deleteCancel" type="button">Abbrechen</button></form></dialog>
 </main><script>(${HSC08_CLIENT})();</script></body></html>`;
 }
@@ -102,7 +103,8 @@ const HSC08_CLIENT = String.raw`function client() {
   });
   $('descriptionInput').addEventListener('drop',e=>e.preventDefault());
   function render() {
-    const t = state.tournament;
+    const t = state.publishedTournament;
+    $('draftNotice').hidden=!$('config').hidden || JSON.stringify(state.tournament)===JSON.stringify(t); 
     parent.HammerschachHsc08.setTitle(t?.title || 'Vereinsmeisterschaft',!$('config').hidden);
     paintText($('description'),t?.descriptionRich || [{text:t?.description || 'Diese Turnierseite ist noch leer.',size:18,bold:false,italic:false}]);
     $('tournamentFacts').replaceChildren();
@@ -126,6 +128,41 @@ const HSC08_CLIENT = String.raw`function client() {
       field.append(number,name);li.append(field);$('participants').append(li);
     }
     $('emptyParticipants').hidden = !!t?.participants.length;
+    renderRounds(t);
+  }
+  function renderRounds(t){
+    const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;};
+    $('roundActions').replaceChildren();$('roundContent').replaceChildren();$('ranking').replaceChildren();
+    $('rankingSection').hidden=!t?.hasEverResults;
+    $('participantsSection').hidden=['running','completed'].includes(t?.phase);
+    function action(text,kind,confirmation){const button=node('button',text,'button-flat');button.type='button';button.onclick=async()=>{if(busy || (confirmation&&!confirm(confirmation)))return;await save('POST',{action:kind});};$('roundActions').append(button);}
+    if(!t?.schedule){$('roundContent').append(node('p',t?.mode==='swiss'?'Die Schweizer Auslosung steht noch nicht zur Verfügung.':'Noch keine Runden freigegeben.'));if(t?.mode==='round-robin')action('♟ Paarungsplan vorbereiten','prepare');return;}
+    if(t.phase==='prepared'){
+      $('roundContent').append(node('p','Paarungsentwurf · Startnummern nach Teilnehmerreihenfolge. Bitte Farben und Begegnungen prüfen.'));
+      action('Paarungsentwurf verwerfen','discard-plan','Paarungsentwurf verwerfen und Einstellungen wieder öffnen?');
+      action('✓ Paarungsplan freigeben','release','Den gesamten Paarungsplan freigeben und das Turnier starten?');
+    }
+    if(t.phase==='running')action('🏁 Turnier abschließen','complete','Turnier abschließen? Alle Partien müssen entschieden sein.');
+    if(t.phase==='completed'){ $('roundContent').append(node('p','Abgeschlossen'));action('✎ Für Korrektur öffnen','reopen'); }
+    const names=new Map(t.participants.map(p=>[p.id,p.name]));
+    const labels={'':'Offen','1-0':'1–0','1/2-1/2':'½–½','0-1':'0–1','+/-':'+ / − (kampflos)','-/+':'− / + (kampflos)','-/-':'− / − (beide nicht angetreten)'};
+    for(const round of [...t.schedule].reverse()){
+      const box=node('div',undefined,'rr-round');box.append(node('h3','Runde '+round.number));
+      if(round.bye)box.append(node('p',names.get(round.bye)+' · spielfrei (0 Punkte)'));
+      for(const game of round.games){
+        const row=node('div',undefined,'rr-game');row.append(node('span','Weiß: '+names.get(game.white)),node('span','Schwarz: '+names.get(game.black)));
+        const select=node('select',undefined,'tournament-select');select.setAttribute('aria-label','Ergebnis '+names.get(game.white)+' gegen '+names.get(game.black));
+        for(const [value,label] of Object.entries(labels)){const option=node('option',label);option.value=value;select.append(option);}select.value=game.result||'';select.disabled=t.phase!=='running';
+        select.onchange=async()=>{if(busy){select.value=game.result||'';return;}let reason='';if(game.result!==null){reason=prompt('Begründung der Ergebniskorrektur:');if(!reason?.trim()){select.value=game.result||'';return;}}const success=await save('POST',{action:'result',gameId:game.id,result:select.value||null,reason});if(!success)select.value=game.result||'';};row.append(select);box.append(row);
+      }$('roundContent').append(box);
+    }
+    if(t.hasEverResults){
+      const table=node('table',undefined,'rr-ranking');const head=node('tr');for(const title of ['Platz','Name','Gespielt','Punkte','SB'])head.append(node('th',title));table.append(head);
+      for(const r of t.ranking||[]){const row=node('tr');for(const value of [r.rank,names.get(r.id),r.played,r.points,r.sb])row.append(node('td',String(value)));table.append(row);}
+      const wrap=node('div',undefined,'ranking-wrap');wrap.append(table);$('ranking').append(node('p',t.phase==='completed'?'Endstand · Punkte → Sonneborn-Berger → direkter Vergleich':'Zwischenstand · Unterschiedlich viele gespielte Partien möglich.'),wrap);
+      if(t.phase==='completed'){const winners=(t.ranking||[]).filter(r=>r.rank===1).map(r=>names.get(r.id));$('ranking').append(node('p',(winners.length===1?'Vereinsmeister: ':'Gemeinsame Vereinsmeister: ')+winners.join(', ')));}
+    }
+    if(t.audit?.length){const details=node('details');details.append(node('summary','Änderungsprotokoll'));for(const entry of [...t.audit].reverse())details.append(node('p',new Date(entry.at).toLocaleString('de-DE')+' · '+entry.actor+' · '+(entry.action==='result'?'Ergebnis '+entry.gameId+': '+(labels[entry.old||'']||entry.old)+' → '+(labels[entry.value||'']||entry.value)+(entry.reason?' · '+entry.reason:''):({prepare:'Paarungsplan vorbereitet','discard-plan':'Paarungsentwurf verworfen',release:'Turnier gestartet',complete:'Turnier abgeschlossen',reopen:'Für Korrekturen geöffnet'}[entry.action]||entry.action))));$('roundContent').append(details);}
   }
   function numberFields() {
     const fields=[...$('names').children];
@@ -133,7 +170,7 @@ const HSC08_CLIENT = String.raw`function client() {
       field.querySelector('label').textContent='Teilnehmer '+(index+1);
       field.querySelector('button').setAttribute('aria-label','Teilnehmer '+(index+1)+' entfernen');
     });
-    $('addNames').disabled=busy || fields.length>=200;
+    $('addNames').disabled=busy || !!state.tournament?.schedule || fields.length>=200;
   }
   function addNameField(participant={}) {
     const field=document.createElement('div');field.className='participant-field';
@@ -173,13 +210,17 @@ const HSC08_CLIENT = String.raw`function client() {
     const config = mode === 'config';
     if(config && !$('config').hidden)return;
     if (!$('config').hidden && !config && !confirm('Konfiguration verlassen? Nicht gespeicherte Eingaben gehen verloren.')) return;
-    $('view').hidden=config;$('config').hidden=!config;
+    $('view').hidden=config;$('config').hidden=!config;render();
     if (config) {const t=state.tournament;$('title').value=t?.title||'';$('mode').value=t?.mode||'';paintText($('descriptionInput'),t?.descriptionRich || [{text:t?.description||'',size:18,bold:false,italic:false}]);savedSelection=null;loadNames(t?.participants||[]);
       for(const [key,fallback] of [['scoring','classic'],['cycles',1],['rounds',''],['startsOn',''],['endsOn',''],['timeControl','']])$(key).value=t?.[key]??fallback;
-      modeFields();}
+      modeFields();
+      const locked=!!t?.schedule;
+      for(const id of ['mode','scoring','cycles','rounds','timeControl','addNames'])$(id).disabled=locked;
+      $('names').querySelectorAll('button').forEach(button=>button.disabled=locked);
+    }
     parent.HammerschachHsc08.setTitle(null,config);
   };
-  window.hscDelete = () => {if(busy)return;$('deleteError').textContent='';$('deleteForm').reset();$('deleteDialog').showModal();};
+  window.hscDelete = () => {if(busy)return;if(state.tournament?.hasEverResults){message('Löschen gesperrt: Es wurden bereits Ergebnisse erfasst.');return;}$('deleteError').textContent='';$('deleteForm').reset();$('deleteDialog').showModal();};
   $('cancel').onclick=()=>window.hscMode('view');
   $('deleteCancel').onclick=()=>{$('deleteForm').reset();$('deleteDialog').close();};
   $('deleteDialog').addEventListener('close',()=>$('deleteForm').reset());
@@ -197,9 +238,10 @@ const HSC08_CLIENT = String.raw`function client() {
       return p;
     }).filter(p=>p.name);
     if(await save('POST',{tournament:{title:$('title').value,mode:$('mode').value,descriptionRich:readText(),scoring:$('scoring').value,cycles:Number($('cycles').value),rounds:$('rounds').value?Number($('rounds').value):null,startsOn:$('startsOn').value,endsOn:$('endsOn').value,timeControl:$('timeControl').value,participants}})){
-      $('config').hidden=true;$('view').hidden=false;parent.HammerschachHsc08.setTitle(state.tournament?.title || 'Vereinsmeisterschaft');message('Privater Entwurf gespeichert.');
+      $('config').hidden=true;$('view').hidden=false;render();message('Entwurf gespeichert. Die Turnieransicht ist unverändert.');
     }
   };
+  $('applyDraft').onclick=async()=>{if(busy)return;if(await save('POST',{action:'apply'}))message('Gespeicherter Entwurf in die Turnieransicht übernommen. Weiterhin nur für Andili sichtbar.');};
   $('deleteForm').onsubmit=async e=>{
     e.preventDefault();if(busy)return;
     const password=$('password').value;$('password').value='';

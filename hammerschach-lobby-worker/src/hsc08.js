@@ -1,3 +1,4 @@
+import { transition, standings } from './hsc08-round-robin.js';
 import { hsc08Page } from './hsc08-page.js';
 
 // Separate from online tournaments: one private championship draft, no user/player links.
@@ -84,7 +85,11 @@ export async function handleHsc08(request, env, deps) {
   await env.DB.prepare('INSERT OR IGNORE INTO hsc08_championship (id, revision) VALUES (1, 0)').run();
   const snapshot = async () => {
     const row = await env.DB.prepare('SELECT revision, document FROM hsc08_championship WHERE id=1').first();
-    return {revision:row.revision, tournament:row.document ? JSON.parse(row.document) : null};
+    const stored = row.document ? JSON.parse(row.document) : null;
+    // Legacy documents are both the saved draft and the previously visible view.
+    const {storageVersion, viewSnapshot, ...draft} = stored || {};
+    return {revision:row.revision, tournament:stored ? draft : null,
+      publishedTournament:stored ? (storageVersion===2 ? viewSnapshot : draft) : null};
   };
   if (request.method === 'GET') return respond({ok:true, ...await snapshot()});
   let body;
@@ -96,11 +101,33 @@ export async function handleHsc08(request, env, deps) {
   if (!body || !Number.isSafeInteger(body.revision) || body.revision < 0) return respond({ok:false, message:'Bitte die Seite neu laden.'}, 400);
   let document = null;
   if (request.method === 'DELETE') {
+    const current=await snapshot();
+    if(current.tournament?.hasEverResults || current.publishedTournament?.hasEverResults)return respond({ok:false,message:'Löschen gesperrt: Es wurden bereits Ergebnisse erfasst. Ein Zurücksetzen mit Sicherung ist in diesem Teststand noch nicht verfügbar.'},403);
     if (body.confirmation !== 'TURNIER LÖSCHEN') return respond({ok:false, message:'Die Löschbestätigung fehlt.'}, 400);
     const checked = await deps.reauthenticate(request, session.user, body.password);
     if (!checked.ok) return respond({ok:false, message:checked.message}, checked.status);
   } else {
-    try { document = JSON.stringify(validateHsc08Draft(body.tournament)); }
+    try {
+      const current=await snapshot();
+      if(current.revision!==body.revision)return respond({ok:false,message:'Inzwischen wurde der Stand geändert. Bitte neu laden.'},409);
+      if(['prepare','discard-plan','release','result','complete','reopen'].includes(body.action)){
+        if(JSON.stringify(current.tournament)!==JSON.stringify(current.publishedTournament))throw Error('Bitte zuerst den gespeicherten Entwurf in die Turnieransicht übernehmen.');
+        const updated=transition(current.publishedTournament,body,session.user.username);
+        document=JSON.stringify({...updated,storageVersion:2,viewSnapshot:updated});
+      } else if(body.action==='apply') {
+        if(!current.tournament)return respond({ok:false,message:'Bitte zuerst einen Entwurf speichern.'},400);
+        document=JSON.stringify({...current.tournament,storageVersion:2,viewSnapshot:current.tournament});
+      } else {
+        if(body.action)return respond({ok:false,message:'Unbekannte Aktion.'},400);
+        const incoming=validateHsc08Draft(body.tournament), existing=current.tournament;
+        if(existing?.schedule){
+          for(const key of ['mode','scoring','cycles','rounds','timeControl'])if(incoming[key]!==existing[key])throw Error('Turnierregeln sind nach Planerstellung gesperrt.');
+          if(JSON.stringify(incoming.participants.map(p=>p.id))!==JSON.stringify(existing.participants.map(p=>p.id)))throw Error('Das Teilnehmerfeld ist nach Planerstellung gesperrt.');
+          Object.assign(incoming,{schedule:existing.schedule,phase:existing.phase,audit:existing.audit,hasEverResults:existing.hasEverResults,ranking:existing.ranking});incoming.ranking=standings(incoming);
+        }
+        document=JSON.stringify({...incoming,storageVersion:2,viewSnapshot:current.publishedTournament});
+      }
+    }
     catch (error) { return respond({ok:false, message:error.message}, 400); }
   }
   const changed = await env.DB.prepare('UPDATE hsc08_championship SET document=?, revision=revision+1, updated_at=? WHERE id=1 AND revision=?')
