@@ -12,7 +12,7 @@ function fixture(t){
  return {db,setUser:u=>user=u,reauth:()=>reauth,async request(method='GET',body,path='/championship'){const r=await handleHsc08(new Request('https://test.invalid/api/hsc08'+path,{method,...(body?{body:JSON.stringify(body)}:{})}),env,deps);return {status:r.status,headers:r.headers,body:await r.json()};}};
 }
 test('all page/data routes reject visitors, ordinary members and other admins',async t=>{
- const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/access','/page','/championship']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
+ const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/access','/page','/championship','/championship/view','/page?view=reader']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
  assert.equal(f.db.prepare("SELECT count(*) n FROM sqlite_master WHERE name='hsc08_championship'").get().n,0);
 });
 test('authorized page contains logo but no tournament user input',async t=>{const f=fixture(t);const r=await f.request('GET',null,'/page');assert.equal(r.status,200);assert.match(r.body.html,/data:image\/jpeg;base64/);assert.ok(r.body.html.includes('<form id="config" hidden>'));assert.ok(!r.body.html.includes('<h1'));});
@@ -100,4 +100,13 @@ test('round-robin API locks rules and preserves permanent delete protection thro
  assert.equal((await f.request('DELETE',{revision:rev,password:'correct',confirmation:'TURNIER LÖSCHEN'})).status,403);
  assert.equal((await send({action:'complete'})).status,400);
  assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
+});
+
+test('reader route contains only adopted data and rejects writes',async t=>{
+ const f=fixture(t);
+ let r=await f.request('GET',null,'/page?view=reader');assert.equal(r.status,200);assert.equal(r.body.canManage,false);assert.ok(!r.body.html.includes('<form'));assert.ok(!r.body.html.includes('<select'));assert.ok(!r.body.html.includes('id="applyDraft"'));
+ await f.request('POST',{revision:0,tournament:draft});r=await f.request('GET',null,'/championship/view');assert.equal(r.body.tournament,null);
+ await f.request('POST',{revision:1,action:'apply'});await f.request('POST',{revision:2,tournament:{...draft,title:'Geheimer Entwurf'}});
+ r=await f.request('GET',null,'/championship/view');assert.equal(r.body.tournament.title,draft.title);assert.ok(!JSON.stringify(r.body).includes('Geheimer Entwurf'));assert.ok(!('publishedTournament' in r.body));
+ for(const method of ['POST','DELETE'])assert.equal((await f.request(method,{revision:3},'/championship/view')).status,405);
 });

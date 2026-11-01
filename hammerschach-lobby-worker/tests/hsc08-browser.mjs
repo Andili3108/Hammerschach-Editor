@@ -169,6 +169,14 @@ try {
   assert.equal(await frame.locator('.rr-ranking tr').count(),3);
   page.once('dialog',dialog=>dialog.accept());await frame.getByRole('button',{name:'🏁 Turnier abschließen',exact:true}).click();await frame.getByText('Abgeschlossen',{exact:true}).waitFor();
   assert.ok(await frame.locator('.rr-game select').first().isDisabled());
+  await page.getByRole('button',{name:'Leseansicht prüfen',exact:true}).filter({visible:true}).click();
+  await page.frameLocator('#hsc08View iframe').locator('.rr-game strong').first().waitFor();
+  assert.equal(await page.frameLocator('#hsc08View iframe').locator('select,input,form,button,details').count(),0);
+  assert.equal(await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).count(),0);
+  assert.equal(await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).count(),0);
+  await page.getByRole('button',{name:'Zur Verwaltung',exact:true}).filter({visible:true}).click();
+  await frame.getByText('Abgeschlossen',{exact:true}).waitFor();
+
   await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.getByText('Löschen gesperrt:',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);assert.equal(await page.locator('.header-brand img').getAttribute('src'),originalLogo);assert.equal(await page.locator('.site-footnote').count(),1);
   await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);
