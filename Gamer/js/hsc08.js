@@ -1,6 +1,7 @@
 'use strict';
 // Public loader only. Page markup, logo and tournament data come from authenticated routes.
 (() => {
+  let readOnly=false;
   let identity='', generation=0, frame=null, active=false, links=[], toolbars=[], restored=[], footerMarker=null, sizeObserver=null, statusText='Vereinsmeisterschaft';
   const auth=()=>typeof onlineAuthToken!=='undefined' ? onlineAuthToken : '';
   const user=()=>typeof onlineAuthUser!=='undefined' ? onlineAuthUser : null;
@@ -33,6 +34,7 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
     root.style.colorScheme=document.documentElement.classList.contains('dark-mode')?'dark':'light';
   }
   async function api(path,method='GET',body) {
+    if(readOnly && method!=='GET')throw new Error('In der Leseansicht sind keine Änderungen möglich.');
     const token=auth();
     if(!eligible())throw new Error('Bitte als Andili anmelden.');
     const response=await fetch(ONLINE_WORKER_URL+'/api/hsc08'+path,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});
@@ -57,7 +59,7 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
     for(const id of ['status','mobileNavTestStatus']){const el=document.getElementById(id);if(el)el.textContent=text;}
   }
   function toolbar(drawerMode=false){
-    const nav=document.createElement('nav');nav.className='hsc08-toolbar'+(drawerMode?' hsc08-drawer-nav':'');nav.setAttribute('aria-label','HSC08-Verwaltung');
+    const nav=document.createElement('nav');nav.className='hsc08-toolbar'+(drawerMode?' hsc08-drawer-nav':'');nav.setAttribute('aria-label',readOnly?'HSC08-Leseansicht':'HSC08-Verwaltung');
     const icons={'Zur Lobby':'↩️','Zur Startseite':'↩️','Vereinsturniere ▾':'🏆','Turnier konfigurieren':'🛠️','Turnier vollständig löschen':'🗑️','Vereinsmeisterschaft':'♟️','Vereinspokal':'🏆','Blitzrunden':'⚡'};
     const button=(label,action)=>{
       const b=document.createElement('button');b.type='button';b.className=drawerMode?'mobile-nav-test-item':'button-flat name-action-btn';
@@ -72,19 +74,20 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
     const popup=document.createElement('div');popup.className=drawerMode?'mobile-nav-accordion-panel':'header-menu-popup';popup.setAttribute('role','menu');popup.hidden=true;
     for(const label of ['Vereinsmeisterschaft','Vereinspokal','Blitzrunden']){const b=button(label,()=>{popup.hidden=true;toggle.setAttribute('aria-expanded','false');frame?.contentWindow.hscMode?.('view');});b.className=drawerMode?'mobile-nav-test-item mobile-nav-accordion-item':'header-menu-item';b.setAttribute('role','menuitem');if(label==='Vereinsmeisterschaft'){b.classList.add('active');b.setAttribute('aria-current','page');}else{b.disabled=true;b.title='Noch nicht verfügbar';}popup.append(b);}
     menu.append(toggle,popup);nav.append(menu);
-    nav.append(button('Turnier konfigurieren',()=>frame?.contentWindow.hscMode?.('config')));
-    nav.append(button('Turnier vollständig löschen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscDelete?.();}));
+    if(!readOnly)nav.append(button('Turnier konfigurieren',()=>frame?.contentWindow.hscMode?.('config')));
+    if(!readOnly)nav.append(button('Turnier vollständig löschen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscDelete?.();}));
+    nav.append(button(readOnly?'Zur Verwaltung':'Leseansicht prüfen',()=>open(!readOnly)));
     nav.addEventListener('click',e=>e.stopPropagation());
     nav.addEventListener('keydown',e=>{if(e.key==='Escape'){popup.hidden=true;toggle.setAttribute('aria-expanded','false');toggle.focus();}});
     return nav;
   }
-  async function open(){
+  async function open(preview=false){
     const current=generation;
     if(!eligible())return;
     let page;
-    try{page=await api('/page');}catch(e){alert(e.message);return;}
+    try{page=await api(preview===true?'/page?view=reader':'/page');}catch(e){alert(e.message);return;}
     if(current!==generation)return;
-    close();
+    close();readOnly=page.canManage!==true;
     if(typeof closeEmbeddedTools==='function')closeEmbeddedTools();
     const shell=document.querySelector('.app > .shell');
     const footer=document.querySelector('.site-footnote');
