@@ -1,3 +1,4 @@
+import {hsc08ReaderPage, readerTournament} from './hsc08-reader.js';
 import { transition, standings } from './hsc08-round-robin.js';
 import { hsc08Page } from './hsc08-page.js';
 
@@ -77,9 +78,10 @@ export async function handleHsc08(request, env, deps) {
   const session = await deps.session(request);
   if (!isHsc08Admin(session?.user, deps.isAdmin)) return respond({ok:false, message:'Nicht verfügbar.'}, 404);
   if (path === '/api/hsc08/access' && request.method === 'GET') return respond({ok:true});
-  if (path === '/api/hsc08/page' && request.method === 'GET') return respond({ok:true, html:hsc08Page()});
-  if (path !== '/api/hsc08/championship') return respond({ok:false, message:'Nicht verfügbar.'}, 404);
+  if (path === '/api/hsc08/page' && request.method === 'GET') {const reader=new URL(request.url).searchParams.get('view')==='reader';return respond({ok:true,canManage:!reader,html:reader?hsc08ReaderPage():hsc08Page()});}
+  if (path !== '/api/hsc08/championship' && path !== '/api/hsc08/championship/view') return respond({ok:false, message:'Nicht verfügbar.'}, 404);
   if (!['GET','POST','DELETE'].includes(request.method)) return respond({ok:false, message:'Methode nicht erlaubt.'}, 405);
+  if(path.endsWith('/view') && request.method!=='GET')return respond({ok:false,message:'Nur Lesezugriff erlaubt.'},405);
   // Keep the row after clearing so revision numbers never reset (stale tabs cannot restore deleted data).
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS hsc08_championship (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL DEFAULT 0, document TEXT, updated_at TEXT)`).run();
   await env.DB.prepare('INSERT OR IGNORE INTO hsc08_championship (id, revision) VALUES (1, 0)').run();
@@ -91,6 +93,7 @@ export async function handleHsc08(request, env, deps) {
     return {revision:row.revision, tournament:stored ? draft : null,
       publishedTournament:stored ? (storageVersion===2 ? viewSnapshot : draft) : null};
   };
+  if(path.endsWith('/view')){const state=await snapshot();return respond({ok:true,canManage:false,tournament:readerTournament(state.publishedTournament)});}
   if (request.method === 'GET') return respond({ok:true, ...await snapshot()});
   let body;
   try {
