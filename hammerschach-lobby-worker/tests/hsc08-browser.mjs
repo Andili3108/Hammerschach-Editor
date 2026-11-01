@@ -91,11 +91,11 @@ try {
   await setMode(originalMode);
   await page.evaluate(()=>scrollTo(0,0));
   if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-inputs.png',fullPage:true});
-  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
+  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});await frame.locator('#draftNotice').waitFor({state:'visible'});assert.ok(await frame.getByText('Entwurf gespeichert. Die Turnieransicht ist unverändert.',{exact:true}).isVisible());await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:true}).click();await frame.locator('#draftNotice').waitFor({state:'hidden'});
   assert.equal(await frame.locator('#participants li').count(),12);
   assert.equal(await frame.locator('#participants').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
   assert.equal(await frame.locator('#tournamentFacts').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),expectedColumns);
-  assert.deepEqual(await frame.locator('#view > section > h2').allTextContents(),['Turnierinformationen','Runden und Paarungen','Teilnehmer','Ausschreibung']);
+  assert.deepEqual(await frame.locator('#view > section:not([hidden]) > h2').allTextContents(),['Turnierinformationen','Runden und Paarungen','Teilnehmer','Ausschreibung']);
   assert.ok(await frame.locator('#tournamentFacts .tournament-input').first().evaluate(el=>el.getBoundingClientRect().height<40),'compact informational fields');
   const rich=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).descriptionRich;
   assert.equal(rich.map(r=>r.text).join(''),'Formatierter Titel');assert.ok(rich.every(r=>r.bold && r.italic && r.size===30));
@@ -130,7 +130,7 @@ try {
   await frame.getByRole('button',{name:'Teilnehmer 3 entfernen',exact:true}).click();
   await frame.locator('#addNames').click();
   await frame.locator('#names input[data-participant-id]').nth(11).fill('Neuer Teilnehmer');
-  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
+  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});await frame.locator('#draftNotice').waitFor({state:'visible'});await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:true}).click();await frame.locator('#draftNotice').waitFor({state:'hidden'});
   assert.equal(await frame.locator('#description table').count(),3);assert.equal(await frame.locator('#description td').first().textContent(),'1');
   const after=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document).participants;
   assert.equal(after.length,12,'blank fields are omitted');assert.equal(after[0].name,'Anna Korrigiert');assert.equal(after[0].id,before[0].id,'rename preserves identity');
@@ -139,7 +139,7 @@ try {
   assert.equal(await frame.locator('#participants input').count(),0,'output fields are not editable');
   for(const mode of ['light','soft','dark']){
     await setMode(mode);
-    const viewColors=await frame.locator('#view > section').evaluateAll(elements=>elements.map(el=>getComputedStyle(el).backgroundImage));
+    const viewColors=await frame.locator('#view > section:not([hidden])').evaluateAll(elements=>elements.map(el=>getComputedStyle(el).backgroundImage));
     assert.equal(new Set(viewColors).size,4,'distinct section colors '+mode);
     assert.equal(await frame.locator('#config > section').evaluate(el=>getComputedStyle(el).backgroundImage),'none','configuration stays neutral');
     assert.deepEqual(await frame.locator('.participant-output').first().evaluate(fieldStyle),await page.locator('#tournamentNameInput').evaluate(fieldStyle),label+' output design '+mode);
@@ -156,9 +156,20 @@ try {
   await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.locator('#password').fill('wrong');await frame.locator('#confirmation').fill('TURNIER LÖSCHEN');await frame.getByRole('button',{name:'Endgültig löschen'}).click();await frame.locator('#deleteError').getByText('Kennwort falsch').waitFor();assert.equal(await frame.locator('#participants li').count(),12);
   await frame.locator('#password').fill('correct');await frame.getByRole('button',{name:'Endgültig löschen'}).click();await frame.getByText('Turnier gelöscht.',{exact:false}).waitFor();assert.equal(await frame.locator('#participants li').count(),0);
   await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
-  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});
+  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});await frame.locator('#draftNotice').waitFor({state:'visible'});await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:true}).click();await frame.locator('#draftNotice').waitFor({state:'hidden'});
   const incomplete=JSON.parse(db.prepare('SELECT document FROM hsc08_championship WHERE id=1').get().document);
   assert.equal(incomplete.title,'');assert.equal(incomplete.mode,'');assert.equal(incomplete.participants.length,0);
+  await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
+  await frame.locator('#title').fill('Rundenturnier Test');await frame.locator('#mode').selectOption('round-robin');await frame.locator('#startsOn').fill('2026-11-01');await frame.locator('#endsOn').fill('2027-05-31');await frame.locator('#timeControl').fill('90 min');
+  await frame.locator('#names input[data-participant-id]').nth(0).fill('Alice');await frame.locator('#names input[data-participant-id]').nth(1).fill('Bob');
+  await frame.getByRole('button',{name:'Entwurf speichern'}).click();await frame.locator('#config').waitFor({state:'hidden'});await frame.locator('#applyDraft').click();await frame.locator('#draftNotice').waitFor({state:'hidden'});
+  await frame.getByRole('button',{name:'♟ Paarungsplan vorbereiten',exact:true}).click();await frame.getByText('Paarungsentwurf ·',{exact:false}).waitFor();
+  page.once('dialog',dialog=>dialog.accept());await frame.getByRole('button',{name:'✓ Paarungsplan freigeben',exact:true}).click();await frame.locator('#participantsSection').waitFor({state:'hidden'});
+  await frame.locator('.rr-game select').first().selectOption('1-0');await frame.locator('#rankingSection').waitFor({state:'visible'});
+  assert.equal(await frame.locator('.rr-ranking tr').count(),3);
+  page.once('dialog',dialog=>dialog.accept());await frame.getByRole('button',{name:'🏁 Turnier abschließen',exact:true}).click();await frame.getByText('Abgeschlossen',{exact:true}).waitFor();
+  assert.ok(await frame.locator('.rr-game select').first().isDisabled());
+  await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.getByText('Löschen gesperrt:',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);assert.equal(await page.locator('.header-brand img').getAttribute('src'),originalLogo);assert.equal(await page.locator('.site-footnote').count(),1);
   await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);
   assert.deepEqual(errors,[],label+' JS errors');console.log(label+': save, delete, overflow, navigation, logout passed');await context.close();db.close();

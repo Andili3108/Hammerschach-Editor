@@ -68,3 +68,36 @@ test('tables survive storage as text cells and invalid shapes are rejected',asyn
  const r=await f.request('POST',{revision:0,tournament:{...draft,descriptionRich:rich}});assert.equal(r.status,200);assert.deepEqual((await f.request()).body.tournament.descriptionRich,rich);
  for(const table of [[['a'],['b','c']],[],[Array(13).fill('a')],[[42]]])assert.throws(()=>validateHsc08Draft({...draft,descriptionRich:[{table}]}));
 });
+
+test('draft and visible snapshot remain independent across saves, apply and conflicts',async t=>{
+ const f=fixture(t);
+ assert.equal((await f.request('POST',{revision:0,action:'apply'})).status,400);
+ let r=await f.request('POST',{revision:0,tournament:draft});assert.equal(r.body.publishedTournament,null);
+ r=await f.request('POST',{revision:1,action:'apply'});assert.equal(r.body.publishedTournament.title,draft.title);
+ r=await f.request('POST',{revision:2,tournament:{...draft,title:'Neuer Entwurf',viewSnapshot:{title:'injected'}}});assert.equal(r.body.tournament.title,'Neuer Entwurf');assert.equal(r.body.publishedTournament.title,draft.title);
+ r=await f.request();assert.equal(r.body.tournament.title,'Neuer Entwurf');assert.equal(r.body.publishedTournament.title,draft.title);
+ assert.equal((await f.request('POST',{revision:2,action:'apply'})).status,409);
+ r=await f.request('POST',{revision:3,action:'apply'});assert.equal(r.body.publishedTournament.title,'Neuer Entwurf');
+ r=await f.request('DELETE',{revision:4,password:'correct',confirmation:'TURNIER LÖSCHEN'});assert.equal(r.body.tournament,null);assert.equal(r.body.publishedTournament,null);
+ assert.equal((await f.request('POST',{revision:4,action:'apply'})).status,409);
+});
+test('legacy saved tournament remains visible when its draft is edited',async t=>{
+ const f=fixture(t);await f.request();f.db.prepare('UPDATE hsc08_championship SET document=? WHERE id=1').run(JSON.stringify(draft));
+ let r=await f.request();assert.deepEqual(r.body.tournament,draft);assert.deepEqual(r.body.publishedTournament,draft);
+ r=await f.request('POST',{revision:0,tournament:{...draft,title:'Neue Fassung'}});assert.equal(r.body.publishedTournament.title,draft.title);assert.equal(r.body.tournament.title,'Neue Fassung');
+});
+
+test('round-robin API locks rules and preserves permanent delete protection through configuration',async t=>{
+ const f=fixture(t);let rev=0;
+ const send=async body=>{const r=await f.request('POST',{revision:rev,...body});if(r.status===200)rev=r.body.revision;return r;};
+ let r=await send({tournament:{...draft,mode:'round-robin',startsOn:'2026-11-01',endsOn:'2027-05-31',timeControl:'90 min',participants:[...draft.participants,{id:'player-0002',name:'B'}]}});await send({action:'apply'});await send({action:'prepare'});
+ r=await send({action:'release'});const gameId=r.body.tournament.schedule[0].games[0].id;
+ assert.equal((await send({tournament:{...r.body.tournament,scoring:'three-point'}})).status,400);
+ r=await send({action:'result',gameId,result:'1-0'});assert.equal(r.status,200);
+ assert.equal((await f.request('DELETE',{revision:rev,password:'correct',confirmation:'TURNIER LÖSCHEN'})).status,403);
+ r=await send({action:'result',gameId,result:null,reason:'Fehler'});assert.ok(r.body.tournament.hasEverResults);
+ r=await send({tournament:{...r.body.tournament,title:'Korrigiert',hasEverResults:false}});await send({action:'apply'});
+ assert.equal((await f.request('DELETE',{revision:rev,password:'correct',confirmation:'TURNIER LÖSCHEN'})).status,403);
+ assert.equal((await send({action:'complete'})).status,400);
+ assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
+});
