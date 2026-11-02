@@ -2,7 +2,7 @@
 
 ## Einspielen
 
-Die drei geänderten/neuen Worker-Module gemeinsam in den vorhandenen Worker übernehmen und diesen neu veröffentlichen. Frontend-Dateien wurden in diesem Schritt nicht geändert. Der lokale Projektordner enthält die Änderungen bereits.
+Die Dateien des jeweiligen Änderungs-ZIPs mit gleicher Ordnerstruktur übernehmen. Für die Sicherungsfunktion sowohl die enthaltenen Frontend-Dateien einspielen als auch den aktualisierten Worker veröffentlichen. Der lokale Projektordner enthält die Änderungen bereits.
 
 ## Testablauf für Andili
 
@@ -20,11 +20,14 @@ Die drei geänderten/neuen Worker-Module gemeinsam in den vorhandenen Worker üb
 
 - Nur Andili hat Zugriff; keine öffentliche Freigabe oder Spielleiterdelegation hinzugefügt.
 - Sobald jemals ein Ergebnis erfasst wurde, ist vollständiges Löschen gesperrt – auch nach Entfernen des Ergebnisses, Abschluss, Wiederöffnung oder Speichern einer Konfiguration. Die Sperre wird serverseitig durchgesetzt.
-- Der gesonderte Rücksetz-, Sicherungs- und Wiederherstellungsablauf ist noch nicht implementiert. Ein Testturnier mit Ergebnissen kann daher über die Oberfläche derzeit nicht vollständig entfernt werden.
+- Im Menü „Sichern / Wiederherstellen“ steht jetzt eine Sicherungs-ZIP bereit: `HSC08-Sicherung.json` enthält den gespeicherten Entwurf, den übernommenen Ansichtsstand, Teilnehmer, Ergebnisse und Protokoll. `HSC08-Turnier.html` ist eine eigenständige, statische Seite im Gamer-Stil mit eingebettetem Logo, ausschließlich mit dem übernommenen Ansichtsstand. Sie kann im Browser geöffnet oder auf anderen Seiten verwendet werden. Noch ungespeicherte Formulareingaben sind in keiner der Dateien enthalten.
+- Zum Zurücksetzen zuerst die ZIP herunterladen und sicher aufbewahren. Danach das Speichern bestätigen, den aktuellen Turniernamen und das Gamer-Passwort eingeben und die zusätzliche Rückfrage bestätigen. Hat sich seit der Sicherung etwas geändert, wird das Zurücksetzen abgewiesen. Nur die Turnierdaten werden entfernt; Seite und Navigation bleiben.
+- Wiederherstellen: ZIP entpacken, auf einer leeren Turnierseite die JSON-Datei auswählen, Gamer-Passwort sowie WIEDERHERSTELLEN eingeben und bestätigen. Vorhandene Turniere werden nicht überschrieben. Die HTML-Datei ist nicht für einen Import bestimmt. Der Zugriff bleibt ausschließlich für Andili freigeschaltet.
+- Zum Testen: Rundenturnier sichern, geschützt zurücksetzen, JSON wiederherstellen und Ergebnisse prüfen. Danach bei Bedarf erneut sichern und zurücksetzen, um einen Schweizer Entwurf anzulegen. Dies ist keine Archivfunktion.
 - Rückzüge einschließlich 50-Prozent-Regel und manuelle Änderungen einzelner Paarungen nach Planerstellung stehen noch aus. Nicht durch Löschen eines Teilnehmers umgehen.
 - Das Schweizer System ist weiterhin nur konfigurierbar, noch nicht auslosbar.
 - Noch nicht übernommene Konfigurationsentwürfe müssen vor einer Turnieraktion übernommen werden. Ergebnisse werden nicht in einen abweichenden Konfigurationsentwurf hineingemischt.
 
 ## Prüfung
 
-16 automatisierte Tests für API, Speicherung, Zugriff, Konkurrenz, Migration, Paarungen, Farbanzahl, Punkte/Feinwertung und Lebenszyklus bestanden. Zusätzlich wurde die Syntax des eingebetteten Browserskripts geprüft. Browserprüfungen wurden für den neuen Ablauf erweitert, konnten diesmal aber nicht ausgeführt werden: Die automatische Freigabeprüfung für die Installation der Testwerkzeuge scheiterte am gemeldeten Nutzungslimit. Es wird keine erfolgreiche Desktop-/iPad-/iPhone-Browserprüfung für diesen Stand behauptet.
+22 automatisierte Tests für API, Speicherung, Zugriff, Konkurrenz, Migration, Paarungen, Farbanzahl, Punkte/Feinwertung und Lebenszyklus bestanden. Zusätzlich wurde die Syntax des eingebetteten Browserskripts geprüft. Browserprüfungen wurden für den neuen Ablauf erweitert, konnten diesmal aber nicht ausgeführt werden: Die automatische Freigabeprüfung für die Installation der Testwerkzeuge scheiterte am gemeldeten Nutzungslimit. Es wird keine erfolgreiche Desktop-/iPad-/iPhone-Browserprüfung für diesen Stand behauptet.
