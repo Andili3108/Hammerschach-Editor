@@ -25,7 +25,7 @@ Die Dateien des jeweiligen Änderungs-ZIPs mit gleicher Ordnerstruktur übernehm
 - Wiederherstellen: ZIP entpacken, auf einer leeren Turnierseite die JSON-Datei auswählen, Gamer-Passwort sowie WIEDERHERSTELLEN eingeben und bestätigen. Vorhandene Turniere werden nicht überschrieben. Die HTML-Datei ist nicht für einen Import bestimmt. Der Zugriff bleibt ausschließlich für Andili freigeschaltet.
 - Zum Testen: Rundenturnier sichern, geschützt zurücksetzen, JSON wiederherstellen und Ergebnisse prüfen. Danach bei Bedarf erneut sichern und zurücksetzen, um einen Schweizer Entwurf anzulegen. Dies ist keine Archivfunktion.
 - Rückzüge einschließlich 50-Prozent-Regel und manuelle Änderungen einzelner Paarungen nach Planerstellung stehen noch aus. Nicht durch Löschen eines Teilnehmers umgehen.
-- Das Schweizer System ist weiterhin nur konfigurierbar, noch nicht auslosbar.
+- Schweizer Testbetrieb: Unter „Runden und Paarungen“ Beginn und letzten Spieltermin eintragen, bei gleich bewerteten Spielern die Startnummern vergeben und „Runde 1 vorbereiten“ wählen. Für Teilnehmer ohne DWZ und Schätzung legt der Spielleiter die Einordnung fest. Ein Entwurf lässt sich verwerfen oder freigeben. Erst die Freigabe macht die Paarungen in der Leseansicht sichtbar. Erst nach Entscheidung aller Partien lässt sich die folgende Runde vorbereiten. Die Rangliste zeigt vorläufige Turnierpunkte. Buchholz, Cut 1 und der endgültige Schweizer Turnierabschluss stehen noch aus.
 - Noch nicht übernommene Konfigurationsentwürfe müssen vor einer Turnieraktion übernommen werden. Ergebnisse werden nicht in einen abweichenden Konfigurationsentwurf hineingemischt.
 
 ## Prüfung
