@@ -60,7 +60,7 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
   }
   function toolbar(drawerMode=false){
     const nav=document.createElement('nav');nav.className='hsc08-toolbar'+(drawerMode?' hsc08-drawer-nav':'');nav.setAttribute('aria-label',readOnly?'HSC08-Leseansicht':'HSC08-Verwaltung');
-    const icons={'Zur Lobby':'↩️','Zur Startseite':'↩️','Vereinsturniere ▾':'🏆','Turnier konfigurieren':'🛠️','Turnier vollständig löschen':'🗑️','Vereinsmeisterschaft':'♟️','Vereinspokal':'🏆','Blitzrunden':'⚡'};
+    const icons={'Sichern / Wiederherstellen':'💾','Leseansicht prüfen':'👁️','Zur Verwaltung':'🛠️','Zur Lobby':'↩️','Zur Startseite':'↩️','Vereinsturniere ▾':'🏆','Turnier konfigurieren':'🛠️','Turnier vollständig löschen':'🗑️','Vereinsmeisterschaft':'♟️','Vereinspokal':'🏆','Blitzrunden':'⚡'};
     const button=(label,action)=>{
       const b=document.createElement('button');b.type='button';b.className=drawerMode?'mobile-nav-test-item':'button-flat name-action-btn';
       const icon=document.createElement('span');icon.textContent=icons[label]||'♟️';icon.setAttribute('aria-hidden','true');
@@ -76,6 +76,7 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
     menu.append(toggle,popup);nav.append(menu);
     if(!readOnly)nav.append(button('Turnier konfigurieren',()=>frame?.contentWindow.hscMode?.('config')));
     if(!readOnly)nav.append(button('Turnier vollständig löschen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscDelete?.();}));
+    if(!readOnly)nav.append(button('Sichern / Wiederherstellen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscBackup?.();}));
     nav.append(button(readOnly?'Zur Verwaltung':'Leseansicht prüfen',()=>open(!readOnly)));
     nav.addEventListener('click',e=>e.stopPropagation());
     nav.addEventListener('keydown',e=>{if(e.key==='Escape'){popup.hidden=true;toggle.setAttribute('aria-expanded','false');toggle.focus();}});
