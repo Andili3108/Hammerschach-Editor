@@ -12,7 +12,7 @@ function fixture(t){
  return {db,setUser:u=>user=u,reauth:()=>reauth,async request(method='GET',body,path='/championship'){const r=await handleHsc08(new Request('https://test.invalid/api/hsc08'+path,{method,...(body?{body:JSON.stringify(body)}:{})}),env,deps);return {status:r.status,headers:r.headers,body:await r.json()};}};
 }
 test('all page/data routes reject visitors, ordinary members and other admins',async t=>{
- const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/access','/page','/championship','/championship/view','/page?view=reader']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
+ const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/access','/page','/championship','/championship/view','/page?view=reader','/championship/backup']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
  assert.equal(f.db.prepare("SELECT count(*) n FROM sqlite_master WHERE name='hsc08_championship'").get().n,0);
 });
 test('authorized page contains logo but no tournament user input',async t=>{const f=fixture(t);const r=await f.request('GET',null,'/page');assert.equal(r.status,200);assert.match(r.body.html,/data:image\/jpeg;base64/);assert.ok(r.body.html.includes('<form id="config" hidden>'));assert.ok(!r.body.html.includes('<h1'));});
@@ -109,4 +109,22 @@ test('reader route contains only adopted data and rejects writes',async t=>{
  await f.request('POST',{revision:1,action:'apply'});await f.request('POST',{revision:2,tournament:{...draft,title:'Geheimer Entwurf'}});
  r=await f.request('GET',null,'/championship/view');assert.equal(r.body.tournament.title,draft.title);assert.ok(!JSON.stringify(r.body).includes('Geheimer Entwurf'));assert.ok(!('publishedTournament' in r.body));
  for(const method of ['POST','DELETE'])assert.equal((await f.request(method,{revision:3},'/championship/view')).status,405);
+});
+
+test('backup reset restore retains game state, enforces reauth and rejects stale backup',async t=>{
+ const f=fixture(t);let rev=0;const send=async body=>{const r=await f.request('POST',{revision:rev,...body});if(r.status===200)rev=r.body.revision;return r;};
+ await send({tournament:{...draft,mode:'round-robin',startsOn:'2026-11-01',endsOn:'2027-05-31',timeControl:'90 min',participants:[...draft.participants,{id:'player-0002',name:'B'}]}});await send({action:'apply'});await send({action:'prepare'});let r=await send({action:'release'});const gameId=r.body.tournament.schedule[0].games[0].id;
+ await send({action:'result',gameId,result:'1-0'});let exported=(await f.request('GET',null,'/championship/backup')).body;
+ assert.equal(exported.backup.version,1);assert.ok(exported.html.includes('1–0'));assert.ok(!exported.html.includes('<script'));assert.ok(!exported.html.includes('Änderungsprotokoll'));
+ assert.equal((await send({action:'reset',password:'wrong',confirmation:draft.title,backupDigest:exported.digest})).status,403);
+ assert.equal((await send({action:'reset',password:'correct',confirmation:'wrong',backupDigest:exported.digest})).status,400);
+ await send({action:'result',gameId,result:'0-1',reason:'Korrektur'});
+ assert.equal((await send({action:'reset',password:'correct',confirmation:draft.title,backupDigest:exported.digest})).status,400);
+ exported=(await f.request('GET',null,'/championship/backup')).body;
+ r=await send({action:'reset',password:'correct',confirmation:draft.title,backupDigest:exported.digest});assert.equal(r.body.tournament,null);
+ assert.equal((await send({action:'restore',password:'wrong',confirmation:'WIEDERHERSTELLEN',backup:exported.backup})).status,403);
+ r=await send({action:'restore',password:'correct',confirmation:'WIEDERHERSTELLEN',backup:exported.backup});assert.equal(r.status,200);assert.equal(r.body.tournament.schedule[0].games[0].result,'0-1');assert.ok(r.body.tournament.hasEverResults);assert.equal(r.body.tournament.audit.at(-1).action,'restore');
+ assert.equal((await send({action:'restore',password:'correct',confirmation:'WIEDERHERSTELLEN',backup:exported.backup})).status,400);
+ assert.equal((await f.request('DELETE',{revision:rev,password:'correct',confirmation:'TURNIER LÖSCHEN'})).status,403);
+ assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
 });
