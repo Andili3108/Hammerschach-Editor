@@ -136,30 +136,64 @@ const HSC08_CLIENT = String.raw`function client() {
     $('rankingSection').hidden=!t?.hasEverResults;
     $('participantsSection').hidden=['running','completed'].includes(t?.phase);
     function action(text,kind,confirmation){const button=node('button',text,'button-flat');button.type='button';button.onclick=async()=>{if(busy || (confirmation&&!confirm(confirmation)))return;await save('POST',{action:kind});};$('roundActions').append(button);}
-    if(!t?.schedule){$('roundContent').append(node('p',t?.mode==='swiss'?'Die Schweizer Auslosung steht noch nicht zur Verfügung.':'Noch keine Runden freigegeben.'));if(t?.mode==='round-robin')action('♟ Paarungsplan vorbereiten','prepare');return;}
-    if(t.phase==='prepared'){
-      $('roundContent').append(node('p','Paarungsentwurf · Startnummern nach Teilnehmerreihenfolge. Bitte Farben und Begegnungen prüfen.'));
-      action('Paarungsentwurf verwerfen','discard-plan','Paarungsentwurf verwerfen und Einstellungen wieder öffnen?');
-      action('✓ Paarungsplan freigeben','release','Den gesamten Paarungsplan freigeben und das Turnier starten?');
+    const swiss=t?.mode==='swiss';
+    const last=t?.schedule?.at(-1);
+    if(swiss && !last?.pending && (!last || (last.number<t.rounds && t.schedule.every(r=>r.games.every(g=>g.result))))){
+      const form=node('form',undefined,'config-grid');
+      const inputs={};
+      for(const [key,label] of [['start','Rundenbeginn'],['end','Spätester Spieltermin']]){
+        const wrap=node('label',label),input=node('input',undefined,'tournament-input');
+        input.type='date';input.required=true;input.min=t.startsOn;input.max=t.endsOn;
+        wrap.append(input);form.append(wrap);inputs[key]=input;
+      }
+      const ordered=t.participants.map((p,i)=>({...p,list:i+1,rating:p.dwz??p.estimatedRating??0})).sort((a,b)=>b.rating-a.rating);
+      const seeds=[];
+      if(!last){
+        for(let i=0;i<ordered.length;){
+          const group=ordered.some(p=>!p.rating)?ordered:ordered.filter(p=>p.rating===ordered[i].rating);
+          for(const p of group){
+            if(group.length===1){seeds.push(()=>p.id);continue;}
+            const label=node('label','Startnummer '+(seeds.length+1)),sel=node('select',undefined,'tournament-select');
+            sel.append(node('option','Bitte wählen'));sel.firstChild.value='';sel.required=true;
+            for(const item of group){const o=node('option',item.name+' · Liste '+item.list+(item.rating?' · '+item.rating:' · ohne Wertung'));o.value=item.id;sel.append(o);}
+            label.append(sel);form.append(label);seeds.push(()=>sel.value);
+          }
+          i+=group.length;
+        }
+      }
+      const submit=node('button','♟ Runde '+((last?.number||0)+1)+' vorbereiten','button-flat');
+      submit.type='submit';form.append(submit);$('roundActions').append(form);
+      form.onsubmit=e=>{e.preventDefault();if(!busy)save('POST',{action:'prepare',start:inputs.start.value,end:inputs.end.value,seeds:seeds.map(read=>read())});};
     }
-    if(t.phase==='running')action('🏁 Turnier abschließen','complete','Turnier abschließen? Alle Partien müssen entschieden sein.');
+    if(!t?.schedule){$('roundContent').append(node('p','Noch keine Runden freigegeben.'));if(t?.mode==='round-robin')action('♟ Paarungsplan vorbereiten','prepare');return;}
+    if(t.phase==='prepared'||last?.pending){
+      $('roundContent').append(node('p',swiss?'Paarungsentwurf · Bitte Farben, Gegner und Termine prüfen.':'Paarungsentwurf · Startnummern nach Teilnehmerreihenfolge. Bitte Farben und Begegnungen prüfen.'));
+      action('Paarungsentwurf verwerfen','discard-plan','Paarungsentwurf verwerfen und Einstellungen wieder öffnen?');
+      action(swiss?'✓ Runde freigeben':'✓ Paarungsplan freigeben','release','Geprüfte Paarungen freigeben?');
+    }
+    if(swiss && t.phase==='running' && !last.pending){
+      const finished=t.schedule.every(r=>r.games.every(g=>g.result));
+      if(!finished)$('roundContent').append(node('p','Offene Partien bitte vor der nächsten Auslosung entscheiden.'));
+      else if(last.number===t.rounds)$('roundContent').append(node('p','Alle Runden gespielt. Die abschließende Feinwertung steht noch aus.'));
+    }
+    if(!swiss && t.phase==='running')action('🏁 Turnier abschließen','complete','Turnier abschließen? Alle Partien müssen entschieden sein.');
     if(t.phase==='completed'){ $('roundContent').append(node('p','Abgeschlossen'));action('✎ Für Korrektur öffnen','reopen'); }
     const names=new Map(t.participants.map(p=>[p.id,p.name]));
     const labels={'':'Offen','1-0':'1–0','1/2-1/2':'½–½','0-1':'0–1','+/-':'+ / − (kampflos)','-/+':'− / + (kampflos)','-/-':'− / − (beide nicht angetreten)'};
     for(const round of [...t.schedule].reverse()){
-      const box=node('div',undefined,'rr-round');box.append(node('h3','Runde '+round.number));
-      if(round.bye)box.append(node('p',names.get(round.bye)+' · spielfrei (0 Punkte)'));
+      const box=node('div',undefined,'rr-round');box.append(node('h3','Runde '+round.number+(swiss?' · '+round.start.split('-').reverse().join('.')+' – '+round.end.split('-').reverse().join('.')+(round.pending?' · Entwurf':''):'')));
+      if(round.bye)box.append(node('p',names.get(round.bye)+(swiss?' · Freilos · '+(t.scoring==='three-point'?'3 Punkte':'1 Punkt'):' · spielfrei (0 Punkte)')));
       for(const game of round.games){
         const row=node('div',undefined,'rr-game');row.append(node('span','Weiß: '+names.get(game.white)),node('span','Schwarz: '+names.get(game.black)));
         const select=node('select',undefined,'tournament-select');select.setAttribute('aria-label','Ergebnis '+names.get(game.white)+' gegen '+names.get(game.black));
-        for(const [value,label] of Object.entries(labels)){const option=node('option',label);option.value=value;select.append(option);}select.value=game.result||'';select.disabled=t.phase!=='running';
+        for(const [value,label] of Object.entries(labels)){const option=node('option',label);option.value=value;select.append(option);}select.value=game.result||'';select.disabled=t.phase!=='running'||!!last?.pending;
         select.onchange=async()=>{if(busy){select.value=game.result||'';return;}let reason='';if(game.result!==null){reason=prompt('Begründung der Ergebniskorrektur:');if(!reason?.trim()){select.value=game.result||'';return;}}const success=await save('POST',{action:'result',gameId:game.id,result:select.value||null,reason});if(!success)select.value=game.result||'';};row.append(select);box.append(row);
       }$('roundContent').append(box);
     }
     if(t.hasEverResults){
-      const table=node('table',undefined,'rr-ranking');const head=node('tr');for(const title of ['Platz','Name','Gespielt','Punkte','SB'])head.append(node('th',title));table.append(head);
-      for(const r of t.ranking||[]){const row=node('tr');for(const value of [r.rank,names.get(r.id),r.played,r.points,r.sb])row.append(node('td',String(value)));table.append(row);}
-      const wrap=node('div',undefined,'ranking-wrap');wrap.append(table);$('ranking').append(node('p',t.phase==='completed'?'Endstand · Punkte → Sonneborn-Berger → direkter Vergleich':'Zwischenstand · Unterschiedlich viele gespielte Partien möglich.'),wrap);
+      const table=node('table',undefined,'rr-ranking');const head=node('tr');for(const title of ['Platz','Name','Gespielt','Punkte',...(swiss?[]:['SB'])])head.append(node('th',title));table.append(head);
+      for(const r of t.ranking||[]){const row=node('tr');for(const value of [r.rank,names.get(r.id),r.played,r.points,...(swiss?[]:[r.sb])])row.append(node('td',String(value)));table.append(row);}
+      const wrap=node('div',undefined,'ranking-wrap');wrap.append(table);$('ranking').append(node('p',swiss?'Vorläufig nach Turnierpunkten · Feinwertung ausstehend':t.phase==='completed'?'Endstand · Punkte → Sonneborn-Berger → direkter Vergleich':'Zwischenstand · Unterschiedlich viele gespielte Partien möglich.'),wrap);
       if(t.phase==='completed'){const winners=(t.ranking||[]).filter(r=>r.rank===1).map(r=>names.get(r.id));$('ranking').append(node('p',(winners.length===1?'Vereinsmeister: ':'Gemeinsame Vereinsmeister: ')+winners.join(', ')));}
     }
     if(t.audit?.length){const details=node('details');details.append(node('summary','Änderungsprotokoll'));for(const entry of [...t.audit].reverse())details.append(node('p',new Date(entry.at).toLocaleString('de-DE')+' · '+entry.actor+' · '+(entry.action==='result'?'Ergebnis '+entry.gameId+': '+(labels[entry.old||'']||entry.old)+' → '+(labels[entry.value||'']||entry.value)+(entry.reason?' · '+entry.reason:''):({prepare:'Paarungsplan vorbereitet','discard-plan':'Paarungsentwurf verworfen',release:'Turnier gestartet',complete:'Turnier abgeschlossen',reopen:'Für Korrekturen geöffnet'}[entry.action]||entry.action))));$('roundContent').append(details);}

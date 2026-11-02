@@ -1,3 +1,4 @@
+import {swissTransition, swissStandings} from './hsc08-swiss.js';
 import {makeBackup,backupDigest,restoreBackup,exportHtml} from './hsc08-backup.js';
 import {hsc08ReaderPage, readerTournament} from './hsc08-reader.js';
 import { transition, standings } from './hsc08-round-robin.js';
@@ -133,7 +134,8 @@ export async function handleHsc08(request, env, deps) {
         }
       } else if(['prepare','discard-plan','release','result','complete','reopen'].includes(body.action)){
         if(JSON.stringify(current.tournament)!==JSON.stringify(current.publishedTournament))throw Error('Bitte zuerst den gespeicherten Entwurf in die Turnieransicht übernehmen.');
-        const updated=transition(current.publishedTournament,body,session.user.username);
+        const update=current.publishedTournament?.mode==='swiss'?swissTransition:transition;
+        const updated=update(current.publishedTournament,body,session.user.username);
         document=JSON.stringify({...updated,storageVersion:2,viewSnapshot:updated});
       } else if(body.action==='apply') {
         if(!current.tournament)return respond({ok:false,message:'Bitte zuerst einen Entwurf speichern.'},400);
@@ -144,7 +146,7 @@ export async function handleHsc08(request, env, deps) {
         if(existing?.schedule){
           for(const key of ['mode','scoring','cycles','rounds','timeControl'])if(incoming[key]!==existing[key])throw Error('Turnierregeln sind nach Planerstellung gesperrt.');
           if(JSON.stringify(incoming.participants.map(p=>p.id))!==JSON.stringify(existing.participants.map(p=>p.id)))throw Error('Das Teilnehmerfeld ist nach Planerstellung gesperrt.');
-          Object.assign(incoming,{schedule:existing.schedule,phase:existing.phase,audit:existing.audit,hasEverResults:existing.hasEverResults,ranking:existing.ranking});incoming.ranking=standings(incoming);
+          Object.assign(incoming,{schedule:existing.schedule,phase:existing.phase,audit:existing.audit,hasEverResults:existing.hasEverResults,ranking:existing.ranking});incoming.ranking=incoming.mode==='swiss'?swissStandings(incoming):standings(incoming);
         }
         document=JSON.stringify({...incoming,storageVersion:2,viewSnapshot:current.publishedTournament});
       }
