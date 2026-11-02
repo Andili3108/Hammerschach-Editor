@@ -1,3 +1,4 @@
+import {makeBackup,backupDigest,restoreBackup,exportHtml} from './hsc08-backup.js';
 import {hsc08ReaderPage, readerTournament} from './hsc08-reader.js';
 import { transition, standings } from './hsc08-round-robin.js';
 import { hsc08Page } from './hsc08-page.js';
@@ -79,9 +80,9 @@ export async function handleHsc08(request, env, deps) {
   if (!isHsc08Admin(session?.user, deps.isAdmin)) return respond({ok:false, message:'Nicht verfügbar.'}, 404);
   if (path === '/api/hsc08/access' && request.method === 'GET') return respond({ok:true});
   if (path === '/api/hsc08/page' && request.method === 'GET') {const reader=new URL(request.url).searchParams.get('view')==='reader';return respond({ok:true,canManage:!reader,html:reader?hsc08ReaderPage():hsc08Page()});}
-  if (path !== '/api/hsc08/championship' && path !== '/api/hsc08/championship/view') return respond({ok:false, message:'Nicht verfügbar.'}, 404);
+  if (path !== '/api/hsc08/championship' && path !== '/api/hsc08/championship/view' && path !== '/api/hsc08/championship/backup') return respond({ok:false, message:'Nicht verfügbar.'}, 404);
   if (!['GET','POST','DELETE'].includes(request.method)) return respond({ok:false, message:'Methode nicht erlaubt.'}, 405);
-  if(path.endsWith('/view') && request.method!=='GET')return respond({ok:false,message:'Nur Lesezugriff erlaubt.'},405);
+  if((path.endsWith('/view')||path.endsWith('/backup')) && request.method!=='GET')return respond({ok:false,message:'Nur Lesezugriff erlaubt.'},405);
   // Keep the row after clearing so revision numbers never reset (stale tabs cannot restore deleted data).
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS hsc08_championship (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL DEFAULT 0, document TEXT, updated_at TEXT)`).run();
   await env.DB.prepare('INSERT OR IGNORE INTO hsc08_championship (id, revision) VALUES (1, 0)').run();
@@ -93,19 +94,20 @@ export async function handleHsc08(request, env, deps) {
     return {revision:row.revision, tournament:stored ? draft : null,
       publishedTournament:stored ? (storageVersion===2 ? viewSnapshot : draft) : null};
   };
+  if(path.endsWith('/backup')){const state=await snapshot();if(!state.tournament)return respond({ok:false,message:'Kein Turnier zum Sichern vorhanden.'},400);const backup=makeBackup(state);return respond({ok:true,backup,digest:await backupDigest(backup),html:exportHtml(state.publishedTournament)});}
   if(path.endsWith('/view')){const state=await snapshot();return respond({ok:true,canManage:false,tournament:readerTournament(state.publishedTournament)});}
   if (request.method === 'GET') return respond({ok:true, ...await snapshot()});
   let body;
   try {
     const raw = await request.text();
-    if (raw.length > 100000) return respond({ok:false, message:'Die Eingabe ist zu groß.'}, 413);
+    if (raw.length > 5000000) return respond({ok:false, message:'Die Eingabe ist zu groß.'}, 413);
     body = JSON.parse(raw);
   } catch { return respond({ok:false, message:'Ungültige Eingabe.'}, 400); }
   if (!body || !Number.isSafeInteger(body.revision) || body.revision < 0) return respond({ok:false, message:'Bitte die Seite neu laden.'}, 400);
   let document = null;
   if (request.method === 'DELETE') {
     const current=await snapshot();
-    if(current.tournament?.hasEverResults || current.publishedTournament?.hasEverResults)return respond({ok:false,message:'Löschen gesperrt: Es wurden bereits Ergebnisse erfasst. Ein Zurücksetzen mit Sicherung ist in diesem Teststand noch nicht verfügbar.'},403);
+    if(current.tournament?.hasEverResults || current.publishedTournament?.hasEverResults)return respond({ok:false,message:'Löschen gesperrt: Es wurden bereits Ergebnisse erfasst. Bitte Sichern / Wiederherstellen für ein geschütztes Zurücksetzen verwenden.'},403);
     if (body.confirmation !== 'TURNIER LÖSCHEN') return respond({ok:false, message:'Die Löschbestätigung fehlt.'}, 400);
     const checked = await deps.reauthenticate(request, session.user, body.password);
     if (!checked.ok) return respond({ok:false, message:checked.message}, checked.status);
@@ -113,7 +115,23 @@ export async function handleHsc08(request, env, deps) {
     try {
       const current=await snapshot();
       if(current.revision!==body.revision)return respond({ok:false,message:'Inzwischen wurde der Stand geändert. Bitte neu laden.'},409);
-      if(['prepare','discard-plan','release','result','complete','reopen'].includes(body.action)){
+      if(body.action==='reset' || body.action==='restore'){
+        const checked=await deps.reauthenticate(request,session.user,body.password);if(!checked.ok)return respond({ok:false,message:checked.message},checked.status);
+        if(body.action==='reset'){
+          if(!current.tournament)throw Error('Kein Turnier vorhanden.');
+          const title=current.tournament.title||'Vereinsmeisterschaft';
+          if(body.confirmation!==title)throw Error('Der Turniername stimmt nicht überein.');
+          if(body.backupDigest!==await backupDigest(makeBackup(current)))throw Error('Bitte zuerst den aktuellen Stand erneut sichern.');
+          document=null;
+        }else{
+          if(current.tournament || current.publishedTournament)throw Error('Wiederherstellung ist nur auf einer leeren Turnierseite möglich. Vorher sichern und geschützt zurücksetzen.');
+          if(body.confirmation!=='WIEDERHERSTELLEN')throw Error('Die Wiederherstellungsbestätigung fehlt.');
+          const restored=restoreBackup(body.backup,validateHsc08Draft);
+          const event={at:new Date().toISOString(),actor:session.user.username,action:'restore'};
+          for(const t of [restored.draft,restored.view])if(t)(t.audit||=[]).push({...event});
+          document=JSON.stringify({...restored.draft,storageVersion:2,viewSnapshot:restored.view});
+        }
+      } else if(['prepare','discard-plan','release','result','complete','reopen'].includes(body.action)){
         if(JSON.stringify(current.tournament)!==JSON.stringify(current.publishedTournament))throw Error('Bitte zuerst den gespeicherten Entwurf in die Turnieransicht übernehmen.');
         const updated=transition(current.publishedTournament,body,session.user.username);
         document=JSON.stringify({...updated,storageVersion:2,viewSnapshot:updated});
