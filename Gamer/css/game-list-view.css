@@ -1,0 +1,34 @@
+/* One root preference updates existing and subsequently rendered overviews.
+   Keep cards, links, status updates and archive actions in their original DOM. */
+html.prefs-games-list #dailyGamesList.running-grid,
+html.prefs-games-list .member-games-grid{grid-template-columns:minmax(0,1fr);gap:8px;align-content:start;}
+html.prefs-games-list :is(.running-game-preview-card,.member-game-card)>.running-game-board{display:none;}
+html.prefs-games-list #dailyGamesList .running-game-preview-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 16px;border-radius:10px;padding:10px 12px;}
+html.prefs-games-list #dailyGamesList .running-game-preview-card.my-turn{padding:9px 11px;}
+html.prefs-games-list .running-game-details{display:flex;align-items:center;flex-wrap:wrap;gap:4px 16px;}
+html.prefs-games-list .running-game-details .daily-game-title{flex:1 1 230px;font-size:15px;margin:0;}
+html.prefs-games-list .running-game-details :is(.running-game-turn,.running-game-deadline){margin:0;}
+html.prefs-games-list .running-game-details .daily-game-meta{flex-basis:100%;margin:0;overflow-wrap:anywhere;}
+html.prefs-games-list .member-game-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,auto) auto;gap:4px 16px;align-items:center;padding:10px 12px;border-radius:10px;}
+html.prefs-games-list .member-game-names{font-size:15px;}
+html.prefs-games-list .member-game-meta{grid-column:1/3;grid-row:2;}
+html.prefs-games-list .member-game-card>.running-game-open{grid-column:3;grid-row:1/3;}
+html.prefs-games-list :is(.member-game-card,.running-game-preview-card)>.running-game-open{margin:0;max-width:180px;}
+html.prefs-games-list #dailyGamesList .daily-game-card.completed,
+html.prefs-games-list .game-archive-card{padding:10px 12px;gap:8px;border-radius:10px;}
+html.prefs-games-list :is(.daily-game-card.completed,.game-archive-card) :is(.daily-game-title,.game-archive-title){font-size:15px;overflow-wrap:anywhere;}
+html.prefs-games-list :is(.daily-game-card.completed,.game-archive-card) :is(.daily-game-meta,.game-archive-meta){font-size:12px;overflow-wrap:anywhere;}
+html.prefs-games-list :is(.daily-game-card.completed,.game-archive-card) :is(.game-moment-panel,.game-reaction-panel){margin-top:6px;}
+html.prefs-games-list .game-archive-card>*{min-width:0;}
+@media(max-width:700px){
+ html.prefs-games-list .member-game-card{grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;}
+ html.prefs-games-list .member-game-card>.running-game-turn{grid-column:1;grid-row:2;}
+ html.prefs-games-list .member-game-meta{grid-column:1/-1;grid-row:3;}
+ html.prefs-games-list .member-game-card>.running-game-open{grid-column:2;grid-row:1/3;max-width:110px;}
+ html.prefs-games-list #dailyGamesList .running-game-preview-card{grid-template-columns:minmax(0,1fr);}
+ html.prefs-games-list .running-game-details .daily-game-title{flex-basis:100%;}
+ html.prefs-games-list .running-game-preview-card>.running-game-open{max-width:none;justify-self:end;}
+ html.prefs-games-list :is(.member-game-card,.running-game-preview-card){overflow-wrap:anywhere;}
+}
+html.prefs-games-list .daily-game-card.completed .daily-game-actions{display:flex;flex-wrap:wrap;gap:6px;}
+html.prefs-games-list .daily-game-card.completed .daily-game-actions>:is(a,button){width:auto;flex:0 1 auto;min-width:0;min-height:36px;font-size:12px;padding:7px 10px;}
