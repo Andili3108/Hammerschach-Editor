@@ -109,8 +109,9 @@
         pumpPreviews();
       }, {root:list, rootMargin:'100px'});
     }
-    job.board.memberPreviewJob = job;
-    observer.observe(job.board);
+    // The board is hidden in list mode; the card remains observable.
+    job.card.memberPreviewJob = job;
+    observer.observe(job.card);
   }
   function watchUrl(game){
     // Stay on this installation, including when it is hosted in a subdirectory.
@@ -216,10 +217,15 @@
     const all = member.id === 'all';
     title.textContent = all ? 'Laufende Partien' : 'Partien von ' + member.username;
     allButton.hidden = all;
+    if(window.HammerschachPreferences?.get('gamesAsList')){
+      hint.textContent = 'Laufende Partien als kompakte Liste. Eine Zeile öffnet die Partie; eigene Partien mit deinem Spielerplatz.';
+      return;
+    }
     hint.textContent = all
       ? 'Laufende Partien mit aktueller Brettvorschau. Eigene Partien öffnest du mit deinem Spielerplatz.'
       : 'Laufende Partien. Das ausgewählte Mitglied spielt auf den Vorschaubrettern von unten.';
   }
+  window.addEventListener('hammerschach:preferences', () => { if(member) updateHeading(); });
   function openDialog(user, source){
     if(user && user.id !== 'all' && !/^[A-Za-z0-9_-]{8,128}$/.test(String(user.id || ''))) return;
     if(!backdrop.hidden) saveScroll();

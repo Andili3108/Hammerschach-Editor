@@ -21,6 +21,7 @@
  select(appearance,'scheme','Farbschema',[['light','Hell'],['soft','Sanft'],['dark','Dunkel']]);
  toggle(appearance,'autoNight','Nachtmodus automatisch','Folgt der Hell-/Dunkel-Einstellung deines Geräts. Bei heller Geräteeinstellung kehrt die gewählte Tagesansicht Hell oder Sanft zurück.');
  toggle(appearance,'focus','Konzentrationsmodus','Blendet im Spielraum Chat und zusätzliche Informationsbereiche aus.');
+ toggle(appearance,'gamesAsList','Partien als Liste anzeigen','Kompakte Zeilen in den Partienübersichten. Ohne Häkchen bleiben die Brett-Kacheln erhalten.');
  const board=section('appearance','Brett & Figuren');
  select(board,'board','Schachbrett',boardColorPresets.map(p=>[p.id,p.name]));
  // Only offer sets accepted by the shared preferences, excluding retired aliases.

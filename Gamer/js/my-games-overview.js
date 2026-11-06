@@ -52,8 +52,9 @@ function observeRunningGamePreview(job){
       pumpRunningGamePreviews();
     }, {root:dailyGamesBackdrop, rootMargin:'100px'});
   }
-  job.board.previewJob = job;
-  runningPreviewObserver.observe(job.board);
+  // Observe the visible row too, so list mode receives fresh turn status.
+  job.card.previewJob = job;
+  runningPreviewObserver.observe(job.card);
 }
 function renderRunningGameBoard(element, data){
   if(!data || !data.ok || !Array.isArray(data.board) || data.board.length !== 8 ||
