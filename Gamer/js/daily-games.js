@@ -610,7 +610,7 @@ function createDailyGameCard(game){
   const titleText = document.createElement('span');
   titleText.className = 'daily-game-title-text';
   const pendingOpponentName = cleanDisplayName(game.invitedOpponentName || game.opponentName || '');
-  titleText.textContent = game.incomingInvitation
+  titleText.textContent = game.isOwnOpenOffer ? 'Offenes Daily-Angebot' : game.incomingInvitation
     ? 'Einladung von ' + (cleanDisplayName(game.opponentName) || 'einem Mitglied')
     : game.pendingInvitation
     ? (pendingOpponentName && pendingOpponentName !== 'noch offen' ? 'Einladung an ' + pendingOpponentName : 'Offene Daily-Einladung')
@@ -623,7 +623,8 @@ function createDailyGameCard(game){
     const outcome = dailyOutcomeForUser(game);
     status.textContent = outcome.label + ' · ' + dailyResultLabel(game.result);
     if(outcome.className) status.classList.add(outcome.className);
-  } else if(game.incomingInvitation) status.textContent = 'Bitte annehmen oder ablehnen';
+  } else if(game.isOwnOpenOffer) status.textContent = 'Wartet auf Mitspieler';
+  else if(game.incomingInvitation) status.textContent = 'Bitte annehmen oder ablehnen';
   else if(game.incomingDrawOffer) status.textContent = '🤝 ' + (cleanDisplayName(game.opponentName) || 'Gegner') + ' bietet Remis an';
   else if(game.outgoingDrawOffer) status.textContent = '½ Remis angeboten · wartet auf Antwort';
   else if(game.drawClaimAvailable){
@@ -714,7 +715,7 @@ function createDailyGameCard(game){
     const openLink = document.createElement('a');
     openLink.className = 'daily-game-open-btn';
     openLink.href = roomUrl || '#';
-    openLink.textContent = game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : (game.incomingDrawOffer ? 'Remisangebot öffnen' : (game.drawClaimAvailable ? 'Remis reklamieren' : 'Partie öffnen')));
+    openLink.textContent = game.isOwnOpenOffer ? 'Angebot öffnen' : game.ended ? 'Partie ansehen' : (game.pendingInvitation ? 'Einladung öffnen' : (game.incomingDrawOffer ? 'Remisangebot öffnen' : (game.drawClaimAvailable ? 'Remis reklamieren' : 'Partie öffnen')));
     openLink.title = 'Partie im aktuellen Tab öffnen';
     if(!roomUrl){
       openLink.addEventListener('click', event => {
@@ -747,8 +748,8 @@ function createDailyGameCard(game){
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'daily-game-delete-btn';
-    deleteBtn.textContent = 'Einladung löschen';
-    deleteBtn.title = 'Offene Daily-Einladung dauerhaft zurückziehen';
+    deleteBtn.textContent = game.isOwnOpenOffer ? 'Angebot zurückziehen' : 'Einladung löschen';
+    deleteBtn.title = game.isOwnOpenOffer ? 'Öffentliches Daily-Angebot zurückziehen' : 'Offene Daily-Einladung dauerhaft zurückziehen';
     deleteBtn.addEventListener('click', () => deleteDailyInvitation(game, deleteBtn));
     actions.appendChild(deleteBtn);
   }
@@ -1122,18 +1123,27 @@ async function deleteDailyInvitation(game, button){
     if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Ungültiger Spielraum.';
     return;
   }
-  if(!window.confirm('Diese Daily-Einladung wirklich löschen?\n\nDer bisherige Einladungslink wird dauerhaft ungültig.')) return;
+  const publicOffer = game.isOwnOpenOffer === true;
+  if(!window.confirm(publicOffer ? 'Dieses öffentliche Daily-Partieangebot wirklich zurückziehen?' : 'Diese Daily-Einladung wirklich löschen?\n\nDer bisherige Einladungslink wird dauerhaft ungültig.')) return;
   const oldText = button ? button.textContent : '';
-  if(button){ button.disabled = true; button.textContent = 'Lösche…'; }
-  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Einladung wird gelöscht…';
+  if(button){ button.disabled = true; button.textContent = publicOffer ? 'Wird zurückgezogen…' : 'Lösche…'; }
+  if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = publicOffer ? 'Öffentliches Angebot wird zurückgezogen…' : 'Einladung wird gelöscht…';
   try{
-    await authApi('/api/daily-games/' + encodeURIComponent(roomId), {method:'DELETE'});
+    await authApi((publicOffer ? '/api/open-offers/' : '/api/daily-games/') + encodeURIComponent(roomId), {method:'DELETE'});
     if(roomId === onlineRoomId){
       applyRoomCancelled('Diese Einladung wurde zurückgezogen. Der Spielraum ist nicht mehr verfügbar.');
     }
-    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Einladung wurde gelöscht. Der alte Link ist nicht mehr gültig.';
-    await loadDailyGames();
+    await loadDailyGames({silent:true});
+    if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = publicOffer ? 'Öffentliches Daily-Angebot wurde zurückgezogen.' : 'Einladung wurde gelöscht. Der alte Link ist nicht mehr gültig.';
   } catch(err){
+    // The offers request may have failed or the list may be stale. Only this
+    // explicit server classification permits switching to the withdrawal path.
+    if(err?.data?.code === 'OPEN_OFFER_REQUIRES_WITHDRAWAL'){
+      game.isOwnOpenOffer = true;
+      renderDailyGames(dailyGamesCache);
+      if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = 'Dies ist ein öffentliches Angebot. Bitte mit „Angebot zurückziehen“ bestätigen.';
+      return;
+    }
     if(dailyGamesStatusEl) dailyGamesStatusEl.textContent = err && err.message ? err.message : 'Einladung konnte nicht gelöscht werden.';
     if(button){ button.disabled = false; button.textContent = oldText || 'Einladung löschen'; }
   }
@@ -1170,6 +1180,12 @@ async function loadDailyGames(options){
     myLiveCompletedTotal = Math.max(myLiveCompletedGamesCache.length, Number(liveArchiveData.total || 0));
     myRematchOffersCache = rematchResult.status === 'fulfilled' && Array.isArray(rematchResult.value.offers) ? rematchResult.value.offers : [];
     const offers = offersResult && offersResult.status === 'fulfilled' && Array.isArray(offersResult.value.offers) ? offersResult.value.offers : [];
+    // Daily offers also occur in /daily-games. Keep a single card, but use
+    // the public offer's withdrawal action rather than invitation deletion.
+    const ownDailyOffers = new Set(offers.filter(offer => offer && offer.mine === true && offer.mode === 'daily').map(offer => cleanRoomId(offer.roomId)));
+    games.forEach(game => {
+      game.isOwnOpenOffer = !game.started && !game.ended && ownDailyOffers.has(cleanRoomId(game.roomId));
+    });
     myLiveOpenOffersCache = offers.filter(offer => offer && offer.mine === true && offer.mode !== 'daily');
 
     const dailyMyTurnCount = games.filter(game => !game.ended && !!game.started && !!game.isMyTurn).length;
