@@ -51,3 +51,9 @@ Den Inhalt des aktuellen Änderungs-ZIPs mit derselben Ordnerstruktur übernehme
 `node --test tests/hsc08*.test.mjs` prüft Zugriffsschutz, Speicherung, Wertung, Sicherung und Lebenszyklus. `tests/hsc08-tiebreak-browser.mjs` prüft den gebündelten Worker mit lokalen Testdaten, drei Bildschirmgrößen, Erscheinungsbildern, Konfiguration und Leseansicht. Dafür Playwright bereitstellen und bei Bedarf PLAYWRIGHT_MODULE, HSC08_WORKER_MODULE, CHROMIUM_EXECUTABLE und HSC_SCREENSHOT_DIR setzen. Die Browserprüfung simuliert Größen in Chromium; reale iOS-Geräte und Safari sind nicht damit getestet.
 
 Prüfergebnis dieses Änderungsstands: 29 automatisierte Tests bestanden. Der gesamte Worker wurde erfolgreich gebündelt. Der Browserablauf für Desktop, iPad- und iPhone-Größen einschließlich drei Erscheinungsbildern, Konfiguration, Zwischenstand, Leseansicht, Abschluss und Wiederöffnung ist bestanden. Bestehende Ergebnisse müssen für die neue Feinwertung nicht gelöscht werden.
+
+## Header vom 9. November 2026
+
+Die aktive Vereinsmeisterschaft ist als bordeauxrote Schaltfläche „Meisterschaft“ direkt sichtbar. Vereinspokal und Blitzrunden sind sichtbar, jedoch als noch nicht verfügbar deaktiviert. „Zur Lobby“ führt zurück. „Verwaltung“ bündelt Konfiguration, Leseansicht und Sicherung. „Turnier vollständig löschen“ steht als farblich abgesetzter letzter Menüpunkt hinter einer Trennlinie. Die bestehenden Passwort- und Bestätigungsschritte gelten weiterhin. In der Leseansicht führt „Zur Verwaltung“ zurück. Auf kleinen Bildschirmen und im mobilen Menü wird dieselbe Auswahl angeboten.
+
+Für diese Headeränderung die beiden Frontend-Dateien Gamer/index.html und Gamer/js/hsc08.js gemeinsam bereitstellen. Die Bedienwege in der privaten Konfiguration gelten ab „Verwaltung“.
