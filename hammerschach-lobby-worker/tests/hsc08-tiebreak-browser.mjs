@@ -68,18 +68,21 @@ try {
     assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
     if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-'+(theme||'light')+'.png',fullPage:true});
   }
-  await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
+  await page.getByRole('button',{name:'Verwaltung',exact:false}).filter({visible:true}).click();
+  await page.getByRole('menuitem',{name:'Turnier konfigurieren',exact:false}).filter({visible:true}).click();
   assert.equal(await frame.locator('#config .config-card').count(),2);
   assert.ok(await frame.locator('#config .participant-fields').isVisible());
   await frame.locator('#title').fill('Feinwertungstest bearbeitet');
   await frame.getByRole('button',{name:'Entwurf speichern',exact:true}).click();
   await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:true}).click();
   if(process.env.HSC_SCREENSHOT_DIR){
-    await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
+    await page.getByRole('button',{name:'Verwaltung',exact:false}).filter({visible:true}).click();
+  await page.getByRole('menuitem',{name:'Turnier konfigurieren',exact:false}).filter({visible:true}).click();
     await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-config.png',fullPage:true});
     await frame.getByRole('button',{name:'Zur Turnierseite',exact:true}).click();
   }
-  await page.getByRole('button',{name:'Leseansicht prüfen',exact:true}).filter({visible:true}).click();
+  await page.getByRole('button',{name:'Verwaltung',exact:false}).filter({visible:true}).click();
+  await page.getByRole('menuitem',{name:'Leseansicht prüfen',exact:false}).filter({visible:true}).click();
   await frame.locator('#ranking table').waitFor();
   assert.equal(await frame.locator('select,input,form').count(),0);
   assert.equal(await frame.locator('#ranking th').count(),6);
