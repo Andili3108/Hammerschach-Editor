@@ -128,3 +128,27 @@ test('backup reset restore retains game state, enforces reauth and rejects stale
  assert.equal((await f.request('DELETE',{revision:rev,password:'correct',confirmation:'TURNIER LÖSCHEN'})).status,403);
  assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
 });
+test('Swiss API persists absence, recalculates legacy rankings, protects completion and isolates readers',async t=>{
+ const f=fixture(t);
+ const participants=Array.from({length:4},(_,i)=>({id:'swiss-id-'+i,name:'Spieler '+i,dwz:2000-i*100}));
+ let state=(await f.request()).body;
+ async function post(body){const r=await f.request('POST',{revision:state.revision,...body});assert.equal(r.status,200,r.body.message);state=r.body;}
+ await post({tournament:{title:'VM',mode:'swiss',rounds:1,scoring:'three-point',participants,startsOn:'2026-11-01',endsOn:'2026-11-30',timeControl:'90+30'}});
+ await post({action:'apply'});
+ await post({action:'prepare',seeds:participants.map(p=>p.id),start:'2026-11-01',end:'2026-11-30',absent:[participants[3].id]});
+ assert.equal((await f.request('GET',null,'/championship/view')).body.tournament.schedule,undefined);
+ await post({action:'release'});
+ assert.equal((await f.request('POST',{revision:state.revision,action:'complete'})).status,400);
+ await post({action:'result',gameId:state.tournament.schedule[0].games[0].id,result:'1-0'});
+ await post({action:'complete'});
+ const persisted=JSON.parse(f.db.prepare('SELECT document FROM hsc08_championship').get().document);
+ assert.equal(persisted.ranking,undefined);
+ assert.ok(state.tournament.ranking.every(row=>Number.isFinite(row.bh)));
+ const reader=(await f.request('GET',null,'/championship/view')).body.tournament;
+ assert.equal(reader.phase,'completed');assert.equal(reader.audit,undefined);
+ assert.equal(reader.schedule[0].absent[0],participants[3].id);
+ assert.equal((await f.request('POST',{revision:state.revision,action:'prepare'})).status,400);
+ const before=state.revision;
+ await post({action:'reopen'});
+ assert.equal((await f.request('POST',{revision:before,action:'complete'})).status,409);
+});
