@@ -73,6 +73,15 @@ export function validateHsc08Draft(input) {
   return {title, description, ...(descriptionRich !== undefined ? {descriptionRich} : {}), mode:input.mode || '', participants, scoring, cycles, rounds,
     startsOn, endsOn, timeControl, phase:'draft', rulesStatus:'pending'};
 }
+// Swiss rankings are derived on read; do not duplicate per-round explanations in storage.
+function storageDocument(draft, view) {
+  const clean = tournament => {
+    if (!tournament || tournament.mode !== 'swiss') return tournament;
+    const {ranking, ...data} = tournament;
+    return data;
+  };
+  return JSON.stringify({...clean(draft), storageVersion:2, viewSnapshot:clean(view)});
+}
 export async function handleHsc08(request, env, deps) {
   const path = new URL(request.url).pathname;
   const respond = (body, status = 200) => deps.json(body, {status, headers:{'cache-control':'no-store, max-age=0', 'x-content-type-options':'nosniff'}});
@@ -92,6 +101,7 @@ export async function handleHsc08(request, env, deps) {
     const stored = row.document ? JSON.parse(row.document) : null;
     // Legacy documents are both the saved draft and the previously visible view.
     const {storageVersion, viewSnapshot, ...draft} = stored || {};
+    for (const t of [draft, viewSnapshot]) if (t?.mode === 'swiss' && t.schedule) t.ranking = swissStandings(t);
     return {revision:row.revision, tournament:stored ? draft : null,
       publishedTournament:stored ? (storageVersion===2 ? viewSnapshot : draft) : null};
   };
@@ -130,25 +140,25 @@ export async function handleHsc08(request, env, deps) {
           const restored=restoreBackup(body.backup,validateHsc08Draft);
           const event={at:new Date().toISOString(),actor:session.user.username,action:'restore'};
           for(const t of [restored.draft,restored.view])if(t)(t.audit||=[]).push({...event});
-          document=JSON.stringify({...restored.draft,storageVersion:2,viewSnapshot:restored.view});
+          document=storageDocument(restored.draft,restored.view);
         }
-      } else if(['prepare','discard-plan','release','result','complete','reopen'].includes(body.action)){
+      } else if(['prepare','discard-plan','release','result','complete','reopen','withdraw'].includes(body.action)){
         if(JSON.stringify(current.tournament)!==JSON.stringify(current.publishedTournament))throw Error('Bitte zuerst den gespeicherten Entwurf in die Turnieransicht übernehmen.');
         const update=current.publishedTournament?.mode==='swiss'?swissTransition:transition;
         const updated=update(current.publishedTournament,body,session.user.username);
-        document=JSON.stringify({...updated,storageVersion:2,viewSnapshot:updated});
+        document=storageDocument(updated,updated);
       } else if(body.action==='apply') {
         if(!current.tournament)return respond({ok:false,message:'Bitte zuerst einen Entwurf speichern.'},400);
-        document=JSON.stringify({...current.tournament,storageVersion:2,viewSnapshot:current.tournament});
+        document=storageDocument(current.tournament,current.tournament);
       } else {
         if(body.action)return respond({ok:false,message:'Unbekannte Aktion.'},400);
         const incoming=validateHsc08Draft(body.tournament), existing=current.tournament;
         if(existing?.schedule){
           for(const key of ['mode','scoring','cycles','rounds','timeControl'])if(incoming[key]!==existing[key])throw Error('Turnierregeln sind nach Planerstellung gesperrt.');
           if(JSON.stringify(incoming.participants.map(p=>p.id))!==JSON.stringify(existing.participants.map(p=>p.id)))throw Error('Das Teilnehmerfeld ist nach Planerstellung gesperrt.');
-          Object.assign(incoming,{schedule:existing.schedule,phase:existing.phase,audit:existing.audit,hasEverResults:existing.hasEverResults,ranking:existing.ranking});incoming.ranking=incoming.mode==='swiss'?swissStandings(incoming):standings(incoming);
+          Object.assign(incoming,{schedule:existing.schedule,phase:existing.phase,audit:existing.audit,hasEverResults:existing.hasEverResults,ranking:existing.ranking,...(existing.withdrawn?{withdrawn:existing.withdrawn}:{})});incoming.ranking=incoming.mode==='swiss'?swissStandings(incoming):standings(incoming);
         }
-        document=JSON.stringify({...incoming,storageVersion:2,viewSnapshot:current.publishedTournament});
+        document=storageDocument(incoming,current.publishedTournament);
       }
     }
     catch (error) { return respond({ok:false, message:error.message}, 400); }
