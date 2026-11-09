@@ -1,4 +1,8 @@
-# HSC08 – erster geschützter Teststand
+# HSC08 – Hinweise zu den Testständen
+
+Aktuelle Bedienung, Feinwertung, Grenzen und Einspielhinweise stehen in `README-HSC08-Rundenturnier.md` (aktualisiert am 9. November 2026). Die folgenden Abschnitte dokumentieren ausdrücklich die älteren Entwicklungsschritte.
+
+## Historischer erster Teststand vom 30. Oktober 2026
 
 Basis: die vom Nutzer am 30.10.2026 zur Bearbeitung bestätigten Projektdateien. Vor der Bearbeitung wurden diese mit der vorhandenen vollständigen `Hammerschach-Gamer.zip` abgeglichen. Der zuvor genannte datierte ZIP-Name ist lokal nicht vorhanden.
 

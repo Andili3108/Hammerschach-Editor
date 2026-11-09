@@ -97,14 +97,24 @@ Stand: 31. Oktober 2026. Diese Datei ersetzt den bisherigen unbestätigten Regel
 - Ausschließlich HSC08-Turnierdaten betroffen; feste Seite, Navigation, Gamer-Benutzer und Online-Turniermodule bleiben erhalten.
 - Sicherungsdatei ist keine Archivfunktion. Konkrete Sicherungsstruktur und Validierung sind technische Umsetzung, keine Freigabe für automatische Veröffentlichung oder Rechteausweitung durch Import.
 
+## Ergänzende Beschlüsse vom 9. November 2026
+
+- Schweizer Startnummern bei gleicher DWZ/Schätzung werden durch den Spielleiter zugeordnet. Bei fehlender Wertungszahl legt er die Einordnung fest.
+- Feinwertung nach FIDE C.07 vom 1. März 2026, Artikel 16.3 bis 16.5, mit dem gewählten Punktesystem 1–½–0 oder 3–1–0. Zugewiesenes Freilos: eigener Punktestand, maximal Rundenzahl × Remiswert. Kampfloser Sieg/Verlust: eigener Punktestand, maximal angepasster Gegnerpunktestand.
+- Angepasste Gegnerpunkte berücksichtigen nach Artikel 16.3 die abschließenden ausgesetzten Runden rechnerisch als Remis. Keine Änderung der echten Turnierpunkte.
+- Buchholz Cut 1 streicht vorrangig den niedrigsten Beitrag einer freiwillig ungespielten Runde (Aussetzen / kampfloser Verlust). Ohne solche Runden gilt der insgesamt niedrigste Beitrag.
+- Zwischenstände aktualisieren sich nach jeder Ergebnisspeicherung, mit einsehbarer Berechnung einschließlich Streichresultat. Offene Partien bleiben offen. Ein ausdrücklicher Abschluss erzeugt den Endstand; Korrekturen erfordern Wiederöffnung.
+- Konfigurationsseite und Turnieransicht erhalten gleichermaßen das Gamer-Design. Rückzüge und einzelne Abwesenheiten werden ausdrücklich erfasst.
+- Ergebniskorrekturen bei offenem Schweizer Paarungsentwurf erfordern vorheriges Verwerfen oder Freigeben. Bereits freigegebene Paarungen bleiben bestehen.
+
 ## 10. Noch nicht abschließend entschiedene Detailfälle
 
 Diese Punkte nicht stillschweigend als beschlossen ausgeben. Bei Bedarf gezielt und einzeln mit Andili klären; unabhängige Implementierung kann weiterlaufen.
 
-1. Schweizer Startreihenfolge bei gleicher DWZ/Schätzung, bei fehlender Schätzung und eventuellen Titelkriterien. Vereinsregel und formale FIDE-Regelkonformität auseinanderhalten.
-2. Genaue Feinwertungsbehandlung ungespielter Schweizer Runden nach FIDE Artikel 16 (Regelstand März 2026), insbesondere Kombination mit 3–1–0. Grundsatz gesonderter Behandlung ist bestätigt, die konkreten Sonderfallformeln noch nicht besprochen.
+1. Eventuelle Titelkriterien bei der Startreihenfolge bleiben offen. Gleichstände und fehlende Wertungszahlen siehe Beschlüsse vom 9. November.
+2. Die Feinwertungsbehandlung ist inzwischen beschlossen; siehe Ergänzung vom 9. November.
 3. Rundenturnier-Rückzug: Zählung früherer kampfloser Ergebnisse für die 50-%-Schwelle, mehrere Rückzüge und Doppelrunden-Sonderfälle präzisieren. Allgemeine 50-%-Regel ist beschlossen.
-4. Umgang mit Schweizer Paarungsentwürfen nach zwischenzeitlicher Ergebniskorrektur; veröffentlichte Paarungen bleiben verbindlich unverändert.
+4. Aktueller Schutz für Paarungsentwürfe siehe Ergänzung vom 9. November.
 5. Grenzen manueller Eingriffe in Dutch-Auslosungen: harte Unmöglichkeit (z.B. Spieler doppelt) ablehnen; bewusste Paarungsregel-Ausnahme nicht ohne Entscheidung einführen.
 6. Änderungen der Schweizer Rundenzahl nach Turnierbeginn waren nur als mögliche Sonderentscheidung vorgeschlagen, nicht abschließend freigegeben. Keine beiläufige Änderung anbieten.
 7. Ob und wie eine Veröffentlichung zurückgenommen werden darf, wurde noch nicht beschlossen.
