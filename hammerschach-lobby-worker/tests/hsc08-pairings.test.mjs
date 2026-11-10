@@ -61,7 +61,7 @@ test('Swiss only latest pending round editable; older rounds and absent players 
 for(const scoring of ['classic','three-point'])test('Swiss manual changes, audit, reader and backup '+scoring,()=>{
  let t=preparedSwiss(7);t.scoring=scoring;
  const round=structuredClone(t.schedule[0]),g=round.games[0];[g.white,g.black]=[g.black,g.white];
- assert.throws(()=>swissTransition(t,{action:'pairings',rounds:[round],reason,acceptDeviation:true},'Spielleiter'),/Andili/);
+ assert.throws(()=>swissTransition(t,{action:'pairings',rounds:[round],reason,acceptDeviation:true},'Spielleiter'),/Berechtigung/);
  t=sw(t,{action:'pairings',rounds:[round],reason,acceptDeviation:true});assert.equal(t.schedule[0].manualPairings,true);
  assert.ok(t.audit.some(e=>e.action==='pairing-approval'&&e.value==='manual'&&e.actor==='Andili'));
  assert.equal(readerTournament(t).schedule,undefined);t=sw(t,{action:'release'});
