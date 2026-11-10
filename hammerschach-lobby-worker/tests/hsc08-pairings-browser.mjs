@@ -42,7 +42,7 @@ try {
     await post({action:'apply'});await post({action:'prepare'});
     document.querySelector('#hsc08View iframe').contentWindow.location.reload();
   });
-  const editor=frame.locator('.pairing-editor');await editor.locator('summary').click();
+  const editor=frame.locator('.pairing-editor');await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).click();
   const first=editor.locator('.pairing-edit-row').first(),white=await first.locator('select').nth(0).inputValue(),black=await first.locator('select').nth(1).inputValue();
   await first.getByRole('button',{name:'Farben tauschen',exact:false}).click();
   assert.equal(await first.locator('select').nth(0).inputValue(),black);
@@ -53,10 +53,10 @@ try {
     if(process.env.HSC_SCREENSHOT_DIR)await editor.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-pairing-'+(theme||'light')+'.png'});
   }
   await editor.getByRole('button',{name:'Änderungen prüfen und speichern',exact:false}).click();
-  await editor.locator('summary').click();assert.equal(await editor.locator('.pairing-edit-row').first().locator('select').nth(0).inputValue(),black);
+  await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).click();assert.equal(await editor.locator('.pairing-edit-row').first().locator('select').nth(0).inputValue(),black);
   // A local change can be cancelled without modifying the saved plan.
   await editor.locator('.pairing-edit-row').first().getByRole('button',{name:'Farben tauschen',exact:false}).click();
-  await editor.getByRole('button',{name:'Abbrechen',exact:true}).click();await editor.locator('summary').click();
+  await editor.getByRole('button',{name:'Abbrechen',exact:true}).click();await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).click();
   assert.equal(await editor.locator('.pairing-edit-row').first().locator('select').nth(0).inputValue(),black);
   // Swapping two participants only in one round would duplicate other encounters.
   const other=await editor.locator('.pairing-edit-row').nth(1).locator('select').first().inputValue();
@@ -67,7 +67,7 @@ try {
   await editor.getByRole('button',{name:'Abbrechen',exact:true}).click();
   await frame.getByRole('button',{name:'Paarungsplan freigeben',exact:false}).click();
   await frame.getByRole('button',{name:'Spielplan zur Bearbeitung zurücknehmen',exact:false}).click();
-  await editor.locator('summary').waitFor();assert.equal(await frame.getByRole('button',{name:'Paarungsentwurf verwerfen',exact:true}).count(),0);
+  await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).waitFor();assert.equal(await frame.getByRole('button',{name:'Entwurf verwerfen',exact:true}).count(),0);
   const view=await page.evaluate(()=>window.HammerschachHsc08.api('/championship/view'));assert.equal(view.tournament.schedule,undefined);assert.equal(view.tournament.audit,undefined);
   await frame.getByRole('button',{name:'Paarungsplan freigeben',exact:false}).click();
   await frame.locator('.rr-round').first().locator('select').first().selectOption('1-0');
@@ -81,17 +81,17 @@ try {
     await post({action:'apply'});await post({action:'prepare',seeds:participants.map(p=>p.id),start:'2026-11-01',end:'2026-11-30'});
     document.querySelector('#hsc08View iframe').contentWindow.location.reload();
   });
-  await editor.locator('summary').click();await editor.locator('.pairing-edit-row').first().getByRole('button',{name:'Farben tauschen',exact:false}).click();
+  await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).click();await editor.locator('.pairing-edit-row').first().getByRole('button',{name:'Farben tauschen',exact:false}).click();
   await editor.getByLabel('Begründung der Paarungsänderung').fill('Andili bestätigt abweichende Farben');
   await editor.getByRole('button',{name:'Änderungen prüfen und speichern',exact:false}).click();
   await editor.getByRole('alert').filter({hasText:'Dutch-Auslosung'}).waitFor();
   await editor.getByRole('checkbox').check();await editor.getByRole('button',{name:'Änderungen prüfen und speichern',exact:false}).click();
   await frame.locator('.rr-round>summary').filter({hasText:'Manuell geändert'}).waitFor();
-  await editor.locator('summary').click();assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+  await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).click();assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
   if(process.env.HSC_SCREENSHOT_DIR)await editor.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-swiss-pairing.png'});
   await frame.getByRole('button',{name:'Runde freigeben',exact:false}).click();
   const swissView=await page.evaluate(()=>window.HammerschachHsc08.api('/championship/view'));assert.equal(swissView.tournament.schedule[0].manualPairings,true);assert.equal(swissView.tournament.audit,undefined);
-  await frame.getByRole('button',{name:'Runde zur Bearbeitung zurücknehmen',exact:false}).click();await editor.locator('summary').waitFor();
+  await frame.getByRole('button',{name:'Runde zur Bearbeitung zurücknehmen',exact:false}).click();await frame.getByRole('button',{name:'Paarungen bearbeiten',exact:false}).waitFor();
   await frame.locator('#roundActions button:focus').filter({hasText:'Runde freigeben'}).waitFor();
   // Verify the actual pointer target after the application has repositioned the page.
   // Use a real pointer click without Playwright re-scrolling the nested iframe.
