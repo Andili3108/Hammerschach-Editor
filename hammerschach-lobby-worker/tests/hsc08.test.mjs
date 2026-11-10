@@ -175,3 +175,22 @@ test('pairing API checks authorization, revision, explicit deviation approval an
  assert.equal((await post({action:'recall-pairings',reason:'Sperre testen'})).status,400);
  assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
 });
+
+
+test('Bob, Thomas1961 and Fabili have read-only access without drafts, audit or administration',async t=>{
+ const f=fixture(t);
+ let result=await f.request('POST',{revision:0,tournament:{...draft,title:'Übernommen'}});
+ result=await f.request('POST',{revision:result.body.revision,action:'apply'});
+ await f.request('POST',{revision:result.body.revision,tournament:{...draft,title:'Geheimer Entwurf'}});
+ for(const username of ['Bob','Thomas1961','Fabili','bOb']){
+  f.setUser({id:username,username,isAdmin:false});
+  assert.equal((await f.request('GET',null,'/access')).body.canManage,false);
+  for(const path of ['/page','/page?view=reader','/page?view=manager']){
+   const r=await f.request('GET',null,path);assert.equal(r.status,200);assert.equal(r.body.canManage,false);assert.ok(!r.body.html.includes('<form id="config"'));assert.ok(!r.body.html.includes('id="backupDialog"'));
+  }
+  const view=(await f.request('GET',null,'/championship/view')).body.tournament;
+  assert.equal(view.title,'Übernommen');assert.equal(view.audit,undefined);
+  for(const path of ['/championship','/championship/backup'])assert.equal((await f.request('GET',null,path)).status,404);
+  for(const method of ['POST','DELETE'])for(const path of ['/championship','/championship/view','/page'])assert.equal((await f.request(method,{revision:2,action:'release'},path)).status,404);
+ }
+});
