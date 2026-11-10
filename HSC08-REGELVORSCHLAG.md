@@ -113,7 +113,7 @@ Diese Punkte nicht stillschweigend als beschlossen ausgeben. Bei Bedarf gezielt 
 
 1. Eventuelle Titelkriterien bei der Startreihenfolge bleiben offen. Gleichstände und fehlende Wertungszahlen siehe Beschlüsse vom 9. November.
 2. Die Feinwertungsbehandlung ist inzwischen beschlossen; siehe Ergänzung vom 9. November.
-3. Rundenturnier-Rückzug: Zählung früherer kampfloser Ergebnisse für die 50-%-Schwelle, mehrere Rückzüge und Doppelrunden-Sonderfälle präzisieren. Allgemeine 50-%-Regel ist beschlossen.
+3. Rundenturnier-Rückzüge sind konkret beschlossen und umgesetzt; siehe Ergänzung Saisonbetrieb vom 10. November 2026.
 4. Aktueller Schutz für Paarungsentwürfe siehe Ergänzung vom 9. November.
 5. Manuelle Dutch-Abweichungen sind inzwischen für Andili mit ausdrücklicher Bestätigung und Begründung beschlossen (siehe Umsetzung Paarungsänderungen). Strukturell unmögliche Paarungen, unzulässige Wiederholungen/Freilose und manuelle Überschreitungen der normalen Farbgrenzen bleiben gesperrt.
 6. Änderungen der Schweizer Rundenzahl nach Turnierbeginn waren nur als mögliche Sonderentscheidung vorgeschlagen, nicht abschließend freigegeben. Keine beiläufige Änderung anbieten.
@@ -142,3 +142,10 @@ Die gewählten Feinwertungsreihenfolgen und Bedienabläufe sind HSC08-Entscheidu
 ## Umsetzung Paarungsänderungen (9. November 2026)
 
 Begründete Bearbeitung im Entwurf und bestätigte Rücknahme vor dem ersten Partieergebnis sind umgesetzt. Rundenturniere prüfen den vollständigen Plan einschließlich Rückspielfarben. Andili darf Schweizer Abweichungen von der Dutch-Auslosung ausdrücklich bestätigen und begründen. Die Runde trägt dann „Manuell geändert“; sie wird nicht als Dutch-konforme Auslosung ausgegeben. Strukturelle Fehler, Wiederholungen gespielter Begegnungen, unzulässige Freilose und manuelle Überschreitungen der normalen Farbgrenzen werden abgelehnt. Sonderfälle der Schlussrunde bei der Farbvergabe bleiben der Automatik vorbehalten. Die Brettreihenfolge ist ebenfalls änderbar. Wiederholte Veröffentlichung erfolgt ausdrücklich. Eine zurückgenommene Runde lässt sich nicht verwerfen. Gespeicherte Partieergebnisse sperren die Paarungen dauerhaft, auch nach Ergebnislöschung. Automatische Freilose allein gelten hierfür nicht als manuell erfasste Partieergebnisse. Details, Bedienung und Installation: README-HSC08-Rundenturnier.md.
+
+
+## Ergänzung Saisonbetrieb vom 10. November 2026
+
+Bestätigt: Für die 50-%-Schwelle zählen nur tatsächlich gespielte Partien. Hin- und Rückspiele zählen gemeinsam. Der ursprünglich geplante Umfang bleibt bei mehreren Rückzügen die Bezugsgröße. Unter 50 % sind sämtliche Begegnungen aus der Wertung zu nehmen, aber zu dokumentieren; ab 50 % bleiben Ergebnisse gewertet und offene Partien werden kampflos verloren. Bei beiderseitigem Rückzug wird eine bisher offene Begegnung für beide mit 0 behandelt. Die Umsetzung berechnet automatische Ergebnisse getrennt von den gespeicherten Originalergebnissen; Ergebniskorrekturen aktualisieren auch die Schwelle.
+
+Schweizer Termine können mit Begründung innerhalb der Saison ohne Überschneidung geändert werden. Ein Schweizer Rückzug ist ohne offenen Paarungsentwurf für zukünftige Runden aufhebbar. Bereits freigegebene Paarungen und vergangene Aussetzrunden bleiben unverändert. Bedienung, Speicherung und Grenzen stehen im Abschnitt Saisonbetrieb der README-HSC08-Rundenturnier.md.
