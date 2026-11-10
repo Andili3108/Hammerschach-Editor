@@ -162,7 +162,7 @@ export function swissTransition(original,body,actor){
       const deviation=!matchesDutchPairings(t,next);
       if(deviation){
         validateManualColours(t,next);
-        if(String(actor).toLowerCase()!=='andili'||body.acceptDeviation!==true)throw Error('Abweichung von der Dutch-Auslosung: Nur Andili darf diese mit ausdrücklicher Bestätigung und Begründung speichern.');
+        if(String(actor).toLowerCase()!=='andili'||body.acceptDeviation!==true)throw Error('Abweichung von der Dutch-Auslosung: Zum Speichern sind die entsprechende Berechtigung, eine ausdrückliche Bestätigung und eine Begründung erforderlich.');
       }
       next.manualPairings=deviation;
       (t.audit ||= []).push(...pairingEvents([last],[next],actor,reason));
