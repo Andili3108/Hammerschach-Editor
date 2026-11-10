@@ -82,7 +82,7 @@ Stand: 31. Oktober 2026. Diese Datei ersetzt den bisherigen unbestätigten Regel
 ## 8. Berechtigungen und Schutz
 
 - Andili darf alles, was der Spielleiter darf, plus exklusive Verwaltungsaktionen.
-- Delegation an bestehendes Gamer-Konto; Teilnehmer brauchen weiterhin keines.
+- Spielleiterdelegation ist bis ganz ans Ende nach Blitzrunden und Vereinspokal zurückgestellt (9. November 2026). Die nachfolgenden Spielleiterrechte sind Zukunftsplanung. Teilnehmer brauchen weiterhin kein Gamer-Konto.
 - Spielleiter: Vorbereitung, Konfiguration, Teilnehmerverwaltung innerhalb der Sperren, Paarungen/Prüfung/Freigabe, Ergebnisse/Korrekturen, Termine, Rückzüge, Abschluss/Wiederöffnung.
 - Nur Andili: Spielleiter ernennen/abberufen, Turnier veröffentlichen und Konfigurationsänderungen veröffentlichen, vollständiges Löschen/Zurücksetzen, Sicherungen wiederherstellen.
 - Private Daten, Seiten, Paarungsentwürfe und interne Protokolle serverseitig schützen, auch bei Direktzugriff. Öffentliche Antwort darf keine versteckten privaten Daten enthalten.
@@ -105,7 +105,7 @@ Stand: 31. Oktober 2026. Diese Datei ersetzt den bisherigen unbestätigten Regel
 - Buchholz Cut 1 streicht vorrangig den niedrigsten Beitrag einer freiwillig ungespielten Runde (Aussetzen / kampfloser Verlust). Ohne solche Runden gilt der insgesamt niedrigste Beitrag.
 - Zwischenstände aktualisieren sich nach jeder Ergebnisspeicherung, mit einsehbarer Berechnung einschließlich Streichresultat. Offene Partien bleiben offen. Ein ausdrücklicher Abschluss erzeugt den Endstand; Korrekturen erfordern Wiederöffnung.
 - Konfigurationsseite und Turnieransicht erhalten gleichermaßen das Gamer-Design. Rückzüge und einzelne Abwesenheiten werden ausdrücklich erfasst.
-- Ergebniskorrekturen bei offenem Schweizer Paarungsentwurf erfordern vorheriges Verwerfen oder Freigeben. Bereits freigegebene Paarungen bleiben bestehen.
+- Ergebniskorrekturen bei offenem Schweizer Paarungsentwurf erfordern vorheriges Verwerfen oder Freigeben. Bereits freigegebene Paarungen bleiben bestehen, außer bei ausdrücklich bestätigter Rücknahme der jüngsten noch nie mit einem Partieergebnis versehenen Runde.
 
 ## 10. Noch nicht abschließend entschiedene Detailfälle
 
@@ -115,7 +115,7 @@ Diese Punkte nicht stillschweigend als beschlossen ausgeben. Bei Bedarf gezielt 
 2. Die Feinwertungsbehandlung ist inzwischen beschlossen; siehe Ergänzung vom 9. November.
 3. Rundenturnier-Rückzug: Zählung früherer kampfloser Ergebnisse für die 50-%-Schwelle, mehrere Rückzüge und Doppelrunden-Sonderfälle präzisieren. Allgemeine 50-%-Regel ist beschlossen.
 4. Aktueller Schutz für Paarungsentwürfe siehe Ergänzung vom 9. November.
-5. Grenzen manueller Eingriffe in Dutch-Auslosungen: harte Unmöglichkeit (z.B. Spieler doppelt) ablehnen; bewusste Paarungsregel-Ausnahme nicht ohne Entscheidung einführen.
+5. Manuelle Dutch-Abweichungen sind inzwischen für Andili mit ausdrücklicher Bestätigung und Begründung beschlossen (siehe Umsetzung Paarungsänderungen). Strukturell unmögliche Paarungen, unzulässige Wiederholungen/Freilose und manuelle Überschreitungen der normalen Farbgrenzen bleiben gesperrt.
 6. Änderungen der Schweizer Rundenzahl nach Turnierbeginn waren nur als mögliche Sonderentscheidung vorgeschlagen, nicht abschließend freigegeben. Keine beiläufige Änderung anbieten.
 7. Ob und wie eine Veröffentlichung zurückgenommen werden darf, wurde noch nicht beschlossen.
 
@@ -137,3 +137,8 @@ Diese Punkte nicht stillschweigend als beschlossen ausgeben. Bei Bedarf gezielt 
 - FIDE Wettbewerbsregeln, insbesondere Rückzug im Rundenturnier Abschnitt 6.6: https://handbook.fide.com/files/handbook/Competition_Rules.pdf
 
 Die gewählten Feinwertungsreihenfolgen und Bedienabläufe sind HSC08-Entscheidungen. Diese Datei behauptet keine FIDE-Zertifizierung der Anwendung und keine bereits erfolgte Umsetzung.
+
+
+## Umsetzung Paarungsänderungen (9. November 2026)
+
+Begründete Bearbeitung im Entwurf und bestätigte Rücknahme vor dem ersten Partieergebnis sind umgesetzt. Rundenturniere prüfen den vollständigen Plan einschließlich Rückspielfarben. Andili darf Schweizer Abweichungen von der Dutch-Auslosung ausdrücklich bestätigen und begründen. Die Runde trägt dann „Manuell geändert“; sie wird nicht als Dutch-konforme Auslosung ausgegeben. Strukturelle Fehler, Wiederholungen gespielter Begegnungen, unzulässige Freilose und manuelle Überschreitungen der normalen Farbgrenzen werden abgelehnt. Sonderfälle der Schlussrunde bei der Farbvergabe bleiben der Automatik vorbehalten. Die Brettreihenfolge ist ebenfalls änderbar. Wiederholte Veröffentlichung erfolgt ausdrücklich. Eine zurückgenommene Runde lässt sich nicht verwerfen. Gespeicherte Partieergebnisse sperren die Paarungen dauerhaft, auch nach Ergebnislöschung. Automatische Freilose allein gelten hierfür nicht als manuell erfasste Partieergebnisse. Details, Bedienung und Installation: README-HSC08-Rundenturnier.md.

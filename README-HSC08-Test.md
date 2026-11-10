@@ -1,6 +1,6 @@
 # HSC08 – Hinweise zu den Testständen
 
-Aktuelle Bedienung, Feinwertung, Grenzen und Einspielhinweise stehen in `README-HSC08-Rundenturnier.md` (aktualisiert am 9. November 2026). Die folgenden Abschnitte dokumentieren ausdrücklich die älteren Entwicklungsschritte.
+Aktuelle Bedienung, Feinwertung, Grenzen und Einspielhinweise stehen in `README-HSC08-Rundenturnier.md` (aktualisiert am 10. November 2026). Die folgenden Abschnitte dokumentieren ausdrücklich die älteren Entwicklungsschritte.
 
 ## Historischer erster Teststand vom 30. Oktober 2026
 
