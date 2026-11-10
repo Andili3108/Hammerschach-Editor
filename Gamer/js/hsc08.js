@@ -5,7 +5,8 @@
   let identity='', generation=0, frame=null, active=false, links=[], toolbars=[], restored=[], footerMarker=null, sizeObserver=null, statusText='Vereinsmeisterschaft';
   const auth=()=>typeof onlineAuthToken!=='undefined' ? onlineAuthToken : '';
   const user=()=>typeof onlineAuthUser!=='undefined' ? onlineAuthUser : null;
-  const eligible=()=>!!auth() && user()?.isAdmin===true && String(user()?.username||'').toLowerCase()==='andili';
+  const managerEligible=()=>!!auth() && user()?.isAdmin===true && String(user()?.username||'').toLowerCase()==='andili';
+  const eligible=()=>managerEligible() || !!auth() && ['bob','thomas1961','fabili'].includes(String(user()?.username||'').toLowerCase());
   const style=document.createElement('style');
   style.textContent=`
 .hsc08-covered{display:none!important}
@@ -86,6 +87,7 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
       }else{tab.disabled=true;tab.title='Noch nicht verfügbar';tab.classList.add('hsc08-future');}
       nav.append(tab);
     }
+    if(!managerEligible())return nav;
     const menu=document.createElement('div');menu.className=drawerMode?'mobile-nav-accordion':'header-menu';
     const popup=document.createElement('div');popup.className=drawerMode?'mobile-nav-accordion-panel':'header-menu-popup';popup.setAttribute('role','menu');popup.hidden=true;
     const hide=()=>{popup.hidden=true;toggle.setAttribute('aria-expanded','false');};
