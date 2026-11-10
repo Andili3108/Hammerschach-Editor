@@ -34,7 +34,7 @@ try {
   else {await page.locator('#clubChessMenuBtn').click();await page.locator('#clubChessMenuPopup').getByRole('button',{name:'HSC08',exact:true}).click();}
   const frame=page.frameLocator('#hsc08View iframe');await frame.getByText('Diese Turnierseite ist noch leer.').waitFor();
 
-  page.on('dialog',dialog=>dialog.accept());
+  page.on('dialog',dialog=>dialog.accept(dialog.type()==='prompt'?'Korrektur im Test':undefined));
   await page.evaluate(async()=>{
     const api=window.HammerschachHsc08.api;
     let state=await api('/championship');
@@ -49,6 +49,18 @@ try {
     document.querySelector('#hsc08View iframe').contentWindow.location.reload();
   });
   await frame.locator('#ranking table').waitFor();
+  await frame.locator('.rr-round').first().getByRole('button',{name:'Rundentermine ändern',exact:false}).click();
+  const dates=frame.locator('.rr-round').first().locator('form');
+  await dates.getByLabel('Rundenbeginn',{exact:true}).fill('2026-11-02');
+  await dates.getByLabel('Spätester Spieltermin',{exact:true}).fill('2026-11-29');
+  await dates.getByLabel('Begründung der Terminänderung').fill('Vereinsabend verschoben');
+  await dates.getByRole('button',{name:'Termine speichern'}).click();
+  await frame.locator('.rr-round>summary').filter({hasText:'29.11.2026'}).waitFor();
+  await frame.getByLabel('Rückzug rückgängig machen',{exact:true}).selectOption('player-5');
+  await page.waitForFunction(async()=>!(await window.HammerschachHsc08.api('/championship')).tournament.withdrawn.includes('player-5'));
+  await frame.getByLabel('Teilnehmer zurückziehen',{exact:true}).selectOption('player-5');
+  await page.waitForFunction(async()=>(await window.HammerschachHsc08.api('/championship')).tournament.withdrawn.includes('player-5'));
+
   assert.deepEqual(await frame.locator('#ranking th').allTextContents(),['Platz','Name','Gespielt','Punkte','Buchholz','BH Cut 1']);
   await frame.locator('#ranking .calculation>summary').click();
   await frame.locator('#ranking .calculation details>summary').first().click();
