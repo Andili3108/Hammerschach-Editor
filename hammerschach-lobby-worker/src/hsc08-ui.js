@@ -14,9 +14,9 @@ window.Hsc08Ui = (() => {
     table.append(head);
     for(const row of t.ranking||[]){
       const tr=node('tr');
-      const label=names.get(row.id)+((t.withdrawn||[]).includes(row.id)?' · Zurückgezogen':'');
+      const label=names.get(row.id)+(row.excluded?' · ohne Wertung':'')+((t.withdrawn||[]).includes(row.id)?' · Zurückgezogen':'');
       const values=[row.rank,label,row.played,row.points,...(swiss?[row.bh,row.bhCut1]:[row.sb])];
-      values.forEach((value,i)=>tr.append(node('td',i===1?value:number(value),i===3?'points':'')));
+      values.forEach((value,i)=>tr.append(node('td',i===1?value:i===0&&value==null?'—':number(value),i===3?'points':'')));
       table.append(tr);
     }
     const wrap=node('div',undefined,'ranking-wrap');wrap.append(table);target.append(wrap);
@@ -55,7 +55,7 @@ window.Hsc08Ui = (() => {
     const row=node('div',undefined,'rr-game');
     const white=node('span',names.get(game.white),'white-player');white.setAttribute('aria-label','Weiß: '+names.get(game.white));
     const black=node('span',names.get(game.black),'black-player');black.setAttribute('aria-label','Schwarz: '+names.get(game.black));
-    const output=typeof result==='string'?node('strong',result,'result'):result;output.classList.add('result');
+    const output=typeof result==='string'?node('strong',result,'result'):result;output.classList.add('result');if(game.excluded)output.append(node('small',' · ohne Wertung'));else if(game.withdrawalResult)output.append(node('small',' · Rückzug'));
     row.append(node('span',String(index+1),'board-number'),white,output,black);return row;
   }
   return {ranking,round,pairing};

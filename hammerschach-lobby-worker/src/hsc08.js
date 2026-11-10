@@ -101,7 +101,7 @@ export async function handleHsc08(request, env, deps) {
     const stored = row.document ? JSON.parse(row.document) : null;
     // Legacy documents are both the saved draft and the previously visible view.
     const {storageVersion, viewSnapshot, ...draft} = stored || {};
-    for (const t of [draft, viewSnapshot]) if (t?.mode === 'swiss' && t.schedule) t.ranking = swissStandings(t);
+    for (const t of [draft, viewSnapshot]) if (t?.schedule) t.ranking = t.mode==='swiss'?swissStandings(t):standings(t);
     return {revision:row.revision, tournament:stored ? draft : null,
       publishedTournament:stored ? (storageVersion===2 ? viewSnapshot : draft) : null};
   };
@@ -142,7 +142,7 @@ export async function handleHsc08(request, env, deps) {
           for(const t of [restored.draft,restored.view])if(t)(t.audit||=[]).push({...event});
           document=storageDocument(restored.draft,restored.view);
         }
-      } else if(['prepare','discard-plan','release','result','complete','reopen','withdraw','pairings','recall-pairings'].includes(body.action)){
+      } else if(['prepare','discard-plan','release','result','complete','reopen','withdraw','pairings','recall-pairings','round-dates','rejoin'].includes(body.action)){
         if(JSON.stringify(current.tournament)!==JSON.stringify(current.publishedTournament))throw Error('Bitte zuerst den gespeicherten Entwurf in die Turnieransicht übernehmen.');
         const update=current.publishedTournament?.mode==='swiss'?swissTransition:transition;
         const updated=update(current.publishedTournament,body,session.user.username);
@@ -154,6 +154,7 @@ export async function handleHsc08(request, env, deps) {
         if(body.action)return respond({ok:false,message:'Unbekannte Aktion.'},400);
         const incoming=validateHsc08Draft(body.tournament), existing=current.tournament;
         if(existing?.schedule){
+          if(existing.mode==='swiss'&&existing.schedule.some(r=>r.start<incoming.startsOn||r.end>incoming.endsOn))throw Error('Der Turnierzeitraum muss alle vorhandenen Runden umfassen.');
           for(const key of ['mode','scoring','cycles','rounds','timeControl'])if(incoming[key]!==existing[key])throw Error('Turnierregeln sind nach Planerstellung gesperrt.');
           if(JSON.stringify(incoming.participants.map(p=>p.id))!==JSON.stringify(existing.participants.map(p=>p.id)))throw Error('Das Teilnehmerfeld ist nach Planerstellung gesperrt.');
           Object.assign(incoming,{schedule:existing.schedule,phase:existing.phase,audit:existing.audit,hasEverResults:existing.hasEverResults,ranking:existing.ranking,...(existing.withdrawn?{withdrawn:existing.withdrawn}:{})});incoming.ranking=incoming.mode==='swiss'?swissStandings(incoming):standings(incoming);

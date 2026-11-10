@@ -1,6 +1,6 @@
 import {validateRoundRobinPlan} from './hsc08-pairings.js';
 import {swissStandings,validateSwissRound} from './hsc08-swiss.js';
-import {RESULTS,standings} from './hsc08-round-robin.js';
+import {RESULTS,standings,effectiveRoundRobinGames} from './hsc08-round-robin.js';
 import {readerTournament} from './hsc08-reader.js';
 import {hsc08Logo} from './hsc08-logo.js';
 function roundFlags(r) {
@@ -18,6 +18,7 @@ export function restoreBackup(input,validate){
   if(raw===null)return null;
   const t=validate(raw);
   if(!['draft','prepared','running','completed'].includes(raw.phase))throw Error('Ungültiger Turnierstatus.');
+  if(raw.withdrawn!==undefined){const ids=t.participants.map(p=>p.id);if(!Array.isArray(raw.withdrawn)||new Set(raw.withdrawn).size!==raw.withdrawn.length||raw.withdrawn.some(id=>!ids.includes(id)))throw Error('Ungültige Rückzüge.');t.withdrawn=[...raw.withdrawn];}
   if(raw.phase!=='draft'){
    if(t.mode==='swiss'){
     if(!Array.isArray(raw.schedule)||!raw.schedule.length||!['prepared','running','completed'].includes(raw.phase))throw Error('Ungültiger Schweizer Spielstand.');
@@ -44,12 +45,12 @@ export function restoreBackup(input,validate){
    validateRoundRobinPlan(t,expected);
    const hasResults=expected.some(r=>r.games.some(g=>g.result!==null));
    if(raw.phase==='prepared'&&hasResults)throw Error('Ein Paarungsentwurf darf keine Ergebnisse enthalten.');
-   if(raw.phase==='completed'&&expected.some(r=>r.games.some(g=>!g.result)))throw Error('Abgeschlossenes Turnier enthält offene Partien.');
+   if(raw.phase==='completed'&&effectiveRoundRobinGames({...t,schedule:expected}).some(g=>!g.excluded&&!g.result))throw Error('Abgeschlossenes Turnier enthält offene Partien.');
    t.schedule=expected;t.phase=raw.phase;t.hasEverResults=raw.hasEverResults===true||hasResults;
    }
   }else if(raw.schedule || raw.hasEverResults)throw Error('Widersprüchliche Turnierdaten.');
   if(raw.audit!==undefined){if(!Array.isArray(raw.audit)||raw.audit.length>50000)throw Error('Ungültiges Protokoll.');t.audit=raw.audit.map(e=>{
-   if(!e || typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at))||typeof e.actor!=='string'||e.actor.length>100||!['prepare','discard-plan','release','result','complete','reopen','restore','withdraw','pairings','recall-pairings','pairing-approval'].includes(e.action))throw Error('Ungültiger Protokolleintrag.');
+   if(!e || typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at))||typeof e.actor!=='string'||e.actor.length>100||!['prepare','discard-plan','release','result','complete','reopen','restore','withdraw','pairings','recall-pairings','pairing-approval','round-dates','rejoin'].includes(e.action))throw Error('Ungültiger Protokolleintrag.');
    const out={at:e.at,actor:e.actor,action:e.action};for(const k of ['gameId','participantId','old','value','reason'])if(e[k]!==undefined){if(e[k]!==null&&(typeof e[k]!=='string'||e[k].length>500))throw Error('Ungültiger Protokollwert.');out[k]=e[k];}return out;
   });}
   if(t.schedule){for(const r of t.schedule){if(r.games.some(g=>g.result!==null)||(t.audit||[]).some(e=>e.action==='result'&&r.games.some(g=>g.id===e.gameId)&&(e.old!=null||e.value!=null)))r.hasRecordedResults=true;}if(t.audit?.some(e=>e.action==='result'&&(e.old!==null||e.value!==null)))t.hasEverResults=true;t.ranking=t.mode==='swiss'?swissStandings(t):standings(t);}return t;
@@ -72,9 +73,9 @@ export function exportHtml(raw){
  let content='';
  if(t){content+=section('Turnierinformationen',table(['Angabe','Wert'],[['Modus',t.mode==='swiss'?'Schweizer System':'Rundenturnier'],['Punktewertung',t.scoring==='three-point'?'3–1–0':'1–½–0'],[t.mode==='swiss'?'Runden':'Durchgänge',t.mode==='swiss'?t.rounds:t.cycles],['Beginn',t.startsOn],['Spätester Spieltermin',t.endsOn],['Bedenkzeit',t.timeControl]]),'#fff1c2');}
  if(t?.ranking)content+='<p>'+(t.phase==='completed'?'Endstand':'Zwischenstand')+'</p>';
- if(t?.ranking)content+=section('Rangliste',table(['Platz','Name','Gespielt','Punkte',...(t.mode==='swiss'?['Buchholz','BH Cut 1']:['SB'])],t.ranking.map(r=>[r.rank,names.get(r.id)+((t.withdrawn||[]).includes(r.id)?' · Zurückgezogen':''),r.played,r.points,...(t.mode==='swiss'?[r.bh,r.bhCut1]:[r.sb])])),'#fff1c2');
+ if(t?.ranking)content+=section('Rangliste',table(['Platz','Name','Gespielt','Punkte',...(t.mode==='swiss'?['Buchholz','BH Cut 1']:['SB'])],t.ranking.map(r=>[r.rank??'—',names.get(r.id)+((t.withdrawn||[]).includes(r.id)?' · Zurückgezogen':''),r.played,r.points,...(t.mode==='swiss'?[r.bh,r.bhCut1]:[r.sb])])),'#fff1c2');
  const labels={'1-0':'1–0','0-1':'0–1','1/2-1/2':'½–½','+/-':'+ / − (kampflos)','-/+':'− / + (kampflos)','-/-':'− / −'};
- content+=section('Runden und Paarungen',(t?.schedule||[]).slice().reverse().map(r=>'<h3>Runde '+r.number+(r.start?' · '+esc(r.start.split('-').reverse().join('.'))+' – '+esc(r.end.split('-').reverse().join('.')):'')+(r.manualPairings?' · Manuell geändert':'')+'</h3>'+table(['Brett','Weiß','Ergebnis','Schwarz'],r.games.map((g,i)=>[i+1,names.get(g.white),labels[g.result]||'Offen',names.get(g.black)]))+(r.bye?'<p>'+esc(names.get(r.bye))+(t.mode==='swiss'?' · Freilos · '+(t.scoring==='three-point'?'3 Punkte':'1 Punkt'):' · spielfrei')+'</p>':'')+(r.absent||[]).map(id=>'<p>'+esc(names.get(id))+' · Ausgesetzt · 0 Punkte</p>').join('')).join('')||'<p>Noch keine Runden freigegeben.</p>','#e5edf4');
+ content+=section('Runden und Paarungen',(t?.schedule||[]).slice().reverse().map(r=>'<h3>Runde '+r.number+(r.start?' · '+esc(r.start.split('-').reverse().join('.'))+' – '+esc(r.end.split('-').reverse().join('.')):'')+(r.manualPairings?' · Manuell geändert':'')+'</h3>'+table(['Brett','Weiß','Ergebnis','Schwarz'],r.games.map((g,i)=>[i+1,names.get(g.white),(labels[g.result]||'Offen')+(g.excluded?' · ohne Wertung':g.withdrawalResult?' · Rückzug':''),names.get(g.black)]))+(r.bye?'<p>'+esc(names.get(r.bye))+(t.mode==='swiss'?' · Freilos · '+(t.scoring==='three-point'?'3 Punkte':'1 Punkt'):' · spielfrei')+'</p>':'')+(r.absent||[]).map(id=>'<p>'+esc(names.get(id))+' · Ausgesetzt · 0 Punkte</p>').join('')).join('')||'<p>Noch keine Runden freigegeben.</p>','#e5edf4');
  if(t?.phase==='completed' && t.ranking)content+='<p>Vereinsmeister: '+t.ranking.filter(r=>r.rank===1).map(r=>esc(names.get(r.id))).join(', ')+'</p>';
  if(t?.mode==='swiss' && t.ranking)content+=section('Berechnung der Feinwertung',t.ranking.map(row=>'<details><summary>'+esc(names.get(row.id))+' · Buchholz '+row.bh+' · Cut 1 '+row.bhCut1+'</summary>'+table(['Runde','Art','Gegner','Beitrag','Cut 1'],row.contributions.map(c=>[c.round,({'played':'Gespielt','open':'Offen','bye':'Freilos','absent':'Ausgesetzt','forfeit-win':'Kampfloser Sieg','forfeit-loss':'Kampfloser Verlust'})[c.kind],names.get(c.opponent)||'Rechnerischer Gegner',c.value??'Offen',c.cut?'Gestrichen':'']))+'</details>').join(''),'#fff1c2');
  if(!t?.schedule)content+=section('Teilnehmer',table(['Name','Spielstärke'],(t?.participants||[]).map(p=>[p.name,p.dwz?'DWZ '+p.dwz:p.estimatedRating?'Schätzung '+p.estimatedRating:''])),'#e5eee2');

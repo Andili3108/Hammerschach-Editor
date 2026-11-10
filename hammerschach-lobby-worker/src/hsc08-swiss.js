@@ -74,6 +74,7 @@ function prepare(t, body, initialFlip) {
 
 export function validateSwissRound(t,r,previous,restoring=false) {
   checkDates(r.start,r.end);
+  if(r.start<t.startsOn||r.end>t.endsOn)throw Error('Runde liegt außerhalb des Turnierzeitraums.');
   const ids=new Set(t.participants.map(p=>p.id));
   if(r.number!==previous.length+1 || r.number>t.rounds || typeof r.pending!=='boolean' || !Array.isArray(r.games) ||
       previous.at(-1)?.pending || (previous.length && r.start<=previous.at(-1).end))throw Error('Ungültige Schweizer Runde.');
@@ -134,6 +135,22 @@ export function swissTransition(original,body,actor){
     case 'reopen':
       if (t.phase !== 'completed') throw Error('Das Turnier ist nicht abgeschlossen.');
       t.phase='running'; break;
+    case 'round-dates': {
+      if(!['prepared','running'].includes(t.phase))throw Error('Bitte das Turnier für Änderungen öffnen.');
+      const index=t.schedule.findIndex(r=>r.number===body.roundNumber),round=t.schedule[index];
+      if(!round)throw Error('Runde nicht gefunden.');
+      checkDates(body.start,body.end);
+      if(body.start<t.startsOn||body.end>t.endsOn||index>0&&body.start<=t.schedule[index-1].end||index<t.schedule.length-1&&body.end>=t.schedule[index+1].start)throw Error('Rundenzeitraum außerhalb der Saison oder Überschneidung mit einer anderen Runde.');
+      const reason=String(body.reason||'').trim();if(!reason||reason.length>500)throw Error('Bitte die Terminänderung kurz begründen.');
+      Object.assign(event,{gameId:'r'+round.number,old:round.start+' – '+round.end,value:body.start+' – '+body.end,reason});
+      round.start=body.start;round.end=body.end;break;
+    }
+    case 'rejoin': {
+      if(t.phase!=='running'||last?.pending)throw Error('Rückkehr nur ohne offenen Paarungsentwurf im laufenden Turnier möglich.');
+      if(!(t.withdrawn||[]).includes(body.participantId))throw Error('Dieser Teilnehmer ist nicht zurückgezogen.');
+      const reason=String(body.reason||'').trim();if(!reason||reason.length>500)throw Error('Bitte die Rückkehr kurz begründen.');
+      t.withdrawn=t.withdrawn.filter(id=>id!==body.participantId);Object.assign(event,{participantId:body.participantId,reason});break;
+    }
     case 'withdraw':
       if (t.phase !== 'running' || last?.pending || !t.participants.some(p=>p.id===body.participantId))
         throw Error('Rückzug nur im laufenden Turnier ohne offenen Paarungsentwurf möglich.');

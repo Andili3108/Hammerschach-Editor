@@ -1,3 +1,4 @@
+import {effectiveRoundRobinGames} from './hsc08-round-robin.js';
 import {HSC08_UI} from './hsc08-ui.js';
 import {swissStandings} from './hsc08-tiebreak.js';
 import {hsc08Page} from './hsc08-page.js';
@@ -6,11 +7,12 @@ export function readerTournament(t){
   if(!t)return null;
   const keys=['title','description','descriptionRich','mode','scoring','cycles','rounds','startsOn','endsOn','timeControl','phase'];
   const out=Object.fromEntries(keys.filter(k=>t[k]!==undefined).map(k=>[k,t[k]]));
-  if(t.mode==='swiss') out.withdrawn=[...(t.withdrawn || [])];
+  out.withdrawn=[...(t.withdrawn || [])];
   out.participants=(t.participants||[]).map(({id,name,dwz,estimatedRating})=>({id,name,...(dwz?{dwz}:{}),...(!dwz&&estimatedRating?{estimatedRating}:{})}));
   if(['running','completed'].includes(t.phase)){
-    out.schedule=(t.schedule||[]).filter(r=>!r.pending).map(r=>({number:r.number,...(r.manualPairings?{manualPairings:true}:{}),...(r.start?{start:r.start,end:r.end}:{}),bye:r.bye,...(r.absent?{absent:[...r.absent]}:{}),games:r.games.map(({id,white,black,result})=>({id,white,black,result}))}));
-    if(t.hasEverResults || t.phase==='completed')out.ranking=t.mode==='swiss'?swissStandings(t):(t.ranking||[]).map(({id,rank,points,sb,played})=>({id,rank,points,sb,played}));
+    const effective=t.mode==='round-robin'?new Map(effectiveRoundRobinGames(t).map(g=>[g.id,g])):null;
+    out.schedule=(t.schedule||[]).filter(r=>!r.pending).map(r=>({number:r.number,...(r.manualPairings?{manualPairings:true}:{}),...(r.start?{start:r.start,end:r.end}:{}),bye:r.bye,...(r.absent?{absent:[...r.absent]}:{}),games:r.games.map(({id,white,black,result})=>effective?effective.get(id):({id,white,black,result}))}));
+    if(t.hasEverResults || t.phase==='completed')out.ranking=t.mode==='swiss'?swissStandings(t):(t.ranking||[]).map(({id,rank,points,sb,played,excluded})=>({id,rank,points,sb,played,...(excluded?{excluded:true}:{})}));
   }
   return out;
 }
