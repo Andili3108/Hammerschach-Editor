@@ -18,11 +18,11 @@ Die Dateien des jeweiligen Änderungs-ZIPs mit gleicher Ordnerstruktur übernehm
 
 ## Schutz und noch ausstehende Funktionen
 
-- Nur Andili hat Zugriff; keine öffentliche Freigabe oder Spielleiterdelegation hinzugefügt.
+- Andili verwaltet; Bob, Thomas1961 und Fabili haben angemeldeten Lesezugriff. Keine öffentliche Freigabe oder Spielleiterdelegation.
 - Sobald jemals ein Ergebnis erfasst wurde, ist vollständiges Löschen gesperrt – auch nach Entfernen des Ergebnisses, Abschluss, Wiederöffnung oder Speichern einer Konfiguration. Die Sperre wird serverseitig durchgesetzt.
 - Im Menü „Sichern / Wiederherstellen“ steht jetzt eine Sicherungs-ZIP bereit: `HSC08-Sicherung.json` enthält den gespeicherten Entwurf, den übernommenen Ansichtsstand, Teilnehmer, Ergebnisse und Protokoll. `HSC08-Turnier.html` ist eine eigenständige, statische Seite im Gamer-Stil mit eingebettetem Logo, ausschließlich mit dem übernommenen Ansichtsstand. Sie kann im Browser geöffnet oder auf anderen Seiten verwendet werden. Noch ungespeicherte Formulareingaben sind in keiner der Dateien enthalten.
 - Zum Zurücksetzen zuerst die ZIP herunterladen und sicher aufbewahren. Danach das Speichern bestätigen, den aktuellen Turniernamen und das Gamer-Passwort eingeben und die zusätzliche Rückfrage bestätigen. Hat sich seit der Sicherung etwas geändert, wird das Zurücksetzen abgewiesen. Nur die Turnierdaten werden entfernt; Seite und Navigation bleiben.
-- Wiederherstellen: ZIP entpacken, auf einer leeren Turnierseite die JSON-Datei auswählen, Gamer-Passwort sowie WIEDERHERSTELLEN eingeben und bestätigen. Vorhandene Turniere werden nicht überschrieben. Die HTML-Datei ist nicht für einen Import bestimmt. Der Zugriff bleibt ausschließlich für Andili freigeschaltet.
+- Wiederherstellen: ZIP entpacken, auf einer leeren Turnierseite die JSON-Datei auswählen, Gamer-Passwort sowie WIEDERHERSTELLEN eingeben und bestätigen. Vorhandene Turniere werden nicht überschrieben. Die HTML-Datei ist nicht für einen Import bestimmt. Sichern und Wiederherstellen bleiben ausschließlich für Andili freigeschaltet.
 - Zum Testen: Rundenturnier sichern, geschützt zurücksetzen, JSON wiederherstellen und Ergebnisse prüfen. Danach bei Bedarf erneut sichern und zurücksetzen, um einen Schweizer Entwurf anzulegen. Dies ist keine Archivfunktion.
 - Rundenturnier-Rückzüge einschließlich 50-Prozent-Regel sind umgesetzt; siehe „Saisonbetrieb“. Paarungen sind im Entwurf bearbeitbar; siehe Abschnitt Paarungsänderungen. Nicht durch Löschen eines Teilnehmers umgehen.
 - Schweizer Testbetrieb: Unter „Runden und Paarungen“ Beginn und letzten Spieltermin eintragen, bei gleich bewerteten Spielern die Startnummern vergeben und „Runde 1 vorbereiten“ wählen. Für Teilnehmer ohne DWZ und Schätzung legt der Spielleiter die Einordnung fest. Ein Entwurf lässt sich verwerfen oder freigeben. Erst die Freigabe macht die Paarungen in der Leseansicht sichtbar. Erst nach Entscheidung aller Partien lässt sich die folgende Runde vorbereiten. Die Rangliste zeigt Punkte, Buchholz und Buchholz Cut 1. Details stehen im nachfolgenden Abschnitt zur Schweizer Feinwertung.
@@ -88,7 +88,7 @@ Prüfung der Schaltflächenänderung: 41 automatisierte Tests bestanden; Paarung
 
 ## Sichtbare Texte (10. November 2026)
 
-Turnierseite, Konfiguration, Hilfe, Dialoge und Statusmeldungen enthalten keine Hinweise mehr auf einen privaten Testbereich oder die persönliche Andili-Freigabe. Berechtigungsbezogene Meldungen und die Bestätigung manueller Paarungen sind neutral formuliert. Die serverseitige Beschränkung auf Andili und sämtliche Schutzprüfungen gelten unverändert. Tatsächliche Bearbeiternamen im Änderungsprotokoll bleiben erhalten. Zum Einspielen die beiden Gamer-Dateien gemeinsam aktualisieren und den Lobby-Worker neu veröffentlichen.
+Turnierseite, Konfiguration, Hilfe, Dialoge und Statusmeldungen enthalten keine Hinweise mehr auf einen privaten Testbereich oder die persönliche Andili-Freigabe. Berechtigungsbezogene Meldungen und die Bestätigung manueller Paarungen sind neutral formuliert. Verwaltungsrechte bleiben serverseitig auf Andili beschränkt; sämtliche Schutzprüfungen gelten weiterhin. Tatsächliche Bearbeiternamen im Änderungsprotokoll bleiben erhalten. Zum Einspielen die beiden Gamer-Dateien gemeinsam aktualisieren und den Lobby-Worker neu veröffentlichen.
 
 ## Saisonbetrieb: Termine und Rückzüge (10. November 2026)
 
@@ -102,3 +102,11 @@ Turnierseite, Konfiguration, Hilfe, Dialoge und Statusmeldungen enthalten keine 
 - Installation: Dateien in ihrer Ordnerstruktur übernehmen und den Lobby-Worker neu veröffentlichen. Keine Gamer-Frontend-Dateien erforderlich. Der lokale Projektordner ist bereits aktualisiert.
 
 Prüfung Saisonbetrieb: 48 automatisierte Tests bestanden, vollständiger Worker erfolgreich gebündelt. Browserabläufe für Terminänderung, Schweizer Rückkehr und Rundenturnier-Rückzug in Desktop-, iPad- und iPhone-Größe bestanden. Dies sind Chromium-Simulationen, keine Tests auf echten iOS-Geräten.
+
+## Lesefreigabe vom 10. November 2026
+
+Bob, Thomas1961 und Fabili sehen nach Anmeldung unter Schachwelt die Rubrik Vereine mit HSC08. Sie gelangen ausschließlich in die Leseansicht des übernommenen Turnierstands. Kein Turniermenü, keine Bearbeitungsansicht, keine Ergebnisfelder, keine Entwürfe, Protokolle oder Sicherungen. Direkte Verwaltungsaufrufe und Schreibzugriffe sind serverseitig gesperrt. Andili behält die Verwaltung. Andere Konten und Besucher bleiben ausgeschlossen.
+
+Installation: Gamer/index.html und Gamer/js/hsc08.js aktualisieren und Lobby-Worker neu veröffentlichen.
+
+Prüfung Lesefreigabe: 49 Funktionstests bestanden. Separater Browsertest `hammerschach-lobby-worker/tests/hsc08-access-browser.mjs`: Bob auf Desktop, Thomas1961 in iPad-Größe, Fabili in iPhone-Größe; Navigation und reine Leseansicht geprüft. Besucher und anderes Mitglied bleiben ausgeschlossen. Mobile Prüfungen sind Chromium-Simulationen. Handbuch-/Erste-Schritte-/Hilfetexte mitgeprüft; keine zusätzliche sichtbare Freigabemeldung erforderlich.

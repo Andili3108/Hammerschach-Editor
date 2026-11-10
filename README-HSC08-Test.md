@@ -8,11 +8,11 @@ Basis: die vom Nutzer am 30.10.2026 zur Bearbeitung bestätigten Projektdateien.
 
 ## Enthalten
 
-- Andili erhält unter Schachwelt die Rubrik Vereine / HSC08, auch im mobilen Menü. Die gemeinsame Navigation wird auf Besucher-Startansicht und Mitglieder-Lobby verwendet; ohne bestätigte Admin-Anmeldung bleibt die Rubrik verborgen.
+- Andili sowie die Lesekonten Bob, Thomas1961 und Fabili erhalten unter Schachwelt die Rubrik Vereine / HSC08, auch im mobilen Menü. Die gemeinsame Navigation wird auf Besucher-Startansicht und Mitglieder-Lobby verwendet; ohne Anmeldung eines dieser berechtigten Konten bleibt die Rubrik verborgen.
 - Geschützte Seitenansicht mit Original-HSC08-Logo, Titel, Ausschreibung und freier Teilnehmerliste.
 - Separate Konfigurationsansicht für Titel, Modus (Rundenturnier/Schweizer System), Beschreibung und Namen. Noch keine Spielleiterdelegation.
 - Vorhandener Gamer-Header bleibt bestehen. Ergänzte Turnierauswahl mit deaktivierten Einträgen für Vereinspokal und Blitzrunden; Rückkehr, Konfiguration und Löschung im Header.
-- Serverseitige Session-, Admin- und Andili-Prüfung für jeden neuen Seiten-/Datenzugriff. Die vollständige neue Seite inklusive Logo wird nur authentifiziert ausgeliefert. Keine öffentlich abrufbare HSC08-HTML-Datei.
+- Serverseitige Session- und Berechtigungsprüfung für jeden Seiten-/Datenzugriff; Verwaltungsrechte nur für Andili. Die vollständige neue Seite inklusive Logo wird nur authentifiziert ausgeliefert. Keine öffentlich abrufbare HSC08-HTML-Datei.
 - Löschung verlangt aktuelles Admin-Passwort, serverseitige Begrenzung von Passwortversuchen und ausgeschriebene Bestätigung. Alle derzeit gespeicherten Turnierinhalte werden entfernt. Die feste Seite bleibt leer erreichbar.
 - Eigenständige Tabelle `hsc08_championship`; keine Änderung bestehender Online-Turniertabellen. Revisionsprüfung verhindert Überschreiben aus veralteten Tabs. Nach Löschung bleiben nur die leere technische Zeile, Revisionsnummer und Änderungszeit zurück.
 
@@ -29,7 +29,7 @@ Dies ist ausschließlich ein Änderungsstand. Ordnerstruktur beibehalten, nicht 
 3. Als Andili anmelden und unter Schachwelt → Vereine → HSC08 öffnen.
 4. Titel, Modus, Ausschreibung und Namen konfigurieren, speichern, Seite schließen/erneut öffnen.
 5. Falsches Passwort beim Löschen muss scheitern. Richtiges Passwort plus Bestätigung muss den Inhalt entfernen; Seite/Navigation bleiben bestehen.
-6. Als anderes Mitglied und abgemeldet: kein Menüeintrag. Direkte GET/POST/DELETE-Zugriffe auf `/api/hsc08/championship` und GET auf `/api/hsc08/page` müssen ohne Andili-Berechtigung 404 liefern.
+6. Als anderes Mitglied (außer Bob, Thomas1961 und Fabili) und abgemeldet: kein Menüeintrag. Direkte GET/POST/DELETE-Zugriffe auf `/api/hsc08/championship` und GET auf `/api/hsc08/page` müssen ohne passende Berechtigung 404 liefern. Bob, Thomas1961 und Fabili dürfen ausschließlich GET auf `/api/hsc08/access`, `/api/hsc08/page` und `/api/hsc08/championship/view` aufrufen; Verwaltung und Schreibzugriffe bleiben gesperrt.
 7. Hilfe, Zahnrad, Rückkehr zur Lobby sowie bestehende Online-Turniere nach Einspielen kurz prüfen.
 
 Noch nicht produktiv bereitgestellt. Keine echten Konten oder Turniere wurden verändert.
@@ -49,7 +49,7 @@ Ergebnis der lokalen Prüfung: 5 neue Servertests bestanden; Desktop (1440 × 10
 Dieser Nachtrag setzt den ersten HSC08-Teststand voraus. Das neue Änderungs-ZIP enthält nur die seitdem angepassten Dateien.
 
 - Der HSC08-Header ersetzt die normale Lobby-Navigation durch eine Rückkehr-Schaltfläche, das Gamer-Menü „Vereinsturniere“, Konfiguration und Löschung. Keine zusätzliche Desktop-Navigationszeile. Hilfe und Einstellungen bleiben vorhanden.
-- Aktuell nur „Zur Lobby“ für Andili. Die alternative Beschriftung „Zur Startseite“ ist für eine spätere Besucherfreigabe vorbereitet; Besucher erhalten weiterhin keinen Zugriff.
+- Angemeldete berechtigte Konten erhalten „Zur Lobby“. Die alternative Beschriftung „Zur Startseite“ ist für eine spätere Besucherfreigabe vorbereitet; Besucher erhalten weiterhin keinen Zugriff.
 - Das geschützte HSC-Logo ersetzt das Gamer-Logo im Header. Beim Schließen werden Logo und Status wiederhergestellt.
 - Der Status zeigt „HSC08 · Vereinsmeisterschaft“ beziehungsweise den gespeicherten Turniertitel; beim Konfigurieren „HSC08 · Turnier konfigurieren“. Keine wiederholte Seitenüberschrift und kein zweites sichtbares Logo im Inhalt.
 - Seitenhöhe wird aus dem tatsächlichen Inhalt ermittelt; kein inneres Scrollfenster. Die originalen Fußnoten einschließlich ihrer bestehenden Funktionen und Statistikzeile werden unter den Inhalt verschoben und beim Schließen an ihren ursprünglichen Platz zurückgesetzt.
