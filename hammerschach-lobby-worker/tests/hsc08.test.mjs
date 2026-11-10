@@ -152,3 +152,26 @@ test('Swiss API persists absence, recalculates legacy rankings, protects complet
  await post({action:'reopen'});
  assert.equal((await f.request('POST',{revision:before,action:'complete'})).status,409);
 });
+
+test('pairing API checks authorization, revision, explicit deviation approval and persistent round locks',async t=>{
+ const f=fixture(t),participants=Array.from({length:6},(_,i)=>({id:'pair-test-'+i,name:'Spieler '+i,dwz:2000-i*50}));
+ let state=(await f.request()).body;
+ const post=async body=>{const r=await f.request('POST',{revision:state.revision,...body});if(r.status===200)state=r.body;return r;};
+ await post({tournament:{title:'Paarungsänderungen',participants,mode:'swiss',rounds:3,scoring:'classic',startsOn:'2026-11-01',endsOn:'2027-05-31',timeControl:'90+30'}});await post({action:'apply'});
+ await post({action:'prepare',seeds:participants.map(p=>p.id),start:'2026-11-01',end:'2026-11-30'});
+ const round=structuredClone(state.tournament.schedule[0]),g=round.games[0];[g.white,g.black]=[g.black,g.white];
+ const request={action:'pairings',rounds:[round],reason:'Bestätigter Farbtausch',acceptDeviation:true};
+ const stale=state.revision;
+ assert.equal((await post({...request,acceptDeviation:false})).status,400);assert.equal(state.revision,stale);
+ f.setUser({id:'other',username:'Andere',isAdmin:true});assert.equal((await post(request)).status,404);
+ f.setUser({id:'admin',username:'Andili',isAdmin:true});assert.equal((await post(request)).status,200);
+ assert.equal((await f.request('POST',{revision:stale,...request})).status,409);
+ assert.equal(state.tournament.schedule[0].manualPairings,true);
+ await post({action:'release'});assert.equal((await f.request('GET',null,'/championship/view')).body.tournament.schedule[0].manualPairings,true);
+ assert.equal((await post({action:'recall-pairings',reason:'Vor Beginn zurücknehmen'})).status,200);
+ assert.equal((await f.request('GET',null,'/championship/view')).body.tournament.schedule,undefined);
+ assert.equal((await post({action:'discard-plan'})).status,400);
+ await post({action:'release'});await post({action:'result',gameId:g.id,result:'1-0'});await post({action:'result',gameId:g.id,result:null,reason:'Ergebnis noch offen'});
+ assert.equal((await post({action:'recall-pairings',reason:'Sperre testen'})).status,400);
+ assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
+});
