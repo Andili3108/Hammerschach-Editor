@@ -74,6 +74,11 @@ export function transition(t,body,actor){
     (t.audit||=[]).push(...pairingEvents(t.schedule,next,actor,reason));t.schedule=next;
   }else if(body.action==='release'){
     if(t.phase!=='prepared')throw Error('Bitte zuerst den Paarungsplan vorbereiten.');validateRoundRobinPlan(t,t.schedule);t.schedule.forEach(r=>r.wasReleased=true);t.phase='running';
+  }else if(body.action==='rejoin'){
+    if(t.phase!=='running'||!(t.withdrawn||[]).includes(body.participantId))throw Error('Rückkehr nur für einen zurückgezogenen Teilnehmer im laufenden Turnier möglich.');
+    const reason=String(body.reason||'').trim();if(!reason||reason.length>500)throw Error('Bitte die Rückkehr kurz begründen (höchstens 500 Zeichen).');
+    t.withdrawn=t.withdrawn.filter(id=>id!==body.participantId);
+    (t.audit||=[]).push({at:new Date().toISOString(),actor,action:'rejoin',participantId:body.participantId,reason});
   }else if(body.action==='withdraw'){
     if(t.phase!=='running'||!t.participants.some(p=>p.id===body.participantId)||(t.withdrawn||[]).includes(body.participantId))throw Error('Rückzug nur für einen aktiven Teilnehmer im laufenden Turnier möglich.');
     const reason=String(body.reason||'').trim();if(!reason||reason.length>500)throw Error('Bitte den Rückzug kurz begründen.');
