@@ -46,7 +46,7 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
   async function api(path,method='GET',body) {
     if(readOnly && method!=='GET')throw new Error('In der Leseansicht sind keine Änderungen möglich.');
     const token=auth();
-    if(!eligible())throw new Error('Bitte als Andili anmelden.');
+    if(!eligible())throw new Error('Für diesen Bereich ist eine berechtigte Anmeldung erforderlich.');
     const response=await fetch(ONLINE_WORKER_URL+'/api/hsc08'+path,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});
     const data=await response.json();
     if(token!==auth() || !eligible())throw new Error('Die Anmeldung hat sich geändert.');
