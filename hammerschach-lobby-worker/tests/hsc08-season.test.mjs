@@ -50,3 +50,35 @@ test('RR multiple withdrawals are independent of order; both-open is zero; compl
  const mutual=effectiveRoundRobinGames(a).find(g=>[g.white,g.black].every(id=>id==='player-0'||id==='player-1'));assert.equal(mutual.result,'-/-');
  a=act(a,{action:'complete'});assert.equal(restore(a).phase,'completed');
 });
+
+for(const scoring of ['classic','three-point'])for(const cycles of [1,2])test('RR return preserves corrections, other withdrawals and backups '+scoring+' '+cycles,()=>{
+ let t=start(base('round-robin',5,cycles,scoring));
+ const g=t.schedule.flatMap(r=>r.games).find(g=>g.white==='player-0'||g.black==='player-0');
+ t=act(t,{action:'result',gameId:g.id,result:'1-0'});
+ t=act(t,{action:'withdraw',participantId:'player-0',reason:'Fehleingabe'});
+ t=act(t,{action:'result',gameId:g.id,result:'1/2-1/2',reason:'Korrektur'});
+ t=act(t,{action:'withdraw',participantId:'player-1',reason:'Krankheit'});
+ const schedule=structuredClone(t.schedule),rejoin={action:'rejoin',participantId:'player-0',reason:'Fehleingabe korrigieren'};
+ for(const reason of ['', ' '.repeat(10), 'x'.repeat(501)])assert.throws(()=>act(t,{...rejoin,reason}));
+ assert.throws(()=>act({...t,phase:'completed'},rejoin));assert.throws(()=>act(t,{...rejoin,participantId:'unknown'}));
+ t=act(t,rejoin);assert.deepEqual(t.schedule,schedule);assert.deepEqual(t.withdrawn,['player-1']);assert.equal(t.audit.at(-1).action,'rejoin');assert.equal(t.hasEverResults,true);
+ assert.ok(effectiveRoundRobinGames(t).some(g=>(g.white==='player-0'||g.black==='player-0')&&g.result===null&&!g.excluded));
+ assert.deepEqual(restore(t).ranking,t.ranking);assert.deepEqual(restore(t).schedule,t.schedule);assert.throws(()=>act(t,rejoin));assert.throws(()=>act(t,{action:'complete'}));
+ assert.ok(!readerTournament(t).withdrawn.includes('player-0'));
+});
+test('RR return after reopening removes automatic forfeits above threshold without clearing real results',()=>{
+ let t=start(base('round-robin',3));const id='player-0',games=t.schedule.flatMap(r=>r.games);
+ const played=games.find(g=>g.white===id||g.black===id),other=games.find(g=>g.white!==id&&g.black!==id);
+ t=act(t,{action:'result',gameId:played.id,result:'+/-'});
+ // An explicitly recorded forfeit is not an automatically derived withdrawal result.
+ t=act(t,{action:'result',gameId:played.id,result:'1-0',reason:'Tatsächlich gespielt'});
+ t=act(t,{action:'result',gameId:other.id,result:'+/-'});
+ t=act(t,{action:'withdraw',participantId:id,reason:'Fehleingabe'});
+ assert.equal(roundRobinWithdrawals(t).get(id).excluded,false);
+ t=act(t,{action:'complete'});t=act(t,{action:'reopen'});
+ t=act(t,{action:'rejoin',participantId:id,reason:'Berichtigung'});
+ assert.equal(effectiveRoundRobinGames(t).filter(g=>g.result===null).length,1);
+ assert.equal(effectiveRoundRobinGames(t).find(g=>g.id===other.id).result,'+/-');
+ assert.equal(effectiveRoundRobinGames(t).find(g=>g.id===played.id).result,'1-0');
+ assert.throws(()=>act(t,{action:'complete'}));assert.equal(restore(t).audit.at(-1).action,'rejoin');
+});
