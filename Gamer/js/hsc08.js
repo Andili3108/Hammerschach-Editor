@@ -70,7 +70,7 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
   }
   function toolbar(drawerMode=false){
     const nav=document.createElement('nav');nav.className='hsc08-toolbar'+(drawerMode?' hsc08-drawer-nav':'');nav.setAttribute('aria-label',readOnly?'HSC08-Leseansicht':'HSC08-Verwaltung');
-    const icons={'Verwaltung ▾':'🛠️','Meisterschaft':'♟️','Sichern / Wiederherstellen':'💾','Leseansicht prüfen':'👁️','Zur Verwaltung':'🛠️','Zur Lobby':'↩️','Zur Startseite':'↩️','Vereinsturniere ▾':'🏆','Turnier konfigurieren':'🛠️','Turnier vollständig löschen':'🗑️','Vereinsmeisterschaft':'♟️','Vereinspokal':'🏆','Blitzrunden':'⚡'};
+    const icons={'Turniermenü ▾':'🛠️','Meisterschaft':'♟️','Sichern / Wiederherstellen':'💾','Leseansicht prüfen':'👁️','Bearbeitungsansicht':'✏️','Zur Lobby':'↩️','Zur Startseite':'↩️','Vereinsturniere ▾':'🏆','Turnier konfigurieren':'🛠️','Turnier vollständig löschen':'🗑️','Vereinsmeisterschaft':'♟️','Vereinspokal':'🏆','Blitzrunden':'⚡'};
     const button=(label,action)=>{
       const b=document.createElement('button');b.type='button';b.className=drawerMode?'mobile-nav-test-item':'button-flat name-action-btn';
       const icon=document.createElement('span');icon.textContent=icons[label]||'♟️';icon.setAttribute('aria-hidden','true');
@@ -89,7 +89,7 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     const menu=document.createElement('div');menu.className=drawerMode?'mobile-nav-accordion':'header-menu';
     const popup=document.createElement('div');popup.className=drawerMode?'mobile-nav-accordion-panel':'header-menu-popup';popup.setAttribute('role','menu');popup.hidden=true;
     const hide=()=>{popup.hidden=true;toggle.setAttribute('aria-expanded','false');};
-    const toggle=button(readOnly?'Zur Verwaltung':'Verwaltung ▾',()=>{});
+    const toggle=button(readOnly?'Bearbeitungsansicht':'Turniermenü ▾',()=>{});
     toggle.onclick=()=>{if(readOnly){if(drawerMode)document.getElementById('mobileNavTestClose')?.click();open(false);return;}popup.hidden=!popup.hidden;toggle.setAttribute('aria-expanded',String(!popup.hidden));};
     if(!drawerMode)toggle.classList.add('header-menu-button');
     if(!readOnly){toggle.setAttribute('aria-haspopup','menu');toggle.setAttribute('aria-expanded','false');}
