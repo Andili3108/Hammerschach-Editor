@@ -1,3 +1,4 @@
+import {pairingReason,hasRecordedResults,replacePairings,pairingEvents,validateRoundRobinPlan} from './hsc08-pairings.js';
 // Real club games only; no dependency on Gamer online-tournament tables.
 export const RESULTS = {'1-0':[1,0],'0-1':[0,1],'1/2-1/2':[.5,.5],'+/-':[1,0],'-/+':[0,1],'-/-':[0,0]};
 export function pairRoundRobin(ids, cycles=1) {
@@ -46,9 +47,19 @@ export function transition(t,body,actor){
     if(!t.title || !t.startsOn || !t.endsOn || !t.timeControl)throw Error('Bitte Titel, Zeitraum und Bedenkzeit ergänzen.');
     t.schedule=pairRoundRobin(t.participants.map(p=>p.id),t.cycles);t.phase='prepared';
   }else if(body.action==='discard-plan'){
-    if(t.phase!=='prepared')throw Error('Nur ein unveröffentlichter Plan darf verworfen werden.');delete t.schedule;delete t.ranking;t.phase='draft';
+    if(t.phase!=='prepared'||t.schedule.some(r=>r.wasReleased))throw Error('Ein bereits veröffentlichter Plan darf nicht verworfen werden.');delete t.schedule;delete t.ranking;t.phase='draft';
+  }else if(body.action==='recall-pairings'){
+    if(t.phase!=='running'||t.schedule.some(r=>hasRecordedResults(t,r)))throw Error('Rücknahme nur möglich, solange noch kein Partieergebnis eingetragen wurde.');
+    const reason=pairingReason(body);t.schedule.forEach(r=>r.wasReleased=true);t.phase='prepared';
+    (t.audit||=[]).push({at:new Date().toISOString(),actor,action:body.action,reason});
+  }else if(body.action==='pairings'){
+    if(t.phase!=='prepared'||t.schedule.some(r=>hasRecordedResults(t,r)))throw Error('Paarungen sind nur im ergebnislosen Entwurf bearbeitbar.');
+    const reason=pairingReason(body);
+    if(!Array.isArray(body.rounds)||body.rounds.length!==t.schedule.length)throw Error('Bitte den vollständigen Spielplan übermitteln.');
+    const next=t.schedule.map((r,i)=>replacePairings(r,body.rounds[i]));validateRoundRobinPlan(t,next);
+    (t.audit||=[]).push(...pairingEvents(t.schedule,next,actor,reason));t.schedule=next;
   }else if(body.action==='release'){
-    if(t.phase!=='prepared')throw Error('Bitte zuerst den Paarungsplan vorbereiten.');t.phase='running';
+    if(t.phase!=='prepared')throw Error('Bitte zuerst den Paarungsplan vorbereiten.');validateRoundRobinPlan(t,t.schedule);t.schedule.forEach(r=>r.wasReleased=true);t.phase='running';
   }else if(body.action==='result'){
     if(t.phase!=='running')throw Error('Ergebnisse sind nur im laufenden Turnier bearbeitbar.');
     if(body.result!==null && !Object.hasOwn(RESULTS,body.result))throw Error('Ungültiges Ergebnis.');
@@ -56,12 +67,12 @@ export function transition(t,body,actor){
     const reason=String(body.reason||'').trim();if(game.result!==null && !reason)throw Error('Bitte die Korrektur kurz begründen.');if(reason.length>500)throw Error('Die Begründung ist zu lang.');
     if(game.result===body.result)return t;
     (t.audit||=[]).push({at:new Date().toISOString(),actor,action:'result',gameId:game.id,old:game.result,value:body.result,reason});game.result=body.result;
-    if(body.result!==null)t.hasEverResults=true;
+    if(body.result!==null){t.hasEverResults=true;t.schedule.find(r=>r.games.some(g=>g.id===game.id)).hasRecordedResults=true;}
   }else if(body.action==='complete'){
     if(t.phase!=='running'||t.schedule.some(r=>r.games.some(g=>!g.result)))throw Error('Zuerst alle Partien abschließen.');t.phase='completed';
   }else if(body.action==='reopen'){
     if(t.phase!=='completed')throw Error('Das Turnier ist nicht abgeschlossen.');t.phase='running';
   }else throw Error('Unbekannte Turnieraktion.');
-  if(t.phase!==before)(t.audit||=[]).push({at:new Date().toISOString(),actor,action:body.action,old:before,value:t.phase});
+  if(t.phase!==before && body.action!=='recall-pairings')(t.audit||=[]).push({at:new Date().toISOString(),actor,action:body.action,old:before,value:t.phase});
   t.ranking=standings(t);return t;
 }

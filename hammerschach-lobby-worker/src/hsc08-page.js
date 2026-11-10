@@ -21,11 +21,12 @@ html.dark-mode #descriptionSection{background:linear-gradient(rgba(159,77,86,.18
 #config label[for="descriptionInput"]{margin-top:48px}
 @media(max-width:560px){#config .participant-fields{margin-top:32px}#config label[for="descriptionInput"]{margin-top:32px}}
 .rr-game{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(130px,.7fr);gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ui-line)}.rr-game span{overflow-wrap:anywhere}.rr-game select{min-width:0}.rr-round{margin-top:24px}.ranking-wrap{overflow-x:auto}.rr-ranking{width:100%;border-collapse:collapse}.rr-ranking th,.rr-ranking td{padding:8px;text-align:left;border-bottom:1px solid var(--ui-line)}@media(max-width:560px){.rr-game{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rr-game select{grid-column:1 / -1}}
-${HSC08_STYLE}</style><body><main>
+${HSC08_STYLE}.pairing-editor{margin:16px 0;padding:16px;border:1px solid var(--ui-border,#b6aa98);border-radius:16px;background:var(--ui-surface)}.pairing-editor summary{font-weight:bold;cursor:pointer;min-height:44px;padding:10px}.pairing-editor fieldset{min-width:0;margin:20px 0;padding:12px;border:1px solid var(--ui-border,#b6aa98);border-radius:14px}.pairing-edit-row{display:grid;grid-template-columns:70px minmax(0,1fr) minmax(0,1fr) minmax(150px,210px);align-items:center;gap:12px;border-bottom:1px solid #a9884b44;padding:10px 0}.pairing-edit-row label{margin:0;min-width:0}.pairing-editor select{max-width:100%}.pairing-tools{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0}.pairing-moves{display:flex;gap:4px}.pairing-moves button{width:44px;margin:0}.pairing-consent{display:flex;align-items:center;gap:12px;line-height:1.5}.pairing-consent input[type=checkbox]{width:22px;height:22px;min-height:22px;flex:0 0 22px;accent-color:#842b36}.pairing-consent span{flex:1}@media(max-width:700px){.pairing-edit-row{grid-template-columns:repeat(2,minmax(0,1fr))}.pairing-edit-row>strong,.pairing-edit-row>.pairing-tools{grid-column:1/-1}.pairing-editor{padding:10px}}@media(max-width:420px){.pairing-edit-row{grid-template-columns:minmax(0,1fr)}}
+</style><body><main>
 <template id="hsc08Brand"><img src="${hsc08Logo}" alt="HSC08 – Schachabteilung"></template>
 <div id="message" role="status" aria-live="polite"></div>
 <div id="draftNotice" class="notice" hidden><p>Ein gespeicherter Entwurf wurde noch nicht in die Turnieransicht übernommen.</p><button type="button" id="applyDraft">In Turnieransicht übernehmen</button></div><div id="view"><section id="factsSection" class="lobby-tournaments" hidden><h2>Turnierinformationen</h2><div id="tournamentFacts"></div></section><section id="rankingSection" class="lobby-tournaments" hidden><h2>Rangliste</h2><div id="ranking"></div></section><section id="roundsSection"><h2>Runden und Paarungen</h2><div id="roundActions" class="actions"></div><div id="roundContent"></div></section><section id="participantsSection"><h2>Teilnehmer</h2><ol id="participants" role="list"></ol><p id="emptyParticipants">Noch keine Teilnehmer.</p></section><section id="descriptionSection"><h2>Ausschreibung</h2><div id="description" class="description"></div></section></div>
-<form id="config" hidden><section><div class="config-card"><h2>Turnierinformationen</h2><details class="calculation"><summary>ⓘ Erste Schritte und Hilfe zur Turnierverwaltung</summary><ol><li>Titel, Modus, Wertung, Termine, Teilnehmer und Ausschreibung eintragen. „Entwurf speichern“ sichert den Bearbeitungsstand. „In Turnieransicht übernehmen“ macht ihn auf der Turnierseite sichtbar.</li><li>Schweizer System: Auf der Turnierseite den Zeitraum der nächsten Runde eintragen. Unter „Teilnahme an dieser Runde“ Aussetzen markieren. Bei gleicher Spielstärke die Startnummern zuweisen. Paarungen vorbereiten, prüfen und freigeben.</li><li>Ergebnisse an den Paarungen eintragen. Korrekturen benötigen eine Begründung. Die nächste Runde ist möglich, wenn alle bisherigen Partien entschieden sind. Ein offener Paarungsentwurf muss vor einer Ergebniskorrektur verworfen oder freigegeben werden.</li><li>Ein Rückzug gilt für künftige Runden. Bereits freigegebene Partien bleiben ausdrücklich zu entscheiden. Aussetzen gilt nur für die gewählte Runde.</li><li>Die Rangliste aktualisiert sich nach Ergebnissen. Unter „ⓘ Berechnung der Feinwertung“ sind Rundenbeiträge und das Streichresultat einsehbar. Nach der letzten entschiedenen Runde „Turnier abschließen“ wählen. Für Korrekturen den Endstand ausdrücklich wieder öffnen.</li><li>„Sichern / Wiederherstellen“ lädt JSON und HTML als ZIP herunter. Vor dem Zurücksetzen die Sicherung aufbewahren. Wiederherstellung ist auf einer leeren Turnierseite möglich.</li></ol><p>Der HSC08-Testbereich ist derzeit ausschließlich für Andili zugänglich. Die Leseansicht zeigt den übernommenen Stand ohne Verwaltungsfelder. Spielleiterdelegation und öffentliche Freigabe stehen noch aus.</p></details><label for="title">Titel</label><input class="tournament-input" id="title" maxlength="160"><div class="config-grid"><div><label for="mode">Modus</label><select class="tournament-select" id="mode"><option value="">Bitte wählen</option><option value="round-robin">Rundenturnier</option><option value="swiss">Schweizer System</option></select></div>
+<form id="config" hidden><section><div class="config-card"><h2>Turnierinformationen</h2><details class="calculation"><summary>ⓘ Erste Schritte und Hilfe zur Turnierverwaltung</summary><ol><li>Titel, Modus, Wertung, Termine, Teilnehmer und Ausschreibung eintragen. „Entwurf speichern“ sichert den Bearbeitungsstand. „In Turnieransicht übernehmen“ macht ihn auf der Turnierseite sichtbar.</li><li>Schweizer System: Auf der Turnierseite den Zeitraum der nächsten Runde eintragen. Unter „Teilnahme an dieser Runde“ Aussetzen markieren. Bei gleicher Spielstärke die Startnummern zuweisen. Paarungen vorbereiten, prüfen und freigeben.</li><li>Im Paarungsentwurf „✎ Paarungen bearbeiten“ öffnen. Im Rundenturnier die zu bearbeitende Runde auswählen und Spieler über die Auswahlfelder tauschen. Im Schweizer System muss Andili Abweichungen von der Dutch-Auslosung zusätzlich ausdrücklich erlauben; sie werden als manuell geändert gekennzeichnet. Die Brettreihenfolge lässt sich über die Pfeilschaltflächen ändern. Änderungen begründen und gemeinsam prüfen und speichern. Bei Auswahl eines bereits eingeteilten Spielers tauschen die beiden ihre Plätze. „Abbrechen“ verwirft nur die ungespeicherte Bearbeitung. Eine freigegebene ergebnislose Schweizer Runde lässt sich als jüngste Runde zurücknehmen; beim Rundenturnier gilt dies für den ganzen Plan. Die Paarungen verschwinden bis zur erneuten Freigabe aus der Leseansicht. Betroffene Spieler bitte informieren. Sobald ein Partieergebnis einmal gespeichert wurde, bleiben die betroffenen Paarungen gesperrt, auch nach Leeren des Ergebnisses. Ein automatisch zugeteiltes Freilos allein sperrt die Rücknahme nicht.</li><li>Ergebnisse an den Paarungen eintragen. Korrekturen benötigen eine Begründung. Die nächste Runde ist möglich, wenn alle bisherigen Partien entschieden sind. Ein offener Paarungsentwurf muss vor einer Ergebniskorrektur verworfen oder freigegeben werden.</li><li>Ein Rückzug gilt für künftige Runden. Bereits freigegebene Partien bleiben ausdrücklich zu entscheiden. Aussetzen gilt nur für die gewählte Runde.</li><li>Die Rangliste aktualisiert sich nach Ergebnissen. Unter „ⓘ Berechnung der Feinwertung“ sind Rundenbeiträge und das Streichresultat einsehbar. Nach der letzten entschiedenen Runde „Turnier abschließen“ wählen. Für Korrekturen den Endstand ausdrücklich wieder öffnen.</li><li>„Sichern / Wiederherstellen“ lädt JSON und HTML als ZIP herunter. Vor dem Zurücksetzen die Sicherung aufbewahren. Wiederherstellung ist auf einer leeren Turnierseite möglich.</li></ol><p>Der HSC08-Testbereich ist derzeit ausschließlich für Andili zugänglich. Die Leseansicht zeigt den übernommenen Stand ohne Verwaltungsfelder. Spielleiterdelegation ist bis nach Blitzrunden und Vereinspokal zurückgestellt. Öffentliche Freigabe steht noch aus.</p></details><label for="title">Titel</label><input class="tournament-input" id="title" maxlength="160"><div class="config-grid"><div><label for="mode">Modus</label><select class="tournament-select" id="mode"><option value="">Bitte wählen</option><option value="round-robin">Rundenturnier</option><option value="swiss">Schweizer System</option></select></div>
 <div><label for="scoring">Punktewertung</label><select id="scoring" class="tournament-select"><option value="classic">Klassisch · 1 / ½ / 0</option><option value="three-point">Dreipunktewertung · 3 / 1 / 0</option></select></div>
 <div id="cyclesField"><label for="cycles">Durchgänge</label><select id="cycles" class="tournament-select"><option value="1">Einfachrunde · jeder gegen jeden</option><option value="2">Doppelrunde · Hin- und Rückspiel</option></select></div>
 <div id="roundsField" hidden><label for="rounds">Anzahl der Runden</label><input id="rounds" class="tournament-input" type="number" min="1" max="199" step="1"></div>
@@ -137,6 +138,14 @@ const HSC08_CLIENT = String.raw`function client() {
     $('roundActions').replaceChildren();$('roundContent').replaceChildren();$('ranking').replaceChildren();
     $('rankingSection').hidden=!t?.hasEverResults && t?.phase!=='completed';
     $('participantsSection').hidden=['running','completed'].includes(t?.phase);
+    function revealRoundActions(){requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const frame=window.frameElement;if(!frame)return;
+      const mobileHeader=parent.document.getElementById('mobileNavTestHeader');
+      const headerHeight=mobileHeader?.getBoundingClientRect().height||0;
+      const top=parent.scrollY+frame.getBoundingClientRect().top+$('roundActions').getBoundingClientRect().top-headerHeight-20;
+      parent.scrollTo({top:Math.max(0,top),behavior:'instant'});
+      [...$('roundActions').querySelectorAll('button')].find(button=>button.textContent.includes('freigeben'))?.focus({preventScroll:true});
+    }));}
     function action(text,kind,confirmation){const button=node('button',text,'button-flat');button.type='button';button.onclick=async()=>{if(busy || (confirmation&&!confirm(confirmation)))return;await save('POST',{action:kind});};$('roundActions').append(button);}
     const swiss=t?.mode==='swiss';
     const last=t?.schedule?.at(-1);
@@ -178,8 +187,13 @@ const HSC08_CLIENT = String.raw`function client() {
     if(!t?.schedule){$('roundContent').append(node('p','Noch keine Runden freigegeben.'));if(t?.mode==='round-robin')action('♟ Paarungsplan vorbereiten','prepare');return;}
     if(t.phase==='prepared'||last?.pending){
       $('roundContent').append(node('p',swiss?'Paarungsentwurf · Bitte Farben, Gegner und Termine prüfen.':'Paarungsentwurf · Startnummern nach Teilnehmerreihenfolge. Bitte Farben und Begegnungen prüfen.'));
-      action('Paarungsentwurf verwerfen','discard-plan','Paarungsentwurf verwerfen und Einstellungen wieder öffnen?');
+      if(!(swiss?[last]:t.schedule).some(r=>r.wasReleased))action('Paarungsentwurf verwerfen','discard-plan','Paarungsentwurf verwerfen und Einstellungen wieder öffnen?');
       action(swiss?'✓ Runde freigeben':'✓ Paarungsplan freigeben','release','Geprüfte Paarungen freigeben?');
+    }
+    const recorded=r=>r.hasRecordedResults||r.games.some(g=>g.result!==null)||(t.audit||[]).some(e=>e.action==='result'&&r.games.some(g=>g.id===e.gameId)&&(e.old!=null||e.value!=null));
+    if(t.phase==='running' && !last.pending && !(swiss?[last]:t.schedule).some(recorded)){
+      const recall=node('button',swiss?'↩ Runde zur Bearbeitung zurücknehmen':'↩ Spielplan zur Bearbeitung zurücknehmen','button-flat');recall.type='button';
+      recall.onclick=async()=>{if(busy)return;const reason=prompt('Grund der Rücknahme (bitte die betroffenen Spieler über die Änderung informieren):');if(!reason?.trim())return;if(confirm('Die Paarungen werden aus der Leseansicht genommen, bis du sie erneut freigibst. Fortfahren?')){if(await save('POST',{action:'recall-pairings',reason}))revealRoundActions();}};$('roundActions').append(recall);
     }
     if(swiss && t.phase==='running' && !last.pending){
       const finished=t.schedule.every(r=>r.games.every(g=>g.result));
@@ -194,6 +208,40 @@ const HSC08_CLIENT = String.raw`function client() {
     if(!swiss && t.phase==='running')action('🏁 Turnier abschließen','complete','Turnier abschließen? Alle Partien müssen entschieden sein.');
     if(t.phase==='completed'){ $('roundContent').append(node('p','Abgeschlossen'));action('✎ Für Korrektur öffnen','reopen'); }
     const names=new Map(t.participants.map(p=>[p.id,p.name]));
+    if(t.phase==='prepared'||last.pending){
+      const editor=node('details',undefined,'pairing-editor');editor.append(node('summary','✎ Paarungen bearbeiten'));
+      const form=node('form');
+      form.append(node('p',swiss?'Die vollständige Runde wird geprüft. Andere Gegner, Farben oder Freilose können von der Dutch-Auslosung abweichen. Nur Andili darf solche Abweichungen ausdrücklich bestätigen und begründen. Manuelle Farbänderungen über die normalen Farbgrenzen hinaus bleiben gesperrt; Sonderfälle der Schlussrunde bleiben der Automatik vorbehalten.':'Alle Begegnungen des gesamten Plans werden gemeinsam geprüft. In der Doppelrunde müssen Hin- und Rückspiel entgegengesetzte Farben behalten.','notice'));
+      const source=swiss?[last]:t.schedule,rounds=source.map(r=>({number:r.number,bye:r.bye,games:r.games.map(g=>({id:g.id,white:g.white,black:g.black}))}));
+      const host=node('div');
+      if(rounds.length>1){const label=node('label','Runde bearbeiten'),chooser=node('select',undefined,'tournament-select');for(const round of rounds){const option=node('option','Runde '+round.number);option.value=String(round.number);chooser.append(option);}chooser.onchange=()=>paintRound(rounds.find(r=>r.number===Number(chooser.value)));label.append(chooser);form.append(label);}
+      form.append(host);
+      function paintRound(round){
+        host.replaceChildren();
+        const group=node('fieldset');group.append(node('legend','Runde '+round.number));const controls=[];
+        function selectPlayer(label,read,write){
+          const wrap=node('label',label),select=node('select',undefined,'tournament-select');
+          for(const p of t.participants.filter(p=>!(source.find(r=>r.number===round.number).absent||[]).includes(p.id))){const option=node('option',p.name);option.value=p.id;select.append(option);}
+          select.value=read();wrap.append(select);const control={select,read,write};controls.push(control);
+          select.onchange=()=>{const old=read(),next=select.value,other=controls.find(c=>c!==control&&c.read()===next);write(next);if(other)other.write(old);controls.forEach(c=>c.select.value=c.read());};return wrap;
+        }
+        for(const [i,g] of round.games.entries()){
+          const row=node('div',undefined,'pairing-edit-row');row.append(node('strong','Brett '+(i+1)));
+          row.append(selectPlayer('Weiß · Brett '+(i+1),()=>g.white,v=>g.white=v),selectPlayer('Schwarz · Brett '+(i+1),()=>g.black,v=>g.black=v));
+          const flip=node('button','⇄ Farben tauschen','button-flat');flip.type='button';flip.onclick=()=>{[g.white,g.black]=[g.black,g.white];controls.forEach(c=>c.select.value=c.read());};const tools=node('div',undefined,'pairing-tools');tools.append(flip);
+          if(swiss){const moves=node('div',undefined,'pairing-moves');for(const [offset,text] of [[-1,'↑ Brett nach oben'],[1,'↓ Brett nach unten']]){const move=node('button',text,'button-flat');move.setAttribute('aria-label',text+' · Brett '+(i+1));move.title=text;move.textContent=offset<0?'↑':'↓';move.type='button';move.disabled=i+offset<0||i+offset>=round.games.length;move.onclick=()=>{const other=round.games[i+offset];[g.white,other.white]=[other.white,g.white];[g.black,other.black]=[other.black,g.black];controls.forEach(c=>c.select.value=c.read());};moves.append(move);}tools.append(moves);}
+          row.append(tools);group.append(row);
+        }
+        if(round.bye)group.append(selectPlayer(swiss?'Freilos':'Spielfrei',()=>round.bye,v=>round.bye=v));
+        host.append(group);
+      }
+      paintRound(rounds[0]);
+      const label=node('label','Begründung der Paarungsänderung'),reason=node('input',undefined,'tournament-input');reason.required=true;reason.maxLength=500;label.append(reason);form.append(label);
+      const deviation=node('input');deviation.type='checkbox';
+      if(swiss){const consent=node('label',undefined,'pairing-consent');consent.append(deviation,node('span','Als Andili eine Abweichung von der Dutch-Auslosung ausdrücklich erlauben. Die Runde wird als manuell geändert gekennzeichnet.'));form.append(consent);}
+      const actions=node('div',undefined,'actions'),submit=node('button','✓ Änderungen prüfen und speichern','button-flat'),cancel=node('button','Abbrechen','button-flat');submit.type='submit';cancel.type='button';cancel.onclick=()=>renderRounds(t);actions.append(submit,cancel);form.append(actions);
+      const feedback=node('p');feedback.setAttribute('role','alert');form.append(feedback);form.onsubmit=async e=>{e.preventDefault();if(busy)return;if(await save('POST',{action:'pairings',rounds,reason:reason.value,acceptDeviation:deviation.checked})){revealRoundActions();}else{feedback.textContent=$('message').textContent;feedback.scrollIntoView({block:'nearest'});}};editor.append(form);$('roundContent').append(editor);
+    }
     const labels={'':'Offen','1-0':'1–0','1/2-1/2':'½–½','0-1':'0–1','+/-':'+ / − (kampflos)','-/+':'− / + (kampflos)','-/-':'− / − (beide nicht angetreten)'};
     for(const [roundIndex,round] of [...t.schedule].reverse().entries()){
       const {box,body:roundBody}=Hsc08Ui.round(t,round,roundIndex,names);
@@ -205,7 +253,17 @@ const HSC08_CLIENT = String.raw`function client() {
       }$('roundContent').append(box);
     }
     if(t.hasEverResults || t.phase==='completed')Hsc08Ui.ranking($('ranking'),t);
-    if(t.audit?.length){const details=node('details');details.append(node('summary','Änderungsprotokoll'));for(const entry of [...t.audit].reverse())details.append(node('p',new Date(entry.at).toLocaleString('de-DE')+' · '+entry.actor+' · '+(entry.action==='result'?'Ergebnis '+entry.gameId+': '+(labels[entry.old||'']||entry.old)+' → '+(labels[entry.value||'']||entry.value)+(entry.reason?' · '+entry.reason:''):({prepare:'Paarungsplan vorbereitet','discard-plan':'Paarungsentwurf verworfen',release:'Turnier gestartet',complete:'Turnier abgeschlossen',reopen:'Für Korrekturen geöffnet',withdraw:'Teilnehmer zurückgezogen: '+(names.get(entry.participantId)||'')}[entry.action]||entry.action))));$('roundContent').append(details);}
+    if(t.audit?.length){
+      const details=node('details');details.append(node('summary','Änderungsprotokoll'));
+      const pairLabel=value=>{if(value===null)return '—';try{const ids=JSON.parse(value);if(Array.isArray(ids))return 'Weiß: '+(names.get(ids[0])||ids[0])+' / Schwarz: '+(names.get(ids[1])||ids[1]);}catch{}return names.get(value)||value;};
+      for(const entry of [...t.audit].reverse()){
+        let text=({prepare:'Paarungsplan vorbereitet','discard-plan':'Paarungsentwurf verworfen',release:'Paarungen freigegeben',complete:'Turnier abgeschlossen',reopen:'Für Korrekturen geöffnet',withdraw:'Teilnehmer zurückgezogen: '+(names.get(entry.participantId)||''),'recall-pairings':'Paarungen zur Bearbeitung zurückgenommen'}[entry.action]||entry.action);
+        if(entry.action==='result')text='Ergebnis '+entry.gameId+': '+(labels[entry.old||'']||entry.old)+' → '+(labels[entry.value||'']||entry.value);
+        if(entry.action==='pairing-approval')text=entry.value==='manual'?'Manuelle Dutch-Abweichung ausdrücklich bestätigt':'Paarungen entsprechen der Dutch-Auslosung';
+        if(entry.action==='pairings')text='Paarung '+entry.gameId+': '+pairLabel(entry.old)+' → '+pairLabel(entry.value);
+        details.append(node('p',new Date(entry.at).toLocaleString('de-DE')+' · '+entry.actor+' · '+text+(entry.reason?' · '+entry.reason:'')));
+      }$('roundContent').append(details);
+    }
   }
   function numberFields() {
     const fields=[...$('names').children];

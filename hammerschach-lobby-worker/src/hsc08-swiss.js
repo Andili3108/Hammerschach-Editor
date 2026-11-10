@@ -1,3 +1,4 @@
+import {pairingReason,hasRecordedResults,replacePairings,pairingEvents} from './hsc08-pairings.js';
 import {swissStandings} from './hsc08-tiebreak.js';
 export {swissStandings} from './hsc08-tiebreak.js';
 import {t as dutch} from './vendor/hsc08-dutch/dutch-gyo2itP7.js';
@@ -19,7 +20,7 @@ function checkDates(start, end) {
 }
 
 
-function prepare(t, body) {
+function prepare(t, body, initialFlip) {
   if (!['draft','running'].includes(t.phase)) throw Error('Bitte das Turnier zuerst für die Bearbeitung öffnen.');
   const previous = t.schedule || [];
   const number = previous.length+1;
@@ -33,7 +34,7 @@ function prepare(t, body) {
     throw Error('Rundenzeitraum außerhalb der Saison oder Überschneidung mit der Vorrunde.');
   const seeds = previous[0]?.seeds ?? body.seeds;
   if (!previous.length) checkSeeds(t,seeds);
-  const flip = previous[0]?.flip ?? Boolean(crypto.getRandomValues(new Uint8Array(1))[0] % 2);
+  const flip = previous[0]?.flip ?? initialFlip ?? Boolean(crypto.getRandomValues(new Uint8Array(1))[0] % 2);
   const requested = body.absent ?? [];
   if (!Array.isArray(requested) || new Set(requested).size !== requested.length || requested.some(id => !seeds.includes(id)))
     throw Error('Ungültige Abwesenheitsliste.');
@@ -92,6 +93,34 @@ export function validateSwissRound(t,r,previous,restoring=false) {
   if(used.size!==ids.size)throw Error('Kein vollständiger zulässiger Paarungsvorschlag.');
 }
 
+
+// Replay the same deterministic Dutch input, including the original random initial colour.
+export function dutchReference(t,round) {
+  const previous=t.schedule.slice(0,round.number-1);
+  const copy={...t,withdrawn:[],phase:previous.length?'running':'draft',schedule:structuredClone(previous)};
+  prepare(copy,{start:round.start,end:round.end,seeds:round.seeds,absent:round.absent},t.schedule[0].flip);
+  return copy.schedule.at(-1);
+}
+export function matchesDutchPairings(t,round) {
+  const reference=dutchReference(t,round);
+  const signature=r=>JSON.stringify({bye:r.bye,games:r.games.map(g=>[g.white,g.black]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))});
+  return signature(reference)===signature(round);
+}
+
+// Manual edits do not override the ordinary colour limits. Final-round exceptions
+// remain available only through the automatic Dutch pairing, not this override.
+export function validateManualColours(t,round) {
+  const colours=new Map(t.participants.map(p=>[p.id,[]]));
+  for(const r of t.schedule.slice(0,round.number-1))for(const g of r.games){
+    if(['1-0','0-1','1/2-1/2'].includes(g.result)){colours.get(g.white).push(1);colours.get(g.black).push(-1);}
+  }
+  const names=new Map(t.participants.map(p=>[p.id,p.name]));
+  for(const g of round.games)for(const [id,colour] of [[g.white,1],[g.black,-1]]){
+    const past=colours.get(id),difference=past.reduce((sum,c)=>sum+c,0)+colour;
+    if(Math.abs(difference)>2||past.length>=2&&past.at(-1)===colour&&past.at(-2)===colour)
+      throw Error('Unzulässige manuelle Farbvergabe für '+names.get(id)+': dritte gleiche Farbe in Folge oder Farbdifferenz größer als zwei. Sonderfälle der Schlussrunde bleiben der Dutch-Automatik vorbehalten.');
+  }
+}
 export function swissTransition(original,body,actor){
   const t=structuredClone(original);
   const last=t.schedule?.at(-1);
@@ -114,13 +143,37 @@ export function swissTransition(original,body,actor){
       break;
     case 'prepare': prepare(t,body);break;
     case 'discard-plan':
+      if(last?.wasReleased)throw Error('Eine zurückgenommene Runde muss erneut freigegeben werden und darf nicht verworfen werden.');
       if(!last?.pending)throw Error('Kein offener Paarungsentwurf.');
       t.schedule.pop();
       if(!t.schedule.length){delete t.schedule;t.phase='draft';}
       break;
+    case 'recall-pairings': {
+      if(t.phase!=='running'||!last||last.pending||hasRecordedResults(t,last))throw Error('Nur die jüngste freigegebene Runde ohne jemals eingetragenes Partieergebnis kann zurückgenommen werden.');
+      event.reason=pairingReason(body);event.gameId='r'+last.number;
+      last.wasReleased=true;last.pending=true;if(last.number===1)t.phase='prepared';break;
+    }
+    case 'pairings': {
+      if(!last?.pending||hasRecordedResults(t,last))throw Error('Nur der ergebnislose Paarungsentwurf ist bearbeitbar.');
+      const reason=pairingReason(body);
+      if(!Array.isArray(body.rounds)||body.rounds.length!==1)throw Error('Nur die aktuelle Schweizer Runde darf geändert werden.');
+      const next=replacePairings(last,body.rounds[0]);
+      validateSwissRound(t,next,t.schedule.slice(0,-1));
+      const deviation=!matchesDutchPairings(t,next);
+      if(deviation){
+        validateManualColours(t,next);
+        if(String(actor).toLowerCase()!=='andili'||body.acceptDeviation!==true)throw Error('Abweichung von der Dutch-Auslosung: Nur Andili darf diese mit ausdrücklicher Bestätigung und Begründung speichern.');
+      }
+      next.manualPairings=deviation;
+      (t.audit ||= []).push(...pairingEvents([last],[next],actor,reason));
+      t.audit.push({actor,at:event.at,action:'pairing-approval',gameId:'r'+last.number,old:last.manualPairings?'manual':'dutch',value:deviation?'manual':'dutch',reason});t.schedule[t.schedule.length-1]=next;
+      t.ranking=swissStandings(t);return t;
+    }
     case 'release':
       if(!last?.pending)throw Error('Kein offener Paarungsentwurf.');
-      last.pending=false;t.phase='running';if(last.bye)t.hasEverResults=true;break;
+      validateSwissRound(t,last,t.schedule.slice(0,-1));
+      if(last.manualPairings)validateManualColours(t,last);
+      last.pending=false;last.wasReleased=true;t.phase='running';event.gameId='r'+last.number;if(last.bye)t.hasEverResults=true;break;
     case 'result': {
       if(t.phase!=='running'||last?.pending)throw Error('Bitte zuerst den Paarungsentwurf verwerfen oder freigeben.');
       const g=t.schedule.flatMap(r=>r.games).find(g=>g.id===body.gameId);
@@ -129,7 +182,7 @@ export function swissTransition(original,body,actor){
       const reason=String(body.reason||'').trim();
       if((g.result!==null&&!reason)||reason.length>500)throw Error('Bitte die Korrektur kurz begründen.');
       Object.assign(event,{gameId:g.id,old:g.result,value:body.result,reason});
-      g.result=body.result;if(g.result)t.hasEverResults=true;break;
+      g.result=body.result;if(g.result){t.hasEverResults=true;t.schedule.find(r=>r.games.some(x=>x.id===g.id)).hasRecordedResults=true;}break;
     }
     default:throw Error('Diese Turnieraktion steht im Schweizer System noch nicht zur Verfügung.');
   }

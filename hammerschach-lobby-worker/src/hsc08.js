@@ -142,7 +142,7 @@ export async function handleHsc08(request, env, deps) {
           for(const t of [restored.draft,restored.view])if(t)(t.audit||=[]).push({...event});
           document=storageDocument(restored.draft,restored.view);
         }
-      } else if(['prepare','discard-plan','release','result','complete','reopen','withdraw'].includes(body.action)){
+      } else if(['prepare','discard-plan','release','result','complete','reopen','withdraw','pairings','recall-pairings'].includes(body.action)){
         if(JSON.stringify(current.tournament)!==JSON.stringify(current.publishedTournament))throw Error('Bitte zuerst den gespeicherten Entwurf in die Turnieransicht übernehmen.');
         const update=current.publishedTournament?.mode==='swiss'?swissTransition:transition;
         const updated=update(current.publishedTournament,body,session.user.username);

@@ -1,7 +1,11 @@
+import {validateRoundRobinPlan} from './hsc08-pairings.js';
 import {swissStandings,validateSwissRound} from './hsc08-swiss.js';
-import {pairRoundRobin,RESULTS,standings} from './hsc08-round-robin.js';
+import {RESULTS,standings} from './hsc08-round-robin.js';
 import {readerTournament} from './hsc08-reader.js';
 import {hsc08Logo} from './hsc08-logo.js';
+function roundFlags(r) {
+ const out={};for(const key of ['wasReleased','hasRecordedResults','manualPairings'])if(r[key]!==undefined){if(typeof r[key]!=='boolean')throw Error('Ungültige Rundensperre.');out[key]=r[key];}return out;
+}
 function backupTournament(t) {
  if(!t || t.mode!=='swiss')return t;
  const {ranking,...data}=t;return data;
@@ -25,7 +29,7 @@ export function restoreBackup(input,validate){
     }
     t.schedule=[];
     for(const r of raw.schedule){
-      const clean={number:r.number,start:r.start,end:r.end,pending:r.pending,bye:r.bye,...(r.absent?{absent:[...r.absent]}:{}),games:r.games.map(({id,white,black,result})=>({id,white,black,result})),...(r.number===1?{seeds:first.seeds,flip:first.flip}:{})};
+      const clean={number:r.number,...roundFlags(r),start:r.start,end:r.end,pending:r.pending,bye:r.bye,...(r.absent?{absent:[...r.absent]}:{}),games:r.games.map(({id,white,black,result})=>({id,white,black,result})),...(r.number===1?{seeds:first.seeds,flip:first.flip}:{})};
       validateSwissRound(t,clean,t.schedule,true);t.schedule.push(clean);
     }
     if((raw.phase==='prepared')!==first.pending)throw Error('Ungültige Freigabe.');
@@ -33,23 +37,22 @@ export function restoreBackup(input,validate){
     t.phase=raw.phase;t.hasEverResults=raw.hasEverResults===true||t.schedule.some(r=>!r.pending&&(r.bye||r.games.some(g=>g.result)));
    }else{
    if(t.mode!=='round-robin')throw Error('Diese Turnierart kann noch nicht wiederhergestellt werden.');
-   const expected=pairRoundRobin(t.participants.map(p=>p.id),t.cycles);
-   if(!Array.isArray(raw.schedule)||raw.schedule.length!==expected.length)throw Error('Unvollständiger Paarungsplan.');
-   let hasResults=false;
-   for(let i=0;i<expected.length;i++){
-    const r=raw.schedule[i],e=expected[i];if(r.number!==e.number||r.bye!==e.bye||!Array.isArray(r.games)||r.games.length!==e.games.length)throw Error('Ungültiger Paarungsplan.');
-    for(let j=0;j<e.games.length;j++){const g=r.games[j],x=e.games[j];if(g.id!==x.id||g.white!==x.white||g.black!==x.black||!(g.result===null||Object.hasOwn(RESULTS,g.result)))throw Error('Ungültige Partie.');x.result=g.result;hasResults ||=g.result!==null;}
-   }
+   if(!Array.isArray(raw.schedule))throw Error('Unvollständiger Paarungsplan.');
+   const expected=raw.schedule.map(r=>({number:r.number,bye:r.bye,...roundFlags(r),games:r.games.map(({id,white,black,result})=>{
+     if(result!==null&&!Object.hasOwn(RESULTS,result))throw Error('Ungültiges Ergebnis.');return {id,white,black,result};
+   })}));
+   validateRoundRobinPlan(t,expected);
+   const hasResults=expected.some(r=>r.games.some(g=>g.result!==null));
    if(raw.phase==='prepared'&&hasResults)throw Error('Ein Paarungsentwurf darf keine Ergebnisse enthalten.');
    if(raw.phase==='completed'&&expected.some(r=>r.games.some(g=>!g.result)))throw Error('Abgeschlossenes Turnier enthält offene Partien.');
    t.schedule=expected;t.phase=raw.phase;t.hasEverResults=raw.hasEverResults===true||hasResults;
    }
   }else if(raw.schedule || raw.hasEverResults)throw Error('Widersprüchliche Turnierdaten.');
   if(raw.audit!==undefined){if(!Array.isArray(raw.audit)||raw.audit.length>50000)throw Error('Ungültiges Protokoll.');t.audit=raw.audit.map(e=>{
-   if(!e || typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at))||typeof e.actor!=='string'||e.actor.length>100||!['prepare','discard-plan','release','result','complete','reopen','restore','withdraw'].includes(e.action))throw Error('Ungültiger Protokolleintrag.');
+   if(!e || typeof e.at!=='string'||!Number.isFinite(Date.parse(e.at))||typeof e.actor!=='string'||e.actor.length>100||!['prepare','discard-plan','release','result','complete','reopen','restore','withdraw','pairings','recall-pairings','pairing-approval'].includes(e.action))throw Error('Ungültiger Protokolleintrag.');
    const out={at:e.at,actor:e.actor,action:e.action};for(const k of ['gameId','participantId','old','value','reason'])if(e[k]!==undefined){if(e[k]!==null&&(typeof e[k]!=='string'||e[k].length>500))throw Error('Ungültiger Protokollwert.');out[k]=e[k];}return out;
   });}
-  if(t.schedule){if(t.audit?.some(e=>e.action==='result'&&(e.old!==null||e.value!==null)))t.hasEverResults=true;t.ranking=t.mode==='swiss'?swissStandings(t):standings(t);}return t;
+  if(t.schedule){for(const r of t.schedule){if(r.games.some(g=>g.result!==null)||(t.audit||[]).some(e=>e.action==='result'&&r.games.some(g=>g.id===e.gameId)&&(e.old!=null||e.value!=null)))r.hasRecordedResults=true;}if(t.audit?.some(e=>e.action==='result'&&(e.old!==null||e.value!==null)))t.hasEverResults=true;t.ranking=t.mode==='swiss'?swissStandings(t):standings(t);}return t;
  }
  const draft=tournament(input.draft),view=tournament(input.view);
  if(!draft && !view)throw Error('Die Sicherung enthält kein Turnier.');
@@ -71,7 +74,7 @@ export function exportHtml(raw){
  if(t?.ranking)content+='<p>'+(t.phase==='completed'?'Endstand':'Zwischenstand')+'</p>';
  if(t?.ranking)content+=section('Rangliste',table(['Platz','Name','Gespielt','Punkte',...(t.mode==='swiss'?['Buchholz','BH Cut 1']:['SB'])],t.ranking.map(r=>[r.rank,names.get(r.id)+((t.withdrawn||[]).includes(r.id)?' · Zurückgezogen':''),r.played,r.points,...(t.mode==='swiss'?[r.bh,r.bhCut1]:[r.sb])])),'#fff1c2');
  const labels={'1-0':'1–0','0-1':'0–1','1/2-1/2':'½–½','+/-':'+ / − (kampflos)','-/+':'− / + (kampflos)','-/-':'− / −'};
- content+=section('Runden und Paarungen',(t?.schedule||[]).slice().reverse().map(r=>'<h3>Runde '+r.number+(r.start?' · '+esc(r.start.split('-').reverse().join('.'))+' – '+esc(r.end.split('-').reverse().join('.')):'')+'</h3>'+table(['Brett','Weiß','Ergebnis','Schwarz'],r.games.map((g,i)=>[i+1,names.get(g.white),labels[g.result]||'Offen',names.get(g.black)]))+(r.bye?'<p>'+esc(names.get(r.bye))+(t.mode==='swiss'?' · Freilos · '+(t.scoring==='three-point'?'3 Punkte':'1 Punkt'):' · spielfrei')+'</p>':'')+(r.absent||[]).map(id=>'<p>'+esc(names.get(id))+' · Ausgesetzt · 0 Punkte</p>').join('')).join('')||'<p>Noch keine Runden freigegeben.</p>','#e5edf4');
+ content+=section('Runden und Paarungen',(t?.schedule||[]).slice().reverse().map(r=>'<h3>Runde '+r.number+(r.start?' · '+esc(r.start.split('-').reverse().join('.'))+' – '+esc(r.end.split('-').reverse().join('.')):'')+(r.manualPairings?' · Manuell geändert':'')+'</h3>'+table(['Brett','Weiß','Ergebnis','Schwarz'],r.games.map((g,i)=>[i+1,names.get(g.white),labels[g.result]||'Offen',names.get(g.black)]))+(r.bye?'<p>'+esc(names.get(r.bye))+(t.mode==='swiss'?' · Freilos · '+(t.scoring==='three-point'?'3 Punkte':'1 Punkt'):' · spielfrei')+'</p>':'')+(r.absent||[]).map(id=>'<p>'+esc(names.get(id))+' · Ausgesetzt · 0 Punkte</p>').join('')).join('')||'<p>Noch keine Runden freigegeben.</p>','#e5edf4');
  if(t?.phase==='completed' && t.ranking)content+='<p>Vereinsmeister: '+t.ranking.filter(r=>r.rank===1).map(r=>esc(names.get(r.id))).join(', ')+'</p>';
  if(t?.mode==='swiss' && t.ranking)content+=section('Berechnung der Feinwertung',t.ranking.map(row=>'<details><summary>'+esc(names.get(row.id))+' · Buchholz '+row.bh+' · Cut 1 '+row.bhCut1+'</summary>'+table(['Runde','Art','Gegner','Beitrag','Cut 1'],row.contributions.map(c=>[c.round,({'played':'Gespielt','open':'Offen','bye':'Freilos','absent':'Ausgesetzt','forfeit-win':'Kampfloser Sieg','forfeit-loss':'Kampfloser Verlust'})[c.kind],names.get(c.opponent)||'Rechnerischer Gegner',c.value??'Offen',c.cut?'Gestrichen':'']))+'</details>').join(''),'#fff1c2');
  if(!t?.schedule)content+=section('Teilnehmer',table(['Name','Spielstärke'],(t?.participants||[]).map(p=>[p.name,p.dwz?'DWZ '+p.dwz:p.estimatedRating?'Schätzung '+p.estimatedRating:''])),'#e5eee2');

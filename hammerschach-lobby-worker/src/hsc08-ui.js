@@ -44,7 +44,7 @@ window.Hsc08Ui = (() => {
   function round(t,r,index,names){
     const box=node('details',undefined,'rr-round');box.open=index===0;
     const status=r.pending?'Entwurf':r.games.some(g=>!g.result)?'Partien offen':'Ergebnisse vollständig';
-    box.append(node('summary','Runde '+r.number+(r.start?' · '+date(r.start)+' – '+date(r.end):'')+' · '+status));
+    box.append(node('summary','Runde '+r.number+(r.start?' · '+date(r.start)+' – '+date(r.end):'')+' · '+status+(r.manualPairings?' · Manuell geändert':'')));
     const body=node('div',undefined,'round-body');box.append(body);
     if(r.bye)body.append(node('div',names.get(r.bye)+(t.mode==='swiss'?' · Freilos · '+(t.scoring==='three-point'?'3 Punkte':'1 Punkt'):' · spielfrei (0 Punkte)'),'tournament-input round-note'));
     for(const id of r.absent||[])body.append(node('div',names.get(id)+' · Ausgesetzt · 0 Punkte','tournament-input round-note'));
