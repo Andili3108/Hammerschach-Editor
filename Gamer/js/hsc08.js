@@ -1,7 +1,7 @@
 'use strict';
 // Public loader only. Page markup, logo and tournament data come from authenticated routes.
 (() => {
-  let readOnly=false;
+  let readOnly=false, area='championship';
   let identity='', generation=0, frame=null, active=false, links=[], toolbars=[], restored=[], footerMarker=null, sizeObserver=null, statusText='Vereinsmeisterschaft';
   const auth=()=>typeof onlineAuthToken!=='undefined' ? onlineAuthToken : '';
   const user=()=>typeof onlineAuthUser!=='undefined' ? onlineAuthUser : null;
@@ -48,6 +48,7 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     if(readOnly && method!=='GET')throw new Error('In der Leseansicht sind keine Änderungen möglich.');
     const token=auth();
     if(!eligible())throw new Error('Für diesen Bereich ist eine berechtigte Anmeldung erforderlich.');
+    if(readOnly&&path==='/blitz')path+='?view=reader';
     const response=await fetch(ONLINE_WORKER_URL+'/api/hsc08'+path,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});
     const data=await response.json();
     if(token!==auth() || !eligible())throw new Error('Die Anmeldung hat sich geändert.');
@@ -81,10 +82,10 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     };
     nav.append(button(auth()&&user()?'Zur Lobby':'Zur Startseite',close));
     for(const label of ['Meisterschaft','Vereinspokal','Blitzrunden']){
-      const tab=button(label,()=>frame?.contentWindow.hscMode?.('view'));
-      if(label==='Meisterschaft'){
-        tab.classList.add('hsc08-current');tab.setAttribute('aria-current','page');tab.title='Vereinsmeisterschaft · ausgewählt';
-      }else{tab.disabled=true;tab.title='Noch nicht verfügbar';tab.classList.add('hsc08-future');}
+      const tab=button(label,()=>open(false,label==='Blitzrunden'?'blitz':'championship'));
+      if(label===(area==='blitz'?'Blitzrunden':'Meisterschaft')){
+        tab.classList.add('hsc08-current');tab.setAttribute('aria-current','page');tab.title=label+' · ausgewählt';
+      }else if(label==='Vereinspokal'){tab.disabled=true;tab.title='Noch nicht verfügbar';tab.classList.add('hsc08-future');}
       nav.append(tab);
     }
     if(!managerEligible())return nav;
@@ -105,21 +106,22 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     if(!readOnly){
       item('Turnier konfigurieren',()=>frame?.contentWindow.hscMode?.('config'));
       item('Leseansicht prüfen',()=>open(true));
-      item('Sichern / Wiederherstellen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscBackup?.();});
-      item('Turnier vollständig löschen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscDelete?.();},true);
+      if(area!=='blitz')item('Sichern / Wiederherstellen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscBackup?.();});
+      if(area!=='blitz')item('Turnier vollständig löschen',()=>{frame?.scrollIntoView({block:'start'});frame?.contentWindow.hscDelete?.();},true);
     }
     menu.append(toggle,popup);nav.append(menu);
     nav.addEventListener('click',e=>e.stopPropagation());
     nav.addEventListener('keydown',e=>{if(e.key==='Escape'){popup.hidden=true;toggle.setAttribute('aria-expanded','false');toggle.focus();}});
     return nav;
   }
-  async function open(preview=false){
+  async function open(preview=false,target=area){
+    if(typeof target!=='string')target=area;
     const current=generation;
     if(!eligible())return;
     let page;
-    try{page=await api(preview===true?'/page?view=reader':'/page');}catch(e){alert(e.message);return;}
+    try{page=await api((target==='blitz'?'/blitz/page':'/page')+(preview===true?'?view=reader':''));}catch(e){alert(e.message);return;}
     if(current!==generation)return;
-    close();readOnly=page.canManage!==true;
+    close();area=target;readOnly=page.canManage!==true;
     if(typeof closeEmbeddedTools==='function')closeEmbeddedTools();
     const shell=document.querySelector('.app > .shell');
     const footer=document.querySelector('.site-footnote');
@@ -130,10 +132,10 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     for(const id of ['status','mobileNavTestStatus']){const el=document.getElementById(id);if(el){const text=el.textContent;restored.push(()=>{el.textContent=text;});}}
     for(const [selector,text] of [['.mobile-nav-test-drawer-brand strong','HSC08'],['.mobile-nav-test-drawer-brand small','Vereinsturniere'],['#mobileNavTestBrand strong','HSC08'],['#mobileNavTestContext','Vereinsturniere']]){const el=document.querySelector(selector);if(el){const old=el.textContent;restored.push(()=>{el.textContent=old;});el.textContent=text;}}
     document.documentElement.classList.add('hsc08-active');
-    statusText='Vereinsmeisterschaft';setTitle(statusText);
+    statusText=area==='blitz'?'Vereinsblitzen':'Vereinsmeisterschaft';setTitle(statusText);
     for(const child of shell.children){if(child.tagName==='HEADER'||child.tagName==='SCRIPT'||child.tagName==='STYLE'||child.tagName==='DIALOG'||/backdrop|popup/i.test(child.id+' '+child.className))continue;child.classList.add('hsc08-covered');}
-    const view=document.createElement('section');view.id='hsc08View';view.setAttribute('aria-label','HSC08 Vereinsmeisterschaft');
-    frame=document.createElement('iframe');frame.title='HSC08 – Vereinsmeisterschaft und Konfiguration';frame.setAttribute('scrolling','no');frame.srcdoc=page.html;frame.onload=()=>{const doc=frame?.contentDocument;if(!doc)return;syncAppearance();const main=doc.querySelector('main');if(main){const measure=()=>window.HammerschachHsc08.resize(main.getBoundingClientRect().height+24);sizeObserver?.disconnect();sizeObserver=new ResizeObserver(measure);sizeObserver.observe(main);measure();}};view.append(frame);shell.append(view);if(footer)shell.append(footer);active=true;
+    const view=document.createElement('section');view.id='hsc08View';view.setAttribute('aria-label','HSC08 '+statusText);
+    frame=document.createElement('iframe');frame.title='HSC08 – '+statusText;frame.setAttribute('scrolling','no');frame.srcdoc=page.html;frame.onload=()=>{const doc=frame?.contentDocument;if(!doc)return;syncAppearance();const main=doc.querySelector('main');if(main){const measure=()=>window.HammerschachHsc08.resize(main.getBoundingClientRect().height+24);sizeObserver?.disconnect();sizeObserver=new ResizeObserver(measure);sizeObserver.observe(main);measure();}};view.append(frame);shell.append(view);if(footer)shell.append(footer);active=true;
     for(const host of [document.querySelector('.header .header-main'),document.querySelector('#mobileNavTestHeader')]){if(host){const nav=toolbar();host.append(nav);toolbars.push(nav);}}
     const drawerList=document.querySelector('#mobileNavTestDrawer .mobile-nav-test-list');if(drawerList){const nav=toolbar(true);drawerList.prepend(nav);toolbars.push(nav);}
     document.querySelectorAll('.header-menu-popup').forEach(el=>el.hidden=true);
