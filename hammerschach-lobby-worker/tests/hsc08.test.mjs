@@ -194,3 +194,10 @@ test('Bob, Thomas1961 and Fabili have read-only access without drafts, audit or 
   for(const method of ['POST','DELETE'])for(const path of ['/championship','/championship/view','/page'])assert.equal((await f.request(method,{revision:2,action:'release'},path)).status,404);
  }
 });
+test('Blitz storage is separate, revision guarded and read-only for approved readers',async t=>{
+ const f=fixture(t);let r=await f.request('POST',{revision:0,action:'config',title:'Blitz',drops:0,scale:[25,18,15,12,10,8,6,4,2,1],dates:Array(10).fill('')},'/blitz');assert.equal(r.status,200);assert.equal(r.body.revision,1);
+ assert.equal((await f.request('POST',{revision:0,action:'player',name:'Old'},'/blitz')).status,409);
+ assert.equal((await f.request()).body.tournament,null);
+ for(const username of ['Bob','Thomas1961','Fabili']){f.setUser({username,isAdmin:false});r=await f.request('GET',null,'/blitz');assert.equal(r.status,200);assert.equal(r.body.season.audit,undefined);assert.equal((await f.request('POST',{revision:1,action:'player',name:'No'},'/blitz')).status,404);assert.equal((await f.request('GET',null,'/blitz/page')).body.canManage,false);}
+ f.setUser(null);assert.equal((await f.request('GET',null,'/blitz')).status,404);
+});
