@@ -6,7 +6,7 @@ Stand: 31. Oktober 2026. Diese Datei ersetzt den bisherigen unbestätigten Regel
 
 - Maßgeblich ist der bestätigte lokale Arbeitsstand in Hammerschach-Gamer, einschließlich der zuletzt gelieferten Änderungen. Am 31. Oktober wurden die vier Dateien aus HSC08-Gamer-Felddesign-20261031.zip bytegleich mit den lokalen Dateien geprüft. Keine ältere vollständige ZIP als Ersatz verwenden.
 - Vor Änderungen betroffene aktuelle Dateien erneut prüfen. Bestehende Online-Turniere und Gamer-Konten nicht beeinträchtigen. HSC08-Daten und Funktionen modular getrennt halten.
-- Reale Vereinsmeisterschaften, Teilnehmer ohne Gamer-Konto. Keine Pokal- oder Blitzimplementierung, keine Archivfunktion.
+- Reale Vereinsmeisterschaften, Teilnehmer ohne Gamer-Konto. Vereinspokal und Archivfunktion bleiben zurückgestellt. Vereinsblitzen ist inzwischen als eigener Bereich umgesetzt; siehe README-HSC08-Vereinsblitzen.md.
 - Bestehendes Gamer-Design verbindlich: originale gemeinsame Feld- und Schaltflächenstile, abgerundete Eingabe- und Ausgabefelder, Icons, Hell/Sanft/Dunkel sowie mobile Menüs.
 - Header mit HSC08-Logo, Statusfeld, Hilfe, Zahnrad und kontextabhängig Zur Lobby/Zur Startseite. Kein zusätzliches Logo oder doppelte Titelüberschrift im Inhalt. Bestehende Fußzeilen und Seitenfläche erhalten.
 - Teilnehmerfelder und Ausgabe in drei Spalten am Desktop, bei weniger Platz zwei beziehungsweise eine Spalte.
@@ -155,3 +155,7 @@ Schweizer Termine können mit Begründung innerhalb der Saison ohne Überschneid
 Unter Runden und Paarungen „Rückzug rückgängig machen …“ wählen. Die Abfrage erläutert die Auswirkungen; eine Begründung bestätigt und speichert die Rückkehr. Nur im laufenden Turnier möglich, abgeschlossene Turniere zuerst für Korrekturen öffnen. Gespeicherte Ergebnisse einschließlich späterer Korrekturen bleiben unverändert. Automatische Rückzugswertungen entfallen für diesen Teilnehmer; vorher offene Partien werden wieder offen, sofern kein anderer Rückzug ihre Behandlung bestimmt. Andere Rückzüge bleiben erhalten. Rangliste und Feinwertung werden neu berechnet. Der Vorgang wird protokolliert und bleibt in JSON-Sicherungen erhalten. Keine Aufhebung bestehender Lösch- oder Ergebnissperren. Beide Punktewertungen und Einfach-/Doppelrunde werden unterstützt.
 
 Installation: die geänderten Worker-Dateien übernehmen und Lobby-Worker neu veröffentlichen. Keine Frontendänderung notwendig. Erste Schritte/Hilfe in der Konfiguration wurden entsprechend ergänzt.
+
+## Vereinsblitzen (10. November 2026)
+
+Eigenständige Saisonserie mit maximal zehn Terminen, Teilnehmerauswahl je Abend, Einfach-/Doppelrunde und klassischer Partiepunktwertung. Die im anschließenden Gespräch beschlossenen Saisonpunkte, Gleichstände, Streichungen, Korrekturen, Rückzüge und vorzeitiger Saisonabschluss sind in README-HSC08-Vereinsblitzen.md dokumentiert. Die Meisterschaftsregeln werden dadurch nicht geändert.

@@ -54,7 +54,7 @@ Prüfergebnis des Feinwertungsstands vor den Paarungsänderungen: 29 automatisie
 
 ## Header vom 9. November 2026
 
-Die aktive Vereinsmeisterschaft ist als bordeauxrote Schaltfläche „Meisterschaft“ direkt sichtbar. Vereinspokal und Blitzrunden sind sichtbar, jedoch als noch nicht verfügbar deaktiviert. „Zur Lobby“ führt zurück. „Turniermenü ▾“ bündelt Konfiguration, Leseansicht und Sicherung. „Turnier vollständig löschen“ steht als farblich abgesetzter letzter Menüpunkt hinter einer Trennlinie. Die bestehenden Passwort- und Bestätigungsschritte gelten weiterhin. In der Leseansicht führt „Bearbeitungsansicht“ zurück. Auf kleinen Bildschirmen und im mobilen Menü wird dieselbe Auswahl angeboten.
+Die aktive Vereinsmeisterschaft ist als bordeauxrote Schaltfläche „Meisterschaft“ direkt sichtbar. Vereinspokal bleibt deaktiviert. Blitzrunden öffnet inzwischen das eigenständige Vereinsblitzen (siehe README-HSC08-Vereinsblitzen.md). „Zur Lobby“ führt zurück. „Turniermenü ▾“ bündelt Konfiguration, Leseansicht und Sicherung. „Turnier vollständig löschen“ steht als farblich abgesetzter letzter Menüpunkt hinter einer Trennlinie. Die bestehenden Passwort- und Bestätigungsschritte gelten weiterhin. In der Leseansicht führt „Bearbeitungsansicht“ zurück. Auf kleinen Bildschirmen und im mobilen Menü wird dieselbe Auswahl angeboten.
 
 Für diese Headeränderung die beiden Frontend-Dateien Gamer/index.html und Gamer/js/hsc08.js gemeinsam bereitstellen. Die Bedienwege in der privaten Konfiguration gelten ab „Turniermenü ▾“.
 
