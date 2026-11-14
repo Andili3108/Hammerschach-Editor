@@ -159,3 +159,6 @@ Installation: die geänderten Worker-Dateien übernehmen und Lobby-Worker neu ve
 ## Vereinsblitzen (10. November 2026)
 
 Eigenständige Saisonserie mit maximal zehn Terminen, Teilnehmerauswahl je Abend, Einfach-/Doppelrunde und klassischer Partiepunktwertung. Die im anschließenden Gespräch beschlossenen Saisonpunkte, Gleichstände, Streichungen, Korrekturen, Rückzüge und vorzeitiger Saisonabschluss sind in README-HSC08-Vereinsblitzen.md dokumentiert. Die Meisterschaftsregeln werden dadurch nicht geändert.
+
+## Klarstellung Vereinsblitzen – 11. November 2026
+Streichungen beziehen sich auf die schlechtesten Partieergebnisse jedes Spielers innerhalb eines Blitzabends, nicht auf Saisonrunden. Sie reduzieren nur seine eigene Punktesumme. Gegnerergebnisse bleiben unverändert; direkter Vergleich und Sonneborn-Berger werden aus den vollständigen Ergebnissen vor Streichungen berechnet. Alle aus den Abendplatzierungen entstandenen Saisonpunkte zählen zur Gesamtsumme. Diese Klarstellung ersetzt die frühere Saison-Streichwertung. Bedienung und Umgang mit bestehenden Daten: README-HSC08-Vereinsblitzen.md.
