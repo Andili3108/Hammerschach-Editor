@@ -1,7 +1,13 @@
 import {transition,standings,effectiveRoundRobinGames,score} from './hsc08-round-robin.js';
 export const defaultScale=[25,18,15,12,10,8,6,4,2,1];
-export function eveningRanking(t){
+export function eveningRanking(t,drops=0){
  const rows=standings(t),games=effectiveRoundRobinGames(t).filter(g=>!g.excluded),groups=[];
+ // Keep full-result SB and direct comparison; only the player's own point sum is reduced.
+ for(const row of rows){
+  row.rawPoints=row.points;
+  row.droppedGames=row.excluded?[]:games.filter(g=>(g.white===row.id||g.black===row.id)&&g.result!==null).map(g=>({id:g.id,points:score(g.result,'classic')[g.white===row.id?0:1]})).sort((a,b)=>a.points-b.points).slice(0,drops);
+  row.deducted=row.droppedGames.reduce((n,g)=>n+g.points,0);row.points-=row.deducted;
+ }
  for(const row of rows.filter(r=>!r.excluded).sort((a,b)=>b.points-a.points)){let group=groups.at(-1);if(!group||group[0].points!==row.points)groups.push(group=[]);group.push(row);}
  let rank=1;return groups.flatMap(group=>{
   const ids=new Set(group.map(r=>r.id)),meet=games.filter(g=>ids.has(g.white)&&ids.has(g.black)),complete=meet.every(g=>g.result);
@@ -13,8 +19,7 @@ export function eveningRanking(t){
 export function seasonRanking(s){
  const evenings=s.evenings.filter(e=>e.tournament?.phase==='completed');
  const rows=s.players.map(p=>{
-  const values=evenings.map(e=>{const rows=eveningRanking(e.tournament),row=rows.find(r=>r.id===p.id);let value=0;if(row&&!row.excluded){const count=rows.filter(r=>r.rank===row.rank).length;for(let i=0;i<count;i++)value+=(s.scale[row.rank-1+i]||0)/count;}return {eveningId:e.id,value,dropped:false};});
-  [...values].sort((a,b)=>a.value-b.value).slice(0,Math.min(s.drops,values.length)).forEach(v=>v.dropped=true);
+  const values=evenings.map(e=>{const rows=eveningRanking(e.tournament,s.drops),row=rows.find(r=>r.id===p.id);let value=0;if(row&&!row.excluded){const count=rows.filter(r=>r.rank===row.rank).length;for(let i=0;i<count;i++)value+=(s.scale[row.rank-1+i]||0)/count;}return {eveningId:e.id,value,dropped:false};});
   return {...p,values,total:values.reduce((n,v)=>n+v.value,0),counted:values.reduce((n,v)=>n+(v.dropped?0:v.value),0)};
  }).sort((a,b)=>b.counted-a.counted);
  let previous=null;rows.forEach((r,i)=>{r.rank=previous&&Math.abs(r.counted-previous.counted)<1e-9?previous.rank:i+1;previous=r;});return rows;
@@ -51,7 +56,7 @@ export function blitzTransition(old,b,actor){
  }
  s.audit.push({at:new Date().toISOString(),actor,action:b.action,eveningId:b.eveningId||null});return s;
 }
-export function blitzView(s,manager){if(!s)return null;const v=structuredClone(s);v.ranking=seasonRanking(s);for(const e of v.evenings)if(e.tournament){e.tournament.ranking=eveningRanking(e.tournament);if(!manager){delete e.tournament.audit;delete e.tournament.hasEverResults;}}if(!manager)delete v.audit;return v;}
+export function blitzView(s,manager){if(!s)return null;const v=structuredClone(s);v.ranking=seasonRanking(s);for(const e of v.evenings)if(e.tournament){e.tournament.ranking=eveningRanking(e.tournament,s.drops);if(!manager){delete e.tournament.audit;delete e.tournament.hasEverResults;}}if(!manager)delete v.audit;return v;}
 export async function handleBlitz(request,env,respond,manager,actor){
  if(!['GET','POST'].includes(request.method)||(!manager&&request.method!=='GET'))return respond({ok:false,message:'Nicht verfügbar.'},404);
  await env.DB.prepare('CREATE TABLE IF NOT EXISTS hsc08_blitz (id INTEGER PRIMARY KEY, revision INTEGER NOT NULL, document TEXT)').run();
