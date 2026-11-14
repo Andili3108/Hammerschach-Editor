@@ -38,11 +38,12 @@ try {
   await frame.getByText('Saisoninformationen',{exact:true}).waitFor();
   page.on('dialog',dialog=>dialog.accept(dialog.type()==='prompt'?'Korrektur im Test':undefined));
   await frame.getByLabel('Saisontitel',{exact:true}).fill('Blitz Test');
+  await frame.getByLabel('Streichpartien je Blitzabend (0 = alle zählen)',{exact:true}).fill('1');
   await frame.getByLabel('Blitzabend 1',{exact:true}).fill('2026-11-13');
   await frame.getByRole('button',{name:'Saison speichern',exact:false}).click();
   await frame.getByText('Teilnehmer der Saison',{exact:true}).waitFor();
   for(const name of ['Anna','Bert','Clara']){await frame.getByLabel('Neuer Teilnehmer',{exact:true}).fill(name);await frame.getByRole('button',{name:'Teilnehmer hinzufügen',exact:false}).click();await frame.getByText(name,{exact:true}).last().waitFor();}
-  await frame.locator('summary').filter({hasText:'Abend 1 ·'}).click();
+  await frame.locator('summary').filter({hasText:'Runde 1 ·'}).click();
   for(const name of ['Anna','Bert','Clara'])await frame.getByLabel(name,{exact:true}).check();
   await frame.getByRole('button',{name:'Paarungsplan freigeben',exact:false}).click();
   await frame.locator('.game').first().waitFor();
@@ -51,6 +52,8 @@ try {
   await frame.getByRole('button',{name:'Abend wieder öffnen',exact:false}).waitFor();
   assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
   let season=await page.evaluate(async()=>(await window.HammerschachHsc08.api('/blitz')).season);
+  assert.equal(await frame.locator('#rankingSection s').count(),0);assert.ok((await frame.locator('#rankingSection th').allTextContents()).includes('Runde 1'));
+  assert.equal(season.evenings[0].tournament.ranking[0].deducted,.5);assert.equal(season.evenings[0].tournament.ranking[0].points,.5);
   assert.equal(season.ranking[0].rank,1);assert.ok(Math.abs(season.ranking[0].counted-58/3)<1e-8);
   await frame.getByRole('button',{name:'Abend wieder öffnen',exact:false}).click();await frame.locator('.game').first().getByRole('button',{name:'1–0',exact:true}).click();
   await frame.locator('.game').first().getByText('Gespeichert: 1-0',{exact:true}).waitFor();
