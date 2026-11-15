@@ -6,7 +6,7 @@ const draft={title:'Vereinsmeisterschaft',description:'Ausschreibung',mode:'swis
 function fixture(t){
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
  db.exec('CREATE TABLE tournaments (id TEXT PRIMARY KEY); INSERT INTO tournaments VALUES (\'online-unberuehrt\')');
- const env={DB:{prepare(sql){let args=[];return {bind(...a){args=a;return this;},async first(){return db.prepare(sql).get(...args);},async run(){return {meta:{changes:db.prepare(sql).run(...args).changes}};}};}}};
+ const env={DB:{prepare(sql){let args=[];return {bind(...a){args=a;return this;},async first(){return db.prepare(sql).get(...args);},async all(){return {results:db.prepare(sql).all(...args)};},async run(){return {meta:{changes:db.prepare(sql).run(...args).changes}};}};}}};
  let user={id:'admin',username:'Andili',isAdmin:true};let reauth=0;
  const deps={json:(body,init)=>new Response(JSON.stringify(body),{...init,headers:{'content-type':'application/json',...init.headers}}),session:async()=>user?{user}:null,isAdmin:u=>u.isAdmin,reauthenticate:async(req,u,p)=>{reauth++;return p==='correct'?{ok:true}:{ok:false,status:403,message:'Kennwort falsch'};}};
  return {db,setUser:u=>user=u,reauth:()=>reauth,async request(method='GET',body,path='/championship'){const r=await handleHsc08(new Request('https://test.invalid/api/hsc08'+path,{method,...(body?{body:JSON.stringify(body)}:{})}),env,deps);return {status:r.status,headers:r.headers,body:await r.json()};}};
@@ -200,4 +200,19 @@ test('Blitz storage is separate, revision guarded and read-only for approved rea
  assert.equal((await f.request()).body.tournament,null);
  for(const username of ['Bob','Thomas1961','Fabili']){f.setUser({username,isAdmin:false});r=await f.request('GET',null,'/blitz');assert.equal(r.status,200);assert.equal(r.body.season.audit,undefined);assert.equal((await f.request('POST',{revision:1,action:'player',name:'No'},'/blitz')).status,404);assert.equal((await f.request('GET',null,'/blitz/page')).body.canManage,false);}
  f.setUser(null);assert.equal((await f.request('GET',null,'/blitz')).status,404);
+});
+
+test('Reports protect drafts/files, retain published snapshots and guard revisions and deletions',async t=>{
+ const f=fixture(t);let r=await f.request('GET',null,'/reports');assert.equal(r.status,200);assert.equal(r.body.items.length,1);assert.equal(r.body.items[0].date,'2026-11-08');
+ let detail=(await f.request('GET',null,'/reports?id=thomas-20261108')).body;const original=structuredClone(detail.report);const draft={...original,title:'Privater Entwurf',files:[{name:'privat.pgn',mime:'application/x-chess-pgn',data:btoa('[Event "Privat"]')}]};
+ assert.equal((await f.request('POST',{action:'save',id:detail.id,revision:detail.revision,status:'draft',report:draft},'/reports')).status,200);
+ assert.equal((await f.request('POST',{action:'save',id:detail.id,revision:detail.revision,status:'published',report:draft},'/reports')).status,409);
+ for(const username of ['Bob','Thomas1961','Fabili']){f.setUser({username,isAdmin:false});r=await f.request('GET',null,'/reports');assert.equal(r.body.items[0].title,original.title);r=await f.request('GET',null,'/reports?id=thomas-20261108');assert.deepEqual(r.body.report,original);assert.equal((await f.request('POST',{action:'delete'},'/reports')).status,404);assert.equal((await f.request('GET',null,'/reports/page?view=manager')).body.canManage,false);}
+ f.setUser({username:'Andili',isAdmin:true});detail=(await f.request('GET',null,'/reports?id=thomas-20261108')).body;
+ assert.equal((await f.request('POST',{action:'save',id:detail.id,revision:detail.revision,status:'published',report:{...draft,leagueId:'missing'}},'/reports')).status,400);
+ assert.equal((await f.request('POST',{action:'save',id:detail.id,revision:detail.revision,status:'published',report:draft},'/reports')).status,200);
+ assert.equal((await f.request('GET',null,'/reports?id=thomas-20261108&view=reader')).body.report.title,draft.title);
+ detail=(await f.request('GET',null,'/reports?id=thomas-20261108')).body;assert.equal((await f.request('POST',{action:'delete',id:detail.id,revision:detail.revision,confirmation:'BERICHT LÖSCHEN'},'/reports')).status,200);assert.equal((await f.request('GET',null,'/reports')).body.items.length,0);
+ for(const user of [null,{username:'Other',isAdmin:true}]){f.setUser(user);for(const path of ['/reports','/reports?id=thomas-20261108','/reports/page'])assert.equal((await f.request('GET',null,path)).status,404);}
+ assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
 });
