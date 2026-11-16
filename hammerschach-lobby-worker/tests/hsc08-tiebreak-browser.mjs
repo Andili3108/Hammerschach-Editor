@@ -27,6 +27,8 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
+  async function clickHscNav(role,name,exact){const target=page.getByRole(role,{name,exact}).filter({visible:true});if(!await target.count())await page.locator('#mobileNavTestOpen').click();await target.click();if(name==='Leseansicht prüfen')await page.locator('nav[aria-label="HSC08-Leseansicht"]').first().waitFor({state:'attached'});}
+
   if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('HSC08'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
@@ -80,27 +82,27 @@ try {
     assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
     if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-'+(theme||'light')+'.png',fullPage:true});
   }
-  await page.getByRole('button',{name:'Turniermenü',exact:false}).filter({visible:true}).click();
-  await page.getByRole('menuitem',{name:'Turnier konfigurieren',exact:false}).filter({visible:true}).click();
+  await clickHscNav('button','Turniermenü',false);
+  await clickHscNav('menuitem','Turnier konfigurieren',false);
   assert.equal(await frame.locator('#config .config-card').count(),2);
   assert.ok(await frame.locator('#config .participant-fields').isVisible());
   await frame.locator('#title').fill('Feinwertungstest bearbeitet');
   await frame.getByRole('button',{name:'Entwurf speichern',exact:true}).click();
   await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:true}).click();
   if(process.env.HSC_SCREENSHOT_DIR){
-    await page.getByRole('button',{name:'Turniermenü',exact:false}).filter({visible:true}).click();
-  await page.getByRole('menuitem',{name:'Turnier konfigurieren',exact:false}).filter({visible:true}).click();
+    await clickHscNav('button','Turniermenü',false);
+  await clickHscNav('menuitem','Turnier konfigurieren',false);
     await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/'+label+'-config.png',fullPage:true});
     await frame.getByRole('button',{name:'Zur Turnierseite',exact:true}).click();
   }
-  await page.getByRole('button',{name:'Turniermenü',exact:false}).filter({visible:true}).click();
-  await page.getByRole('menuitem',{name:'Leseansicht prüfen',exact:false}).filter({visible:true}).click();
+  await clickHscNav('button','Turniermenü',false);
+  await clickHscNav('menuitem','Leseansicht prüfen',false);
   await frame.locator('#ranking table').waitFor();
   assert.equal(await frame.locator('select,input,form').count(),0);
   assert.equal(await frame.locator('#ranking th').count(),6);
   await frame.locator('#ranking .calculation>summary').click();
   assert.ok(await frame.locator('#ranking .calculation details').count());
-  await page.getByRole('button',{name:'Bearbeitungsansicht',exact:true}).filter({visible:true}).click();
+  await clickHscNav('button','Bearbeitungsansicht',true);
   const finalPrepare=frame.locator('#roundActions form');
   await finalPrepare.locator('input[type=date]').nth(0).fill('2027-01-01');await finalPrepare.locator('input[type=date]').nth(1).fill('2027-01-31');
   await finalPrepare.getByRole('button',{name:'Runde 3 vorbereiten',exact:false}).click();

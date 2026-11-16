@@ -27,6 +27,8 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
+  async function clickHscNav(role,name,exact){const target=page.getByRole(role,{name,exact}).filter({visible:true});if(!await target.count())await page.locator('#mobileNavTestOpen').click();await target.click();if(name==='Leseansicht prüfen')await page.locator('nav[aria-label="HSC08-Leseansicht"]').first().waitFor({state:'attached'});}
+
   if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('HSC08'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
@@ -54,8 +56,8 @@ try {
   const state=await page.evaluate(async()=>(await window.HammerschachHsc08.api('/championship')).tournament);
   assert.equal(state.audit.at(-1).action,'rejoin');assert.equal(state.schedule.flatMap(r=>r.games).filter(g=>g.result==='1-0').length,1);
   assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
-  await page.getByRole('button',{name:'Turniermenü',exact:false}).filter({visible:true}).click();
-  await page.getByRole('menuitem',{name:'Leseansicht prüfen',exact:false}).filter({visible:true}).click();
+  await clickHscNav('button','Turniermenü',false);
+  await clickHscNav('menuitem','Leseansicht prüfen',false);
   await frame.locator('#ranking table').waitFor();
   assert.equal(await frame.locator('select,input,form').count(),0);
   assert.ok(!(await frame.locator('#ranking').textContent()).includes('Zurückgezogen'));

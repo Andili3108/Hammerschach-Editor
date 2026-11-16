@@ -28,6 +28,8 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
+  async function clickHscNav(role,name,exact){const target=page.getByRole(role,{name,exact}).filter({visible:true});if(!await target.count())await page.locator('#mobileNavTestOpen').click();await target.click();if(name==='Leseansicht prüfen')await page.locator('nav[aria-label="HSC08-Leseansicht"]').first().waitFor({state:'attached'});}
+
   if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('HSC08'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
@@ -36,8 +38,11 @@ try {
   const frame=page.frameLocator('#hsc08View iframe');await frame.getByText('Diese Turnierseite ist noch leer.').waitFor();
 
 
-  await page.getByRole('button',{name:'Berichte',exact:true}).filter({visible:true}).click();
+  await clickHscNav('button','Berichte',true);
   await frame.getByText('Überraschungssieg gegen Werne 1',{exact:true}).waitFor();
+  assert.equal(await page.locator('#mobileNavTestHeader .hsc08-toolbar').count(),0);
+  if(width<1000){assert.equal(await page.locator('#mobileNavTestBrand>span').isVisible(),false);const head=await page.locator('#mobileNavTestHeader').boundingBox(),menu=await page.locator('#mobileNavTestOpen').boundingBox();assert.ok(head.height<160);assert.ok(menu.x+menu.width>head.x+head.width-25);}
+
   assert.ok((await frame.locator('.report-card img').getAttribute('src')).startsWith('data:image/jpeg'));
   await frame.getByRole('button',{name:'Bearbeiten',exact:false}).click();
   await frame.getByLabel('Überschrift',{exact:true}).fill('Entwurf für Vereinsbericht');
@@ -65,7 +70,7 @@ try {
   await page.evaluate(()=>window.HammerschachHsc08.open(true,'reports'));
   await frame.getByRole('button',{name:'Weiterlesen',exact:true}).waitFor();assert.equal(await frame.getByRole('button',{name:'Bearbeiten',exact:false}).count(),0);
   if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/reports-'+label+'.png',fullPage:true});
-  await page.getByRole('button',{name:'Bearbeitungsansicht',exact:true}).filter({visible:true}).click();await frame.getByRole('button',{name:'Neuer Bericht',exact:false}).waitFor();
+  await clickHscNav('button','Bearbeitungsansicht',true);await frame.getByRole('button',{name:'Neuer Bericht',exact:false}).waitFor();
   assert.deepEqual(errors,[]);await context.close();db.close();console.log(label+': reports draft, publish, reader and internal result link OK');
  }
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
