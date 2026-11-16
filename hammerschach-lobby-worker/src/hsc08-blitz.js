@@ -1,3 +1,4 @@
+import {validateDescription} from './hsc08-description.js';
 import {transition,standings,effectiveRoundRobinGames,score} from './hsc08-round-robin.js';
 export const defaultScale=[25,18,15,12,10,8,6,4,2,1];
 export function eveningRanking(t,drops=0){
@@ -37,6 +38,12 @@ export function blitzTransition(old,b,actor){
   if(s.locked&&(drops!==s.drops||JSON.stringify(scale)!==JSON.stringify(s.scale)))throw Error('Die Saisonwertung ist seit dem ersten Start gesperrt.');
   if(!Array.isArray(b.dates)||b.dates.length!==10)throw Error('Zehn Terminfelder erforderlich.');
   s.title=title;s.drops=drops;s.scale=scale;s.evenings.forEach((e,i)=>{const d=date(b.dates[i]);if(e.tournament&&d!==e.date)throw Error('Gestartete Abende behalten ihr Datum.');e.date=d;});
+ }else if(b.action==='description-draft'){
+  if(!old)throw Error('Bitte zuerst die Saison speichern.');
+  s.descriptionDraft=validateDescription(b);
+ }else if(b.action==='description-publish'){
+  if(!s.descriptionDraft)throw Error('Kein Ausschreibungsentwurf vorhanden.');
+  delete s.descriptionRich;Object.assign(s,s.descriptionDraft);delete s.descriptionDraft;
  }else if(b.action==='player'){
   const name=text(b.name,100);if(b.id){const p=s.players.find(p=>p.id===b.id);if(!p)throw Error('Teilnehmer fehlt.');p.name=name;for(const e of s.evenings){const q=e.tournament?.participants.find(q=>q.id===b.id);if(q)q.name=name;}}
   else {if(s.players.length>=200)throw Error('Maximal 200 Teilnehmer.');s.players.push({id:crypto.randomUUID(),name});}
@@ -56,7 +63,7 @@ export function blitzTransition(old,b,actor){
  }
  s.audit.push({at:new Date().toISOString(),actor,action:b.action,eveningId:b.eveningId||null});return s;
 }
-export function blitzView(s,manager){if(!s)return null;const v=structuredClone(s);v.ranking=seasonRanking(s);for(const e of v.evenings)if(e.tournament){e.tournament.ranking=eveningRanking(e.tournament,s.drops);if(!manager){delete e.tournament.audit;delete e.tournament.hasEverResults;}}if(!manager)delete v.audit;return v;}
+export function blitzView(s,manager){if(!s)return null;const v=structuredClone(s);v.ranking=seasonRanking(s);for(const e of v.evenings)if(e.tournament){e.tournament.ranking=eveningRanking(e.tournament,s.drops);if(!manager){delete e.tournament.audit;delete e.tournament.hasEverResults;}}if(!manager){delete v.audit;delete v.descriptionDraft;}return v;}
 export async function handleBlitz(request,env,respond,manager,actor){
  if(!['GET','POST'].includes(request.method)||(!manager&&request.method!=='GET'))return respond({ok:false,message:'Nicht verfügbar.'},404);
  await env.DB.prepare('CREATE TABLE IF NOT EXISTS hsc08_blitz (id INTEGER PRIMARY KEY, revision INTEGER NOT NULL, document TEXT)').run();

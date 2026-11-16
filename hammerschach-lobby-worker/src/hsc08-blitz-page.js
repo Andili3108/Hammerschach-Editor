@@ -1,19 +1,33 @@
+import {DESCRIPTION_EDITOR_HTML,DESCRIPTION_EDITOR_CLIENT} from './hsc08-description-editor.js';
 import {hsc08Page} from './hsc08-page.js';
 import {hsc08Logo} from './hsc08-logo.js';
 export function blitzPage(manager){return hsc08Page().split('<body>')[0]+`<style>
 .blitz-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.blitz-grid>*{min-width:0}table{width:100%;border-collapse:collapse}th,td{padding:9px;text-align:left;border-bottom:1px solid var(--ui-line)}.table-wrap{overflow:auto}section.info{background:var(--ui-surface,#fff2bc)}.game{display:grid;grid-template-columns:50px 1fr auto 1fr;gap:10px;align-items:center;padding:10px;border-bottom:1px solid var(--ui-line)}.game>span:last-child{text-align:right}.game button[aria-pressed=true]{background:#80303d;color:white}.game button{padding:7px 10px}.attendance{display:flex;align-items:center;gap:8px}.attendance input{width:22px;min-height:22px}.muted{color:var(--ui-muted)}@media(max-width:900px){.blitz-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:520px){.blitz-grid{grid-template-columns:1fr}.game{grid-template-columns:35px 1fr 1fr}.game .results{grid-row:2;grid-column:2/4}.game>span:last-child{grid-column:3;grid-row:1}}details{margin:12px 0}summary{cursor:pointer;padding:10px;font-weight:bold}button,input,select{font:inherit}input,select{border-radius:14px;padding:8px 12px;border:1px solid var(--ui-line);background:var(--ui-field);color:var(--ui-text)}
 </style><body><main><template id="hsc08Brand"><img src="${hsc08Logo}" alt="HSC08"></template><p id="message" role="status"></p><div id="content"></div></main><script>const MANAGER=${!!manager};${CLIENT}</script></body></html>`;}
 const CLIENT=String.raw`
-const api=parent.HammerschachHsc08.api;let state,busy=false,chosen=null;
+const api=parent.HammerschachHsc08.api;let state,busy=false,chosen=null,descriptionEditor=null,descriptionDirty=false;
+window.hscCanLeave=()=>!descriptionDirty||confirm('Ungespeicherte Ausschreibung verwerfen?');
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
 const button=(label,fn)=>{const b=el('button',label,'button-flat');b.type='button';b.onclick=()=>{if(!busy)fn();};return b;};
 const field=(label,value,type='text')=>{const box=el('label',label);const input=el('input');input.type=type;input.value=value??'';box.append(input);return {box,input};};
 const fmt=n=>Number(n.toFixed(4)).toLocaleString('de-DE');
 const day=d=>d?d.split('-').reverse().join('.'):'Termin offen';
-async function save(body){if(busy)return;busy=true;try{state=await api('/blitz','POST',{revision:state.revision,...body});render();document.getElementById('message').textContent='Gespeichert.';}catch(e){document.getElementById('message').textContent=e.message;}finally{busy=false;}}
+async function save(body){if(busy)return;if(descriptionDirty&&body.action!=='description-draft'&&!window.hscCanLeave())return;busy=true;try{state=await api('/blitz','POST',{revision:state.revision,...body});descriptionDirty=false;render();document.getElementById('message').textContent='Gespeichert.';}catch(e){document.getElementById('message').textContent=e.message;}finally{busy=false;}}
 function table(headers,rows){const wrap=el('div',null,'table-wrap'),t=el('table'),h=el('tr');headers.forEach(x=>h.append(el('th',x)));t.append(h);for(const row of rows){const tr=el('tr');row.forEach(x=>{const td=el('td');if(x instanceof Node)td.append(x);else td.textContent=x;tr.append(td);});t.append(tr);}wrap.append(t);return wrap;}
 function section(root,title){const s=el('section');s.append(el('h2',title));root.append(s);return s;}
+function initDescriptionEditor(){
+ const $=id=>document.getElementById(id),message=text=>{$('message').textContent=text;};
+ ${DESCRIPTION_EDITOR_CLIENT}
+ return {readText,paintText,destroy:()=>document.removeEventListener('selectionchange',trackDescriptionSelection)};
+}
+function paintDescription(target,data){
+ for(const run of data.descriptionRich||[{text:data.description||'',size:18,bold:false,italic:false}]){
+  if(run.table){const t=el('table',null,'editor-table');run.table.forEach((cells,i)=>{const row=el('tr');cells.forEach(text=>row.append(el(i?'td':'th',text)));t.append(row);});target.append(t);}
+  else {const span=el('span',run.text);span.style.fontSize=run.size+'px';span.style.fontWeight=run.bold?'bold':'normal';span.style.fontStyle=run.italic?'italic':'normal';target.append(span);}
+ }
+}
 function render(){
+ descriptionEditor?.destroy();descriptionEditor=null;
  const root=document.getElementById('content');root.replaceChildren();const s=state.season;
  parent.HammerschachHsc08.setTitle(s?.title||'Vereinsblitzen');
  if(!s&&!MANAGER){root.append(el('p','Noch keine Blitzsaison angelegt.'));return;}
@@ -47,6 +61,22 @@ function render(){
    });d.append(block);}
  }
  if(MANAGER&&s.phase==='running'){const players=section(root,'Teilnehmer der Saison'),grid=el('div',null,'blitz-grid');for(const p of s.players){const box=el('div');box.append(el('span',p.name),button('✏️',()=>{const name=prompt('Name korrigieren:',p.name);if(name?.trim())save({action:'player',id:p.id,name});}));grid.append(box);}players.id='participantsSection';players.append(grid);const f=field('Neuer Teilnehmer','');players.append(f.box,button('＋ Teilnehmer hinzufügen',()=>save({action:'player',name:f.input.value})));}
+
+ const announcement=section(root,'Ausschreibung');announcement.id='descriptionSection';
+ const description=el('div',null,'description');description.id='description';paintDescription(description,s);announcement.append(description);
+ if(MANAGER&&s.phase!=='completed'){
+  const edit=el('details');edit.append(el('summary','✏️ Ausschreibung bearbeiten'));
+  const editor=el('div',null,'config-card');editor.innerHTML=${JSON.stringify(DESCRIPTION_EDITOR_HTML)};
+  edit.append(editor);announcement.append(edit);
+  descriptionEditor=initDescriptionEditor();
+  descriptionEditor.paintText(document.getElementById('descriptionInput'),(s.descriptionDraft||s).descriptionRich||[{text:(s.descriptionDraft||s).description||'',size:18,bold:false,italic:false}]);
+  editor.addEventListener('input',()=>descriptionDirty=true);
+  editor.addEventListener('click',event=>{if(event.target.closest('button'))descriptionDirty=true;});
+  editor.addEventListener('change',()=>descriptionDirty=true);
+  edit.append(el('p','Entwurf speichern sichert deine Bearbeitung. Die Turnieransicht ändert sich erst mit „In Turnieransicht übernehmen“.','notice'),
+   button('💾 Entwurf speichern',()=>save({action:'description-draft',descriptionRich:descriptionEditor.readText()})));
+  if(s.descriptionDraft){edit.open=true;edit.append(button('✓ In Turnieransicht übernehmen',()=>save({action:'description-publish'})));}
+ }
 }
 window.hscMode=()=>{const c=document.getElementById('blitzConfig');if(c){c.open=true;c.scrollIntoView();}};
 async function load(){try{state=await api('/blitz');render();}catch(e){document.getElementById('message').textContent=e.message;}}

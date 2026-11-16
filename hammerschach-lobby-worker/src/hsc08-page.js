@@ -1,3 +1,4 @@
+import {DESCRIPTION_EDITOR_HTML,DESCRIPTION_EDITOR_CLIENT} from './hsc08-description-editor.js';
 import {HSC08_UI,HSC08_STYLE} from './hsc08-ui.js';
 import { hsc08Logo } from './hsc08-logo.js';
 export function hsc08Page() {
@@ -36,7 +37,7 @@ ${HSC08_STYLE}.pairing-editor{margin:16px 0;padding:16px;border:1px solid var(--
 <div id="roundsField" hidden><label for="rounds">Anzahl der Runden</label><input id="rounds" class="tournament-input" type="number" min="1" max="199" step="1"></div>
 <div><label for="startsOn">Turnierbeginn</label><input id="startsOn" class="tournament-input" type="date"></div>
 <div><label for="endsOn">Spätester Spieltermin</label><input id="endsOn" class="tournament-input" type="date"></div>
-<div><label for="timeControl">Bedenkzeit</label><input id="timeControl" class="tournament-input" maxlength="300" placeholder="Bedenkzeit eurer Vereinsmeisterschaft"></div></div><p id="roundsHint" class="participant-hint" hidden>Die Rundenzahl vor Turnierbeginn festlegen. Sie darf im Entwurf noch offen bleiben.</p></div><fieldset class="participant-fields"><legend>Teilnehmer · ohne Gamer-Konto</legend><p id="namesHint" class="participant-hint">Ein Name pro Feld. Leere Felder werden nicht gespeichert. Bis zu 200 Teilnehmer.</p><div id="names" class="participant-grid"></div><button id="addNames" class="button-flat" type="button">＋ 3 weitere Namensfelder</button></fieldset><div class="config-card"><label for="descriptionInput">Ausschreibung / Beschreibung</label><div class="editor-toolbar" role="group" aria-label="Textformatierung"><button class="button-flat" type="button" id="textBold" aria-label="Fett" title="Fett (Strg/Befehl+B)"><b>F</b></button><button class="button-flat" type="button" id="textItalic" aria-label="Kursiv" title="Kursiv (Strg/Befehl+I)"><i>K</i></button><label for="textSize">Schriftgröße</label><select id="textSize" class="tournament-select"><option value="2">Klein · 14</option><option value="4" selected>Normal · 18</option><option value="5">Groß · 24</option><option value="6">Überschrift · 30</option></select><label for="tablePreset">Tabelle</label><select id="tablePreset" class="tournament-select"><option value="">Vorlage wählen</option><option value="2">2 Spalten</option><option value="3">3 Spalten</option><option value="4">4 Spalten</option><option value="schedule">Rundentermine</option></select><button class="button-flat" type="button" id="tableRow">Zeile hinzufügen</button><button class="button-flat" type="button" id="tableDelete">Tabelle entfernen</button><button class="button-flat" type="button" id="textClear">Formatierung entfernen</button></div><div class="tournament-textarea" id="descriptionInput" contenteditable="true" role="textbox" aria-label="Ausschreibung / Beschreibung" aria-multiline="true" aria-describedby="editorHint"></div><small id="editorHint">Text markieren und formatieren. Eingefügte Texte übernehmen die Gamer-Schrift; maximal 20.000 Zeichen.</small></div><div class="config-footer"><p class="notice">Entwurf speichern sichert deine Bearbeitung. Die Turnieransicht ändert sich erst mit „In Turnieransicht übernehmen“.</p><div class="actions"><button type="submit">Entwurf speichern</button><button id="cancel" type="button">Zur Turnierseite</button></div></div></section></form>
+<div><label for="timeControl">Bedenkzeit</label><input id="timeControl" class="tournament-input" maxlength="300" placeholder="Bedenkzeit eurer Vereinsmeisterschaft"></div></div><p id="roundsHint" class="participant-hint" hidden>Die Rundenzahl vor Turnierbeginn festlegen. Sie darf im Entwurf noch offen bleiben.</p></div><fieldset class="participant-fields"><legend>Teilnehmer · ohne Gamer-Konto</legend><p id="namesHint" class="participant-hint">Ein Name pro Feld. Leere Felder werden nicht gespeichert. Bis zu 200 Teilnehmer.</p><div id="names" class="participant-grid"></div><button id="addNames" class="button-flat" type="button">＋ 3 weitere Namensfelder</button></fieldset><div class="config-card">${DESCRIPTION_EDITOR_HTML}</div><div class="config-footer"><p class="notice">Entwurf speichern sichert deine Bearbeitung. Die Turnieransicht ändert sich erst mit „In Turnieransicht übernehmen“.</p><div class="actions"><button type="submit">Entwurf speichern</button><button id="cancel" type="button">Zur Turnierseite</button></div></div></section></form>
 <dialog id="deleteDialog"><form id="deleteForm"><h2>Turnier vollständig löschen</h2><p>Die gespeicherte Konfiguration, Ausschreibung und Teilnehmer werden unwiderruflich gelöscht. Die feste HSC08-Seite und ihre Navigation bleiben erhalten.</p><label for="password">Aktuelles Gamer-Passwort</label><input class="tournament-input" id="password" type="password" autocomplete="current-password" required maxlength="1024"><label for="confirmation">Zur Bestätigung TURNIER LÖSCHEN eingeben</label><input class="tournament-input" id="confirmation" required autocomplete="off"><p id="deleteError" role="alert"></p><button type="submit">Endgültig löschen</button><button id="deleteCancel" type="button">Abbrechen</button></form></dialog>
 <dialog id="backupDialog"><h2>Sichern / Wiederherstellen</h2><p>Die ZIP enthält eine JSON-Sicherung mit Entwurf und Turnieransicht sowie eine HTML-Datei des übernommenen Ansichtsstands.</p><button id="downloadBackup" type="button">Sicherungs-ZIP herunterladen</button><p id="backupStatus" role="status"></p><label for="backupPassword">Aktuelles Gamer-Passwort</label><input id="backupPassword" type="password" autocomplete="current-password" class="tournament-input"><label for="resetTitle">Zum Zurücksetzen den aktuellen Turniernamen eingeben</label><input id="resetTitle" class="tournament-input" autocomplete="off"><label><input id="backupConfirmed" type="checkbox" style="width:auto;min-height:0"> Ich habe die Sicherungs-ZIP gespeichert.</label><button id="resetTournament" type="button" disabled>Gesichert zurücksetzen</button><hr><label for="restoreFile">JSON-Datei aus einer entpackten Sicherungs-ZIP</label><input id="restoreFile" class="tournament-input" type="file" accept=".json,application/json"><label for="restoreConfirmation">Zur Bestätigung WIEDERHERSTELLEN eingeben</label><input id="restoreConfirmation" class="tournament-input" autocomplete="off"><button id="restoreTournament" type="button">Sicherung wiederherstellen</button><button id="backupClose" type="button">Schließen</button></dialog></main><script>${HSC08_UI}
 (${HSC08_CLIENT})();</script></body></html>`;
@@ -47,69 +48,7 @@ const HSC08_CLIENT = String.raw`function client() {
   let state = {revision:0,tournament:null}, busy = false;
   const api = (method, body) => parent.HammerschachHsc08.api('/championship', method, body);
   const message = text => { $('message').textContent = text; };
-  function paintText(target,runs){
-    target.replaceChildren();
-    for(const run of runs){if(run.table){target.append(makeTable(run.table));continue;}const span=document.createElement('span');span.textContent=run.text;span.style.fontSize=run.size+'px';span.style.fontWeight=run.bold?'bold':'normal';span.style.fontStyle=run.italic?'italic':'normal';target.append(span);}
-  }
-  function readText(){
-    const runs=[];
-    const emit=(text,style)=>{if(!text)return;const last=runs.at(-1);if(last && !last.table && last.size===style.size && last.bold===style.bold && last.italic===style.italic)last.text+=text;else runs.push({text,...style});};
-    function walk(node,style){
-      if(node.nodeType===3){emit(node.textContent,style);return;}
-      if(node.nodeType!==1)return;
-      if(['SCRIPT','STYLE','IFRAME','OBJECT'].includes(node.tagName))return;
-      if(node.tagName==='TABLE'){runs.push({table:[...node.rows].map(row=>[...row.cells].map(cell=>cell.innerText))});return;}
-      if(node.tagName==='BR'){emit('\n',style);return;}
-      const block=['DIV','P','LI','H1','H2','H3'].includes(node.tagName);
-      if(block && runs.length && !(runs.at(-1).text||'').endsWith('\n'))emit('\n',style);
-      const next={...style};
-      if(['B','STRONG'].includes(node.tagName))next.bold=true;
-      if(['I','EM'].includes(node.tagName))next.italic=true;
-      if(node.style.fontWeight)next.bold=node.style.fontWeight==='bold'||Number(node.style.fontWeight)>=600;
-      if(node.style.fontStyle)next.italic=node.style.fontStyle==='italic';
-      const sizes={1:14,2:14,3:18,4:18,5:24,6:30,7:30};
-      if(node.tagName==='FONT' && sizes[node.getAttribute('size')])next.size=sizes[node.getAttribute('size')];
-      const px=parseInt(node.style.fontSize);if([14,18,24,30].includes(px))next.size=px;
-      for(const child of node.childNodes)walk(child,next);
-      if(block && node.nextSibling && runs.length && !(runs.at(-1).text||'').endsWith('\n'))emit('\n',next);
-    }
-    for(const node of $('descriptionInput').childNodes)walk(node,{size:18,bold:false,italic:false});
-    return runs;
-  }
-  let savedSelection=null;
-  document.addEventListener('selectionchange',()=>{
-    const selection=getSelection();if(selection.rangeCount && $('descriptionInput').contains(selection.anchorNode) && $('descriptionInput').contains(selection.focusNode))savedSelection=selection.getRangeAt(0).cloneRange();
-  });
-  function format(command,value){
-    if(busy)return;
-    $('descriptionInput').focus();
-    if(savedSelection && $('descriptionInput').contains(savedSelection.commonAncestorContainer)){const selection=getSelection();selection.removeAllRanges();selection.addRange(savedSelection);}
-    document.execCommand(command,false,value);
-    const selection=getSelection();if(selection.rangeCount)savedSelection=selection.getRangeAt(0).cloneRange();
-  }
-  for(const [id,command] of [['textBold','bold'],['textItalic','italic'],['textClear','removeFormat']]){
-    $(id).onmousedown=e=>e.preventDefault();$(id).onclick=()=>format(command);
-  }
-  $('textSize').onchange=()=>format('fontSize',$('textSize').value);
-  function makeTable(rows){const table=document.createElement('table');table.className='editor-table';const body=document.createElement('tbody');rows.forEach((cells,index)=>{const row=document.createElement('tr');cells.forEach(text=>{const cell=document.createElement(index===0?'th':'td');cell.textContent=text;row.append(cell);});body.append(row);});table.append(body);return table;}
-  function insertTable(rows){if(rows.length>100 || rows.some(r=>r.length>12)){message('Maximal 100 Zeilen und 12 Spalten pro Tabelle.');return;}format('insertHTML',makeTable(rows).outerHTML+'<div><br></div>');}
-  $('tablePreset').onchange=()=>{const value=$('tablePreset').value;if(!value)return;const count=value==='schedule'?3:Number(value);const rows=[value==='schedule'?['Runde','Rundenbeginn','Spätester Spieltermin']:Array.from({length:count},(_,i)=>'Spalte '+(i+1)),...Array.from({length:3},()=>Array(count).fill(''))];insertTable(rows);$('tablePreset').value='';};
-  function selectedTable(){const node=savedSelection?.startContainer;const table=(node?.nodeType===1?node:node?.parentElement)?.closest('table');return table && $('descriptionInput').contains(table)?table:null;}
-  $('tableRow').onmousedown=e=>e.preventDefault();$('tableDelete').onmousedown=e=>e.preventDefault();
-  $('tableRow').onclick=()=>{if(busy)return;const table=selectedTable();if(!table){message('Bitte zuerst in eine Tabellenzelle klicken.');return;}if(table.rows.length>=100)return;const row=table.insertRow();for(let i=0;i<table.rows[0].cells.length;i++)row.insertCell().textContent='';};
-  $('tableDelete').onclick=()=>{if(busy)return;const table=selectedTable();if(table && confirm('Diese Tabelle aus der Ausschreibung entfernen?')){table.remove();savedSelection=null;}};
-  $('descriptionInput').addEventListener('paste',e=>{
-    e.preventDefault();if(busy)return;
-    const html=e.clipboardData.getData('text/html');
-    if(html){const doc=new DOMParser().parseFromString(html,'text/html');const table=doc.querySelector('table');if(table){insertTable([...table.rows].map(row=>[...row.cells].map(cell=>cell.textContent)));return;}}
-    const text=e.clipboardData.getData('text/plain');
-    const lines=text.trim().split(/\r?\n/);
-    if(lines.length>1 && lines.every(line=>line.includes('|'))){const rows=lines.map(line=>line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(cell=>cell.trim())).filter(row=>!row.every(cell=>/^:?-{3,}:?$/.test(cell)));if(rows.length && rows.every(row=>row.length===rows[0].length)){insertTable(rows);return;}}
-    if(lines.length>1 && lines.every(line=>line.includes('\t'))){insertTable(lines.map(line=>line.split('\t')));return;}
-    format('insertText',text);
-  });
-  $('descriptionInput').addEventListener('drop',e=>e.preventDefault());
-  function render() {
+${DESCRIPTION_EDITOR_CLIENT}  function render() {
     const t = state.publishedTournament;
     $('draftNotice').hidden=!$('config').hidden || JSON.stringify(state.tournament)===JSON.stringify(t); 
     parent.HammerschachHsc08.setTitle(t?.title || 'Vereinsmeisterschaft',!$('config').hidden);
