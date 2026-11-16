@@ -44,6 +44,29 @@ try {
   await frame.getByLabel('Blitzabend 1',{exact:true}).fill('2026-11-13');
   await frame.getByRole('button',{name:'Saison speichern',exact:false}).click();
   await frame.getByText('Teilnehmer der Saison',{exact:true}).waitFor();
+  await frame.getByText('✏️ Ausschreibung bearbeiten',{exact:true}).click();
+  await frame.getByRole('textbox',{name:'Ausschreibung / Beschreibung',exact:true}).fill('Blitzsaison mit Ausschreibung');
+  await frame.locator('#descriptionInput').evaluate(e=>{
+   const range=document.createRange();range.selectNodeContents(e);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);
+  });
+  await frame.getByRole('button',{name:'Fett',exact:true}).click();
+  await frame.locator('#textSize').selectOption('5');
+  await frame.locator('#descriptionInput').evaluate(e=>{
+   e.focus();const range=document.createRange();range.selectNodeContents(e);range.collapse(false);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);
+  });
+  await frame.locator('#descriptionInput').evaluate(e=>{
+   const data=new DataTransfer();data.setData('text/plain','| Runde | Datum |\n| --- | --- |\n| 1 | 13.11.2026 |');
+   e.dispatchEvent(new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true}));
+  });
+  await frame.getByRole('button',{name:'Entwurf speichern',exact:false}).click();
+  await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:false}).waitFor();
+  assert.equal(await frame.locator('#description').textContent(),'');
+  const draft=await page.evaluate(async()=>await window.HammerschachHsc08.api('/blitz?view=reader'));
+  assert.equal(draft.season.descriptionDraft,undefined);
+  await frame.getByRole('button',{name:'In Turnieransicht übernehmen',exact:false}).click();
+  await frame.locator('#description .editor-table').waitFor();
+  assert.equal(await frame.locator('#description .editor-table tr').count(),2);
+  assert.ok(await frame.locator('#description span').first().evaluate(e=>getComputedStyle(e).fontWeight==='700'&&getComputedStyle(e).fontSize==='24px'));
   for(const name of ['Anna','Bert','Clara']){await frame.getByLabel('Neuer Teilnehmer',{exact:true}).fill(name);await frame.getByRole('button',{name:'Teilnehmer hinzufügen',exact:false}).click();await frame.getByText(name,{exact:true}).last().waitFor();}
   await frame.locator('summary').filter({hasText:'Runde 1 ·'}).click();
   for(const name of ['Anna','Bert','Clara'])await frame.getByLabel(name,{exact:true}).check();
@@ -62,7 +85,10 @@ try {
   await frame.getByRole('button',{name:'Abend abschließen',exact:false}).click();await frame.getByRole('button',{name:'Abend wieder öffnen',exact:false}).waitFor();
   await frame.getByRole('button',{name:'Saison abschließen',exact:false}).click();await frame.getByRole('button',{name:'Saison wieder öffnen',exact:false}).waitFor();
   await clickHscNav('button','Turniermenü',false);await clickHscNav('menuitem','Leseansicht prüfen',false);
-  await frame.getByText('Saisonwertung',{exact:true}).waitFor();assert.equal(await frame.locator('input,select,button').count(),0);
+  await frame.getByText('Saisonwertung',{exact:true}).waitFor();
+  await frame.locator('#description .editor-table').waitFor();
+  assert.equal(await frame.locator('[contenteditable=true]').count(),0);
+  assert.equal(await frame.locator('input,select,button').count(),0);
   if(process.env.HSC_SCREENSHOT_DIR)await page.screenshot({path:process.env.HSC_SCREENSHOT_DIR+'/blitz-'+label+'.png',fullPage:true});
   assert.deepEqual(errors,[]);await context.close();db.close();console.log(label+': Blitz season, results, correction, completion and reader OK');
  }

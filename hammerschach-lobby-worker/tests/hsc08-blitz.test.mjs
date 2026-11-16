@@ -30,3 +30,23 @@ test('Losses are removed first, open games never count, corrections recompute dr
  play(games[1],1,'Ergebnis berichtigt');r=eveningRanking(s.evenings[0].tournament,1).find(r=>r.id===id);assert.equal(r.rawPoints,2.5);assert.equal(r.points,2);assert.equal(r.droppedGames[0].id,games[2].id);
  assert.equal(eveningRanking(s.evenings[0].tournament,9).find(r=>r.id===id).droppedGames.length,3);
 });
+test('Announcement drafts stay private, publication preserves results and old config preserves text',()=>{
+ let s=start(setup()),schedule=structuredClone(s.evenings[0].tournament.schedule);
+ const rich=[{text:'Saison',size:24,bold:true,italic:false},{table:[['Runde','Datum'],['1','13.11.2026']]}];
+ s=act(s,{action:'description-draft',descriptionRich:rich});
+ assert.equal(blitzView(s,false).descriptionDraft,undefined);
+ assert.equal(blitzView(s,false).description,undefined);
+ assert.deepEqual(blitzView(s,true).descriptionDraft.descriptionRich,rich);
+ s=act(s,{action:'description-publish'});
+ assert.deepEqual(blitzView(s,false).descriptionRich,rich);
+ s=act(s,{action:'description-draft',description:'Noch nicht öffentlich'});
+ assert.deepEqual(blitzView(s,false).descriptionRich,rich);
+ s=act(s,{action:'config',title:s.title,drops:s.drops,scale:s.scale,dates:s.evenings.map(e=>e.date)});
+ assert.deepEqual(s.descriptionRich,rich);
+ assert.deepEqual(s.evenings[0].tournament.schedule,schedule);
+ assert.throws(()=>act(s,{action:'description-draft',descriptionRich:[{table:[['A'],['B','C']]}]}));
+ assert.throws(()=>act(s,{action:'description-draft',description:'x'.repeat(20001)}));
+ s=act(s,{action:'description-publish'});assert.equal(s.description,'Noch nicht öffentlich');assert.equal(s.descriptionRich,undefined);
+ s=act(s,{action:'description-draft',descriptionRich:[]});
+ s=act(s,{action:'description-publish'});assert.equal(s.description,'');
+});
