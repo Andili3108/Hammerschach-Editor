@@ -10,6 +10,12 @@
   const style=document.createElement('style');
   style.textContent=`
 .hsc08-covered{display:none!important}
+html.hsc08-active #mobileNavTestBrand>span{display:none!important}
+html.hsc08-active #mobileNavTestHeader{grid-template-columns:minmax(0,auto) minmax(0,1fr) 48px}
+html.hsc08-active #mobileNavTestOpen{grid-column:-2/-1;grid-row:1}
+html.hsc08-active #compactBoardSizeBtn{display:none!important}
+@media(max-width:520px){html.hsc08-active #mobileNavTestHeader{grid-template-columns:minmax(0,auto) minmax(0,1fr) 46px}}
+@media(max-width:600px) and (orientation:portrait){html.hsc08-active #mobileNavTestHeader{grid-template-columns:minmax(0,1fr) 46px}}
 #hsc08View{width:100%;min-width:0;max-height:none!important;overflow:visible!important}
 #hsc08View iframe{display:block;width:100%;border:0;min-height:0!important;max-height:none!important;overflow:hidden}
 .hsc08-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:0;min-width:0}
@@ -17,7 +23,6 @@
 .hsc08-toolbar>button,.hsc08-toolbar>.header-menu{flex:0 1 auto;min-width:0}
 .hsc08-toolbar button{min-height:40px;max-width:100%}
 .hsc08-toolbar>.header-menu>.header-menu-button{width:100%}
-#mobileNavTestHeader .hsc08-toolbar{grid-column:1/-1;width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}#mobileNavTestHeader .hsc08-toolbar button{width:100%;height:100%;white-space:normal}
 html.hsc08-active .header .match-actions,html.hsc08-active #playerMenu,html.hsc08-active #profileOpenBtn,html.hsc08-active #privateMessagesOpenBtn,html.hsc08-active #mobilePrivateMessagesOpenBtn{display:none!important}
 html.hsc08-active .header #status{grid-column:1/-1}
 html.hsc08-active .header-main{height:auto;min-height:120px}
@@ -30,10 +35,6 @@ html.hsc08-active #mobileNavTestDrawer .mobile-nav-test-list>section:not(#mobile
 .hsc08-toolbar .hsc08-danger{border-top:1px solid var(--ui-line,#c5b8b0);margin-top:10px;padding-top:14px;color:#a22d38}
 html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
 .hsc08-toolbar .header-menu-popup{min-width:260px;max-width:calc(100vw - 40px);right:0;left:auto}
-#mobileNavTestHeader .hsc08-toolbar .hsc08-current{grid-column:1/-1;grid-row:1;width:100%}
-#mobileNavTestHeader .hsc08-toolbar>.header-menu{grid-column:2;grid-row:2}
-#mobileNavTestHeader .hsc08-toolbar>button:first-child{grid-column:1;grid-row:2}
-#mobileNavTestHeader .hsc08-toolbar>button{width:100%;font-size:14px;padding:8px}
 .hsc08-drawer-nav{display:block;padding:8px 0}.hsc08-drawer-nav>.mobile-nav-test-item{width:100%}
 
 `;
@@ -62,6 +63,7 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     frame?.parentElement.remove();frame=null;
     restored.forEach(restore=>restore());restored=[];
     document.documentElement.classList.remove('hsc08-active');
+    delete document.documentElement.dataset.hsc08Section;
     document.querySelectorAll('.hsc08-covered').forEach(el=>el.classList.remove('hsc08-covered'));
     toolbars.forEach(el=>el.remove());toolbars=[];
   }
@@ -131,13 +133,15 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     const logo=parsed.querySelector('#hsc08Brand')?.content.querySelector('img')?.getAttribute('src');
     for(const img of document.querySelectorAll('.header-brand img,#mobileNavTestBrand img,.mobile-nav-test-drawer-brand img')){const src=img.getAttribute('src'),alt=img.getAttribute('alt');restored.push(()=>{img.setAttribute('src',src);if(alt===null)img.removeAttribute('alt');else img.setAttribute('alt',alt);});if(logo){img.src=logo;img.alt='HSC08 – Schachabteilung';}}
     for(const id of ['status','mobileNavTestStatus']){const el=document.getElementById(id);if(el){const text=el.textContent;restored.push(()=>{el.textContent=text;});}}
-    for(const [selector,text] of [['.mobile-nav-test-drawer-brand strong','HSC08'],['.mobile-nav-test-drawer-brand small','Vereinsturniere'],['#mobileNavTestBrand strong','HSC08'],['#mobileNavTestContext','Vereinsturniere']]){const el=document.querySelector(selector);if(el){const old=el.textContent;restored.push(()=>{el.textContent=old;});el.textContent=text;}}
+    const sectionLabel=area==='reports'?'Berichte':area==='blitz'?'Vereinsblitzen':'Vereinsmeisterschaft';
+    document.documentElement.dataset.hsc08Section=sectionLabel;
+    for(const [selector,text] of [['.mobile-nav-test-drawer-brand strong','HSC08'],['.mobile-nav-test-drawer-brand small',sectionLabel],['#mobileNavTestBrand strong','HSC08'],['#mobileNavTestContext',sectionLabel]]){const el=document.querySelector(selector);if(el){const old=el.textContent;restored.push(()=>{el.textContent=old;});el.textContent=text;}}
     document.documentElement.classList.add('hsc08-active');
     statusText=area==='reports'?'Berichte':area==='blitz'?'Vereinsblitzen':'Vereinsmeisterschaft';setTitle(statusText);
     for(const child of shell.children){if(child.tagName==='HEADER'||child.tagName==='SCRIPT'||child.tagName==='STYLE'||child.tagName==='DIALOG'||/backdrop|popup/i.test(child.id+' '+child.className))continue;child.classList.add('hsc08-covered');}
     const view=document.createElement('section');view.id='hsc08View';view.setAttribute('aria-label','HSC08 '+statusText);
     frame=document.createElement('iframe');frame.title='HSC08 – '+statusText;frame.setAttribute('scrolling','no');frame.srcdoc=page.html;frame.onload=()=>{const doc=frame?.contentDocument;if(!doc)return;syncAppearance();const main=doc.querySelector('main');if(main){const measure=()=>window.HammerschachHsc08.resize(main.getBoundingClientRect().height+24);sizeObserver?.disconnect();sizeObserver=new ResizeObserver(measure);sizeObserver.observe(main);measure();}};view.append(frame);shell.append(view);if(footer)shell.append(footer);active=true;
-    for(const host of [document.querySelector('.header .header-main'),document.querySelector('#mobileNavTestHeader')]){if(host){const nav=toolbar();host.append(nav);toolbars.push(nav);}}
+    for(const host of [document.querySelector('.header .header-main')]){if(host){const nav=toolbar();host.append(nav);toolbars.push(nav);}}
     const drawerList=document.querySelector('#mobileNavTestDrawer .mobile-nav-test-list');if(drawerList){const nav=toolbar(true);drawerList.prepend(nav);toolbars.push(nav);}
     document.querySelectorAll('.header-menu-popup').forEach(el=>el.hidden=true);
     const drawer=document.getElementById('mobileNavTestBackdrop');if(drawer&&!drawer.hidden)document.getElementById('mobileNavTestClose')?.click();
