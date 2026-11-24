@@ -28,13 +28,13 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
-  async function clickHscNav(role,name,exact){const target=page.getByRole(role,{name,exact}).filter({visible:true});if(!await target.count())await page.locator('#mobileNavTestOpen').click();await target.click();if(name==='Leseansicht prüfen')await page.locator('nav[aria-label="HSC08-Leseansicht"]').first().waitFor({state:'attached'});}
+  async function clickHscNav(role,name,exact){const target=page.getByRole(role,{name,exact}).filter({visible:true});if(!await target.count())await page.locator('#mobileNavTestOpen').click();await target.click();if(name==='Leseansicht prüfen')await page.locator('nav[aria-label="„Verein“-Leseansicht"]').first().waitFor({state:'attached'});}
 
-  if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
-  await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('HSC08'));
+  if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
+  await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('„Verein“'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
-  if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'HSC08',exact:true}).click();}
-  else {await page.locator('#clubChessMenuBtn').click();await page.locator('#clubChessMenuPopup').getByRole('button',{name:'HSC08',exact:true}).click();}
+  if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'„Verein“',exact:true}).click();}
+  else {await page.locator('#clubChessMenuBtn').click();await page.locator('#clubChessMenuPopup').getByRole('button',{name:'„Verein“',exact:true}).click();}
   const frame=page.frameLocator('#hsc08View iframe');await frame.getByText('Diese Turnierseite ist noch leer.').waitFor();
 
 
@@ -43,7 +43,14 @@ try {
   assert.equal(await page.locator('#mobileNavTestHeader .hsc08-toolbar').count(),0);
   if(width<1000){assert.equal(await page.locator('#mobileNavTestBrand>span').isVisible(),false);const head=await page.locator('#mobileNavTestHeader').boundingBox(),menu=await page.locator('#mobileNavTestOpen').boundingBox();assert.ok(head.height<160);assert.ok(menu.x+menu.width>head.x+head.width-25);}
 
-  assert.ok((await frame.locator('.report-card img').getAttribute('src')).startsWith('data:image/jpeg'));
+  const crest = frame.locator('.report-card img').first();
+  await crest.evaluate(image => image.decode());
+  assert.equal(await crest.getAttribute('alt'), '„Verein“');
+  const crestSource = await crest.getAttribute('src');
+  assert.notEqual(crestSource, originalLogo);
+  for (const selector of ['.header-brand img', '#mobileNavTestBrand img', '.mobile-nav-test-drawer-brand img']) {
+    assert.equal(await page.locator(selector).getAttribute('src'), crestSource);
+  }
   await frame.getByRole('button',{name:'Bearbeiten',exact:false}).click();
   await frame.getByLabel('Überschrift',{exact:true}).fill('Entwurf für Vereinsbericht');
   await frame.getByLabel('Ergebnisdienst verknüpfen',{exact:true}).selectOption('liga-test');

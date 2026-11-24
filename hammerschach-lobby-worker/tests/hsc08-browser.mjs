@@ -27,11 +27,11 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
-  if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
-  await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('HSC08'));
+  if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
+  await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('„Verein“'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
-  if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'HSC08',exact:true}).click();}
-  else {await page.locator('#clubChessMenuBtn').click();await page.locator('#clubChessMenuPopup').getByRole('button',{name:'HSC08',exact:true}).click();}
+  if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'„Verein“',exact:true}).click();}
+  else {await page.locator('#clubChessMenuBtn').click();await page.locator('#clubChessMenuPopup').getByRole('button',{name:'„Verein“',exact:true}).click();}
   const frame=page.frameLocator('#hsc08View iframe');await frame.getByText('Diese Turnierseite ist noch leer.').waitFor();
   if(width<1000){
     await page.locator('#mobileNavTestOpen').click();
@@ -56,7 +56,7 @@ try {
   assert.ok(await page.getByRole('menuitem',{name:'Vereinspokal',exact:true}).filter({visible:true}).isDisabled());
   await page.getByRole('menuitem',{name:'Vereinsmeisterschaft',exact:true}).filter({visible:true}).click();
   await page.getByRole('button',{name:'Turnier konfigurieren',exact:true}).filter({visible:true}).click();
-  assert.equal(await page.locator('#status').textContent(),'HSC08 · Turnier konfigurieren');
+  assert.equal(await page.locator('#status').textContent(),'„Verein“ · Turnier konfigurieren');
   const expectedColumns=width>1000?3:width>560?2:1;
   await frame.locator('#title').fill('Vereinsmeisterschaft 2026');await frame.locator('#mode').selectOption('swiss');await frame.locator('#descriptionInput').fill('Ausschreibung\nMit Vereinsfreunden');
   await frame.locator('#scoring').selectOption('three-point');await frame.locator('#rounds').fill('7');
@@ -148,7 +148,7 @@ try {
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'outer overflow '+label);
   assert.ok(await frame.locator('body').evaluate(el=>el.ownerDocument.documentElement.scrollWidth<=el.ownerDocument.defaultView.innerWidth+1),'inner overflow '+label);
   await page.waitForTimeout(150);
-  assert.equal(await page.locator('#status').textContent(),'HSC08 · Vereinsmeisterschaft 2026');
+  assert.equal(await page.locator('#status').textContent(),'„Verein“ · Vereinsmeisterschaft 2026');
   assert.ok(await frame.locator('html').evaluate(el=>el.scrollHeight<=el.clientHeight+1),'no inner vertical scroll '+label);
   assert.ok(await page.evaluate(()=>document.querySelector('.site-footnote').getBoundingClientRect().top>=document.querySelector('#hsc08View').getBoundingClientRect().bottom-1),'footer below whole page');
   await page.evaluate(()=>scrollTo(0,0));
@@ -179,7 +179,7 @@ try {
 
   await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.getByText('Löschen gesperrt:',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);assert.equal(await page.locator('.header-brand img').getAttribute('src'),originalLogo);assert.equal(await page.locator('.site-footnote').count(),1);
-  await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'HSC08',exact:true}).count(),0);
+  await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);
   assert.deepEqual(errors,[],label+' JS errors');console.log(label+': save, delete, overflow, navigation, logout passed');await context.close();db.close();
  }
 }finally{await browser.close();server.close();}
