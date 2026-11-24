@@ -12,7 +12,7 @@ const server=http.createServer(async(req,res)=>{try{let file=path.join(root,new 
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const local=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined});
 try {
- for(const [label,width,height,role] of [['desktop',1440,1000,'admin'],['ipad',820,1180,'admin'],['iphone',390,844,'admin'],['visitor',390,844,'visitor'],['member',1440,1000,'member']]){
+ for(const [label,width,height,role] of [['desktop',1440,1000,'admin'],['ipad',820,1180,'admin'],['iphone',390,844,'admin']]){
   const db=new DatabaseSync(':memory:');const env={DB:{prepare(sql){let a=[];return {bind(...v){a=v;return this;},async first(){return db.prepare(sql).get(...a);},async run(){return {meta:{changes:db.prepare(sql).run(...a).changes}};}};}}};
   const context=await browser.newContext({viewport:{width,height},locale:'de-DE',isMobile:width<1000,hasTouch:width<1000});
   const user=role==='visitor'?null:{id:role,username:role==='admin'?'Andili':'Mitglied',isAdmin:role==='admin'};
@@ -27,7 +27,6 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
-  if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('„Verein“'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
   if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'„Verein“',exact:true}).click();}
@@ -179,7 +178,7 @@ try {
 
   await page.getByRole('button',{name:'Turnier vollständig löschen',exact:true}).filter({visible:true}).click();await frame.getByText('Löschen gesperrt:',{exact:false}).waitFor();
   await page.getByRole('button',{name:'Zur Lobby',exact:true}).filter({visible:true}).click();assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('.hsc08-covered').count(),0);assert.equal(await page.locator('.header-brand img').getAttribute('src'),originalLogo);assert.equal(await page.locator('.site-footnote').count(),1);
-  await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);
+  await page.evaluate(()=>HammerschachHsc08.open());await page.locator('#hsc08View').waitFor();await page.evaluate(()=>{onlineAuthToken='';onlineAuthUser=null;updateAuthUi();});assert.equal(await page.locator('#hsc08View').count(),0);assert.equal(await page.locator('#clubChessMenuPopup button').filter({hasText:'„Verein“'}).count(),1);
   assert.deepEqual(errors,[],label+' JS errors');console.log(label+': save, delete, overflow, navigation, logout passed');await context.close();db.close();
  }
 }finally{await browser.close();server.close();}

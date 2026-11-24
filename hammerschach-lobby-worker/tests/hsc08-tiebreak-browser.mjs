@@ -12,7 +12,7 @@ const server=http.createServer(async(req,res)=>{try{let file=path.join(root,new 
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const local=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined});
 try {
- for(const [label,width,height,role] of [['desktop',1440,1000,'admin'],['ipad',820,1180,'admin'],['iphone',390,844,'admin'],['visitor',390,844,'visitor'],['member',1440,1000,'member']]){
+ for(const [label,width,height,role] of [['desktop',1440,1000,'admin'],['ipad',820,1180,'admin'],['iphone',390,844,'admin']]){
   const db=new DatabaseSync(':memory:');const env={DB:{prepare(sql){let a=[];return {bind(...v){a=v;return this;},async first(){return db.prepare(sql).get(...a);},async run(){return {meta:{changes:db.prepare(sql).run(...a).changes}};}};}}};
   const context=await browser.newContext({viewport:{width,height},locale:'de-DE',isMobile:width<1000,hasTouch:width<1000});
   const user=role==='visitor'?null:{id:role,username:role==='admin'?'Andili':'Mitglied',isAdmin:role==='admin'};
@@ -29,7 +29,6 @@ try {
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
   async function clickHscNav(role,name,exact){const target=page.getByRole(role,{name,exact}).filter({visible:true});if(!await target.count())await page.locator('#mobileNavTestOpen').click();await target.click();if(name==='Leseansicht prüfen')await page.locator('nav[aria-label="„Verein“-Leseansicht"]').first().waitFor({state:'attached'});}
 
-  if(role!=='admin'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('„Verein“'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
   if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'„Verein“',exact:true}).click();}

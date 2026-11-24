@@ -11,8 +11,8 @@ function fixture(t){
  const deps={json:(body,init)=>new Response(JSON.stringify(body),{...init,headers:{'content-type':'application/json',...init.headers}}),session:async()=>user?{user}:null,isAdmin:u=>u.isAdmin,reauthenticate:async(req,u,p)=>{reauth++;return p==='correct'?{ok:true}:{ok:false,status:403,message:'Kennwort falsch'};}};
  return {db,setUser:u=>user=u,reauth:()=>reauth,async request(method='GET',body,path='/championship'){const r=await handleHsc08(new Request('https://test.invalid/api/hsc08'+path,{method,...(body?{body:JSON.stringify(body)}:{})}),env,deps);return {status:r.status,headers:r.headers,body:await r.json()};}};
 }
-test('all page/data routes reject visitors, ordinary members and other admins',async t=>{
- const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/access','/page','/championship','/championship/view','/page?view=reader','/championship/backup']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
+test('private data routes reject visitors, ordinary members and other admins',async t=>{
+ const f=fixture(t);for(const user of [null,{username:'Andili',isAdmin:false},{username:'Andere',isAdmin:true}]){f.setUser(user);for(const path of ['/championship','/championship/backup']){const r=await f.request('GET',null,path);assert.equal(r.status,404);assert.equal(r.headers.get('cache-control'),'no-store, max-age=0');assert.ok(!JSON.stringify(r.body).includes('Ausschreibung'));}}
  assert.equal(f.db.prepare("SELECT count(*) n FROM sqlite_master WHERE name='hsc08_championship'").get().n,0);
 });
 test('authorized page contains logo but no tournament user input',async t=>{const f=fixture(t);const r=await f.request('GET',null,'/page');assert.equal(r.status,200);assert.match(r.body.html,/data:image\/jpeg;base64/);assert.ok(r.body.html.includes('<form id="config" hidden>'));assert.ok(!r.body.html.includes('<h1'));});
@@ -182,8 +182,8 @@ test('Bob, Thomas1961 and Fabili have read-only access without drafts, audit or 
  let result=await f.request('POST',{revision:0,tournament:{...draft,title:'Übernommen'}});
  result=await f.request('POST',{revision:result.body.revision,action:'apply'});
  await f.request('POST',{revision:result.body.revision,tournament:{...draft,title:'Geheimer Entwurf'}});
- for(const username of ['Bob','Thomas1961','Fabili','bOb']){
-  f.setUser({id:username,username,isAdmin:false});
+ for(const username of [null,'Mitglied','Bob','Thomas1961','Fabili','bOb']){
+  f.setUser(username?{id:username,username,isAdmin:false}:null);
   assert.equal((await f.request('GET',null,'/access')).body.canManage,false);
   for(const path of ['/page','/page?view=reader','/page?view=manager']){
    const r=await f.request('GET',null,path);assert.equal(r.status,200);assert.equal(r.body.canManage,false);assert.ok(!r.body.html.includes('<form id="config"'));assert.ok(!r.body.html.includes('id="backupDialog"'));
@@ -199,7 +199,7 @@ test('Blitz storage is separate, revision guarded and read-only for approved rea
  assert.equal((await f.request('POST',{revision:0,action:'player',name:'Old'},'/blitz')).status,409);
  assert.equal((await f.request()).body.tournament,null);
  for(const username of ['Bob','Thomas1961','Fabili']){f.setUser({username,isAdmin:false});r=await f.request('GET',null,'/blitz');assert.equal(r.status,200);assert.equal(r.body.season.audit,undefined);assert.equal((await f.request('POST',{revision:1,action:'player',name:'No'},'/blitz')).status,404);assert.equal((await f.request('GET',null,'/blitz/page')).body.canManage,false);}
- f.setUser(null);assert.equal((await f.request('GET',null,'/blitz')).status,404);
+ f.setUser(null);assert.equal((await f.request('GET',null,'/blitz')).body.canManage,false);assert.equal((await f.request('POST',{},'/blitz')).status,404);
 });
 
 test('Reports protect drafts/files, retain published snapshots and guard revisions and deletions',async t=>{
@@ -213,6 +213,6 @@ test('Reports protect drafts/files, retain published snapshots and guard revisio
  assert.equal((await f.request('POST',{action:'save',id:detail.id,revision:detail.revision,status:'published',report:draft},'/reports')).status,200);
  assert.equal((await f.request('GET',null,'/reports?id=thomas-20261108&view=reader')).body.report.title,draft.title);
  detail=(await f.request('GET',null,'/reports?id=thomas-20261108')).body;assert.equal((await f.request('POST',{action:'delete',id:detail.id,revision:detail.revision,confirmation:'BERICHT LÖSCHEN'},'/reports')).status,200);assert.equal((await f.request('GET',null,'/reports')).body.items.length,0);
- for(const user of [null,{username:'Other',isAdmin:true}]){f.setUser(user);for(const path of ['/reports','/reports?id=thomas-20261108','/reports/page'])assert.equal((await f.request('GET',null,path)).status,404);}
+ for(const user of [null,{username:'Other',isAdmin:true}]){f.setUser(user);for(const path of ['/reports','/reports?id=thomas-20261108','/reports/page'])assert.equal((await f.request('GET',null,path)).status,path.includes('?id=')?404:200);assert.equal((await f.request('POST',{},'/reports')).status,404);}
  assert.equal(f.db.prepare('SELECT id FROM tournaments').get().id,'online-unberuehrt');
 });

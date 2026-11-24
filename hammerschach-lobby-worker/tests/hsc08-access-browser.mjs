@@ -12,8 +12,8 @@ const server=http.createServer(async(req,res)=>{try{let file=path.join(root,new 
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const local=`http://127.0.0.1:${server.address().port}`;
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined});
 try {
- for(const [label,width,height,role] of [['desktop',1440,1000,'Bob'],['ipad',820,1180,'Thomas1961'],['iphone',390,844,'Fabili'],['visitor',390,844,'visitor'],['member',1440,1000,'member']]){
-  const db=new DatabaseSync(':memory:');const env={DB:{prepare(sql){let a=[];return {bind(...v){a=v;return this;},async first(){return db.prepare(sql).get(...a);},async run(){return {meta:{changes:db.prepare(sql).run(...a).changes}};}};}}};
+ for(const [label,width,height,role] of [['desktop',1440,1000,'Bob'],['ipad',820,1180,'Thomas1961'],['iphone',390,844,'Fabili'],['visitor-mobile',390,844,'visitor'],['visitor-desktop',1440,1000,'visitor'],['member',1440,1000,'member']]){
+  const db=new DatabaseSync(':memory:');const env={DB:{prepare(sql){let a=[];return {bind(...v){a=v;return this;},async first(){return db.prepare(sql).get(...a);},async all(){return {results:db.prepare(sql).all(...a)};},async run(){return {meta:{changes:db.prepare(sql).run(...a).changes}};}};}}};
   const context=await browser.newContext({viewport:{width,height},locale:'de-DE',isMobile:width<1000,hasTouch:width<1000});
   const user=role==='visitor'?null:{id:role,username:role==='member'?'Mitglied':role,isAdmin:role==='admin'};
   if(user)await context.addInitScript(user=>{localStorage.setItem('hammerschachGamerAuthToken','test-token');localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));},user);
@@ -27,7 +27,6 @@ try {
   });
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
-  if(role==='visitor'||role==='member'){await page.waitForTimeout(300);assert.equal(await page.getByRole('button',{name:'„Verein“',exact:true}).count(),0);await context.close();db.close();console.log(label+': hidden');continue;}
   await page.waitForFunction(()=>document.querySelector('#clubChessMenuPopup')?.textContent.includes('„Verein“'));
   const originalLogo=await page.locator('.header-brand img').getAttribute('src');
   if(width<1000){await page.locator('#mobileNavTestOpen').click();await page.locator('[aria-controls=mobileNavClubChessPanel]').click();await page.locator('#mobileNavClubChessPanel').getByRole('button',{name:'„Verein“',exact:true}).click();}
@@ -38,6 +37,19 @@ try {
   assert.equal(await page.getByRole('button',{name:'Bearbeitungsansicht',exact:true}).count(),0);
   assert.equal(await frame.locator('select,input,form').count(),0);
   assert.ok(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+  async function clickTab(name) {
+    const tab = page.getByRole('button', {name, exact:true}).filter({visible:true});
+    if (!await tab.count()) await page.locator('#mobileNavTestOpen').click();
+    await tab.click();
+  }
+  await clickTab('Berichte');
+  await frame.getByText('Überraschungssieg gegen Werne 1', {exact:true}).waitFor();
+  await frame.getByRole('button', {name:'Weiterlesen'}).click();
+  await frame.getByText('Nach einem Bericht von Thomas Flügel.', {exact:true}).waitFor();
+  await clickTab('Blitzrunden');
+  await frame.getByText('Noch keine Blitzsaison angelegt.').waitFor();
+  await clickTab(role === 'visitor' ? 'Zur Startseite' : 'Zur Lobby');
+  await page.locator('#hsc08View').waitFor({state:'detached'});
   assert.deepEqual(errors,[]);
   await context.close();db.close();console.log(label+': '+role+' Leseansicht und Navigation OK');
  }
