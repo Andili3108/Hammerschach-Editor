@@ -1,12 +1,11 @@
 'use strict';
-// Public loader only. Page markup, logo and tournament data come from authenticated routes.
+// Public loader only. Page markup, logo and tournament data come from the Worker.
 (() => {
   let readOnly=false, area='championship';
-  let identity='', generation=0, frame=null, active=false, links=[], toolbars=[], restored=[], footerMarker=null, sizeObserver=null, statusText='Vereinsmeisterschaft';
+  let identity=null, generation=0, frame=null, active=false, links=[], toolbars=[], restored=[], footerMarker=null, sizeObserver=null, statusText='Vereinsmeisterschaft';
   const auth=()=>typeof onlineAuthToken!=='undefined' ? onlineAuthToken : '';
   const user=()=>typeof onlineAuthUser!=='undefined' ? onlineAuthUser : null;
   const managerEligible=()=>!!auth() && user()?.isAdmin===true && String(user()?.username||'').toLowerCase()==='andili';
-  const eligible=()=>managerEligible() || !!auth() && ['bob','thomas1961','fabili'].includes(String(user()?.username||'').toLowerCase());
   const style=document.createElement('style');
   style.textContent=`
 .hsc08-covered{display:none!important}
@@ -48,11 +47,10 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
   async function api(path,method='GET',body) {
     if(readOnly && method!=='GET')throw new Error('In der Leseansicht sind keine Änderungen möglich.');
     const token=auth();
-    if(!eligible())throw new Error('Für diesen Bereich ist eine berechtigte Anmeldung erforderlich.');
     if(readOnly&&(path==='/blitz'||(path==='/reports'||path.startsWith('/reports?'))))path+=(path.includes('?')?'&':'?')+'view=reader';
-    const response=await fetch(ONLINE_WORKER_URL+'/api/hsc08'+path,{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});
+    const response=await fetch(ONLINE_WORKER_URL+'/api/hsc08'+path,{method,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});
     const data=await response.json();
-    if(token!==auth() || !eligible())throw new Error('Die Anmeldung hat sich geändert.');
+    if(token!==auth())throw new Error('Die Anmeldung hat sich geändert.');
     if(!response.ok || !data.ok){if(response.status===404 || response.status===401)close();throw new Error(data.message||'Der Vereinsbereich ist nicht verfügbar.');}
     return data;
   }
@@ -120,7 +118,6 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     if(typeof target!=='string')target=area;
     if(frame?.contentWindow.hscCanLeave&&!frame.contentWindow.hscCanLeave())return;
     const current=generation;
-    if(!eligible())return;
     let page;
     try{page=await api((target==='reports'?'/reports/page':target==='blitz'?'/blitz/page':'/page')+(preview===true?'?view=reader':''));}catch(e){alert(e.message);return;}
     if(current!==generation)return;
@@ -148,16 +145,13 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     window.scrollTo(0,0);
   }
   async function updateIdentity(){
-    const next=eligible()?auth():'';
+    const next=auth();
     if(next===identity)return;
-    identity=next;const current=++generation;close();links.forEach(el=>el.remove());links=[];
-    if(!next)return;
-    try{await api('/access');}catch{return;}
-    if(current!==generation)return;
+    identity=next;++generation;close();links.forEach(el=>el.remove());links=[];
     for(const id of ['clubChessMenuPopup','mobileNavClubChessPanel']){
       const host=document.getElementById(id);if(!host)continue;
       const wrap=document.createElement('div');const label=document.createElement('div');label.className='header-menu-section-label';label.textContent='Vereine';
-      const b=document.createElement('button');b.type='button';b.className=id.startsWith('mobile')?'mobile-nav-test-item mobile-nav-accordion-item':'header-menu-item';b.textContent='„Verein“';b.onclick=open;wrap.append(label,b);host.append(wrap);links.push(wrap);
+      const b=document.createElement('button');b.type='button';b.className=id.startsWith('mobile')?'mobile-nav-test-item mobile-nav-accordion-item':'header-menu-item';b.textContent='„Verein“';b.onclick=()=>{if(id.startsWith('mobile'))document.getElementById('mobileNavTestClose')?.click();open(false,'championship');};wrap.append(label,b);host.append(wrap);links.push(wrap);
     }
   }
   // Remove private content immediately on local or cross-tab sign-out.
@@ -171,6 +165,6 @@ html.dark-mode .hsc08-toolbar .hsc08-danger{color:#f0a0a8}
     const b=e.target.closest('button');
     if(b && (['roomLobbyBtn','mobileNavTestBrand'].includes(b.id) || (b.closest('.match-actions') && b.getAttribute('aria-haspopup')!=='menu')))close();
   },true);
-  window.HammerschachHsc08={async openResults(id){if(!eligible())return;await loadLeagueStandings();if(!leagueStandingsActiveLeagues().some(t=>t.id===id))throw Error('Der Ergebnisdienst ist nicht mehr verfügbar.');if(frame?.contentWindow.hscCanLeave&&!frame.contentWindow.hscCanLeave())return;close();openLeagueStandingsToolDebounced();selectLeagueStandings(id);},api,updateIdentity,open,close,setTitle,resize(height){if(frame&&Number.isFinite(height))frame.style.setProperty('height',Math.ceil(Math.max(1,height))+'px','important');}};
+  window.HammerschachHsc08={async openResults(id){await loadLeagueStandings();if(!leagueStandingsActiveLeagues().some(t=>t.id===id))throw Error('Der Ergebnisdienst ist nicht mehr verfügbar.');if(frame?.contentWindow.hscCanLeave&&!frame.contentWindow.hscCanLeave())return;close();openLeagueStandingsToolDebounced();selectLeagueStandings(id);},api,updateIdentity,open,close,setTitle,resize(height){if(frame&&Number.isFinite(height))frame.style.setProperty('height',Math.ceil(Math.max(1,height))+'px','important');}};
   updateIdentity();
 })();
