@@ -38,3 +38,42 @@ function formatLobbyWelcome(firstVisit){
   // While offline or loading, use a neutral welcome rather than guessing "zurück".
   return (firstVisit === false ? 'Willkommen zurück' : 'Willkommen im Gamer') + suffix;
 }
+
+// The real status stays readable to the app and assistive technology.
+// Visual copies share one grid cell so both messages reserve enough height.
+function syncLobbyWelcomeDisplay(){
+  const text = statusEl.textContent;
+  const active = lobbyWelcomeState && onlineAuthToken === lobbyWelcomeState.token &&
+    onlineAuthUser && String(onlineAuthUser.id || '') === lobbyWelcomeState.userId &&
+    isMemberLobbyView() && !embeddedToolActive() && !variationModeActive &&
+    !document.documentElement.classList.contains('local-game-open') &&
+    text === formatLobbyWelcome(lobbyWelcomeState.firstVisit);
+
+  if(!active){
+    statusEl.classList.remove('lobby-welcome-rotating');
+    if(statusEl.firstElementChild?.classList.contains('lobby-welcome-source'))
+      statusEl.textContent = text;
+    return;
+  }
+  if(statusEl.firstElementChild?.classList.contains('lobby-welcome-source')) return;
+  const source = document.createElement('span');
+  source.className = 'lobby-welcome-source';
+  source.textContent = text;
+  const greeting = document.createElement('span');
+  greeting.className = 'lobby-welcome-greeting';
+  greeting.setAttribute('aria-hidden','true');
+  greeting.dataset.text = text;
+  const motto = document.createElement('span');
+  motto.className = 'lobby-welcome-motto';
+  motto.setAttribute('aria-hidden','true');
+  motto.dataset.text = 'Zeit für deinen nächsten Hammerzug.';
+  statusEl.replaceChildren(source, greeting, motto);
+  statusEl.classList.add('lobby-welcome-rotating');
+}
+
+if(typeof MutationObserver !== 'undefined' && statusEl){
+  const observer = new MutationObserver(syncLobbyWelcomeDisplay);
+  observer.observe(statusEl, {childList:true});
+  observer.observe(document.documentElement, {attributes:true, attributeFilter:['class']});
+  syncLobbyWelcomeDisplay();
+}
