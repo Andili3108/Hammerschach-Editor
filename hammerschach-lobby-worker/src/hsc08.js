@@ -72,8 +72,7 @@ export async function handleHsc08(request, env, deps) {
   if (request.method === 'OPTIONS') return respond({ok:true});
   const session = await deps.session(request);
   const manager=isHsc08Admin(session?.user,deps.isAdmin);
-  const reader=!!session?.user && ['bob','thomas1961','fabili'].includes(String(session.user.username||'').toLowerCase());
-  if(!manager && (!reader || request.method!=='GET' || !['/api/hsc08/access','/api/hsc08/page','/api/hsc08/championship/view','/api/hsc08/blitz','/api/hsc08/blitz/page','/api/hsc08/reports','/api/hsc08/reports/page'].includes(path)))return respond({ok:false,message:'Nicht verfügbar.'},404);
+  if(!manager && (request.method!=='GET' || !['/api/hsc08/access','/api/hsc08/page','/api/hsc08/championship/view','/api/hsc08/blitz','/api/hsc08/blitz/page','/api/hsc08/reports','/api/hsc08/reports/page'].includes(path)))return respond({ok:false,message:'Nicht verfügbar.'},404);
   if(path==='/api/hsc08/reports/page'&&request.method==='GET'){const manage=manager&&new URL(request.url).searchParams.get('view')!=='reader';return respond({ok:true,canManage:manage,html:reportsPage(manage)});}
   if(path==='/api/hsc08/reports')return handleReports(request,env,respond,manager&&new URL(request.url).searchParams.get('view')!=='reader');
   if(path==='/api/hsc08/blitz/page'&&request.method==='GET'){const manage=manager&&new URL(request.url).searchParams.get('view')!=='reader';return respond({ok:true,canManage:manage,html:blitzPage(manage)});}
