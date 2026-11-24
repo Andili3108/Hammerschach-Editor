@@ -3732,3 +3732,37 @@ html body button.current-area:disabled:active{
   transform:none!important;
   transition:none!important;
 }
+
+/* Both lobby messages occupy the same cell, including when either wraps. */
+#status.lobby-welcome-rotating {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  animation: lobby-welcome-phase 8s linear infinite;
+}
+.lobby-welcome-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.lobby-welcome-greeting, .lobby-welcome-motto { grid-area: 1 / 1; }
+.lobby-welcome-greeting::before, .lobby-welcome-motto::before { content: attr(data-text); }
+@property --lobby-motto-opacity {
+  syntax: "<number>";
+  initial-value: 0;
+  inherits: true;
+}
+.lobby-welcome-greeting { opacity: calc(1 - var(--lobby-motto-opacity, 0)); }
+.lobby-welcome-motto { opacity: var(--lobby-motto-opacity, 0); }
+@keyframes lobby-welcome-phase {
+  0%, 47%, 100% { --lobby-motto-opacity: 0; }
+  50%, 97% { --lobby-motto-opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #status.lobby-welcome-rotating { animation: none; }
+}
