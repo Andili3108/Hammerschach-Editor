@@ -25,7 +25,14 @@ Es wurde nichts öffentlich hochgeladen oder bereitgestellt.
 4. Gamer neu laden. Zwischen oberer Übersicht und Aufgaben/Ticker erscheint die schmale
    Schaltfläche „📌 Schwarzes Brett“ für Besucher und Mitglieder.
 5. Als Andili öffnen → „Meldungen verwalten“ → „＋ Neue Meldung“.
-   Titel und Beschreibung ausfüllen, optional Kategorie, Anzeigen-bis, Anhänge und Links.
+   Titel und Beschreibung ausfüllen. Optional einen Veranstalter eintragen. Sein Name erscheint über dem Titel.
+   Kategorie und Anzeigen-bis werden im Editor gepflegt. Das Ablaufdatum steuert die Sichtbarkeit.
+   Für ein Bild den hochgeladenen Dateinamen zu den Anhängen hinzufügen, den Cursor in die Beschreibung setzen,
+   Bild und Breite auswählen und „Bild einfügen“ anklicken. Die Bildmarke im Text lässt sich verschieben oder löschen.
+   Zur Größenänderung das Bild erneut auswählen und 25, 50, 75 oder 100 Prozent einstellen.
+   Unter „Zur Ausschreibung“ eine eingetragene PDF oder einen externen Link auswählen.
+   Unter „Zur Turnierseite“ kann ein weiterer externer Link ausgewählt werden.
+   „Keine Schaltfläche“ zeigt das Ziel wieder als normalen Eintrag. Beide Ziele sind in der Vorschau anklickbar.
 6. Zuerst als Entwurf speichern und die öffentliche Ansicht prüfen. Erst nach Bestätigung
    der öffentlichen Freigabe „Veröffentlichen“ wählen.
 7. Mit einem privaten Browserfenster/ohne Anmeldung und einem normalen Mitgliedskonto
@@ -42,9 +49,11 @@ Bis zu zehn Anhänge: PDF, PNG, JPG/JPEG, WebP, PGN und TXT. Keine Unterordnerpf
 Bis zu zehn externe HTTPS-Links, ebenfalls einer pro Zeile.
 
 Der Server prüft beim Veröffentlichen jeden Anhang durch Abruf der ersten fünf Bytes aus dem öffentlichen GitHub-Ordner. Bei einer PDF prüft er zusätzlich die PDF-Kennung. Ein fehlender Anhang verhindert die gesamte Veröffentlichung;
-eine bereits veröffentlichte Fassung bleibt unverändert. Öffentliche Anhänge werden
-über `/api/notice-board/files/DATEINAME` an die öffentliche Gamer-Adresse weitergeleitet und
-per Klick in einem separaten Tab geöffnet. Der Dialog bleibt dabei offen.
+eine bereits veröffentlichte Fassung bleibt unverändert. Ein Klick öffnet die Anhangansicht in einem neuen Tab. Tab-Titel und Überschrift zeigen den Dateinamen.
+Die Browseradresse enthält die Gamer-Domain, `/a/#` und eine kurze Dateikennung.
+Ein kopierter Kurzlink lässt sich auf anderen Geräten öffnen, solange der Anhang zu einer aktuellen öffentlichen Meldung gehört.
+Bilder und PDFs erscheinen als Vorschau, PGN und TXT als Text. Für jeden Anhang gibt es einen Download mit dem Originalnamen.
+Die bisherige Dateiroute bleibt für ältere Links verfügbar.
 
 Dateien sind schon nach dem GitHub-Upload öffentlich erreichbar, unabhängig vom
 Entwurfsstatus der Meldung. Nur ausdrücklich freigegebene Dateien hochladen.
@@ -106,7 +115,7 @@ Browserprüfungen mit lokal ausgeliefertem Gamer und isolierter Testdatenbank:
   Fokusführung, Escape, Schließknopf und Farbschemata.
 - Prüfinhalte werden als Text ausgegeben, nicht als ausführbares HTML.
 
-Die sechs neuen Servertests sowie vier bestehende Tests zu Besucherzugriff und
+Die sieben Servertests sowie vier bestehende Tests zu Besucherzugriff und
 Vereinsberichten bestehen. Die sechs Browser-Szenarien bestehen.
 Ein zusätzlich ausgeführter vorhandener Begrüßungs-/Registrierungstest scheitert
 an `handleSchacheckeApi is not defined` in seiner Testumgebung. Dieser identische
