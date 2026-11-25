@@ -1,6 +1,6 @@
 // Independent editorial board. Draft/published snapshots and optimistic revisions
 // follow the club report pattern; attachments remain manually managed on GitHub.
-export const ATTACHMENT_ROOT = 'https://raw.githubusercontent.com/Andili3108/Hammerschach-Editor/main/Gamer/SchwarzesBrett/anhaenge/';
+export const ATTACHMENT_ROOT = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/SchwarzesBrett/anhaenge/';
 const TYPES = {pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',pgn:'application/x-chess-pgn',txt:'text/plain; charset=utf-8'};
 const CATEGORIES = ['', 'Turniereinladung', 'Veranstaltung', 'Regionale Nachricht', 'Sonstiges'];
 export function attachmentName(name) {
@@ -34,9 +34,7 @@ export async function handleNoticeBoard(request, env, deps) {
   if(url.pathname.startsWith(base+'/files/')) {
     if(request.method!=='GET')return reply({ok:false},405);
     let name;try{name=attachmentName(decodeURIComponent(url.pathname.slice((base+'/files/').length)));}catch{return reply({ok:false},400);}
-    const response=await (deps.fetch||fetch)(ATTACHMENT_ROOT+encodeURIComponent(name),{redirect:'error',signal:AbortSignal.timeout(15000)});
-    if(!response.ok)return reply({ok:false,message:'Anhang derzeit nicht verfügbar.'},404);
-    return new Response(response.body,{headers:{'content-type':TYPES[name.split('.').pop().toLowerCase()],'content-disposition':"inline; filename*=UTF-8''"+encodeURIComponent(name),'x-content-type-options':'nosniff','cache-control':'public, max-age=300','access-control-allow-origin':'*'}});
+    return Response.redirect(ATTACHMENT_ROOT + encodeURIComponent(name), 302);
   }
   if(url.pathname!==base)return reply({ok:false},404);
   if(!['GET','POST'].includes(request.method))return reply({ok:false},405);
@@ -66,8 +64,22 @@ export async function handleNoticeBoard(request, env, deps) {
           if(body.approved!==true)throw Error('Bitte die Freigabe der Texte und Anhänge bestätigen.');
           if(!isCurrent(notice,now))throw Error('Das Ablaufdatum liegt in der Vergangenheit.');
           for(const name of notice.files) {
-            let response;try{response=await (deps.fetch||fetch)(ATTACHMENT_ROOT+encodeURIComponent(name),{method:'HEAD',redirect:'error',signal:AbortSignal.timeout(10000),cache:'no-store'});}catch{throw Error('Anhang nicht erreichbar: '+name);}
-            if(!response.ok)throw Error('Anhang nicht erreichbar: '+name);
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 10000);
+            let response;
+            try {
+              response = await (deps.fetch || fetch)(ATTACHMENT_ROOT + encodeURIComponent(name), {
+                method: 'HEAD', redirect: 'error', signal: controller.signal
+              });
+            } catch {
+              throw Error('Die Verfügbarkeit konnte gerade nicht geprüft werden: ' + name);
+            } finally {
+              clearTimeout(timer);
+            }
+            if (!response.ok) throw Error('Anhang nicht erreichbar: ' + name + ' (HTTP ' + response.status + ')');
+            if (/text\/html/i.test(response.headers.get('content-type') || '')) {
+              throw Error('Die Adresse liefert eine Webseite statt der Datei: ' + name);
+            }
           }
           published=draft;publishedAt=publishedAt||new Date(now).toISOString();
         }
