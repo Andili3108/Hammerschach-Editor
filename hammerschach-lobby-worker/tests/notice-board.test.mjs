@@ -42,7 +42,7 @@ test('draft snapshots, attachment checks, conflict protection, hide, republish a
  assert.equal((await f.call()).data.items.length,0);f.setAvailable(true);
  assert.equal((await f.call('admin',{action:'publish',id,revision:1,notice:{...sample,files:['cup.pdf']}})).status,400);
  assert.equal((await f.call('admin',{action:'publish',id,revision:1,notice:{...sample,files:['cup.pdf']},approved:true})).status,200);
- assert.equal(f.fetched.at(-1).url,ATTACHMENT_ROOT+'cup.pdf');assert.equal(f.fetched.at(-1).options.redirect,'manual');
+ assert.equal(f.fetched.at(-1).url,'https://raw.githubusercontent.com/Andili3108/Hammerschach-Editor/main/Gamer/SchwarzesBrett/anhaenge/cup.pdf');assert.equal(f.fetched.at(-1).options.redirect,'manual');
  let publicItem=(await f.call()).data.items[0];assert.equal(publicItem.revision,undefined);assert.equal(publicItem.isNew,true);const stamp=publicItem.publishedAt;
  await f.call('admin',{action:'draft',id,revision:2,notice:{...sample,title:'Geheimer Entwurf'}});
  assert.equal((await f.call()).data.items[0].title,sample.title);
@@ -54,7 +54,7 @@ test('draft snapshots, attachment checks, conflict protection, hide, republish a
  await f.call('admin',{action:'delete',id,revision:5,confirmation:'MELDUNG LÖSCHEN'});
  assert.equal((await f.call()).data.items.length,0);assert.equal((await f.call('admin',undefined,'?manage=1')).data.items.length,0);
  assert.equal((await f.call('admin',{action:'draft',id,revision:5,notice:sample})).status,409);
- assert.ok(f.fetched.every(r=>r.options.method==='HEAD'));f.db.close();
+ assert.ok(f.fetched.every(r=>r.options.method==='GET' && r.options.headers.Range==='bytes=0-4'));f.db.close();
 });
 test('seven-day badge, Berlin end-of-day expiry, newest first, no expired publication',async()=>{
  const f=fixture();await f.call('admin',{action:'publish',revision:0,notice:sample,approved:true});
