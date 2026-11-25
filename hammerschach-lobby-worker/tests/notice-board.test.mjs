@@ -66,9 +66,9 @@ test('seven-day badge, Berlin end-of-day expiry, newest first, no expired public
  assert.equal((await f.call('admin',undefined,'?manage=1')).data.items[0].status,'Abgelaufen');
  assert.equal((await f.call('admin',{action:'publish',revision:0,notice:{...sample,expires:'2026-12-02'},approved:true})).status,400);f.db.close();
 });
-test('public attachment route has safe MIME, inline delivery and fixed origin; preflight works',async()=>{
+test('public attachment route redirects to the public Gamer file on a fixed origin; preflight works',async()=>{
  const f=fixture();const r=await handleNoticeBoard(new Request('https://test/api/notice-board/files/cup.pdf'),f.env,f.deps);
- assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'application/pdf');assert.match(r.headers.get('content-disposition'),/^inline/);assert.equal(await r.text(),'%PDF-test');assert.equal(f.fetched[0].url,ATTACHMENT_ROOT+'cup.pdf');
+ assert.equal(r.status,302);assert.equal(r.headers.get('location'),'https://hammerschach-gamer.webmaster-5bb.workers.dev/SchwarzesBrett/anhaenge/cup.pdf');assert.equal(f.fetched.length,0);
  for(const name of ['x.html','a%2Fb.pdf'])assert.equal((await handleNoticeBoard(new Request('https://test/api/notice-board/files/'+name),f.env,f.deps)).status,400);
  const preflight=await handleNoticeBoard(new Request('https://test/api/notice-board',{method:'OPTIONS'}),f.env,f.deps);assert.equal(preflight.status,204);f.db.close();
 });

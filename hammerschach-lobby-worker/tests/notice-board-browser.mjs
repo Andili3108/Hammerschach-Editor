@@ -46,7 +46,7 @@ try {
     assert.equal(await page.locator('.notice-board-preview img').count(),0,'text is never interpreted as HTML');
     await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Bitte die öffentliche Freigabe bestätigen.',{exact:true}).waitFor();
     await page.getByRole('checkbox').filter({visible:true}).check();
-    await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Anhang nicht erreichbar: missing.pdf',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Anhang nicht erreichbar: missing.pdf (HTTP 404)',{exact:true}).waitFor();
     await page.locator('#noticeBoardDialog').getByLabel('Dateinamen der Anhänge',{exact:false}).fill('cup.pdf\nplakat.png');
     await page.locator('#noticeBoardDialog').getByLabel('Externe HTTPS-Links',{exact:false}).fill('https://example.org/anmeldung');
     await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();
