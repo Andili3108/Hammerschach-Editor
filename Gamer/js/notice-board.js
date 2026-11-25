@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  const openButton=document.getElementById('noticeBoardOpen'),count=document.getElementById('noticeBoardCount');
+  const count=document.getElementById('noticeBoardCount');
   const token=()=>typeof onlineAuthToken!=='undefined'?onlineAuthToken:'';
   const eligible=()=>typeof onlineAuthUser!=='undefined' && onlineAuthUser?.isAdmin===true && String(onlineAuthUser?.username||'').toLowerCase()==='andili' && !!token();
   const base=()=>ONLINE_WORKER_URL+'/api/notice-board';
@@ -23,7 +23,8 @@
   });
   dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
   dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
-  dialog.addEventListener('close',()=>{document.documentElement.classList.remove('notice-board-open');previousFocus?.focus({preventScroll:true});});
+  dialog.addEventListener('close',()=>{document.documentElement.classList.remove('notice-board-open');const target=previousFocus?.isConnected?previousFocus:[...rows.children].find(row=>row.dataset.id===selectedId);
+    (target||tabs[1]).focus({preventScroll:true});});
   window.addEventListener('beforeunload',e=>{if(dirty||busy){e.preventDefault();e.returnValue='';}});
   function message(text,error=false){status.textContent=text;status.classList.toggle('error',error);}
   async function api(manage=false,body){
@@ -34,8 +35,68 @@
   const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now()+offset));
   const current=items=>items.filter(n=>!n.expires||n.expires>=today());
   const isNew=n=>!!n.publishedAt && Date.now()+offset-Date.parse(n.publishedAt)>=0 && Date.now()+offset-Date.parse(n.publishedAt)<7*86400000;
-  function updateCount(){const n=current(publicItems).filter(isNew).length;count.textContent=n===1?'1 neue Meldung':n>1?n+' neue Meldungen':'Alle Meldungen ›';count.classList.toggle('notice-board-new',n>0);}
-  async function refreshCount(){try{const data=await api();offset=data.serverNow-Date.now();publicItems=data.items;updateCount();}catch{count.textContent='Meldungen öffnen ›';count.classList.remove('notice-board-new');}}
+  const tabs=['newsTickerTab','newsBoardTab'].map(id=>document.getElementById(id));
+  const rows=document.getElementById('noticeBoardRows'), manageButton=document.getElementById('noticeBoardManage');
+  const pref='hammerschach.noticeBoard.newsTab';
+  let selectedId='', listKey='', loaded=false;
+  function selectTab(index,remember){
+    tabs.forEach((tab,i)=>{
+      const active=i===index;
+      tab.setAttribute('aria-selected',String(active));
+      tab.tabIndex=active?0:-1;
+      document.getElementById(tab.getAttribute('aria-controls')).hidden=!active;
+    });
+    if(remember)try{localStorage.setItem(pref,index?'board':'ticker');}catch{}
+  }
+  tabs.forEach((tab,i)=>{
+    tab.addEventListener('click',()=>selectTab(i,true));
+    tab.addEventListener('keydown',event=>{
+      const next={ArrowRight:1-i,ArrowLeft:1-i,Home:0,End:1}[event.key];
+      if(next===undefined)return;
+      event.preventDefault();selectTab(next,true);tabs[next].focus();
+    });
+  });
+  let initial=0;
+  try{initial=localStorage.getItem(pref)==='board'?1:0;}catch{}
+  selectTab(initial,false);
+  function openBoard(id,manage){
+    previousFocus=document.activeElement;
+    selectedId=id;
+    dialog.showModal();
+    document.documentElement.classList.add('notice-board-open');
+    overview(manage);
+  }
+  manageButton.addEventListener('click',()=>openBoard('',true));
+  function updateCount(){
+    manageButton.hidden=!eligible();
+    if(!loaded)return;
+    const items=current(publicItems), number=items.filter(isNew).length;
+    count.hidden=!number;count.textContent=number?number+' neu':'';
+    const key=JSON.stringify(items.map(n=>[n.id,n.title,n.organizer,isNew(n)]));
+    if(listKey===key)return;
+    listKey=key;
+    const focused=rows.contains(document.activeElement)?document.activeElement.dataset.id:null;
+    rows.replaceChildren();
+    if(!items.length)rows.textContent='Derzeit keine aktuellen Meldungen';
+    for(const n of items){
+      const row=button('',()=>openBoard(n.id,false));
+      row.dataset.id=n.id;
+      row.setAttribute('aria-haspopup','dialog');
+      row.append(el('strong',n.title));
+      if(isNew(n))row.append(el('span','NEU','notice-board-new'));
+      if(n.organizer)row.append(el('small',n.organizer));
+      rows.append(row);
+      if(focused===n.id)row.focus({preventScroll:true});
+    }
+  }
+  async function refreshCount(){
+    updateCount();
+    try{
+      const data=await api();offset=data.serverNow-Date.now();publicItems=data.items;loaded=true;updateCount();
+    }catch{
+      if(!loaded)rows.replaceChildren(el('p','Meldungen derzeit nicht erreichbar.'),button('Erneut laden',refreshCount));
+    }
+  }
   // Positions refer to UTF-16 offsets, as used by textarea selections.
   function mergedRanges(ranges){
     const result=[];
@@ -110,7 +171,7 @@
     card.append(links);return card;
   }
   async function overview(manage=false,background=false){
-    if(!canLeave())return;dirty=false;managing=manage;const ticket=++generation,scroll=content.scrollTop;if(!background){message('Meldungen werden geladen…');content.replaceChildren();}
+    if(!canLeave())return;if(manage)selectedId='';dirty=false;managing=manage;const ticket=++generation,scroll=content.scrollTop;if(!background){message('Meldungen werden geladen…');content.replaceChildren();}
     try {
       const data=await api(manage);if(ticket!==generation||!dialog.open)return;
       if(manage&&!eligible())return;
@@ -122,9 +183,9 @@
       if(manage){actions.append(button('＋ Neue Meldung',()=>edit()),button('Öffentliche Ansicht',()=>overview(false)));}
       else if(eligible())actions.append(button('Meldungen verwalten',()=>overview(true)));
       content.append(actions);
-      if(!manage){publicItems=data.items;updateCount();}
-      const items=manage?data.items:current(data.items);
-      if(!items.length)content.append(el('p',manage?'Noch keine Meldungen angelegt.':'Derzeit keine aktuellen Meldungen'));
+      if(!manage){publicItems=data.items;loaded=true;updateCount();}
+      const items=manage?data.items:current(data.items).filter(n=>!selectedId||n.id===selectedId);
+      if(!items.length)content.append(el('p',manage?'Noch keine Meldungen angelegt.':selectedId?'Diese Meldung ist nicht mehr aktuell.':'Derzeit keine aktuellen Meldungen'));
       for(const n of items){const card=renderNotice(n,!manage);if(manage)card.append(button('Bearbeiten',()=>edit(n)));content.append(card);}
       content.scrollTop=background?scroll:0;
     }catch(error){if(ticket===generation)message(error.message,true);}
@@ -252,7 +313,6 @@
     if(item)actions.append(button('Ausblenden',()=>{if(confirm('Meldung öffentlich ausblenden? Ungespeicherte Eingaben werden verworfen.'))mutate({...identity,action:'hide'});}),button('Löschen',()=>{if(confirm('Meldung endgültig löschen? Die Dateien auf GitHub bleiben erhalten.'))mutate({...identity,action:'delete',confirmation:'MELDUNG LÖSCHEN'});}));
     actions.append(button('Zur Übersicht',()=>overview(true)));form.append(actions,preview);form.addEventListener('input',()=>{dirty=true;});form.addEventListener('submit',e=>e.preventDefault());content.append(form);content.scrollTop=0;titleInput.focus();
   }
-  openButton.addEventListener('click',()=>{previousFocus=document.activeElement;dialog.showModal();document.documentElement.classList.add('notice-board-open');overview(false);});
   window.addEventListener('hammerschach:auth-change',()=>{generation++;dirty=false;busy=false;content.replaceChildren();if(dialog.open)overview(false);refreshCount();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshCount();if(dialog.open&&!managing)overview(false,true);}});
   // Expiry/new badges update while the page stays open; no modal opens automatically.
