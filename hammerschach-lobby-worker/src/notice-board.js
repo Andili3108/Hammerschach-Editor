@@ -62,7 +62,25 @@ export function validateNotice(input) {
     if (url.protocol!=='https:' || url.username || url.password) throw Error('Nur HTTPS-Links ohne Zugangsdaten sind erlaubt.');
     return url.href;
   });
-  return {title,description,category,expires,files,links};
+  const images = {};
+  for (const [name, width] of Object.entries(input.images || {})) {
+    if (!files.includes(name) || !/\.(png|jpe?g|webp)$/i.test(name) || ![25,50,75,100].includes(width)) {
+      throw Error('Bitte Bildanhang und Bildbreite prüfen.');
+    }
+    images[name] = width;
+  }
+  function target(value, allowPdf) {
+    if (!value) return '';
+    if (allowPdf && files.includes(value) && /\.pdf$/i.test(value)) return value;
+    const index = input.links.indexOf(value);
+    if (index < 0) throw Error('Das Schaltflächenziel fehlt in den Anhängen oder Links.');
+    return links[index];
+  }
+  const invitation = target(input.invitation, true);
+  const tournament = target(input.tournament, false);
+  if (invitation && invitation === tournament) throw Error('Bitte für die beiden Schaltflächen unterschiedliche Ziele wählen.');
+  const organizer = text(input.organizer ?? '',160);
+  return {title,description,organizer,category,expires,files,links,images,invitation,tournament};
 }
 export const berlinDate = now => new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
 export const isCurrent = (notice,now) => !notice.expires || notice.expires >= berlinDate(now);
