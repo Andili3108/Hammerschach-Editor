@@ -1,0 +1,81 @@
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {DatabaseSync} from 'node:sqlite';
+const {handleNoticeBoard}=await import('../src/notice-board.js');
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const root=fileURLToPath(new URL('../../Gamer/',import.meta.url));
+const server=http.createServer(async(req,res)=>{try{let file=path.join(root,new URL(req.url,'http://localhost').pathname);if((await fs.stat(file)).isDirectory())file=path.join(file,'index.html');res.setHeader('content-type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.png')?'image/png':'text/html');res.end(await fs.readFile(file));}catch{res.statusCode=404;res.end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const local=`http://127.0.0.1:${server.address().port}`;
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined});
+try {
+ for(const [label,width,height,role] of [['desktop',1440,1000,'admin'],['ipad',820,1180,'admin'],['iphone',390,844,'admin'],['small-iphone',320,568,'visitor'],['visitor',1440,1000,'visitor'],['member',820,1180,'member']]){
+  const db=new DatabaseSync(':memory:');const env={DB:{prepare(sql){let a=[];return {bind(...v){a=v;return this;},async first(){return db.prepare(sql).get(...a);},async all(){return {results:db.prepare(sql).all(...a)};},async run(){return {meta:{changes:db.prepare(sql).run(...a).changes}};}};}}};
+  db.exec("CREATE TABLE league_standings_sources (id TEXT,title TEXT,enabled INTEGER,sort_order INTEGER); INSERT INTO league_standings_sources VALUES ('liga-test','Bezirksliga Test',1,0)");
+  const context=await browser.newContext({viewport:{width,height},locale:'de-DE',isMobile:width<1000,hasTouch:width<1000});
+  const user=role==='visitor'?null:{id:role,username:role==='admin'?'Andili':'Mitglied',isAdmin:role==='admin'};
+  if(user)await context.addInitScript(user=>{localStorage.setItem('hammerschachGamerAuthToken','test-token');localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));},user);
+  await context.route('**/*',async route=>{
+   const req=route.request(),url=new URL(req.url());if(url.origin===local)return route.continue();if(!url.pathname.startsWith('/api/'))return route.abort();
+   if(url.pathname.startsWith('/api/notice-board')){
+    const r=await handleNoticeBoard(new Request(req.url(),{method:req.method(),headers:req.headers(),...(req.postData()?{body:req.postData()}:{})}),env,{json:(b,i)=>new Response(JSON.stringify(b),i),session:async()=>user?{user}:null,isAdmin:u=>u.isAdmin,fetch:async(url,options)=>new Response(options.method==='HEAD'?null:'%PDF-test',{status:url.includes('missing')?404:200})});
+    return route.fulfill({status:r.status,contentType:'application/json',body:await r.text()});
+   }
+   return route.fulfill({contentType:'application/json',body:JSON.stringify({ok:true,leagues:[{id:'liga-test',title:'Bezirksliga Test',enabled:true}],user,allowed:true,firstVisit:false,stats:{},tournaments:[],games:[],members:[],offers:[],messages:[],items:[],entries:[],series:[],unread:0,unreadCount:0})});
+  });
+  await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
+  page.on('dialog',d=>d.accept());
+  await page.locator('#noticeBoardOpen').waitFor({state:'visible'});
+  assert.equal(await page.locator('#noticeBoardDialog').isVisible(),false,'no automatic popup');
+  const bar=await page.locator('#noticeBoardOpen').boundingBox(),upper=await page.locator('.lobby-overview').boundingBox(),lower=await page.locator('.global-chat-shell').boundingBox();
+  assert.ok(bar.y>=upper.y+upper.height-1 && bar.y+bar.height<=lower.y+1,'between upper and lower areas');assert.ok(bar.height<60,'slim button');assert.ok(Math.abs(bar.width-upper.width)<2,'full content width');
+  await page.locator('#noticeBoardOpen').click();await page.getByText('Derzeit keine aktuellen Meldungen',{exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).count(),role==='admin'?1:0);
+  if(role==='admin'){
+    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'＋ Neue Meldung',exact:true}).click();
+    await page.locator('#noticeBoardDialog').getByLabel('Titel',{exact:true}).fill('Test <img src=x onerror=alert(1)>');await page.locator('#noticeBoardDialog').getByLabel('Beschreibung',{exact:true}).fill('Öffentliche Einladung\nZweite Zeile');
+    await page.locator('#noticeBoardDialog').getByLabel('Dateinamen der Anhänge', {exact:false}).fill('missing.pdf');
+    await page.getByRole('button',{name:'Entwurf speichern',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    const editor=await page.locator('#noticeBoardDialog').boundingBox();
+    assert.ok(editor.x>=0&&editor.x+editor.width<=width+1);assert.equal(await page.locator('.notice-board-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
+    await page.screenshot({path:'/tmp/notice-board-editor-'+label+'.png'});
+    await page.getByRole('button',{name:'Vorschau',exact:true}).click();await page.getByText('Vorschau · noch nicht veröffentlicht',{exact:true}).waitFor();
+    assert.equal(await page.locator('.notice-board-preview img').count(),0,'text is never interpreted as HTML');
+    await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Bitte die öffentliche Freigabe bestätigen.',{exact:true}).waitFor();
+    await page.getByRole('checkbox').filter({visible:true}).check();
+    await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Anhang nicht erreichbar: missing.pdf',{exact:true}).waitFor();
+    await page.locator('#noticeBoardDialog').getByLabel('Dateinamen der Anhänge',{exact:false}).fill('cup.pdf\nplakat.png');
+    await page.locator('#noticeBoardDialog').getByLabel('Externe HTTPS-Links',{exact:false}).fill('https://example.org/anmeldung');
+    await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();
+    await page.getByText('1 neue Meldung',{exact:true}).waitFor({state:'attached'});
+    const file=page.getByRole('link',{name:'📎 cup.pdf',exact:true});await file.waitFor();assert.equal(await file.getAttribute('target'),'_blank');
+    const popupWait=context.waitForEvent('page');await file.click();const popup=await popupWait;await popup.close();assert.equal(await page.locator('#noticeBoardDialog').isVisible(),true);
+    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    await page.locator('#noticeBoardDialog').getByLabel('Titel',{exact:true}).fill('Unveröffentlichte Änderung');await page.getByRole('button',{name:'Entwurf speichern',exact:true}).click();
+    await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();await page.getByRole('heading',{name:'Test <img src=x onerror=alert(1)> NEU',exact:false}).waitFor();
+    assert.equal(await page.getByText('Unveröffentlichte Änderung',{exact:true}).count(),0);
+  }
+  const modal=await page.locator('#noticeBoardDialog').boundingBox();assert.ok(modal.x>=0&&modal.y>=0&&modal.x+modal.width<=width+1&&modal.y+modal.height<=height+1);
+  assert.equal(await page.locator('.notice-board-content').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
+  if(width<601)assert.ok(modal.height>height*.9,'nearly fullscreen on phone');
+  await page.screenshot({path:'/tmp/notice-board-'+label+'.png'});
+  await page.evaluate(()=>window.HammerschachAppearance.select('dark'));
+  await page.screenshot({path:'/tmp/notice-board-dark-'+label+'.png'});
+  await page.evaluate(()=>window.HammerschachAppearance.select('soft'));
+  await page.getByRole('button',{name:'Schließen',exact:true}).filter({visible:true}).focus();await page.keyboard.press('Tab');
+  assert.equal(await page.evaluate(()=>document.querySelector('#noticeBoardDialog').contains(document.activeElement)),true,'focus stays inside modal');
+  await page.keyboard.press('Escape');assert.equal(await page.locator('#noticeBoardDialog').isVisible(),false);assert.equal(await page.evaluate(()=>document.activeElement.id),'noticeBoardOpen');
+  await page.locator('#noticeBoardOpen').click();
+  if(role==='admin'){
+    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    await page.getByRole('button',{name:'Ausblenden',exact:true}).click();await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();await page.getByText('Derzeit keine aktuellen Meldungen',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    await page.getByRole('button',{name:'Löschen',exact:true}).click();await page.getByText('Noch keine Meldungen angelegt.',{exact:true}).waitFor();
+  }
+  await page.getByRole('button',{name:'Schwarzes Brett schließen',exact:true}).click();
+  assert.deepEqual(errors,[]);console.log(label+': layout, modal, permissions and '+(role==='admin'?'editor lifecycle':'public empty state')+' passed');await context.close();db.close();
+ }
+}finally{await browser.close();await new Promise(r=>server.close(r));}
