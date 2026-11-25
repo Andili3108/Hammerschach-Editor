@@ -18,7 +18,7 @@ try {
   const user=role==='visitor'?null:{id:role,username:role==='admin'?'Andili':'Mitglied',isAdmin:role==='admin'};
   if(user)await context.addInitScript(user=>{localStorage.setItem('hammerschachGamerAuthToken','test-token');localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));},user);
   await context.route('**/*',async route=>{
-   const req=route.request(),url=new URL(req.url());if(url.origin===local && url.pathname==='/SchwarzesBrett/anhaenge/plakat.png')return route.fulfill({path:path.join(root,'Gamer-Logo.png')});
+   const req=route.request(),url=new URL(req.url());if(url.origin===local && ['/SchwarzesBrett/anhaenge/plakat.png','/SchwarzesBrett/anhaenge/logo.png'].includes(url.pathname))return route.fulfill({path:path.join(root,'Gamer-Logo.png')});
    if(url.origin===local)return route.continue();if(!url.pathname.startsWith('/api/'))return route.abort();
    if(url.pathname.startsWith('/api/notice-board')){
     const r=await handleNoticeBoard(new Request(req.url(),{method:req.method(),headers:req.headers(),...(req.postData()?{body:req.postData()}:{})}),env,{json:(b,i)=>new Response(JSON.stringify(b),i),session:async()=>user?{user}:null,isAdmin:u=>u.isAdmin,fetch:async(url,options)=>new Response(options.method==='HEAD'?null:'%PDF-test',{status:url.includes('missing')?404:200})});
@@ -48,28 +48,45 @@ try {
     await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Bitte die öffentliche Freigabe bestätigen.',{exact:true}).waitFor();
     await page.getByRole('checkbox').filter({visible:true}).check();
     await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByText('Anhang nicht erreichbar: missing.pdf (HTTP 404)',{exact:true}).waitFor();
-    await page.locator('#noticeBoardDialog').getByLabel('Dateinamen der Anhänge',{exact:false}).fill('cup.pdf\nplakat.png\nliste.txt');
+    await page.locator('#noticeBoardDialog').getByLabel('Dateinamen der Anhänge',{exact:false}).fill('cup.pdf\nplakat.png\nliste.txt\nlogo.png');
     await page.locator('#noticeBoardDialog').getByLabel('Externe HTTPS-Links',{exact:false}).fill('https://example.org/anmeldung\nhttps://example.org/ergebnisse');
     const editorDialog=page.locator('#noticeBoardDialog');
     await editorDialog.getByLabel('Veranstalter (optional)',{exact:true}).fill('SV Ahlen 1954 e. V.');
     await editorDialog.getByLabel('Kategorie (optional)',{exact:true}).selectOption('Veranstaltung');
     await editorDialog.getByLabel('Anzeigen bis',{exact:false}).fill('2099-01-31');
+    await editorDialog.getByLabel('Bild über dem Titel (optional)',{exact:true}).selectOption('logo.png');
+    await editorDialog.getByLabel('Breite des Bildes über dem Titel').selectOption('25');
+    await editorDialog.getByLabel('Schriftgröße des Titels').selectOption('xl');
+    await editorDialog.getByLabel('Schriftgröße des Inhaltstexts').selectOption('large');
+    const description=editorDialog.getByLabel('Beschreibung',{exact:true});
+    await description.evaluate(input=>input.setSelectionRange(0,11));
+    const toggleBold=editorDialog.getByRole('button',{name:'Fett',exact:true});
+    await toggleBold.click();
+    await toggleBold.click();
+    assert.equal(await editorDialog.locator('.notice-board-description strong').count(),0);
+    await toggleBold.click();
     await editorDialog.getByLabel('Beschreibung',{exact:true}).evaluate(input=>input.setSelectionRange(21,21));
     await editorDialog.getByLabel('Bild aus den Anhängen').selectOption('plakat.png');
     await editorDialog.getByLabel('Bildbreite').selectOption('50');
     await editorDialog.getByRole('button',{name:'Bild einfügen',exact:true}).click();
     const preview=editorDialog.locator('.notice-board-preview');
-    assert.equal(await preview.locator('.notice-board-inline-image').evaluate(a=>a.style.width),'50%');
+    assert.equal(await preview.locator('.notice-board-description .notice-board-inline-image').evaluate(a=>a.style.width),'50%');
     await editorDialog.getByLabel('Bildbreite').selectOption('75');
     await editorDialog.getByLabel('Zur Ausschreibung (optional)').selectOption('cup.pdf');
     await editorDialog.getByLabel('Zur Turnierseite (optional)').selectOption('https://example.org/anmeldung');
     const checkCard=async card=>{
       await card.locator('.notice-board-organizer + h3').waitFor();
+      const logo=card.getByRole('link',{name:'logo.png',exact:true});
+      assert.equal(await logo.evaluate(a=>a.style.width),'25%');
+      assert.ok(await logo.evaluate(a=>a.parentElement.firstElementChild===a));
+      await logo.locator('img[alt="logo.png"]').evaluate(img=>img.decode());
+      assert.equal(await card.locator('h3[data-size="xl"]').count(),1);
+      assert.equal(await card.locator('.notice-board-description[data-size="large"] strong').innerText(),'Öffentliche');
       assert.equal(await card.locator('.notice-board-organizer + h3').count(),1);
       assert.equal(await card.locator('.notice-board-organizer').innerText(),'SV Ahlen 1954 e. V.');
       assert.equal(await card.locator('.notice-board-meta').count(),0);
-      await card.locator('.notice-board-inline-image img').evaluate(img=>img.decode());
-      assert.equal(await card.locator('.notice-board-inline-image').evaluate(a=>a.style.width),'75%');
+      await card.locator('.notice-board-description img').evaluate(img=>img.decode());
+      assert.equal(await card.locator('.notice-board-description .notice-board-inline-image').evaluate(a=>a.style.width),'75%');
       assert.equal(await card.getByRole('link',{name:'Zur Turnierseite'}).getAttribute('href'),'https://example.org/anmeldung');
       assert.equal(await card.locator('.notice-board-links a').count(),2);
       assert.equal(await card.getByRole('link',{name:'Zur Ausschreibung'}).getAttribute('target'),'_blank');

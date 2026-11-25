@@ -94,3 +94,12 @@ test('optional editorial fields support old entries and validate targets and ima
  assert.equal(validateNotice({...notice,invitation:notice.links[1]}).invitation,notice.links[1]);
  for(const invalid of [{images:{'logo.png':110}},{images:{'unknown.png':50}},{invitation:'logo.png'},{tournament:'cup.pdf'},{tournament:'https://other.example/'},{invitation:notice.tournament},{organizer:'x'.repeat(161)}])assert.throws(()=>validateNotice({...notice,...invalid}));
 });
+
+test('header image, separate sizes and bold offsets survive validation and trimming',()=>{
+ const formatted={...sample,description:'  Einladung zum Turnier  ',files:['logo.png'],headerImage:'logo.png',headerWidth:50,titleSize:'xl',bodySize:'small',boldRanges:[[2,11],[16,25]]};
+ const n=validateNotice(formatted);
+ assert.deepEqual(n.boldRanges.map(([a,b])=>n.description.slice(a,b)),['Einladung','Turnier']);
+ assert.equal(n.headerImage,'logo.png');assert.equal(n.titleSize,'xl');assert.equal(n.bodySize,'small');
+ assert.deepEqual(validateNotice(sample).boldRanges,[]);assert.equal(validateNotice(sample).titleSize,'standard');
+ for(const invalid of [{headerImage:'missing.png'},{headerWidth:30},{titleSize:'4em'},{bodySize:'huge'},{boldRanges:[[8,3]]},{boldRanges:[[0,4],[3,7]]}])assert.throws(()=>validateNotice({...formatted,...invalid}));
+});
