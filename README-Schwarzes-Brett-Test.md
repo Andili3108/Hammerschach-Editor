@@ -29,6 +29,10 @@ Es wurde nichts öffentlich hochgeladen oder bereitgestellt.
    Kategorie und Anzeigen-bis werden im Editor gepflegt. Das Ablaufdatum steuert die Sichtbarkeit.
    Für ein Bild den hochgeladenen Dateinamen zu den Anhängen hinzufügen, den Cursor in die Beschreibung setzen,
    Bild und Breite auswählen und „Bild einfügen“ anklicken. Die Bildmarke im Text lässt sich verschieben oder löschen.
+   Für ein Vereinslogo „Bild über dem Titel“ auswählen und die eigene Bildbreite einstellen.
+   Ersetzt das Logo ein bisheriges Textbild, die alte Bildmarke aus der Beschreibung entfernen.
+   Titel und Inhalt haben unabhängige Schriftgrößen. Für Fettschrift Text in der Beschreibung markieren
+   und „Fett“ anklicken. Erneutes Anklicken hebt die Fettschrift der Auswahl auf. Die Vorschau zeigt die Gestaltung.
    Zur Größenänderung das Bild erneut auswählen und 25, 50, 75 oder 100 Prozent einstellen.
    Unter „Zur Ausschreibung“ eine eingetragene PDF oder einen externen Link auswählen.
    Unter „Zur Turnierseite“ kann ein weiterer externer Link ausgewählt werden.
@@ -115,7 +119,7 @@ Browserprüfungen mit lokal ausgeliefertem Gamer und isolierter Testdatenbank:
   Fokusführung, Escape, Schließknopf und Farbschemata.
 - Prüfinhalte werden als Text ausgegeben, nicht als ausführbares HTML.
 
-Die sieben Servertests sowie vier bestehende Tests zu Besucherzugriff und
+Die acht Servertests sowie vier bestehende Tests zu Besucherzugriff und
 Vereinsberichten bestehen. Die sechs Browser-Szenarien bestehen.
 Ein zusätzlich ausgeführter vorhandener Begrüßungs-/Registrierungstest scheitert
 an `handleSchacheckeApi is not defined` in seiner Testumgebung. Dieser identische
