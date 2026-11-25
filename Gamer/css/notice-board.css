@@ -18,3 +18,11 @@
 .notice-board-targets{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 .notice-board-targets a{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 16px;border-radius:12px;background:var(--ui-accent);color:var(--ui-surface);font-weight:700;text-decoration:none}
 .notice-board-organizer{margin:0 0 4px;color:var(--ui-accent);font-weight:600;font-size:1rem;text-align:left}
+
+.notice-board-card h3[data-size="small"]{font-size:1rem}
+.notice-board-card h3[data-size="large"]{font-size:1.5rem}
+.notice-board-card h3[data-size="xl"]{font-size:1.875rem}
+.notice-board-description[data-size="small"]{font-size:.875rem}
+.notice-board-description[data-size="large"]{font-size:1.25rem}
+.notice-board-description[data-size="xl"]{font-size:1.5rem}
+.notice-board-description strong{font-weight:700}
