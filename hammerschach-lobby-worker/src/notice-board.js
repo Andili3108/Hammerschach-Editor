@@ -69,7 +69,7 @@ export async function handleNoticeBoard(request, env, deps) {
             let response;
             try {
               response = await (deps.fetch || fetch)(ATTACHMENT_ROOT + encodeURIComponent(name), {
-                method: 'HEAD', redirect: 'error', signal: controller.signal
+                method: 'HEAD', redirect: 'manual', signal: controller.signal
               });
             } catch {
               throw Error('Die Verfügbarkeit konnte gerade nicht geprüft werden: ' + name);
