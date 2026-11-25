@@ -1,6 +1,45 @@
 // Independent editorial board. Draft/published snapshots and optimistic revisions
 // follow the club report pattern; attachments remain manually managed on GitHub.
 export const ATTACHMENT_ROOT = 'https://hammerschach-gamer.webmaster-5bb.workers.dev/SchwarzesBrett/anhaenge/';
+const GITHUB_ATTACHMENTS = 'https://raw.githubusercontent.com/Andili3108/Hammerschach-Editor/main/Gamer/SchwarzesBrett/anhaenge/';
+
+async function verifyAttachment(name, fetchFile) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  let response;
+  try {
+    response = await fetchFile(GITHUB_ATTACHMENTS + encodeURIComponent(name), {
+      method: 'GET', headers: {Range: 'bytes=0-4'}, redirect: 'manual', signal: controller.signal
+    });
+    if (![200, 206].includes(response.status)) {
+      throw Error('Anhang nicht erreichbar: ' + name + ' (HTTP ' + response.status + ')');
+    }
+    if (!response.body || /text\/html/i.test(response.headers.get('content-type') || '')) {
+      throw Error('GitHub liefert keine Anhangdatei: ' + name);
+    }
+    const reader = response.body.getReader();
+    const prefix = new Uint8Array(5);
+    let length = 0;
+    try {
+      while (length < prefix.length) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        const bytes = value.subarray(0, prefix.length - length);
+        prefix.set(bytes, length);
+        length += bytes.length;
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    if (!length || (/\.pdf$/i.test(name) && new TextDecoder().decode(prefix) !== '%PDF-')) {
+      throw Error('Datei leer oder ungültiger PDF-Anfang: ' + name);
+    }
+  } finally {
+    clearTimeout(timer);
+    if (response?.body) await response.body.cancel().catch(() => {});
+  }
+}
+
 const TYPES = {pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',pgn:'application/x-chess-pgn',txt:'text/plain; charset=utf-8'};
 const CATEGORIES = ['', 'Turniereinladung', 'Veranstaltung', 'Regionale Nachricht', 'Sonstiges'];
 export function attachmentName(name) {
@@ -64,22 +103,7 @@ export async function handleNoticeBoard(request, env, deps) {
           if(body.approved!==true)throw Error('Bitte die Freigabe der Texte und Anhänge bestätigen.');
           if(!isCurrent(notice,now))throw Error('Das Ablaufdatum liegt in der Vergangenheit.');
           for(const name of notice.files) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 10000);
-            let response;
-            try {
-              response = await (deps.fetch || fetch)(ATTACHMENT_ROOT + encodeURIComponent(name), {
-                method: 'HEAD', redirect: 'manual', signal: controller.signal
-              });
-            } catch {
-              throw Error('Die Verfügbarkeit konnte gerade nicht geprüft werden: ' + name);
-            } finally {
-              clearTimeout(timer);
-            }
-            if (!response.ok) throw Error('Anhang nicht erreichbar: ' + name + ' (HTTP ' + response.status + ')');
-            if (/text\/html/i.test(response.headers.get('content-type') || '')) {
-              throw Error('Die Adresse liefert eine Webseite statt der Datei: ' + name);
-            }
+            await verifyAttachment(name, deps.fetch || fetch);
           }
           published=draft;publishedAt=publishedAt||new Date(now).toISOString();
         }
