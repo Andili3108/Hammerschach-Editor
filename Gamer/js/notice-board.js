@@ -36,8 +36,31 @@
   const isNew=n=>!!n.publishedAt && Date.now()+offset-Date.parse(n.publishedAt)>=0 && Date.now()+offset-Date.parse(n.publishedAt)<7*86400000;
   function updateCount(){const n=current(publicItems).filter(isNew).length;count.textContent=n===1?'1 neue Meldung':n>1?n+' neue Meldungen':'Alle Meldungen ›';count.classList.toggle('notice-board-new',n>0);}
   async function refreshCount(){try{const data=await api();offset=data.serverNow-Date.now();publicItems=data.items;updateCount();}catch{count.textContent='Meldungen öffnen ›';count.classList.remove('notice-board-new');}}
+  // Positions refer to UTF-16 offsets, as used by textarea selections.
+  function mergedRanges(ranges){
+    const result=[];
+    for(const [start,end] of ranges.sort((a,b)=>a[0]-b[0])){
+      if(start>=end)continue;
+      const last=result[result.length-1];
+      if(last && start<=last[1])last[1]=Math.max(last[1],end);
+      else result.push([start,end]);
+    }
+    return result;
+  }
+  function appendText(host,n,start,end){
+    let cursor=start;
+    for(const [left,right] of n.boldRanges||[]){
+      const from=Math.max(start,left), to=Math.min(end,right);
+      if(from>=to)continue;
+      host.append(n.description.slice(cursor,from),el('strong',n.description.slice(from,to)));
+      cursor=to;
+    }
+    host.append(n.description.slice(cursor,end));
+  }
   function renderNotice(n, published=false){
     const card=el('article',null,'notice-board-card'),heading=el('h3',n.title);
+    if(n.headerImage && n.files.includes(n.headerImage))card.append(imageLink(n.headerImage,n.headerWidth||25));
+    heading.dataset.size=n.titleSize||'standard';
     if(n.organizer)card.append(el('p',n.organizer,'notice-board-organizer'));
     card.append(heading);
     if(isNew(n))heading.append(el('span','NEU','notice-board-new'));
@@ -50,24 +73,28 @@
       a.rel='noopener noreferrer';
       return a;
     }
-    const body=el('div',null,'notice-board-description');
-    const inline=new Set();
-    let offset=0;
-    for(const match of n.description.matchAll(/\[\[Bild: ([^\]\n]+)\]\]/g)){
-      const name=match[1], width=n.images?.[name];
-      if(![25,50,75,100].includes(width) || !n.files.includes(name))continue;
-      body.append(n.description.slice(offset,match.index));
+    function imageLink(name,width){
       const a=link('',name), image=el('img');
       image.alt=name;
       image.src='SchwarzesBrett/anhaenge/'+encodeURIComponent(name);
       a.className='notice-board-inline-image';
       a.style.width=width+'%';
       a.append(image);
-      body.append(a);
+      return a;
+    }
+    const body=el('div',null,'notice-board-description');
+    body.dataset.size=n.bodySize||'standard';
+    const inline=new Set();
+    let offset=0;
+    for(const match of n.description.matchAll(/\[\[Bild: ([^\]\n]+)\]\]/g)){
+      const name=match[1], width=n.images?.[name];
+      if(![25,50,75,100].includes(width) || !n.files.includes(name))continue;
+      appendText(body,n,offset,match.index);
+      body.append(imageLink(name,width));
       inline.add(name);
       offset=match.index+match[0].length;
     }
-    body.append(n.description.slice(offset));
+    appendText(body,n,offset,n.description.length);
     card.append(body);
     const actions=el('div',null,'notice-board-targets');
     if(n.invitation)actions.append(link('Zur Ausschreibung',n.invitation));
@@ -75,7 +102,7 @@
     if(actions.childElementCount)card.append(actions);
     const links=el('div',null,'notice-board-links');
     for(const name of n.files){
-      if(!inline.has(name) && name!==n.invitation)links.append(link('📎 '+name,name));
+      if(name!==n.headerImage && !inline.has(name) && name!==n.invitation)links.append(link('📎 '+name,name));
     }
     for(const url of n.links){
       if(url!==n.invitation && url!==n.tournament)links.append(link('↗ '+url,url));
@@ -115,8 +142,47 @@
     const form=el('form',null,'notice-board-form');form.append(el('h3',item?'Meldung bearbeiten':'Neue Meldung'));
     function field(label,value,type,max){const wrap=el('label',label),input=el(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type||'text';input.value=value;if(max)input.maxLength=max;wrap.append(input);form.append(wrap);return input;}
     const titleInput=field('Titel',n.title,'text',160);titleInput.required=true;
+    function fontChoice(label,current){
+      const select=choice(label);
+      for(const [key,text] of [['small','Klein'],['standard','Standard'],['large','Groß'],['xl','Sehr groß']])select.add(new Option(text,key));
+      select.value=current||'standard';
+      return select;
+    }
+    const titleSize=fontChoice('Schriftgröße des Titels',n.titleSize);
     const organizer=field('Veranstalter (optional)',n.organizer||'','text',160);
     const description=field('Beschreibung',n.description,'textarea',12000);description.required=true;description.rows=6;
+    const bodySize=fontChoice('Schriftgröße des Inhaltstexts',n.bodySize);
+    let boldRanges=(n.boldRanges||[]).map(pair=>[...pair]);
+    let previousText=description.value, editStart=null;
+    description.addEventListener('beforeinput',()=>{editStart=description.selectionStart;});
+    function syncBold(){
+      const next=description.value, old=previousText;
+      if(next===old)return;
+      let left=0,oldEnd=old.length,newEnd=next.length;
+      while(left<(editStart??Infinity) && left<oldEnd && left<newEnd && old[left]===next[left])left++;
+      while(oldEnd>left && newEnd>left && old[oldEnd-1]===next[newEnd-1]){oldEnd--;newEnd--;}
+      const delta=newEnd-oldEnd, adjusted=[];
+      for(const [a,b] of boldRanges){
+        if(a<left)adjusted.push([a,Math.min(b,left)]);
+        if(a<=left && b>=oldEnd && (oldEnd>left || b>left))adjusted.push([left,newEnd]);
+        if(b>oldEnd)adjusted.push([Math.max(a,oldEnd)+delta,b+delta]);
+      }
+      boldRanges=mergedRanges(adjusted);
+      previousText=next; editStart=null;
+    }
+    description.addEventListener('input',syncBold);
+    const boldButton=button('Fett',()=>{
+      syncBold();
+      const a=description.selectionStart,b=description.selectionEnd;
+      if(a===b){message('Markiere zuerst die Wörter, die du formatieren möchtest.');description.focus();return;}
+      if(boldRanges.some(([left,right])=>left<=a && right>=b)){
+        boldRanges=mergedRanges(boldRanges.flatMap(([left,right])=>[[left,Math.min(right,a)],[Math.max(left,b),right]]));
+      }else boldRanges=mergedRanges([...boldRanges,[a,b]]);
+      dirty=true;description.focus();description.setSelectionRange(a,b);showPreview();
+    });
+    boldButton.title='Markierten Text fett setzen oder Fettschrift aufheben';
+    boldButton.style.fontWeight='bold';
+    form.append(boldButton);
     const categoryLabel=el('label','Kategorie (optional)'),category=el('select');
     category.setAttribute('aria-label','Kategorie (optional)');
     for(const value of ['','Turniereinladung','Veranstaltung','Regionale Nachricht','Sonstiges']){const option=el('option',value||'Keine Kategorie');option.value=value;category.append(option);}category.value=n.category;categoryLabel.append(category);form.append(categoryLabel);
@@ -135,6 +201,10 @@
       if(values.includes(selected))select.value=selected;
     }
     const lines=input=>input.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    const headerImage=choice('Bild über dem Titel (optional)');
+    const headerWidth=choice('Breite des Bildes über dem Titel');
+    for(const width of [25,50,75,100])headerWidth.add(new Option(width+' %',width));
+    headerWidth.value=n.headerWidth||25;
     form.append(el('p','Für ein Bild im Text: Dateinamen oben eintragen, den Cursor in der Beschreibung platzieren, Bild und Breite wählen und „Bild einfügen“ anklicken.','notice-board-help'));
     const imageChoice=choice('Bild aus den Anhängen'), size=choice('Bildbreite');
     for(const width of [25,50,75,100])size.add(new Option(width+' %',width));
@@ -148,18 +218,22 @@
       const name=imageChoice.value;
       if(!name){message('Trage zuerst einen Bilddateinamen bei den Anhängen ein und wähle das Bild aus.',true);return;}
       widths[name]=Number(size.value);
+      editStart=description.selectionStart;
       description.setRangeText('[[Bild: '+name+']]',description.selectionStart,description.selectionEnd,'end');
-      dirty=true; description.focus(); showPreview();
+      syncBold(); dirty=true; description.focus(); showPreview();
     }));
     const invitation=choice('Zur Ausschreibung (optional)'), tournament=choice('Zur Turnierseite (optional)');
     function refreshChoices(){
       const names=lines(files), urls=lines(links);
-      options(imageChoice,names.filter(name=>/\.(png|jpe?g|webp)$/i.test(name)),'Bild wählen',imageChoice.value);
+      const imageNames=names.filter(name=>/\.(png|jpe?g|webp)$/i.test(name));
+      options(headerImage,imageNames,'Kein Bild',headerImage.value);
+      options(imageChoice,imageNames,'Bild wählen',imageChoice.value);
       syncSize();
       options(invitation,[...names.filter(name=>/\.pdf$/i.test(name)),...urls],'Keine Schaltfläche',invitation.value);
       options(tournament,urls,'Keine Schaltfläche',tournament.value);
     }
     refreshChoices();
+    headerImage.value=n.headerImage||'';
     invitation.value=n.invitation||''; tournament.value=n.tournament||'';
     files.addEventListener('change',refreshChoices);
     links.addEventListener('change',refreshChoices);
@@ -168,7 +242,7 @@
     function notice(){
       const names=lines(files);
       const images=Object.fromEntries(Object.entries(widths).filter(([name])=>names.includes(name) && description.value.includes('[[Bild: '+name+']]')));
-      return {title:titleInput.value,organizer:organizer.value.trim(),description:description.value,category:category.value,expires:expires.value,files:names,links:lines(links),images,invitation:invitation.value,tournament:tournament.value};
+      return {titleSize:titleSize.value,bodySize:bodySize.value,headerImage:headerImage.value,headerWidth:Number(headerWidth.value),boldRanges:mergedRanges(boldRanges),title:titleInput.value,organizer:organizer.value.trim(),description:description.value,category:category.value,expires:expires.value,files:names,links:lines(links),images,invitation:invitation.value,tournament:tournament.value};
     }
     const identity={id:item?.id,revision:item?.revision||0};
     const actions=el('div',null,'notice-board-actions'),preview=el('section',null,'notice-board-preview');preview.setAttribute('aria-label','Vorschau');
