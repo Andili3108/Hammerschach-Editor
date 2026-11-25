@@ -84,3 +84,13 @@ test('actual Worker entry routes preflight, public reads and admin identity corr
  assert.equal((await request('POST','admin',{action:'draft',revision:0,notice:sample})).status,200);
  assert.equal((await (await request('GET','')).json()).items.length,0);f.db.close();
 });
+
+test('optional editorial fields support old entries and validate targets and image widths',()=>{
+ const notice={...sample,organizer:'  SV Ahlen  ',files:['cup.pdf','logo.png'],links:['https://example.org','https://example.org/cup'],images:{'logo.png':25},invitation:'cup.pdf',tournament:'https://example.org'};
+ assert.equal(validateNotice(sample).organizer,'');
+ for(const width of [25,50,75,100])assert.equal(validateNotice({...notice,images:{'logo.png':width}}).images['logo.png'],width);
+ assert.equal(validateNotice(notice).organizer,'SV Ahlen');
+ assert.equal(validateNotice(notice).tournament,'https://example.org/');
+ assert.equal(validateNotice({...notice,invitation:notice.links[1]}).invitation,notice.links[1]);
+ for(const invalid of [{images:{'logo.png':110}},{images:{'unknown.png':50}},{invitation:'logo.png'},{tournament:'cup.pdf'},{tournament:'https://other.example/'},{invitation:notice.tournament},{organizer:'x'.repeat(161)}])assert.throws(()=>validateNotice({...notice,...invalid}));
+});
