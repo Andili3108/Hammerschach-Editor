@@ -80,7 +80,28 @@ export function validateNotice(input) {
   const tournament = target(input.tournament, false);
   if (invitation && invitation === tournament) throw Error('Bitte für die beiden Schaltflächen unterschiedliche Ziele wählen.');
   const organizer = text(input.organizer ?? '',160);
-  return {title,description,organizer,category,expires,files,links,images,invitation,tournament};
+  const fontSize=value=>{
+    const size=value??'standard';
+    if(!['small','standard','large','xl'].includes(size))throw Error('Ungültige Schriftgröße.');
+    return size;
+  };
+  const titleSize=fontSize(input.titleSize), bodySize=fontSize(input.bodySize);
+  const headerImage=input.headerImage??'', headerWidth=input.headerWidth??25;
+  if(headerImage && (!files.includes(headerImage) || !/\.(png|jpe?g|webp)$/i.test(headerImage)))throw Error('Bitte ein Bild aus den Anhängen auswählen.');
+  if(![25,50,75,100].includes(headerWidth))throw Error('Ungültige Breite für das Bild über dem Titel.');
+  const trimOffset=input.description.length-input.description.trimStart().length;
+  const ranges=input.boldRanges??[],boldRanges=[];
+  if(!Array.isArray(ranges))throw Error('Ungültige Textformatierung.');
+  let previousEnd=0;
+  for(const pair of ranges){
+    if(!Array.isArray(pair)||pair.length!==2)throw Error('Ungültige Textmarkierung.');
+    const [start,end]=pair;
+    if(!Number.isInteger(start)||!Number.isInteger(end)||start<previousEnd||end<=start||end>input.description.length)throw Error('Ungültiger Textbereich.');
+    const a=Math.max(0,start-trimOffset),b=Math.min(description.length,end-trimOffset);
+    if(a<b)boldRanges.push([a,b]);
+    previousEnd=end;
+  }
+  return {titleSize,bodySize,headerImage,headerWidth,boldRanges,title,description,organizer,category,expires,files,links,images,invitation,tournament};
 }
 export const berlinDate = now => new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
 export const isCurrent = (notice,now) => !notice.expires || notice.expires >= berlinDate(now);
