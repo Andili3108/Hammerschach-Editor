@@ -29,14 +29,43 @@ try {
   await context.routeWebSocket(/.*/,socket=>{if(!socket.url().includes('/global-chat'))return socket.close();socket.onMessage(msg=>{if(JSON.parse(msg).type==='authenticate')socket.send(JSON.stringify({type:'global_chat_ready',messages:[]}));});});
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);
   page.on('dialog',d=>d.accept());
-  await page.locator('#noticeBoardOpen').waitFor({state:'visible'});
-  assert.equal(await page.locator('#noticeBoardDialog').isVisible(),false,'no automatic popup');
-  const bar=await page.locator('#noticeBoardOpen').boundingBox(),upper=await page.locator('.lobby-overview').boundingBox(),lower=await page.locator('.global-chat-shell').boundingBox();
-  assert.ok(bar.y>=upper.y+upper.height-1 && bar.y+bar.height<=lower.y+1,'between upper and lower areas');assert.ok(bar.height<60,'slim button');assert.ok(Math.abs(bar.width-upper.width)<2,'full content width');
-  await page.locator('#noticeBoardOpen').click();await page.getByText('Derzeit keine aktuellen Meldungen',{exact:true}).waitFor();
-  assert.equal(await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).count(),role==='admin'?1:0);
+  const tickerTab=page.locator('#newsTickerTab'),boardTab=page.locator('#newsBoardTab');
+  await tickerTab.waitFor();
+  assert.equal(await tickerTab.getAttribute('aria-selected'),'true');
+  await boardTab.click();
+  const boardPane=page.locator('#newsBoardPane');
+  await boardPane.getByText('Derzeit keine aktuellen Meldungen',{exact:true}).waitFor();
+  assert.equal(await page.locator('#noticeBoardDialog').isVisible(),false);
+  assert.equal(await page.locator('#noticeBoardManage').isVisible(),role==='admin');
+  if(role!=='visitor'){
+    await page.locator('#lobbyChatTab').click();
+    await page.locator('#globalChatInput').waitFor();
+    assert.equal(await boardTab.isVisible(),false);
+    await page.locator('#lobbyChatTab').click();
+    await boardPane.waitFor();assert.equal(await boardTab.getAttribute('aria-selected'),'true');
+  }
+  await page.reload();await boardPane.waitFor();
+  await boardTab.focus();await page.keyboard.press('ArrowLeft');await page.locator('#newsTickerPane').waitFor();
+  await page.keyboard.press('ArrowRight');await boardPane.waitFor();
+  if(role!=='admin'){
+    const insert=db.prepare('INSERT INTO notice_board(id,revision,draft,published,published_at) VALUES (?,1,NULL,?,?)');
+    for(const [id,title,days] of [['old','Ältere Einladung',8],['new','Neue Einladung',1]]){
+      const doc={title,organizer:'Schachverein',description:'Beschreibung '+id,files:[],links:[]};
+      insert.run(id,JSON.stringify(doc),new Date(Date.now()-days*86400000).toISOString());
+    }
+    await page.reload();
+    const buttons=boardPane.locator('#noticeBoardRows button');
+    await buttons.nth(1).waitFor();
+    assert.match(await buttons.first().innerText(),/Neue Einladung/);
+    assert.equal(await page.locator('#noticeBoardCount').innerText(),'1 neu');
+    await buttons.nth(1).click();await page.getByText('Beschreibung old',{exact:true}).waitFor();
+    assert.equal(await page.locator('#noticeBoardDialog .notice-board-card').count(),1);
+    await page.keyboard.press('Escape');
+    assert.equal(await buttons.nth(1).evaluate(b=>document.activeElement===b),true);
+    console.log(label+': tabs, preference, sorted list and selected detail passed');await context.close();db.close();continue;
+  }
   if(role==='admin'){
-    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'＋ Neue Meldung',exact:true}).click();
+    await page.locator('#noticeBoardManage').click();await page.getByRole('button',{name:'＋ Neue Meldung',exact:true}).click();
     await page.locator('#noticeBoardDialog').getByLabel('Titel',{exact:true}).fill('Test <img src=x onerror=alert(1)>');await page.locator('#noticeBoardDialog').getByLabel('Beschreibung',{exact:true}).fill('Öffentliche Einladung\nZweite Zeile');
     await page.locator('#noticeBoardDialog').getByLabel('Dateinamen der Anhänge', {exact:false}).fill('missing.pdf');
     await page.getByRole('button',{name:'Entwurf speichern',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
@@ -97,11 +126,11 @@ try {
     await (await previewPopup).close();
     assert.equal(await editorDialog.getByLabel('Veranstalter (optional)').inputValue(),'SV Ahlen 1954 e. V.');
     await page.getByRole('button',{name:'Veröffentlichen',exact:true}).click();await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();
-    await page.getByText('1 neue Meldung',{exact:true}).waitFor({state:'attached'});
+    await page.locator('#noticeBoardCount').getByText('1 neu',{exact:true}).waitFor({state:'attached'});
     await checkCard(editorDialog.locator('.notice-board-card'));
     const file=page.getByRole('link',{name:'Zur Ausschreibung',exact:true});await file.waitFor();assert.equal(await file.getAttribute('target'),'_blank');
     const popupWait=context.waitForEvent('page');await file.click();const popup=await popupWait;await popup.close();assert.equal(await page.locator('#noticeBoardDialog').isVisible(),true);
-    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    await page.locator('#noticeBoardDialog').getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
     await page.locator('#noticeBoardDialog').getByLabel('Titel',{exact:true}).fill('Unveröffentlichte Änderung');await page.getByRole('button',{name:'Entwurf speichern',exact:true}).click();
     await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();await page.getByRole('heading',{name:'Test <img src=x onerror=alert(1)> NEU',exact:false}).waitFor();
     assert.equal(await page.getByText('Unveröffentlichte Änderung',{exact:true}).count(),0);
@@ -115,12 +144,12 @@ try {
   await page.evaluate(()=>window.HammerschachAppearance.select('soft'));
   await page.getByRole('button',{name:'Schließen',exact:true}).filter({visible:true}).focus();await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(()=>document.querySelector('#noticeBoardDialog').contains(document.activeElement)),true,'focus stays inside modal');
-  await page.keyboard.press('Escape');assert.equal(await page.locator('#noticeBoardDialog').isVisible(),false);assert.equal(await page.evaluate(()=>document.activeElement.id),'noticeBoardOpen');
-  await page.locator('#noticeBoardOpen').click();
+  await page.keyboard.press('Escape');assert.equal(await page.locator('#noticeBoardDialog').isVisible(),false);assert.equal(await page.evaluate(()=>document.activeElement.id),'noticeBoardManage');
+
   if(role==='admin'){
-    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
-    await page.getByRole('button',{name:'Ausblenden',exact:true}).click();await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();await page.getByText('Derzeit keine aktuellen Meldungen',{exact:true}).waitFor();
-    await page.getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    await page.locator('#noticeBoardManage').click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
+    await page.getByRole('button',{name:'Ausblenden',exact:true}).click();await page.getByRole('button',{name:'Öffentliche Ansicht',exact:true}).click();await page.locator('#noticeBoardDialog').getByText('Derzeit keine aktuellen Meldungen',{exact:true}).waitFor();
+    await page.locator('#noticeBoardDialog').getByRole('button',{name:'Meldungen verwalten',exact:true}).click();await page.getByRole('button',{name:'Bearbeiten',exact:true}).click();
     await page.getByRole('button',{name:'Löschen',exact:true}).click();await page.getByText('Noch keine Meldungen angelegt.',{exact:true}).waitFor();
   }
   await page.getByRole('button',{name:'Schwarzes Brett schließen',exact:true}).click();
