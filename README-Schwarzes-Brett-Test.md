@@ -1,5 +1,7 @@
 # Schwarzes Brett – Änderungsstand vom 25. November 2026
 
+Für das Reiter-Update eines bereits eingerichteten Schwarzen Bretts genügen die geänderten Gamer-Dateien. Die folgenden Einrichtungshinweise zum Worker beziehen sich auf die Erstinstallation.
+
 ## Grundlage und Auslieferung
 
 Verwendet wurde der lokale freigegebene Ordner `Hammerschach-Gamer/`.
@@ -22,8 +24,10 @@ Es wurde nichts öffentlich hochgeladen oder bereitgestellt.
    mit dem Lobby-Worker bereitgestellt werden. Bestehende Bindings und Secrets bleiben erhalten.
 3. Die Tabelle `notice_board` wird im bestehenden D1 beim ersten Aufruf automatisch
    angelegt. Keine zusätzliche Datenbank, kein zusätzlicher Dienst und kein Zeitplan erforderlich.
-4. Gamer neu laden. Zwischen oberer Übersicht und Aufgaben/Ticker erscheint die schmale
-   Schaltfläche „📌 Schwarzes Brett“ für Besucher und Mitglieder.
+4. Gamer neu laden. Die Nachrichtenkarte neben den Wochenaufgaben hat die Reiter „Gamer-Ticker“ und
+   „📌 Schwarzes Brett“. Beim ersten Besuch ist der Ticker aktiv. Der Browser merkt sich die Auswahl.
+   Ein Klick auf eine Brettmeldung öffnet den ausgewählten Beitrag. Der Chat-Schalter in der Lobby
+   wechselt weiterhin den gesamten unteren Bereich. Beim Zurückwechseln ist der gewählte Reiter wieder sichtbar.
 5. Als Andili öffnen → „Meldungen verwalten“ → „＋ Neue Meldung“.
    Titel und Beschreibung ausfüllen. Optional einen Veranstalter eintragen. Sein Name erscheint über dem Titel.
    Kategorie und Anzeigen-bis werden im Editor gepflegt. Das Ablaufdatum steuert die Sichtbarkeit.
@@ -71,7 +75,7 @@ Löschen einer Meldung löschen keine GitHub-Dateien.
   Bearbeiten oder erneutes Einblenden startet diese Frist nicht erneut.
 - „Anzeigen bis“ gilt einschließlich des gewählten Tages in Europe/Berlin.
   Abgelaufene Meldungen bleiben verwaltbar, werden öffentlich jedoch herausgefiltert.
-- Geöffnete öffentliche Ansichten aktualisieren sich minütlich, die Schaltfläche
+- Geöffnete öffentliche Ansichten aktualisieren sich minütlich, die Nachrichtenkarte
   lädt neue Meldungen alle fünf Minuten und beim Zurückkehren zum Browser nach.
   Unveränderte Inhalte und die Leseposition bleiben bei Hintergrundaktualisierungen erhalten.
 - Entwurf speichern verändert eine bestehende öffentliche Fassung nicht.
@@ -115,7 +119,7 @@ Browserprüfungen mit lokal ausgeliefertem Gamer und isolierter Testdatenbank:
 - Admin-Verwaltungsablauf, Vorschau, Freigabe, Fehler bei fehlendem Anhang,
   separate Anhangöffnung, Entwurfsisolation, Ausblenden und Löschen.
 - Besucher- und Mitglieder-Leseansicht, Leerzustand, keine automatische Öffnung,
-  Position und Breite der Schaltfläche, keine horizontale Überbreite, Scrollbarkeit,
+  Reiterwechsel, Chat-Rückkehr, gemerkte Auswahl, Sortierung und Einzeldetail, keine horizontale Überbreite, Scrollbarkeit,
   Fokusführung, Escape, Schließknopf und Farbschemata.
 - Prüfinhalte werden als Text ausgegeben, nicht als ausführbares HTML.
 
