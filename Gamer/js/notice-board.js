@@ -36,14 +36,14 @@
   const isNew=n=>!!n.publishedAt && Date.now()+offset-Date.parse(n.publishedAt)>=0 && Date.now()+offset-Date.parse(n.publishedAt)<7*86400000;
   function updateCount(){const n=current(publicItems).filter(isNew).length;count.textContent=n===1?'1 neue Meldung':n>1?n+' neue Meldungen':'Alle Meldungen ›';count.classList.toggle('notice-board-new',n>0);}
   async function refreshCount(){try{const data=await api();offset=data.serverNow-Date.now();publicItems=data.items;updateCount();}catch{count.textContent='Meldungen öffnen ›';count.classList.remove('notice-board-new');}}
-  function renderNotice(n){
+  function renderNotice(n, published=false){
     const card=el('article',null,'notice-board-card'),heading=el('h3',n.title);card.append(heading);
     if(isNew(n))heading.append(el('span','NEU','notice-board-new'));
     const date=n.publishedAt?new Date(n.publishedAt).toLocaleDateString('de-DE',{timeZone:'Europe/Berlin'}):'';
     card.append(el('p',[n.category,date,n.status].filter(Boolean).join(' · '),'notice-board-meta'),el('p',n.description,'notice-board-description'));
     if(n.expires)card.append(el('p','Anzeigen bis '+n.expires.split('-').reverse().join('.')+' (einschließlich)','notice-board-meta'));
     const links=el('div',null,'notice-board-links');
-    for(const name of n.files){const a=el('a','📎 '+name);a.href=base()+'/files/'+encodeURIComponent(name);a.target='_blank';a.rel='noopener noreferrer';links.append(a);}
+    for(const name of n.files){const a=el('a','📎 '+name);NoticeAttachment.link(a,name,published);a.target='_blank';a.rel='noopener noreferrer';links.append(a);}
     for(const url of n.links){const a=el('a','↗ '+url);a.href=url;a.target='_blank';a.rel='noopener noreferrer';links.append(a);}
     card.append(links);return card;
   }
@@ -63,7 +63,7 @@
       if(!manage){publicItems=data.items;updateCount();}
       const items=manage?data.items:current(data.items);
       if(!items.length)content.append(el('p',manage?'Noch keine Meldungen angelegt.':'Derzeit keine aktuellen Meldungen'));
-      for(const n of items){const card=renderNotice(n);if(manage)card.append(button('Bearbeiten',()=>edit(n)));content.append(card);}
+      for(const n of items){const card=renderNotice(n,!manage);if(manage)card.append(button('Bearbeiten',()=>edit(n)));content.append(card);}
       content.scrollTop=background?scroll:0;
     }catch(error){if(ticket===generation)message(error.message,true);}
   }
