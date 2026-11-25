@@ -1,3 +1,4 @@
+import { handleNoticeBoard } from './notice-board.js';
 import { handleHsc08 } from './hsc08.js';
 import { processDailyLowTimeReminders, sendDailyLowTimeReminder, dailyLowTimeSnapshot } from './daily-low-time.js';
 import { handleSchacheckeApi, refreshGamerNews, CORNER_CRON } from './schachecke.js';
@@ -19647,6 +19648,17 @@ export class GameRoom {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname === '/api/notice-board' || url.pathname.startsWith('/api/notice-board/')) {
+      try {
+        return await handleNoticeBoard(request, env, {
+          json, session: req => lookupAuthSession(env, bearerTokenFromRequest(req)),
+          isAdmin: user => isAdminUser(user, env)
+        });
+      } catch (_) {
+        return json({ok:false, message:'Das Schwarze Brett ist derzeit nicht verfügbar.'}, {status:503, headers:{'cache-control':'no-store'}});
+      }
+    }
 
     if (url.pathname.startsWith('/api/hsc08/')) {
       try {
