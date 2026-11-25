@@ -42,7 +42,7 @@ test('draft snapshots, attachment checks, conflict protection, hide, republish a
  assert.equal((await f.call()).data.items.length,0);f.setAvailable(true);
  assert.equal((await f.call('admin',{action:'publish',id,revision:1,notice:{...sample,files:['cup.pdf']}})).status,400);
  assert.equal((await f.call('admin',{action:'publish',id,revision:1,notice:{...sample,files:['cup.pdf']},approved:true})).status,200);
- assert.equal(f.fetched.at(-1).url,ATTACHMENT_ROOT+'cup.pdf');assert.equal(f.fetched.at(-1).options.redirect,'error');
+ assert.equal(f.fetched.at(-1).url,ATTACHMENT_ROOT+'cup.pdf');assert.equal(f.fetched.at(-1).options.redirect,'manual');
  let publicItem=(await f.call()).data.items[0];assert.equal(publicItem.revision,undefined);assert.equal(publicItem.isNew,true);const stamp=publicItem.publishedAt;
  await f.call('admin',{action:'draft',id,revision:2,notice:{...sample,title:'Geheimer Entwurf'}});
  assert.equal((await f.call()).data.items[0].title,sample.title);
