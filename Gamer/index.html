@@ -57,7 +57,7 @@
 <script src="js/board-pinch-zoom.js?v=20261008-scroll-1"></script>
   <link rel="stylesheet" href="css/visitor-lobby.css?v=20261123-visitor-1">
 <link rel="stylesheet" href="css/game-list-view.css?v=20261105-1">
-  <link rel="stylesheet" href="css/notice-board.css?v=20261125-gestaltung">
+  <link rel="stylesheet" href="css/notice-board.css?v=20261125-nachrichten">
 </head>
 <body>
 <div class="app" role="main">
@@ -589,7 +589,6 @@
         <div id="infoCenterOverviewList" class="info-center-overview-list" tabindex="0" role="region" aria-label="Aktuelle Mitteilungen"></div>
       </section>
       </div>
-      <button id="noticeBoardOpen" class="button-flat notice-board-bar" type="button" aria-haspopup="dialog" aria-controls="noticeBoardDialog"><span>📌 Schwarzes Brett</span><span id="noticeBoardCount" aria-live="polite">Alle Meldungen ›</span></button>
       <div class="box global-chat-shell" aria-label="Aufgaben, Nachrichten und Chat">
         <div class="global-chat-header">
           <div class="lobby-chat-toggle-wrap">
@@ -614,7 +613,7 @@
             <div id="globalChatMembersList" class="global-chat-members-list"><div class="global-chat-member"><span class="presence-dot"></span><span class="global-chat-member-name">Noch niemand verbunden</span></div></div>
           </aside>
         </div>
-        <div id="lobbyCornerPanel" class="corner-layout" role="region" aria-label="Aufgaben der Woche und Gamer-Ticker" hidden>
+        <div id="lobbyCornerPanel" class="corner-layout" role="region" aria-label="Aufgaben der Woche und Nachrichten" hidden>
           <section class="corner-card corner-puzzles" aria-labelledby="weeklyHeading">
             <div class="weekly-header">
               <h2 id="weeklyHeading">Aufgaben der Woche</h2>
@@ -631,10 +630,19 @@
             <div class="weekly-actions"><button id="weeklyHint" class="button-flat" type="button">Tipp</button><button id="weeklySolution" class="button-flat" type="button">Lösung</button><button id="weeklyRepeat" class="button-flat" type="button">Wiederholen</button></div>
             <div id="weeklyLine" class="weekly-line" aria-label="Gespielte Züge" aria-live="polite" hidden></div>
           </section>
-          <section class="corner-card corner-news" aria-labelledby="gamerTickerHeading">
-            <h2 id="gamerTickerHeading">Gamer-Ticker</h2>
+          <section class="corner-card corner-news" aria-label="Nachrichten">
+            <div class="notice-news-tabs" role="tablist" aria-label="Nachrichtenquelle">
+              <button id="newsTickerTab" class="button-flat" type="button" role="tab" aria-selected="true" aria-controls="newsTickerPane">Gamer-Ticker</button>
+              <button id="newsBoardTab" class="button-flat" type="button" role="tab" aria-selected="false" aria-controls="newsBoardPane" tabindex="-1">📌 Schwarzes Brett <span id="noticeBoardCount" class="notice-board-new" hidden></span></button>
+            </div>
+            <div id="newsTickerPane" role="tabpanel" aria-labelledby="newsTickerTab">
             <div id="gamerTickerStatus" class="corner-meta" role="status" hidden></div>
             <ol id="gamerTickerList" class="gamer-ticker-list" aria-label="Neueste Schachnachrichten"></ol>
+            </div>
+            <div id="newsBoardPane" role="tabpanel" aria-labelledby="newsBoardTab" hidden>
+              <div id="noticeBoardRows">Meldungen werden geladen…</div>
+              <button id="noticeBoardManage" class="button-flat" type="button" hidden>Meldungen verwalten</button>
+            </div>
           </section>
         </div>
       </div>
@@ -2790,6 +2798,6 @@
 <script defer src="js/gamer-settings.js?v=20261105-list-1"></script>
 <script src="js/hsc08.js?v=20261124-verein-oeffentlich"></script>
 <script src="a/links.js"></script>
-<script src="js/notice-board.js?v=20261125-gestaltung"></script>
+<script src="js/notice-board.js?v=20261125-nachrichten"></script>
 </body>
 </html>
