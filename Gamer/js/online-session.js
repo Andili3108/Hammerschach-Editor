@@ -371,10 +371,21 @@ function formatStatsNumber(value){
   if(!Number.isFinite(number)) return '0';
   try{ return Math.max(0, Math.floor(number)).toLocaleString('de-DE'); } catch(_){ return String(Math.max(0, Math.floor(number))); }
 }
+const siteCommunityEl = document.getElementById('siteCommunity');
+function hideSiteStats(){
+  for(const el of [siteStatsEl, siteCommunityEl]){
+    if(el){ el.hidden = true; el.textContent = ''; }
+  }
+}
 let siteStatsRequestId = 0;
 let siteStatsCountedIdentity = '';
 function renderSiteStats(stats){
-  if(!siteStatsEl || !stats || !stats.today || !stats.yesterday) return;
+  if(!onlineAuthToken || !onlineAuthUser || !stats || !stats.today || !stats.yesterday){ hideSiteStats(); return; }
+  if(!siteStatsEl) return;
+  if(siteCommunityEl && Number.isFinite(stats.totalMembers)){
+    siteCommunityEl.textContent = 'Unsere Gemeinschaft: ' + formatStatsNumber(stats.totalMembers) + ' Mitglieder';
+    siteCommunityEl.hidden = false;
+  }
   const label = counts => formatStatsNumber(counts.members) + ' Mitglieder · ' + formatStatsNumber(counts.visitors) + ' Besucher';
   siteStatsEl.textContent = 'Heute: ' + label(stats.today) + ' | Gestern: ' + label(stats.yesterday);
   siteStatsEl.hidden = false;
@@ -408,13 +419,14 @@ async function refreshSiteStats(countVisit){
   if(!siteStatsEl) return;
   const requestId = ++siteStatsRequestId;
   const authToken = onlineAuthToken || '';
+  if(!authToken || !onlineAuthUser) hideSiteStats();
   try{
     const endpoint = onlineApiBaseUrl() + '/api/stats/daily';
-    const response = await fetch(endpoint, {cache:'no-store'});
+    const response = await fetch(endpoint, {cache:'no-store', headers:authToken ? {authorization:'Bearer ' + authToken} : {}});
     let data = await response.json();
     if(requestId !== siteStatsRequestId) return;
     if(!response.ok || !data || !data.ok) throw new Error('Tageszähler nicht verfügbar');
-    const day = data.stats && data.stats.today && data.stats.today.date;
+    const day = data.day || (data.stats && data.stats.today && data.stats.today.date);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) throw new Error('Ungültiger Zählertag');
     const identity = day + ':' + (authToken ? 'member:' + String(onlineAuthUser && onlineAuthUser.id || authToken) : 'visitor');
     if(countVisit && identity !== siteStatsCountedIdentity){
@@ -438,7 +450,7 @@ async function refreshSiteStats(countVisit){
     renderSiteStats(data.stats);
   } catch(_){
     // Keine alten Tageswerte oder erfundenen Nullen bei Verbindungsproblemen anzeigen.
-    if(requestId === siteStatsRequestId) siteStatsEl.hidden = true;
+    if(requestId === siteStatsRequestId) hideSiteStats();
   }
 }
 // Auch eine über Mitternacht geöffnete Seite erhält den neuen Kalendertag.
@@ -465,6 +477,8 @@ function saveAuthState(token, user){
   const previousUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
   onlineAuthToken = token || '';
   onlineAuthUser = user || null;
+  ++siteStatsRequestId;
+  hideSiteStats();
   window.dispatchEvent(new Event('hammerschach:auth-change'));
   const nextUserId = onlineAuthUser && onlineAuthUser.id ? String(onlineAuthUser.id) : '';
   if(previousUserId !== nextUserId){
