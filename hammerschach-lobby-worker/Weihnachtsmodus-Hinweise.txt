@@ -1,0 +1,64 @@
+Weihnachtsmodus – Änderung vom 26.11.2026
+
+Grundlage
+Der laut AGENTS.md freigegebene lokale Ordner Hammerschach-Gamer wurde verwendet.
+Keine ältere ZIP wurde eingespielt. Dieses Paket enthält nur neue/geänderte Dateien.
+
+Bereitstellung
+1. Die Dateien in Gamer/ unter Beibehaltung ihrer Unterordner hochladen.
+2. Die beiden Worker-Quelldateien in das bestehende Workerprojekt übernehmen und
+   den Worker wie gewohnt bereitstellen (im Workerordner: npm run deploy).
+   Vorhandene Konfiguration, Datenbankbindung und Zugangsdaten beibehalten.
+   src/index.js benötigt auch das neue Modul src/seasonal-design.js.
+3. Seite neu laden. Ein fehlender Wert wird beim ersten erfolgreichen Abruf
+   serverseitig in der vorhandenen Tabelle admin_settings als AN gespeichert.
+   Ein bereits gespeichertes AUS wird niemals durch Initialisierung überschrieben.
+4. Mein Profil > Admin-Systemübersicht > Saisonale Gestaltung > Weihnachtsmodus.
+   Nur die vorhandenen berechtigten Admins können serverseitig umschalten.
+   Bereits geöffnete Seiten übernehmen Änderungen spätestens beim nächsten
+   erfolgreichen 30-Sekunden-Abruf oder bei Rückkehr ins Browserfenster.
+
+Gestaltung und Verhalten
+Besucher: Weihnachtsbereich unmittelbar vor dem bisherigen Begrüßungs-/Info-Bereich.
+Desktop: Video links, Gruß rechts. Bis 700 Pixel Breite untereinander.
+Tannenzweige, Sterne und Kugeln sind lokale SVG-/Textgestaltung ohne externe Abrufe.
+Mitglieder: Nur das vorhandene Begrüßungsfeld erhält Festfarben und Weihnachtsmotto;
+persönliche Begrüßung und bestehender Wechsel bleiben erhalten. Kein Lobbyvideo.
+AUS: Weihnachtsbereich vollständig entfernt; Standard-Lobbymotto und -gestaltung.
+Keine Datumssteuerung. Bei noch unbekanntem Serverzustand bleibt die Gestaltung aus.
+Ein Speicherfehler zeigt eine Meldung und setzt den Schalter auf den bestätigten Wert.
+
+Video und Datenschutz
+Kein YouTube-Player, Vorschaubild oder YouTube-Netzwerkaufruf durch dieses Modul vor
+aktiver Zustimmung. Erst der Klick lädt youtube-nocookie.com/embed/cmm1gt_2SkQ.
+Kein Autoplay. Hinweis auf Datenübertragung und mögliche Anbieterwerbung vorhanden.
+Ein Link zum direkten Öffnen auf YouTube ist als Ausweichmöglichkeit enthalten.
+Beim Ausblenden wird der geladene Player entfernt; erneutes Laden erfordert Klick.
+
+WICHTIG: Der reale lokale Einbettungstest am 26.11.2026 zeigte im YouTube-Player
+„Dieses Video ist nicht verfügbar“ / „Auf YouTube ansehen“.
+Der Player-Endpunkt selbst war abrufbar. Erfolgreiche Wiedergabe ist NICHT bestätigt.
+Ursache (Video-/Regionsfreigabe, Testumgebung oder Einbettungskontext) nicht geklärt.
+Nach Bereitstellung auf der Gamer-Domain testen; bei gleicher Meldung ein anderes,
+einbettbares Video wählen. Werbefreiheit wird nicht zugesichert.
+
+Prüfungen
+- 3 neue Servertests erfolgreich: dauerhafte Initialisierung, AUS bleibt erhalten,
+  Adminschutz, ungültige Werte, parallele Initialisierung, Datenbankfehler.
+- Browserprüfung mit simulierten API-Antworten erfolgreich für Besucher, Mitglied,
+  Admin; 1440/820/390/320 Pixel; kein Überlauf im Weihnachtsbereich; mobile Stapelung;
+  keine YouTube-Anfrage vor Klick; Player wird beim Ausschalten entfernt;
+  Admin-Umschaltung, Fehler-Rücknahme, Standardmotto nach AUS, keine JS-Laufzeitfehler.
+- Desktop-/Mobilbilder visuell kontrolliert.
+- Syntaxprüfungen erfolgreich.
+- 11 bestehende Begrüßungstests erfolgreich. Ein bestehender Registrierungstest
+  scheitert an einer fehlenden Testfunktion handleSchacheckeApi. Derselbe Fehler
+  wurde auch ohne die Workeränderungen reproduziert; kein neuer Produktfehler belegt.
+- Keine Bereitstellung oder Änderung der produktiven Datenbank vorgenommen.
+- Keine Tests auf physischem iPad/iPhone; Größen im Chromium-Testbrowser simuliert.
+
+Tests erneut ausführen
+node --test tests/seasonal-design.test.mjs
+node tests/seasonal-design-browser.mjs
+Der Browsertest benötigt Playwright und Chromium. Bei Bedarf PLAYWRIGHT_MODULE und
+CHROMIUM_EXECUTABLE setzen. SCREENSHOT_DIR ist ein optionaler existierender Ausgabeordner.
