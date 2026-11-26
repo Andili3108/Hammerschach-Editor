@@ -1238,20 +1238,30 @@
 
   .site-footnote{
     text-align:center;
-    font-size:12px;
-    font-weight:700;
-    color:rgba(17,17,17,.48);
-    line-height:1.35;
+    font-size:14px;
+    font-weight:500;
+    color:var(--ui-muted);
+    line-height:1.5;
     padding:2px 8px 0;
     margin-top:22px;
-    user-select:none;
     width:100%;
     box-sizing:border-box;
+    overflow-wrap:anywhere;
+    text-wrap:pretty;
   }
-  .site-footnote a{color:rgba(132,63,70,.72);text-decoration:none;border-bottom:1px solid rgba(132,63,70,.22);}
-  .site-footnote a:hover{text-decoration:none;border-bottom-color:rgba(132,63,70,.72);}
-  .site-stats{margin-top:4px;font-size:12px;font-weight:700;color:rgba(17,17,17,.46);line-height:1.35;}
-  .site-stats[hidden]{display:none!important;}
+  .site-footnote > div + div{margin-top:4px;}
+  .site-footnote-title{font-size:14.4px;font-weight:700;color:var(--ui-text);text-wrap:balance;}
+  .site-footnote a,.site-footnote .site-footnote-button,
+  html.dark-mode .site-footnote a,html.dark-mode .site-footnote .site-footnote-button{
+    color:var(--ui-accent)!important;text-decoration:none;
+    border-bottom:1px solid currentColor!important;
+  }
+  .site-footnote a:hover,.site-footnote .site-footnote-button:hover{color:var(--ui-text)!important;}
+  .site-footnote a:focus-visible,.site-footnote .site-footnote-button:focus-visible{outline:2px solid var(--ui-accent);outline-offset:4px;}
+  .site-stats,.site-community{font-size:inherit;font-weight:500;color:var(--ui-muted);line-height:inherit;}
+  .site-stats{text-wrap:balance;}
+  .site-stats[hidden],.site-community[hidden]{display:none!important;}
+
 
 
   .chat-moderation-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;}
