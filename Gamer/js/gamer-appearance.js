@@ -7,12 +7,13 @@
   const root=document.documentElement;
   const deviceScheme=typeof window.matchMedia==='function'?window.matchMedia('(prefers-color-scheme: dark)'):null;
   let requestedScheme='soft',automaticNight=false,parentPreferences=false;
+  let temporaryDark = false;
   function normalize(value){return schemes.includes(value)?value:'soft';}
   function current(){return normalize(root.dataset.colorScheme);}
   function apply(value,autoNight=automaticNight){
     requestedScheme=normalize(value);
     automaticNight=autoNight===true;
-    const scheme=automaticNight?(deviceScheme?.matches?'dark':requestedScheme==='dark'?'soft':requestedScheme):requestedScheme;
+    const scheme=temporaryDark?'dark':automaticNight?(deviceScheme?.matches?'dark':requestedScheme==='dark'?'soft':requestedScheme):requestedScheme;
     const changed=root.dataset.colorScheme!==scheme;
     root.dataset.colorScheme=scheme;
     root.classList.toggle('dark-mode',scheme==='dark');
@@ -20,6 +21,11 @@
     root.style.colorScheme=scheme==='dark'?'dark':'light';
     if(changed)window.dispatchEvent(new CustomEvent('hammerschach:appearance',{detail:{scheme}}));
     return scheme;
+  }
+  function setTemporaryDark(active){
+    if(temporaryDark === active) return;
+    temporaryDark = active;
+    apply(requestedScheme, automaticNight);
   }
   function read(){
     try{
@@ -45,7 +51,7 @@
     try{localStorage.setItem(key,scheme);}catch(_){}
     apply(scheme);
   }
-  window.HammerschachAppearance={normalize,current,apply,select,cycle(){select(schemes[(schemes.indexOf(current())+1)%schemes.length]);}};
+  window.HammerschachAppearance={normalize,current,apply,select,setTemporaryDark,get temporaryDark(){return temporaryDark;},cycle(){select(schemes[(schemes.indexOf(current())+1)%schemes.length]);}};
   window.addEventListener('storage',event=>{
     if(event.key===key)apply(event.newValue);
     else if(event.key===preferencesKey||event.key===null)refresh();

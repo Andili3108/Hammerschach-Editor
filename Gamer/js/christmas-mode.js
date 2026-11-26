@@ -9,8 +9,22 @@
   const toggle = document.getElementById('christmasModeToggle');
   const status = document.getElementById('seasonalAdminStatus');
   let enabled = false, known = false, saving = false, revision = 0, loading = false;
+  let visitorChoseAppearance = false;
+  function syncVisitorAppearance() {
+    const visible = !panel.hidden && panel.getClientRects().length > 0;
+    window.HammerschachAppearance.setTemporaryDark(visible && !visitorChoseAppearance);
+  }
+  window.addEventListener('hammerschach:preferences-edit', ({detail}) => {
+    if (detail.name === 'scheme' || detail.name === 'autoNight') {
+      visitorChoseAppearance = true;
+      syncVisitorAppearance();
+    }
+  });
+  // Navigation can hide the lobby via an ancestor without hiding the card itself.
+  new ResizeObserver(syncVisitorAppearance).observe(panel);
   function sync() {
     panel.hidden = !enabled || welcome.hidden;
+    syncVisitorAppearance();
     if (panel.hidden && video.querySelector('iframe')) video.replaceChildren(consent);
     document.documentElement.classList.toggle('christmas-mode', enabled);
     adminPanel.hidden = !isCurrentUserAdmin();
