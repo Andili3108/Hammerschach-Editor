@@ -58,6 +58,7 @@
   <link rel="stylesheet" href="css/visitor-lobby.css?v=20261123-visitor-1">
 <link rel="stylesheet" href="css/game-list-view.css?v=20261105-1">
   <link rel="stylesheet" href="css/notice-board.css?v=20261125-nachrichten">
+<link rel="stylesheet" href="css/christmas-mode.css?v=20261126-1">
 </head>
 <body>
 <div class="app" role="main">
@@ -560,6 +561,29 @@
     </div>
 
     <section id="memberLobby" class="member-lobby" hidden aria-label="Mitglieder-Lobby">
+      <section id="christmasWelcome" class="christmas-welcome" hidden aria-labelledby="christmasTitle">
+        <div class="christmas-ornaments" aria-hidden="true"><svg class="christmas-branch" viewBox="0 0 90 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 27L86 10M18 24L9 12M29 22L20 6M40 20L33 3M51 17L47 2M62 15L61 2M25 23L18 31M39 20L33 30M53 17L49 29M67 14L65 26"/><circle cx="42" cy="27" r="4" fill="#a17b37" stroke="#a17b37"/></svg> ✦ ● ✦ <svg class="christmas-branch" viewBox="0 0 90 32" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 27L86 10M18 24L9 12M29 22L20 6M40 20L33 3M51 17L47 2M62 15L61 2M25 23L18 31M39 20L33 30M53 17L49 29M67 14L65 26"/><circle cx="42" cy="27" r="4" fill="#a17b37" stroke="#a17b37"/></svg></div>
+        <h2 id="christmasTitle">Frohe Weihnachten!</h2>
+        <div class="christmas-columns">
+          <div>
+            <div id="christmasVideo" class="christmas-video">
+              <div class="christmas-consent">
+                <span class="christmas-music" aria-hidden="true">♫</span>
+                <strong>Boney M. – Mary's Boy Child</strong>
+                <p>Mit deinem Klick wird eine Verbindung zu YouTube hergestellt und es werden Daten an den Anbieter übertragen.</p>
+                <button id="christmasVideoLoad" class="button-flat" type="button">YouTube-Video laden</button>
+              </div>
+            </div>
+            <p class="christmas-video-note">Externes YouTube-Video – möglicherweise mit Werbung des Anbieters. Kein automatischer Wiedergabestart. <a href="https://www.youtube.com/watch?v=cmm1gt_2SkQ" target="_blank" rel="noopener noreferrer">Bei Wiedergabeproblemen auf YouTube öffnen</a>.</p>
+          </div>
+          <div class="christmas-greeting">
+            <h3>Weihnachten verbindet. Schach auch.</h3>
+            <p>Liebe Schachfreunde, wir wünschen euch und euren Familien ein frohes Weihnachtsfest, besinnliche Stunden und viele schöne gemeinsame Momente.</p>
+            <p>Genießt die Zeit miteinander – und vielleicht auch die eine oder andere Partie am Schachbrett.</p>
+            <p class="christmas-signature">Herzliche Weihnachtsgrüße<br>euer Hammerschach-Gamer</p>
+          </div>
+        </div>
+      </section>
       <div class="lobby-overview">
       <section id="visitorWelcome" class="visitor-welcome" hidden aria-labelledby="visitorWelcomeTitle">
         <div class="visitor-welcome-heading">
@@ -1379,6 +1403,12 @@
         <h3 id="adminOverviewTitle">Admin-Systemübersicht</h3>
         <div id="adminOverviewGenerated" class="admin-overview-generated"></div>
         <div class="admin-overview-scroll">
+          <section id="seasonalAdmin" class="admin-section" hidden aria-labelledby="seasonalAdminTitle">
+            <h4 id="seasonalAdminTitle">Saisonale Gestaltung</h4>
+            <label><input id="christmasModeToggle" type="checkbox" role="switch" disabled> Weihnachtsmodus</label>
+            <p>Weihnachtsgestaltung auf Besucher-Startseite und in der Lobby für alle ein- oder ausschalten. Ohne automatische Datumssteuerung.</p>
+            <p id="seasonalAdminStatus" role="status" aria-live="polite"></p>
+          </section>
           <div id="adminOverviewSummary" class="admin-summary-grid" aria-live="polite"></div>
 
           <section class="admin-section" aria-labelledby="adminSecurityTitle">
@@ -2721,7 +2751,7 @@
 <script src="js/training-impulses.js?v=20261021-auto-night-1"></script>
 <script src="js/embedded-tools.js?v=20261028-reader-height-1"></script>
 <script src="js/member-avatars.js?v=20260917-theme-3"></script>
-<script src="js/lobby-welcome.js?v=20261124-1"></script>
+<script src="js/lobby-welcome.js?v=20261126-christmas-1"></script>
 <script src="js/lobby-chat-unread.js?v=20261011-2"></script>
 <script src="js/global-chat-lobby.js?v=20261028-visitor-1"></script>
 <script src="js/admin-overview.js?v=20261027-daily-reminder-1"></script>
@@ -2807,5 +2837,6 @@
 <script src="js/hsc08.js?v=20261124-verein-oeffentlich"></script>
 <script src="a/links.js"></script>
 <script src="js/notice-board.js?v=20261125-nachrichten"></script>
+<script src="js/christmas-mode.js?v=20261126-1"></script>
 </body>
 </html>
