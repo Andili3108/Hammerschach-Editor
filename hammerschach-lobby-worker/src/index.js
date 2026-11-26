@@ -10563,20 +10563,28 @@ async function recordDailyGamerVisit(env, days, kind, identity, visitorToken = '
 
 async function handleDailyGamerStats(request, env) {
   const headers = {'cache-control':'no-store, max-age=0'};
-  if (request.method === 'GET') return json({ok:true, stats:await readDailyGamerStats(env)}, {headers});
-  const body = await readJsonBody(request);
   const token = bearerTokenFromRequest(request);
   const session = token ? await lookupAuthSession(env, token) : null;
   // Abgelaufene Anmeldungen nicht versehentlich als zusätzliche Besucher zählen.
   if (token && !session) return json({ok:false, code:'NOT_AUTHENTICATED'}, {status:401, headers});
   const days = gamerStatsDays();
+  const response = async () => {
+    // Öffentlich nur den Zähltag liefern; keine Mitglieder- oder Besuchszahlen.
+    if (!session) return json({ok:true, day:days.today}, {headers});
+    const stats = await readDailyGamerStats(env, days);
+    const members = await env.DB.prepare('SELECT COUNT(*) AS total FROM users').first();
+    stats.totalMembers = Number(members.total);
+    return json({ok:true, day:days.today, stats}, {headers});
+  };
+  if (request.method === 'GET') return response();
+  const body = await readJsonBody(request);
   if (!body || body.day !== days.today) return json({ok:false, code:'STATS_DAY_CHANGED'}, {status:409, headers});
   const visitorToken = String(body.visitorToken || '');
   if (!session && !/^[a-f0-9]{32}$/.test(visitorToken)) {
     return json({ok:false, code:'INVALID_VISITOR_TOKEN'}, {status:400, headers});
   }
   await recordDailyGamerVisit(env, days, session ? 'member' : 'visitor', session ? String(session.user.id) : visitorToken, visitorToken);
-  return json({ok:true, stats:await readDailyGamerStats(env)}, {headers});
+  return response();
 }
 
 async function createSession(env, userId) {
