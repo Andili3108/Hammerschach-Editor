@@ -1,3 +1,4 @@
+import { handleSeasonalApi } from './seasonal-design.js';
 import { handleNoticeBoard } from './notice-board.js';
 import { handleHsc08 } from './hsc08.js';
 import { processDailyLowTimeReminders, sendDailyLowTimeReminder, dailyLowTimeSnapshot } from './daily-low-time.js';
@@ -10889,6 +10890,10 @@ async function handleAuthApi(request, env, url) {
       return json({ok:false, code:'HAMMERSCHACH_TV_REFRESH_FAILED', message:'Die YouTube-Suche konnte nicht aktualisiert werden.'}, {status:500});
     }
   }
+
+  const seasonalResponse = ['/api/seasonal-design', '/api/admin/seasonal-design'].includes(url.pathname)
+    ? await handleSeasonalApi(request, env, url, {json, requireAdminSession, readJsonBody, ensureAdminSettingsTable, readAdminSetting, writeAdminSetting}) : null;
+  if (seasonalResponse) return seasonalResponse;
 
   const lobbyWelcomeResponse = url.pathname === '/api/account/lobby-welcome'
     ? await handleLobbyWelcomeApi(request, env, url, {json, lookupAuthSession, bearerTokenFromRequest, readJsonBody}) : null;
