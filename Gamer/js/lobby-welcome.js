@@ -55,7 +55,14 @@ function syncLobbyWelcomeDisplay(){
       statusEl.textContent = text;
     return;
   }
-  if(statusEl.firstElementChild?.classList.contains('lobby-welcome-source')) return;
+  const seasonalMotto = document.documentElement.classList.contains('christmas-mode')
+    ? 'Wir wünschen dir eine hammermäßige Weihnachtszeit!'
+    : 'Zeit für deinen nächsten Hammerzug.';
+  if(statusEl.firstElementChild?.classList.contains('lobby-welcome-source')){
+    const existingMotto = statusEl.querySelector('.lobby-welcome-motto');
+    if(existingMotto) existingMotto.dataset.text = seasonalMotto;
+    return;
+  }
   const source = document.createElement('span');
   source.className = 'lobby-welcome-source';
   source.textContent = text;
@@ -66,7 +73,7 @@ function syncLobbyWelcomeDisplay(){
   const motto = document.createElement('span');
   motto.className = 'lobby-welcome-motto';
   motto.setAttribute('aria-hidden','true');
-  motto.dataset.text = 'Zeit für deinen nächsten Hammerzug.';
+  motto.dataset.text = seasonalMotto;
   statusEl.replaceChildren(source, greeting, motto);
   statusEl.classList.add('lobby-welcome-rotating');
 }
