@@ -1,0 +1,38 @@
+.christmas-welcome[hidden], #seasonalAdmin[hidden] { display:none !important; }
+.christmas-welcome {
+  box-sizing:border-box; position:relative; margin:0 0 20px; padding:20px 26px 26px;
+  color:#572834; background:linear-gradient(135deg,#fffaf0,#f4e7ce);
+  border:2px solid #b39350; border-radius:18px;
+  box-shadow:inset 0 0 0 5px #fff8e8,inset 0 0 0 6px #cfb779,0 6px 20px #42162318;
+}
+.christmas-ornaments { color:#86662f; text-align:center; letter-spacing:.25em; font-size:23px; }
+.christmas-welcome h2 { margin:8px 0 22px; color:#702b3d; text-align:center; font:700 clamp(26px,4vw,36px)/1.2 Georgia,serif; }
+.christmas-columns { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:28px; align-items:center; }
+.christmas-video { aspect-ratio:16/9; display:flex; background:#69283b; color:#fff5df; border:1px solid #ac8a43; border-radius:12px; overflow:hidden; }
+.christmas-consent { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px; gap:10px; }
+.christmas-music { font-size:30px; color:#ead49d; }
+.christmas-consent p { font-size:13px; line-height:1.5; margin:0; max-width:380px; }
+.christmas-consent .button-flat { background:#fff4d9; color:#632338; border:1px solid #d7b76c; min-height:44px; white-space:normal; }
+.christmas-video iframe { width:100%; height:100%; border:0; }
+.christmas-video-note { margin:9px 0 0; font-size:12px; line-height:1.5; color:#634d40; }
+.christmas-video-note a { color:#702b3d; text-decoration:underline; }
+.christmas-greeting h3 { font:700 clamp(22px,2.6vw,29px)/1.25 Georgia,serif; color:#702b3d; margin:0 0 16px; }
+.christmas-greeting p { line-height:1.65; margin:0 0 12px; }
+.christmas-signature { font-style:italic; }
+.christmas-mode #status.lobby-welcome-rotating { background:linear-gradient(110deg,#fff6e5,#f0dfb8); color:#702b3d; border:1px solid #b39350; border-radius:12px; padding:10px 16px; }
+.christmas-mode #status.lobby-welcome-rotating .lobby-welcome-motto { color:#702b3d; }
+#seasonalAdmin input { accent-color:#702b3d; width:20px; height:20px; vertical-align:middle; }
+#seasonalAdmin label { display:flex; gap:10px; align-items:center; min-height:44px; font-weight:bold; }
+@media(max-width:700px) {
+  .christmas-welcome { padding:16px; }
+  .christmas-columns { grid-template-columns:minmax(0,1fr); gap:20px; }
+  .christmas-consent { padding:14px; }
+  .christmas-video { min-height:240px; }
+  .christmas-music { font-size:24px; }
+}
+.christmas-welcome { min-width:0; }
+.christmas-branch { width:86px; height:32px; vertical-align:middle; color:#49644c; }
+.christmas-branch:last-child { transform:scaleX(-1); }
+.christmas-columns > div, .christmas-consent { min-width:0; }
+.christmas-video { width:100%; min-width:0; box-sizing:border-box; }
+.christmas-consent { box-sizing:border-box; }
