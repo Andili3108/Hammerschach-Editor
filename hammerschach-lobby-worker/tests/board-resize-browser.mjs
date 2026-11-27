@@ -58,6 +58,7 @@ async function grabAndAim(page, from, to) {
 
 async function fixture(page,account=andili){
     await page.addInitScript(user => {
+      if(!user)return;
       localStorage.setItem('hammerschachGamerAuthToken','fixture-token');
       localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));
     },account);
@@ -76,13 +77,13 @@ async function fixture(page,account=andili){
       }
       if (url.pathname === '/api/account/preferences') {
         if(route.request().headers().authorization!=='Bearer fixture-token'){
-          return route.fulfill({json:{ok:true,preferences:{screenFit:true}}});
+          return route.fulfill({json:{ok:true,preferences:{screenFit:false}}});
         }
         if(route.request().method()==='POST'){
           const patch=route.request().postDataJSON().preferences;
           if(typeof patch.screenFit==='boolean')saved=patch.screenFit;
         }
-        return route.fulfill({json:{ok:true,screenFitAccount:account.id,preferences:{screenFit:saved}}});
+        return route.fulfill({json:{ok:true,preferences:{screenFit:saved}}});
       }
       if(url.origin!==origin && url.pathname.startsWith('/api/'))return route.fulfill({json:{
         ok:true,user:account,christmasEnabled:true,allowed:true,stats:{},games:[],members:[],
@@ -401,7 +402,7 @@ try {
     await page.evaluate(()=>saveAuthState('other',{id:'two',username:'Mitglied',isAdmin:false}));
     await page.waitForFunction(()=>!HammerschachScreenFit.enabled);
     await page.evaluate(()=>HammerschachSettings.open());
-    assert.equal(await page.getByLabel('Automatische Bildschirmoptimierung').count(),0);
+    assert.equal(await page.getByLabel('Automatische Bildschirmoptimierung').isChecked(),false);
     await page.evaluate(()=>saveAuthState('',null));
     assert.equal(await page.evaluate(()=>HammerschachScreenFit.scale),1);
     await page.close();
@@ -423,6 +424,34 @@ try {
     await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
     await page.reload();
     await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
+    await page.close();
+  }
+  {
+    const page=await browser.newPage({viewport:{width:1920,height:1080}});
+    await fixture(page,null);
+    await page.goto(origin);
+    await page.locator('#visitorWelcome').waitFor();
+    await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
+    await page.locator('#themeToggleBtn').click();
+    const toggle=page.getByRole('checkbox',{name:'Automatische Bildschirmoptimierung'});
+    assert.equal(await toggle.isChecked(),true);
+    assert.equal(await toggle.evaluate(el=>getComputedStyle(el.labels[0].querySelector('span')).fontWeight),'700');
+    await toggle.uncheck();
+    await page.reload();
+    await page.locator('#visitorWelcome').waitFor();
+    await page.locator('#themeToggleBtn').click();
+    assert.equal(await toggle.isChecked(),false);
+    assert.equal(await page.evaluate(()=>HammerschachScreenFit.scale),1);
+    saved=undefined;
+    await page.evaluate(()=>saveAuthState('fixture-token',{id:'regular',username:'Mitglied',isAdmin:false}));
+    await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
+    await toggle.uncheck();
+    await page.waitForFunction(()=>document.querySelector('#settingsSaveStatus').textContent==='Im Mitgliedskonto gespeichert.');
+    assert.equal(saved,false);
+    await toggle.check();
+    await page.evaluate(()=>saveAuthState('',null));
+    await page.locator('#visitorWelcome').waitFor({state:'attached'});
+    assert.equal(await toggle.isChecked(),false,'Besucherwahl nach Logout wiederhergestellt');
     await page.close();
   }
   assert.deepEqual(failures, [], 'Ein Größenwechsel darf keinen Zug auf ein anderes Feld auslösen.');
