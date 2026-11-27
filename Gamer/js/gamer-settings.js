@@ -130,7 +130,10 @@
  if(error.data?.code==='NOT_ALLOWED'||error.data?.code==='NOT_AUTHENTICATED'){clearTester();delete dirty.screenFit;}
  cache();say(Object.hasOwn(batch,'screenFit')?'Bildschirmoptimierung konnte nicht im Konto gespeichert werden.':'Auf diesem Gerät gespeichert. Kontospeicherung fehlgeschlagen; bitte erneut versuchen.',true);return;}finally{if(ticket===generation){saving=false;inFlight={};}}if(Object.keys(dirty).length)save();}
  window.addEventListener('hammerschach:preferences-edit',e=>{if(e.detail.name==='moveMethod'){say('Zugmethode auf diesem Gerät gespeichert.');return;}if(!account){say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}dirty[e.detail.name]=e.detail.value;cache();clearTimeout(timer);timer=setTimeout(save,350);});
- window.addEventListener('hammerschach:auth-change',()=>{if(sessionToken!==onlineAuthToken||account!==String(onlineAuthUser?.id||'')||onlineAuthUser?.isAdmin!==true)clearTester();queueMicrotask(()=>syncAccount());});
+ window.addEventListener('hammerschach:auth-change',()=>{
+   if(sessionToken!==onlineAuthToken||account!==String(onlineAuthUser?.id||''))clearTester();
+   queueMicrotask(()=>syncAccount());
+ });
  window.addEventListener('storage',event=>{
    if(event.key===ONLINE_AUTH_TOKEN_STORAGE_KEY || event.key===null){
      if(localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY)!==sessionToken)clearTester();
