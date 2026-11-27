@@ -90,7 +90,7 @@
   let visitorChoseAppearance = false;
   function syncVisitorAppearance() {
     const visible = !panel.hidden && panel.getClientRects().length > 0;
-    window.HammerschachAppearance.setTemporaryDark(visible && !visitorChoseAppearance);
+    window.HammerschachAppearance.setTemporarySoft(visible && !visitorChoseAppearance);
   }
   window.addEventListener('hammerschach:preferences-edit', ({detail}) => {
     if (detail.name === 'scheme' || detail.name === 'autoNight') {
