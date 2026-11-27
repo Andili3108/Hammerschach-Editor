@@ -100,7 +100,12 @@
     return clamp(Math.floor(Math.min(MAX_SIZE,widthLimit,heightLimit) / STEP) * STEP,MIN_SIZE,MAX_SIZE);
   }
 
+  function automaticSize(){
+    return embedded ? parentState?.automatic === true : window.HammerschachScreenFit?.enabled === true;
+  }
+
   function effectiveSize(){
+    if(automaticSize()) return DEFAULT_SIZE;
     return Math.min(preferredSize,maximumFittingSize());
   }
 
@@ -150,7 +155,9 @@
   function applySize(forceCompactDecision){
     const available = desktopViewport() && (!!tool || !!activeTool() || roomContext());
     root.classList.toggle('shared-desktop-board',available);
-    wrap.hidden = !available;
+    const manual = available && !automaticSize();
+    wrap.hidden = !manual;
+    if(!manual) closePopup(false);
 
     if(!available){
       root.classList.remove('desktop-board-sizing-active','desktop-board-compact');
@@ -171,7 +178,7 @@
     updateCompactMode(effective,forceCompactDecision);
     /* Der kompakte Header ist unabhängig von der Brettgröße. Der Zugriff auf
        die Brettgröße bleibt trotzdem an die bestehende Desktopprüfung gebunden. */
-    if(compactButton) compactButton.hidden = !available || !!activeTool();
+    if(compactButton) compactButton.hidden = !manual || !!activeTool();
     updateControls(effective,true);
 
     window.dispatchEvent(new CustomEvent('hammerschach:board-size-change',{
@@ -210,7 +217,7 @@
   });
 
   function openPopup(anchor){
-    if(anchor.hidden || wrap.hidden) return;
+    if(automaticSize() || anchor.hidden || wrap.hidden) return;
     popupAnchor = anchor;
     popup.hidden = false;
     boardButton.setAttribute('aria-expanded',String(anchor === boardButton));
@@ -230,6 +237,7 @@
   }
 
   function setPreferredSize(value,commit){
+    if(automaticSize()) return;
     preferredSize = normalizedSize(value);
     // In the Gamer, only the parent writes storage. A second writer could
     // replay an older change while the user is already changing another tool.
@@ -239,7 +247,7 @@
     if(!popup.hidden && popupAnchor) requestAnimationFrame(() => positionPopup(popupAnchor));
   }
 
-  window.HammerschachBoardSize = {set:value=>setPreferredSize(value,true),get:()=>preferredSize,available:desktopViewport};
+  window.HammerschachBoardSize = {set:value=>setPreferredSize(value,true),get:()=>automaticSize() ? DEFAULT_SIZE : preferredSize,available:()=>desktopViewport() && !automaticSize()};
   window.dispatchEvent(new Event('hammerschach:board-size-ready'));
   boardButton.addEventListener('click',() => togglePopup(boardButton));
   if(compactButton) compactButton.addEventListener('click',() => togglePopup(compactButton));
@@ -265,6 +273,7 @@
   window.addEventListener('resize',() => scheduleApply(true),{passive:true});
   window.addEventListener('orientationchange',() => scheduleApply(true),{passive:true});
   window.addEventListener('popstate',() => scheduleApply(true));
+  window.addEventListener('hammerschach:screen-fit-mode',()=>applySize(true));
 
   function postParent(message){
     window.parent.postMessage(message,location.origin === 'null' ? '*' : location.origin);
@@ -272,7 +281,7 @@
 
   function broadcastState(){
     if(tool) return;
-    const message = {type:'hammerschach-board-size-state',preferred:preferredSize,
+    const message = {type:'hammerschach-board-size-state',preferred:automaticSize() ? DEFAULT_SIZE : preferredSize, automatic:automaticSize(),
       effective:effectiveSize(),desktop:desktopViewport()};
     toolFrames().forEach(frame => {
       if(frame.contentWindow) frame.contentWindow.postMessage(message,location.origin === 'null' ? '*' : location.origin);
@@ -285,7 +294,7 @@
     if(!message || typeof message !== 'object') return;
     if(embedded && event.source === window.parent && message.type === 'hammerschach-board-size-state'){
       if(!Number.isFinite(message.preferred) || !Number.isFinite(message.effective)) return;
-      parentState = {desktop:message.desktop === true,effective:normalizedSize(message.effective)};
+      parentState = {automatic:message.automatic === true,desktop:message.desktop === true,effective:normalizedSize(message.effective)};
       preferredSize = normalizedSize(message.preferred);
       applySize(true);
     }else if(!tool && toolFrames().some(frame => frame.contentWindow === event.source)){
