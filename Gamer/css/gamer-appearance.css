@@ -5,6 +5,7 @@
  */
 :root {
   --ui-page:#f6f7fb;
+  --page-background:radial-gradient(ellipse at 50% 40%, #f2f1ee 0%, #e8e6e2 100%);
   --ui-surface:#ffffff;
   --ui-surface-alt:#f0f1f4;
   --ui-hover:#e4e6eb;
@@ -25,6 +26,7 @@
 }
 html.dark-mode {
   --ui-page:#171a1f;
+  --page-background:radial-gradient(ellipse at 50% 40%, #202328 0%, #171a1f 100%);
   --ui-surface:#24282f;
   --ui-surface-alt:#2e333c;
   --ui-hover:#3b424d;
@@ -44,6 +46,7 @@ html.dark-mode {
 }
 html.soft-mode {
   --ui-page:#d6d2ca;
+  --page-background:var(--ui-page);
   --ui-surface:#eeeae2;
   --ui-surface-alt:#e2ddd4;
   --ui-hover:#d4cec3;
@@ -73,8 +76,8 @@ html.soft-mode {
 }
 html, html body { color:var(--ui-text); }
 html.hammerschach-standalone, html.hammerschach-standalone body,
-html.soft-mode, html.soft-mode body { background:var(--ui-page); }
-html.dark-mode, html.dark-mode body { background:var(--ui-page)!important; }
+html.soft-mode, html.soft-mode body { background:var(--page-background); }
+html.dark-mode, html.dark-mode body { background:var(--page-background)!important; }
 /* Dialog copy and labels must not inherit the old light-only inline colors. */
 :is(.identity-modal,.info-modal,.invite-modal,.daily-games-modal,.open-offers-modal,.public-games-modal,.game-archive-modal,.admin-overview-modal,.promo-modal) {
   color:var(--ui-text);background:var(--ui-surface);box-shadow:var(--ui-shadow);
@@ -102,4 +105,3 @@ html.soft-mode #gamerSettings button[aria-pressed=true],html.soft-mode #gamerSet
 html.soft-mode :is(.header,.box,.identity-modal,.info-modal,.visitor-board-welcome) {box-shadow:var(--ui-shadow);}
 html.soft-mode .status {background:linear-gradient(135deg,var(--ui-surface),var(--ui-surface-alt));}
 html.soft-mode button {text-shadow:none;}
-html.soft-mode.hammerschach-standalone body::before,html.soft-mode.hammerschach-standalone body::after {opacity:.12;}
