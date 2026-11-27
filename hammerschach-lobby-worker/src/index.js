@@ -10599,6 +10599,16 @@ async function createSession(env, userId) {
   return token;
 }
 
+// Pin the existing member id once. Renaming or reusing the login name must
+// never transfer the screen-fit trial to another account.
+async function isScreenFitTester(user, env) {
+  if (isAdminUser(user, env) && String(user.username).toLowerCase() === 'andili') return true;
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS screen_fit_member_pilot AS
+    SELECT id AS user_id FROM users WHERE username_lc = 'fabili'`).run();
+  const pilot = await env.DB.prepare('SELECT user_id FROM screen_fit_member_pilot WHERE user_id = ?').bind(user.id).first();
+  return !!pilot;
+}
+
 async function lookupAuthSession(env, token) {
   if (!env || !env.DB || !token) return null;
   const tokenHash = await sha256Hex(token);
@@ -10988,7 +10998,7 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
     try {
-      const screenTester = isAdminUser(session.user, env) && String(session.user.username).toLowerCase() === 'andili';
+      const screenTester = await isScreenFitTester(session.user, env);
       if(request.method === 'GET'){
         const preferences = await getGamerPreferences(env,session.user.id);
         if (!screenTester) delete preferences.screenFit;
