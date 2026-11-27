@@ -10,17 +10,30 @@
   const status = document.getElementById('seasonalAdminStatus');
   // Reuse the existing fir artwork. Fit each branch only into measured free space.
   const headers = [...document.querySelectorAll('.shell > header')];
-  const decorations = headers.map(header => {
+  const decorations = headers.map((header, headerIndex) => {
     const layer = document.createElement('div');
     layer.className = 'lobby-christmas-ornaments';
     layer.setAttribute('aria-hidden', 'true');
     for (const side of ['left', 'right']) {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('viewBox', '0 0 240 88');
+      // Clone the complete visitor corner, including baubles and local gradients.
+      // Unique IDs keep it independent of the hidden visitor panel in member view.
+      const svg = panel.querySelector('.christmas-corner').cloneNode(true);
+      const prefix = 'lobbyFir-' + headerIndex + '-' + side + '-';
+      const ids = new Map([...svg.querySelectorAll('[id]')].map(el => [el.id, prefix + el.id]));
+      for (const el of [svg, ...svg.querySelectorAll('*')]) {
+        for (const attr of [...el.attributes]) {
+          let value = attr.value;
+          if (attr.name === 'id') value = ids.get(value);
+          else for (const [id, replacement] of ids) {
+            if (value === '#' + id) value = '#' + replacement;
+            value = value.replaceAll('url(#' + id + ')', 'url(#' + replacement + ')');
+          }
+          el.setAttribute(attr.name, value);
+        }
+      }
       svg.setAttribute('focusable', 'false');
-      svg.classList.add('lobby-christmas-branch');
+      svg.setAttribute('class', 'lobby-christmas-branch');
       svg.dataset.side = side;
-      svg.innerHTML = '<use href="#gamerFirCorner"/>';
       svg.setAttribute('hidden', '');
       layer.append(svg);
     }
@@ -39,10 +52,12 @@
         // Search inward from the corner, keeping clear of the logo, help and settings.
         for (const width of [150, 120, 90, 60]) {
           const height = width * 88 / 240;
+          if (height + 8 > bounds.height) continue;
           let found = false;
           for (let inset = 8; inset <= Math.min(240, bounds.width / 3); inset += 8) {
             const left = branch.dataset.side === 'left' ? bounds.left + inset : bounds.right - inset - width;
             const top = bounds.top + 4;
+            if (left < bounds.left + 4 || left + width > bounds.right - 4) continue;
             if (occupied.some(r => left < r.right + 4 && left + width > r.left - 4 && top < r.bottom + 4 && top + height > r.top - 4)) continue;
             branch.style.cssText = 'top:4px;left:' + (left - bounds.left) + 'px;width:' + width + 'px;height:' + height + 'px;' + (branch.dataset.side === 'right' ? 'transform:scaleX(-1)' : '');
             branch.removeAttribute('hidden');
