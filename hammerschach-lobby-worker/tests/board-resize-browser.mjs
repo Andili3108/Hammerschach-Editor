@@ -56,11 +56,11 @@ async function grabAndAim(page, from, to) {
   return end;
 }
 
-async function fixture(page){
+async function fixture(page,account=andili){
     await page.addInitScript(user => {
       localStorage.setItem('hammerschachGamerAuthToken','fixture-token');
       localStorage.setItem('hammerschachGamerAuthUser',JSON.stringify(user));
-    },andili);
+    },account);
 
     await page.routeWebSocket(/.*/, socket => socket.close());
     // Serve only the local fixture. No live accounts, requests or games.
@@ -82,10 +82,10 @@ async function fixture(page){
           const patch=route.request().postDataJSON().preferences;
           if(typeof patch.screenFit==='boolean')saved=patch.screenFit;
         }
-        return route.fulfill({json:{ok:true,screenFitAccount:andili.id,preferences:{screenFit:saved}}});
+        return route.fulfill({json:{ok:true,screenFitAccount:account.id,preferences:{screenFit:saved}}});
       }
       if(url.origin!==origin && url.pathname.startsWith('/api/'))return route.fulfill({json:{
-        ok:true,user:andili,christmasEnabled:true,allowed:true,stats:{},games:[],members:[],
+        ok:true,user:account,christmasEnabled:true,allowed:true,stats:{},games:[],members:[],
         offers:[],items:[],entries:[],messages:[],tournaments:[],series:[]
       }});
       if (url.origin !== origin) return route.abort();
@@ -317,12 +317,19 @@ try {
       appendChatMessage({id:'room-edge-test', senderName:'Schwarz', text:'Testnachricht '.repeat(18)},
         {suppressUnread:true});
     });
-    for(const height of [900,800]){
-      await page.setViewportSize({width:1720,height});
+    for(const [width,height] of [[1920,1080],[1720,900],[1720,800],[2560,1440]]){
+      await page.setViewportSize({width,height});
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       await page.waitForFunction(h=>{
         const board=document.querySelector('.top-layout .board-wrapper').getBoundingClientRect();
-        const width=document.querySelector('.shell').getBoundingClientRect().width;
-        return width>1120 && board.height<=h && Math.abs(board.height-board.width)<1;
+        const top=document.getElementById('boardPlayerTop').getBoundingClientRect().top;
+        const bottom=document.getElementById('boardPlayerBottom').getBoundingClientRect().bottom;
+        const scale=HammerschachScreenFit.scale;
+        if(Math.abs(board.height-board.width)>1)return false;
+        if((bottom-top)/scale+12>h)return scale===1;
+        window.scrollBy(0,top-5);
+        return (h<1080 || scale>1) && document.getElementById('boardPlayerTop').getBoundingClientRect().top>=0
+          && document.getElementById('boardPlayerBottom').getBoundingClientRect().bottom<=h;
       },height);
       const send=page.locator('#chatSendBtn');
       await send.evaluate(el=>window.scrollBy(0,el.getBoundingClientRect().top-innerHeight/2));
@@ -397,6 +404,21 @@ try {
     assert.equal(await page.getByLabel('Automatische Bildschirmoptimierung').count(),0);
     await page.evaluate(()=>saveAuthState('',null));
     assert.equal(await page.evaluate(()=>HammerschachScreenFit.scale),1);
+    await page.close();
+  }
+  {
+    saved=false;
+    const page=await browser.newPage({viewport:{width:1920,height:1080}});
+    await fixture(page,{id:'test-fabili',username:'Fabili',isAdmin:false});
+    await page.goto(origin);
+    await page.locator('#themeToggleBtn').click();
+    const toggle=page.getByRole('checkbox',{name:'Automatische Bildschirmoptimierung'});
+    await toggle.waitFor();
+    assert.equal(await toggle.isChecked(),false);
+    await toggle.check();
+    await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
+    await page.reload();
+    await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
     await page.close();
   }
   assert.deepEqual(failures, [], 'Ein Größenwechsel darf keinen Zug auf ein anderes Feld auslösen.');
