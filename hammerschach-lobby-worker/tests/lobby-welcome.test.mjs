@@ -46,7 +46,7 @@ test('Kontolöschung entfernt auch den Begrüßungszustand',async t=>{
 const source=readFileSync(new URL('../../Gamer/js/lobby-welcome.js',import.meta.url),'utf8');
 function client(){
   const requests=[];
-  const c=vm.createContext({crypto:webcrypto,onlineAuthToken:'',onlineAuthUser:null,document:{hidden:false},statusEl:{textContent:''},inLobby:true,inTool:false,cleanDisplayName:s=>String(s||'').trim(),Date});
+  const c=vm.createContext({crypto:webcrypto,onlineAuthToken:'',onlineAuthUser:null,document:{hidden:false,documentElement:{classList:{contains:()=>false}}},statusEl:{textContent:''},inLobby:true,inTool:false,cleanDisplayName:s=>String(s||'').trim(),Date});
   c.isMemberLobbyView=()=>c.inLobby;c.embeddedToolActive=()=>c.inTool;
   c.authApi=(url,options)=>new Promise((resolve,reject)=>requests.push({url,body:JSON.parse(options.body),resolve,reject}));
   vm.runInContext(source,c);

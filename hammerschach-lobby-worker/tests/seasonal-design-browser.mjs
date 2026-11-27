@@ -33,15 +33,83 @@ for(const role of ['visitor','member','admin']){
  assert.ok(dims.left>=0&&dims.right<=width+1&&dims.scroll<=dims.client+1,JSON.stringify(dims));if(width<701)assert.ok(dims.gy>=dims.vbottom);
  if(process.env.SCREENSHOT_DIR)await panel.screenshot({path:path.join(process.env.SCREENSHOT_DIR,`christmas-${width}.png`)});
  }
+
+ for (const scheme of ['light','soft','dark']) {
+   await page.evaluate(s => window.HammerschachAppearance.select(s), scheme);
+   const palette = await panel.evaluate(el => {
+     const s = getComputedStyle(el);
+     return [s.getPropertyValue('--card-top').trim(), s.getPropertyValue('--card-accent').trim(), getComputedStyle(el.querySelector('.christmas-video')).backgroundColor];
+   });
+   assert.deepEqual(palette, ['#253c34','#f2d597','rgb(25, 37, 33)']);
+ }
  await page.locator('#christmasVideoLoad').click();assert.equal(await page.locator('#christmasVideo iframe').count(),1);assert.equal(await page.locator('#christmasVideo iframe').getAttribute('src'),'https://www.youtube-nocookie.com/embed/cmm1gt_2SkQ');
  enabled=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>!document.documentElement.classList.contains('christmas-mode'));assert.equal(await panel.isVisible(),false);assert.equal(await page.locator('#christmasVideo iframe').count(),0);
  enabled=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await panel.waitFor({state:'visible'});assert.equal(await page.locator('#christmasVideoLoad').isVisible(),true);
  }else{
- await page.waitForFunction(()=>document.querySelector('.lobby-welcome-motto')?.dataset.text.includes('Weihnachtszeit'));
+ await page.waitForFunction(()=>document.querySelector('.lobby-welcome-greeting')?.dataset.text.startsWith('Frohe Weihnachtszeit'));
  assert.equal(await page.locator('#christmasVideo iframe').count(),0);
+ for (const username of ['Mitglied', 'Alexandra-Maria-LangerBe']) {
+   await page.evaluate(name => { onlineAuthUser.username = name; statusEl.textContent = lobbyWelcomeText(); }, username);
+   for (const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:1180,height:820},{width:390,height:844},{width:844,height:390},{width:320,height:720}]) {
+     await page.setViewportSize(viewport);
+     for (const scheme of ['light','soft','dark']) {
+       await page.evaluate(s => window.HammerschachAppearance.select(s), scheme);
+       await page.waitForTimeout(80);
+       const inspect = () => page.evaluate(() => {
+         const header = [...document.querySelectorAll('.shell > header')].find(el => el.getBoundingClientRect().height > 0);
+         const r = header.getBoundingClientRect();
+         const controls = [...header.querySelectorAll('button,a,img,.status,.mobile-nav-test-status')].filter(el => el.getClientRects().length);
+         const branches = [...header.querySelectorAll('.lobby-christmas-branch:not([hidden])')].filter(el => el.getClientRects().length);
+         for (const branch of branches) {
+           const b = branch.getBoundingClientRect();
+           if (b.left < r.left || b.right > r.right || b.top < r.top || b.bottom > r.bottom) throw Error('Branch outside header');
+           for (const control of controls) {
+             const c = control.getBoundingClientRect();
+             if (b.left < c.right && b.right > c.left && b.top < c.bottom && b.bottom > c.top) throw Error('Decoration covers ' + control.id);
+           }
+           if (getComputedStyle(branch).pointerEvents !== 'none') throw Error('Decoration receives clicks');
+         }
+         for (const id of ['themeToggleBtn','infoMenuBtn']) {
+           const el = document.getElementById(id), b = el.getBoundingClientRect();
+           if (b.width && b.height && !el.contains(document.elementFromPoint(b.x + b.width / 2,b.y + b.height / 2))) throw Error('Button obscured: ' + id);
+         }
+         return {height:r.height,width:r.width,status:document.getElementById('status').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth > innerWidth};
+       });
+       const before = await inspect();
+       assert.equal(before.overflow,false);
+       assert.equal(await page.locator('#status .lobby-welcome-greeting').getAttribute('data-text'), 'Frohe Weihnachtszeit, ' + username + '!');
+       assert.equal(await page.locator('#status .lobby-welcome-motto').getAttribute('data-text'), 'Zeit für deinen nächsten Hammerzug.');
+       // Sample both phases of the existing eight-second animation without waiting.
+       await page.evaluate(() => { for(const el of document.querySelectorAll('.lobby-welcome-rotating')) { const a = el.getAnimations()[0]; if(a) { a.pause(); a.currentTime = 1000; } } });
+       const first = await inspect();
+       await page.evaluate(() => { for(const el of document.querySelectorAll('.lobby-welcome-rotating')) { const a = el.getAnimations()[0]; if(a) a.currentTime = 5000; } });
+       assert.deepEqual(await inspect(), first);
+       assert.equal(await page.evaluate(() => {
+         const el = [...document.querySelectorAll('.lobby-welcome-rotating')].find(el => el.getBoundingClientRect().height > 0);
+         return getComputedStyle(el.querySelector('.lobby-welcome-motto')).opacity;
+       }), '1');
+       enabled=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+       await page.waitForFunction(()=>!document.documentElement.classList.contains('christmas-mode'));
+       assert.equal(await page.locator('#status .lobby-welcome-greeting').getAttribute('data-text'),'Willkommen zurück, ' + username + '!');
+       const off = await inspect();
+       assert.deepEqual(off, before, 'Header/status dimensions must stay stable when Christmas changes');
+       enabled=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+       await page.waitForFunction(()=>document.documentElement.classList.contains('christmas-mode'));
+       await page.evaluate(() => { for(const el of document.querySelectorAll('.lobby-welcome-rotating')) { const a = el.getAnimations()[0]; if(a) a.currentTime = 1000; } });
+       if(process.env.SCREENSHOT_DIR && username==='Mitglied') await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,`lobby-${viewport.width}-${scheme}.png`)});
+     }
+   }
+ }
+ await page.setViewportSize({width:1440,height:1000});
+ await page.locator('#infoMenuBtn').click();
+ assert.equal(await page.locator('#infoMenuPopup').isVisible(),true);
+ await page.locator('#infoMenuBtn').click();
+ await page.locator('#themeToggleBtn').click();
+ assert.equal(await page.locator('#gamerSettings').isVisible(),true);
+ await page.locator('#settingsDone').click();
  if(role==='admin'){
  await page.evaluate(()=>openAdminOverview());await page.locator('#seasonalAdmin').waitFor({state:'visible'});await page.locator('#christmasModeToggle').click();await page.waitForFunction(()=>!document.documentElement.classList.contains('christmas-mode'));
- assert.equal(await page.locator('.lobby-welcome-motto').getAttribute('data-text'),'Zeit für deinen nächsten Hammerzug.');
+ assert.equal(await page.locator('#status .lobby-welcome-motto').getAttribute('data-text'),'Zeit für deinen nächsten Hammerzug.');
  failed=true;await page.locator('#christmasModeToggle').click();await page.waitForFunction(()=>document.getElementById('seasonalAdminStatus').textContent==='Testfehler');assert.equal(await page.locator('#christmasModeToggle').isChecked(),false);
  failed=false;await page.locator('#christmasModeToggle').click();await page.waitForFunction(()=>document.documentElement.classList.contains('christmas-mode'));
  } else assert.equal(await page.locator('#seasonalAdmin').isVisible(),false);
