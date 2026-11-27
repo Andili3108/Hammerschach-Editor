@@ -1,0 +1,9 @@
+html.gamer-screen-fit body { zoom: var(--gamer-screen-scale); }
+/* Fixed drag images are positioned and sized in pointer (viewport) pixels. */
+html.gamer-screen-fit :is(.piece-drag-ghost, .local-drag-ghost) {
+  zoom: calc(1 / var(--gamer-screen-scale));
+}
+html.gamer-screen-fit :is([role="dialog"][aria-modal="true"], #gamerSettings) {
+  max-height: min(94dvh, calc(100dvh / var(--gamer-screen-scale) - 16px));
+  max-width: calc(100vw / var(--gamer-screen-scale) - 16px);
+}
