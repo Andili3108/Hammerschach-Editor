@@ -7,3 +7,15 @@ html.gamer-screen-fit :is([role="dialog"][aria-modal="true"], #gamerSettings) {
   max-height: min(94dvh, calc(100dvh / var(--gamer-screen-scale) - 16px));
   max-width: calc(100vw / var(--gamer-screen-scale) - 16px);
 }
+
+/* WebKit can retain the previous inherited zoom inside a loaded tool frame.
+   Lay out the tool in its original coordinates and scale its painted surface. */
+html.gamer-screen-fit :is(.player-tool-view, .analyzer-tool-view) {
+  height: var(--measured-tool-height, 1120px);
+}
+html.gamer-screen-fit :is(.player-tool-frame, .analyzer-tool-frame) {
+  zoom: calc(1 / var(--gamer-screen-scale));
+  width: calc(100% / var(--gamer-screen-scale));
+  transform: scale(var(--gamer-screen-scale));
+  transform-origin: top left;
+}
