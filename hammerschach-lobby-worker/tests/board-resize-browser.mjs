@@ -415,7 +415,11 @@ try {
     const toggle=page.getByRole('checkbox',{name:'Automatische Bildschirmoptimierung'});
     await toggle.waitFor();
     assert.equal(await toggle.isChecked(),false);
+    await page.evaluate(()=>saveAuthState(onlineAuthToken,onlineAuthUser));
+    assert.ok(await toggle.isVisible(),'Sitzungsbestätigung erhält Fabilis Schalter');
     await toggle.check();
+    await page.evaluate(()=>saveAuthState(onlineAuthToken,onlineAuthUser));
+    assert.ok(await toggle.isChecked(),'Sitzungsbestätigung erhält Fabilis Auswahl');
     await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
     await page.reload();
     await page.waitForFunction(()=>HammerschachScreenFit.scale>1);
