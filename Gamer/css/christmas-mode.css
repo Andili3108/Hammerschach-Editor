@@ -1,15 +1,5 @@
-/* Seasonal colours follow the active Gamer appearance, including automatic night mode. */
+/* Reuse the established dark Christmas palette in every appearance. */
 .christmas-welcome {
-  --card-top:#fffdf6; --card-bottom:#f7ebd6; --card-ink:#302923;
-  --card-accent:#802436; --card-muted:#584736; --card-edge:#b08b45;
-  --card-inlay:#c6a361; --card-branch:#435d48; --card-video:#662232;
-}
-html.soft-mode .christmas-welcome {
-  --card-top:#e9dec7; --card-bottom:#d9c9a9; --card-ink:#352f2b;
-  --card-accent:#6b2d39; --card-muted:#514638; --card-edge:#514b43;
-  --card-inlay:#9d7c40; --card-branch:#53654b; --card-video:#594049;
-}
-html.dark-mode .christmas-welcome {
   --card-top:#253c34; --card-bottom:#132822; --card-ink:#f2eadd;
   --card-accent:#f2d597; --card-muted:#d5c9af; --card-edge:#846d41;
   --card-inlay:#695c3d; --card-branch:#8ba994; --card-video:#192521;
@@ -38,8 +28,6 @@ html.dark-mode .christmas-welcome {
 .christmas-greeting h3 { font:700 clamp(22px,2.6vw,29px)/1.25 Georgia,serif; color:var(--card-accent); margin:0 0 16px; }
 .christmas-greeting p { line-height:1.65; margin:0 0 12px; }
 .christmas-signature { font-style:italic; }
-.christmas-mode #status.lobby-welcome-rotating { background:linear-gradient(110deg,#fff6e5,#f0dfb8); color:#702b3d; border:1px solid #b39350; border-radius:12px; padding:10px 16px; }
-.christmas-mode #status.lobby-welcome-rotating .lobby-welcome-motto { color:#702b3d; }
 #seasonalAdmin input { accent-color:#702b3d; width:20px; height:20px; vertical-align:middle; }
 #seasonalAdmin label { display:flex; gap:10px; align-items:center; min-height:44px; font-weight:bold; }
 @media(max-width:700px) {
@@ -59,4 +47,25 @@ html.dark-mode .christmas-welcome {
 /* The compact landscape header uses a 7px gap. Complete it above the card. */
 @media (orientation:landscape) and (min-width:568px) and (max-height:600px) and (max-width:1400px) {
   html.mobile-nav-test-active .christmas-welcome { margin-top:7px; }
+}
+
+/* Reserve both greetings in the same cell without changing typography or animation. */
+.lobby-welcome-greeting { display:grid; }
+.lobby-welcome-greeting::before, .lobby-welcome-greeting::after { grid-area:1 / 1; }
+.lobby-welcome-greeting::after { content:attr(data-reserve); visibility:hidden; }
+/* Decoration has no layout footprint and cannot receive pointer events. */
+.lobby-christmas-ornaments { display:none; position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; }
+html.christmas-mode.member-lobby-view .lobby-christmas-ornaments { display:block; box-shadow:inset 0 0 0 1px #b39350; }
+.lobby-christmas-ornaments * { pointer-events:none; }
+.lobby-christmas-branch { position:absolute; opacity:.75; }
+.lobby-christmas-branch[hidden] { display:none; }
+
+/* The compact header mirrors the same two messages and their reserved height. */
+#mobileNavTestStatus.lobby-welcome-rotating {
+  position:relative; display:grid; grid-template-columns:minmax(0,1fr);
+  align-items:center; white-space:normal; overflow-wrap:anywhere;
+  animation:lobby-welcome-phase 8s linear infinite;
+}
+@media(prefers-reduced-motion:reduce) {
+  #mobileNavTestStatus.lobby-welcome-rotating { animation:none; }
 }
