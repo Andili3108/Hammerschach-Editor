@@ -27,20 +27,22 @@ for(const role of ['visitor','member','admin']){
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);await page.waitForFunction(()=>document.documentElement.classList.contains('christmas-mode'));
  const panel=page.locator('#christmasWelcome');assert.equal(await panel.isVisible(),!user);assert.equal(youtube,0);
  if(!user){
- for(const width of [1440,820,390,320]){
- await page.setViewportSize({width,height:1000});await panel.scrollIntoViewIfNeeded();
+ for (const scheme of ['light','soft','dark']) {
+ await page.evaluate(s => window.HammerschachAppearance.select(s), scheme);
+ for(const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:1180,height:820},{width:390,height:844},{width:844,height:390},{width:320,height:720}]){
+ const {width} = viewport;
+ await page.setViewportSize(viewport);await panel.scrollIntoViewIfNeeded();
  const dims=await panel.evaluate(el=>{const r=el.getBoundingClientRect(),v=el.querySelector('.christmas-video').getBoundingClientRect(),g=el.querySelector('.christmas-greeting').getBoundingClientRect();return{left:r.left,right:r.right,scroll:el.scrollWidth,client:el.clientWidth,vy:v.y,gy:g.y,vbottom:v.bottom}});
  assert.ok(dims.left>=0&&dims.right<=width+1&&dims.scroll<=dims.client+1,JSON.stringify(dims));if(width<701)assert.ok(dims.gy>=dims.vbottom);
- if(process.env.SCREENSHOT_DIR)await panel.screenshot({path:path.join(process.env.SCREENSHOT_DIR,`christmas-${width}.png`)});
+ if(process.env.SCREENSHOT_DIR)await panel.screenshot({path:path.join(process.env.SCREENSHOT_DIR,`christmas-${width}-${scheme}.png`)});
  }
 
- for (const scheme of ['light','soft','dark']) {
    await page.evaluate(s => window.HammerschachAppearance.select(s), scheme);
    const palette = await panel.evaluate(el => {
      const s = getComputedStyle(el);
-     return [s.getPropertyValue('--card-top').trim(), s.getPropertyValue('--card-accent').trim(), getComputedStyle(el.querySelector('.christmas-video')).backgroundColor];
+     return [s.getPropertyValue('--card-top').trim(), s.getPropertyValue('--card-accent').trim(), getComputedStyle(el.querySelector('.christmas-video')).backgroundImage, getComputedStyle(el.querySelector('.christmas-video')).color];
    });
-   assert.deepEqual(palette, ['#253c34','#f2d597','rgb(25, 37, 33)']);
+   assert.deepEqual(palette, scheme === 'dark' ? ['#253c34','#f2d597','none','rgb(255, 245, 223)'] : ['#fbf3df','#792638','linear-gradient(135deg, rgb(188, 153, 85), rgb(155, 119, 60))','rgb(23, 15, 5)']);
  }
  await page.locator('#christmasVideoLoad').click();assert.equal(await page.locator('#christmasVideo iframe').count(),1);assert.equal(await page.locator('#christmasVideo iframe').getAttribute('src'),'https://www.youtube-nocookie.com/embed/cmm1gt_2SkQ');
  enabled=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>!document.documentElement.classList.contains('christmas-mode'));assert.equal(await panel.isVisible(),false);assert.equal(await page.locator('#christmasVideo iframe').count(),0);
@@ -62,6 +64,8 @@ for(const role of ['visitor','member','admin']){
          const branches = [...header.querySelectorAll('.lobby-christmas-branch:not([hidden])')].filter(el => el.getClientRects().length);
          for (const branch of branches) {
            const b = branch.getBoundingClientRect();
+           if (branch.querySelectorAll('rect').length !== 3 || !branch.querySelector('radialGradient')) throw Error('Missing baubles or lights');
+           if (Math.abs(b.width / b.height - 240 / 88) > .01) throw Error('Branch distorted');
            if (b.left < r.left || b.right > r.right || b.top < r.top || b.bottom > r.bottom) throw Error('Branch outside header');
            for (const control of controls) {
              const c = control.getBoundingClientRect();
