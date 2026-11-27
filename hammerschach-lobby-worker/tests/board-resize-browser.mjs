@@ -261,6 +261,82 @@ try {
     await child.waitForFunction(()=>HammerschachScreenFit.scale===1);
     await page.close();
   }
+  {
+    const page=await browser.newPage({viewport:{width:1720,height:900}});
+    await fixture(page);await page.goto(origin);
+    await page.waitForFunction(()=>HammerschachScreenFit.enabled);
+    for(const tool of ['analyzer','player']){
+      await page.evaluate(name=>setEmbeddedToolActive(name),tool);
+      const id=tool+'ToolFrame';
+      const frame=page.frameLocator('#'+id);
+      await frame.locator('#board > *').first().waitFor();
+      for(const [width,height] of [[1920,1080],[1440,900],[1400,900],[1720,900]]){
+        await page.setViewportSize({width,height});
+        await page.waitForFunction(id=>{
+          const frame=document.getElementById(id);
+          const doc=frame.contentDocument;
+          const board=doc.querySelector('.board-column');
+          const side=board?.nextElementSibling;
+          if(!side?.offsetWidth)return false;
+          const rect=side.getBoundingClientRect();
+          const outer=frame.getBoundingClientRect(), section=frame.parentElement.getBoundingClientRect();
+          return board.getBoundingClientRect().left>=-1 && rect.right<=frame.contentWindow.innerWidth+1
+            && Math.abs(outer.right-section.right)<2 && outer.bottom<=section.bottom+2;
+        },id);
+      }
+      const sizes=await page.evaluate(async({id,tool})=>{
+        const iframe=document.getElementById(id);
+        const shell=iframe.contentDocument.querySelector('.'+tool+'-shell');
+        const spacer=iframe.contentDocument.createElement('div');
+        spacer.style.height='200px';
+        const settle=()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(done))));
+        const widths=[], heights=[];
+        for(let i=0;i<7;i++){
+          shell.append(spacer);await settle();
+          const expanded=iframe.offsetHeight;
+          spacer.remove();await settle();
+          if(expanded-iframe.offsetHeight<150)throw Error(tool+' Rahmen schrumpft nach Inhaltsänderung nicht zurück');
+          widths.push(document.querySelector('.shell').getBoundingClientRect().width);
+          heights.push(iframe.offsetHeight);
+        }
+        return {widths,heights};
+      },{id,tool});
+      assert.equal(new Set(sizes.heights).size,1,tool+' stabiler Rahmen bei wiederholter Messung');
+      assert.equal(new Set(sizes.widths).size,1,tool+' stabile Breite');
+    }
+    await page.evaluate(()=>{
+      closeEmbeddedTools();onlineRoomId='fit-room';onlineConnected=true;onlineGameStarted=true;
+      onlineRoleCode='w';activeTimeCategory='blitz';
+      updateMemberLobbyUi();updateAnalyzerToolAvailability();updateSidePanelLayout();renderBoard();
+    });
+    assert.ok(await page.locator('#boardPlayerTop').isVisible());
+    assert.ok(await page.locator('#boardPlayerBottom').isVisible());
+    await page.locator('#showChatPanelBtn').click();
+    await page.evaluate(()=>{
+      updateChatControls();
+      appendChatMessage({id:'room-edge-test', senderName:'Schwarz', text:'Testnachricht '.repeat(18)},
+        {suppressUnread:true});
+    });
+    for(const height of [900,800]){
+      await page.setViewportSize({width:1720,height});
+      await page.waitForFunction(h=>{
+        const board=document.querySelector('.top-layout .board-wrapper').getBoundingClientRect();
+        const width=document.querySelector('.shell').getBoundingClientRect().width;
+        return width>1120 && board.height<=h && Math.abs(board.height-board.width)<1;
+      },height);
+      const send=page.locator('#chatSendBtn');
+      await send.evaluate(el=>window.scrollBy(0,el.getBoundingClientRect().top-innerHeight/2));
+      assert.ok(await send.evaluate(el=>{
+        const r=el.getBoundingClientRect();
+        const panel=document.querySelector('#chatPanel').getBoundingClientRect();
+        const message=document.querySelector('#chatMessages .chat-message-text');
+        return message.scrollWidth<=message.clientWidth+1 && panel.left>=0 && panel.right<=document.documentElement.clientWidth
+          && r.left>=panel.left && r.right<=panel.right+1
+          && el.contains(document.elementFromPoint(r.right-3,r.top+r.height/2));
+      }),'Rechte Chatkante und Senden-Schaltfläche erreichbar');
+    }
+    await page.close();
+  }
   // A saved 1000 px board survives the trial even when the tool is already
   // open, the viewport crosses the breakpoint, or the account changes.
   {
