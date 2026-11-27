@@ -461,6 +461,7 @@
 <script src="../js/gamer-preferences.js?v=20261021-auto-night-1"></script>
 <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
 <script src="../js/board-pinch-zoom.js?v=20261127-screen-fit"></script>
+<script src="../js/tool-frame-height.js?v=20261127-height-1"></script>
 </head>
 <body>
   <input id="fileInputPGN" type="file" accept=".pgn,text/plain" style="display:none" />
@@ -2559,8 +2560,9 @@
       search.oninput=render;requestFromGamer('hammerschach-analyzer-request-games').then(r=>{games=Array.isArray(r.games)?r.games:[];render();}).catch(err=>{body.textContent=err.message;});
     }
     const btnGamerGames=document.getElementById('btnGamerGames');if(btnGamerGames)btnGamerGames.addEventListener('click',openGamerGamesModal);
-    function reportAnalyzerHeight(){parentMessage({type:'hammerschach-analyzer-height',height:Math.ceil(document.documentElement.scrollHeight)});}
-    if(window.ResizeObserver)new ResizeObserver(reportAnalyzerHeight).observe(document.body);window.addEventListener('load',reportAnalyzerHeight);parentMessage({type:'hammerschach-analyzer-ready'});
+    const reportAnalyzerHeight = installToolFrameHeight(document.querySelector('.analyzer-shell'),
+      height => parentMessage({type:'hammerschach-analyzer-height',height}));
+    parentMessage({type:'hammerschach-analyzer-ready'});
 
     const restoredAnalyzerSession = restoreAnalyzerSession();
     setupEngineControls();
