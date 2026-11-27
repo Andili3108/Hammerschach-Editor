@@ -10988,11 +10988,22 @@ async function handleAuthApi(request, env, url) {
     const session = await lookupAuthSession(env, bearerTokenFromRequest(request));
     if (!session) return json({ok:false, code:'NOT_AUTHENTICATED', message:'Bitte zuerst einloggen.'}, {status:401});
     try {
-      if(request.method === 'GET') return json({ok:true, preferences:await getGamerPreferences(env,session.user.id)}, {headers:{'Cache-Control':'no-store'}});
+      const screenTester = isAdminUser(session.user, env) && String(session.user.username).toLowerCase() === 'andili';
+      if(request.method === 'GET'){
+        const preferences = await getGamerPreferences(env,session.user.id);
+        if (!screenTester) delete preferences.screenFit;
+        const capability = screenTester ? {screenFitAccount:String(session.user.id)} : {};
+        return json({ok:true, preferences, ...capability}, {headers:{'Cache-Control':'no-store'}});
+      }
       const body = await readJsonBody(request);
       const patch = validPreferencePatch(body && body.preferences);
+      if (patch && Object.hasOwn(patch,'screenFit') && !screenTester) {
+        return json({ok:false, code:'NOT_ALLOWED'}, {status:403});
+      }
       if(!patch) return json({ok:false, code:'INVALID_PREFERENCES', message:'Ungültige Einstellungen.'}, {status:400});
-      return json({ok:true, preferences:await saveGamerPreferences(env,session.user.id,patch)}, {headers:{'Cache-Control':'no-store'}});
+      const preferences = await saveGamerPreferences(env,session.user.id,patch);
+      if (!screenTester) delete preferences.screenFit;
+      return json({ok:true, preferences}, {headers:{'Cache-Control':'no-store'}});
     } catch (_) { return json({ok:false, code:'PREFERENCES_UNAVAILABLE', message:'Die Kontoeinstellungen sind vorübergehend nicht verfügbar.'}, {status:503}); }
   }
 
