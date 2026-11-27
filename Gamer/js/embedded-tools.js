@@ -843,6 +843,16 @@ if(tournamentReportToolFrame)tournamentReportToolFrame.addEventListener('load',(
 [newGameBtn,createOnlineBtn,newGameMenuBtn,membersOpenBtn,profileOpenBtn,privateMessagesOpenBtn,openOffersOpenBtn,tournamentsOpenBtn,publicGamesOpenBtn,gameArchiveOpenBtn,authOpenBtn,firstStepsOpenBtn,infoGuideOpenBtn,leitbildOpenBtn].forEach(button=>{
   if(button)button.addEventListener('click',closeEmbeddedTools,{capture:true});
 });
+// Keep the outer section and its painted frame at the same height when
+// screen-fit isolates the tool's document from the surrounding CSS zoom.
+function setMeasuredToolHeight(frame, requested, maximum) {
+  if (!Number.isFinite(requested) || requested <= 0) return;
+  const height = Math.max(720, Math.min(maximum, requested + 4)) + 'px';
+  frame.style.height = height;
+  frame.parentElement.style.setProperty('--measured-tool-height', height);
+  hammerschachScheduleHeightReport(true);
+}
+
 window.addEventListener('message',async event=>{
   const fromLearning=!!(learningToolFrame&&event.source===learningToolFrame.contentWindow);
   const fromAnalyzer=!!(analyzerToolFrame&&event.source===analyzerToolFrame.contentWindow);
@@ -863,7 +873,7 @@ window.addEventListener('message',async event=>{
     }
     if(message.type==='hammerschach-player-height'){
       const requested=Math.ceil(Number(message.height||0));
-      if(Number.isFinite(requested)&&requested>0){playerToolFrame.style.height=Math.max(720,Math.min(3600,requested+4))+'px';hammerschachScheduleHeightReport(true);}
+      setMeasuredToolHeight(playerToolFrame, requested, 3600);
       return;
     }
     return;
@@ -1201,10 +1211,7 @@ window.addEventListener('message',async event=>{
   }
   if(message.type==='hammerschach-analyzer-height'){
     const requested=Math.ceil(Number(message.height||0));
-    if(Number.isFinite(requested)&&requested>0){
-      analyzerToolFrame.style.height=Math.max(720,Math.min(3200,requested+4))+'px';
-      hammerschachScheduleHeightReport(true);
-    }
+    setMeasuredToolHeight(analyzerToolFrame, requested, 3200);
     return;
   }
   if(message.type==='hammerschach-analyzer-request-games'){

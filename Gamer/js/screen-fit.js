@@ -64,6 +64,22 @@ window.HammerschachScreenFit = (() => {
     return bottom > top ? (bottom - top) / zoom + 12 : 0;
   }
 
+  // Measure the two auto-height tools before painting/zoom. Feeding their
+  // painted coordinates into the next zoom decision can alternate two scales.
+  function toolLayoutHeight(doc, selectors) {
+    let top = Infinity, bottom = -Infinity;
+    for (const el of doc.querySelectorAll(selectors)) {
+      if (!el.offsetHeight || !el.offsetWidth) continue;
+      let y = el.offsetTop;
+      for (let parent = el.offsetParent; parent; parent = parent.offsetParent) {
+        y += parent.offsetTop + parent.clientTop;
+      }
+      top = Math.min(top, y);
+      bottom = Math.max(bottom, y + el.offsetHeight);
+    }
+    return bottom > top ? bottom - top + 12 : 0;
+  }
+
   function update() {
     frame = 0;
     const width = root.clientWidth;
@@ -73,7 +89,9 @@ window.HammerschachScreenFit = (() => {
       const designWidth = Math.max(baseWidth, shell.offsetWidth);
       let designHeight = 770;
       for (const area of [
-        '.top-layout .board-wrapper, .top-layout #boardPlayerTop, .top-layout .board-tools',
+        // Players can scroll to their clocks and controls. The playing surface
+        // itself sets the height budget in a normal online room.
+        '.top-layout .board-wrapper',
         '#localGameRoom .local-game-table',
         '.shell #liveBoardView .lb-grid, .shell #liveBoardView .lb-pages, .shell #liveBoardView .lb-single .lb-board-column'
       ]) {
@@ -83,8 +101,11 @@ window.HammerschachScreenFit = (() => {
         if (!iframe.getClientRects().length) continue;
         const doc = iframe.contentDocument;
         if (!doc?.querySelector('#board, #chessBoard')?.getClientRects().length) continue;
-        designHeight = Math.max(designHeight, playAreaHeight(doc,
-          '#board, #chessBoard, .board-tools, .board-column .controls, .board-toolbar, #mateMoveBtn, .board-column .clock-card', 1));
+        const controls = '#board, #chessBoard, .board-tools, .board-column .controls, .board-toolbar, #mateMoveBtn, .board-column .clock-card';
+        const intrinsic = doc.documentElement.dataset.boardSizeTool;
+        const height = intrinsic === 'player' || intrinsic === 'analyzer'
+          ? toolLayoutHeight(doc, controls) : playAreaHeight(doc, controls, 1);
+        designHeight = Math.max(designHeight, height);
       }
       // At 1400 px the centered Gamer has 150 px on each side. From there,
       // both content and margins grow, reaching 1540 + 2 × 190 at Full HD.
