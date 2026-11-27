@@ -66,7 +66,7 @@ window.HammerschachScreenFit = (() => {
 
   // Measure the two auto-height tools before painting/zoom. Feeding their
   // painted coordinates into the next zoom decision can alternate two scales.
-  function toolLayoutHeight(doc, selectors) {
+  function layoutHeight(doc, selectors) {
     let top = Infinity, bottom = -Infinity;
     for (const el of doc.querySelectorAll(selectors)) {
       if (!el.offsetHeight || !el.offsetWidth) continue;
@@ -87,11 +87,11 @@ window.HammerschachScreenFit = (() => {
     if (enabled && width > growthStartsAt && CSS.supports('zoom', 'calc(1 / 1.25)')) {
       const shell = document.querySelector('.shell');
       const designWidth = Math.max(baseWidth, shell.offsetWidth);
-      let designHeight = 770;
+      // In the online room the header may scroll away. Keep both visible
+      // player strips and their clocks together with the playing surface.
+      let designHeight = Math.max(770, layoutHeight(document,
+        '#boardPlayerTop, .top-layout .board-wrapper, #boardPlayerBottom'));
       for (const area of [
-        // Players can scroll to their clocks and controls. The playing surface
-        // itself sets the height budget in a normal online room.
-        '.top-layout .board-wrapper',
         '#localGameRoom .local-game-table',
         '.shell #liveBoardView .lb-grid, .shell #liveBoardView .lb-pages, .shell #liveBoardView .lb-single .lb-board-column'
       ]) {
@@ -104,7 +104,7 @@ window.HammerschachScreenFit = (() => {
         const controls = '#board, #chessBoard, .board-tools, .board-column .controls, .board-toolbar, #mateMoveBtn, .board-column .clock-card';
         const intrinsic = doc.documentElement.dataset.boardSizeTool;
         const height = intrinsic === 'player' || intrinsic === 'analyzer'
-          ? toolLayoutHeight(doc, controls) : playAreaHeight(doc, controls, 1);
+          ? layoutHeight(doc, controls) : playAreaHeight(doc, controls, 1);
         designHeight = Math.max(designHeight, height);
       }
       // At 1400 px the centered Gamer has 150 px on each side. From there,
@@ -134,7 +134,7 @@ window.HammerschachScreenFit = (() => {
     revision++;
     if (enabled) {
       observeHostViewport();
-      for (const el of document.querySelectorAll('.shell, .header, .board-column, .board-tools')) observer.observe(el);
+      for (const el of document.querySelectorAll('.shell, .header, .board-column, .board-tools, #boardPlayerTop, #boardPlayerBottom')) observer.observe(el);
       views.observe(root, {attributes:true, attributeFilter:['class']});
       window.addEventListener('resize', schedule);
       document.addEventListener('load', schedule, true);

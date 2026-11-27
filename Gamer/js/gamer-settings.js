@@ -29,8 +29,7 @@
  fitRow.append('Automatische Bildschirmoptimierung',fitInput);
  let tester='',sessionToken='',fitRequested=false;
  function screenFitActive(){
-   return fitRequested && !!tester && tester===String(onlineAuthUser?.id) && sessionToken===onlineAuthToken
-     && onlineAuthUser?.isAdmin===true && String(onlineAuthUser.username).toLowerCase()==='andili';
+   return fitRequested && !!tester && tester===String(onlineAuthUser?.id) && sessionToken===onlineAuthToken;
  }
  function setFit(checked){
    fitInput.checked=checked;
@@ -119,7 +118,7 @@
  say('Kontoeinstellungen werden geladen …');
  try{const data=await authApi('/api/account/preferences');if(ticket!==generation||sessionToken!==onlineAuthToken||next!==String(onlineAuthUser?.id||''))return;
 
- if(data.screenFitAccount===next && localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY)===sessionToken && onlineAuthUser?.isAdmin===true && String(onlineAuthUser.username).toLowerCase()==='andili'){
+ if(data.screenFitAccount===next && localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY)===sessionToken){
    tester=next;appearance.append(fitRow);
    setFit(data.preferences?.screenFit===true);
  }
