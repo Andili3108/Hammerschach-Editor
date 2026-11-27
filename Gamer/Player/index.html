@@ -432,6 +432,7 @@
 <link rel="stylesheet" href="../css/gamer-settings.css?v=20260917-theme-3">
 <script src="../js/gamer-preferences.js?v=20261021-auto-night-1"></script>
 <link rel="stylesheet" href="../css/gamer-appearance.css?v=20260917-theme-3">
+<script src="../js/tool-frame-height.js?v=20261127-height-1"></script>
 </head>
 <body>
 <main class="player-shell" role="main">
@@ -2166,7 +2167,8 @@ function restorePlayerSettings(){
 }
 
 function parentMessage(message){try{window.parent.postMessage(message,location.origin==='null'?'*':location.origin);}catch(_){ }}
-function reportPlayerHeight(){parentMessage({type:'hammerschach-player-height',height:Math.ceil(document.documentElement.scrollHeight)});}
+const reportPlayerHeight = installToolFrameHeight(document.querySelector('.player-shell'),
+      height => parentMessage({type:'hammerschach-player-height',height}));
 window.addEventListener('message',event=>{
   if(location.origin!=='null'&&event.origin!==location.origin)return;
   const message=event.data&&typeof event.data==='object'?event.data:{};
@@ -2181,7 +2183,7 @@ window.addEventListener('message',event=>{
     try{if(engine&&engineBusy){discardBestmove=true;engine.postMessage('stop');}}catch(_){ }
   }
 });
-if(window.ResizeObserver)new ResizeObserver(reportPlayerHeight).observe(document.body);window.addEventListener('load',reportPlayerHeight);
+
 
 /* ===== Init ===== */
 restorePlayerSettings();
