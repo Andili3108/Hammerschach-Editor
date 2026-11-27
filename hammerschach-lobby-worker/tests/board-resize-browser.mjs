@@ -116,7 +116,11 @@ try {
         assert.equal(await page.locator('html').getAttribute('data-color-scheme'),scheme);
       }
       await page.waitForFunction(()=>document.documentElement.classList.contains('gamer-screen-fit'));
-      for(const [width,height] of [[1100,900],[1280,900],[1440,900],[1920,1080],[2560,1440],[1920,650]]){
+      for(const [width,height,expectedContent] of [
+        [1100,900,1100],[1280,900,1100],[1399,900,1100],[1400,900,1100],
+        [1401,900,1100.85],[1440,900,1133.85],[1660,1080,1320],[1920,1080,1540],
+        [2560,1440,1540],[1400,1080,1100],[1920,650,1100]
+      ]){
         await page.setViewportSize({width,height});
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
         const geom=await page.evaluate(()=>{
@@ -127,7 +131,8 @@ try {
         console.log(width,height,geom);
         assert.ok(Math.abs(geom.left-geom.right)<2);
         assert.ok(geom.width<=1541);
-        if(width===1100||height===650)assert.equal(geom.scale,1);
+        assert.ok(Math.abs(geom.width-expectedContent)<0.2,'Inhaltsbreite bei '+width);
+        if(width<=1400||height===650)assert.equal(geom.scale,1);
         else assert.ok(geom.scale>1);
         if(width===1920 && height===1080)assert.ok(Math.abs(geom.left-190)<1);
       }
@@ -255,6 +260,47 @@ try {
     await page.setViewportSize({width:1920,height:650});
     await child.waitForFunction(()=>HammerschachScreenFit.scale===1);
     await page.close();
+  }
+  // A saved 1000 px board survives the trial even when the tool is already
+  // open, the viewport crosses the breakpoint, or the account changes.
+  {
+    saved=false;
+    const page=await browser.newPage({viewport:{width:1920,height:1080}});
+    await fixture(page);await page.goto(origin);
+    await page.evaluate(()=>setEmbeddedToolActive('analyzer'));
+    const child=page.frameLocator('#analyzerToolFrame');
+    await child.locator('#board .square').first().waitFor();
+    await page.evaluate(()=>HammerschachSettings.open());
+    const toggle=page.getByRole('checkbox',{name:'Automatische Bildschirmoptimierung'});
+    await toggle.waitFor();
+    await page.locator('#gamerSettings [data-size="1000"]').click();
+    const stored=()=>page.evaluate(()=>localStorage.getItem('hammerschach.desktopBoardSize.v1'));
+    assert.equal(await stored(),'1000');
+    const toolState=(automatic)=>page.waitForFunction(automatic=>{
+      const doc=document.querySelector('#analyzerToolFrame').contentWindow;
+      return doc.HammerschachBoardSize.get()===(automatic?760:1000)
+        && doc.HammerschachBoardSize.available()===!automatic
+        && doc.document.getElementById('boardSizeWrap').hidden===automatic;
+    },automatic);
+    await toolState(false);
+    await toggle.check();
+    await toolState(true);
+    assert.equal(await page.locator('#settingsBoardSize').isVisible(),false);
+    await page.waitForFunction(()=>HammerschachScreenFit.scale>1.2);
+    await page.evaluate(()=>HammerschachBoardSize.set(860));
+    assert.equal(await stored(),'1000');
+    await page.setViewportSize({width:1100,height:850});
+    await page.waitForFunction(()=>HammerschachScreenFit.scale===1);
+    assert.equal(await page.evaluate(()=>HammerschachBoardSize.get()),760);
+    await page.setViewportSize({width:1920,height:1080});
+    await toggle.uncheck();await toolState(false);
+    assert.equal(await page.locator('#settingsBoardSize').inputValue(),'1000');
+    await toggle.check();await toolState(true);
+    await page.evaluate(()=>saveAuthState('other',{id:'two',username:'Mitglied',isAdmin:false}));
+    await page.waitForFunction(()=>!HammerschachScreenFit.enabled && HammerschachBoardSize.get()===1000);
+    assert.equal(await stored(),'1000');
+    await page.close();
+    saved=true;
   }
   for(const [width,height] of [[390,844],[1024,768],[1366,1024]]){
     const page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true});
