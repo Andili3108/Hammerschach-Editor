@@ -203,7 +203,16 @@
   }
 
   function syncStatus(){
-    if(testStatus && sourceStatus) testStatus.textContent = sourceStatus.textContent || 'Gamer';
+    if(testStatus && sourceStatus) {
+      const rotating = sourceStatus.classList.contains('lobby-welcome-rotating');
+      testStatus.classList.toggle('lobby-welcome-rotating', rotating);
+      if(rotating) {
+        if(testStatus.innerHTML !== sourceStatus.innerHTML)
+          testStatus.replaceChildren(...Array.from(sourceStatus.childNodes, node => node.cloneNode(true)));
+      } else {
+        testStatus.textContent = sourceStatus.textContent || 'Gamer';
+      }
+    }
     if(testContext){
       const learning = root.classList.contains('learning-tool-active');
       const trainer = root.classList.contains('trainer-tool-active');

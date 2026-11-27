@@ -32,11 +32,11 @@ function lobbyWelcomeText(){
   }
   return formatLobbyWelcome(state.firstVisit);
 }
-function formatLobbyWelcome(firstVisit){
+function formatLobbyWelcome(firstVisit, christmas = document.documentElement.classList.contains('christmas-mode')){
   const name = cleanDisplayName(onlineAuthUser && onlineAuthUser.username);
   const suffix = name ? ', ' + name + '!' : '!';
   // While offline or loading, use a neutral welcome rather than guessing "zurück".
-  return (firstVisit === false ? 'Willkommen zurück' : 'Willkommen im Gamer') + suffix;
+  return (firstVisit === false ? (christmas ? 'Frohe Weihnachtszeit' : 'Willkommen zurück') : 'Willkommen im Gamer') + suffix;
 }
 
 // The real status stays readable to the app and assistive technology.
@@ -47,7 +47,7 @@ function syncLobbyWelcomeDisplay(){
     onlineAuthUser && String(onlineAuthUser.id || '') === lobbyWelcomeState.userId &&
     isMemberLobbyView() && !embeddedToolActive() && !variationModeActive &&
     !document.documentElement.classList.contains('local-game-open') &&
-    text === formatLobbyWelcome(lobbyWelcomeState.firstVisit);
+    [false, true].some(christmas => text === formatLobbyWelcome(lobbyWelcomeState.firstVisit, christmas));
 
   if(!active){
     statusEl.classList.remove('lobby-welcome-rotating');
@@ -55,25 +55,30 @@ function syncLobbyWelcomeDisplay(){
       statusEl.textContent = text;
     return;
   }
-  const seasonalMotto = document.documentElement.classList.contains('christmas-mode')
-    ? 'Wir wünschen dir eine hammermäßige Weihnachtszeit!'
-    : 'Zeit für deinen nächsten Hammerzug.';
+  const greetingText = formatLobbyWelcome(lobbyWelcomeState.firstVisit);
+  const reserveText = formatLobbyWelcome(lobbyWelcomeState.firstVisit, true);
+  const mottoText = 'Zeit für deinen nächsten Hammerzug.';
   if(statusEl.firstElementChild?.classList.contains('lobby-welcome-source')){
-    const existingMotto = statusEl.querySelector('.lobby-welcome-motto');
-    if(existingMotto) existingMotto.dataset.text = seasonalMotto;
+    if(statusEl.firstElementChild.textContent !== greetingText)
+      statusEl.firstElementChild.textContent = greetingText;
+    const greeting = statusEl.querySelector('.lobby-welcome-greeting');
+    greeting.dataset.text = greetingText;
+    greeting.dataset.reserve = reserveText;
+    statusEl.querySelector('.lobby-welcome-motto').dataset.text = mottoText;
     return;
   }
   const source = document.createElement('span');
   source.className = 'lobby-welcome-source';
-  source.textContent = text;
+  source.textContent = greetingText;
   const greeting = document.createElement('span');
   greeting.className = 'lobby-welcome-greeting';
   greeting.setAttribute('aria-hidden','true');
-  greeting.dataset.text = text;
+  greeting.dataset.text = greetingText;
+  greeting.dataset.reserve = reserveText;
   const motto = document.createElement('span');
   motto.className = 'lobby-welcome-motto';
   motto.setAttribute('aria-hidden','true');
-  motto.dataset.text = seasonalMotto;
+  motto.dataset.text = mottoText;
   statusEl.replaceChildren(source, greeting, motto);
   statusEl.classList.add('lobby-welcome-rotating');
 }

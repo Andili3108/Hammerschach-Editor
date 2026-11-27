@@ -8,6 +8,69 @@
   const backdrop = document.getElementById('adminOverviewBackdrop');
   const toggle = document.getElementById('christmasModeToggle');
   const status = document.getElementById('seasonalAdminStatus');
+  // Reuse the existing fir artwork. Fit each branch only into measured free space.
+  const headers = [...document.querySelectorAll('.shell > header')];
+  const decorations = headers.map(header => {
+    const layer = document.createElement('div');
+    layer.className = 'lobby-christmas-ornaments';
+    layer.setAttribute('aria-hidden', 'true');
+    for (const side of ['left', 'right']) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 240 88');
+      svg.setAttribute('focusable', 'false');
+      svg.classList.add('lobby-christmas-branch');
+      svg.dataset.side = side;
+      svg.innerHTML = '<use href="#gamerFirCorner"/>';
+      svg.setAttribute('hidden', '');
+      layer.append(svg);
+    }
+    header.append(layer);
+    return {header, layer};
+  });
+  function fitHeaderBranches() {
+    for (const {header, layer} of decorations) {
+      const bounds = header.getBoundingClientRect();
+      const occupied = [...header.querySelectorAll('a,button,img,.status,.online-panel,.mobile-nav-test-status,.mobile-nav-test-brand')]
+        .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
+        .map(el => el.getBoundingClientRect());
+      for (const branch of layer.children) {
+        branch.setAttribute('hidden', '');
+        if (!bounds.width || !document.documentElement.classList.contains('member-lobby-view')) continue;
+        // Search inward from the corner, keeping clear of the logo, help and settings.
+        for (const width of [150, 120, 90, 60]) {
+          const height = width * 88 / 240;
+          let found = false;
+          for (let inset = 8; inset <= Math.min(240, bounds.width / 3); inset += 8) {
+            const left = branch.dataset.side === 'left' ? bounds.left + inset : bounds.right - inset - width;
+            const top = bounds.top + 4;
+            if (occupied.some(r => left < r.right + 4 && left + width > r.left - 4 && top < r.bottom + 4 && top + height > r.top - 4)) continue;
+            branch.style.cssText = 'top:4px;left:' + (left - bounds.left) + 'px;width:' + width + 'px;height:' + height + 'px;' + (branch.dataset.side === 'right' ? 'transform:scaleX(-1)' : '');
+            branch.removeAttribute('hidden');
+            occupied.push({left, right:left + width, top, bottom:top + height});
+            found = true;
+            break;
+          }
+          if (found) break;
+        }
+      }
+    }
+  }
+  let decorationFrame;
+  function scheduleDecoration() {
+    cancelAnimationFrame(decorationFrame);
+    decorationFrame = requestAnimationFrame(fitHeaderBranches);
+  }
+  const headerResize = new ResizeObserver(scheduleDecoration);
+  for (const {header} of decorations) {
+    headerResize.observe(header);
+    for (const child of header.querySelectorAll('button,a,.status')) headerResize.observe(child);
+    new MutationObserver(records => {
+      if (records.some(record => !record.target.closest?.('.lobby-christmas-ornaments'))) scheduleDecoration();
+    }).observe(header, {subtree:true, childList:true, attributes:true, attributeFilter:['hidden','class']});
+  }
+  new MutationObserver(scheduleDecoration).observe(document.documentElement, {attributes:true, attributeFilter:['class']});
+  window.addEventListener('resize', scheduleDecoration);
+  document.fonts.ready.then(scheduleDecoration);
   let enabled = false, known = false, saving = false, revision = 0, loading = false;
   let visitorChoseAppearance = false;
   function syncVisitorAppearance() {
