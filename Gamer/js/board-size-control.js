@@ -200,9 +200,14 @@
     let top = anchorRect.bottom + 9;
     if(top + popupRect.height > window.innerHeight - gutter) top = anchorRect.top - popupRect.height - 9;
     top = clamp(top,gutter,Math.max(gutter,window.innerHeight - popupRect.height - gutter));
-    popup.style.left = Math.round(left) + 'px';
-    popup.style.top = Math.round(top) + 'px';
+    const scale = window.HammerschachScreenFit?.scale || 1;
+    popup.style.left = Math.round(left / scale) + 'px';
+    popup.style.top = Math.round(top / scale) + 'px';
   }
+
+  window.addEventListener('hammerschach:screen-scale',()=>{
+    if(!popup.hidden && popupAnchor)positionPopup(popupAnchor);
+  });
 
   function openPopup(anchor){
     if(anchor.hidden || wrap.hidden) return;

@@ -60,11 +60,12 @@ const TvLiveBoards = (() => {
     if(!shell.hidden&&(!available||windowSlot!==slot.slotId))close(false);
     if(requestToken&&requestToken!==onlineAuthToken){request?.abort();catalog=[];catalogLoaded=false;requestToken='';}
   }
+  const layoutLength=value=>value/(window.HammerschachScreenFit?.scale || 1);
   function clampPosition(left,top){
     const rect=shell.getBoundingClientRect();
-    shell.style.left=Math.round(Math.max(0,Math.min(left,window.innerWidth-rect.width)))+'px';
+    shell.style.left=layoutLength(Math.round(Math.max(0,Math.min(left,window.innerWidth-rect.width))))+'px';
     const y=Math.round(Math.max(0,Math.min(top,window.innerHeight-Math.min(rect.height,80))));
-    shell.style.top=y+'px';shell.style.maxHeight=Math.max(60,window.innerHeight-y-8)+'px';
+    shell.style.top=layoutLength(y)+'px';shell.style.maxHeight=layoutLength(Math.max(60,window.innerHeight-y-8))+'px';
   }
   function minimized(value){
     if(value){HammerschachLiveBoard.pauseTv();shell.classList.add('is-minimized');}
@@ -89,7 +90,7 @@ const TvLiveBoards = (() => {
     if(!shell.hidden){minimized(false);control('minimize').focus();return;}
     // Match the full-page Liveboard width, including its notation column.
     const width=home.parentElement.getBoundingClientRect().width;
-    shell.style.width=Math.min((width||1100)+2,window.innerWidth-16)+'px';
+    shell.style.width=layoutLength(Math.min((width||1100)+2,window.innerWidth-16))+'px';
     shell.classList.remove('is-minimized');control('minimize').textContent='−';control('minimize').setAttribute('aria-label','Liveboards minimieren');
     shell.hidden=false;windowSlot=slot.slotId;favorites=events(slot);
     shell.querySelector('.tv-lb-content').append(view);

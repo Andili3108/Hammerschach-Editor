@@ -70,8 +70,9 @@ const MemberHovercard = (() => {
         if(top + size.height > height - margin) top = box.top - gap - size.height;
       }
     }
-    card.style.left = Math.max(margin, Math.min(left, width - size.width - margin)) + 'px';
-    card.style.top = Math.max(margin, Math.min(top, height - size.height - margin)) + 'px';
+    const scale = window.HammerschachScreenFit?.scale || 1;
+    card.style.left = Math.max(margin, Math.min(left, width - size.width - margin)) / scale + 'px';
+    card.style.top = Math.max(margin, Math.min(top, height - size.height - margin)) / scale + 'px';
   }
   function ratingKeys(target){
     return String(target.ratingType || '').includes('freestyle') || target.variant === 'freestyle960'

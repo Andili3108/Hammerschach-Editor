@@ -356,7 +356,7 @@
   function updateRoomLayout() {
     if (!session) return;
     const header = [$('mobileNavTestHeader'), document.querySelector('.header')].find(el => el.offsetParent !== null);
-    room.style.setProperty('--local-header-height', Math.ceil(header?.getBoundingClientRect().height || 0) + 'px');
+    room.style.setProperty('--local-header-height', Math.ceil((header?.getBoundingClientRect().height || 0) / (window.HammerschachScreenFit?.scale || 1)) + 'px');
     hammerschachScheduleHeightReport(false);
   }
   function requestExit(toSetup = false) {

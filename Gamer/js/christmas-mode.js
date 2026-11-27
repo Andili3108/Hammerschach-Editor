@@ -42,10 +42,16 @@
   });
   function fitHeaderBranches() {
     for (const {header, layer} of decorations) {
-      const bounds = header.getBoundingClientRect();
+      const scale = window.HammerschachScreenFit?.scale || 1;
+      function layoutRect(el){
+        const rect=el.getBoundingClientRect();
+        return {left:rect.left/scale, right:rect.right/scale, top:rect.top/scale,
+          bottom:rect.bottom/scale, width:rect.width/scale, height:rect.height/scale};
+      }
+      const bounds = layoutRect(header);
       const occupied = [...header.querySelectorAll('a,button,img,.status,.online-panel,.mobile-nav-test-status,.mobile-nav-test-brand')]
         .filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
-        .map(el => el.getBoundingClientRect());
+        .map(layoutRect);
       for (const branch of layer.children) {
         branch.setAttribute('hidden', '');
         if (!bounds.width || !document.documentElement.classList.contains('member-lobby-view')) continue;
@@ -75,6 +81,7 @@
     cancelAnimationFrame(decorationFrame);
     decorationFrame = requestAnimationFrame(fitHeaderBranches);
   }
+  window.addEventListener('hammerschach:screen-scale',scheduleDecoration);
   const headerResize = new ResizeObserver(scheduleDecoration);
   for (const {header} of decorations) {
     headerResize.observe(header);

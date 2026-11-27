@@ -22,6 +22,32 @@
  toggle(appearance,'autoNight','Nachtmodus automatisch','Folgt der Hell-/Dunkel-Einstellung deines Geräts. Bei heller Geräteeinstellung kehrt die gewählte Tagesansicht Hell oder Sanft zurück.');
  toggle(appearance,'focus','Konzentrationsmodus','Blendet im Spielraum Chat und zusätzliche Informationsbereiche aus.');
  toggle(appearance,'gamesAsList','Partien als Liste anzeigen','Kompakte Zeilen in den Partienübersichten. Ohne Häkchen bleiben die Brett-Kacheln erhalten.');
+ const fitRow=document.createElement('label');
+ fitRow.className='settings-row';
+ const fitInput=document.createElement('input');
+ fitInput.type='checkbox';
+ fitRow.append('Automatische Bildschirmoptimierung',fitInput);
+ let tester='',sessionToken='',fitRequested=false;
+ function screenFitActive(){
+   return fitRequested && !!tester && tester===String(onlineAuthUser?.id) && sessionToken===onlineAuthToken
+     && onlineAuthUser?.isAdmin===true && String(onlineAuthUser.username).toLowerCase()==='andili';
+ }
+ function setFit(checked){
+   fitInput.checked=checked;
+   fitRequested=checked;
+   window.dispatchEvent(new Event('hammerschach:screen-fit-preference'));
+ }
+ function clearTester(){
+   tester='';fitRow.remove();setFit(false);
+ }
+ function editFit(checked){
+   if(!tester||tester!==String(onlineAuthUser?.id)||sessionToken!==onlineAuthToken)return;
+   setFit(checked);
+   dirty.screenFit=checked;
+   cache();
+   clearTimeout(timer);save();
+ }
+ fitInput.addEventListener('change',()=>editFit(fitInput.checked));
  const board=section('appearance','Brett & Figuren');
  select(board,'board','Schachbrett',boardColorPresets.map(p=>[p.id,p.name]));
  // Only offer sets accepted by the shared preferences, excluding retired aliases.
@@ -62,8 +88,8 @@
  dialog.querySelector('#settingsDone').addEventListener('click',()=>dialog.close());
  dialog.addEventListener('click',e=>{if(e.target===dialog){const b=dialog.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)dialog.close();}});
  dialog.addEventListener('close',()=>document.getElementById('themeToggleBtn')?.focus());
- dialog.querySelector('#settingsReset').addEventListener('click',()=>{if(!confirm('Alle persönlichen Einstellungen und die Brettgröße auf Standard zurücksetzen?'))return;for(const [key,value] of Object.entries(P.defaults))P.set(key,value);window.HammerschachBoardSize?.set(760);});
- window.HammerschachSettings={open(){sizeRefresh();refresh();if(!dialog.open)dialog.showModal();}};
+ dialog.querySelector('#settingsReset').addEventListener('click',()=>{if(!confirm('Alle persönlichen Einstellungen und die Brettgröße auf Standard zurücksetzen?'))return;if(tester)editFit(false);for(const [key,value] of Object.entries(P.defaults))P.set(key,value);window.HammerschachBoardSize?.set(760);});
+ window.HammerschachSettings={screenFitActive,open(){sizeRefresh();refresh();if(!dialog.open)dialog.showModal();}};
  function refresh(){const schemeSelect=dialog.querySelector('[data-preference="scheme"]');schemeSelect.querySelector('option[value="dark"]').disabled=P.get('autoNight');for(const el of dialog.querySelectorAll('[data-preference]')){const v=el.dataset.preference==='scheme' && window.HammerschachAppearance.temporarySoft ? 'soft' : P.get(el.dataset.preference);if(el.type==='checkbox')el.checked=v;else el.value=v;}volume.querySelector('output').textContent=P.get('volume')+' %';preview.replaceChildren();for(let i=0;i<8;i++){const square=document.createElement('span');square.style.background=i%2?'var(--dark-square)':'var(--light-square)';if(i===2||i===5){const img=document.createElement('img');img.src=pieceImg[i===2?'N':'n'];img.alt=i===2?'Weißer Springer':'Schwarzer Springer';square.append(img);}preview.append(square);}}
  function broadcast(){const state=P.snapshot();document.querySelectorAll('iframe').forEach(frame=>{try{if(new URL(frame.src,location.href).origin===location.origin)frame.contentWindow?.postMessage({type:'hammerschach-preferences',preferences:state},location.origin==='null'?'*':location.origin);}catch(_){}});}
  let appliedBoard='',appliedPieces='',appliedScheme=null,appliedSound=null;
@@ -83,18 +109,31 @@
  const cacheKey=id=>'hammerschach.preferences.account.'+id;
  function cache(){try{localStorage.setItem(cacheKey(account),JSON.stringify({preferences:accountPreferences(P.snapshot()),pending:accountPreferences({...inFlight,...dirty})}));}catch(_){}}
  function say(text,error=false){status.textContent=text;retry.hidden=!error;}
- async function syncAccount(force=false){const next=String(onlineAuthUser?.id||'');if(next===account&&!force)return;account=next;try{localStorage.setItem('hammerschach.preferences.owner',account);}catch(_){}const ticket=++generation;dirty={};inFlight={};loading=false;saving=false;clearTimeout(timer);if(!account){P.replace(P.defaults);say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}
+ async function syncAccount(force=false){const next=String(onlineAuthUser?.id||'');if(next===account&&sessionToken===onlineAuthToken&&!force)return;clearTester();sessionToken=onlineAuthToken;account=next;try{localStorage.setItem('hammerschach.preferences.owner',account);}catch(_){}const ticket=++generation;dirty={};inFlight={};loading=false;saving=false;clearTimeout(timer);if(!account){P.replace(P.defaults);say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}
  loading=true;
  let migration=firstAccount?initialDevicePreferences:P.defaults;firstAccount=false;
- try{const raw=JSON.parse(localStorage.getItem(cacheKey(account))||'null');migration=raw?.preferences||migration;P.replace(migration);dirty=accountPreferences(raw?.pending||{});}catch(_){P.replace(P.defaults);}
+ try{const raw=JSON.parse(localStorage.getItem(cacheKey(account))||'null');migration=accountPreferences(raw?.preferences||migration);delete migration.screenFit;P.replace(migration);dirty=accountPreferences(raw?.pending||{});delete dirty.screenFit;}catch(_){P.replace(P.defaults);}
  say('Kontoeinstellungen werden geladen …');
- try{const data=await authApi('/api/account/preferences');if(ticket!==generation)return;if(!Object.keys(data.preferences||{}).length)dirty=accountPreferences({...migration,...dirty});P.replace({...P.defaults,...data.preferences,...dirty});cache();say('Mit deinem Mitgliedskonto synchronisiert.');}
+ try{const data=await authApi('/api/account/preferences');if(ticket!==generation||sessionToken!==onlineAuthToken||next!==String(onlineAuthUser?.id||''))return;
+
+ if(data.screenFitAccount===next && localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY)===sessionToken && onlineAuthUser?.isAdmin===true && String(onlineAuthUser.username).toLowerCase()==='andili'){
+   tester=next;appearance.append(fitRow);
+   setFit(data.preferences?.screenFit===true);
+ }
+ if(!Object.keys(data.preferences||{}).length)dirty=accountPreferences({...migration,...dirty});P.replace({...P.defaults,...data.preferences,...dirty});cache();say('Mit deinem Mitgliedskonto synchronisiert.');}
  catch(_){if(ticket!==generation)return;say('Lokal verfügbar. Kontosynchronisierung derzeit nicht erreichbar.',true);}
  finally{if(ticket===generation){loading=false;if(Object.keys(dirty).length)save();}}
  }
- async function save(){dirty=accountPreferences(dirty);if(!account||loading||saving||!Object.keys(dirty).length)return;const ticket=generation;const batch={...dirty};dirty={};inFlight=batch;saving=true;cache();say('Wird im Mitgliedskonto gespeichert …');try{await authApi('/api/account/preferences',{method:'POST',body:JSON.stringify({preferences:batch})});if(ticket!==generation)return;inFlight={};cache();say('Im Mitgliedskonto gespeichert.');}catch(_){if(ticket!==generation)return;dirty={...batch,...dirty};inFlight={};cache();say('Auf diesem Gerät gespeichert. Kontospeicherung fehlgeschlagen; bitte erneut versuchen.',true);return;}finally{if(ticket===generation){saving=false;inFlight={};}}if(Object.keys(dirty).length)save();}
+ async function save(){dirty=accountPreferences(dirty);if(!tester)delete dirty.screenFit;if(!account||loading||saving||!Object.keys(dirty).length)return;const ticket=generation;const batch={...dirty};dirty={};inFlight=batch;saving=true;cache();say('Wird im Mitgliedskonto gespeichert …');try{await authApi('/api/account/preferences',{method:'POST',body:JSON.stringify({preferences:batch})});if(ticket!==generation)return;inFlight={};cache();say('Im Mitgliedskonto gespeichert.');}catch(error){if(ticket!==generation)return;dirty={...batch,...dirty};inFlight={};
+ if(error.data?.code==='NOT_ALLOWED'||error.data?.code==='NOT_AUTHENTICATED'){clearTester();delete dirty.screenFit;}
+ cache();say(Object.hasOwn(batch,'screenFit')?'Bildschirmoptimierung konnte nicht im Konto gespeichert werden.':'Auf diesem Gerät gespeichert. Kontospeicherung fehlgeschlagen; bitte erneut versuchen.',true);return;}finally{if(ticket===generation){saving=false;inFlight={};}}if(Object.keys(dirty).length)save();}
  window.addEventListener('hammerschach:preferences-edit',e=>{if(e.detail.name==='moveMethod'){say('Zugmethode auf diesem Gerät gespeichert.');return;}if(!account){say('Auf diesem Gerät gespeichert. Für geräteübergreifende Einstellungen bitte einloggen.');return;}dirty[e.detail.name]=e.detail.value;cache();clearTimeout(timer);timer=setTimeout(save,350);});
- window.addEventListener('hammerschach:auth-change',()=>queueMicrotask(()=>syncAccount()));
+ window.addEventListener('hammerschach:auth-change',()=>{if(sessionToken!==onlineAuthToken||account!==String(onlineAuthUser?.id||'')||onlineAuthUser?.isAdmin!==true)clearTester();queueMicrotask(()=>syncAccount());});
+ window.addEventListener('storage',event=>{
+   if(event.key===ONLINE_AUTH_TOKEN_STORAGE_KEY || event.key===null){
+     if(localStorage.getItem(ONLINE_AUTH_TOKEN_STORAGE_KEY)!==sessionToken)clearTester();
+   }
+ });
  retry.addEventListener('click',()=>Object.keys(dirty).length?save():syncAccount(true));
  window.addEventListener('online',()=>Object.keys(dirty).length?save():syncAccount(true));
  tab('appearance');apply();sizeRefresh();if(onlineAuthUser?.id)syncAccount();

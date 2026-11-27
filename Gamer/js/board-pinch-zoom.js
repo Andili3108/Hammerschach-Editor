@@ -19,6 +19,39 @@ window.installBoardPinchZoom = function(containers,cancelDrag){
   window.addEventListener('hammerschach:preferences',applyMoveMethod);
   applyMoveMethod();
 
+  // A resize between pointerdown and release can move a different legal
+  // square under the pointer. Cancel before any board-specific drop handler.
+  function trial(){
+    if(window.HammerschachScreenFit) return window.HammerschachScreenFit;
+    try { return window.parent.HammerschachScreenFit; } catch (_) { return null; }
+  }
+  let gesture=null;
+  function geometry(board){
+    const rect=board.getBoundingClientRect();
+    const frame=window.frameElement?.getBoundingClientRect();
+    return [rect.left,rect.top,rect.width,rect.height,frame?.left,frame?.top,frame?.width,frame?.height];
+  }
+  document.addEventListener('pointerdown',event=>{
+    const board=boards.find(el=>el.contains(event.target));
+    const fit=trial();
+    if(board && fit && event.isPrimary){
+      // A saved preference may arrive while a finger is already on the board.
+      gesture={id:event.pointerId,board,rect:fit.enabled ? geometry(board) : null,revision:fit.revision};
+    }
+  },true);
+  document.addEventListener('pointerup',event=>{
+    if(!gesture||event.pointerId!==gesture.id)return;
+    const {board,rect,revision}=gesture;
+    gesture=null;
+    if(revision!==trial()?.revision || (rect && geometry(board).some((v,i)=>v!==rect[i]))){
+      cancelDrag();
+      suppressClickUntil=Date.now()+500;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  },true);
+  document.addEventListener('pointercancel',()=>{gesture=null;},true);
+
   function observeTouches(event){
     if(event.touches.length > 1){
       pinching = true;

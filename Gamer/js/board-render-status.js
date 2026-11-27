@@ -365,7 +365,7 @@ function updateDailyMoveConfirmationUi(){
   const boardTools = document.querySelector('.board-tools');
   if(boardTools){
     if(visible && !boardTools.classList.contains('daily-move-pending')){
-      boardTools.style.minHeight = boardTools.getBoundingClientRect().height + 'px';
+      boardTools.style.minHeight = boardTools.getBoundingClientRect().height / (window.HammerschachScreenFit?.scale || 1) + 'px';
     } else if(!visible){
       boardTools.style.removeProperty('min-height');
     }

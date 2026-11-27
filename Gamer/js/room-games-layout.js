@@ -45,12 +45,13 @@
     const width = viewport ? viewport.width : window.innerWidth;
     const height = viewport ? viewport.height : window.innerHeight;
     const popupWidth = Math.min(420, Math.max(0, rect.width - 16), width - 24);
-    dialog.style.width = popupWidth + 'px';
+    const scale = window.HammerschachScreenFit?.scale || 1;
+    dialog.style.width = popupWidth / scale + 'px';
     const halfHeight = (dialog.getBoundingClientRect().height || 80) / 2;
     const x = Math.max(left + popupWidth / 2 + 12, Math.min(left + width - popupWidth / 2 - 12, rect.left + rect.width / 2));
     const y = Math.max(top + halfHeight + 12, Math.min(top + height - halfHeight - 12, rect.top + rect.height / 2));
-    dialog.style.left = x + 'px';
-    dialog.style.top = y + 'px';
+    dialog.style.left = x / scale + 'px';
+    dialog.style.top = y / scale + 'px';
   }
 
   function closePopup(){
@@ -113,7 +114,8 @@
     if(room && !stacked){
       const rect = board.getBoundingClientRect();
       const offset = Math.max(0, rect.top - column.getBoundingClientRect().top);
-      const values = {'--room-board-offset':offset+'px','--room-board-height':rect.height+'px'};
+      const scale = window.HammerschachScreenFit?.scale || 1;
+      const values = {'--room-board-offset':offset/scale+'px','--room-board-height':rect.height/scale+'px'};
       for(const [name,value] of Object.entries(values)){
         if(side.style.getPropertyValue(name) !== value) side.style.setProperty(name,value);
       }
