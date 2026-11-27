@@ -27,6 +27,28 @@ for(const role of ['visitor','member','admin']){
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(local);await page.waitForFunction(()=>document.documentElement.classList.contains('christmas-mode'));
  const panel=page.locator('#christmasWelcome');assert.equal(await panel.isVisible(),!user);assert.equal(youtube,0);
  if(!user){
+   // A new Christmas visit starts soft even with a saved dark theme or a dark device.
+   await page.emulateMedia({colorScheme:'dark'});
+   for (const [scheme, autoNight] of [['dark',false], ['light',true]]) {
+     await page.evaluate(({scheme,autoNight}) => {
+       window.HammerschachPreferences.set('scheme',scheme);
+       window.HammerschachPreferences.set('autoNight',autoNight);
+     }, {scheme,autoNight});
+     await page.reload();
+     await panel.waitFor({state:'visible'});
+     assert.equal(await page.locator('html').getAttribute('data-color-scheme'),'soft');
+     assert.equal(await page.evaluate(() => window.HammerschachPreferences.get('scheme')),scheme);
+   }
+   await page.locator('#themeToggleBtn').click();
+   const settingsScheme = page.locator('#gamerSettings select[data-preference="scheme"]');
+   assert.equal(await settingsScheme.inputValue(),'soft');
+   await page.locator('#gamerSettings [data-preference="autoNight"]').uncheck();
+   await settingsScheme.selectOption('dark');
+   assert.equal(await page.locator('html').getAttribute('data-color-scheme'),'dark');
+   await page.locator('#settingsDone').click();
+   await page.reload();
+   await panel.waitFor({state:'visible'});
+   assert.equal(await page.locator('html').getAttribute('data-color-scheme'),'soft');
  for (const scheme of ['light','soft','dark']) {
  await page.evaluate(s => window.HammerschachAppearance.select(s), scheme);
  for(const viewport of [{width:1440,height:1000},{width:820,height:1180},{width:1180,height:820},{width:390,height:844},{width:844,height:390},{width:320,height:720}]){
