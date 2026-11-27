@@ -1,9 +1,17 @@
-/* Reuse the established dark Christmas palette in every appearance. */
+/* Preserve the established dark Christmas palette. */
 .christmas-welcome {
   --card-top:#253c34; --card-bottom:#132822; --card-ink:#f2eadd;
   --card-accent:#f2d597; --card-muted:#d5c9af; --card-edge:#846d41;
   --card-inlay:#695c3d; --card-branch:#8ba994; --card-video:#192521;
 }
+/* Light and soft share the approved champagne palette; dark is untouched. */
+html:not(.dark-mode) .christmas-welcome {
+  --card-top:#fbf3df; --card-bottom:#e5c98d; --card-ink:#35291c;
+  --card-accent:#792638; --card-muted:#58452a; --card-edge:#ad8846;
+  --card-inlay:#c6a566; --card-video:linear-gradient(135deg,#bc9955,#9b773c);
+}
+html:not(.dark-mode) .christmas-video { color:#170f05; }
+html:not(.dark-mode) .christmas-music { color:#170f05; }
 .christmas-welcome[hidden], #seasonalAdmin[hidden] { display:none !important; }
 .christmas-welcome {
   box-sizing:border-box; position:relative; margin:0; padding:20px 26px 26px;
@@ -57,7 +65,7 @@
 .lobby-christmas-ornaments { display:none; position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; }
 html.christmas-mode.member-lobby-view .lobby-christmas-ornaments { display:block; box-shadow:inset 0 0 0 1px #b39350; }
 .lobby-christmas-ornaments * { pointer-events:none; }
-.lobby-christmas-branch { position:absolute; opacity:.75; }
+.lobby-christmas-branch { position:absolute; }
 .lobby-christmas-branch[hidden] { display:none; }
 
 /* The compact header mirrors the same two messages and their reserved height. */
