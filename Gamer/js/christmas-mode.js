@@ -60,7 +60,10 @@
           const height = width * 88 / 240;
           if (height + 8 > bounds.height) continue;
           let found = false;
-          for (let inset = 8; inset <= Math.min(240, bounds.width / 3); inset += 8) {
+          const controls=header.querySelector('.header-icon-actions') || header.querySelector('.color-mode-toggle');
+          const controlBounds=controls && layoutRect(controls);
+          const firstInset=branch.dataset.side==='right' && controlBounds?.width ? Math.max(8,Math.ceil(bounds.right-controlBounds.left+8)) : 8;
+          for (let inset = firstInset; inset <= Math.min(240, bounds.width / 3); inset += 8) {
             const left = branch.dataset.side === 'left' ? bounds.left + inset : bounds.right - inset - width;
             const top = bounds.top + 4;
             if (left < bounds.left + 4 || left + width > bounds.right - 4) continue;
@@ -94,22 +97,8 @@
   window.addEventListener('resize', scheduleDecoration);
   document.fonts.ready.then(scheduleDecoration);
   let enabled = false, known = false, saving = false, revision = 0, loading = false;
-  let visitorChoseAppearance = false;
-  function syncVisitorAppearance() {
-    const visible = !panel.hidden && panel.getClientRects().length > 0;
-    window.HammerschachAppearance.setTemporarySoft(visible && !visitorChoseAppearance);
-  }
-  window.addEventListener('hammerschach:preferences-edit', ({detail}) => {
-    if (detail.name === 'scheme' || detail.name === 'autoNight') {
-      visitorChoseAppearance = true;
-      syncVisitorAppearance();
-    }
-  });
-  // Navigation can hide the lobby via an ancestor without hiding the card itself.
-  new ResizeObserver(syncVisitorAppearance).observe(panel);
   function sync() {
     panel.hidden = !enabled || welcome.hidden;
-    syncVisitorAppearance();
     if (panel.hidden && video.querySelector('iframe')) video.replaceChildren(consent);
     document.documentElement.classList.toggle('christmas-mode', enabled);
     adminPanel.hidden = !isCurrentUserAdmin();

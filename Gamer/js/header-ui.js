@@ -176,6 +176,12 @@ document.addEventListener('keydown', event => {
 const COLOR_SCHEME_STORAGE_KEY = 'hammerschachGamerColorScheme';
 let darkModeEnabled = document.documentElement.classList.contains('dark-mode');
 function updateThemeToggleUi(){
+  for(const button of document.querySelectorAll('.color-mode-toggle')){
+    const dark=HammerschachAppearance.current()==='dark';
+    button.textContent=dark?'☀':'☾';
+    const label=dark?'Dunkelmodus ausschalten':'Dunkelmodus einschalten';
+    button.title=label;button.setAttribute('aria-label',label);
+  }
   if(!themeToggleBtn) return;
   themeToggleBtn.textContent = '⚙';
   themeToggleBtn.removeAttribute('aria-pressed');
@@ -209,6 +215,7 @@ function refreshColorSchemeContext(){
 }
 window.addEventListener('hammerschach:appearance',refreshColorSchemeContext);
 if(themeToggleBtn) themeToggleBtn.addEventListener('click', () => window.HammerschachSettings?.open());
+document.querySelectorAll('.color-mode-toggle').forEach(button=>button.addEventListener('click',()=>HammerschachAppearance.toggle()));
 updateThemeToggleUi();
 
 function setDarkMode(enabled){ setColorScheme(enabled ? 'dark' : 'light'); }
