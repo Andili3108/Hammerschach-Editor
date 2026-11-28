@@ -3778,3 +3778,14 @@ html body button.current-area:disabled:active{
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+#mobileSettingsOpen {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 21px;
+}
