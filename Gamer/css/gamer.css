@@ -3755,3 +3755,26 @@ html body button.current-area:disabled:active{
 @media (prefers-reduced-motion: reduce) {
   #status.lobby-welcome-rotating { animation: none; }
 }
+
+/* Explicit color control in both existing headers. */
+.color-mode-toggle{flex:0 0 auto;display:inline-grid!important;place-items:center;width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;padding:0!important;border-radius:50%!important;font:700 25px/1 Arial,sans-serif!important;touch-action:manipulation;}
+.color-mode-toggle:focus-visible{outline:3px solid var(--ui-accent);outline-offset:3px;}
+@media(min-width:1101px){
+ html:is(.member-lobby-view,.visitor-header-view,.hammerschach-room-view) .header-icon-actions{grid-column:5 / 7!important;justify-self:end;}
+}
+/* Visible controls follow their DOM order. Only the status uses the remaining width. */
+#mobileNavTestHeader:not([hidden]) {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: clamp(4px, 1vw, 9px);
+}
+#mobileNavTestHeader > button { flex: 0 0 auto; }
+#mobileNavTestHeader > [hidden] { display: none !important; }
+#mobileNavTestStatus {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
