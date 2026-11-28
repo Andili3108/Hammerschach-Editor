@@ -295,6 +295,7 @@
     return;
   }
 
+  document.getElementById('mobileSettingsOpen').addEventListener('click', () => window.HammerschachSettings.open());
   openButton.addEventListener('click', openDrawer);
   closeButton.addEventListener('click', () => closeDrawer(true));
   themeButton.addEventListener('click', () => runSourceAction(sourceTheme));
