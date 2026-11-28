@@ -3789,3 +3789,21 @@ html body button.current-area:disabled:active{
   border-radius: 50%;
   font-size: 21px;
 }
+
+/* On portrait phones, reserve a full row for greetings and game updates. */
+@media (max-width: 600px) and (orientation: portrait) {
+  #mobileNavTestHeader:not([hidden]) {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  #mobileNavTestBrand { margin-inline-end: auto; }
+  #mobileNavTestBrand img { width: 52px; height: 52px; }
+  #mobileNavTestHeader > #mobileNavTestStatus {
+    order: 1;
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    font-size: 0.9375rem;
+    line-height: 1.25;
+  }
+}
