@@ -11,7 +11,6 @@
   const classicHeader = document.querySelector('.header');
   const testHeader = document.getElementById('mobileNavTestHeader');
   const testBrand = document.getElementById('mobileNavTestBrand');
-  const testContext = document.getElementById('mobileNavTestContext');
   const testStatus = document.getElementById('mobileNavTestStatus');
   const openButton = document.getElementById('mobileNavTestOpen');
   const backdrop = document.getElementById('mobileNavTestBackdrop');
@@ -212,17 +211,6 @@
       } else {
         testStatus.textContent = sourceStatus.textContent || 'Gamer';
       }
-    }
-    if(testContext){
-      const learning = root.classList.contains('learning-tool-active');
-      const trainer = root.classList.contains('trainer-tool-active');
-      const mateSchool = root.classList.contains('mate-school-tool-active');
-      const leagueStandings = root.classList.contains('league-standings-tool-active');
-      const reader = root.classList.contains('reader-tool-active');
-      const tournamentReport = root.classList.contains('tournament-report-tool-active');
-      const tv = root.classList.contains('tv-tool-active');
-      const workshop = root.classList.contains('analyzer-tool-active') || root.classList.contains('schachlabor-tool-active') || root.classList.contains('openings-tool-active');
-      testContext.textContent = root.classList.contains('hsc08-active') ? 'Vereinsturniere' : root.classList.contains('live-board-tool-active') ? 'Live-Board' : root.classList.contains('impulses-tool-active') ? 'Trainingsimpulse' : root.classList.contains('mediathek-tool-active') ? 'Mediathek' : learning ? 'Videokurse' : (trainer ? 'Trainer' : (mateSchool ? 'Mattbilder' : (leagueStandings ? 'Ergebnisdienst' : (tournamentReport ? 'Turnierbericht' : (reader ? 'Partienarchiv' : (tv ? 'Gamer-TV' : (workshop ? 'Training' : (roomContext() ? 'Partie' : (root.classList.contains('member-lobby-view') ? 'Lobby' : 'Hammerschach')))))))));
     }
   }
 
