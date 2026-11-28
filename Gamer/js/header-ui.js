@@ -178,7 +178,6 @@ let darkModeEnabled = document.documentElement.classList.contains('dark-mode');
 function updateThemeToggleUi(){
   for(const button of document.querySelectorAll('.color-mode-toggle')){
     const dark=HammerschachAppearance.current()==='dark';
-    button.textContent=dark?'☀':'☾';
     const label=dark?'Dunkelmodus ausschalten':'Dunkelmodus einschalten';
     button.title=label;button.setAttribute('aria-label',label);
   }
